@@ -1,53 +1,465 @@
-body{
+/* Table Topics - Speech Practice App Styles */
+
+body {
     font-family: 'Roboto', sans-serif;
-    background-color:hsl(160,30%,30%)
+    background-color: hsl(160, 30%, 30%);
 }
 
-strong{
+strong {
     font-weight: 700;
 }
 
-
-.settings-card{
+/* Cards */
+.settings-card {
     padding: 15px;
 }
-.settings-btn{
-    width: 100%
+
+.settings-btn {
+    width: 100%;
+    margin-bottom: 5px;
 }
 
-
-.menu-btn{
-    width:100%;
+.menu-btn {
+    width: 100%;
     margin-bottom: 10px;
-    background-color: hsl(160,30%,60%)
+    background-color: hsl(160, 30%, 60%);
 }
 
-.ctrl-btn{
+.menu-btn:hover {
+    background-color: hsl(160, 30%, 50%);
+}
+
+.ctrl-btn {
     margin: 5px;
-    background-color: hsl(160,30%,60%)
+    background-color: hsl(160, 30%, 60%);
 }
 
-#close-list-BTN{
+.ctrl-btn:hover {
+    background-color: hsl(160, 30%, 50%);
+}
+
+#close-list-BTN {
     margin: 5px;
 }
 
-#timer{
-   font-size: 5em;
-   margin: 10px;
+/* Timer */
+#timer {
+    font-size: 5em;
+    margin: 10px;
 }
 
-#question{
+#question {
     font-size: 2em;
 }
 
-#WOD{
+#WOD {
     font-size: 1.25em;
     margin-bottom: 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-
-.toast-size{
+.toast-size {
     font-size: 1.5em;
 }
 
+/* Recording Indicator */
+.recording-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #e53935;
+    font-weight: 500;
+    margin: 10px 0;
+}
+
+.pulse-dot {
+    width: 12px;
+    height: 12px;
+    background-color: #e53935;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+/* Recording button active state */
+.ctrl-btn.red {
+    background-color: #e53935 !important;
+}
+
+.ctrl-btn.pulse {
+    animation: btn-pulse 1s infinite;
+}
+
+@keyframes btn-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(229, 57, 53, 0);
+    }
+}
+
+/* Analysis Card */
+.analysis-card {
+    padding: 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.analysis-results h5 {
+    color: hsl(160, 30%, 30%);
+    margin-bottom: 20px;
+}
+
+.analysis-results h6 {
+    color: hsl(160, 30%, 40%);
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+/* Overall Score Display */
+.overall-score {
+    display: inline-block;
+    padding: 20px 40px;
+    border-radius: 50%;
+    margin: 20px 0;
+}
+
+.overall-score .score-number {
+    font-size: 3em;
+    font-weight: bold;
+}
+
+.overall-score .score-label {
+    font-size: 1.2em;
+    color: #666;
+}
+
+.overall-score.excellent {
+    background: linear-gradient(135deg, #a5d6a7, #66bb6a);
+    color: white;
+}
+
+.overall-score.good {
+    background: linear-gradient(135deg, #fff59d, #ffca28);
+    color: #333;
+}
+
+.overall-score.fair {
+    background: linear-gradient(135deg, #ffcc80, #ff9800);
+    color: white;
+}
+
+.overall-score.needs-work {
+    background: linear-gradient(135deg, #ef9a9a, #e53935);
+    color: white;
+}
+
+/* Stat Boxes */
+.stat-box {
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.stat-box .stat-number {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: hsl(160, 30%, 35%);
+}
+
+.stat-box .stat-label {
+    font-size: 0.85em;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.stat-box.warning {
+    background: #fff3e0;
+}
+
+.stat-box.warning .stat-number {
+    color: #e65100;
+}
+
+/* Score Bars */
+.scores-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.score-item {
+    margin-bottom: 8px;
+}
+
+.score-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+}
+
+.score-item .progress {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    margin: 0;
+}
+
+/* Pace Badge */
+.pace-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin: 10px 0;
+}
+
+/* Filler Words */
+.filler-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.filler-words .chip {
+    background: #ffecb3;
+    color: #f57c00;
+}
+
+/* History Card */
+.history-card {
+    padding: 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.history-container h5 {
+    color: hsl(160, 30%, 30%);
+    margin-bottom: 20px;
+}
+
+.history-container h6 {
+    color: hsl(160, 30%, 40%);
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+/* Stats Overview */
+.stats-overview {
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, hsl(160, 30%, 85%), hsl(160, 30%, 75%));
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.stat-card .stat-value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: hsl(160, 30%, 25%);
+}
+
+.stat-card .stat-title {
+    font-size: 0.8em;
+    color: hsl(160, 30%, 35%);
+    text-transform: uppercase;
+}
+
+/* Progress Indicator */
+.progress-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.progress-indicator.positive {
+    background: #c8e6c9;
+    color: #2e7d32;
+}
+
+.progress-indicator.negative {
+    background: #ffcdd2;
+    color: #c62828;
+}
+
+.progress-indicator small {
+    display: block;
+    font-size: 0.75em;
+    opacity: 0.8;
+}
+
+/* Streak Badge */
+.streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ff8a65, #ff5722);
+    color: white;
+    border-radius: 20px;
+    font-weight: 500;
+    margin: 10px 0;
+}
+
+.streak-badge i {
+    color: #ffeb3b;
+}
+
+/* Session List */
+.session-list .session-item {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.session-list .session-item:hover {
+    background: #f5f5f5;
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.session-date {
+    font-weight: 500;
+    color: #333;
+}
+
+.session-score {
+    border-radius: 12px;
+    padding: 2px 10px;
+}
+
+.session-question {
+    font-size: 0.95em;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.session-stats {
+    display: flex;
+    gap: 15px;
+    font-size: 0.85em;
+}
+
+.session-stats span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Collapsible transcript */
+.collapsible {
+    border: none;
+    box-shadow: none;
+}
+
+.collapsible-header {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.collapsible-body {
+    border: 1px solid #eee;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+}
+
+/* Modal Styles */
+.modal .input-field {
+    margin-top: 20px;
+}
+
+/* Responsive adjustments */
+@media only screen and (max-width: 600px) {
+    .stat-box .stat-number {
+        font-size: 1.4em;
+    }
+
+    .overall-score .score-number {
+        font-size: 2.5em;
+    }
+
+    .session-stats {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .stat-card .stat-value {
+        font-size: 1.5em;
+    }
+}
+
+/* Display Card */
+.display-card {
+    padding: 15px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Game Card */
+.game-card {
+    min-height: 300px;
+}
+
+/* Button improvements */
+.btn {
+    text-transform: none;
+}
+
+.btn i.left {
+    margin-right: 8px;
+}
+
+.btn i.right {
+    margin-left: 8px;
+}
+
+/* List items */
+.collection-item {
+    padding: 15px !important;
+}
+
+/* Loading spinner */
+.preloader-wrapper {
+    margin-bottom: 15px;
+}
+
+/* Card panel for feedback */
+.card-panel {
+    border-radius: 8px;
+}
+
+/* Browser default list styling */
+ul.browser-default {
+    padding-left: 20px;
+}
+
+ul.browser-default li {
+    list-style-type: disc;
+    margin-bottom: 8px;
+}

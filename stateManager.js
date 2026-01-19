@@ -184,11 +184,38 @@ function addNewQuestionState() {
     
     function showRulesState(){
 
-        element = 
+        element =
         `
-        <h1> Rules </h1>
+        <h4>How to Play</h4>
 
-        <p> Talk about prompt for up to two minutes, when you see the green light you have qualified</p>
+        <p><strong>Goal:</strong> Practice impromptu speaking by responding to random prompts.</p>
+
+        <ul class="browser-default">
+            <li><strong>Press Play</strong> - You'll get a random question and a Word of the Day</li>
+            <li><strong>6-second countdown</strong> - Prepare your thoughts</li>
+            <li><strong>Speak for 60-120 seconds</strong> to qualify</li>
+            <li>Try to incorporate the Word of the Day in your response!</li>
+        </ul>
+
+        <h5>Timer Colors</h5>
+        <ul class="browser-default">
+            <li><span style="color:#81c784">Green (60s)</span> - You've qualified!</li>
+            <li><span style="color:#fff176">Yellow (75s)</span> - Approaching limit</li>
+            <li><span style="color:#e57373">Red (90s)</span> - 30 seconds left, wrap up!</li>
+            <li><span style="color:#bdbdbd">Grey (120s)</span> - Time's up</li>
+        </ul>
+
+        <h5>Voice Recording & AI Analysis</h5>
+        <p>Recording starts automatically when you begin speaking. After you finish, your speech will be transcribed and analyzed for:</p>
+        <ul class="browser-default">
+            <li>Speaking pace (words per minute)</li>
+            <li>Filler words (um, uh, like, etc.)</li>
+            <li>Structure & clarity</li>
+            <li>Topic relevance</li>
+            <li>Personalized improvement tips</li>
+        </ul>
+
+        <p><em>Note: AI analysis requires an OpenAI API key. Set it in Settings > API Key.</em></p>
 
         <button class = "btn"  onclick ="showHomeState()">Close</button>
 
