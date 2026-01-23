@@ -86,11 +86,24 @@
                 </div>
             </div>
 
+            <!-- Mode Selector -->
+            <div id="mode-selector" class="mode-selector">
+                <!-- Populated by practiceModes.js -->
+            </div>
+
             <!-- Play Button -->
             <button id="play" class="btn btn-primary btn-large">
                 <i data-lucide="play"></i>
                 Start Practice
             </button>
+
+            <!-- Real-Time Coach Toggle -->
+            <div class="coach-toggle" style="margin-top: 0.75rem; text-align: center;">
+                <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: hsl(var(--muted-foreground)); cursor: pointer;">
+                    <input type="checkbox" id="coach-toggle" checked style="accent-color: hsl(var(--primary));">
+                    <span>Enable Real-Time Speech Coach</span>
+                </label>
+            </div>
 
             <!-- Settings Card -->
             <div class="card settings-card" id="settings-card">
@@ -191,6 +204,9 @@
     <script src="voiceRecorder.js"></script>
     <script src="speechAnalysis.js"></script>
     <script src="sessionHistory.js"></script>
+    <script src="practiceModes.js"></script>
+    <script src="realtimeCoach.js"></script>
+    <script src="audioAnalysis.js"></script>
     <script src="gameManager.js"></script>
     <script src="stateManager.js"></script>
     <script src="app.js"></script>

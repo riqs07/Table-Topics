@@ -6,6 +6,14 @@ let currentQuestion = null;
 let currentWord = null;
 let gameInProgress = false;
 let autoRecordEnabled = true; // Automatically start recording when game starts
+let realtimeCoachEnabled = true; // Enable real-time speech coaching
+
+// Current mode settings (will be set from practiceModes.js)
+let currentModeSettings = {
+    duration: 120,
+    qualifyTime: 60,
+    warningTime: 90
+};
 
 function startCountdownTimer() {
     // Get a random word of the day
@@ -30,6 +38,14 @@ function getCountdownTime() {
         // Auto-start recording when speaking begins
         if (autoRecordEnabled) {
             startRecordingForSession();
+        }
+
+        // Start real-time coach if enabled
+        if (realtimeCoachEnabled && typeof startRealtimeCoach === 'function') {
+            const coachToggle = document.getElementById('coach-toggle');
+            if (coachToggle && coachToggle.checked) {
+                startRealtimeCoach();
+            }
         }
     }
 }
@@ -60,22 +76,46 @@ function timeTracker() {
     time++;
     timer.innerHTML = time;
 
+    // Use mode-specific timings
+    const mode = typeof getCurrentMode === 'function' ? getCurrentMode() : null;
+    if (mode) {
+        currentModeSettings = {
+            duration: mode.duration,
+            qualifyTime: mode.qualifyTime,
+            warningTime: mode.warningTime
+        };
+    }
+
+    const { duration, qualifyTime, warningTime } = currentModeSettings;
+
     switch (true) {
-        case (time === 60):
+        case (time === qualifyTime):
             greenLight();
             break;
 
-        case (time === 75):
+        case (time === warningTime):
             yellowLight();
             break;
 
-        case (time === 90):
-            redLight();
+        case (time === duration - 30):
+            if (duration > 60) {
+                redLight();
+            }
             break;
 
-        case (time === 120):
+        case (time === duration):
             gameOver();
             break;
+    }
+
+    // For short modes, adjust warnings
+    if (duration <= 60) {
+        if (time === Math.floor(duration * 0.5) && time !== qualifyTime) {
+            yellowLight();
+        }
+        if (time === Math.floor(duration * 0.8) && time !== warningTime) {
+            redLight();
+        }
     }
 }
 
@@ -102,11 +142,20 @@ function playGame() {
     questionDisplay.innerHTML = currentQuestion;
     btnSettings.classList.add('disabled');
 
+    // Hide mode selector during game
+    const modeSelector = document.getElementById('mode-selector');
+    if (modeSelector) modeSelector.style.display = 'none';
+
+    // Hide coach toggle during game
+    const coachToggle = document.querySelector('.coach-toggle');
+    if (coachToggle) coachToggle.style.display = 'none';
+
     // Start the countdown
     startCountdownTimer();
 
     timer.innerHTML = "Get Ready!";
     timer.style.display = "block";
+    wordOTD.style.display = "block";
 }
 
 function resetGame() {
@@ -118,6 +167,11 @@ function resetGame() {
     if (typeof isCurrentlyRecording === 'function' && isCurrentlyRecording()) {
         stopRecording();
         showRecordingIndicator(false);
+    }
+
+    // Stop real-time coach
+    if (typeof stopRealtimeCoach === 'function') {
+        stopRealtimeCoach();
     }
 
     timer.innerHTML = time;
@@ -164,7 +218,9 @@ function yellowLight() {
 
 function redLight() {
     changeCardColor(Palette.red);
-    showToastAlert('30 seconds Remaining; Wrap it Up!', 'alert');
+    const mode = typeof getCurrentMode === 'function' ? getCurrentMode() : null;
+    const remaining = mode ? mode.duration - time : 30;
+    showToastAlert(`${remaining} seconds Remaining; Wrap it Up!`, 'alert');
 }
 
 function gameOver() {
@@ -174,19 +230,47 @@ function gameOver() {
     showGameButtons('hide');
     gameInProgress = false;
 
+    // Collect real-time coach data before stopping
+    let coachData = null;
+    if (typeof getRealtimeCoachData === 'function') {
+        coachData = getRealtimeCoachData();
+    }
+
+    // Stop real-time coach
+    if (typeof stopRealtimeCoach === 'function') {
+        stopRealtimeCoach();
+    }
+
     // Stop recording and trigger analysis
     if (typeof isCurrentlyRecording === 'function' && isCurrentlyRecording()) {
         stopRecording();
         showRecordingIndicator(false);
     }
 
+    // Get mode settings for qualification check
+    const mode = typeof getCurrentMode === 'function' ? getCurrentMode() : null;
+    const qualifyTime = mode ? mode.qualifyTime : 60;
+    const duration = mode ? mode.duration : 120;
+
     // Show qualification status
-    if (time < 60 || time > 120) {
-        showToastAlert(`Sorry, you have not qualified. Your time was ${time} seconds`, 'alert');
-    } else if (time >= 60 && time <= 120) {
+    if (time < qualifyTime) {
+        showToastAlert(`You didn't reach the qualifying time. Your time was ${time} seconds (need ${qualifyTime}+)`, 'alert');
+    } else if (time >= qualifyTime && time <= duration) {
         showToastAlert(`Great job, you qualified! Your time was ${time} seconds`, 'success');
     }
 
+    // Perform detailed audio analysis if coach data is available
+    if (coachData && typeof analyzeAudioDetailed === 'function') {
+        // Small delay to allow speech analysis to complete first
+        setTimeout(() => {
+            const analysis = analyzeAudioDetailed(coachData);
+            if (analysis && typeof renderDetailedAnalysis === 'function') {
+                renderDetailedAnalysis(analysis);
+            }
+        }, 500);
+    }
+
+    const finalTime = time;
     resetTimers();
 
     setTimeout(() => {
@@ -194,7 +278,16 @@ function gameOver() {
         changeDisplayState("Game over, Play Again?");
         timer.style.display = "none";
         wordOTD.innerHTML = '';
+        wordOTD.style.display = 'none';
         enableMenuButtons('enabled');
+
+        // Show mode selector again
+        const modeSelector = document.getElementById('mode-selector');
+        if (modeSelector) modeSelector.style.display = 'block';
+
+        // Show coach toggle again
+        const coachToggle = document.querySelector('.coach-toggle');
+        if (coachToggle) coachToggle.style.display = 'block';
 
         // Reset current session data
         currentQuestion = null;
@@ -215,4 +308,19 @@ function getCurrentSessionInfo() {
         time: time,
         inProgress: gameInProgress
     };
+}
+
+// Initialize game manager settings
+function initGameManager() {
+    // Render mode selector if function exists
+    if (typeof renderModeSelector === 'function') {
+        renderModeSelector();
+    }
+}
+
+// Call init when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGameManager);
+} else {
+    initGameManager();
 }
