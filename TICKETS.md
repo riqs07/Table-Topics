@@ -715,6 +715,294 @@ Each ticket has a status, priority, and acceptance criteria.
 
 ---
 
+---
+
+## Epic 14 — The Science: Why This Matters
+
+> Research-backed articles that answer the "why" — grounding every practice feature in real evidence. This is what makes someone believe the app is worth their time before they ever record a word.
+
+### TT-066 · "Learn" Section Navigation
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Add a **"Learn"** tab to the main app navigation alongside Practice and History
+- [ ] Learn section renders a scrollable library of article cards
+- [ ] Each card shows: title, category tag, estimated read time, and a one-line summary
+- [ ] Articles stored as structured data in `learnContent.js`: `{ id, title, category, readTime, summary, body, researchCitations[], relatedPracticeMode }`
+- [ ] Mark articles as "read" in localStorage; show read/unread state on cards
+- [ ] Link articles to their related practice mode ("Read this before your next Storytelling session")
+
+---
+
+### TT-067 · Article: The Loneliness Epidemic & Why Social Skills Are a Life Skill
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - The U.S. Surgeon General's 2023 advisory declaring loneliness a public health crisis
+  - Cigna's loneliness index: 58% of Americans report feeling lonely
+  - **Holt-Lunstad meta-analysis (2010)**: social isolation is as deadly as smoking 15 cigarettes a day — a harder-hitting stat than almost any health message
+  - Harvard Study of Adult Development (75+ years, the longest happiness study ever run): the quality of your relationships at 50 is the single strongest predictor of health and happiness at 80
+  - The difference between being alone and feeling lonely — and how communication skills close that gap
+- [ ] Ends with a clear call to action: "Social skills aren't personality — they're learnable. Start with one conversation."
+- [ ] Links to Conversation Simulator mode
+
+---
+
+### TT-068 · Article: The Neuroscience of Storytelling
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - **Paul Zak's research** (Claremont Graduate University): narrative triggers oxytocin release — the trust and empathy hormone. Facts don't. Stories do.
+  - **Neural coupling** (Uri Hasson, Princeton): when someone tells a compelling story, the listener's brain activity begins to mirror the speaker's — the mechanism of true connection
+  - Why the brain processes stories differently from information: the "transportation effect" — people lose themselves in a story and lower their defenses
+  - Why **specificity beats abstraction** — "Sarah, a 34-year-old nurse in Pittsburgh" creates more neural engagement than "a healthcare worker"
+  - The "So what?" test: a story without a point wastes the brain's emotional investment
+- [ ] Links to Storytelling Mode
+
+---
+
+### TT-069 · Article: Why Small Talk Isn't Small
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - **Sandstrom & Dunn (2014)**: people who talked to strangers (baristas, commuters) reported significantly higher well-being than those who didn't — even when they predicted they wouldn't enjoy it
+  - **Epley & Schroeder (2014)**: we systematically underestimate how much strangers will enjoy talking to us and how much we'll enjoy talking to them — the "underestimation of conversation enjoyment"
+  - Small talk as a skill progression: it's the on-ramp to every deep relationship you'll ever have. No one skips it.
+  - The "weak ties" research (Mark Granovetter): your loose social connections — the people you barely know — are often more valuable for opportunities, ideas, and wellbeing than your close circle
+  - How small talk builds social momentum: each brief positive interaction lowers anxiety for the next
+- [ ] Links to Conversation Simulator mode (Networking Event scenario)
+
+---
+
+### TT-070 · Article: Active Listening — The Skill No One Taught You
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - Research showing the average person retains only 25–50% of what they hear
+  - **Carl Rogers** and client-centered listening: feeling truly heard is a rare and powerful experience — it is the foundation of trust in any relationship
+  - The difference between listening to respond vs. listening to understand — and why the former signals low interest
+  - **Perceived understanding research**: people rate relationships as more satisfying when they feel their partner genuinely understands them, independent of whether the partner agrees
+  - The three levels of listening: Level 1 (hearing words), Level 2 (understanding meaning), Level 3 (picking up on emotion and subtext)
+  - Why asking follow-up questions is the single strongest behavioral signal of interest
+- [ ] Links to Conversation Intelligence analysis features
+
+---
+
+### TT-071 · Article: Filler Words, Credibility & How Your Brain Betrays You
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - Research on filler word perception: high filler rates correlate with lower perceived competence, lower credibility, and less persuasive impact — even when the content is identical
+  - **Why we use fillers**: Brennan & Schober research — fillers are cognitive buying signals (the brain is planning the next sentence). This is normal and human, but the frequency matters.
+  - The paradox: pausing feels awkward to the speaker but reads as confidence to the audience. A deliberate 1-second pause is perceived as more authoritative than "um."
+  - The difference between written fluency and spoken fluency — and why high-performers practice both
+  - The 5% rule: reducing fillers by just 5% produces measurable increases in perceived competence
+- [ ] Links to Real-Time Coach filler word feature
+
+---
+
+### TT-072 · Article: Communication Skills & Career — The Data
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - **LinkedIn's Global Talent Trends** (repeated annually): communication is the #1 most in-demand soft skill — above technical skills, above analytical skills
+  - **Harvard Business Review**: executives who communicate clearly earn promotions faster and manage higher-performing teams
+  - Research on persuasion: people are more persuaded by a confident, clear speaker than by better logical arguments alone (Petty & Cacioppo)
+  - The "brilliant jerk" problem: technical skills get you hired, communication skills get you promoted and keep you employed
+  - Self-employed and entrepreneur data: clients choose communicators they trust over experts they can't connect with
+- [ ] Links to Elevator Pitch and Interview Prep modes
+
+---
+
+### TT-073 · Article: Social Anxiety Is Normal — And You Can Train Through It
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - ~40% of people identify as shy; social anxiety disorder affects 15 million Americans — this is one of the most common human experiences
+  - **CBT research**: cognitive reframing is highly effective — the thoughts you have before a social situation ("they'll judge me", "I'll say something stupid") are systematically inaccurate
+  - **Exposure therapy evidence**: gradual, repeated low-stakes social exposure reliably reduces anxiety over time — this is the science behind deliberate practice
+  - Introversion vs. social anxiety: they are not the same. Introverts can be excellent communicators. Social anxiety is a fear pattern, not a personality type.
+  - **Approach vs. avoidance motivation** research: every time you avoid a social situation, the anxiety grows. Every time you approach it, even imperfectly, it shrinks.
+  - Reframe: you are not "bad at socializing" — you are undertrained. Every expert was once a beginner.
+- [ ] This article appears in onboarding for users who identify as shy or introverted
+- [ ] Links to Easy difficulty Conversation Simulator
+
+---
+
+## Epic 15 — Skill Playbooks: How to Actually Do It
+
+> Step-by-step practical guides for each major communication skill. Short, actionable, memorable. These are the "how" to complement the science's "why."
+
+### TT-074 · Playbook: The Small Talk Playbook
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Content covers these frameworks with examples and practice prompts for each:
+  - **The Conversation Arc**: Surface → Personal → Meaningful. Small talk is not the destination — it's the ramp. Most people stay on the surface forever. Moving up the arc is the skill.
+  - **FORD Method**: Family, Occupation, Recreation, Dreams — four reliable topic anchors that work in almost any social context
+  - **Topic Threading**: when someone mentions something in passing ("I just got back from..."), that's a thread — pull it. The best conversationalists always pull threads.
+  - **The Gift of Go First**: share something slightly personal first — it gives the other person permission to match your depth. Vulnerability is contagious.
+  - **The One-Question Rule**: never fire two questions back-to-back. Ask one, listen fully, respond to the answer, then ask another.
+  - **Exiting Gracefully**: how to end a conversation without it feeling abrupt — the bridge ("I want to grab food but it was great meeting you"), the callback ("I'll let you get back to..."), the future ("Let's connect — I'd love to hear more about that")
+- [ ] Each framework has a one-sentence summary card + a 3-line "try this now" exercise
+- [ ] Links directly to Networking Event and Coffee Shop conversation scenarios
+
+---
+
+### TT-075 · Playbook: The Storytelling Playbook
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - **The 5-Part Story Arc**: Hook → Setup → Conflict/Tension → Resolution → The Point. Every story that lands follows this or a variation of it.
+  - **The Hook**: your first sentence determines whether anyone listens. Three types of hooks: the intriguing statement ("I once got lost in a city with no phone and $3"), the bold opinion, the vivid scene-setting detail.
+  - **The Conflict is the Story**: without tension there is no story — there is only a report. The conflict doesn't need to be dramatic. A small obstacle is enough.
+  - **Show, Don't Tell**: "I was nervous" is flat. "My hands were shaking and I rehearsed the first sentence seventeen times" is a story.
+  - **The Point**: before you tell any story, ask yourself "what is this story about?" If you can't answer in one sentence, it's not ready to tell.
+  - **The STAR Method** for professional contexts: Situation, Task, Action, Result — with emphasis on quantifying the Result
+  - **Story length calibration**: social (60–90s), professional (90–120s), presentation (2–3 min). Most people tell 3x too much setup and rush the resolution.
+- [ ] "Story Workshop" prompt at bottom: user picks a personal story and runs it through the 5-part arc checklist before recording
+- [ ] Links to Storytelling practice mode
+
+---
+
+### TT-076 · Playbook: The Active Listening Playbook
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - **The HEAR Framework**: Halt (stop what you're doing), Engage (eye contact, open body), Anticipate (assume they have something valuable to say), Reflect (feed back what you heard)
+  - **Reflective Listening phrases**: "So what you're saying is...", "It sounds like...", "If I understand correctly..." — why these work and when to use them
+  - **Emotional Labeling**: naming what someone seems to be feeling before giving advice. "It sounds like that was really frustrating" does more relational work than "here's what I'd do."
+  - **The Follow-Up Question**: the single most powerful listening signal. It proves you heard them. It shows you care. "What happened after that?" or "How did that make you feel?"
+  - **The 80/20 rule** in conversations where someone needs to be heard: listen 80%, speak 20%.
+  - **What NOT to do**: finishing sentences, pivoting to your own story immediately, checking your phone, giving unsolicited advice, one-upping
+- [ ] Links to Conversation Simulator with a note: "In your next session, aim for at least 2 reflective statements"
+
+---
+
+### TT-077 · Playbook: Asking Better Questions
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - **Open vs. Closed**: closed questions close doors ("Did you like it?"), open questions open them ("What was that like for you?")
+  - **The Follow-Up Question**: the most underused tool in conversation. "And then what happened?" "How did you feel about that?" "What made you decide that?"
+  - **Opinion Questions**: inviting someone's perspective signals respect. "What do you make of that?" "I'm curious what you think about..."
+  - **The Iceberg Question**: most people answer the surface of a question. A great follow-up digs to what's underneath.
+  - **Question stacking (avoid)**: firing multiple questions before the person can answer. Choose one. The best one.
+  - **Curious vs. interrogative tone**: the same question lands differently depending on tone. Practice genuine curiosity — it is audible.
+  - 20 example open questions sorted by social context: casual, professional, first meeting, reconnecting
+- [ ] Links to Question Quality Detector in analysis panel
+
+---
+
+### TT-078 · Playbook: Social Confidence — Rewiring the Inner Monologue
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - **The spotlight effect** (Gilovich et al.): people think others are watching and judging them far more than they actually are. Everyone is mostly thinking about themselves.
+  - **Cognitive reframing**: replace "they'll think I'm weird" with "most people are glad someone talked to them" — backed by the Epley/Schroeder research from TT-069
+  - **The "just as nervous" reminder**: in any social situation, assume the other person is at least as anxious as you. This changes the dynamic from performance to connection.
+  - **The 3-second rule**: when the urge to speak arises, act within 3 seconds before the inner critic takes over (Mel Robbins 5-second rule, adapted for social contexts)
+  - **Preparation as confidence**: knowing your conversation anchors (FORD), having 2-3 go-to stories, having opening lines ready — reduces the cognitive load that fuels anxiety
+  - **Identity shift**: from "I'm an introvert / I'm bad at this" → "I'm someone who is practicing this skill." Behavior follows identity.
+- [ ] Links to Easy difficulty scenarios and Social Anxiety article (TT-073)
+
+---
+
+### TT-079 · Playbook: Recovering From Social Awkwardness
+**Priority:** P2 · **Status:** `[ ]` Todo
+
+- [ ] Content covers:
+  - **The awkward silence**: it is almost never as long as it feels. The skill is to be comfortable enough to let it breathe, or to have a bridging line ready ("So how do you know [host]?" / "What do you do outside of work?")
+  - **When you say the wrong thing**: acknowledge quickly, don't over-apologize, move forward. "That came out wrong — what I meant was..." is graceful. Spiraling is not.
+  - **When someone doesn't respond warmly**: it is almost never about you. Mood, distraction, bad day. Don't internalize. Move the conversation, or move on.
+  - **The graceful exit from a boring conversation**: "I want to let you mingle" / "I'm going to grab a drink but it was great talking to you" — kind, clear, non-awkward
+  - **When you blank on someone's name**: own it with lightness. "I'm so sorry — your name has escaped me." People respect honesty more than a pretend-I-remember spiral.
+- [ ] Links to Hard difficulty Conversation Simulator scenarios
+
+---
+
+## Epic 16 — Personalized Learning Path
+
+> Connect the educational content to the practice data. The app should know what the user struggles with and guide them through a structured path — not just random drills.
+
+### TT-080 · Communication Skills Assessment
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] 10-question self-assessment quiz shown to new users (and available on demand):
+  - Questions across 5 skill dimensions: small talk, storytelling, active listening, public speaking, social confidence
+  - Each answer maps to a skill rating: Needs Work / Developing / Strong
+  - Example: "When meeting someone new, do you find it easy to keep the conversation going?" → maps to small talk confidence
+- [ ] Results stored in localStorage as `skillProfile { smallTalk, storytelling, activeListening, delivery, confidence }`
+- [ ] Assessment results page shows skill radar chart (5-axis spider diagram)
+- [ ] "Your starting point" framing — not a judgment, a baseline
+
+---
+
+### TT-081 · Personalized Curriculum Generator
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Based on skill profile, generate a prioritized learning path:
+  - Weakest skill → read the relevant science article first → then read the playbook → then do 3 practice sessions
+  - Next weakest skill → repeat
+- [ ] Curriculum displayed as a visual roadmap: Step 1 (Read) → Step 2 (Practice) → Step 3 (Review progress)
+- [ ] Each step marked complete when: article marked read + N practice sessions logged
+- [ ] Curriculum regenerates if skill profile improves significantly
+
+---
+
+### TT-082 · "Today's Focus" Dashboard Card
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Home screen shows a "Today's Focus" card:
+  - One concept (pulled from the learning path) with a 2-sentence summary
+  - One recommended practice session (mode + duration)
+  - One specific micro-goal ("Try asking at least 2 open questions today")
+- [ ] Focus refreshes daily
+- [ ] Dismissable — user can say "already practiced today" to log it without opening a session
+- [ ] Streak indicator: N days in a row with a completed focus
+
+---
+
+### TT-083 · Article ↔ Practice Linking
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Every article has a "Practice This Now" button at the bottom that launches the most relevant mode
+- [ ] Post-session analysis panel has a "Learn More" link to the article most relevant to the user's weakest metric that session
+  - Low question quality → links to Asking Better Questions playbook
+  - High filler rate → links to Filler Words article
+  - Missing story arc → links to Storytelling Playbook
+  - Low warmth score → links to Active Listening playbook
+- [ ] This creates a closed feedback loop: practice → see weakness → read the why/how → practice again
+
+---
+
+### TT-084 · Skill Progress Over Time
+**Priority:** P2 · **Status:** `[ ]` Todo
+
+- [ ] Track each of the 5 skill dimensions over sessions (not just overall WPM)
+- [ ] Each post-session analysis maps results to skill dimensions and updates running averages
+- [ ] Progress screen shows per-skill trend charts (sparklines per dimension)
+- [ ] "Most improved" callout: the skill that has moved the most since the user's first session
+- [ ] "Still developing" callout: the skill with the least improvement — links to its article and playbook
+
+---
+
+### TT-085 · Milestone & Achievement System
+**Priority:** P2 · **Status:** `[ ]` Todo
+
+- [ ] Milestones trigger on meaningful events — not arbitrary points:
+  - **"First Story Told"** — complete first Storytelling session
+  - **"Conversation Starter"** — complete first Conversation Simulator session
+  - **"Thread Puller"** — score 3+ follow-up questions in a single conversation session
+  - **"The Pauser"** — complete a session with 0 filler words
+  - **"Deep Diver"** — reach Vulnerable depth level in a Conversation session
+  - **"Consistent"** — 7-day practice streak
+  - **"Well-Read"** — read all 7 science articles
+  - **"Polyglot of Modes"** — complete a session in every practice mode
+- [ ] Milestone notification toast on unlock
+- [ ] Milestone gallery in profile/progress screen
+- [ ] Milestones are descriptive achievements, not gamification points — each milestone explains why it matters
+
+---
+
 ## Backlog (Unscoped / Future)
 
 | ID | Title | Notes |
@@ -745,4 +1033,7 @@ Each ticket has a status, priority, and acceptance criteria.
 | 11 · Small Talk & Conversation Simulator | 0 | 0 | 8 | 8 |
 | 12 · Conversation Intelligence Analysis | 0 | 0 | 6 | 6 |
 | 13 · Social Scenario Content | 0 | 0 | 2 | 2 |
-| **Total** | **24** | **2** | **33** | **59** |
+| 14 · The Science: Why This Matters | 0 | 0 | 8 | 8 |
+| 15 · Skill Playbooks | 0 | 0 | 6 | 6 |
+| 16 · Personalized Learning Path | 0 | 0 | 6 | 6 |
+| **Total** | **24** | **2** | **53** | **79** |
