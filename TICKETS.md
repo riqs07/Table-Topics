@@ -396,6 +396,325 @@ Each ticket has a status, priority, and acceptance criteria.
 
 ---
 
+---
+
+## Epic 10 — Storytelling Mode
+
+> Dedicated practice for narrative structure, hooks, emotional resonance, and delivering a story with a clear point.
+
+### TT-043 · Storytelling Question Bank
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] 30+ built-in storytelling prompts in `data.js` under category `storytelling_deep`:
+  - Personal anecdote prompts ("Tell me about a time you failed and what you learned")
+  - Observation prompts ("Describe a stranger you've never forgotten")
+  - Hypothetical narrative prompts ("Walk me through your perfect day")
+  - Values-revealing prompts ("Tell a story that says something about who you are")
+- [ ] Tag each prompt with sub-type: `personal`, `professional`, `creative`, `values`
+- [ ] Difficulty tiered: Easy (happy/fun stories) → Hard (vulnerable, complex, or abstract)
+
+---
+
+### TT-044 · Storytelling Practice Mode
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Add `STORYTELLING` entry to `PracticeModes` in `practiceModes.js`:
+  - Duration: 180s, qualifyTime: 90s, warningTime: 150s
+  - Icon: `book-open`, color: `amber`
+  - Description: "Structure a personal story with a clear arc and point"
+- [ ] Mode only surfaces `storytelling_deep` category questions
+- [ ] Pre-session tip card: remind user of setup → conflict → resolution → lesson structure
+- [ ] No hard stop — story should end naturally; timer is a guide only
+
+---
+
+### TT-045 · Story Structure Analysis (GPT)
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Extend `speechAnalysis.js` GPT prompt when mode is `storytelling`:
+  - Identify whether story has: **Hook**, **Setup**, **Conflict/Tension**, **Resolution**, **Lesson/Point**
+  - Score each structural element present: 0–5 scale
+  - Return `missingElements[]` array for elements not detected
+- [ ] Overall story structure score (0–100)
+- [ ] Flag stories that are purely a list of facts with no narrative arc
+
+---
+
+### TT-046 · Story Analysis Display
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Post-session panel shows story arc breakdown as a visual timeline (Hook → Setup → Conflict → Resolution → Lesson)
+- [ ] Each arc element shown as filled (detected) or hollow (missing)
+- [ ] "The Point" callout: GPT extracts the core takeaway of the story in one sentence
+- [ ] Highlight emotionally vivid language used in the transcript
+- [ ] Flag sections that were rushed (high WPM) vs. appropriately paced
+
+---
+
+### TT-047 · Narrative Technique Scoring
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] GPT evaluates presence of:
+  - **Sensory details** — sights, sounds, smells, textures invoked
+  - **Dialogue** — did user recreate actual speech from the story?
+  - **Emotional honesty** — did user express how they felt, not just what happened?
+  - **Specificity** — named people, places, dates vs. vague generalities
+  - **Stakes** — was it clear why this story mattered?
+- [ ] Each technique rated Present / Partial / Missing with a one-line tip
+
+---
+
+### TT-048 · STAR Method Mode
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Sub-mode within Storytelling: "Professional Story (STAR)"
+- [ ] Pre-session overlay explains STAR: Situation → Task → Action → Result
+- [ ] GPT post-session maps transcript to each STAR component
+- [ ] Ideal for interview prep — scores whether the Result was quantified and concrete
+- [ ] "Missing STAR components" callout with example phrasing to fill the gap
+
+---
+
+### TT-049 · Story Pacing & Length Feedback
+**Priority:** P2 · **Status:** `[ ]` Todo
+
+- [ ] Detect if story ended before 60s (too brief — likely surface-level)
+- [ ] Detect if story exceeded 3 min with no clear resolution (rambling)
+- [ ] Flag sections where pace spiked (rushing through important moments)
+- [ ] "Slow down here" markers on transcript timeline
+
+---
+
+## Epic 11 — Small Talk & Conversation Simulator
+
+> Interactive two-way conversation practice where GPT plays a social partner. The user speaks; GPT responds as a realistic character in a specific scenario.
+
+### TT-050 · Conversation Simulator Architecture
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] New module `conversationSimulator.js`:
+  - Maintains `conversationHistory[]` array of `{ role, content }` pairs
+  - `startConversation(scenario)` — seeds GPT with character + scenario system prompt
+  - `userTurn(transcript)` — appends user turn, sends to GPT, returns AI response text
+  - `endConversation()` — returns full history for analysis
+- [ ] GPT character prompt instructs the AI to:
+  - Respond naturally and briefly (1–3 sentences, like real small talk)
+  - Occasionally ask follow-up questions
+  - React authentically (show interest, mild disagreement, curiosity)
+  - Never be unnaturally enthusiastic or robotic
+- [ ] AI response displayed as text on screen (no TTS required initially)
+
+---
+
+### TT-051 · Scenario Library
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] 8 built-in conversation scenarios, each with a character description and context:
+
+  | Scenario | Character | Context |
+  |----------|-----------|---------|
+  | Networking Event | Industry peer | Tech/business conference mixer |
+  | Coffee Shop | Friendly stranger | Waiting for orders |
+  | Work Party | New coworker | First time meeting |
+  | First Date | Potential romantic interest | Casual dinner |
+  | Neighbor | Just moved in next door | Seeing each other at mailbox |
+  | Job Interview (Social) | Hiring manager | Pre-interview small talk |
+  | Social Reunion | Old acquaintance | Running into someone after years |
+  | Group Dinner | Friend of a friend | Seated next to a stranger |
+
+- [ ] Each scenario stored as `{ id, name, icon, context, characterPersonality, systemPrompt }`
+- [ ] Scenario selector UI card before starting conversation mode
+
+---
+
+### TT-052 · Conversation Mode Session Flow
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Session flow differs from standard mode:
+  1. User selects scenario
+  2. GPT sends a brief opening line (displayed on screen) — the AI speaks first
+  3. User speaks their response (recorded + transcribed via Whisper or Web Speech)
+  4. Transcript sent to GPT → AI response generated and displayed
+  5. Steps 3–4 repeat until user ends the session
+- [ ] Minimum 4 turns to count as a complete session
+- [ ] "End Conversation" button available after turn 2
+- [ ] Turn counter displayed during session
+- [ ] No hard timer — conversation ends when user decides
+
+---
+
+### TT-053 · Conversation Analysis (GPT)
+**Priority:** P0 · **Status:** `[ ]` Todo
+
+- [ ] Post-conversation, GPT analyzes full transcript with a social intelligence lens:
+  - **Question quality** — ratio of open to closed questions asked by user
+  - **Reciprocity** — did user share about themselves when appropriate, or only ask?
+  - **Topic transitions** — were transitions natural or abrupt?
+  - **Listening signals** — did user reference what the AI said in their responses?
+  - **Warmth** — tone detected (distant / neutral / warm / over-eager)
+  - **Conversation balance** — rough word count ratio (user vs. AI)
+- [ ] Overall **Social Flow Score** (0–100)
+- [ ] Top 2 strengths, top 2 growth areas
+- [ ] "Most natural exchange" highlight — best turn in the conversation
+
+---
+
+### TT-054 · Conversation Analysis Display
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Post-session panel shows full conversation transcript (user turns + AI turns, visually differentiated)
+- [ ] Social Flow Score badge
+- [ ] Question quality breakdown: N open questions, N closed questions
+- [ ] Warmth meter (visual scale)
+- [ ] Balance bar showing user vs. AI speaking share
+- [ ] "Highlight" card showing the most natural exchange
+
+---
+
+### TT-055 · Small Talk Conversation Starters Bank
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] 40+ small talk topic seeds in `data.js` under category `smalltalk`:
+  - Safe openers: weather, environment, current events, shared experience
+  - Depth escalators: opinions, preferences, light personal questions
+  - Story invitations: "Have you ever...", "What's the most..."
+  - Callback questions: follow-ups that show active listening
+- [ ] Topics tagged by social risk level: `safe`, `moderate`, `vulnerable`
+- [ ] Conversation simulator draws from these when AI needs to introduce a new topic
+
+---
+
+### TT-056 · Conversation Coaching Tips (Real-Time)
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] During conversation mode, show a small live tip card between turns:
+  - After 2 closed questions in a row → "Try an open question next (What do you think about...?)"
+  - If user turn > 3x longer than AI turn → "You're dominating — invite them to share"
+  - If user hasn't asked a question in 3 turns → "Show curiosity — ask them something"
+  - If user response is < 10 words → "Give a bit more — build on what they said"
+- [ ] Tips are non-blocking (don't pause the session, just appear briefly)
+
+---
+
+### TT-057 · Conversation Difficulty Progression
+**Priority:** P2 · **Status:** `[ ]` Todo
+
+- [ ] Three difficulty tiers that change the AI character's behavior:
+  - **Easy** — AI is warm, asks follow-ups, keeps conversation alive
+  - **Medium** — AI is neutral, gives short responses, doesn't volunteer information
+  - **Hard** — AI is distracted/skeptical, gives one-word answers, user must work to engage them
+- [ ] Difficulty selector in scenario picker UI
+- [ ] Hard mode tip: "This is great practice — real conversations aren't always easy"
+
+---
+
+## Epic 12 — Conversation Intelligence Analysis
+
+> A shared analysis layer used by both Conversation Simulator and Storytelling modes to score deeper communication skills.
+
+### TT-058 · Question Quality Detector
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Identify questions in user transcript using punctuation + GPT classification
+- [ ] Classify each question:
+  - **Open** — invites elaboration ("What made you decide that?")
+  - **Closed** — yes/no answer ("Did you enjoy it?")
+  - **Follow-up** — references something just said ("And how did that make you feel?")
+  - **Opinion** — invites personal perspective ("What do you think about...?")
+- [ ] Surface counts per type in analysis panel
+- [ ] Ideal ratio guidance: >60% open, at least 1 follow-up per 3 turns
+
+---
+
+### TT-059 · Active Listening Signal Detection
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] GPT flags presence of active listening language in user turns:
+  - Reflective statements ("So what you're saying is...")
+  - Validation statements ("That makes total sense", "I can see why you'd feel that way")
+  - Callbacks ("Going back to what you said about...")
+  - Emotional labeling ("It sounds like that was frustrating")
+- [ ] Count signals per session
+- [ ] Score: 0 signals = "Focus on listening", 1–2 = "Good start", 3+ = "Strong listener"
+
+---
+
+### TT-060 · Empathy & Warmth Scoring
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] GPT rates user's overall warmth across the session on a 5-point scale
+- [ ] Flag specific cold patterns:
+  - Jumping to advice without acknowledging feelings
+  - Pivoting to self ("That happened to me too...") without validating first
+  - One-word acknowledgments with no follow-through ("Cool.", "Interesting.")
+- [ ] Flag specific warm patterns:
+  - Named what the other person might be feeling
+  - Expressed genuine curiosity
+  - Matched emotional energy of the scenario
+
+---
+
+### TT-061 · Monologue / Turn-Balance Detector
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] In conversation mode: track word count per user turn
+- [ ] Flag turns where user spoke >3x the AI's previous response length
+- [ ] Post-session: display turn length bar chart (user vs. AI per turn)
+- [ ] Ideal balance guidance: in small talk, no single turn should exceed ~45 seconds
+
+---
+
+### TT-062 · Topic Transition Quality
+**Priority:** P2 · **Status:** `[ ]` Todo
+
+- [ ] GPT identifies distinct topics discussed during the conversation
+- [ ] Classify each transition: **smooth** (bridged naturally), **abrupt** (topic jumped without connection), **callback** (returned to earlier topic intentionally)
+- [ ] Score: >70% smooth or callback transitions = "Natural flow"
+- [ ] Tip for abrupt transitions: "Try bridging — connect the new topic to something just said"
+
+---
+
+### TT-063 · Vulnerability & Depth Meter
+**Priority:** P2 · **Status:** `[ ]` Todo
+
+- [ ] Track whether user moved beyond surface-level responses during the session
+- [ ] GPT rates depth of self-disclosure on a 3-level scale:
+  - **Surface** — facts only (job, location, weather opinions)
+  - **Personal** — preferences, experiences, opinions
+  - **Vulnerable** — feelings, values, fears, meaningful stories
+- [ ] Show depth progression over the conversation (did it deepen or stay flat?)
+- [ ] Tip: "Real connection happens when you go from facts → feelings"
+
+---
+
+## Epic 13 — Social Scenario Content
+
+> Question banks and scenario content that powers Epics 10–12.
+
+### TT-064 · Social Scenario Questions
+**Priority:** P1 · **Status:** `[ ]` Todo
+
+- [ ] Add 20+ role-play scenario openers to `data.js` under category `social_scenario`:
+  - Icebreaker situations (first day at a job, being introduced to a friend's group)
+  - Reconnection situations (running into someone after years)
+  - Recovery situations (awkward silence, misunderstanding, saying the wrong thing)
+  - Deeper conversation invitations ("I'd love to hear more about that...")
+- [ ] Add scenario metadata: `{ difficulty, socialContext, commonMistakes[] }`
+
+---
+
+### TT-065 · Conversation Tip Library
+**Priority:** P2 · **Status:** `[ ]` Todo
+
+- [ ] Create `conversationTips.js` with a curated bank of actionable micro-tips:
+  - Categorized by skill: `question_asking`, `active_listening`, `topic_transitions`, `warmth`, `storytelling`
+  - Each tip: `{ id, category, tip, example, whenToShow }`
+  - 5+ tips per category (25+ total)
+- [ ] Tips surfaced contextually in real-time coach and post-session analysis
+- [ ] "Tip of the Session" card shown at session end based on the user's weakest dimension
+
+---
+
 ## Backlog (Unscoped / Future)
 
 | ID | Title | Notes |
@@ -422,4 +741,8 @@ Each ticket has a status, priority, and acceptance criteria.
 | 7 · Data Management | 1 | 2 | 0 | 3 |
 | 8 · Infrastructure | 0 | 0 | 5 | 5 |
 | 9 · Documentation | 0 | 0 | 2 | 2 |
-| **Total** | **24** | **2** | **10** | **36** |
+| 10 · Storytelling Mode | 0 | 0 | 7 | 7 |
+| 11 · Small Talk & Conversation Simulator | 0 | 0 | 8 | 8 |
+| 12 · Conversation Intelligence Analysis | 0 | 0 | 6 | 6 |
+| 13 · Social Scenario Content | 0 | 0 | 2 | 2 |
+| **Total** | **24** | **2** | **33** | **59** |
