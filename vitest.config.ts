@@ -13,5 +13,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     // Run in a plain Node environment until component tests need a browser fake
     environment: "node",
+    // Fix the time zone (one with clock changes) so date tests behave the same on every machine
+    env: { TZ: "America/New_York" },
   },
 });
