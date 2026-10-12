@@ -1,0 +1,493 @@
+<!doctype html>
+<!-- Spike for milestone 1: does live transcription work on a real phone, and do filler words survive it? -->
+<!-- Throwaway code: deleted before milestone 1 ends; only the findings are kept in documents/architecture/decisions.md -->
+<html lang="en">
+<head>
+  <!-- Read the page as Unicode text -->
+  <meta charset="utf-8">
+  <!-- Fit the page to the phone screen -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Name shown in the browser tab -->
+  <title>VoiceLab spike: transcription</title>
+  <style>
+    /* Use the phone's own font and comfortable spacing */
+    body { font-family: system-ui, sans-serif; margin: 0 auto; max-width: 40rem; padding: 1rem; line-height: 1.5; }
+    /* Make buttons large enough to tap easily */
+    button { font-size: 1rem; padding: 0.75rem 1rem; margin: 0.25rem 0.25rem 0.25rem 0; }
+    /* Make the number input match the button text size */
+    input, select { font-size: 1rem; padding: 0.4rem; }
+    /* Box the transcript, log, and report so they stand apart */
+    .box { border: 1px solid #999; padding: 0.75rem; min-height: 3rem; white-space: pre-wrap; word-break: break-word; }
+    /* Show interim (not yet final) words in a lighter shade */
+    .interim { opacity: 0.55; }
+    /* Use small fixed-width text for the technical log */
+    .log { font-family: ui-monospace, monospace; font-size: 0.8rem; max-height: 14rem; overflow-y: auto; }
+    /* Make the big timer easy to read while speaking */
+    #timer { font-size: 2rem; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <!-- Page heading -->
+  <h1>Transcription spike</h1>
+
+  <!-- Steps for the person testing -->
+  <ol>
+    <!-- Choose which test to run -->
+    <li>Pick a test below. Run <strong>A</strong> first, then <strong>B</strong>.</li>
+    <!-- Explain the deliberate fillers -->
+    <li>Tap Start and talk for about 60 seconds. Say "um" or "uh" on purpose and keep count.</li>
+    <!-- Ask for the count so the report can compare -->
+    <li>Tap Stop, type how many fillers you said, then tap "Copy report" and paste it into the chat.</li>
+  </ol>
+  <!-- Mention the iPhone setting that speech recognition depends on -->
+  <p>On iPhone, Siri &amp; Dictation may need to be on (Settings → Siri) for this to work.</p>
+
+  <!-- Facts about this phone and browser, filled in by the script -->
+  <h2>This device</h2>
+  <!-- Box for the device facts -->
+  <div id="env" class="box"></div>
+
+  <!-- Controls for running a test -->
+  <h2>Test</h2>
+  <!-- Label for the test picker -->
+  <label for="mode">Test:</label>
+  <!-- Choose transcript alone or transcript plus recording -->
+  <select id="mode">
+    <!-- Test A: only the live transcript uses the microphone -->
+    <option value="A">A: live transcript only</option>
+    <!-- Test B: live transcript and audio recording share the microphone -->
+    <option value="B">B: live transcript + recording together</option>
+  </select>
+  <!-- Start and stop buttons -->
+  <div>
+    <!-- Begin listening -->
+    <button id="start">Start</button>
+    <!-- Stop listening; disabled until a test starts -->
+    <button id="stop" disabled>Stop</button>
+  </div>
+  <!-- Elapsed time while speaking -->
+  <div id="timer">0:00</div>
+
+  <!-- Live transcript area -->
+  <h2>Transcript</h2>
+  <!-- Box where words appear as they are recognized -->
+  <div id="transcript" class="box"></div>
+
+  <!-- Recording playback for test B -->
+  <h2>Recording (test B)</h2>
+  <!-- Player for the recorded audio; hidden until a recording exists -->
+  <audio id="playback" controls hidden></audio>
+  <!-- Facts about the recording -->
+  <div id="recInfo"></div>
+
+  <!-- Filler results and the count the tester said -->
+  <h2>Fillers</h2>
+  <!-- Label for the tester's own filler count -->
+  <label for="saidCount">How many "um"/"uh" did you actually say?</label>
+  <!-- Box for the tester's own filler count -->
+  <input id="saidCount" type="number" min="0" inputmode="numeric" style="width: 5rem">
+  <!-- Box listing fillers found in the transcript -->
+  <div id="fillers" class="box"></div>
+
+  <!-- Technical event log -->
+  <h2>Event log</h2>
+  <!-- Box listing what the speech engine and recorder did, with times -->
+  <div id="log" class="box log"></div>
+
+  <!-- The report to paste back into the chat -->
+  <h2>Report</h2>
+  <!-- Copy the report to the clipboard -->
+  <button id="copy">Copy report</button>
+  <!-- Text area holding the report so it can also be copied by hand -->
+  <textarea id="report" rows="10" style="width: 100%" readonly></textarea>
+
+  <script>
+    // Find the browser's speech recognition engine, under either its standard or Safari name
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    // Words and phrases treated as fillers in this spike (the real list is approved at C7)
+    const FILLERS = ["um", "umm", "uh", "uhh", "er", "erm", "ah", "hmm", "like", "you know", "i mean", "so", "basically", "actually", "literally", "kind of", "sort of"];
+    // Errors that mean listening cannot work, so the test stops instead of restarting
+    const FATAL_ERRORS = ["not-allowed", "service-not-allowed", "audio-capture", "language-not-supported"];
+    // Fillers that are only sounds, used to compare with the tester's own count
+    const SOUND_FILLERS = ["um", "umm", "uh", "uhh", "er", "erm", "ah", "hmm"];
+
+    // Shortcut for finding a page element by its id
+    const el = (id) => document.getElementById(id);
+    // Time the current test started, in milliseconds
+    let startedAt = 0;
+    // Time the current test stopped, in milliseconds
+    let stoppedAt = 0;
+    // Whether a test is running, so the engine can be restarted if it stops early
+    let running = false;
+    // The speech recognition object for the current test
+    let recognition = null;
+    // How many times the engine stopped on its own and was restarted
+    let restarts = 0;
+    // Final words kept from earlier engine runs, since a restart clears the engine's own results
+    let committedText = "";
+    // Final words from the engine's current run
+    let finalText = "";
+    // Not-yet-final words from the engine's current run
+    let interimText = "";
+    // Every error code the engine reported
+    const errors = [];
+    // The audio recorder for test B
+    let recorder = null;
+    // Pieces of recorded audio collected during test B
+    let chunks = [];
+    // The microphone stream for test B
+    let stream = null;
+    // Facts about the recording, added to the report
+    let recordingSummary = "not used";
+    // Timer that updates the elapsed-time display
+    let tick = null;
+    // Lines of the event log, also added to the report
+    const logLines = [];
+
+    // Add a time-stamped line to the event log
+    function log(message) {
+      // Work out seconds since the test started (or zero before it starts)
+      const seconds = startedAt ? ((Date.now() - startedAt) / 1000).toFixed(1) : "0.0";
+      // Build the log line
+      const line = `${seconds}s ${message}`;
+      // Keep the line for the report
+      logLines.push(line);
+      // Show the whole log on the page
+      el("log").textContent = logLines.join("\n");
+      // Scroll to the newest line
+      el("log").scrollTop = el("log").scrollHeight;
+    }
+
+    // Collect facts about this phone and browser
+    function describeEnvironment() {
+      // Check whether the page is running as an installed home-screen app
+      const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+      // List the audio formats the recorder supports
+      const formats = ["audio/mp4", "audio/webm", "audio/webm;codecs=opus", "audio/aac"].filter((type) => window.MediaRecorder && MediaRecorder.isTypeSupported(type));
+      // Check whether the engine offers an on-device (local) processing switch
+      const localOption = Recognition ? ("processLocally" in Recognition.prototype ? "yes" : "no") : "n/a";
+      // Gather all the facts as label and value pairs
+      return [
+        // The browser's self-description
+        ["Browser", navigator.userAgent],
+        // Microphone access needs a secure (https) page
+        ["Secure page (https)", String(window.isSecureContext)],
+        // Whether the page was opened from the home screen
+        ["Installed app mode", String(standalone)],
+        // Whether live speech recognition exists, and under which name
+        ["Speech recognition", window.SpeechRecognition ? "yes (standard)" : window.webkitSpeechRecognition ? "yes (webkit)" : "NOT AVAILABLE"],
+        // Whether an on-device switch exists (a clue for the privacy question, R3)
+        ["On-device option", localOption],
+        // Whether audio recording exists
+        ["Recorder", window.MediaRecorder ? "yes" : "NOT AVAILABLE"],
+        // Which recording formats work
+        ["Recording formats", formats.join(", ") || "none"],
+      ];
+    }
+
+    // Show the device facts on the page
+    function showEnvironment() {
+      // Turn each fact into a "label: value" line and display them
+      el("env").textContent = describeEnvironment().map(([label, value]) => `${label}: ${value}`).join("\n");
+    }
+
+    // Combine all final words recognized so far
+    function fullFinalText() {
+      // Join earlier runs with the current run, ignoring empty parts
+      return [committedText, finalText].filter(Boolean).join(" ").trim();
+    }
+
+    // Redraw the transcript with final words in full and interim words lighter
+    function showTranscript() {
+      // Clear the transcript box
+      el("transcript").textContent = "";
+      // Add the final words
+      el("transcript").append(document.createTextNode(fullFinalText() + " "));
+      // Create a lighter span for the interim words
+      const span = document.createElement("span");
+      // Mark it as interim so it is styled lighter
+      span.className = "interim";
+      // Put the interim words in it
+      span.textContent = interimText;
+      // Add it after the final words
+      el("transcript").append(span);
+    }
+
+    // Count each filler in a piece of text
+    function countFillers(text) {
+      // Lowercase and strip punctuation so matching is simple
+      const clean = " " + text.toLowerCase().replace(/[^a-z' ]+/g, " ").replace(/\s+/g, " ") + " ";
+      // Start with an empty tally
+      const counts = {};
+      // Check each filler in turn
+      for (const filler of FILLERS) {
+        // Count whole-word matches by splitting on the filler surrounded by spaces
+        const found = clean.split(` ${filler} `).length - 1;
+        // Keep only fillers that appeared
+        if (found > 0) counts[filler] = found;
+      }
+      // Hand back the tally
+      return counts;
+    }
+
+    // Show filler results on the page
+    function showFillers() {
+      // Count fillers in the final transcript
+      const counts = countFillers(fullFinalText());
+      // Add up the sound-only fillers (um, uh, ...)
+      const sounds = SOUND_FILLERS.reduce((sum, filler) => sum + (counts[filler] || 0), 0);
+      // Read the tester's own count, if entered
+      const said = el("saidCount").value;
+      // List each filler and its count
+      const lines = Object.entries(counts).map(([filler, n]) => `${filler}: ${n}`);
+      // Add the comparison of heard versus said
+      lines.push(`\n"um"-type fillers in transcript: ${sounds}` + (said !== "" ? ` (you said ${said})` : ""));
+      // Display the result
+      el("fillers").textContent = lines.join("\n");
+      // Hand back the numbers for the report
+      return { counts, sounds, said };
+    }
+
+    // Create and start a speech recognition run
+    function startRecognition() {
+      // Make a fresh engine object
+      recognition = new Recognition();
+      // Listen in US English
+      recognition.lang = "en-US";
+      // Keep listening across pauses instead of stopping after one sentence
+      recognition.continuous = true;
+      // Show words as they are guessed, before they are final
+      recognition.interimResults = true;
+      // Record when the engine starts listening
+      recognition.onstart = () => log("speech: started");
+      // Record when the engine first hears audio
+      recognition.onaudiostart = () => log("speech: audio capture started");
+      // Handle new words from the engine
+      recognition.onresult = (event) => {
+        // Rebuild this run's final and interim words from every result so far
+        let finals = "";
+        // Start interim words empty for this update
+        let interims = "";
+        // Walk through every result the engine holds
+        for (let i = 0; i < event.results.length; i++) {
+          // Take the engine's best guess for this result
+          const text = event.results[i][0].transcript;
+          // Sort it into final or interim words
+          if (event.results[i].isFinal) finals += text + " "; else interims += text + " ";
+        }
+        // Save this run's final words
+        finalText = finals.trim();
+        // Save this run's interim words
+        interimText = interims.trim();
+        // Redraw the transcript
+        showTranscript();
+      };
+      // Record any error the engine reports
+      recognition.onerror = (event) => {
+        // Keep the error code for the report
+        errors.push(event.error);
+        // Show it in the log
+        log(`speech: ERROR ${event.error}`);
+        // Stop the whole test if the error means listening cannot work
+        if (FATAL_ERRORS.includes(event.error) && running) stop();
+      };
+      // Handle the engine stopping
+      recognition.onend = () => {
+        // Keep this run's final words before the engine is replaced
+        committedText = fullFinalText();
+        // Clear this run's words now that they are kept
+        finalText = "";
+        // Clear interim words, which never became final
+        interimText = "";
+        // Record that the engine stopped
+        log("speech: ended");
+        // If the test is still running, the engine stopped on its own, so restart it
+        if (running) {
+          // Count the unexpected stop
+          restarts += 1;
+          // Note the restart in the log
+          log(`speech: restarting (restart #${restarts})`);
+          // Start a new run after a short pause so a failing engine cannot loop rapidly
+          setTimeout(() => { if (running) startRecognition(); }, 300);
+        }
+      };
+      // Try to start listening
+      try {
+        // Begin recognition
+        recognition.start();
+      } catch (error) {
+        // Record a failure to start
+        log(`speech: could not start (${error.message})`);
+      }
+    }
+
+    // Start recording audio from the microphone for test B
+    async function startRecorder() {
+      // Ask for microphone access
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Record that access was granted
+      log("recorder: microphone granted");
+      // Create a recorder for the microphone stream
+      recorder = new MediaRecorder(stream);
+      // Clear any earlier recording pieces
+      chunks = [];
+      // Keep each piece of audio as it arrives
+      recorder.ondataavailable = (event) => { if (event.data.size > 0) chunks.push(event.data); };
+      // When recording stops, build the playable file
+      recorder.onstop = () => {
+        // Join the pieces into one audio file
+        const blob = new Blob(chunks, { type: recorder.mimeType });
+        // Describe the recording for the report
+        recordingSummary = `${(blob.size / 1024).toFixed(0)} KB, ${recorder.mimeType || "unknown format"}`;
+        // Show the recording facts
+        el("recInfo").textContent = `Recorded ${recordingSummary}. Play it to check it captured your voice.`;
+        // Load the recording into the player
+        el("playback").src = URL.createObjectURL(blob);
+        // Show the player
+        el("playback").hidden = false;
+        // Record that the recording finished
+        log(`recorder: stopped, ${recordingSummary}`);
+        // Release the microphone
+        stream.getTracks().forEach((track) => track.stop());
+      };
+      // Record any recorder error
+      recorder.onerror = (event) => log(`recorder: ERROR ${event.error?.name || "unknown"}`);
+      // Start recording, delivering audio every second
+      recorder.start(1000);
+      // Record that recording began
+      log(`recorder: started (${recorder.mimeType || "default format"})`);
+    }
+
+    // Run when the tester taps Start
+    async function start() {
+      // Stop early if the phone has no speech recognition
+      if (!Recognition) {
+        // Explain the problem in the log
+        log("Speech recognition is not available in this browser.");
+        // Refresh the report so the finding can be shared
+        buildReport();
+        // Do nothing further
+        return;
+      }
+      // Reset all results from any earlier test
+      committedText = ""; finalText = ""; interimText = ""; restarts = 0; errors.length = 0; logLines.length = 0; recordingSummary = "not used";
+      // Hide any earlier recording
+      el("playback").hidden = true; el("recInfo").textContent = "";
+      // Note the start time
+      startedAt = Date.now();
+      // Clear the stop time
+      stoppedAt = 0;
+      // Mark the test as running
+      running = true;
+      // Swap which buttons can be tapped
+      el("start").disabled = true; el("stop").disabled = false; el("mode").disabled = true;
+      // Record which test is running
+      log(`test ${el("mode").value} started`);
+      // For test B, start recording before recognition so they share the microphone
+      if (el("mode").value === "B") {
+        // Try to start the recorder
+        try {
+          // Begin recording
+          await startRecorder();
+        } catch (error) {
+          // Record a recorder failure and carry on with the transcript alone
+          log(`recorder: could not start (${error.name}: ${error.message})`);
+        }
+      }
+      // Start live transcription
+      startRecognition();
+      // Update the timer display four times a second
+      tick = setInterval(() => {
+        // Work out the elapsed whole seconds
+        const s = Math.floor((Date.now() - startedAt) / 1000);
+        // Show it as minutes and seconds
+        el("timer").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+      }, 250);
+    }
+
+    // Run when the tester taps Stop
+    function stop() {
+      // Mark the test as finished so the engine is not restarted
+      running = false;
+      // Note the stop time
+      stoppedAt = Date.now();
+      // Stop updating the timer
+      clearInterval(tick);
+      // Ask the engine to finish and deliver its last words
+      if (recognition) recognition.stop();
+      // Stop the recorder if it is running
+      if (recorder && recorder.state !== "inactive") recorder.stop();
+      // Swap which buttons can be tapped
+      el("start").disabled = false; el("stop").disabled = true; el("mode").disabled = false;
+      // Record the stop
+      log("test stopped");
+      // Give the engine a moment to deliver its last words, then update results
+      setTimeout(() => { showFillers(); buildReport(); }, 1500);
+    }
+
+    // Build the text report the tester pastes into the chat
+    function buildReport() {
+      // Work out how long the test ran, in seconds
+      const seconds = startedAt ? Math.round(((stoppedAt || Date.now()) - startedAt) / 1000) : 0;
+      // Get the filler results
+      const { counts, sounds, said } = showFillers();
+      // Get the final transcript
+      const transcript = fullFinalText();
+      // Count the words in the transcript
+      const words = transcript ? transcript.split(/\s+/).length : 0;
+      // Put the report together line by line
+      el("report").value = [
+        // Report title and test name
+        `VoiceLab transcription spike, test ${el("mode").value}`,
+        // Device facts
+        ...describeEnvironment().map(([label, value]) => `${label}: ${value}`),
+        // Length and word count
+        `Duration: ${seconds}s, words: ${words}`,
+        // Engine stability
+        `Engine restarts: ${restarts}, errors: ${errors.join(", ") || "none"}`,
+        // Recording result
+        `Recording: ${recordingSummary}`,
+        // Filler comparison
+        `Um-type fillers heard: ${sounds}, said: ${said === "" ? "not entered" : said}`,
+        // All fillers found
+        `All fillers: ${JSON.stringify(counts)}`,
+        // The transcript itself
+        `Transcript: ${transcript || "(empty)"}`,
+        // The event log
+        `Log:\n${logLines.join("\n")}`,
+      ].join("\n");
+    }
+
+    // Copy the report to the clipboard
+    async function copyReport() {
+      // Make sure the report is up to date
+      buildReport();
+      // Try the modern clipboard first
+      try {
+        // Copy the report text
+        await navigator.clipboard.writeText(el("report").value);
+        // Confirm on the button
+        el("copy").textContent = "Copied";
+      } catch {
+        // Fall back to selecting the text so the tester can copy it by hand
+        el("report").select();
+        // Tell the tester what to do
+        el("copy").textContent = "Select all and copy the text below";
+      }
+    }
+
+    // Connect the Start button
+    el("start").addEventListener("click", start);
+    // Connect the Stop button
+    el("stop").addEventListener("click", stop);
+    // Connect the Copy button
+    el("copy").addEventListener("click", copyReport);
+    // Refresh filler results when the tester types their count
+    el("saidCount").addEventListener("input", () => { showFillers(); buildReport(); });
+    // Show device facts as soon as the page loads
+    showEnvironment();
+    // Fill in an initial report so device facts can be shared even before a test
+    buildReport();
+  </script>
+</body>
+</html>
