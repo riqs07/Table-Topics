@@ -1,5 +1,8 @@
 // Filler-word counting. The word list is the default until checkpoint C7 approves it.
 
+// Load the shared helper that splits a transcript into clean words
+import { toWords } from "@/core/words";
+
 // The result of counting fillers in a transcript
 export interface FillerCount {
   // Total number of fillers found
@@ -35,16 +38,6 @@ export const PHRASE_FILLERS: ReadonlyArray<string> = [
   "actually",
   "literally",
 ];
-
-// Split a transcript into lowercase words with punctuation removed
-function toWords(transcript: string): string[] {
-  // Lowercase, turn anything that is not a letter or apostrophe into a space, then split on spaces
-  return transcript
-    .toLowerCase()
-    .replace(/[^a-z']+/g, " ")
-    .split(" ")
-    .filter((word) => word.length > 0);
-}
 
 // Find which sound filler a single word is, if any
 function matchSound(word: string): string | undefined {
