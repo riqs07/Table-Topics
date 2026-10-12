@@ -2,7 +2,7 @@
 
 **Purpose:** How you control colors, fonts, and feel, and the rules that keep the look in one place.
 **Last updated:** 2026-10-12
-**Status:** Direction proposed; palette and fonts are chosen at checkpoint C6.
+**Status:** Built in milestone 2. Palette and fonts are chosen at checkpoint C6 on the style page (`/style`).
 
 ## Direction
 
@@ -13,7 +13,7 @@ VoiceLab should feel like a **private practice notebook**, not a tech dashboard.
 | Tool | Job | Why |
 |------|-----|-----|
 | Tailwind CSS v4 | Styling | Theme values are CSS variables in one file, so a palette change is one edit |
-| React Aria Components | Buttons, dialogs, switches | Accessible and phone-friendly with no visual style of its own |
+| React Aria Components (added in milestone 7) | Buttons, dialogs, switches | Accessible and phone-friendly with no visual style of its own |
 | Phosphor Icons | Icons | Less common than the default icon sets; has light and regular weights |
 
 ## Roles, not raw values
@@ -40,11 +40,23 @@ Tailwind's built-in color palette is switched off, so a class like `bg-blue-500`
 
 | Theme | Feel | Fonts |
 |-------|------|-------|
-| **Notebook** (recommended) | Warm off-white paper, ink text, one terracotta or deep-green accent; warm charcoal in dark mode | Atkinson Hyperlegible Next (body), Young Serif (display) |
-| **Calm studio** | Cool stone grays, one sage accent, minimal | A modern sans for both |
+| **Notebook** (recommended) | Warm off-white paper, ink text, one terracotta accent; warm charcoal in dark mode | Atkinson Hyperlegible Next (body), Young Serif (display) |
+| **Calm studio** | Cool stone grays, one sage accent, minimal | Figtree for both |
 | **Gray** | Neutral grayscale for building screens before a choice is made | System fonts |
 
 Until C6 is answered the app uses **Gray** (the checkpoint default).
+
+## Where things live
+
+| File | What it holds |
+|------|---------------|
+| `src/theme/themes.ts` | **Every color and font stack.** To change the look, edit this one file |
+| `src/theme/roles.ts` | The role list and the contrast rules every theme must pass |
+| `src/theme/fonts.ts` | Loads the web fonts (downloaded at build time and served from our own site, so no font requests go to Google from the user's phone) |
+| `src/theme/themeCss.ts` | Turns the themes into CSS variables, switched by `data-theme` (and `data-mode` to force light or dark) |
+| `src/app/globals.css` | Exposes each role to Tailwind (`bg-paper`, `text-ink`, ...) and switches off Tailwind's built-in palette |
+
+Dark mode follows the phone's setting automatically.
 
 ## Shape and layout
 
@@ -52,8 +64,9 @@ Until C6 is answered the app uses **Gray** (the checkpoint default).
 - Phone first. One main action per screen, generous spacing.
 - Transcripts read like notes; fillers are marked quietly, not as errors.
 
-## Tests that guard this (milestone 2)
+## Tests that guard this
 
 - Every theme defines every role.
 - Every text/background pair in every theme passes WCAG AA contrast (risk R13).
-- No component file contains a raw color value or a built-in Tailwind color class.
+- No file in `src/` outside `src/theme/` contains a raw color, a color function, a built-in Tailwind color class, an arbitrary color or font value, or an inline font.
+- Page-wide defaults read theme variables directly, so a themed area inside another (like the style page previews) gets its own colors.

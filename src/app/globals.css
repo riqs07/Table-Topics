@@ -35,28 +35,28 @@
   --font-display: var(--vl-font-display);
 }
 
-/* Page-wide defaults */
+/* Page-wide defaults; these read the theme variables directly so nested themed areas get their own values */
 @layer base {
   /* Every themed area starts with the theme's paper, ink, and body font */
   [data-theme] {
     /* Paper background */
-    background-color: var(--color-paper);
+    background-color: var(--vl-paper);
     /* Ink text */
-    color: var(--color-ink);
+    color: var(--vl-ink);
     /* Body font */
-    font-family: var(--font-body);
+    font-family: var(--vl-font-body);
   }
 
   /* Borders default to the rule color */
   *, ::before, ::after {
     /* Use the dividing-line color */
-    border-color: var(--color-rule);
+    border-color: var(--vl-rule);
   }
 
   /* Show a clear outline on whatever has keyboard focus */
   :focus-visible {
     /* Draw the outline in the focus role color */
-    outline: 2px solid var(--color-focus-ring);
+    outline: 2px solid var(--vl-focus-ring);
     /* Leave a small gap so the outline is not lost against the element */
     outline-offset: 2px;
   }

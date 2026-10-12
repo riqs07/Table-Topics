@@ -67,4 +67,12 @@ describe("globals.css", () => {
     // Confirm the built-in fonts are cleared
     expect(globals).toContain("--font-*: initial;");
   });
+
+  // Nested themed areas (like the style page previews) must get their own colors, not the page's
+  it("reads theme variables directly in page-wide defaults, not the Tailwind aliases", () => {
+    // Take only the base-layer defaults
+    const base = globals.slice(globals.indexOf("@layer base"));
+    // Confirm no default reads an alias, which would be fixed to the page root's theme
+    expect(base).not.toMatch(/var\(--(color|font)-/);
+  });
 });

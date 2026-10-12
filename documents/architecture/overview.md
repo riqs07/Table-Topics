@@ -1,7 +1,7 @@
 # Architecture Overview
 
 **Purpose:** Show how VoiceLab is built and how data moves.
-**Last updated:** 2026-10-11
+**Last updated:** 2026-10-12
 
 ## In one paragraph
 
@@ -52,6 +52,7 @@ src/
   data/           Repository over IndexedDB
   audio/          Recorder and transcriber wrappers
   components/     Reusable UI pieces
+  theme/          All colors and fonts, and the CSS built from them
 tests/            Unit, integration, and a few end-to-end tests
 documents/        This folder
 ```
