@@ -41,10 +41,8 @@ describe("checkRateLimit", () => {
     for (const minute of [0, 1, 2]) await checkRateLimit(store, LIMITS, at(10, minute));
     // Try a fourth in a fresh minute
     const result = await checkRateLimit(store, LIMITS, at(10, 3));
-    // Confirm the daily cap refuses it
-    expect(result.allowed).toBe(false);
-    // Confirm the reason is the daily cap
-    expect(result.reason).toBe("day");
+    // Confirm the daily cap refuses it, waiting until midnight UTC (14 hours minus 3 minutes)
+    expect(result).toEqual({ allowed: false, reason: "day", retryAfterSec: 14 * 3600 - 180 });
   });
 
   // Serverless hosting runs many copies of the server; limits must hold across all of them (risk R4)
