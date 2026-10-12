@@ -1,0 +1,96 @@
+// Filler-word counting. The word list is the default until checkpoint C7 approves it.
+
+// The result of counting fillers in a transcript
+export interface FillerCount {
+  // Total number of fillers found
+  total: number;
+  // How many times each filler was found, keyed by its standard spelling
+  byFiller: Record<string, number>;
+}
+
+// Single-word hesitation sounds, with a pattern that also matches stretched spellings
+const SOUND_FILLERS: ReadonlyArray<{ name: string; pattern: RegExp }> = [
+  // "um", "umm", "ummm"
+  { name: "um", pattern: /^u+m+$/ },
+  // "uh", "uhh", "uhhh"
+  { name: "uh", pattern: /^u+h+$/ },
+  // "er", "err", "erm"
+  { name: "er", pattern: /^e+r+m*$/ },
+  // "ah", "ahh"
+  { name: "ah", pattern: /^a+h+$/ },
+  // "hmm", "hmmm"
+  { name: "hmm", pattern: /^h+m+$/ },
+];
+
+// Filler words and phrases matched exactly, longest first so phrases win over single words
+export const PHRASE_FILLERS: ReadonlyArray<string> = [
+  // Two-word fillers
+  "you know",
+  "i mean",
+  "kind of",
+  "sort of",
+  // One-word fillers
+  "like",
+  "basically",
+  "actually",
+  "literally",
+];
+
+// Split a transcript into lowercase words with punctuation removed
+function toWords(transcript: string): string[] {
+  // Lowercase, turn anything that is not a letter or apostrophe into a space, then split on spaces
+  return transcript
+    .toLowerCase()
+    .replace(/[^a-z']+/g, " ")
+    .split(" ")
+    .filter((word) => word.length > 0);
+}
+
+// Find which sound filler a single word is, if any
+function matchSound(word: string): string | undefined {
+  // Return the standard name of the first sound pattern the word fits
+  return SOUND_FILLERS.find((filler) => filler.pattern.test(word))?.name;
+}
+
+// Find which phrase filler starts at a given word position, if any
+function matchPhrase(words: string[], start: number): string | undefined {
+  // Return the first phrase whose words all match from this position
+  return PHRASE_FILLERS.find((phrase) => {
+    // Split the phrase into its words
+    const parts = phrase.split(" ");
+    // Check that every word of the phrase lines up with the transcript
+    return parts.every((part, offset) => words[start + offset] === part);
+  });
+}
+
+// Count how many filler words and phrases appear in a transcript
+export function countFillers(transcript: string): FillerCount {
+  // Break the transcript into clean words
+  const words = toWords(transcript);
+  // Start with an empty tally
+  const byFiller: Record<string, number> = {};
+  // Start the running total at zero
+  let total = 0;
+  // Walk through the words from the start
+  let index = 0;
+  // Keep going until every word has been checked
+  while (index < words.length) {
+    // Take the current word (always present inside the loop)
+    const word = words[index] ?? "";
+    // See whether a filler phrase or sound starts here
+    const phrase = matchPhrase(words, index);
+    // Use the phrase if found, otherwise check for a hesitation sound
+    const filler = phrase ?? matchSound(word);
+    // Record the filler if one was found
+    if (filler !== undefined) {
+      // Add one to this filler's tally
+      byFiller[filler] = (byFiller[filler] ?? 0) + 1;
+      // Add one to the total
+      total += 1;
+    }
+    // Skip past every word of a matched phrase, or move on by one word
+    index += phrase ? phrase.split(" ").length : 1;
+  }
+  // Hand back the total and the per-filler tally
+  return { total, byFiller };
+}
