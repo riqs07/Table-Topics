@@ -20,10 +20,18 @@ describe("themes", () => {
     expect(Object.keys(THEMES).sort()).toEqual(["calm-studio", "gray", "notebook"]);
   });
 
-  // Until checkpoint C6 is answered the app uses gray
-  it("defaults to the gray theme", () => {
-    // Confirm the default
-    expect(DEFAULT_THEME).toBe("gray");
+  // Calm studio was chosen at checkpoint C6
+  it("uses the calm studio theme chosen at C6", () => {
+    // Confirm the app theme
+    expect(DEFAULT_THEME).toBe("calm-studio");
+  });
+
+  // At C6 the accent was changed from sage to forest green
+  it("gives calm studio a forest green accent", () => {
+    // Confirm the light accent
+    expect(THEMES["calm-studio"].colors.light.accent).toBe("#2d5a3d");
+    // Confirm the dark accent
+    expect(THEMES["calm-studio"].colors.dark.accent).toBe("#6fae84");
   });
 
   // Every role must be filled in, or a component would show no color
