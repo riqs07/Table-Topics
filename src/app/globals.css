@@ -1,0 +1,63 @@
+/* Load Tailwind */
+@import "tailwindcss";
+
+/* Switch off Tailwind's built-in colors and fonts so only theme roles exist */
+@theme {
+  /* Remove every built-in color such as blue-500 */
+  --color-*: initial;
+  /* Remove every built-in font family */
+  --font-*: initial;
+}
+
+/* Turn each theme role into a Tailwind color, such as bg-paper or text-ink */
+@theme inline {
+  /* Page background */
+  --color-paper: var(--vl-paper);
+  /* Lifted surfaces */
+  --color-paper-raised: var(--vl-paper-raised);
+  /* Main text */
+  --color-ink: var(--vl-ink);
+  /* Secondary text */
+  --color-ink-muted: var(--vl-ink-muted);
+  /* Dividing lines */
+  --color-rule: var(--vl-rule);
+  /* Record button and your one fix */
+  --color-accent: var(--vl-accent);
+  /* Text on the accent */
+  --color-accent-ink: var(--vl-accent-ink);
+  /* Filler words in a transcript */
+  --color-filler: var(--vl-filler);
+  /* Keyboard focus outline */
+  --color-focus-ring: var(--vl-focus-ring);
+  /* Running text, as font-body */
+  --font-body: var(--vl-font-body);
+  /* Headings and prompts, as font-display */
+  --font-display: var(--vl-font-display);
+}
+
+/* Page-wide defaults */
+@layer base {
+  /* Every themed area starts with the theme's paper, ink, and body font */
+  [data-theme] {
+    /* Paper background */
+    background-color: var(--color-paper);
+    /* Ink text */
+    color: var(--color-ink);
+    /* Body font */
+    font-family: var(--font-body);
+  }
+
+  /* Borders default to the rule color */
+  *, ::before, ::after {
+    /* Use the dividing-line color */
+    border-color: var(--color-rule);
+  }
+
+  /* Show a clear outline on whatever has keyboard focus */
+  :focus-visible {
+    /* Draw the outline in the focus role color */
+    outline: 2px solid var(--color-focus-ring);
+    /* Leave a small gap so the outline is not lost against the element */
+    outline-offset: 2px;
+  }
+}
