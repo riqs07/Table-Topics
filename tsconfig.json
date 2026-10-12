@@ -33,6 +33,8 @@
     "isolatedModules": true,
     // Let React handle JSX without importing React in every file
     "jsx": "react-jsx",
+    // Let older-style packages be imported the modern way (Next.js requires this)
+    "esModuleInterop": true,
     // Speed up repeat type checks
     "incremental": true,
     // Load the Next.js type-checking plugin in editors

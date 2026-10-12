@@ -1,7 +1,7 @@
 # Architecture Decisions
 
 **Purpose:** Record why each technology was chosen, so a reader can challenge it.
-**Last updated:** 2026-10-11
+**Last updated:** 2026-10-12
 
 | # | Decision | Why | Revisit when |
 |---|----------|-----|--------------|
@@ -17,6 +17,7 @@
 | 10 | **Hosting on Vercel** | Zero-config for Next.js, free tier suits one user | Costs or limits change |
 | 11 | **All colors, fonts, and spacing live in theme files; components use named roles only** | You control the look, and a palette change is one file (see design/design-system.md) | Never; this is a principle |
 | 12 | **Test the riskiest assumptions first with throwaway spikes on a real phone** | Transcription behavior (risks R1 to R3) can reshape the architecture, so we learn it before building on it | Spike results arrive (C5) |
+| 13 | **Pinned tool versions: TypeScript 6.0, ESLint 9, Node 22+, pnpm 10** (added 2026-10-12, M0) | TypeScript 7 and ESLint 10 are out, but the Next.js lint rules do not support them yet. Exact versions plus the lockfile keep builds repeatable (R12) | The Next.js lint config supports TypeScript 7 and ESLint 10 |
 
 ## Not chosen
 

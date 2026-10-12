@@ -1,0 +1,19 @@
+# Installed packages
+node_modules/
+# Next.js build output
+.next/
+out/
+# Test coverage reports
+coverage/
+# Local secrets (never commit these; see documents/setup-requirements.md)
+.env
+.env*.local
+# Vercel project link
+.vercel/
+# Generated Next.js type file
+next-env.d.ts
+# TypeScript incremental cache
+*.tsbuildinfo
+# Logs and OS clutter
+*.log
+.DS_Store

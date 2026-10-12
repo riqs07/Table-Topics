@@ -1,0 +1,37 @@
+# Run every quality check on each push and pull request
+name: CI
+
+# Start the checks whenever code is pushed or a pull request is opened or updated
+on:
+  push:
+  pull_request:
+
+# Give the workflow read-only access to the repository
+permissions:
+  contents: read
+
+jobs:
+  # One job that runs all checks in order
+  check:
+    # Use a fresh Linux machine provided by GitHub
+    runs-on: ubuntu-latest
+    steps:
+      # Download the repository code
+      - uses: actions/checkout@v5
+      # Install pnpm using the version pinned in package.json
+      - uses: pnpm/action-setup@v4
+      # Install Node.js from .nvmrc and cache downloaded packages
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      # Install exactly the versions recorded in the lockfile
+      - run: pnpm install --frozen-lockfile
+      # Check code style and common mistakes, failing on any warning
+      - run: pnpm lint
+      # Check that all types are correct
+      - run: pnpm typecheck
+      # Run the automated tests
+      - run: pnpm test
+      # Confirm the app builds for production
+      - run: pnpm build
