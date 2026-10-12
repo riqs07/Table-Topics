@@ -1,0 +1,85 @@
+// The records VoiceLab stores on the device (see documents/architecture/data-model.md)
+// Dates are stored as ISO text such as "2026-10-12T15:00:00.000Z" so exports round-trip exactly
+
+// The coach's three-part feedback for one session
+export interface Feedback {
+  // One thing done well, quoting the user
+  keep: string;
+  // One specific fix, with an example from the transcript
+  change: string;
+  // One sentence to read before retrying
+  retryCue: string;
+}
+
+// Where a session's feedback request stands
+export type FeedbackStatus = "pending" | "done" | "failed";
+
+// One recording and everything measured about it
+export interface SessionRecord {
+  // Unique identifier
+  id: string;
+  // When the session started (ISO text)
+  createdAt: string;
+  // Which prompt was used
+  promptId: string;
+  // True for the user's first-ever session
+  isBaseline: boolean;
+  // Id of the session this one retries, or null
+  retryOf: string | null;
+  // Length of the recording in seconds
+  durationSec: number;
+  // Full text of what was said
+  transcript: string;
+  // Computed speaking speed
+  wordsPerMinute: number;
+  // Computed filler rate
+  fillersPerMinute: number;
+  // Id of the weekly focus active at the time
+  focus: string;
+  // The coach's feedback, or null if not received yet
+  feedback: Feedback | null;
+  // Whether feedback is pending, done, or failed
+  feedbackStatus: FeedbackStatus;
+  // Key of the saved audio, or null if there is none or it was pruned
+  audioKey: string | null;
+}
+
+// One weekly real-world challenge
+export interface ChallengeRecord {
+  // Unique identifier
+  id: string;
+  // The day the week began (ISO date text)
+  weekStart: string;
+  // The real-world task
+  text: string;
+  // When the user marked it done (ISO text), or null
+  completedAt: string | null;
+}
+
+// The user's settings (one record)
+export interface SettingsRecord {
+  // Position in the v1 weekly focus list
+  focusIndex: number;
+  // The day the current focus began (ISO text)
+  focusStartedOn: string;
+  // How many recent sessions keep their audio
+  audioRetention: number;
+}
+
+// What each stored collection holds
+export interface Collections {
+  // Session records, keyed by session id
+  sessions: SessionRecord;
+  // Challenge records, keyed by challenge id
+  challenges: ChallengeRecord;
+  // The single settings record, under the key "settings"
+  settings: SettingsRecord;
+  // Recorded audio, keyed by audio key
+  audio: Blob;
+}
+
+// One collection name
+export type CollectionName = keyof Collections;
+
+// Every collection name, for creating and clearing storage
+export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio"];
