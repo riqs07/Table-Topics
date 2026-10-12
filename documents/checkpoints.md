@@ -1,7 +1,7 @@
 # Human Checkpoints
 
 **Purpose:** Every point where I stop and need you: accounts, taste, real-device tests, and approvals. You stay in control of the things that are yours.
-**Last updated:** 2026-10-11
+**Last updated:** 2026-10-12
 
 ## Types
 
@@ -47,3 +47,10 @@
 3. **C10:** coach quality is the product, and only you can judge how it lands.
 4. **C13:** the prompts and challenges set the tone for the whole experience.
 5. **C1, C9, C15:** accounts and keys. See [setup-requirements.md](setup-requirements.md).
+
+## Answers log
+
+| ID | Date | Answer |
+|----|------|--------|
+| C1 | 2026-10-12 | Private repo `riqs07/table-topics`; code reaches you through the repo. Test phone: iPhone (browser assumed Safari until confirmed) |
+| C2 | 2026-10-12 | Target user confirmed. Name: default "VoiceLab" (flagged; change any time) |

@@ -2,7 +2,7 @@
 
 **Version:** 2.0 (rewritten around a new target user)
 **Status:** Draft for review
-**Last updated:** 2026-10-11
+**Last updated:** 2026-10-12
 
 ## 1. Summary
 
@@ -10,7 +10,7 @@ VoiceLab is a private speech-practice app for people who want to speak better bu
 
 ## 2. Target user (ICP)
 
-> **Assumption to confirm:** we are building for the *shy and wants to be more outgoing* user. Two other possible users (the rambler who needs structure, and the already-outgoing person who wants polish) are out of scope for v1.
+> **Confirmed at C2 (2026-10-12):** we are building for the *shy and wants to be more outgoing* user. Two other possible users (the rambler who needs structure, and the already-outgoing person who wants polish) are out of scope for v1.
 
 **Who:** an adult who feels they are not great at speaking. They hesitate, trail off, use filler words, or avoid speaking up. They want to be more outgoing and express themselves clearly.
 
@@ -111,7 +111,7 @@ Feedback and numbers all relate to the current focus.
 
 ## 10. Open questions
 
-1. Confirm the ICP assumption in section 2.
+1. ~~Confirm the ICP assumption in section 2.~~ Confirmed at C2.
 2. How long do we keep audio locally? (Proposed: last 30 sessions.)
 3. Does the retry flow feel like progress or like repetition? (Test with real users early.)
 4. Is a typed fallback needed for people practicing where they cannot speak aloud?

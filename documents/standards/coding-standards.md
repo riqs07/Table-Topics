@@ -1,7 +1,7 @@
 # Coding Standards
 
 **Purpose:** The rules every change must follow, so a human can trust the code without reading all of it.
-**Last updated:** 2026-10-11
+**Last updated:** 2026-10-12
 
 ## 1. Test-driven development (mandatory)
 
@@ -82,9 +82,9 @@ Tests follow the same rule.
 
 A spike answers one question, such as "does browser transcription work on this phone?" Spikes are the only code exempt from test-first.
 
-- Spike code lives in a `spikes/` folder and still follows the comment rule.
+- Spike code lives in `public/spikes/` so it can be opened on a real phone, and still follows the comment rule.
 - It is deleted before the milestone ends. Only the findings are kept, written into `architecture/decisions.md`.
-- Nothing in `src/` may import from `spikes/`.
+- Nothing in `src/` may import from `public/spikes/`.
 
 ## 7. Checkpoints
 
