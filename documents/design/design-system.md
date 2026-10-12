@@ -2,7 +2,7 @@
 
 **Purpose:** How you control colors, fonts, and feel, and the rules that keep the look in one place.
 **Last updated:** 2026-10-12
-**Status:** Built in milestone 2. Palette and fonts are chosen at checkpoint C6 on the style page (`/style`).
+**Status:** Built in milestone 2. **Calm studio with a forest green accent was chosen at C6 (2026-10-12).** All three themes stay on the style page (`/style`) for comparison.
 
 ## Direction
 
@@ -36,15 +36,15 @@ Fonts use two roles: `font-body` and `font-display` (headings and the daily prom
 
 Tailwind's built-in color palette is switched off, so a class like `bg-blue-500` does not exist. Only role classes such as `bg-paper` and `text-ink` work.
 
-## Starter themes (choose at C6)
+## Starter themes
 
 | Theme | Feel | Fonts |
 |-------|------|-------|
-| **Notebook** (recommended) | Warm off-white paper, ink text, one terracotta accent; warm charcoal in dark mode | Atkinson Hyperlegible Next (body), Young Serif (display) |
-| **Calm studio** | Cool stone grays, one sage accent, minimal | Figtree for both |
+| **Notebook** | Warm off-white paper, ink text, one terracotta accent; warm charcoal in dark mode | Atkinson Hyperlegible Next (body), Young Serif (display) |
+| **Calm studio** (chosen) | Cool stone grays, one forest green accent, minimal | Figtree for both |
 | **Gray** | Neutral grayscale for building screens before a choice is made | System fonts |
 
-Until C6 is answered the app uses **Gray** (the checkpoint default).
+The app uses **Calm studio**. Switching is one line (`DEFAULT_THEME` in `src/theme/themes.ts`).
 
 ## Where things live
 

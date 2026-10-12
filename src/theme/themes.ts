@@ -84,12 +84,12 @@ export const THEMES = {
       display: `var(--font-young-serif), ${SYSTEM_SERIF}`,
     },
   },
-  // Cool stone grays with a sage accent
+  // Cool stone grays with a forest green accent (chosen at C6)
   "calm-studio": {
     // Name shown on the style page
     name: "Calm studio",
     // What the theme is going for
-    description: "Cool stone grays, one sage accent, minimal and quiet.",
+    description: "Cool stone grays, one forest green accent, minimal and quiet. Chosen at C6.",
     // Colors for each mode
     colors: {
       // Daytime colors
@@ -105,7 +105,7 @@ export const THEMES = {
         // Dividing lines
         "rule": "#d4d9d5",
         // Record button and your one fix
-        "accent": "#466e5a",
+        "accent": "#2d5a3d",
         // Text on the accent
         "accent-ink": "#fcfcfb",
         // Filler words in a transcript
@@ -126,7 +126,7 @@ export const THEMES = {
         // Dividing lines
         "rule": "#333934",
         // Record button and your one fix
-        "accent": "#8fbba2",
+        "accent": "#6fae84",
         // Text on the accent
         "accent-ink": "#161917",
         // Filler words in a transcript
@@ -148,7 +148,7 @@ export const THEMES = {
     // Name shown on the style page
     name: "Gray",
     // What the theme is going for
-    description: "Neutral grayscale. The working default until you pick at C6.",
+    description: "Neutral grayscale. Kept for comparison.",
     // Colors for each mode
     colors: {
       // Daytime colors
@@ -202,5 +202,5 @@ export const THEMES = {
 // One theme id
 export type ThemeId = keyof typeof THEMES;
 
-// The theme used until checkpoint C6 is answered
-export const DEFAULT_THEME: ThemeId = "gray";
+// The app's theme, chosen at checkpoint C6
+export const DEFAULT_THEME: ThemeId = "calm-studio";

@@ -55,3 +55,4 @@
 | C1 | 2026-10-12 | Private repo `riqs07/table-topics`; code reaches you through the repo. Test phone: iPhone (browser assumed Safari until confirmed) |
 | C2 | 2026-10-12 | Target user confirmed. Name: default "VoiceLab" (flagged; change any time) |
 | C7 | 2026-10-12 | **Defaulted, flagged.** Fillers counted: um, uh, er, ah, hmm (and stretched spellings like "ummm"), you know, I mean, kind of, sort of, like, basically, actually, literally. "So" is not counted. "Like" is counted even when used as a real verb; approve or change |
+| C6 | 2026-10-12 | Calm studio, with the accent changed from sage to forest green. Fonts: Figtree. Icon direction still open |

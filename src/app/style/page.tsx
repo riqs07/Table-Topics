@@ -18,7 +18,7 @@ export default function StylePage() {
       <h1 className="font-display text-3xl">Style tile</h1>
       {/* How to use the page */}
       <p className="mt-2 max-w-prose text-ink-muted">
-        Three starter themes, each in light and dark. Pick one (checkpoint C6). Colors and fonts can still be tuned after.
+        Three starter themes, each in light and dark. Calm studio was chosen at checkpoint C6; the others are kept for comparison.
       </p>
 
       {/* One section per theme */}
