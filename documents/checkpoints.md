@@ -56,3 +56,4 @@
 | C2 | 2026-10-12 | Target user confirmed. Name: default "VoiceLab" (flagged; change any time) |
 | C7 | 2026-10-12 | **Defaulted, flagged.** Fillers counted: um, uh, er, ah, hmm (and stretched spellings like "ummm"), you know, I mean, kind of, sort of, like, basically, actually, literally. "So" is not counted. "Like" is counted even when used as a real verb; approve or change |
 | C6 | 2026-10-12 | Calm studio, with the accent changed from sage to forest green. Fonts: Figtree. Icon direction still open |
+| C8 | 2026-10-12 | **Defaulted, flagged.** "Export my data" is in v1 (sessions, challenges, settings; no audio). Baseline audio is never auto-deleted |

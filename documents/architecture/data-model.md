@@ -5,7 +5,9 @@
 
 ## Where data lives
 
-Everything is stored in the user's browser (IndexedDB). There is no server database in v1. A "Delete all my data" button in settings wipes everything. Browsers can clear this storage on their own (see risks.md R7), so v1 may also include an "Export my data" file (checkpoint C8).
+Everything is stored in the user's browser (IndexedDB). There is no server database in v1. A "Delete all my data" button in settings wipes everything. Browsers can clear this storage on their own (see risks.md R7), so v1 includes an "Export my data" file (checkpoint C8, defaulted to yes).
+
+Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads and writes), `src/data/indexedDbStore.ts` (browser storage), `src/data/exportFile.ts` (export and import). Dates are stored as ISO text so exports round-trip exactly.
 
 ## Stored records
 
@@ -57,8 +59,14 @@ Prompts ship inside the app as fixed content. They are not user data.
 
 | Data | Kept |
 |------|------|
-| Audio | Last 30 sessions, then deleted automatically |
+| Audio | Last 30 sessions, then deleted automatically. **The baseline (first) recording's audio is always kept** |
 | Transcripts, metrics, feedback | Until the user deletes them |
+
+## Export file
+
+- A JSON file with every session, challenge, and the settings. **Audio is not included** (keeps the file small); sessions in the file have no audio link.
+- Importing adds to what is on the device; a record with the same id is replaced, and the file's settings are used.
+- A file that is not a VoiceLab export, is from a newer version, or has a damaged record is refused before anything is saved, with a plain message.
 
 ## What leaves the device
 
