@@ -123,6 +123,16 @@ describe("pruneAudio", () => {
     expect(pruned).toBe(1);
   });
 
+  // A bad saved limit (negative or not a whole number) must not prune the wrong sessions
+  it("treats a negative limit as zero and rounds fractions down", async () => {
+    // Save three sessions with audio
+    await seed(3);
+    // Save a negative limit
+    await repo.saveSettings({ ...(await repo.getSettings(NOW)), audioRetention: -2 });
+    // Confirm every non-baseline recording is pruned, as with a limit of zero
+    expect(await repo.pruneAudio()).toBe(2);
+  });
+
   // Pruning twice does nothing the second time
   it("does nothing when there is nothing to prune", async () => {
     // Save three sessions with audio
