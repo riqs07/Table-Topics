@@ -21,3 +21,9 @@ export function dayKey(moment: Date): string {
   // Join year, month and day
   return `${moment.getFullYear()}-${month}-${day}`;
 }
+
+// Whole calendar days from one moment's day to another's (negative if "to" is earlier)
+export function daysBetween(from: Date, to: Date): number {
+  // Measure between the two midnights and round away clock-change hours
+  return Math.round((startOfDay(to).getTime() - startOfDay(from).getTime()) / 86_400_000);
+}

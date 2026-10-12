@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-11
+**Last updated:** 2026-10-12
 
 ## Where data lives
 
@@ -40,7 +40,7 @@ Everything is stored in the user's browser (IndexedDB). There is no server datab
 
 | Field | Meaning |
 |-------|---------|
-| focusIndex | Which weekly focus the user is on |
+| focusIndex | Which weekly focus the user is on (position in the v1 focus list in `core/focus.ts`) |
 | focusStartedOn | Date the current focus began |
 | audioRetention | Number of recent sessions whose audio is kept (default 30) |
 

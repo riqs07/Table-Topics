@@ -87,6 +87,8 @@ The app assigns one focus per week, in this order for a new user:
 
 Feedback and numbers all relate to the current focus.
 
+In v1 the focus changes every 7 calendar days, cycling through 1 to 4 and then starting again. Focus 5 is skipped until audio analysis exists. A user who is away advances one focus per full week missed. (Default set in M3; change it with a note in architecture/decisions.md.)
+
 ## 8. Removed or deferred
 
 | Item | Decision | Reason |
