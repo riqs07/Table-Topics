@@ -16,7 +16,7 @@ import { findPrompt } from "@/content/prompts";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the recording length rules
-import { formatClock, maxSeconds, targetSeconds } from "@/core/recordingRules";
+import { MIN_SECONDS, formatClock, maxSeconds, targetSeconds } from "@/core/recordingRules";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -44,7 +44,7 @@ interface RecordingScreenProps {
 }
 
 // Where the screen is in the flow
-type Stage = "ready" | "starting" | "recording" | "saving" | "nothing-heard" | { problem: RecordingProblem };
+type Stage = "ready" | "starting" | "recording" | "saving" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
 
 // Plain explanations for each problem
 const PROBLEM_TEXT: Record<RecordingProblem, string> = {
@@ -169,6 +169,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const result = await finishCapture();
     // Nothing was running
     if (!result) return;
+    // Too short to measure: save nothing and explain
+    if (result.durationSec < MIN_SECONDS) {
+      // Allow another attempt
+      stopping.current = false;
+      // Explain
+      setStage("too-short");
+      // Done
+      return;
+    }
     // No words heard: save nothing and explain
     if (!result.transcript.trim()) {
       // Allow another attempt
@@ -263,7 +272,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         // Stop the page from scrolling
         event.preventDefault();
         // Start or stop
-        if (stage === "ready" || stage === "nothing-heard") void start();
+        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short") void start();
         else if (stage === "recording") void stop();
       }
       // Escape while recording: discard
@@ -351,12 +360,14 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {problem && <p role="alert" className="mt-6 max-w-[48ch] text-lede">{PROBLEM_TEXT[problem]}</p>}
           {/* Nothing heard */}
           {stage === "nothing-heard" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">I did not catch any words. Check that the right microphone is selected, then try again.</p>}
+          {/* Too short */}
+          {stage === "too-short" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">That was under {MIN_SECONDS} seconds, too short to measure, so it was not saved. Take your time and keep going a little longer.</p>}
 
           {/* Push the footer down */}
           <div className="flex-1" />
 
           {/* Before starting: where the words go */}
-          {(stage === "ready" || stage === "nothing-heard") && (
+          {(stage === "ready" || stage === "nothing-heard" || stage === "too-short") && (
             <Footnote>
               <span>Your words are turned into text by your browser’s speech service (Google in Chrome, Apple in Safari). The recording itself stays on this device.</span>
             </Footnote>
@@ -369,8 +380,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           )}
 
           {/* The one action for this stage */}
-          {(stage === "ready" || stage === "nothing-heard" || (problem && problem !== "speech-unsupported")) && (
-            <ActionButton action={problem || stage === "nothing-heard" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
+          {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || (problem && problem !== "speech-unsupported")) && (
+            <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
           )}
           {/* Waiting for the microphone */}
           {stage === "starting" && <ActionButton action="Starting…" aside="allow the microphone" onClick={() => {}} disabled />}

@@ -22,3 +22,6 @@ export function formatClock(seconds: number): string {
   // Minutes, and seconds padded to two digits
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
+
+// The shortest recording kept, in seconds (shorter clips give unreliable rates)
+export const MIN_SECONDS = 10;
