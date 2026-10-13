@@ -17,6 +17,8 @@ export function makeSession(overrides: Partial<SessionRecord> = {}): SessionReco
     isBaseline: false,
     // Not a retry
     retryOf: null,
+    // A full session (not a warm-up)
+    mode: "standard",
     // One minute long
     durationSec: 60,
     // What was said

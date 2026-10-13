@@ -106,6 +106,18 @@ describe("parseExport", () => {
     expect(() => parseExport(JSON.stringify({ format: "voicelab-export", version: 99 }))).toThrow("This file comes from a newer version of VoiceLab.");
   });
 
+  // Files exported before warm-ups existed have no mode; their sessions are full sessions
+  it("treats sessions without a mode as full sessions", () => {
+    // A valid file whose session has no mode field
+    const session: Record<string, unknown> = { ...makeSession({ id: "old" }) };
+    // Remove the mode, as an older export would have
+    delete session.mode;
+    // Build the file text
+    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [session], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
+    // Confirm the session comes back as a full session
+    expect(parseExport(text).sessions[0]?.mode).toBe("standard");
+  });
+
   // A damaged file with a broken session
   it("rejects a file with a damaged record", () => {
     // Build a file whose session is missing its transcript

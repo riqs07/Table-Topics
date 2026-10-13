@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the progress calculations being checked
-import { baselineProgress, historyRows, retryComparison, trendSeries } from "@/core/progress";
+import { baselineProgress, historyRows, retryComparison, shouldBeBaseline, trendSeries } from "@/core/progress";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -77,5 +77,41 @@ describe("historyRows", () => {
     const rows = historyRows(SESSIONS);
     // Confirm the ids, retry pairing, and order
     expect(rows.map((row) => [row.session.id, row.retry?.id ?? null])).toEqual([["s4", null], ["s2", "s3"], ["s1", null]]);
+  });
+});
+
+// A warm-up session on the 10th, between full sessions
+const WITH_WARMUP = [...SESSIONS, makeSession({ id: "w1", createdAt: oct(9), fillersPerMinute: 0.5, mode: "warmup", promptId: "w001" })];
+
+// Group the checks about warm-ups and progress
+describe("warm-ups and progress", () => {
+  // Warm-ups never become the starting point
+  it("makes the first full session the baseline, never a warm-up", () => {
+    // Confirm a warm-up is not a baseline even when it is the very first session
+    expect(shouldBeBaseline([], "warmup")).toBe(false);
+    // Confirm the first full session is, even after warm-ups
+    expect(shouldBeBaseline([makeSession({ mode: "warmup" })], "standard")).toBe(true);
+    // Confirm later full sessions are not
+    expect(shouldBeBaseline([makeSession({ isBaseline: true })], "standard")).toBe(false);
+  });
+
+  // The trend leaves warm-ups out
+  it("leaves warm-ups out of the trend", () => {
+    // Confirm the values match the trend without the warm-up
+    expect(trendSeries(WITH_WARMUP)).toEqual([6, 4.2, 3.1]);
+  });
+
+  // Progress compares full sessions only, even if a warm-up is the latest
+  it("leaves warm-ups out of progress since the first recording", () => {
+    // Add a warm-up after everything else
+    const latestIsWarmup = [...SESSIONS, makeSession({ id: "w2", createdAt: oct(12), fillersPerMinute: 0.1, mode: "warmup" })];
+    // Confirm the latest full session is used
+    expect(baselineProgress(latestIsWarmup)?.latest).toBe(3.1);
+  });
+
+  // History still lists warm-ups, so the record is complete
+  it("keeps warm-ups in the history list", () => {
+    // Confirm the warm-up has its own row
+    expect(historyRows(WITH_WARMUP).map((row) => row.session.id)).toContain("w1");
   });
 });
