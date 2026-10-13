@@ -8,6 +8,8 @@ import { APP_NAME } from "@/core/appInfo";
 import { fontVariables } from "@/theme/fonts";
 // Load the builder for the theme stylesheet
 import { themeCss } from "@/theme/themeCss";
+// Load the background sender for waiting feedback
+import { FeedbackSync } from "@/components/FeedbackSync";
 // Load the theme used until checkpoint C6
 import { DEFAULT_THEME } from "@/theme/themes";
 // Load Tailwind and the role colors
@@ -32,7 +34,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <style dangerouslySetInnerHTML={{ __html: themeCss() }} />
       </head>
       {/* Place the current page inside the document body */}
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="min-h-dvh antialiased">
+        {/* The current page */}
+        {children}
+        {/* Send waiting feedback when the app opens and when the connection returns */}
+        <FeedbackSync />
+      </body>
     </html>
   );
 }

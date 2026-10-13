@@ -17,6 +17,12 @@ import { buildExport, importExport, parseExport } from "@/data/exportFile";
 import type { SettingsRecord } from "@/data/records";
 // Load the sample sessions (development only)
 import { sampleSessions } from "@/data/sampleData";
+// Load the waiting-feedback sender
+import { sendPendingFeedback } from "@/data/feedbackClient";
+// Load the passphrase storage
+import { readPassphrase, savePassphrase } from "@/data/passphrase";
+// Load the sentence for send results
+import { sendResultMessage } from "@/core/feedbackMessages";
 
 // Choices for how many recent sessions keep their audio
 const RETENTION_CHOICES = [10, 30, 60, 100];
@@ -42,10 +48,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+// Settings can also be given a network function (replaced in tests)
+interface SettingsScreenProps extends ScreenProps {
+  // Network function for sending feedback
+  fetchFn?: typeof fetch;
+}
+
 // Draw the Settings screen
-export function SettingsScreen(props: ScreenProps) {
+export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
+  // The passphrase being typed (starts with the saved one)
+  const [passphrase, setPassphrase] = useState(() => (typeof window === "undefined" ? "" : readPassphrase()));
+  // How many sessions are waiting for feedback
+  const [pendingCount, setPendingCount] = useState(0);
   // Saved settings, once loaded
   const [settings, setSettings] = useState<SettingsRecord | null>(null);
   // A message to show after an action
@@ -63,6 +79,11 @@ export function SettingsScreen(props: ScreenProps) {
     repo.getSettings(today).then((loaded) => {
       // Keep them only if the screen is still open
       if (!cancelled) setSettings(loaded);
+    });
+    // Count sessions waiting for feedback
+    repo.listSessions().then((sessions) => {
+      // Keep the count only if the screen is still open
+      if (!cancelled) setPendingCount(sessions.filter((session) => session.feedbackStatus === "pending").length);
     });
     // Mark as closed when leaving
     return () => {
@@ -129,6 +150,24 @@ export function SettingsScreen(props: ScreenProps) {
     event.target.value = "";
   }
 
+  // Save the passphrase on this device
+  function storePassphrase() {
+    // Save it
+    savePassphrase(passphrase);
+    // Say what happened
+    setMessage(passphrase.trim() ? "Passphrase saved on this device." : "Passphrase removed.");
+  }
+
+  // Send every session waiting for feedback now
+  async function sendNow() {
+    // Send with the saved passphrase
+    const result = await sendPendingFeedback(repo, { passphrase: readPassphrase(), ...(fetchFn ? { fetchFn } : {}) });
+    // Update the waiting count
+    setPendingCount((await repo.listSessions()).filter((session) => session.feedbackStatus === "pending").length);
+    // Say what happened
+    setMessage(sendResultMessage(result.sent, result.stoppedBy));
+  }
+
   // Delete everything after the second tap
   async function deleteEverything() {
     // Remove every record and recording
@@ -173,6 +212,27 @@ export function SettingsScreen(props: ScreenProps) {
           sessions. Your first recording is always kept. Transcripts and feedback are never removed.
         </p>
       </Section>
+
+      {/* Coach feedback (drawn in the browser only, where the saved passphrase can be read) */}
+      {today && <Section title="Coach feedback">
+        {/* What the passphrase is for */}
+        <p className="text-ink-muted">Feedback needs the passphrase you set on the server. It is kept on this device only and is not in exports.</p>
+        {/* Passphrase field and save */}
+        <p className="mt-3 flex flex-wrap items-baseline gap-3">
+          {/* The field */}
+          <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-w-0 flex-1 border-b border-ink bg-transparent py-1" />
+          {/* Save */}
+          <button type="button" onClick={storePassphrase} className="underline underline-offset-4">Save passphrase</button>
+        </p>
+        {/* Waiting sessions, with a way to send them now */}
+        {pendingCount > 0 && (
+          <p className="mt-3">
+            {pendingCount} {pendingCount === 1 ? "session is" : "sessions are"} waiting for feedback.{" "}
+            {/* Send now */}
+            <button type="button" onClick={sendNow} className="underline underline-offset-4">Send now</button>
+          </p>
+        )}
+      </Section>}
 
       {/* Export and import */}
       <Section title="Your data">
