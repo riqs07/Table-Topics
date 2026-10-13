@@ -20,6 +20,7 @@
 | 7 | **Small shared store** for rate limits: **Upstash Redis**, added through the Vercel Marketplace | M6 (needed before deploying) | Free tier | Add the integration in Vercel; it sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Not needed for local use |
 | 8 | **Vercel account**, connected to GitHub | M11 | Free tier | Create the project and enter the variables below |
 | 9 | **Domain name** | M11, optional | About $10 to $15 per year | Only if you want a custom address |
+| 11 | **ElevenLabs account and API key** | Voice features V1 and V2 (later) | Pay per use | Only when we start the coach's voice. Set a spend limit in ElevenLabs |
 | 10 | **App icon and name approval** | M2 and M11 | Free | You choose a direction; I can draft options |
 
 ## Environment variables
