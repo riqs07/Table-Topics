@@ -21,12 +21,36 @@ import { retryComparison } from "@/core/progress";
 import { promptForDay } from "@/content/prompts";
 // Load the session record type
 import type { SessionRecord } from "@/data/records";
+// Load the feedback requester and its outcomes
+import { requestFeedback, type FeedbackOutcome } from "@/data/feedbackClient";
+// Load the saved passphrase
+import { readPassphrase } from "@/data/passphrase";
 
 // What the screen needs: which session, plus the shared props
 interface SessionScreenProps extends ScreenProps {
   // Id of the session to show
   sessionId: string;
+  // Network function for asking the coach (replaced in tests)
+  fetchFn?: typeof fetch;
 }
+
+// What to say while feedback is being asked for, or why it has not come
+const FEEDBACK_NOTES: Record<FeedbackOutcome | "asking", string> = {
+  // Request under way
+  asking: "Asking the coach…",
+  // Arrived (not shown; the feedback replaces the note)
+  done: "",
+  // No passphrase saved, or a wrong one
+  "needs-passphrase": "Add your passphrase in Settings to get feedback. Your session is saved.",
+  // Server missing a setting
+  "not-set-up": "The server is missing a setting, so feedback is paused. Your session is saved.",
+  // Offline or busy
+  "retry-later": "The coach could not be reached. Feedback will arrive when you are back online; your session is saved.",
+  // Declined
+  declined: "The coach could not review this session.",
+  // Refused as invalid
+  invalid: "The coach could not review this session.",
+};
 
 // What was loaded: the session (or null if missing) and, for a retry, its first try
 interface Loaded {
@@ -51,7 +75,7 @@ function Transcript({ text }: { text: string }) {
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ session, now }: { session: SessionRecord; now: Date }) {
+function FeedbackView({ session, now, note }: { session: SessionRecord; now: Date; note: string }) {
   // Whether this was a warm-up (it leads into the full minute instead of a retry)
   const warmup = session.mode === "warmup";
   // Whether the transcript is open on a phone (it is always shown on a computer)
@@ -91,7 +115,7 @@ function FeedbackView({ session, now }: { session: SessionRecord; now: Date }) {
             </>
           ) : (
             // Feedback has not come back yet
-            <p className="mt-5 text-lede text-ink-muted">Feedback is on its way. It appears here once it arrives; your session is saved.</p>
+            <p className="mt-5 text-lede text-ink-muted">{note || "Feedback is on its way. It appears here once it arrives; your session is saved."}</p>
           )}
           {/* Push the footer down */}
           <div className="flex-1" />
@@ -161,11 +185,13 @@ function RetryView({ retry, original, now }: { retry: SessionRecord; original: S
 }
 
 // Draw the session page
-export function SessionScreen({ sessionId, ...props }: SessionScreenProps) {
+export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
   // What was loaded
   const [loaded, setLoaded] = useState<Loaded | null>(null);
+  // A note about feedback being asked for, or why it has not come
+  const [note, setNote] = useState("");
 
   // Load the session (and its first try, for a retry) once the date is known
   useEffect(() => {
@@ -173,21 +199,42 @@ export function SessionScreen({ sessionId, ...props }: SessionScreenProps) {
     if (!today) return;
     // Ignore the result if the screen closes first
     let cancelled = false;
-    // Load the session and, if it is a retry, its first try
-    (async () => {
+    // Read the session and, if it is a retry, its first try
+    const load = async (): Promise<Loaded> => {
       // Read the session
       const session = (await repo.getSession(sessionId)) ?? null;
       // Read the first try if this is a retry
       const original = session?.retryOf ? ((await repo.getSession(session.retryOf)) ?? null) : null;
-      // Keep the result if the screen is still open
-      if (!cancelled) setLoaded({ session, original });
+      // Hand both back
+      return { session, original };
+    };
+    // Load, then ask the coach if feedback is still waiting
+    (async () => {
+      // Load the session
+      const first = await load();
+      // Show it if the screen is still open
+      if (cancelled) return;
+      // Show what was loaded
+      setLoaded(first);
+      // Nothing more to do unless feedback is waiting
+      if (first.session?.feedbackStatus !== "pending") return;
+      // Say the coach is being asked
+      setNote(FEEDBACK_NOTES.asking);
+      // Ask the coach
+      const outcome = await requestFeedback(repo, sessionId, { passphrase: readPassphrase(), ...(fetchFn ? { fetchFn } : {}) });
+      // Stop if the screen closed meanwhile
+      if (cancelled) return;
+      // Say how it went
+      setNote(FEEDBACK_NOTES[outcome]);
+      // Reload to show the feedback (or the new status)
+      setLoaded(await load());
     })();
     // Mark as closed when leaving
     return () => {
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo, today, sessionId]);
+  }, [repo, today, sessionId, fetchFn]);
 
   // Draw the page
   return (
@@ -205,7 +252,7 @@ export function SessionScreen({ sessionId, ...props }: SessionScreenProps) {
       {/* A retry with its first try */}
       {loaded?.session && loaded.original && today && <RetryView retry={loaded.session} original={loaded.original} now={today} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && today && <FeedbackView session={loaded.session} now={today} />}
+      {loaded?.session && !loaded.original && today && <FeedbackView session={loaded.session} now={today} note={note} />}
     </main>
   );
 }

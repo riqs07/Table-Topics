@@ -93,14 +93,18 @@ describe("SessionScreen", () => {
     expect(screen.getByText("Before the full minute")).toBeTruthy();
   });
 
-  // Feedback that has not arrived yet is explained
-  it("explains feedback that is still on its way", async () => {
+  // Offline, the page says feedback will come later and the session is safe
+  it("explains feedback that cannot arrive yet", async () => {
+    // Save a passphrase on this device
+    savePassphrase("pass");
     // A session waiting for feedback
     const session = makeSession({ id: "s1", feedback: null, feedbackStatus: "pending" });
+    // A network that is offline
+    const offline = vi.fn(async () => { throw new TypeError("offline"); });
     // Draw the screen
-    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} fetchFn={offline} />);
     // Confirm the explanation
-    expect(await screen.findByText(/Feedback is on its way/)).toBeTruthy();
+    expect(await screen.findByText(/Feedback will arrive when you are back online/)).toBeTruthy();
   });
 
   // A new session asks the coach straight away and shows the feedback when it arrives
