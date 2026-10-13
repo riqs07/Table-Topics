@@ -69,6 +69,10 @@ Rule: logic goes in `core/` with no browser dependencies, so it can be tested qu
 
 A saved session starts with feedback `pending`. `src/data/feedbackClient.ts` sends it to the feedback route with the passphrase (kept in this browser's local storage, never in exports) and saves the reply. A background sender (`src/components/FeedbackSync.tsx`) sends waiting sessions oldest first when the app opens and when the device comes back online, stopping at the first problem that would block the rest (no passphrase, server not set up, offline or rate limited). A decline or invalid data marks the session `failed` so it is not sent again. Settings shows how many sessions are waiting and can send them on request.
 
+## Installing and working offline
+
+The app is installable (`src/app/manifest.ts`, icons in `public/icons/`, iPhone settings in the layout). In the released app a hand-written service worker (`public/sw.js`, registered by `src/components/ServiceWorkerRegister.tsx`) saves the main pages and every built file they use when it installs. Pages load from the network when possible and from the saved copy offline; built files and icons come from the cache first; the feedback API is never cached. One page, `/sessions?id=...`, shows any saved session, so every past session opens offline. Saved data lives in IndexedDB, so it is all there without a connection. Raise `CACHE` in `sw.js` to force every device to refresh its saved files.
+
 ## Failure behavior
 
 | Failure | What the user sees |

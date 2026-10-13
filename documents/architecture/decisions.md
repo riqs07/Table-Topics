@@ -20,6 +20,7 @@
 | 13 | **Pinned tool versions: TypeScript 6.0, ESLint 9, Node 22+, pnpm 10** (added 2026-10-12, M0) | TypeScript 7 and ESLint 10 are out, but the Next.js lint rules do not support them yet. Exact versions plus the lockfile keep builds repeatable (R12) | The Next.js lint config supports TypeScript 7 and ESLint 10 |
 | 14 | **Coach feedback uses structured output (a JSON schema), the standing instructions are cached, and no automatic model fallback** (added 2026-10-13, M6) | The schema guarantees keep / change / retry cue every time; caching cuts repeat input cost. Server-side fallback on this model only retries cyber and AI-development declines, which speech practice will not trigger, so a decline is shown plainly instead | Declines show up in real use |
 | 15 | **Limits: 6 feedback calls a minute, 60 a day, counted in Upstash Redis; if the counter is down, feedback pauses** (added 2026-10-13, M6) | About a cent a session caps the worst day near $0.60, on top of the provider spend limit. Failing closed means an outage can never lift the cap | Real use needs more |
+| 16 | **A small hand-written service worker instead of a PWA plugin** (added 2026-10-13, M10) | About 100 lines, fully tested, no extra dependency to keep up to date; it only needs to save a handful of pages and their files | Offline needs grow (background sync, push reminders) |
 
 ## Not chosen
 

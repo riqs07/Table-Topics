@@ -2,9 +2,9 @@
 // The feedback API is never cached; waiting feedback is sent by the app itself when the connection returns.
 
 // Name of this version's cache; change it to replace every cached file
-const CACHE = "voicelab-v1";
-// Pages saved at install so the app opens offline
-const SHELL = ["/", "/history", "/settings", "/session"];
+const CACHE = "voicelab-v3";
+// Pages saved at install so the app opens offline (/sessions shows any saved session, chosen by ?id=)
+const SHELL = ["/", "/history", "/settings", "/session", "/sessions"];
 
 // Decide how a request is handled: "network", "cache-first", or "network-first"
 function strategyFor(url, mode) {
@@ -56,18 +56,36 @@ async function networkFirst(request) {
     // Hand back the response
     return response;
   } catch {
-    // Offline: use the saved copy, or the offline page
-    return (await caches.match(request)) ?? offlinePage();
+    // Offline: use the saved copy (ignoring ?id= and similar, so one saved page serves every session), or the offline page
+    return (await caches.match(request, { ignoreSearch: true })) ?? offlinePage();
   }
 }
 
-// On install, save the main pages, then take over without waiting
+// Save the main pages, then every built file they use, so they all work offline even if never opened online
+async function precache() {
+  // Open this version's cache
+  const cache = await caches.open(CACHE);
+  // Save the main pages
+  await cache.addAll(SHELL);
+  // Collect the built files the pages refer to
+  const assets = new Set();
+  // Read each saved page
+  for (const page of SHELL) {
+    // Find the saved copy
+    const saved = await cache.match(page);
+    // Skip a page that could not be saved
+    if (!saved) continue;
+    // Find every built-file address in its HTML
+    for (const match of (await saved.text()).matchAll(/\/_next\/static\/[^"'\s)\\]+/g)) assets.add(match[0]);
+  }
+  // Save them all
+  await cache.addAll([...assets]);
+}
+
+// On install, save the main pages and their files, then take over without waiting
 self.addEventListener("install", (event) => {
-  // Keep the worker installing until the pages are saved
-  event.waitUntil(
-    // Open this version's cache and save the main pages
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()),
-  );
+  // Keep the worker installing until everything is saved
+  event.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
 // On activate, delete caches from older versions and take control of open pages

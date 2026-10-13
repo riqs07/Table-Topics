@@ -26,7 +26,14 @@ function loadWorker(): Worker {
   // Files stored during install
   const precached: string[] = [];
   // A fake cache that records what is added
-  const cache = { addAll: vi.fn(async (urls: string[]) => void precached.push(...urls)), put: vi.fn(), match: vi.fn(async () => undefined) };
+  const cache = {
+    // Record every saved address
+    addAll: vi.fn(async (urls: string[]) => void precached.push(...urls)),
+    // Saving one response does nothing here
+    put: vi.fn(),
+    // Every saved page's HTML refers to one built script
+    match: vi.fn(async () => new Response('<script src="/_next/static/chunks/page-abc.js"></script>')),
+  };
   // The fake worker global
   const self: Record<string, unknown> = {
     // Record each handler the worker registers
@@ -36,10 +43,10 @@ function loadWorker(): Worker {
     // Skip-waiting and claim do nothing here
     skipWaiting: vi.fn(), clients: { claim: vi.fn() },
   };
-  // Fake cache storage
-  const caches = { open: vi.fn(async () => cache), keys: vi.fn(async () => []), delete: vi.fn(), match: vi.fn(async () => undefined) };
+  // Fake cache storage: holds a saved copy of /sessions, matched only when the query is ignored
+  const caches = { open: vi.fn(async () => cache), keys: vi.fn(async () => []), delete: vi.fn(), match: vi.fn(async (request: { url: string }, options?: { ignoreSearch?: boolean }) => (new URL(request.url).pathname === "/sessions" && options?.ignoreSearch ? new Response("saved sessions page") : undefined)) };
   // Run the worker's code with the fakes
-  runInNewContext(SOURCE, { self, caches, fetch: vi.fn(), Response, URL, Promise });
+  runInNewContext(SOURCE, { self, caches, fetch: vi.fn(async () => { throw new TypeError("offline"); }), Response, URL, Promise });
   // Hand back what the worker exposed
   return { strategyFor: self.voicelabStrategyFor as Worker["strategyFor"], handlers, precached };
 }
@@ -95,6 +102,18 @@ describe("service worker install", () => {
     expect(worker.precached).toEqual(expect.arrayContaining(["/", "/history", "/settings", "/sessions"]));
   });
 
+  // Each saved page's scripts are saved too, so pages never opened online still work offline
+  it("saves the built files that the main pages use", async () => {
+    // Collect the work the install step waits for
+    let pending: Promise<unknown> = Promise.resolve();
+    // Run the install handler
+    worker.handlers.install!({ waitUntil: (promise: Promise<unknown>) => void (pending = promise) });
+    // Wait for it
+    await pending;
+    // Confirm the script named in the pages was saved
+    expect(worker.precached).toContain("/_next/static/chunks/page-abc.js");
+  });
+
   // Requests to the API are not intercepted at all
   it("does not intercept API requests", () => {
     // A fake fetch event for the API
@@ -103,5 +122,17 @@ describe("service worker install", () => {
     worker.handlers.fetch!(event);
     // Confirm the worker stayed out of the way
     expect(event.respondWith).not.toHaveBeenCalled();
+  });
+
+  // Offline, any session address uses the one saved session page
+  it("serves the saved session page offline whatever the ?id= is", async () => {
+    // Collect the response the worker gives
+    let reply: Promise<Response> | undefined;
+    // A page request for a session, while offline
+    const event = { request: { url: `${ORIGIN}/sessions?id=abc`, mode: "navigate", method: "GET" }, respondWith: (response: Promise<Response>) => void (reply = response) };
+    // Run the fetch handler
+    worker.handlers.fetch!(event);
+    // Confirm the saved page came back
+    expect(await (await reply!).text()).toBe("saved sessions page");
   });
 });
