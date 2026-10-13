@@ -59,3 +59,4 @@
 | C8 | 2026-10-12 | **Defaulted, flagged.** "Export my data" is in v1 (sessions, challenges, settings; no audio). Baseline audio is never auto-deleted |
 | C11 | 2026-10-13 | First grayscale wireframes rejected as template-like. **Script-page direction chosen** (over tape recorder and instrument). Revised phone and desktop wireframes at `/wireframes`. **Approved 2026-10-13** |
 | C13 | 2026-10-13 | **Open.** Drafts to approve before shipping: 36 daily prompts and 24 warm-up prompts (`src/content/prompts.ts`), 14 weekly challenges (`src/content/challenges.ts`) |
+| C5 | 2026-10-13 | **Desktop decided**: browser speech recognition plus on-device audio (decision 17). **Phone still open** until the iPhone test (C3) |

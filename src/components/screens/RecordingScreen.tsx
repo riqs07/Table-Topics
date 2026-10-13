@@ -94,9 +94,11 @@ function Meter({ levels }: { levels: number[] }) {
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock = () => new Date() }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock }: RecordingScreenProps) {
   // Use the given repository, or the browser's
   const [repo] = useState(() => repository ?? browserRepository());
+  // Use the given clock, or the real one, kept the same between redraws (a new one each time would restart the effects below)
+  const [clock] = useState(() => givenClock ?? (() => new Date()));
   // Where the screen is in the flow (an unsupported browser starts with that problem)
   const [stage, setStage] = useState<Stage>(() => (services.speechSupported() ? "ready" : { problem: "speech-unsupported" }));
   // Words heard so far
@@ -273,8 +275,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     return () => window.removeEventListener("keydown", onKey);
   }, [discard, stage, start, stop]);
 
-  // Release the microphone if the screen closes mid-recording
-  useEffect(() => () => void finishCapture(), [finishCapture]);
+  // The latest stop-everything function, for the cleanup below
+  const finishLatest = useRef(finishCapture);
+  // Keep it current after each redraw
+  useEffect(() => {
+    // Point at the newest version
+    finishLatest.current = finishCapture;
+  }, [finishCapture]);
+  // Release the microphone only when the screen actually closes mid-recording
+  useEffect(() => () => void finishLatest.current(), []);
 
   // Whether recording is under way
   const recording = stage === "recording";

@@ -65,6 +65,10 @@ Rule: logic goes in `core/` with no browser dependencies, so it can be tested qu
 
 `POST /api/feedback` with header `x-voicelab-passphrase` and body `{ transcript, durationSec, focusId, previousChange }`. Checks run in this order, so nothing costs money until the last step: settings present (500 naming the missing variable), passphrase (401), body shape and size (400), shared rate limit (429 with `Retry-After`; 503 if the counter store is down), then the coach (200 `{ feedback }`, 422 if declined, 502 on failure). Logic: `src/server/feedbackHandler.ts`; prompt: `src/core/coachPrompt.ts`.
 
+## Recording (desktop first)
+
+`/session?prompt=...&mode=...&retryOf=...` shows the prompt, then records. `src/audio/browserServices.ts` holds the browser pieces behind small contracts in `src/audio/services.ts`: live transcription (restarts when the browser stops listening by itself, keeping earlier words), MediaRecorder for the audio, and a Web Audio level meter. Space starts and stops; Esc discards. Warm-ups stop at 30 seconds, full sessions at 3 minutes. Stopping saves the session (`src/data/saveRecording.ts`: numbers, the week's focus, the baseline rule, audio), opens `/sessions?id=...`, and that page asks the coach for feedback straight away. A blocked or missing microphone, a browser without speech recognition, a dropped speech service, or nothing heard are explained and nothing is saved.
+
 ## Getting feedback to the device
 
 A saved session starts with feedback `pending`. `src/data/feedbackClient.ts` sends it to the feedback route with the passphrase (kept in this browser's local storage, never in exports) and saves the reply. A background sender (`src/components/FeedbackSync.tsx`) sends waiting sessions oldest first when the app opens and when the device comes back online, stopping at the first problem that would block the rest (no passphrase, server not set up, offline or rate limited). A decline or invalid data marks the session `failed` so it is not sent again. Settings shows how many sessions are waiting and can send them on request.
