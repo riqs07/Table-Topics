@@ -1,0 +1,87 @@
+// Progress calculations for the retry result and history screens (milestone 8)
+// All work on fillers per minute, the v1 headline number
+
+// Load the session record type
+import type { SessionRecord } from "@/data/records";
+
+// Smallest change in fillers per minute that counts as a real difference
+const NOTICEABLE = 0.2;
+
+// A retry compared with its first try
+export interface RetryComparison {
+  // Fillers per minute on the first try
+  before: number;
+  // Fillers per minute on the retry
+  after: number;
+  // True if the retry had noticeably fewer fillers
+  improved: boolean;
+  // True if the difference is too small to matter
+  same: boolean;
+}
+
+// Compare a retry with the session it retried
+export function retryComparison(retry: SessionRecord, original: SessionRecord): RetryComparison {
+  // Work out the difference (negative means fewer fillers)
+  const difference = retry.fillersPerMinute - original.fillersPerMinute;
+  // Decide whether the difference is big enough to mention
+  const same = Math.abs(difference) < NOTICEABLE;
+  // Hand back both numbers and the verdict
+  return { before: original.fillersPerMinute, after: retry.fillersPerMinute, improved: !same && difference < 0, same };
+}
+
+// Progress since the first recording
+export interface BaselineProgress {
+  // When the first recording was made (ISO text)
+  baselineDate: string;
+  // Fillers per minute in the first recording
+  baseline: number;
+  // Fillers per minute in the latest session
+  latest: number;
+  // Whole-number percent change (negative means fewer fillers)
+  percentChange: number;
+}
+
+// Sort sessions oldest first without changing the original list
+function oldestFirst(sessions: ReadonlyArray<SessionRecord>): SessionRecord[] {
+  // Copy, then sort by start time (ISO text sorts in time order)
+  return [...sessions].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+// Compare the first recording with the most recent session, or null if there is nothing to compare
+export function baselineProgress(sessions: ReadonlyArray<SessionRecord>): BaselineProgress | null {
+  // Find the first recording
+  const baseline = sessions.find((session) => session.isBaseline);
+  // Find the most recent session
+  const latest = oldestFirst(sessions).at(-1);
+  // Nothing to compare without a baseline and a later session
+  if (!baseline || !latest || latest.id === baseline.id) return null;
+  // Work out the percent change, guarding against a baseline of zero
+  const percentChange = baseline.fillersPerMinute === 0 ? 0 : Math.round(((latest.fillersPerMinute - baseline.fillersPerMinute) / baseline.fillersPerMinute) * 100);
+  // Hand back the comparison
+  return { baselineDate: baseline.createdAt, baseline: baseline.fillersPerMinute, latest: latest.fillersPerMinute, percentChange };
+}
+
+// Fillers per minute for each first try, oldest first, for the trend line
+export function trendSeries(sessions: ReadonlyArray<SessionRecord>): number[] {
+  // Leave out retries so the line compares first tries only
+  return oldestFirst(sessions)
+    .filter((session) => session.retryOf === null)
+    .map((session) => session.fillersPerMinute);
+}
+
+// One line of the history list
+export interface HistoryRow {
+  // The first try
+  session: SessionRecord;
+  // Its retry, if there was one
+  retry: SessionRecord | null;
+}
+
+// Group each first try with its retry, newest first
+export function historyRows(sessions: ReadonlyArray<SessionRecord>): HistoryRow[] {
+  // Find each first try's retry (the latest one, if there were several)
+  return oldestFirst(sessions)
+    .filter((session) => session.retryOf === null)
+    .reverse()
+    .map((session) => ({ session, retry: oldestFirst(sessions).filter((other) => other.retryOf === session.id).at(-1) ?? null }));
+}
