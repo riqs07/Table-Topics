@@ -87,6 +87,8 @@ describe("SessionScreen", () => {
     expect(screen.getByRole("link", { name: /Now the full minute/ }).getAttribute("href")).toBe(`/session?prompt=${promptForDay(NOW).id}`);
     // Confirm there is no retry
     expect(screen.queryByRole("link", { name: /Try it again/ })).toBeNull();
+    // Confirm the cue introduces the full minute, not a retry
+    expect(screen.getByText("Before the full minute")).toBeTruthy();
   });
 
   // Feedback that has not arrived yet is explained

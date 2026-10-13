@@ -84,7 +84,7 @@ function FeedbackView({ session, now }: { session: SessionRecord; now: Date }) {
               {/* The cue, as a pull quote */}
               <div className="mt-6 border-y border-ink py-4">
                 {/* Small heading */}
-                <p className="text-footnote italic text-ink-muted">Before you try again</p>
+                <p className="text-footnote italic text-ink-muted">{warmup ? "Before the full minute" : "Before you try again"}</p>
                 {/* The cue */}
                 <p className="mt-1 font-display text-cue">{session.feedback.retryCue}</p>
               </div>
