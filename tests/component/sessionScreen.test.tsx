@@ -40,7 +40,7 @@ describe("SessionScreen", () => {
   // A first try shows the feedback and offers a retry
   it("shows feedback for a first try", async () => {
     // A finished first try
-    const session = makeSession({ id: "s1", fillersPerMinute: 4.2, feedback: FEEDBACK, feedbackStatus: "done", promptId: "p001" });
+    const session = makeSession({ id: "s1", focus: "cut-fillers", fillersPerMinute: 4.2, feedback: FEEDBACK, feedbackStatus: "done", promptId: "p001" });
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the headline number
@@ -49,6 +49,16 @@ describe("SessionScreen", () => {
     for (const text of [FEEDBACK.keep, FEEDBACK.change, FEEDBACK.retryCue]) expect(screen.getByText(text)).toBeTruthy();
     // Confirm the retry action keeps the prompt and links back to this session
     expect(screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")).toBe("/session?prompt=p001&retryOf=s1");
+  });
+
+  // The headline number follows the session's weekly focus
+  it("shows words a minute as the headline in pace week", async () => {
+    // A finished first try in pace week
+    const session = makeSession({ id: "s1", focus: "pace", wordsPerMinute: 162, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the headline
+    expect(await screen.findByText("162 words a minute.")).toBeTruthy();
   });
 
   // The transcript can be read, with fillers marked
@@ -66,9 +76,9 @@ describe("SessionScreen", () => {
   // A retry shows the before and after
   it("shows before and after for a retry", async () => {
     // The first try
-    const first = makeSession({ id: "s1", fillersPerMinute: 4.2, feedback: FEEDBACK, feedbackStatus: "done" });
+    const first = makeSession({ id: "s1", focus: "cut-fillers", fillersPerMinute: 4.2, feedback: FEEDBACK, feedbackStatus: "done" });
     // The retry
-    const retry = makeSession({ id: "s2", retryOf: "s1", fillersPerMinute: 1.8, feedback: FEEDBACK, feedbackStatus: "done", createdAt: "2026-10-12T16:00:00.000Z" });
+    const retry = makeSession({ id: "s2", focus: "cut-fillers", retryOf: "s1", fillersPerMinute: 1.8, feedback: FEEDBACK, feedbackStatus: "done", createdAt: "2026-10-12T16:00:00.000Z" });
     // Draw the retry's page
     render(<SessionScreen sessionId="s2" repository={await repositoryWith(first, retry)} now={NOW} />);
     // Confirm the statement
