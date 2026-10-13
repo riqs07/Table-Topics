@@ -11,7 +11,7 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the prompt and challenge pickers
-import { promptForDay } from "@/content/prompts";
+import { promptForDay, warmupPromptForDay } from "@/content/prompts";
 import { CHALLENGES } from "@/content/challenges";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
@@ -47,6 +47,16 @@ describe("HomeScreen", () => {
     const action = await screen.findByRole("link", { name: /Speak for a minute/ });
     // Confirm it points at the session page with the prompt id
     expect(action.getAttribute("href")).toBe(`/session?prompt=${promptForDay(NOW).id}`);
+  });
+
+  // A quieter option starts a 30-second warm-up on today's warm-up prompt
+  it("offers a 30-second warm-up", async () => {
+    // Draw the screen
+    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
+    // Find the warm-up link
+    const warmup = await screen.findByRole("link", { name: /warm up for 30 seconds/ });
+    // Confirm it starts a warm-up with today's warm-up prompt
+    expect(warmup.getAttribute("href")).toBe(`/session?mode=warmup&prompt=${warmupPromptForDay(NOW).id}`);
   });
 
   // A returning user sees the streak as a sentence

@@ -12,6 +12,8 @@ import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
+// Load the daily prompt picker
+import { promptForDay } from "@/content/prompts";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 13, 18);
@@ -71,6 +73,20 @@ describe("SessionScreen", () => {
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("From 4.2 to 1.8 fillers a minute.");
     // Confirm the finish action goes home
     expect(screen.getByRole("link", { name: /Finish/ }).getAttribute("href")).toBe("/");
+  });
+
+  // A warm-up leads into the full minute rather than a retry
+  it("leads from a warm-up into the full minute", async () => {
+    // A finished warm-up
+    const session = makeSession({ id: "w1", mode: "warmup", promptId: "w001", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="w1" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the masthead says it was a warm-up
+    expect(await screen.findByText("Warm-up")).toBeTruthy();
+    // Confirm the action goes to today's full prompt
+    expect(screen.getByRole("link", { name: /Now the full minute/ }).getAttribute("href")).toBe(`/session?prompt=${promptForDay(NOW).id}`);
+    // Confirm there is no retry
+    expect(screen.queryByRole("link", { name: /Try it again/ })).toBeNull();
   });
 
   // Feedback that has not arrived yet is explained

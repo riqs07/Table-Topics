@@ -10,6 +10,8 @@ import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the sample sessions
 import { sampleSessions } from "@/data/sampleData";
+// Load a sample session builder
+import { makeSession } from "../support/fixtures";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 13, 18);
@@ -50,13 +52,25 @@ describe("HistoryScreen", () => {
     // Draw the screen with sample data
     render(<HistoryScreen repository={await sampleRepository()} now={NOW} />);
     // Find the list items
-    const links = await screen.findAllByRole("link", { name: /Today|Yesterday|Sat|Sun|Mon|Tue|Wed|Thu|Fri|Sep|Oct/ });
+    const links = await screen.findAllByRole("link", { name: /^(Today|Yesterday|Sat|Sun|Mon|Tue|Wed|Thu|Fri|\d+ (Sep|Oct))/ });
     // Confirm one row per first try (8 days in the sample)
     expect(links).toHaveLength(8);
     // Confirm the newest row shows the first try and the retry
     expect(links[0]!.textContent).toMatch(/Today.*\d\.\d, then \d\.\d/);
     // Confirm it links to that session
     expect(links[0]!.getAttribute("href")).toBe("/sessions?id=sample-7");
+  });
+
+  // Warm-ups are listed and marked, and do not change the progress sentence
+  it("marks warm-ups in the list", async () => {
+    // Make a repository with the sample sessions plus a warm-up today
+    const repository = await sampleRepository();
+    // Save a warm-up
+    await repository.saveSession(makeSession({ id: "warm", createdAt: new Date(2026, 9, 13, 7).toISOString(), mode: "warmup", promptId: "w001", fillersPerMinute: 0 }));
+    // Draw the screen
+    render(<HistoryScreen repository={repository} now={NOW} />);
+    // Confirm the warm-up row is marked
+    expect(await screen.findByText(/^Warm-up: /)).toBeTruthy();
   });
 
   // The first recording is labeled as such
