@@ -87,3 +87,40 @@ export function countFillers(transcript: string): FillerCount {
   // Hand back the total and the per-filler tally
   return { total, byFiller };
 }
+
+// One piece of a transcript, marked if it is a filler
+export interface TranscriptPiece {
+  // The original text of this piece
+  text: string;
+  // True if this piece is a filler word or phrase
+  filler: boolean;
+}
+
+// Pattern matching any filler as a whole word, phrases first (same list as the counter above)
+const FILLER_PATTERN = new RegExp(
+  // Phrase and word fillers, then stretched hesitation sounds, each as whole words
+  `\\b(?:${[...PHRASE_FILLERS.map((phrase) => phrase.replace(" ", "\\s+")), "u+m+", "u+h+", "e+r+m*", "a+h+", "h+m+"].join("|")})\\b`,
+  // Every match, ignoring capitals
+  "gi",
+);
+
+// Split a transcript into pieces, marking the fillers, without changing any text
+export function markFillers(transcript: string): TranscriptPiece[] {
+  // Collect the pieces
+  const pieces: TranscriptPiece[] = [];
+  // Where the last match ended
+  let last = 0;
+  // Walk through every filler match
+  for (const match of transcript.matchAll(FILLER_PATTERN)) {
+    // Keep the ordinary text before this filler
+    if (match.index > last) pieces.push({ text: transcript.slice(last, match.index), filler: false });
+    // Keep the filler itself, marked
+    pieces.push({ text: match[0], filler: true });
+    // Move past it
+    last = match.index + match[0].length;
+  }
+  // Keep any ordinary text after the last filler
+  if (last < transcript.length) pieces.push({ text: transcript.slice(last), filler: false });
+  // Hand back the pieces
+  return pieces;
+}
