@@ -3,8 +3,8 @@
 // Load Node's tools for hashing and timing-safe comparison
 import { createHash, timingSafeEqual } from "node:crypto";
 
-// Header the app sends the passphrase in
-export const PASSPHRASE_HEADER = "x-voicelab-passphrase";
+// Load and pass on the shared header name, so existing imports keep working
+export { PASSPHRASE_HEADER } from "@/config/headers";
 
 // Turn text into a fixed-length fingerprint so comparisons always take the same time
 function fingerprint(text: string): Buffer {
