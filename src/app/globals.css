@@ -61,6 +61,14 @@
   --text-prompt: 2.75rem;
   /* Prompt line height */
   --text-prompt--line-height: 1.04;
+  /* Statement sentences on a computer screen */
+  --text-statement-xl: 3.5rem;
+  /* Large statement line height */
+  --text-statement-xl--line-height: 1.05;
+  /* The daily prompt on a computer screen */
+  --text-prompt-xl: 4.5rem;
+  /* Large prompt line height */
+  --text-prompt-xl--line-height: 1.02;
 }
 
 /* Page-wide defaults; these read the theme variables directly so nested themed areas get their own values */

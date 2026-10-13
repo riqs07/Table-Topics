@@ -4,6 +4,8 @@
 import type { Metadata } from "next";
 // Load the type for components that wrap other content
 import type { ReactNode } from "react";
+// Load the desktop versions of the screens
+import { DesktopWireframes } from "./desktop";
 
 // Tab title for the wireframes page
 export const metadata: Metadata = { title: "Wireframes · VoiceLab" };
@@ -303,6 +305,19 @@ export default function WireframesPage() {
           <RetryResultScreen />
           <HistoryScreen />
         </div>
+        {/* Desktop versions of the same screens */}
+        <section className="mt-20 border-t border-ink pt-10">
+          {/* Section heading */}
+          <h2 className="font-display text-3xl">On a computer</h2>
+          {/* What changes on a wide screen */}
+          <p className="mt-2 max-w-prose text-lg italic text-ink-muted">
+            The same five screens on a wide window. The page gains a margin column, like a printed book: context and notes go there, the main column keeps the one thing that matters.
+          </p>
+          {/* The desktop screens */}
+          <div className="mt-10">
+            <DesktopWireframes />
+          </div>
+        </section>
       </div>
     </main>
   );
