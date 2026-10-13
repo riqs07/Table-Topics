@@ -1,0 +1,81 @@
+// Load the test helpers from the test runner
+import { describe, expect, it } from "vitest";
+// Load the progress calculations being checked
+import { baselineProgress, historyRows, retryComparison, trendSeries } from "@/core/progress";
+// Load a sample session builder
+import { makeSession } from "../../support/fixtures";
+
+// Build an ISO time on a day in October 2026 at noon UTC
+const oct = (day: number, hour = 12) => new Date(Date.UTC(2026, 9, day, hour)).toISOString();
+
+// A small history: baseline, two first tries, and one retry
+const SESSIONS = [
+  // The first-ever session
+  makeSession({ id: "s1", createdAt: oct(2), isBaseline: true, fillersPerMinute: 6, promptId: "p1" }),
+  // A first try
+  makeSession({ id: "s2", createdAt: oct(5), fillersPerMinute: 4.2, promptId: "p2" }),
+  // A retry of s2
+  makeSession({ id: "s3", createdAt: oct(5, 13), fillersPerMinute: 1.8, promptId: "p2", retryOf: "s2" }),
+  // The latest first try
+  makeSession({ id: "s4", createdAt: oct(8), fillersPerMinute: 3.1, promptId: "p3" }),
+];
+
+// Group the checks about comparing a retry with its first try
+describe("retryComparison", () => {
+  // The retry result screen needs before, after, and whether it improved
+  it("gives before, after, and the direction of change", () => {
+    // Compare s3 with s2
+    expect(retryComparison(SESSIONS[2]!, SESSIONS[1]!)).toEqual({ before: 4.2, after: 1.8, improved: true, same: false });
+  });
+
+  // A change too small to matter is reported as the same
+  it("treats a difference under 0.2 a minute as the same", () => {
+    // Compare two nearly equal sessions
+    const result = retryComparison(makeSession({ fillersPerMinute: 3.05 }), makeSession({ fillersPerMinute: 3.1 }));
+    // Confirm it counts as the same
+    expect(result.same).toBe(true);
+  });
+});
+
+// Group the checks about progress since the first recording
+describe("baselineProgress", () => {
+  // History opens with first recording versus latest
+  it("compares the first recording with the latest session", () => {
+    // Work out progress
+    const progress = baselineProgress(SESSIONS);
+    // Confirm the numbers and date
+    expect(progress).toEqual({ baselineDate: oct(2), baseline: 6, latest: 3.1, percentChange: -48 });
+  });
+
+  // With no baseline there is no progress to show
+  it("returns null without a baseline", () => {
+    // Confirm nothing is returned for an empty history
+    expect(baselineProgress([])).toBeNull();
+  });
+
+  // With only the baseline there is nothing to compare yet
+  it("returns null when the baseline is the only session", () => {
+    // Confirm nothing is returned for one session
+    expect(baselineProgress([SESSIONS[0]!])).toBeNull();
+  });
+});
+
+// Group the checks about the trend line
+describe("trendSeries", () => {
+  // Retries are left out so the line compares like with like
+  it("lists first tries in time order, without retries", () => {
+    // Confirm the values, oldest first
+    expect(trendSeries([...SESSIONS].reverse())).toEqual([6, 4.2, 3.1]);
+  });
+});
+
+// Group the checks about the history list
+describe("historyRows", () => {
+  // Each row is a first try, with its retry beside it if there was one
+  it("pairs retries with their first try, newest first", () => {
+    // Build the rows
+    const rows = historyRows(SESSIONS);
+    // Confirm the ids, retry pairing, and order
+    expect(rows.map((row) => [row.session.id, row.retry?.id ?? null])).toEqual([["s4", null], ["s2", "s3"], ["s1", null]]);
+  });
+});
