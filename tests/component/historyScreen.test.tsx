@@ -56,7 +56,7 @@ describe("HistoryScreen", () => {
     // Confirm the newest row shows the first try and the retry
     expect(links[0]!.textContent).toMatch(/Today.*\d\.\d, then \d\.\d/);
     // Confirm it links to that session
-    expect(links[0]!.getAttribute("href")).toBe("/sessions/sample-7");
+    expect(links[0]!.getAttribute("href")).toBe("/sessions?id=sample-7");
   });
 
   // The first recording is labeled as such

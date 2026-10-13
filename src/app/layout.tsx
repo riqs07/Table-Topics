@@ -1,5 +1,5 @@
 // Load the type for page metadata such as the browser tab title
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 // Load the type for components that wrap other content
 import type { ReactNode } from "react";
 // Load the app's shared name so it is defined in one place
@@ -10,8 +10,10 @@ import { fontVariables } from "@/theme/fonts";
 import { themeCss } from "@/theme/themeCss";
 // Load the background sender for waiting feedback
 import { FeedbackSync } from "@/components/FeedbackSync";
-// Load the theme used until checkpoint C6
-import { DEFAULT_THEME } from "@/theme/themes";
+// Load the offline worker registration
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+// Load the app theme
+import { DEFAULT_THEME, THEMES } from "@/theme/themes";
 // Load Tailwind and the role colors
 import "./globals.css";
 
@@ -21,6 +23,21 @@ export const metadata: Metadata = {
   title: APP_NAME,
   // Describe the app in one sentence
   description: "Private, one-minute speaking practice.",
+  // Settings for iPhone home-screen apps
+  appleWebApp: {
+    // Open full screen from the home screen
+    capable: true,
+    // Name under the icon
+    title: APP_NAME,
+    // Light status bar text over the page
+    statusBarStyle: "default",
+  },
+};
+
+// Browser color for the address bar and status bar, from the theme
+export const viewport: Viewport = {
+  // The accent color
+  themeColor: THEMES[DEFAULT_THEME].colors.light.accent,
 };
 
 // The outer frame shared by every page
@@ -39,6 +56,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
         {/* Send waiting feedback when the app opens and when the connection returns */}
         <FeedbackSync />
+        {/* Register the offline worker in the released app */}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

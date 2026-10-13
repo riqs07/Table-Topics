@@ -83,7 +83,7 @@ describe("service worker routing", () => {
 
 // Group the checks about installing the worker
 describe("service worker install", () => {
-  // The main pages are saved on install so the app opens offline
+  // The main pages (including the one page that shows any session) are saved on install so the app opens offline
   it("saves the main pages when installed", async () => {
     // Collect the work the install step waits for
     let pending: Promise<unknown> = Promise.resolve();
@@ -92,7 +92,7 @@ describe("service worker install", () => {
     // Wait for it
     await pending;
     // Confirm the main pages were saved
-    expect(worker.precached).toEqual(expect.arrayContaining(["/", "/history", "/settings"]));
+    expect(worker.precached).toEqual(expect.arrayContaining(["/", "/history", "/settings", "/sessions"]));
   });
 
   // Requests to the API are not intercepted at all
