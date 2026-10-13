@@ -1,0 +1,230 @@
+// The real recording pieces, built on the browser's speech recognition, MediaRecorder, and Web Audio
+
+// Load the transcript stitcher
+import { TranscriptAssembler, type RecognitionResult } from "@/audio/transcriptAssembler";
+// Load the contracts these pieces fulfil
+import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
+
+// The minimal shape of the browser's speech recognizer that the app uses
+interface SpeechRecognizer {
+  // Language to listen for
+  lang: string;
+  // Keep listening across pauses
+  continuous: boolean;
+  // Report words before they are final
+  interimResults: boolean;
+  // New results
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
+  // A problem
+  onerror: ((event: { error: string }) => void) | null;
+  // The recognizer stopped
+  onend: (() => void) | null;
+  // Begin listening
+  start(): void;
+  // Stop listening
+  stop(): void;
+}
+
+// The recognizer's constructor, under its standard or webkit name (Chrome and Safari use webkit)
+function recognizerClass(): (new () => SpeechRecognizer) | undefined {
+  // Read either name from the global object
+  const global = globalThis as unknown as { SpeechRecognition?: new () => SpeechRecognizer; webkitSpeechRecognition?: new () => SpeechRecognizer };
+  // Prefer the standard name
+  return global.SpeechRecognition ?? global.webkitSpeechRecognition;
+}
+
+// Whether this browser can turn speech into text
+export function speechRecognitionSupported(): boolean {
+  // True if either name exists
+  return recognizerClass() !== undefined;
+}
+
+// Browser error codes that mean recording cannot continue, and the reason to show
+const BLOCKING_ERRORS: Record<string, RecordingProblem> = {
+  // The user or browser refused the microphone
+  "not-allowed": "microphone-blocked",
+  // The browser refused the speech service
+  "service-not-allowed": "microphone-blocked",
+  // No microphone could be used
+  "audio-capture": "no-microphone",
+  // The speech service could not be reached
+  network: "speech-offline",
+  // English is not available
+  "language-not-supported": "speech-unsupported",
+};
+
+// Live transcription with the browser's speech recognition, restarting when it stops by itself
+export class WebSpeechTranscriber implements LiveTranscriber {
+  // Stitches results across restarts
+  private readonly assembler = new TranscriptAssembler();
+  // The current recognizer run
+  private recognizer: SpeechRecognizer | null = null;
+  // True while the user is recording
+  private running = false;
+  // Called once the final run has ended
+  private ended: (() => void) | null = null;
+
+  // Start listening
+  start(onText: (text: LiveText) => void, onProblem: (problem: RecordingProblem) => void): void {
+    // Find the recognizer class
+    const Recognizer = recognizerClass();
+    // Without one, report it and stop
+    if (!Recognizer) return onProblem("speech-unsupported");
+    // Mark as running
+    this.running = true;
+    // Start one recognizer run (called again after each automatic stop)
+    const run = () => {
+      // Make a fresh recognizer
+      const recognizer = new Recognizer();
+      // Listen in US English
+      recognizer.lang = "en-US";
+      // Keep listening across pauses
+      recognizer.continuous = true;
+      // Show words before they are final
+      recognizer.interimResults = true;
+      // Pass each update through the stitcher to the screen
+      recognizer.onresult = (event) => {
+        // Turn the browser's results into plain results
+        const results: RecognitionResult[] = Array.from(event.results, (result) => ({ transcript: result[0]?.transcript ?? "", isFinal: result.isFinal }));
+        // Update the stitched transcript
+        this.assembler.update(results);
+        // Show it
+        onText(this.assembler.current());
+      };
+      // Report problems that mean recording cannot continue
+      recognizer.onerror = (event) => {
+        // Look up whether this error blocks recording
+        const problem = BLOCKING_ERRORS[event.error];
+        // Stop and report it; other errors (like a pause with no speech) are ignored
+        if (problem) {
+          // Stop restarting
+          this.running = false;
+          // Tell the screen
+          onProblem(problem);
+        }
+      };
+      // When the run ends, restart if still recording, otherwise finish
+      recognizer.onend = () => {
+        // Keep this run's words
+        this.assembler.restart();
+        // Still recording: start another run after a short pause
+        if (this.running) setTimeout(() => this.running && run(), 250);
+        // Stopped: let stop() finish
+        else this.ended?.();
+      };
+      // Keep the current run
+      this.recognizer = recognizer;
+      // Begin listening
+      recognizer.start();
+    };
+    // Start the first run
+    run();
+  }
+
+  // Stop listening and return everything heard
+  async stop(): Promise<string> {
+    // Read the words so far, including any still being heard, before the last run ends
+    const lastWords = this.assembler.finish();
+    // No more restarts
+    this.running = false;
+    // Wait for the last run to end (the browser may deliver final words first), at most 1.5 seconds
+    await new Promise<void>((resolve) => {
+      // Finish when the run ends
+      this.ended = resolve;
+      // Or give up waiting
+      setTimeout(resolve, 1500);
+      // Ask the browser to stop
+      this.recognizer?.stop();
+    });
+    // Hand back the fuller of the two readings
+    const finalWords = this.assembler.finish();
+    // Prefer the reading with more words
+    return finalWords.length >= lastWords.length ? finalWords : lastWords;
+  }
+}
+
+// Loudness from a block of audio samples (0-255, silence at 128), as a number from 0 to 1
+export function rmsLevel(samples: Uint8Array): number {
+  // Add up the squared distance of each sample from silence
+  let total = 0;
+  // Visit every sample
+  for (const sample of samples) total += ((sample - 128) / 128) ** 2;
+  // Root mean square, capped at 1
+  return Math.min(1, Math.sqrt(total / Math.max(1, samples.length)));
+}
+
+// Records the microphone with MediaRecorder and reads loudness with Web Audio
+class MediaCapture implements AudioCapture {
+  // The audio recorder
+  private readonly recorder: MediaRecorder;
+  // Pieces of recorded audio
+  private readonly chunks: Blob[] = [];
+  // The audio graph used to read loudness
+  private readonly context: AudioContext;
+  // Reads the waveform
+  private readonly analyser: AnalyserNode;
+  // A reusable buffer for waveform samples
+  private readonly samples: Uint8Array<ArrayBuffer>;
+
+  // Start recording and measuring
+  constructor(private readonly stream: MediaStream) {
+    // Make the recorder
+    this.recorder = new MediaRecorder(stream);
+    // Keep each piece of audio
+    this.recorder.ondataavailable = (event) => {
+      // Ignore empty pieces
+      if (event.data.size > 0) this.chunks.push(event.data);
+    };
+    // Deliver audio every second
+    this.recorder.start(1000);
+    // Make the audio graph
+    this.context = new AudioContext();
+    // Make the waveform reader
+    this.analyser = this.context.createAnalyser();
+    // A small window is enough for a level meter
+    this.analyser.fftSize = 512;
+    // Feed the microphone into the reader
+    this.context.createMediaStreamSource(stream).connect(this.analyser);
+    // Make the sample buffer
+    this.samples = new Uint8Array(this.analyser.fftSize);
+  }
+
+  // Current loudness
+  level(): number {
+    // Read the latest waveform
+    this.analyser.getByteTimeDomainData(this.samples);
+    // Turn it into a level
+    return rmsLevel(this.samples);
+  }
+
+  // Stop everything and hand back the recording
+  stop(): Promise<Blob> {
+    // Wait for the recorder to deliver its last piece
+    return new Promise((resolve) => {
+      // When it stops, build the file and release the microphone
+      this.recorder.onstop = () => {
+        // Release the microphone
+        this.stream.getTracks().forEach((track) => track.stop());
+        // Close the audio graph
+        void this.context.close();
+        // Join the pieces into one file
+        resolve(new Blob(this.chunks, { type: this.recorder.mimeType }));
+      };
+      // Stop recording (or finish at once if it already stopped)
+      if (this.recorder.state !== "inactive") this.recorder.stop();
+      else this.recorder.onstop?.(new Event("stop"));
+    });
+  }
+}
+
+// The real recording services for the browser
+export const browserRecordingServices: RecordingServices = {
+  // Check for speech recognition
+  speechSupported: speechRecognitionSupported,
+  // Ask for the microphone
+  openMicrophone: () => navigator.mediaDevices.getUserMedia({ audio: true }),
+  // Live transcription
+  createTranscriber: () => new WebSpeechTranscriber(),
+  // Audio recording and level
+  createCapture: (stream) => new MediaCapture(stream),
+};

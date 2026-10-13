@@ -4,8 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the browser pieces being checked
 import { WebSpeechTranscriber, rmsLevel, speechRecognitionSupported } from "@/audio/browserServices";
 
-// The most recently created fake recognizer, so checks can drive it
-let latest: FakeRecognition;
 
 // A fake of the browser's speech recognizer, with just what the app uses
 class FakeRecognition {
@@ -17,8 +15,10 @@ class FakeRecognition {
   onend: (() => void) | null = null;
   // How many times start was called
   starts = 0;
-  // Remember the newest recognizer
-  constructor() { latest = this; }
+  // Every recognizer made, newest last, so checks can drive the current one
+  static made: FakeRecognition[] = [];
+  // Record each new recognizer
+  constructor() { FakeRecognition.made.push(this); }
   // Starting just counts
   start() { this.starts += 1; }
   // Stopping ends the run, as the browser does
@@ -32,8 +32,13 @@ class FakeRecognition {
   }
 }
 
+// The newest fake recognizer
+const latest = () => FakeRecognition.made.at(-1)!;
+
 // Put the fake in place of the browser's recognizer
 function installFake() {
+  // Forget recognizers from earlier checks
+  FakeRecognition.made = [];
   // The app looks for either name; Safari and Chrome use the webkit one
   vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
 }
@@ -62,9 +67,9 @@ describe("WebSpeechTranscriber", () => {
     // Start transcribing
     new WebSpeechTranscriber().start((text) => shown.push(text), () => {});
     // Confirm the settings
-    expect([latest.lang, latest.continuous, latest.interimResults]).toEqual(["en-US", true, true]);
+    expect([latest().lang, latest().continuous, latest().interimResults]).toEqual(["en-US", true, true]);
     // The browser hears some words
-    latest.say(["So I went", true], [" home", false]);
+    latest().say(["So I went", true], [" home", false]);
     // Confirm they were passed on
     expect(shown.at(-1)).toEqual({ final: "So I went", interim: "home" });
   });
@@ -80,15 +85,17 @@ describe("WebSpeechTranscriber", () => {
     // Begin
     transcriber.start(() => {}, () => {});
     // First run hears words
-    latest.say(["First part", true]);
+    latest().say(["First part", true]);
     // The browser ends the run by itself
-    latest.onend?.();
+    latest().onend?.();
     // Let the restart pause pass
     vi.advanceTimersByTime(500);
-    // Confirm it started again
-    expect(latest.starts).toBe(2);
+    // Confirm a second run was started
+    expect(FakeRecognition.made.length).toBe(2);
+    // Confirm the second run is listening
+    expect(latest().starts).toBe(1);
     // Second run hears words
-    latest.say(["second part", true]);
+    latest().say(["second part", true]);
     // Back to real timers for stopping
     vi.useRealTimers();
     // Confirm stopping gives both parts
@@ -104,7 +111,7 @@ describe("WebSpeechTranscriber", () => {
     // Start transcribing
     new WebSpeechTranscriber().start(() => {}, (reason) => problems.push(reason));
     // The browser refuses the microphone
-    latest.onerror?.({ error: "not-allowed" });
+    latest().onerror?.({ error: "not-allowed" });
     // Confirm the reason was reported
     expect(problems).toEqual(["microphone-blocked"]);
   });
