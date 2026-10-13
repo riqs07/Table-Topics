@@ -89,6 +89,16 @@ describe("feedback handler", () => {
     expect(coach.calls).toBe(0);
   });
 
+  // Warm-ups are accepted, and an older app that sends no mode still works
+  it("accepts a warm-up and a request without a mode", async () => {
+    // Call with a warm-up
+    const warmup = await createFeedbackHandler(deps())(request({ ...BODY, mode: "warmup" }));
+    // Call without a mode
+    const noMode = await createFeedbackHandler(deps())(request(BODY));
+    // Confirm both succeed
+    expect([warmup.status, noMode.status]).toEqual([200, 200]);
+  });
+
   // Bad input is refused before anything costs money
   it.each([
     // Not JSON

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { COACH_SYSTEM_PROMPT, buildCoachMessage, checkFeedback } from "@/core/coachPrompt";
 
 // A typical session for these checks
-const SESSION = { transcript: "Um, so I think, uh, the best part of my week was the dog.", durationSec: 30, focusId: "cut-fillers", previousChange: null };
+const SESSION = { transcript: "Um, so I think, uh, the best part of my week was the dog.", durationSec: 30, focusId: "cut-fillers", previousChange: null, mode: "standard" as const };
 
 // Group the checks about the coach's instructions
 describe("COACH_SYSTEM_PROMPT", () => {
@@ -67,6 +67,20 @@ describe("buildCoachMessage", () => {
     const message = buildCoachMessage({ ...SESSION, previousChange: "Pause instead of saying um." });
     // Confirm the previous fix is included
     expect(message).toContain("This is a retry. The fix you gave last time was: Pause instead of saying um.");
+  });
+
+  // A warm-up is flagged so the coach keeps it short and light
+  it("tells the coach when a session is a warm-up", () => {
+    // Build a warm-up message
+    const message = buildCoachMessage({ ...SESSION, mode: "warmup" });
+    // Confirm the note
+    expect(message).toContain("This is a 30-second warm-up. Keep every part to one short sentence, and keep it light.");
+  });
+
+  // A full session has no warm-up note
+  it("does not mention warm-ups for a full session", () => {
+    // Confirm no note
+    expect(buildCoachMessage(SESSION)).not.toContain("warm-up");
   });
 
   // An unknown focus id falls back to general feedback rather than failing

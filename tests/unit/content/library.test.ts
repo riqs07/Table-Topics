@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt library and picker
-import { PROMPTS, promptForDay } from "@/content/prompts";
+import { PROMPTS, WARMUP_PROMPTS, findPrompt, promptForDay, warmupPromptForDay } from "@/content/prompts";
 // Load the challenge list and picker
 import { CHALLENGES, challengeForWeek } from "@/content/challenges";
 
@@ -68,5 +68,38 @@ describe("challenges", () => {
     expect(challengeForWeek(0)).toBe(CHALLENGES[0]);
     // Confirm it wraps around
     expect(challengeForWeek(CHALLENGES.length)).toBe(CHALLENGES[0]);
+  });
+});
+
+// Group the checks about warm-up prompts
+describe("warm-up prompts", () => {
+  // Enough for a few weeks of warm-ups, with ids that never clash with full prompts
+  it("has at least 20 warm-up prompts with their own ids", () => {
+    // Confirm the count
+    expect(WARMUP_PROMPTS.length).toBeGreaterThanOrEqual(20);
+    // Confirm every id starts with w and none clash with full prompts
+    expect(WARMUP_PROMPTS.every((prompt) => prompt.id.startsWith("w") && !PROMPTS.some((full) => full.id === prompt.id))).toBe(true);
+  });
+
+  // Warm-up prompts are shorter still, so they can be answered in 30 seconds
+  it("keeps warm-up prompts very short", () => {
+    // Check every prompt
+    for (const prompt of WARMUP_PROMPTS) expect(prompt.text).toMatch(/^.{8,60}[.?]$/);
+  });
+
+  // A day's warm-up is fixed, like the main prompt, and changes daily
+  it("gives one warm-up a day", () => {
+    // Confirm morning and evening match
+    expect(warmupPromptForDay(oct(12, 7)).id).toBe(warmupPromptForDay(oct(12, 22)).id);
+    // Confirm the next day differs
+    expect(warmupPromptForDay(oct(13)).id).not.toBe(warmupPromptForDay(oct(12)).id);
+  });
+
+  // Any saved prompt id can be turned back into its text
+  it("finds a prompt's text by id, full or warm-up", () => {
+    // Confirm a full prompt
+    expect(findPrompt(PROMPTS[0]!.id)).toBe(PROMPTS[0]);
+    // Confirm a warm-up prompt
+    expect(findPrompt(WARMUP_PROMPTS[0]!.id)).toBe(WARMUP_PROMPTS[0]);
   });
 });

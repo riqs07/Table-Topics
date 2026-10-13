@@ -56,7 +56,7 @@ describe("requestFeedback", () => {
     // Confirm the passphrase header
     expect(new Headers(init.headers).get("x-voicelab-passphrase")).toBe("pass");
     // Confirm the body, including last time's fix
-    expect(JSON.parse(String(init.body))).toEqual({ transcript: "hello", durationSec: 40, focusId: "pace", previousChange: "c" });
+    expect(JSON.parse(String(init.body))).toEqual({ transcript: "hello", durationSec: 40, focusId: "pace", previousChange: "c", mode: "standard" });
   });
 
   // Without a passphrase nothing is sent
