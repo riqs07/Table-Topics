@@ -2,7 +2,7 @@
 // The Home screen: today's prompt as the page, with streak, focus, and the weekly challenge around it
 
 // Load React's state and effect tools
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
@@ -23,18 +23,10 @@ import { currentFocus, type Focus } from "@/core/focus";
 import { practiceWeek } from "@/core/practiceWeek";
 // Load the streak calculator
 import { currentStreak } from "@/core/streak";
-// Load the shared browser repository
-import { browserRepository } from "@/data/browserRepository";
 // Load the repository type
 import type { Repository } from "@/data/repository";
-
-// What the screen needs from outside; both have real defaults and are replaced in tests
-interface HomeScreenProps {
-  // Where data is saved and loaded
-  repository?: Repository;
-  // The current moment
-  now?: Date;
-}
+// Load the shared screen starting points
+import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 
 // Everything Home shows that comes from saved data
 interface HomeData {
@@ -91,22 +83,10 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
   };
 }
 
-// A subscription that never fires, used to tell the browser apart from the server
-function subscribeToNothing(): () => void {
-  // Nothing to unsubscribe from
-  return () => {};
-}
-
 // Draw the Home screen
-export function HomeScreen({ repository, now }: HomeScreenProps) {
-  // Use the given repository, or the browser's
-  const [repo] = useState(() => repository ?? browserRepository());
-  // The moment the screen was opened (worked out separately in the browser)
-  const [openedAt] = useState(() => now ?? new Date());
-  // True only in the browser, so date-based content is not drawn on the server (time zones could differ)
-  const inBrowser = useSyncExternalStore(subscribeToNothing, () => true, () => false);
-  // The current moment, once in the browser
-  const today = inBrowser ? openedAt : null;
+export function HomeScreen(props: ScreenProps) {
+  // The repository, and today's date once in the browser
+  const { repo, today } = useScreenBasics(props);
   // Which prompt along from today's ("or choose another" adds one)
   const [offset, setOffset] = useState(0);
   // Saved data, once loaded

@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the filler counter being checked
-import { countFillers } from "@/core/fillers";
+import { countFillers, markFillers } from "@/core/fillers";
 
 // Group the checks about counting filler words
 describe("countFillers", () => {
@@ -61,5 +61,26 @@ describe("countFillers", () => {
     const result = countFillers("");
     // Confirm the result is empty and zero
     expect(result).toEqual({ total: 0, byFiller: {} });
+  });
+});
+
+// Group the checks about marking fillers inside a transcript for display
+describe("markFillers", () => {
+  // The pieces join back to exactly the original text
+  it("keeps the original text, split into marked and unmarked pieces", () => {
+    // A transcript with two fillers
+    const text = "Um, so I think, you know, it went well.";
+    // Split it
+    const pieces = markFillers(text);
+    // Confirm nothing was lost or changed
+    expect(pieces.map((piece) => piece.text).join("")).toBe(text);
+    // Confirm the marked pieces
+    expect(pieces.filter((piece) => piece.filler).map((piece) => piece.text)).toEqual(["Um", "you know"]);
+  });
+
+  // Words that only contain filler letters are not marked
+  it("does not mark parts of longer words", () => {
+    // Confirm nothing is marked in "umbrella"
+    expect(markFillers("The umbrella").some((piece) => piece.filler)).toBe(false);
   });
 });
