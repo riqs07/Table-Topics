@@ -17,6 +17,8 @@ import { dayLabel, formatRate } from "@/core/copy";
 import { markFillers } from "@/core/fillers";
 // Load the retry comparison
 import { retryComparison } from "@/core/progress";
+// Load the daily prompt picker, for the step after a warm-up
+import { promptForDay } from "@/content/prompts";
 // Load the session record type
 import type { SessionRecord } from "@/data/records";
 
@@ -48,15 +50,17 @@ function Transcript({ text }: { text: string }) {
   );
 }
 
-// The Feedback screen for a first try
-function FeedbackView({ session }: { session: SessionRecord }) {
+// The Feedback screen for a first try or a warm-up
+function FeedbackView({ session, now }: { session: SessionRecord; now: Date }) {
+  // Whether this was a warm-up (it leads into the full minute instead of a retry)
+  const warmup = session.mode === "warmup";
   // Whether the transcript is open on a phone (it is always shown on a computer)
   const [showTranscript, setShowTranscript] = useState(false);
   // Draw the page
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title="Your take">{Math.round(session.wordsPerMinute)} words a minute</Masthead>
+      <Masthead title={warmup ? "Warm-up" : "Your take"}>{Math.round(session.wordsPerMinute)} words a minute</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -102,8 +106,12 @@ function FeedbackView({ session }: { session: SessionRecord }) {
             {/* Finish */}
             <Link href="/" className="italic text-ink-muted underline underline-offset-4">or finish for today</Link>
           </Footnote>
-          {/* Retry is the main action */}
-          <ActionBand action="Try it again" aside="same prompt" href={`/session?prompt=${session.promptId}&retryOf=${session.id}`} />
+          {/* After a warm-up, the full minute; after a full session, the retry */}
+          {warmup ? (
+            <ActionBand action="Now the full minute" aside="today’s prompt" href={`/session?prompt=${promptForDay(now).id}`} />
+          ) : (
+            <ActionBand action="Try it again" aside="same prompt" href={`/session?prompt=${session.promptId}&retryOf=${session.id}`} />
+          )}
         </aside>
       </div>
     </>
@@ -197,7 +205,7 @@ export function SessionScreen({ sessionId, ...props }: SessionScreenProps) {
       {/* A retry with its first try */}
       {loaded?.session && loaded.original && today && <RetryView retry={loaded.session} original={loaded.original} now={today} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && <FeedbackView session={loaded.session} />}
+      {loaded?.session && !loaded.original && today && <FeedbackView session={loaded.session} now={today} />}
     </main>
   );
 }

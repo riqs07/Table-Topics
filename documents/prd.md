@@ -2,7 +2,7 @@
 
 **Version:** 2.0 (rewritten around a new target user)
 **Status:** Draft for review
-**Last updated:** 2026-10-12
+**Last updated:** 2026-10-13
 
 ## 1. Summary
 
@@ -41,6 +41,7 @@ Once a week: complete one **real-world challenge** and mark it done.
 | Feature | Why it exists (actionable outcome) |
 |---------|-------------------------------------|
 | Daily prompt, 60-90 s session | Removes the "what do I say?" barrier |
+| 30-second warm-up on an easier prompt (added 2026-10-13) | Gives a lower-pressure way in on hard days. Counts for the streak, never for progress numbers, never the baseline; leads into the full minute instead of a retry |
 | Live transcript | Lets the user see their words as they speak |
 | Three-part feedback (keep / change / retry cue) | Gives a single next step instead of a critique |
 | Retry flow with before/after numbers | Proves the fix worked within minutes |

@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-12
+**Last updated:** 2026-10-13
 
 ## Where data lives
 
@@ -18,8 +18,9 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | id | Unique identifier |
 | createdAt | When the session started |
 | promptId | Which prompt was used |
-| isBaseline | True for the user's first-ever session |
+| isBaseline | True for the user's first full session (never a warm-up) |
 | retryOf | Id of the session this one retries, or empty |
+| mode | `standard` (a full session) or `warmup` (30 seconds, easier prompt). Warm-ups count for the streak but are left out of the baseline, the trend, and progress numbers. Exports from before modes existed load as `standard` |
 | durationSec | Length of the recording |
 | transcript | Full text of what was said |
 | wordsPerMinute | Computed from transcript and duration |

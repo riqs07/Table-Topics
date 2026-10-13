@@ -12,7 +12,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the weekly challenge picker
 import { challengeForWeek, type Challenge } from "@/content/challenges";
 // Load the daily prompt picker
-import { promptForDay } from "@/content/prompts";
+import { promptForDay, warmupPromptForDay } from "@/content/prompts";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
 // Load the day label helper
@@ -160,10 +160,15 @@ export function HomeScreen(props: ScreenProps) {
               {prompt.text}
             </h1>
           )}
-          {/* Swap the prompt */}
-          <button type="button" onClick={() => setOffset(offset + 1)} className="mt-4 self-start italic text-ink-muted hover:underline">
-            or choose another
-          </button>
+          {/* Quieter options: swap the prompt, or warm up first */}
+          <p className="mt-4 italic text-ink-muted">
+            {/* Swap the prompt */}
+            <button type="button" onClick={() => setOffset(offset + 1)} className="italic hover:underline">or choose another</button>
+            {/* Separator */}
+            {" · "}
+            {/* A 30-second warm-up on an easier prompt (counts for the streak, not for progress) */}
+            {today && <Link href={`/session?mode=warmup&prompt=${warmupPromptForDay(today).id}`} className="hover:underline">or warm up for 30 seconds</Link>}
+          </p>
           {/* Push the footer down */}
           <div className="flex-1" />
           {/* This week's challenge as a footnote with a checkbox */}

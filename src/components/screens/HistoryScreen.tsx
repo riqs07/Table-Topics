@@ -10,7 +10,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the prompt library
-import { PROMPTS } from "@/content/prompts";
+import { findPrompt } from "@/content/prompts";
 // Load the sentence builders
 import { dayLabel, formatRate, progressSentence } from "@/core/copy";
 // Load the progress calculations
@@ -45,7 +45,9 @@ function promptText(session: SessionRecord): string {
   // The first recording is named as such
   if (session.isBaseline) return "Your first recording";
   // Look up the prompt, falling back to a plain label
-  return PROMPTS.find((prompt) => prompt.id === session.promptId)?.text ?? "A prompt";
+  const text = findPrompt(session.promptId)?.text ?? "A prompt";
+  // Mark warm-ups so they read differently from full sessions
+  return session.mode === "warmup" ? `Warm-up: ${text}` : text;
 }
 
 // One line of the contents: day, prompt, dotted leader, result

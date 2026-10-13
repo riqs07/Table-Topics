@@ -58,3 +58,4 @@
 | C6 | 2026-10-12 | Calm studio, with the accent changed from sage to forest green (fonts later changed to Newsreader with the script-page direction). **Icon drafted 2026-10-13**: a Newsreader opening quote mark in paper on forest green (alternative: forest on paper with a hairline). Awaiting approval |
 | C8 | 2026-10-12 | **Defaulted, flagged.** "Export my data" is in v1 (sessions, challenges, settings; no audio). Baseline audio is never auto-deleted |
 | C11 | 2026-10-13 | First grayscale wireframes rejected as template-like. **Script-page direction chosen** (over tape recorder and instrument). Revised phone and desktop wireframes at `/wireframes`. **Approved 2026-10-13** |
+| C13 | 2026-10-13 | **Open.** Drafts to approve before shipping: 36 daily prompts and 24 warm-up prompts (`src/content/prompts.ts`), 14 weekly challenges (`src/content/challenges.ts`) |

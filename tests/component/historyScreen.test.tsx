@@ -53,8 +53,8 @@ describe("HistoryScreen", () => {
     render(<HistoryScreen repository={await sampleRepository()} now={NOW} />);
     // Find the list items
     const links = await screen.findAllByRole("link", { name: /^(Today|Yesterday|Sat|Sun|Mon|Tue|Wed|Thu|Fri|\d+ (Sep|Oct))/ });
-    // Confirm one row per first try (8 days in the sample)
-    expect(links).toHaveLength(8);
+    // Confirm one row per first try (8 full sessions and 1 warm-up in the sample)
+    expect(links).toHaveLength(9);
     // Confirm the newest row shows the first try and the retry
     expect(links[0]!.textContent).toMatch(/Today.*\d\.\d, then \d\.\d/);
     // Confirm it links to that session
@@ -69,8 +69,8 @@ describe("HistoryScreen", () => {
     await repository.saveSession(makeSession({ id: "warm", createdAt: new Date(2026, 9, 13, 7).toISOString(), mode: "warmup", promptId: "w001", fillersPerMinute: 0 }));
     // Draw the screen
     render(<HistoryScreen repository={repository} now={NOW} />);
-    // Confirm the warm-up row is marked
-    expect(await screen.findByText(/^Warm-up: /)).toBeTruthy();
+    // Confirm both warm-ups (the sample's and this one) are marked
+    expect(await screen.findAllByText(/^Warm-up: /)).toHaveLength(2);
   });
 
   // The first recording is labeled as such

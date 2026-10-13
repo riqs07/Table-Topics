@@ -103,6 +103,12 @@ export function sampleSessions(now: Date): SessionRecord[] {
     // The retry, five minutes later, if planned
     if (plan.retryFillers !== null) sessions.push(sampleSession(`sample-${index}-retry`, new Date(firstAt.getTime() + 5 * 60 * 1000), promptId, plan.retryFillers, first.id, false));
   });
+  // A warm-up yesterday morning, to preview how warm-ups appear
+  const yesterday = addDays(now, -1);
+  // Build it on a warm-up prompt, 30 seconds long, with one filler
+  const warmup = sampleSession("sample-warmup", new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 7, 30), "w001", 1, null, false);
+  // Mark it as a warm-up with its shorter length and lighter feedback
+  sessions.push({ ...warmup, mode: "warmup", durationSec: 30, feedback: { keep: "You named three clear things.", change: "Try one longer sentence next time.", retryCue: "Say one more detail." } });
   // Hand back the sessions
   return sessions;
 }
