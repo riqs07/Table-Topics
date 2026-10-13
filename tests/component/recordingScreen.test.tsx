@@ -144,13 +144,17 @@ describe("RecordingScreen", () => {
     // Save the first try
     await repository.saveSession(makeSession({ id: "first", isBaseline: true, feedbackStatus: "done", feedback: { keep: "k", change: "c", retryCue: "Breathe, then say your first word." } }));
     // Draw the retry screen
-    const { navigate } = draw({ repository, retryOf: "first" });
+    const { navigate, clock } = draw({ repository, retryOf: "first" });
     // Confirm the cue is shown before starting
     expect(await screen.findByText("Breathe, then say your first word.")).toBeTruthy();
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Speak for 20 seconds
+    clock.advance(20_000);
     // Stop
-    fireEvent.click(await screen.findByRole("button", { name: /Stop/ }));
+    fireEvent.click(stop);
     // Wait for the page change
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // Confirm the retry link was saved and it is not a baseline
@@ -177,6 +181,24 @@ describe("RecordingScreen", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // Confirm it was saved as a warm-up of at most 30 seconds
     expect((await repository.listSessions())[0]).toMatchObject({ mode: "warmup", durationSec: 30 });
+  });
+
+  // Under ten seconds is too short to measure: nothing is saved, and the user is told
+  it("does not save a recording under ten seconds", async () => {
+    // Draw the screen
+    const { repository, navigate, clock } = draw();
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Only five seconds
+    clock.advance(5_000);
+    // Stop
+    fireEvent.click(stop);
+    // Confirm the explanation
+    expect(await screen.findByText(/under 10 seconds/)).toBeTruthy();
+    // Confirm nothing was saved and the page did not change
+    expect([await repository.listSessions(), navigate.mock.calls.length]).toEqual([[], 0]);
   });
 
   // A blocked microphone is explained, with nothing saved
@@ -218,11 +240,15 @@ describe("RecordingScreen", () => {
   // Nothing heard means nothing saved, and a gentle explanation
   it("saves nothing when no words were heard", async () => {
     // Draw with an empty transcript
-    const { repository, navigate } = draw({}, { finalText: "" });
+    const { repository, navigate, clock } = draw({}, { finalText: "" });
     // Start
     fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Let 20 seconds pass
+    clock.advance(20_000);
     // Stop
-    fireEvent.click(await screen.findByRole("button", { name: /Stop/ }));
+    fireEvent.click(stop);
     // Confirm the explanation
     expect(await screen.findByText(/did not catch any words/)).toBeTruthy();
     // Confirm nothing was saved and the page did not change
@@ -245,6 +271,8 @@ describe("RecordingScreen", () => {
 
   // Regression: without a clock passed in (as in the real app), recording must keep running across redraws
   it("keeps recording across redraws with the default clock", async () => {
+    // Fake timers, so the real clock can be moved forward
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     // Fake services
     const fake = fakeServices();
     // Record where the screen sends the user
@@ -257,6 +285,8 @@ describe("RecordingScreen", () => {
     const stop = await screen.findByRole("button", { name: /Stop/ });
     // Words arrive, causing redraws
     await fake.say({ final: "So I went home", interim: "" });
+    // Move the real clock forward 20 seconds
+    vi.setSystemTime(Date.now() + 20_000);
     // Stop
     fireEvent.click(stop);
     // Confirm the session was saved and opened
@@ -266,13 +296,15 @@ describe("RecordingScreen", () => {
   // The space bar starts and stops recording on a computer
   it("starts and stops with the space bar", async () => {
     // Draw the screen
-    const { navigate } = draw();
+    const { navigate, clock } = draw();
     // Wait for the screen
     await screen.findByRole("button", { name: /Start speaking/ });
     // Press space to start
     fireEvent.keyDown(window, { key: " " });
     // Confirm recording
     await screen.findByRole("button", { name: /Stop/ });
+    // Speak for 20 seconds
+    clock.advance(20_000);
     // Press space to stop
     fireEvent.keyDown(window, { key: " " });
     // Confirm it saved and moved on

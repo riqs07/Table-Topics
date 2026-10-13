@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the recording rules being checked
-import { formatClock, maxSeconds, targetSeconds } from "@/core/recordingRules";
+import { MIN_SECONDS, formatClock, maxSeconds, targetSeconds } from "@/core/recordingRules";
 
 // Group the checks about how long recordings run
 describe("recording length", () => {
@@ -17,6 +17,15 @@ describe("recording length", () => {
   it("stops a warm-up at 30 seconds", () => {
     // Confirm the target and the limit match
     expect([targetSeconds("warmup"), maxSeconds("warmup")]).toEqual([30, 30]);
+  });
+});
+
+// Group the checks about the shortest recording kept
+describe("minimum length", () => {
+  // Under ten seconds gives unreliable rates (a five-second clip once read as 240 words a minute)
+  it("keeps recordings of at least ten seconds", () => {
+    // Confirm the minimum
+    expect(MIN_SECONDS).toBe(10);
   });
 });
 
