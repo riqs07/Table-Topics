@@ -164,7 +164,7 @@ describe("RecordingScreen", () => {
     // Draw a warm-up
     const { repository, clock, navigate } = draw({ mode: "warmup", promptId: WARMUP_PROMPTS[0]!.id });
     // Confirm the length is stated
-    expect(await screen.findByText(/30 seconds/)).toBeTruthy();
+    expect(await screen.findByText("of 30 seconds")).toBeTruthy();
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // Wait for recording

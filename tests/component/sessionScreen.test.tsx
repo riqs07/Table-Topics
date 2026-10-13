@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Load the test helpers from the test runner
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and finding things on it
 import { cleanup, render, screen } from "@testing-library/react";
 // Load the tool for acting like a user
@@ -12,6 +12,8 @@ import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
+// Load the passphrase storage
+import { savePassphrase } from "@/data/passphrase";
 // Load the daily prompt picker
 import { promptForDay } from "@/content/prompts";
 
@@ -99,6 +101,32 @@ describe("SessionScreen", () => {
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the explanation
     expect(await screen.findByText(/Feedback is on its way/)).toBeTruthy();
+  });
+
+  // A new session asks the coach straight away and shows the feedback when it arrives
+  it("asks for feedback for a waiting session and shows it", async () => {
+    // Save a passphrase on this device
+    savePassphrase("pass");
+    // A session waiting for feedback
+    const session = makeSession({ id: "s1", feedback: null, feedbackStatus: "pending" });
+    // A network that returns feedback
+    const network = vi.fn(async () => Response.json({ feedback: FEEDBACK }));
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} fetchFn={network} />);
+    // Confirm the feedback appears
+    expect(await screen.findByText(FEEDBACK.retryCue)).toBeTruthy();
+  });
+
+  // Without a passphrase, the page says where to add it
+  it("points to Settings when no passphrase is saved", async () => {
+    // Make sure no passphrase is saved
+    localStorage.clear();
+    // A session waiting for feedback
+    const session = makeSession({ id: "s1", feedback: null, feedbackStatus: "pending" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} fetchFn={vi.fn()} />);
+    // Confirm the pointer to Settings
+    expect(await screen.findByText(/Add your passphrase in Settings/)).toBeTruthy();
   });
 
   // An unknown id is explained plainly

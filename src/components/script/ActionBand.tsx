@@ -25,3 +25,16 @@ export function ActionBand({ action, aside, href }: ActionBandProps) {
     </Link>
   );
 }
+
+// The same band as a button, for actions that happen on this page (start, stop)
+export function ActionButton({ action, aside, onClick, disabled = false }: { action: string; aside: string; onClick: () => void; disabled?: boolean }) {
+  // Accent band that bleeds to the screen edges on a phone
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} className="-mx-6 flex items-baseline justify-between gap-4 bg-accent px-6 pb-8 pt-5 text-left text-accent-ink disabled:opacity-60 md:mx-0 md:mb-10 md:w-full md:max-w-md md:pb-5">
+      {/* The action, large italic */}
+      <span className="whitespace-nowrap text-band italic">{action}</span>
+      {/* The aside */}
+      <span className="whitespace-nowrap text-sm">{aside}</span>
+    </button>
+  );
+}
