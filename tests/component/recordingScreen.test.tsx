@@ -243,6 +243,26 @@ describe("RecordingScreen", () => {
     expect(await repository.listSessions()).toHaveLength(0);
   });
 
+  // Regression: without a clock passed in (as in the real app), recording must keep running across redraws
+  it("keeps recording across redraws with the default clock", async () => {
+    // Fake services
+    const fake = fakeServices();
+    // Record where the screen sends the user
+    const navigate = vi.fn();
+    // Draw without a clock, as the real page does
+    render(<RecordingScreen promptId={PROMPTS[0]!.id} mode="standard" retryOf={null} repository={createRepository(new MemoryStore())} services={fake.services} navigate={navigate} />);
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Words arrive, causing redraws
+    await fake.say({ final: "So I went home", interim: "" });
+    // Stop
+    fireEvent.click(stop);
+    // Confirm the session was saved and opened
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+  });
+
   // The space bar starts and stops recording on a computer
   it("starts and stops with the space bar", async () => {
     // Draw the screen
