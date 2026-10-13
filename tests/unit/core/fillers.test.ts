@@ -26,7 +26,7 @@ describe("countFillers", () => {
   // Speech engines spell drawn-out sounds with extra letters
   it("treats stretched spellings like ummm and uhhh as the same filler", () => {
     // Count fillers spelled with extra letters
-    const result = countFillers("Ummm well uhhh hmmm erm");
+    const result = countFillers("Ummm uhhh hmmm erm");
     // Confirm each stretched spelling maps to its standard form
     expect(result.byFiller).toEqual({ um: 1, uh: 1, hmm: 1, er: 1 });
   });
@@ -47,10 +47,10 @@ describe("countFillers", () => {
     expect(result.total).toBe(0);
   });
 
-  // "like" is counted for now; the approved list is decided at checkpoint C7
-  it("counts 'like' as a filler in the default list", () => {
+  // "like" counts, as chosen at checkpoint C7
+  it("counts 'like' as a filler", () => {
     // Count fillers in a sentence that uses "like" as filler
-    const result = countFillers("It was like really like big");
+    const result = countFillers("It was like big like huge");
     // Confirm both uses were counted
     expect(result.byFiller).toEqual({ like: 2 });
   });
@@ -77,7 +77,7 @@ describe("markFillers", () => {
   // The pieces join back to exactly the original text
   it("keeps the original text, split into marked and unmarked pieces", () => {
     // A transcript with two fillers
-    const text = "Um, so I think, you know, it went well.";
+    const text = "Um, I think, you know, it went fine.";
     // Split it
     const pieces = markFillers(text);
     // Confirm nothing was lost or changed

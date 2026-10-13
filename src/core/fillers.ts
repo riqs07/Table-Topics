@@ -1,4 +1,4 @@
-// Filler-word counting. The word list is the default until checkpoint C7 approves it.
+// Filler-word counting. The list was set at checkpoint C7: every common filler counts, including crutch words
 
 // Load the shared helper that splits a transcript into clean words
 import { toWords } from "@/core/words";
@@ -23,21 +23,28 @@ const SOUND_FILLERS: ReadonlyArray<{ name: string; pattern: RegExp }> = [
   { name: "ah", pattern: /^a+h+$/ },
   // "hmm", "hmmm"
   { name: "hmm", pattern: /^h+m+$/ },
+  // "mm", "mmm"
+  { name: "mm", pattern: /^m{2,}$/ },
+  // "mhm", "mmhm"
+  { name: "mhm", pattern: /^m+h+m+$/ },
+  // "eh", "ehh"
+  { name: "eh", pattern: /^e+h+$/ },
 ];
 
-// Filler words and phrases matched exactly, longest first so phrases win over single words
-export const PHRASE_FILLERS: ReadonlyArray<string> = [
-  // Two-word fillers
-  "you know",
-  "i mean",
-  "kind of",
-  "sort of",
-  // One-word fillers
-  "like",
-  "basically",
-  "actually",
-  "literally",
+// Filler words and phrases matched exactly, grouped by length (the longest match wins, so phrases beat single words)
+const PHRASES_BY_GROUP: ReadonlyArray<ReadonlyArray<string>> = [
+  // Long hedging phrases
+  ["you know what i mean", "at the end of the day", "if that makes sense", "or something like that", "and stuff like that"],
+  // Three-word phrases
+  ["to be honest", "and all that", "you know what"],
+  // Two-word phrases
+  ["you know", "i mean", "you see", "i guess", "i suppose", "kind of", "sort of", "or something", "and stuff", "or whatever"],
+  // Single crutch words (these also count when used in their ordinary sense, a known trade-off chosen at C7)
+  ["like", "so", "well", "just", "really", "basically", "actually", "literally", "totally", "honestly", "seriously", "anyway", "anyways", "whatever", "right", "okay", "ok", "yeah", "kinda", "sorta"],
 ];
+
+// Every phrase filler, longest first
+export const PHRASE_FILLERS: ReadonlyArray<string> = PHRASES_BY_GROUP.flat().sort((a, b) => b.split(" ").length - a.split(" ").length);
 
 // Find which sound filler a single word is, if any
 function matchSound(word: string): string | undefined {
@@ -99,7 +106,7 @@ export interface TranscriptPiece {
 // Pattern matching any filler as a whole word, phrases first (same list as the counter above)
 const FILLER_PATTERN = new RegExp(
   // Phrase and word fillers, then stretched hesitation sounds, each as whole words
-  `\\b(?:${[...PHRASE_FILLERS.map((phrase) => phrase.replace(" ", "\\s+")), "u+m+", "u+h+", "e+r+m*", "a+h+", "h+m+"].join("|")})\\b`,
+  `\\b(?:${[...PHRASE_FILLERS.map((phrase) => phrase.replaceAll(" ", "\\s+")), ...SOUND_FILLERS.map((filler) => filler.pattern.source.replace(/^\^|\$$/g, ""))].join("|")})\\b`,
   // Every match, ignoring capitals
   "gi",
 );
