@@ -63,6 +63,14 @@ describe("themes", () => {
     expect(failures).toEqual([]);
   });
 
+  // The script-page direction (chosen after C11 feedback) sets calm studio in Newsreader
+  it("sets calm studio in the Newsreader serif", () => {
+    // Confirm the body font
+    expect(THEMES["calm-studio"].fonts.body).toContain("--font-newsreader");
+    // Confirm the display font
+    expect(THEMES["calm-studio"].fonts.display).toContain("--font-newsreader");
+  });
+
   // Each theme names a body font and a display font
   it.each(themeEntries)("%s names a body and a display font", (_id, theme) => {
     // Confirm the body font is set
