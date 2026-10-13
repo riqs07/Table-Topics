@@ -11,6 +11,9 @@ export interface Feedback {
   retryCue: string;
 }
 
+// The kind of session: a full one-minute session, or a 30-second warm-up
+export type SessionMode = "standard" | "warmup";
+
 // Where a session's feedback request stands
 export type FeedbackStatus = "pending" | "done" | "failed";
 
@@ -26,6 +29,8 @@ export interface SessionRecord {
   isBaseline: boolean;
   // Id of the session this one retries, or null
   retryOf: string | null;
+  // Full session or warm-up (warm-ups count for the streak, not for progress)
+  mode: SessionMode;
   // Length of the recording in seconds
   durationSec: number;
   // Full text of what was said

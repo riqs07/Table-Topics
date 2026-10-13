@@ -1,8 +1,8 @@
 // Progress calculations for the retry result and history screens (milestone 8)
 // All work on fillers per minute, the v1 headline number
 
-// Load the session record type
-import type { SessionRecord } from "@/data/records";
+// Load the session record types
+import type { SessionMode, SessionRecord } from "@/data/records";
 
 // Smallest change in fillers per minute that counts as a real difference
 const NOTICEABLE = 0.2;
@@ -47,12 +47,24 @@ function oldestFirst(sessions: ReadonlyArray<SessionRecord>): SessionRecord[] {
   return [...sessions].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-// Compare the first recording with the most recent session, or null if there is nothing to compare
+// Keep only full sessions; warm-ups count for the streak but never for progress
+function fullSessions(sessions: ReadonlyArray<SessionRecord>): SessionRecord[] {
+  // Drop warm-ups
+  return sessions.filter((session) => session.mode !== "warmup");
+}
+
+// Whether a new session should become the starting point: the first full session ever, never a warm-up
+export function shouldBeBaseline(existing: ReadonlyArray<SessionRecord>, mode: SessionMode): boolean {
+  // Warm-ups never become the baseline, and there is only ever one
+  return mode === "standard" && !existing.some((session) => session.isBaseline);
+}
+
+// Compare the first recording with the most recent full session, or null if there is nothing to compare
 export function baselineProgress(sessions: ReadonlyArray<SessionRecord>): BaselineProgress | null {
   // Find the first recording
   const baseline = sessions.find((session) => session.isBaseline);
-  // Find the most recent session
-  const latest = oldestFirst(sessions).at(-1);
+  // Find the most recent full session
+  const latest = oldestFirst(fullSessions(sessions)).at(-1);
   // Nothing to compare without a baseline and a later session
   if (!baseline || !latest || latest.id === baseline.id) return null;
   // Work out the percent change, guarding against a baseline of zero
@@ -61,10 +73,10 @@ export function baselineProgress(sessions: ReadonlyArray<SessionRecord>): Baseli
   return { baselineDate: baseline.createdAt, baseline: baseline.fillersPerMinute, latest: latest.fillersPerMinute, percentChange };
 }
 
-// Fillers per minute for each first try, oldest first, for the trend line
+// Fillers per minute for each full first try, oldest first, for the trend line
 export function trendSeries(sessions: ReadonlyArray<SessionRecord>): number[] {
-  // Leave out retries so the line compares first tries only
-  return oldestFirst(sessions)
+  // Leave out warm-ups and retries so the line compares like with like
+  return oldestFirst(fullSessions(sessions))
     .filter((session) => session.retryOf === null)
     .map((session) => session.fillersPerMinute);
 }

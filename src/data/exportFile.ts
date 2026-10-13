@@ -81,6 +81,8 @@ function isSession(value: unknown): value is SessionRecord {
     typeof value.isBaseline === "boolean" &&
     // Optional links
     isTextOrNull(value.retryOf) && isTextOrNull(value.audioKey) &&
+    // Session kind (missing in files made before warm-ups existed)
+    (value.mode === undefined || value.mode === "standard" || value.mode === "warmup") &&
     // Measurements
     isNumber(value.durationSec) && isNumber(value.wordsPerMinute) && isNumber(value.fillersPerMinute) &&
     // Feedback and its status
@@ -123,5 +125,7 @@ export function parseExport(text: string): ExportFile {
   // Refuse a damaged file
   if (!valid) throw new Error(DAMAGED);
   // The file has been checked, so it can be used as an export
-  return data as unknown as ExportFile;
+  const file = data as unknown as ExportFile;
+  // Sessions from before warm-ups existed are full sessions
+  return { ...file, sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
 }

@@ -66,7 +66,7 @@ function sampleSession(id: string, createdAt: Date, promptId: string, fillers: n
   // Put the record together with numbers measured from the transcript
   return {
     // Identity and timing
-    id, createdAt: createdAt.toISOString(), promptId, isBaseline, retryOf, durationSec, transcript,
+    id, createdAt: createdAt.toISOString(), promptId, isBaseline, retryOf, mode: "standard", durationSec, transcript,
     // Measured numbers
     wordsPerMinute: wordsPerMinute(transcript, durationSec), fillersPerMinute: fillersPerMinute(transcript, durationSec),
     // The focus at the time
