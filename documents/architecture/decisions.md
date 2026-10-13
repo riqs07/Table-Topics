@@ -25,3 +25,5 @@
 
 - **A server database:** conflicts with the privacy goal and adds ops work.
 - **Five-dimension scoring:** transcripts cannot support it honestly (see PRD section 5).
+- **Azure Pronunciation Assessment for prosody (intonation, monotone, pause naturalness)** (considered 2026-10-13, skipped for now): scores against native-speaker delivery rather than confidence, sends audio to Microsoft, English (US) only, and needs another account. Revisit if on-device pitch and pause measures prove too weak.
+- **Voice emotion APIs such as Hume:** inferring feelings from the voice is a guess presented as fact (PRD section 5).
