@@ -55,6 +55,14 @@ describe("countFillers", () => {
     expect(result.byFiller).toEqual({ like: 2 });
   });
 
+  // C7 (2026-10-13): every common filler counts, including crutch words and hedging phrases
+  it("counts the full filler list chosen at C7", () => {
+    // A sentence full of crutch words and hedges
+    const result = countFillers("So, well, I guess it was just really okay, you know what I mean? Mm.");
+    // Confirm each was counted once, with the longest phrase winning
+    expect(result.byFiller).toEqual({ so: 1, well: 1, "i guess": 1, just: 1, really: 1, okay: 1, "you know what i mean": 1, mm: 1 });
+  });
+
   // Empty input happens when nothing was heard
   it("handles an empty transcript", () => {
     // Count fillers in an empty string

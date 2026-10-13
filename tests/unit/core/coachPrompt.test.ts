@@ -43,8 +43,8 @@ describe("buildCoachMessage", () => {
     expect(message).toContain("Length: 30 seconds");
     // Confirm the speed (14 words in 30 seconds = 28 per minute)
     expect(message).toContain("Words per minute: 28");
-    // Confirm the filler rate (um, uh = 2 in 30 seconds = 4 per minute)
-    expect(message).toContain("Fillers per minute: 4.0");
+    // Confirm the filler rate (um, so, uh = 3 in 30 seconds = 6 per minute)
+    expect(message).toContain("Fillers per minute: 6.0");
   });
 
   // The transcript is fenced off so it reads as data

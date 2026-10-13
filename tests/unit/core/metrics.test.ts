@@ -49,10 +49,10 @@ describe("wordsPerMinute", () => {
 
 // Group the checks about filler rate
 describe("fillersPerMinute", () => {
-  // Three fillers in thirty seconds is six per minute
+  // Four fillers (um, so, uh, um) in thirty seconds is eight per minute
   it("divides fillers by minutes spoken", () => {
     // Confirm the filler rate for half a minute
-    expect(fillersPerMinute("um so uh yes um", 30)).toBe(6);
+    expect(fillersPerMinute("um so uh yes um", 30)).toBe(8);
   });
 
   // A zero-length session cannot have a rate
