@@ -13,7 +13,7 @@ import type { SessionRecord } from "@/data/records";
 const SENTENCES = [
   "The best part of my week was walking home on Thursday.",
   "I saw a tiny dog wearing a yellow raincoat.",
-  "It was standing in a puddle like it owned the street.",
+  "It was standing in a puddle as if it owned the street.",
   "The owner was trying not to laugh, and so was I.",
   "It reminded me to slow down and look around more.",
   "I have been rushing everywhere lately without noticing much.",
@@ -73,8 +73,8 @@ function sampleSession(id: string, createdAt: Date, promptId: string, fillers: n
     focus: "cut-fillers",
     // Sample feedback in the coach's format
     feedback: {
-      keep: "You ended on a clear line: \"that is going to be my new favorite part of the week.\"",
-      change: retryOf ? "Better: you began without an um. Keep the pause before your second sentence too." : "Two fillers came early. Take a breath before \"The best part\" instead of saying um.",
+      keep: "You ended on a clear line: “that is going to be my new favorite part of the week.”",
+      change: retryOf ? "Better: you began without an um. Keep the pause before your second sentence too." : "Two fillers came early. Take a breath before “The best part” instead of saying um.",
       retryCue: "Breathe, then say your first word.",
     },
     // Feedback is finished

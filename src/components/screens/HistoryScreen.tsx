@@ -57,11 +57,11 @@ function Row({ row, now }: { row: HistoryRow; now: Date }) {
     <li>
       <Link href={`/sessions/${row.session.id}`} className="flex items-baseline gap-3 py-2 hover:text-accent">
         {/* Day in italic, fixed width so prompts line up */}
-        <span className="w-20 flex-none italic text-ink-muted">{dayLabel(new Date(row.session.createdAt), now)}</span>
-        {/* The prompt, cut short if long */}
-        <span className="truncate">{promptText(row.session)}</span>
-        {/* Dotted leader */}
-        <span className="min-w-6 flex-1 border-b border-dotted border-ink-muted" />
+        <span className="w-20 flex-none italic text-ink-muted max-md:w-16">{dayLabel(new Date(row.session.createdAt), now)}</span>
+        {/* The prompt: wraps on a phone, cut short on a computer where the leader takes the space */}
+        <span className="min-w-0 flex-1 md:flex-none md:truncate">{promptText(row.session)}</span>
+        {/* Dotted leader, on a computer only */}
+        <span className="hidden min-w-6 flex-1 border-b border-dotted border-ink-muted md:block" />
         {/* The result */}
         <span className="flex-none">{result}</span>
       </Link>
