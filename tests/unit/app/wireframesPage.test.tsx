@@ -16,10 +16,10 @@ describe("wireframes page", () => {
     expect(html).toContain('data-theme="calm-studio"');
   });
 
-  // The five screens of the core loop are shown and named
+  // The five screens of the core loop are shown and named, on phone and on desktop
   it("shows home, recording, feedback, retry result, and history", () => {
-    // Confirm there are exactly five captioned screens
-    expect(html.match(/<figcaption/g)).toHaveLength(5);
+    // Confirm there are five phone screens and five desktop screens
+    expect(html.match(/<figcaption/g)).toHaveLength(10);
     // Check each screen's caption text
     for (const name of ["Home", "Recording", "Feedback", "Retry result", "History"]) expect(html).toContain(name);
   });
@@ -28,6 +28,12 @@ describe("wireframes page", () => {
   it("shows keep, change, and retry cue on the feedback screen", () => {
     // Check each heading
     for (const label of ["What to keep.", "One change.", "Before you try again"]) expect(html).toContain(label);
+  });
+
+  // Desktop layouts sit in their own labeled section
+  it("has a desktop section", () => {
+    // Confirm the section heading
+    expect(html).toContain("On a computer");
   });
 
   // History shows progress against the first recording
