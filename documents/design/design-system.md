@@ -1,12 +1,26 @@
 # Design System
 
 **Purpose:** How you control colors, fonts, and feel, and the rules that keep the look in one place.
-**Last updated:** 2026-10-12
+**Last updated:** 2026-10-13
 **Status:** Built in milestone 2. **Calm studio with a forest green accent was chosen at C6 (2026-10-12).** All three themes stay on the style page (`/style`) for comparison.
 
-## Direction
+## Direction: the script page (chosen 2026-10-13)
 
-VoiceLab should feel like a **private practice notebook**, not a tech dashboard. Calm, warm, one thing at a time. We deliberately avoid the common "generated app" look: default component-kit styling, Inter or Geist fonts, purple gradients, glow, frosted glass, and emoji used as icons.
+VoiceLab reads like a **printed speech script or a magazine page**, not an app dashboard. It was chosen over a tape-recorder look and a monospaced "instrument" look after the first wireframes read as template-made. One idea is borrowed from the tape recorder: a live level meter while recording.
+
+Rules for every screen:
+
+- **Serif type throughout** (Newsreader). The daily prompt is set like a headline, with a hanging opening quote in the accent.
+- **Prose instead of widgets.** Streak, focus, and progress are written as sentences ("Fourth day running."). Numbers appear inside sentences ("From 4.2 to 1.8 fillers a minute.").
+- **A masthead line** on every screen: title in small capitals on the left, an italic note on the right, a solid hairline underneath.
+- **Run-in italic headings** ("*What to keep.*") instead of labels above blocks.
+- **One full-width action band** at the bottom of a screen, square-cornered, with the action in large italic. Secondary actions are footnotes above it.
+- **Footnotes** (a thin rule, smaller text) for anything secondary: the weekly challenge, "or choose another", "Listen to your first recording."
+- **Left-aligned, square edges, hairline rules.** Lists use dotted leaders like a table of contents.
+
+Never: pill-shaped buttons, uppercase letter-spaced micro-labels, rounded cards with borders, centered stacks of widgets, emoji, gradients, or cheerleading copy. A test fails if the wireframes use pill buttons or uppercase labels.
+
+Type sizes are named in `src/app/globals.css` (`text-footnote`, `text-lede`, `text-running`, `text-cue`, `text-band`, `text-statement`, `text-prompt`); components use the names, not pixel values.
 
 ## Tools
 
@@ -41,7 +55,7 @@ Tailwind's built-in color palette is switched off, so a class like `bg-blue-500`
 | Theme | Feel | Fonts |
 |-------|------|-------|
 | **Notebook** | Warm off-white paper, ink text, one terracotta accent; warm charcoal in dark mode | Atkinson Hyperlegible Next (body), Young Serif (display) |
-| **Calm studio** (chosen) | Cool stone grays, one forest green accent, minimal | Figtree for both |
+| **Calm studio** (chosen) | Cool stone grays, one forest green accent | Newsreader (an editorial serif) for both |
 | **Gray** | Neutral grayscale for building screens before a choice is made | System fonts |
 
 The app uses **Calm studio**. Switching is one line (`DEFAULT_THEME` in `src/theme/themes.ts`).
@@ -60,7 +74,7 @@ Dark mode follows the phone's setting automatically.
 
 ## Shape and layout
 
-- Flat surfaces separated by thin rules, not shadowed cards. Modest corner rounding.
+- Flat surfaces separated by thin rules, not shadowed cards. Square corners.
 - Phone first. One main action per screen, generous spacing.
 - Transcripts read like notes; fillers are marked quietly, not as errors.
 

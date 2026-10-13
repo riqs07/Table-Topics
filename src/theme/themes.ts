@@ -89,7 +89,7 @@ export const THEMES = {
     // Name shown on the style page
     name: "Calm studio",
     // What the theme is going for
-    description: "Cool stone grays, one forest green accent, minimal and quiet. Chosen at C6.",
+    description: "Cool stone grays, one forest green accent, set in Newsreader like a printed script. Chosen at C6.",
     // Colors for each mode
     colors: {
       // Daytime colors
@@ -135,12 +135,12 @@ export const THEMES = {
         "focus-ring": "#9cc3e8",
       },
     },
-    // One modern sans for everything
+    // One editorial serif for everything (script-page direction)
     fonts: {
       // Font for running text
-      body: `var(--font-figtree), ${SYSTEM_SANS}`,
+      body: `var(--font-newsreader), ${SYSTEM_SERIF}`,
       // Font for headings and the daily prompt
-      display: `var(--font-figtree), ${SYSTEM_SANS}`,
+      display: `var(--font-newsreader), ${SYSTEM_SERIF}`,
     },
   },
   // Neutral grayscale for building screens before a palette is chosen
