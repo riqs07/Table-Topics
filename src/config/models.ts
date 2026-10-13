@@ -2,6 +2,8 @@
 
 // Per-session feedback: Sonnet is fast and low-cost for short transcripts (decision 6)
 export const COACH_MODEL = "claude-sonnet-5-5";
+// Coach model prices in US dollars per million tokens (input, output), for cost estimates in the live check
+export const COACH_PRICE_PER_MILLION = { input: 2, output: 10 };
 // How hard the coach thinks; medium to start, to be tuned at checkpoint C10
 export const COACH_EFFORT = "medium" as const;
 // Weekly summaries (milestone 9): Opus, to be measured against Sonnet (decision 6)

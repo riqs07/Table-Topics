@@ -48,6 +48,8 @@ flowchart LR
 ```
 src/
   app/            Screens and API routes
+  config/         Model names and limits (one place to change them)
+  server/         Server-only code: settings check, passphrase gate, rate limits, the coach
   core/           Pure logic: metrics, feedback parsing, focus rules (most tests live here)
   data/           Repository over IndexedDB
   audio/          Recorder and transcriber wrappers
@@ -58,6 +60,10 @@ documents/        This folder
 ```
 
 Rule: logic goes in `core/` with no browser dependencies, so it can be tested quickly.
+
+## Feedback route
+
+`POST /api/feedback` with header `x-voicelab-passphrase` and body `{ transcript, durationSec, focusId, previousChange }`. Checks run in this order, so nothing costs money until the last step: settings present (500 naming the missing variable), passphrase (401), body shape and size (400), shared rate limit (429 with `Retry-After`; 503 if the counter store is down), then the coach (200 `{ feedback }`, 422 if declined, 502 on failure). Logic: `src/server/feedbackHandler.ts`; prompt: `src/core/coachPrompt.ts`.
 
 ## Failure behavior
 
