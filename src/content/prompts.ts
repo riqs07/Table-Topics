@@ -87,6 +87,58 @@ export const PROMPTS: ReadonlyArray<Prompt> = [
   { id: "p036", text: "What would you do with a free afternoon today?" },
 ];
 
+// Easier prompts for 30-second warm-ups. DRAFT: approved at checkpoint C13 with the main prompts
+export const WARMUP_PROMPTS: ReadonlyArray<Prompt> = [
+  // Warm-up 1
+  { id: "w001", text: "Describe what you can see right now." },
+  // Warm-up 2
+  { id: "w002", text: "What did you have for breakfast?" },
+  // Warm-up 3
+  { id: "w003", text: "Name three things you did yesterday." },
+  // Warm-up 4
+  { id: "w004", text: "What is the weather like where you are?" },
+  // Warm-up 5
+  { id: "w005", text: "Describe the last thing that made you smile." },
+  // Warm-up 6
+  { id: "w006", text: "What is your favorite snack, and why?" },
+  // Warm-up 7
+  { id: "w007", text: "Describe the shoes you are wearing." },
+  // Warm-up 8
+  { id: "w008", text: "What is one thing on your to-do list today?" },
+  // Warm-up 9
+  { id: "w009", text: "Tell me about the last place you walked to." },
+  // Warm-up 10
+  { id: "w010", text: "What sound can you hear right now?" },
+  // Warm-up 11
+  { id: "w011", text: "Describe your favorite mug or cup." },
+  // Warm-up 12
+  { id: "w012", text: "What is the last song you listened to?" },
+  // Warm-up 13
+  { id: "w013", text: "Name a color you like and where you see it." },
+  // Warm-up 14
+  { id: "w014", text: "What would you cook tonight if you could?" },
+  // Warm-up 15
+  { id: "w015", text: "Describe the room you are in." },
+  // Warm-up 16
+  { id: "w016", text: "What is one small thing you are looking forward to?" },
+  // Warm-up 17
+  { id: "w017", text: "Tell me about a plant, pet, or tree you know." },
+  // Warm-up 18
+  { id: "w018", text: "What did you do last Saturday?" },
+  // Warm-up 19
+  { id: "w019", text: "Describe your route to work or school." },
+  // Warm-up 20
+  { id: "w020", text: "What is your favorite time of day?" },
+  // Warm-up 21
+  { id: "w021", text: "What is something you bought recently?" },
+  // Warm-up 22
+  { id: "w022", text: "Describe a smell you like." },
+  // Warm-up 23
+  { id: "w023", text: "What app do you open first each morning?" },
+  // Warm-up 24
+  { id: "w024", text: "Tell me about the last film or show you watched." },
+];
+
 // Day the rotation counts from
 const START = new Date(2026, 0, 1);
 
@@ -106,14 +158,32 @@ function stride(count: number): number {
   return step;
 }
 
-// The prompt for a given day; "choose another" asks for the next one along with offset 1, 2, ...
-export function promptForDay(day: Date, offset = 0): Prompt {
+// Pick from a list for a given day, stepping so neighboring days get unrelated items; offset moves along the list
+function pickForDay(list: ReadonlyArray<Prompt>, day: Date, offset: number): Prompt {
   // Count calendar days since the start of the rotation
   const dayNumber = daysBetween(START, day);
-  // Number of prompts
-  const count = PROMPTS.length;
+  // Number of items
+  const count = list.length;
   // Step through the list, wrapping around, and keep the result positive
   const index = (((dayNumber * stride(count) + offset) % count) + count) % count;
-  // Look up the prompt (always present because the index is in range)
-  return PROMPTS[index] as Prompt;
+  // Look up the item (always present because the index is in range)
+  return list[index] as Prompt;
+}
+
+// The prompt for a given day; "choose another" asks for the next one along with offset 1, 2, ...
+export function promptForDay(day: Date, offset = 0): Prompt {
+  // Pick from the full prompts
+  return pickForDay(PROMPTS, day, offset);
+}
+
+// The warm-up prompt for a given day
+export function warmupPromptForDay(day: Date, offset = 0): Prompt {
+  // Pick from the warm-up prompts
+  return pickForDay(WARMUP_PROMPTS, day, offset);
+}
+
+// Find any prompt (full or warm-up) by its saved id
+export function findPrompt(id: string): Prompt | undefined {
+  // Look in both lists
+  return [...PROMPTS, ...WARMUP_PROMPTS].find((prompt) => prompt.id === id);
 }

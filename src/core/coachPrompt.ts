@@ -6,8 +6,8 @@ import { z } from "zod";
 import { WEEKLY_FOCUSES } from "@/core/focus";
 // Load the session measurements
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
-// Load the feedback record type
-import type { Feedback } from "@/data/records";
+// Load the record types
+import type { Feedback, SessionMode } from "@/data/records";
 
 // The coach's standing instructions; kept free of per-session details so it can be cached
 export const COACH_SYSTEM_PROMPT = `You are VoiceLab's speaking coach. The person practicing is an adult who finds speaking uncomfortable and wants to become clearer and more outgoing. They practice alone, speaking for about a minute on a prompt, then read your feedback before trying again.
@@ -39,6 +39,8 @@ export interface CoachInput {
   focusId: string;
   // On a retry, the fix given last time; otherwise null
   previousChange: string | null;
+  // Full session or warm-up (missing means a full session)
+  mode?: SessionMode;
 }
 
 // Remove transcript tags from the speech itself so it cannot close its own fence
@@ -61,6 +63,8 @@ export function buildCoachMessage(input: CoachInput): string {
     `Words per minute: ${Math.round(wordsPerMinute(input.transcript, input.durationSec))}`,
     // Filler rate, to one decimal place
     `Fillers per minute: ${fillersPerMinute(input.transcript, input.durationSec).toFixed(1)}`,
+    // On a warm-up, keep it brief and light
+    ...(input.mode === "warmup" ? ["This is a 30-second warm-up. Keep every part to one short sentence, and keep it light."] : []),
     // On a retry, the fix to check for
     ...(input.previousChange ? [`This is a retry. The fix you gave last time was: ${input.previousChange}`] : []),
     // A blank line before the transcript
