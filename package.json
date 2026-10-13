@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "fresh": "node scripts/fresh.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
