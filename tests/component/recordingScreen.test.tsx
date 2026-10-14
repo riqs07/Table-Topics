@@ -201,6 +201,31 @@ describe("RecordingScreen", () => {
     expect([await repository.listSessions(), navigate.mock.calls.length]).toEqual([[], 0]);
   });
 
+  // A failed save is explained instead of leaving the screen on "Saving…" forever
+  it("explains when the session could not be saved", async () => {
+    // A repository whose writes fail, the way a full or refused browser database does
+    const repository = createRepository(new MemoryStore());
+    // Make saving the audio fail
+    repository.saveAudio = async () => {
+      // Fail like the browser database does
+      throw new DOMException("The operation failed.", "UnknownError");
+    };
+    // Draw the screen with it
+    const { clock, navigate } = draw({ repository });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Speak for 40 seconds
+    clock.advance(40_000);
+    // Stop
+    fireEvent.click(stop);
+    // Confirm the explanation names the browser's reason
+    expect((await screen.findByRole("alert")).textContent).toMatch(/could not be saved.*The operation failed\./);
+    // Confirm the screen is no longer saving, offers another try, and did not move on
+    expect([screen.queryByText("Saving…"), !!screen.getByRole("button", { name: /Try again/ }), navigate.mock.calls.length]).toEqual([null, true, 0]);
+  });
+
   // A blocked microphone is explained, with nothing saved
   it("explains a blocked microphone", async () => {
     // Draw with a refused microphone

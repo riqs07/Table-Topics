@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the browser pieces being checked
-import { WebSpeechTranscriber, rmsLevel, speechRecognitionSupported } from "@/audio/browserServices";
+import { WebSpeechTranscriber, browserRecordingServices, rmsLevel, speechRecognitionSupported } from "@/audio/browserServices";
 
 
 // A fake of the browser's speech recognizer, with just what the app uses
@@ -133,5 +133,55 @@ describe("rmsLevel", () => {
     expect(rmsLevel(loud)).toBeGreaterThan(0.9);
     // Confirm the cap
     expect(rmsLevel(loud)).toBeLessThanOrEqual(1);
+  });
+});
+
+// A fake of the browser's audio recorder whose stop event never arrives (seen in some browsers)
+class SilentRecorder {
+  // Recording until stopped
+  state = "recording";
+  // The file type
+  mimeType = "audio/webm";
+  // Handlers the app sets
+  ondataavailable: ((event: { data: Blob }) => void) | null = null;
+  onstop: ((event: Event) => void) | null = null;
+  // Starting delivers one piece of audio
+  start() { this.ondataavailable?.({ data: new Blob(["voice"]) }); }
+  // Stopping changes state but never fires the stop event
+  stop() { this.state = "inactive"; }
+}
+
+// A fake of the browser's audio graph, with just what the level meter uses
+class FakeAudioContext {
+  // A waveform reader that reports silence
+  createAnalyser() { return { fftSize: 0, getByteTimeDomainData: () => {} }; }
+  // A microphone source that connects to anything
+  createMediaStreamSource() { return { connect: () => {} }; }
+  // Closing does nothing
+  close() { return Promise.resolve(); }
+}
+
+// Group the checks about audio capture
+describe("audio capture", () => {
+  // A recorder that never says it stopped must not hang saving forever
+  it("hands back the audio so far if the recorder never reports stopping", async () => {
+    // Use fake timers so the wait can be skipped
+    vi.useFakeTimers();
+    // Put the fakes in place
+    vi.stubGlobal("MediaRecorder", SilentRecorder);
+    // The audio graph fake
+    vi.stubGlobal("AudioContext", FakeAudioContext);
+    // A stream whose tracks can be stopped
+    const track = { stop: vi.fn() };
+    // Start capturing
+    const capture = browserRecordingServices.createCapture({ getTracks: () => [track] } as unknown as MediaStream);
+    // Ask it to stop
+    const stopped = capture.stop();
+    // Let the safety wait run out
+    await vi.advanceTimersByTimeAsync(5000);
+    // Back to real timers
+    vi.useRealTimers();
+    // Confirm the audio so far came back and the microphone was released
+    expect([(await stopped).size, track.stop.mock.calls.length]).toEqual([5, 1]);
   });
 });
