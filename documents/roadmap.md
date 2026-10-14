@@ -24,7 +24,7 @@ Checkpoint IDs (C#) are defined in [checkpoints.md](checkpoints.md). The riskies
 
 Work continues on anything that does not depend on the open checkpoint. For example, core logic (M3) can proceed while the palette (C6) is undecided. Non-blocking checkpoints use their stated default.
 
-## Next: two modes (agreed 2026-10-14)
+## Done: two modes (agreed and built 2026-10-14)
 
 Decision 18 in decisions.md has the details. In build order:
 
