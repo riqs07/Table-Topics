@@ -49,7 +49,7 @@ Once a week: complete one **real-world challenge** and mark it done.
 | Weekly focus (one skill at a time) | Prevents overwhelm; keeps feedback consistent |
 | Weekly real-world challenge | Bridges practice to real conversations |
 | Showing-up streak (counts any completed session) | Rewards practice, not performance |
-| Session history with transcript and feedback | Lets the user review and see patterns |
+| Session history with transcript, feedback, and the recording to play back | Lets the user review, hear themselves, and see patterns |
 | Recordings and history stay on the device by default | Protects privacy for a vulnerable activity. Browser speech recognition may send audio to the browser maker, so the exact promise is decided at checkpoint C5 |
 
 ## 5. What we measure (and what we do not)
@@ -65,6 +65,8 @@ We only show numbers we can compute reliably from a transcript.
 | Pitch, tone, energy | Needs audio analysis | Later |
 
 We do **not** present guesses about tone or vocal variety as fact. A transcript cannot support them.
+
+The headline number follows the weekly focus (decided 2026-10-14): fillers a minute in filler week, words a minute in pace week. Weeks with no transcript measure (start and finish, structure) show the focus name and say the notes are what count; the retry screen then says "Your second try is in." instead of comparing numbers. The other number stays visible in smaller type.
 
 ## 6. Feedback format
 
