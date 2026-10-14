@@ -2,7 +2,7 @@
 
 **Purpose:** One place for every decision about what VoiceLab is, how it is built, and the rules we build by.
 **Audience:** A human inspector. Each file is short and can be read on its own.
-**Last updated:** 2026-10-11
+**Last updated:** 2026-10-14
 
 ## What VoiceLab is (30 seconds)
 
@@ -22,6 +22,7 @@ A private, practice-alone-at-home app that helps people who struggle to speak we
 | 8 | [checkpoints.md](checkpoints.md) | Exactly what do I need from you, and when? | 3 min |
 | 9 | [setup-requirements.md](setup-requirements.md) | Which accounts and keys must you set up? | 2 min |
 | 10 | [risks.md](risks.md) | What do we expect to go wrong, and what is the plan? | 3 min |
+| 11 | [ai-development-playbook.md](ai-development-playbook.md) | What have we learned about building with an AI agent, and which rules carry over to the next project? | 5 min |
 
 ## Inspector checklist
 
@@ -32,6 +33,7 @@ A private, practice-alone-at-home app that helps people who struggle to speak we
 - Is every open checkpoint either answered or defaulted and flagged? (see checkpoints)
 - Does any component contain a raw color or font? (it must not; see design system)
 - Has any key been committed or pasted anywhere? (it must not; see setup requirements)
+- Did any bug reach the user without a row in the playbook saying why the tests missed it? (it must not; see the AI development playbook)
 
 ## Maintenance rules
 

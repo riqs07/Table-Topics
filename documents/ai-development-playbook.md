@@ -1,0 +1,94 @@
+# AI-driven development playbook
+
+Lessons from building VoiceLab with an AI coding agent, written so they carry over to future projects. Started 2026-10-14.
+
+## How to use this file
+
+- **For you:** read the "Bugs that reached you" table before starting a new project, and copy this file into the new repository. The checklists in sections 3 to 6 are meant to be used as-is.
+- **For the AI agent:** read this file before starting work in a project that contains it. Follow sections 3 and 4 on every change.
+- **Keeping it current:** whenever a bug reaches the user (they find it, not the tests), the agent adds a row to section 1 in the same change as the fix, and adds or sharpens a rule in sections 3 to 6 if the lesson is new. A bug is not fixed until this file says why the tests missed it.
+
+## 1. Bugs that reached you, and why the tests missed them
+
+Every one of these passed the full test suite and a browser check. The pattern is the same each time: **the tests checked what the agent expected, not what your machine actually had.**
+
+| # | Date | What you saw | The real cause | Why the tests missed it | Rule it produced |
+|---|------|--------------|----------------|-------------------------|------------------|
+| B1 | 2026-10-14 | Recording stuck on "Saving…" forever | The save step had no error handling. Any failure left the screen waiting, and the error only went to the console | Every test used stand-ins that never fail, and only the success path was tested. Missing code has no test to fail | T1, T2 |
+| B2 | 2026-10-14 | "The requested version (1) is less than the existing version (10)" | Another project on `localhost:3000` had already made a browser database called "voicelab" | Every test and browser run started with empty storage | T3, S1 |
+| B3 | 2026-10-14 | "Hydration failed because the server rendered HTML didn't match the client" | The page asked "does this browser support speech?" while the server was drawing it. The server always said no | Component tests only drew pages in a browser-like setting. Browser checks always clicked through from the home page, so the server never drew that page | T4, T5 |
+| B4 | 2026-10-14 | "The object store uses in-line keys and the key parameter was provided" | The fix for B2 reused the other project's database, whose collections were laid out differently | The test for the B2 fix built the "existing" database the way **our** app would, not the way the other project did. The fix treated the symptom (a version number), not the cause (sharing a name) | T3, T6, S1 |
+
+### Caught before they reached you (what worked)
+
+These were caught by the agent's own checks. Keep doing these.
+
+- **Recording stopped itself on every redraw:** caught by running the real flow in a browser. Component tests had passed because they supplied their own clock instead of the default one (rule T7).
+- **Speech recognition restarted forever after the microphone was blocked:** caught in the browser.
+- **A server-only file (using `node:crypto`) was pulled into the browser bundle:** caught by the production build.
+- **Theme previews showed the wrong colors:** caught by a test that checks nested themes.
+- **A gray filler-word color was slightly too faint (contrast 4.49 instead of 4.5):** caught by the automatic contrast test.
+- **Buttons overflowing on a phone, or not fitting:** caught by screenshots at phone width (rule T8).
+- **Rounding: 3.05 shown as "3.0":** caught by a test written before the code.
+
+## 2. The one big lesson
+
+Tests written by the same agent that writes the code share its blind spots. A passing suite proves the code does what the agent imagined. It does not prove the code survives your browser, your data, your other projects, or your real voice. So:
+
+1. **Test the unhappy paths and the leftover state on purpose** (section 3), because nothing else will.
+2. **Say plainly what was and wasn't verified.** "Checked with a stand-in microphone" is different from "works with your voice". The agent reports which one it did.
+3. **When you hit a bug, paste the exact error text.** B2 and B4 were found within minutes once the exact message arrived; B1 took guesswork because there was no message.
+
+## 3. Testing rules
+
+| Rule | What to do |
+|------|------------|
+| **T1. Every user action that can fail has a visible failure state, and a test for it** | Anything async the user starts (save, upload, send, load) needs a try/catch that shows a message and a way to try again. Write the "it fails" test alongside the "it works" test. A screen must never be able to sit on a loading state forever |
+| **T2. Stand-ins must be able to fail** | Every fake (fake microphone, fake database, fake network) gets at least one test where it throws, and one where it never answers (use a timeout) |
+| **T3. Never assume storage starts empty** | Test against storage that already holds old data, data from an older version of the app, and data from a **different** app with different shapes. Build those fixtures from what the other app really does, not from what ours does |
+| **T4. Test that the server and browser draw the same first page** | For server-rendered pages: render to HTML as the server would, then let the browser take over, and fail on any mismatch. Never decide what to draw from browser-only facts (window, speech support, storage, the date) during the first render |
+| **T5. Browser checks open every page directly, not just by clicking through** | A page reached by a link and the same page loaded fresh behave differently. Load each route by its address at least once, and fail the check on any console error |
+| **T6. Reproduce the user's exact error before fixing it** | Write a test that produces the same message the user saw. If the test can't produce it, the cause isn't understood yet. After the fix, ask: "did I fix the cause, or the first symptom?" |
+| **T7. Test the defaults, not only the injected fakes** | If a component takes a clock, service or store as an optional setting, have at least one test that leaves it out and uses the real default |
+| **T8. Check layouts at phone width with screenshots** | Look at every new screen at 375 px wide, and check that nothing scrolls sideways |
+| **T9. Write the failing test first, as its own commit** | This caught real mistakes here (rounding, the theme bug). Keep it |
+| **T10. Browser checks belong in the repository and in CI** | In this project the browser checks lived in throwaway scripts, so they only ran when the agent remembered. Keep end-to-end checks with the code and run them on every push |
+
+## 4. Definition of done for an AI change
+
+Before saying "done", the agent confirms each of these and reports any that were skipped:
+
+- [ ] A failing test was written first, then passed.
+- [ ] The failure path is tested (T1, T2), not just the success path.
+- [ ] Lint, typecheck, unit tests and the production build all pass.
+- [ ] The change was run in a real browser, each touched page was loaded directly, and the console was clean (T5).
+- [ ] New or changed screens were looked at in screenshots at phone and desktop width (T8).
+- [ ] The report says exactly what was verified and with what (for example "stand-in microphone, desktop Chromium"), and what still needs the user (a real voice, a phone, an API key).
+- [ ] Docs changed in the same commit as the code.
+- [ ] If this fixes a bug the user found, section 1 of this file has a new row.
+
+## 5. Setup checklist for a new project
+
+Things that would have prevented B2 to B4 if done on day one:
+
+- **S1. Give browser storage an app-specific name** (database names, localStorage keys, cache names), such as `appname-purpose`, never just the app name. Every project you run at `localhost:3000` shares the same browser storage.
+- **S2. Use a different local port for each project**, or clear site data when switching projects, for the same reason. Service workers left over from one project can also serve stale files to another.
+- **S3. Turn on a lint rule that flags promises nobody waits for** (for TypeScript, `@typescript-eslint/no-floating-promises`). B1 started as a `void save()` whose errors vanished.
+- **S4. Set up the end-to-end browser suite and CI in the first week**, not later (T10).
+- **S5. Write the "not chosen" and "revisit later" lists in a decisions file from the start**, so the reasons survive between sessions.
+
+## 6. Working with an AI agent on product decisions
+
+- **Say where an idea comes from early.** The timed-talk mode was built twice before it came out that the idea came from Toastmasters Table Topics. Naming the source up front ("this is based on X") lets the agent research the real rules first.
+- **For multi-part requests, ask the agent to confirm its understanding before building.** Doing this for the two modes caught gaps (what happens to the old modes, which recording becomes the baseline) before any code was written.
+- **Unanswered questions get recorded defaults.** When you approve a plan without answering every question, the agent uses the defaults it proposed and writes them down where you can change them later.
+- **Mark MVP compromises as temporary.** "Good enough for launch, revisit later" goes in the roadmap, so it doesn't harden into a permanent decision by accident.
+- **Keys and secrets never go in the chat.** They go in `.env.local` and the hosting dashboard only.
+
+## 7. Open improvements in this project
+
+Concrete steps that follow from the rules above, not yet done:
+
+1. **Move the browser checks into the repository as a Playwright suite and run it in CI** (T5, T10). It would cover both modes end to end, load every page directly, and fail on console errors.
+2. **Turn on typed linting with `no-floating-promises`** (S3).
+3. **Do a real-voice test on desktop and a phone test** (checkpoints C3 and C5). Nothing so far has used a real microphone.
