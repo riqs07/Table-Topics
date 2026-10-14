@@ -44,7 +44,7 @@ interface RecordingScreenProps {
 }
 
 // Where the screen is in the flow
-type Stage = "ready" | "starting" | "recording" | "saving" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
+type Stage = "ready" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
 
 // Plain explanations for each problem
 const PROBLEM_TEXT: Record<RecordingProblem, string> = {
@@ -113,6 +113,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval> } | null>(null);
   // Guards against stopping twice (a click and the auto-stop at once)
   const stopping = useRef(false);
+  // The browser's reason when saving failed, shown so the problem can be pinned down
+  const [saveError, setSaveError] = useState("");
 
   // The prompt to speak to
   const prompt = findPrompt(promptId);
@@ -165,32 +167,51 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     stopping.current = true;
     // Show that saving is under way
     setStage("saving");
-    // Stop everything
-    const result = await finishCapture();
-    // Nothing was running
-    if (!result) return;
-    // Too short to measure: save nothing and explain
-    if (result.durationSec < MIN_SECONDS) {
+    // Any step below can fail (the browser database can refuse a write), so never leave the screen on "Saving…"
+    try {
+      // Stop everything
+      const result = await finishCapture();
+      // Nothing was running (it was already stopped elsewhere): back to the start
+      if (!result) {
+        // Allow another attempt
+        stopping.current = false;
+        // Offer a fresh start
+        setStage("ready");
+        // Done
+        return;
+      }
+      // Too short to measure: save nothing and explain
+      if (result.durationSec < MIN_SECONDS) {
+        // Allow another attempt
+        stopping.current = false;
+        // Explain
+        setStage("too-short");
+        // Done
+        return;
+      }
+      // No words heard: save nothing and explain
+      if (!result.transcript.trim()) {
+        // Allow another attempt
+        stopping.current = false;
+        // Explain
+        setStage("nothing-heard");
+        // Done
+        return;
+      }
+      // Save the session with its audio
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf }, clock());
+      // Open the new session's page (feedback is requested there)
+      navigate(`/sessions?id=${session.id}`);
+    } catch (error) {
+      // Keep the details in the browser console for debugging
+      console.error("Saving the recording failed", error);
       // Allow another attempt
       stopping.current = false;
+      // Keep the browser's reason to show
+      setSaveError(error instanceof Error ? error.message : String(error));
       // Explain
-      setStage("too-short");
-      // Done
-      return;
+      setStage("save-failed");
     }
-    // No words heard: save nothing and explain
-    if (!result.transcript.trim()) {
-      // Allow another attempt
-      stopping.current = false;
-      // Explain
-      setStage("nothing-heard");
-      // Done
-      return;
-    }
-    // Save the session with its audio
-    const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf }, clock());
-    // Open the new session's page (feedback is requested there)
-    navigate(`/sessions?id=${session.id}`);
   }, [clock, finishCapture, mode, navigate, promptId, repo, retryOf]);
 
   // Stop because of a problem, saving nothing
@@ -272,7 +293,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         // Stop the page from scrolling
         event.preventDefault();
         // Start or stop
-        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short") void start();
+        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") void start();
         else if (stage === "recording") void stop();
       }
       // Escape while recording: discard
@@ -363,6 +384,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* Too short */}
           {stage === "too-short" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">That was under {MIN_SECONDS} seconds, too short to measure, so it was not saved. Take your time and keep going a little longer.</p>}
 
+          {/* Saving failed */}
+          {stage === "save-failed" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
           {/* Push the footer down */}
           <div className="flex-1" />
 
@@ -380,8 +403,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           )}
 
           {/* The one action for this stage */}
-          {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || (problem && problem !== "speech-unsupported")) && (
-            <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
+          {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || (problem && problem !== "speech-unsupported")) && (
+            <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
           )}
           {/* Waiting for the microphone */}
           {stage === "starting" && <ActionButton action="Starting…" aside="allow the microphone" onClick={() => {}} disabled />}

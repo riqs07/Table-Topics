@@ -153,6 +153,9 @@ export function rmsLevel(samples: Uint8Array): number {
   return Math.min(1, Math.sqrt(total / Math.max(1, samples.length)));
 }
 
+// Longest wait for the recorder's stop event before keeping the audio that already arrived
+const STOP_WAIT_MS = 3000;
+
 // Records the microphone with MediaRecorder and reads loudness with Web Audio
 class MediaCapture implements AudioCapture {
   // The audio recorder
@@ -201,8 +204,14 @@ class MediaCapture implements AudioCapture {
   stop(): Promise<Blob> {
     // Wait for the recorder to deliver its last piece
     return new Promise((resolve) => {
-      // When it stops, build the file and release the microphone
-      this.recorder.onstop = () => {
+      // Whether the file has been handed back already
+      let done = false;
+      // Build the file and release the microphone, once
+      const finish = () => {
+        // Only once (the stop event and the safety wait can both arrive)
+        if (done) return;
+        // Mark as done
+        done = true;
         // Release the microphone
         this.stream.getTracks().forEach((track) => track.stop());
         // Close the audio graph
@@ -210,9 +219,13 @@ class MediaCapture implements AudioCapture {
         // Join the pieces into one file
         resolve(new Blob(this.chunks, { type: this.recorder.mimeType }));
       };
+      // Finish when the recorder says it stopped
+      this.recorder.onstop = finish;
+      // Some browsers never send the stop event, so give up waiting after a few seconds and keep what arrived
+      setTimeout(finish, STOP_WAIT_MS);
       // Stop recording (or finish at once if it already stopped)
       if (this.recorder.state !== "inactive") this.recorder.stop();
-      else this.recorder.onstop?.(new Event("stop"));
+      else finish();
     });
   }
 }
