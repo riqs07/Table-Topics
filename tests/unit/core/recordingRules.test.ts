@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the recording rules being checked
-import { MIN_SECONDS, THINK_SECONDS, formatClock, maxSeconds, targetSeconds, timeSignal, timingSentence } from "@/core/recordingRules";
+import { MIN_SECONDS, formatClock, maxSeconds, targetSeconds, thinkSeconds, timeSignal, timingSentence } from "@/core/recordingRules";
 
 // Group the checks about how long recordings run
 describe("recording length", () => {
@@ -40,10 +40,10 @@ describe("formatClock", () => {
 
 // Group the checks about a Table Topic, timed by Toastmasters rules
 describe("Table Topic", () => {
-  // Up to 45 seconds to think, a 1:00 to 2:00 window, and it stops itself at 3:00 so running over can be seen
-  it("gives 45 seconds to think, a 1:00 to 2:00 window, and stops at 3:00", () => {
-    // Confirm the think time, top of the window, and limit
-    expect([THINK_SECONDS, targetSeconds("talk"), maxSeconds("talk")]).toEqual([45, 120, 180]);
+  // A 10-second countdown, a 1:00 to 2:00 window, and it stops itself at 3:00 so running over can be seen
+  it("gives a 10-second countdown, a 1:00 to 2:00 window, and stops at 3:00", () => {
+    // Confirm the countdown, top of the window, and limit
+    expect([thinkSeconds("talk"), targetSeconds("talk"), maxSeconds("talk")]).toEqual([10, 120, 180]);
   });
 
   // The Toastmasters lights: green at 1:00, yellow at 1:30, red at 2:00 (staying on), and over time past 2:30
@@ -61,7 +61,7 @@ describe("Table Topic", () => {
   // After a Table Topic, one plain sentence on whether it would have qualified
   it("says whether the length would qualify in a contest", () => {
     // Confirm under, inside, in the grace, at the edge, and over
-    expect([timingSentence(52), timingSentence(107), timingSentence(132), timingSentence(150), timingSentence(161)]).toEqual([
+    expect([timingSentence("talk", 52), timingSentence("talk", 107), timingSentence("talk", 132), timingSentence("talk", 150), timingSentence("talk", 161)]).toEqual([
       // Under the minimum
       "0:52, under the 1:00 minimum. In a contest this would not qualify.",
       // Inside the window
@@ -73,5 +73,32 @@ describe("Table Topic", () => {
       // Over the grace
       "2:41, over 2:30. In a contest this would not qualify.",
     ]);
+  });
+});
+
+// Group the checks about a Record Response
+describe("Record Response", () => {
+  // Two minutes to think, a three-minute goal, and it stops itself at four
+  it("gives 2 minutes to think, aims for 3:00, and stops at 4:00", () => {
+    // Confirm the think time, goal, and limit
+    expect([thinkSeconds("response"), targetSeconds("response"), maxSeconds("response")]).toEqual([120, 180, 240]);
+  });
+
+  // No thinking time for the older kinds of session
+  it("has no thinking time for a one-minute session or a warm-up", () => {
+    // Confirm none
+    expect([thinkSeconds("standard"), thinkSeconds("warmup")]).toEqual([0, 0]);
+  });
+
+  // Off, then yellow 45 seconds before the goal, then red past it
+  it("turns the light yellow from 2:15 and red past 3:00", () => {
+    // Confirm the light at each boundary
+    expect([0, 134.9, 135, 180, 180.1].map((seconds) => timeSignal("response", seconds))).toEqual(["none", "none", "yellow", "yellow", "red"]);
+  });
+
+  // One plain sentence on the timing
+  it("says how the length compared with the goal", () => {
+    // Confirm under, on, and over
+    expect([timingSentence("response", 170), timingSentence("response", 180), timingSentence("response", 192)]).toEqual(["2:50 against a 3:00 goal, 10 seconds to spare.", "3:00 against a 3:00 goal, right on time.", "3:12 against a 3:00 goal, 12 seconds over."]);
   });
 });

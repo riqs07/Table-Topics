@@ -73,6 +73,20 @@ describe("HistoryScreen", () => {
     expect(await screen.findAllByText(/^Warm-up: /)).toHaveLength(2);
   });
 
+  // Both modes are marked in the list
+  it("marks Table Topics and Record Responses in the list", async () => {
+    // Make a repository with the sample sessions
+    const repository = await sampleRepository();
+    // Save one of each
+    await repository.saveSession(makeSession({ id: "tt", createdAt: new Date(2026, 9, 13, 7).toISOString(), mode: "talk", promptId: "t001" }));
+    // A Record Response
+    await repository.saveSession(makeSession({ id: "rr", createdAt: new Date(2026, 9, 13, 8).toISOString(), mode: "response", promptId: "p002" }));
+    // Draw the screen
+    render(<HistoryScreen repository={repository} now={NOW} />);
+    // Confirm both labels
+    expect([!!(await screen.findByText(/^Table Topic: /)), !!screen.getByText(/^Record Response: /)]).toEqual([true, true]);
+  });
+
   // The first recording is labeled as such
   it("labels the first recording", async () => {
     // Draw the screen with sample data

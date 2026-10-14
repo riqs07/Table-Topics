@@ -95,6 +95,12 @@ describe("warm-ups and progress", () => {
     expect(shouldBeBaseline([makeSession({ isBaseline: true })], "standard")).toBe(false);
   });
 
+  // The first Record Response becomes the starting point; a Table Topic never does
+  it("makes the first Record Response the baseline, never a Table Topic", () => {
+    // Confirm both
+    expect([shouldBeBaseline([], "response"), shouldBeBaseline([], "talk")]).toEqual([true, false]);
+  });
+
   // The trend leaves warm-ups out
   it("leaves warm-ups out of the trend", () => {
     // Confirm the values match the trend without the warm-up

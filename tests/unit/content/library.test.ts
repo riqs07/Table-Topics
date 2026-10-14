@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt library and picker
-import { PROMPTS, WARMUP_PROMPTS, findPrompt, promptForDay, warmupPromptForDay } from "@/content/prompts";
+import { PROMPTS, STRUCTURE_HINT, TABLE_TOPICS, WARMUP_PROMPTS, findPrompt, promptForDay, tableTopicForDay, warmupPromptForDay } from "@/content/prompts";
 // Load the challenge list and picker
 import { CHALLENGES, challengeForWeek } from "@/content/challenges";
 
@@ -22,6 +22,44 @@ describe("prompt library", () => {
   it("keeps every prompt short and complete", () => {
     // Check every prompt
     for (const prompt of PROMPTS) expect(prompt.text).toMatch(/^.{10,80}[.?]$/);
+  });
+});
+
+// Group the checks about the Table Topic and Record Response content
+describe("mode content", () => {
+  // Table Topics are light, short-answer questions
+  it("has at least 30 short Table Topics with their own ids", () => {
+    // Confirm the count and that every id is a "t" id, unique across all lists
+    expect([TABLE_TOPICS.length >= 30, TABLE_TOPICS.every((topic) => /^t\d{3}$/.test(topic.id)), new Set([...PROMPTS, ...WARMUP_PROMPTS, ...TABLE_TOPICS].map((prompt) => prompt.id)).size]).toEqual([true, true, PROMPTS.length + WARMUP_PROMPTS.length + TABLE_TOPICS.length]);
+    // Confirm each is short enough to take in at a glance
+    for (const topic of TABLE_TOPICS) expect(topic.text).toMatch(/^.{8,60}[.?]$/);
+  });
+
+  // Every Record Response prompt has two or three angles to help shape an answer
+  it("gives every Record Response prompt two or three short angles", () => {
+    // Check every prompt
+    for (const prompt of PROMPTS) {
+      // Confirm the number of angles
+      expect(prompt.angles?.length).toBeGreaterThanOrEqual(2);
+      // Confirm no more than three
+      expect(prompt.angles?.length).toBeLessThanOrEqual(3);
+      // Confirm each is a short phrase
+      for (const angle of prompt.angles ?? []) expect(angle.length).toBeLessThanOrEqual(90);
+    }
+  });
+
+  // One structure that fits any answer
+  it("offers one four-step structure", () => {
+    // Confirm the steps
+    expect(STRUCTURE_HINT.map((step) => step.label)).toEqual(["Point", "Reason", "Example", "Point again"]);
+  });
+
+  // The Table Topic of the day rotates like the main prompt, and can be found later by id
+  it("picks a Table Topic for the day and finds it by id", () => {
+    // Today's topic
+    const topic = tableTopicForDay(oct(12, 7));
+    // Confirm it holds all day, changes the next day, and can be looked up
+    expect([tableTopicForDay(oct(12, 22)).id, tableTopicForDay(oct(13)).id !== topic.id, findPrompt(topic.id)?.text]).toEqual([topic.id, true, topic.text]);
   });
 });
 

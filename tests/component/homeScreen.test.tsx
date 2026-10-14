@@ -11,7 +11,7 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the prompt and challenge pickers
-import { promptForDay, warmupPromptForDay } from "@/content/prompts";
+import { promptForDay, tableTopicForDay } from "@/content/prompts";
 import { CHALLENGES } from "@/content/challenges";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
@@ -39,34 +39,34 @@ describe("HomeScreen", () => {
     expect(screen.getByText(CHALLENGES[0]!.text.charAt(0).toLowerCase() + CHALLENGES[0]!.text.slice(1))).toBeTruthy();
   });
 
-  // The action takes the user to record with today's prompt
-  it("links the action to recording with today's prompt", async () => {
+  // The main action records a response to today's prompt
+  it("links the main action to a Record Response on today's prompt", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
     // Find the action
-    const action = await screen.findByRole("link", { name: /Speak for a minute/ });
-    // Confirm it points at the session page with the prompt id
-    expect(action.getAttribute("href")).toBe(`/session?prompt=${promptForDay(NOW).id}`);
+    const action = await screen.findByRole("link", { name: /Record a response/ });
+    // Confirm it points at a Record Response with the prompt id
+    expect(action.getAttribute("href")).toBe(`/session?mode=response&prompt=${promptForDay(NOW).id}`);
   });
 
-  // A quieter option starts a Table Topic on the prompt shown
-  it("offers a Table Topic", async () => {
-    // Draw the screen
-    render(<HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Find the talk link
-    const talk = await screen.findByRole("link", { name: /answer it as a Table Topic/ });
-    // Confirm it starts a talk with today's prompt
-    expect(talk.getAttribute("href")).toBe(`/session?mode=talk&prompt=${promptForDay(NOW).id}`);
-  });
-
-  // A quieter option starts a 30-second warm-up on today's warm-up prompt
-  it("offers a 30-second warm-up", async () => {
+  // The other mode is a Table Topic on a light question, kept hidden until it starts
+  it("offers a Table Topic without showing its question", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Find the warm-up link
-    const warmup = await screen.findByRole("link", { name: /warm up for 30 seconds/ });
-    // Confirm it starts a warm-up with today's warm-up prompt
-    expect(warmup.getAttribute("href")).toBe(`/session?mode=warmup&prompt=${warmupPromptForDay(NOW).id}`);
+    // Find the Table Topic action
+    const talk = await screen.findByRole("link", { name: /Table Topic/ });
+    // Confirm it starts today's Table Topic, and its question is not on the page
+    expect([talk.getAttribute("href"), screen.queryByText(tableTopicForDay(NOW).text)]).toEqual([`/session?mode=talk&prompt=${tableTopicForDay(NOW).id}`, null]);
+  });
+
+  // The warm-up and the one-minute session are retired from the home screen
+  it("offers only the two modes", async () => {
+    // Draw the screen
+    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
+    // Wait for the page
+    await screen.findByRole("link", { name: /Record a response/ });
+    // Confirm the old options are gone
+    expect([screen.queryByRole("link", { name: /warm up/ }), screen.queryByRole("link", { name: /Speak for a minute/ })]).toEqual([null, null]);
   });
 
   // A returning user sees the streak as a sentence
@@ -90,7 +90,7 @@ describe("HomeScreen", () => {
     // Confirm the heading changed to the next prompt
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(promptForDay(NOW, 1).text);
     // Confirm the link follows
-    expect(screen.getByRole("link", { name: /Speak for a minute/ }).getAttribute("href")).toBe(`/session?prompt=${promptForDay(NOW, 1).id}`);
+    expect(screen.getByRole("link", { name: /Record a response/ }).getAttribute("href")).toBe(`/session?mode=response&prompt=${promptForDay(NOW, 1).id}`);
   });
 
   // Ticking the challenge saves it as done

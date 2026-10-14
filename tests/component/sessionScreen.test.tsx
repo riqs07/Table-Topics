@@ -87,20 +87,34 @@ describe("SessionScreen", () => {
     expect(screen.getByRole("link", { name: /Finish/ }).getAttribute("href")).toBe("/");
   });
 
-  // A warm-up leads into the full minute rather than a retry
-  it("leads from a warm-up into the full minute", async () => {
+  // An old warm-up leads into a Record Response rather than a retry
+  it("leads from a warm-up into a Record Response", async () => {
     // A finished warm-up
     const session = makeSession({ id: "w1", mode: "warmup", promptId: "w001", feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="w1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the masthead says it was a warm-up
     expect(await screen.findByText("Warm-up")).toBeTruthy();
-    // Confirm the action goes to today's full prompt
-    expect(screen.getByRole("link", { name: /Now the full minute/ }).getAttribute("href")).toBe(`/session?prompt=${promptForDay(NOW).id}`);
+    // Confirm the action goes to a Record Response on today's prompt
+    expect(screen.getByRole("link", { name: /Now record a response/ }).getAttribute("href")).toBe(`/session?mode=response&prompt=${promptForDay(NOW).id}`);
     // Confirm there is no retry
     expect(screen.queryByRole("link", { name: /Try it again/ })).toBeNull();
-    // Confirm the cue introduces the full minute, not a retry
-    expect(screen.getByText("Before the full minute")).toBeTruthy();
+    // Confirm the cue introduces the response, not a retry
+    expect(screen.getByText("Before your response")).toBeTruthy();
+  });
+
+  // A Record Response says how the timing went, and its retry is another Record Response
+  it("shows the timing of a Record Response and retries as one", async () => {
+    // A response that ran 12 seconds over
+    const session = makeSession({ id: "r1", mode: "response", durationSec: 192, promptId: "p001", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="r1" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the masthead names the kind of session
+    expect(await screen.findByText("Your response")).toBeTruthy();
+    // Confirm the timing line
+    expect(screen.getByText("3:12 against a 3:00 goal, 12 seconds over.")).toBeTruthy();
+    // Confirm the retry is another Record Response
+    expect(screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")).toBe("/session?mode=response&prompt=p001&retryOf=r1");
   });
 
   // A Table Topic says whether it would qualify, and its retry is another Table Topic

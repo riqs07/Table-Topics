@@ -118,12 +118,12 @@ describe("parseExport", () => {
     expect(parseExport(text).sessions[0]?.mode).toBe("standard");
   });
 
-  // Three-minute talks survive a round trip
-  it("keeps three-minute talks", () => {
+  // Table Topics and Record Responses survive a round trip
+  it("keeps both modes", () => {
     // A file with one talk
-    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "t1", mode: "talk" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
+    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "t1", mode: "talk" }), makeSession({ id: "r1", mode: "response" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
     // Confirm it comes back as a talk
-    expect(parseExport(text).sessions[0]?.mode).toBe("talk");
+    expect(parseExport(text).sessions.map((session) => session.mode)).toEqual(["talk", "response"]);
   });
 
   // A damaged file with a broken session
