@@ -24,6 +24,24 @@ Checkpoint IDs (C#) are defined in [checkpoints.md](checkpoints.md). The riskies
 
 Work continues on anything that does not depend on the open checkpoint. For example, core logic (M3) can proceed while the palette (C6) is undecided. Non-blocking checkpoints use their stated default.
 
+## Next: two modes (agreed 2026-10-14)
+
+Decision 18 in decisions.md has the details. In build order:
+
+1. Split the prompts: a new list of light, short-answer prompts for Table Topic; the current deeper prompts go to Record Response, each with two or three written angles (both lists go to C13 for approval).
+2. Table Topic: briefing screen, 10-second countdown that starts recording by itself, Toastmasters lights and the qualify sentence (already built).
+3. Record Response: 2-minute thinking screen with the structure hint and angles, hints kept in the margin while speaking, 3:00 goal light.
+4. Home screen offers just the two modes; the one-minute session and warm-up are retired (old sessions stay in history). Baseline moves to the first Record Response.
+
+## To revisit after the MVP (agreed 2026-10-14)
+
+Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:
+
+- The Table Topic timings (currently the Toastmasters contest rules) and the 10-second countdown (fixed, or random between 5 and 10).
+- Record Response thinking time (2 minutes), its 3:00 goal, and when its light turns yellow.
+- The hint format: the fixed structure (point, reason, example, point) and the per-prompt angles.
+- Whether the warm-up or the one-minute session should come back in some form.
+
 ## To do: voice features (added 2026-10-13)
 
 Ideas agreed for later, in order. Each sends audio or text to ElevenLabs, so each needs an ElevenLabs API key (`ELEVENLABS_API_KEY`, server only) and a plain notice to the user about what leaves the device.
