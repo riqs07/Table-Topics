@@ -47,7 +47,9 @@ function promptText(session: SessionRecord): string {
   // Look up the prompt, falling back to a plain label
   const text = findPrompt(session.promptId)?.text ?? "A prompt";
   // Mark warm-ups so they read differently from full sessions
-  return session.mode === "warmup" ? `Warm-up: ${text}` : text;
+  if (session.mode === "warmup") return `Warm-up: ${text}`;
+  // Mark three-minute talks the same way
+  return session.mode === "talk" ? `Three-minute talk: ${text}` : text;
 }
 
 // One line of the contents: day, prompt, dotted leader, result

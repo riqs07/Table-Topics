@@ -239,7 +239,7 @@ describe("RecordingScreen", () => {
     // Let the timer tick
     await act(async () => vi.advanceTimersByTime(200));
     // Confirm yellow, with words for screen readers
-    expect([light(), screen.getByRole("status", { name: "Timing light" }).textContent]).toEqual(["caution", "Under a minute to the goal"]);
+    expect([light(), screen.getByRole("status", { name: "Timing light" }).textContent]).toEqual(["caution", "Under 45 seconds to the goal"]);
     // Move past 3:00
     clock.advance(45_000);
     // Let the timer tick

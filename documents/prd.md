@@ -42,6 +42,7 @@ Once a week: complete one **real-world challenge** and mark it done.
 |---------|-------------------------------------|
 | Daily prompt, 60-90 s session | Removes the "what do I say?" barrier |
 | 30-second warm-up on an easier prompt (added 2026-10-13) | Gives a lower-pressure way in on hard days. Counts for the streak, never for progress numbers, never the baseline; leads into the full minute instead of a retry |
+| Three-minute talk (added 2026-10-14) | Practises a full table-topics answer: the prompt, up to 45 seconds to think (can start early), then a three-minute goal. A timing light turns yellow 45 seconds before the goal and red past it; the session page says how far over or under it ran |
 | Live transcript | Lets the user see their words as they speak |
 | Three-part feedback (keep / change / retry cue) | Gives a single next step instead of a critique |
 | Retry flow with before/after numbers | Proves the fix worked within minutes |

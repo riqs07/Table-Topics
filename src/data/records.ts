@@ -11,8 +11,8 @@ export interface Feedback {
   retryCue: string;
 }
 
-// The kind of session: a full one-minute session, or a 30-second warm-up
-export type SessionMode = "standard" | "warmup";
+// The kind of session: a full one-minute session, a 30-second warm-up, or a three-minute talk
+export type SessionMode = "standard" | "warmup" | "talk";
 
 // Where a session's feedback request stands
 export type FeedbackStatus = "pending" | "done" | "failed";

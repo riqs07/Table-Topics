@@ -20,7 +20,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | promptId | Which prompt was used |
 | isBaseline | True for the user's first full session (never a warm-up) |
 | retryOf | Id of the session this one retries, or empty |
-| mode | `standard` (a full session) or `warmup` (30 seconds, easier prompt). Warm-ups count for the streak but are left out of the baseline, the trend, and progress numbers. Exports from before modes existed load as `standard` |
+| mode | `standard` (a full session), `warmup` (30 seconds, easier prompt), or `talk` (up to 45 seconds to think, then a three-minute goal; stops itself at four minutes). Talks count for the streak and progress numbers (both are per-minute rates) but never become the baseline. Warm-ups count for the streak but are left out of the baseline, the trend, and progress numbers. Exports from before modes existed load as `standard` |
 | durationSec | Length of the recording |
 | transcript | Full text of what was said |
 | wordsPerMinute | Computed from transcript and duration |

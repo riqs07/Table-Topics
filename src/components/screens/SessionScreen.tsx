@@ -15,6 +15,8 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 import { dayLabel, formatRate } from "@/core/copy";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
+// Load the talk timing sentence
+import { timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
 import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
@@ -132,13 +134,15 @@ function sideNumber(session: SessionRecord): string {
 function FeedbackView({ repo, session, now, note }: { repo: Repository; session: SessionRecord; now: Date; note: string }) {
   // Whether this was a warm-up (it leads into the full minute instead of a retry)
   const warmup = session.mode === "warmup";
+  // Whether this was a three-minute talk (its timing is reported, and its retry is another talk)
+  const talk = session.mode === "talk";
   // Whether the transcript is open on a phone (it is always shown on a computer)
   const [showTranscript, setShowTranscript] = useState(false);
   // Draw the page
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : "Your take"}>{sideNumber(session)}</Masthead>
+      <Masthead title={warmup ? "Warm-up" : talk ? "Three-minute talk" : "Your take"}>{sideNumber(session)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -154,6 +158,8 @@ function FeedbackView({ repo, session, now, note }: { repo: Repository; session:
           <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
           {/* When there is no number, say why */}
           {!measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
+          {/* After a talk, how the timing went */}
+          {talk && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.durationSec)}</p>}
           {/* Listen back */}
           <Playback repo={repo} session={session} />
           {/* Feedback, or a note that it has not arrived */}
@@ -192,7 +198,7 @@ function FeedbackView({ repo, session, now, note }: { repo: Repository; session:
           {warmup ? (
             <ActionBand action="Now the full minute" aside="today’s prompt" href={`/session?prompt=${promptForDay(now).id}`} />
           ) : (
-            <ActionBand action="Try it again" aside="same prompt" href={`/session?prompt=${session.promptId}&retryOf=${session.id}`} />
+            <ActionBand action="Try it again" aside="same prompt" href={`/session?${talk ? "mode=talk&" : ""}prompt=${session.promptId}&retryOf=${session.id}`} />
           )}
         </aside>
       </div>

@@ -45,6 +45,8 @@ Components never use a raw color, font, or size. They use a **role** (a named pu
 | `accent-ink` | Text placed on the accent |
 | `filler` | Filler words in a transcript (soft pencil gray, never red) |
 | `focus-ring` | Keyboard focus outline |
+| `caution` | Timing light in a three-minute talk, from 45 seconds before the goal (yellow) |
+| `over` | Timing light in a three-minute talk, past the goal (red) |
 
 Fonts use two roles: `font-body` and `font-display` (headings and the daily prompt).
 

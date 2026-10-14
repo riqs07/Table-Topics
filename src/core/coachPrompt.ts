@@ -7,6 +7,8 @@ import { WEEKLY_FOCUSES } from "@/core/focus";
 // Load the session measurements
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
+// Load the talk timing rules
+import { THINK_SECONDS, targetSeconds } from "@/core/recordingRules";
 import type { Feedback, SessionMode } from "@/data/records";
 
 // The coach's standing instructions; kept free of per-session details so it can be cached
@@ -39,7 +41,7 @@ export interface CoachInput {
   focusId: string;
   // On a retry, the fix given last time; otherwise null
   previousChange: string | null;
-  // Full session or warm-up (missing means a full session)
+  // Full session, warm-up, or three-minute talk (missing means a full session)
   mode?: SessionMode;
 }
 
@@ -65,6 +67,8 @@ export function buildCoachMessage(input: CoachInput): string {
     `Fillers per minute: ${fillersPerMinute(input.transcript, input.durationSec).toFixed(1)}`,
     // On a warm-up, keep it brief and light
     ...(input.mode === "warmup" ? ["This is a 30-second warm-up. Keep every part to one short sentence, and keep it light."] : []),
+    // On a talk, the goal and how long it ran, so the coach looks at the whole arc
+    ...(input.mode === "talk" ? [`This is a three-minute talk after up to ${THINK_SECONDS} seconds to prepare. The goal was ${targetSeconds("talk")} seconds and it ran ${Math.round(input.durationSec)}. Comment on how the answer was organised across the whole time.`] : []),
     // On a retry, the fix to check for
     ...(input.previousChange ? [`This is a retry. The fix you gave last time was: ${input.previousChange}`] : []),
     // A blank line before the transcript

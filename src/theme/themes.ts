@@ -53,6 +53,10 @@ export const THEMES = {
         "filler": "#736a61",
         // Keyboard focus outline
         "focus-ring": "#2f5d50",
+        // Timing light near the goal (yellow)
+        "caution": "#a87a00",
+        // Timing light past the goal (red)
+        "over": "#c0392b",
       },
       // Night colors: warm charcoal, not blue-black
       dark: {
@@ -74,6 +78,10 @@ export const THEMES = {
         "filler": "#a59a8b",
         // Keyboard focus outline
         "focus-ring": "#8fc7b6",
+        // Timing light near the goal (yellow)
+        "caution": "#e8b923",
+        // Timing light past the goal (red)
+        "over": "#f26b5b",
       },
     },
     // Readable body face and a soft serif for headings and prompts
@@ -112,6 +120,10 @@ export const THEMES = {
         "filler": "#666e69",
         // Keyboard focus outline
         "focus-ring": "#2c5a88",
+        // Timing light near the goal (yellow)
+        "caution": "#a87a00",
+        // Timing light past the goal (red)
+        "over": "#c0392b",
       },
       // Night colors
       dark: {
@@ -133,6 +145,10 @@ export const THEMES = {
         "filler": "#959d98",
         // Keyboard focus outline
         "focus-ring": "#9cc3e8",
+        // Timing light near the goal (yellow)
+        "caution": "#e8b923",
+        // Timing light past the goal (red)
+        "over": "#f26b5b",
       },
     },
     // One editorial serif for everything (script-page direction)
@@ -171,6 +187,10 @@ export const THEMES = {
         "filler": "#6b6b6b",
         // Keyboard focus outline
         "focus-ring": "#3d3d3d",
+        // Timing light near the goal (yellow)
+        "caution": "#a87a00",
+        // Timing light past the goal (red)
+        "over": "#c0392b",
       },
       // Night colors
       dark: {
@@ -192,6 +212,10 @@ export const THEMES = {
         "filler": "#949494",
         // Keyboard focus outline
         "focus-ring": "#f2f2f2",
+        // Timing light near the goal (yellow)
+        "caution": "#e8b923",
+        // Timing light past the goal (red)
+        "over": "#f26b5b",
       },
     },
     // The phone's own fonts

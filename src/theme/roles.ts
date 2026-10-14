@@ -20,6 +20,10 @@ export const ROLES = [
   "filler",
   // Keyboard focus outline
   "focus-ring",
+  // Timing light near the goal of a talk (yellow)
+  "caution",
+  // Timing light past the goal of a talk (red)
+  "over",
 ] as const;
 
 // One color role name
@@ -64,4 +68,12 @@ export const CONTRAST_RULES: ReadonlyArray<ContrastRule> = [
   { foreground: "focus-ring", background: "paper", minimum: NON_TEXT },
   // (same, on lifted surfaces)
   { foreground: "focus-ring", background: "paper-raised", minimum: NON_TEXT },
+  // The yellow timing light must stand out from both surfaces
+  { foreground: "caution", background: "paper", minimum: NON_TEXT },
+  // (same, on lifted surfaces)
+  { foreground: "caution", background: "paper-raised", minimum: NON_TEXT },
+  // The red timing light must stand out from both surfaces
+  { foreground: "over", background: "paper", minimum: NON_TEXT },
+  // (same, on lifted surfaces)
+  { foreground: "over", background: "paper-raised", minimum: NON_TEXT },
 ];

@@ -29,6 +29,10 @@
   --color-filler: var(--vl-filler);
   /* Keyboard focus outline */
   --color-focus-ring: var(--vl-focus-ring);
+  /* Timing light near the goal (yellow) */
+  --color-caution: var(--vl-caution);
+  /* Timing light past the goal (red) */
+  --color-over: var(--vl-over);
   /* Running text, as font-body */
   --font-body: var(--vl-font-body);
   /* Headings and prompts, as font-display */

@@ -82,7 +82,7 @@ function isSession(value: unknown): value is SessionRecord {
     // Optional links
     isTextOrNull(value.retryOf) && isTextOrNull(value.audioKey) &&
     // Session kind (missing in files made before warm-ups existed)
-    (value.mode === undefined || value.mode === "standard" || value.mode === "warmup") &&
+    (value.mode === undefined || value.mode === "standard" || value.mode === "warmup" || value.mode === "talk") &&
     // Measurements
     isNumber(value.durationSec) && isNumber(value.wordsPerMinute) && isNumber(value.fillersPerMinute) &&
     // Feedback and its status

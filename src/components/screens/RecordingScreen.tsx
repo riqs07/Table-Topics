@@ -18,7 +18,7 @@ import { findPrompt } from "@/content/prompts";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the recording length rules
-import { MIN_SECONDS, formatClock, maxSeconds, targetSeconds } from "@/core/recordingRules";
+import { MIN_SECONDS, THINK_SECONDS, formatClock, maxSeconds, targetSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -46,7 +46,7 @@ interface RecordingScreenProps {
 }
 
 // Where the screen is in the flow
-type Stage = "ready" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
+type Stage = "ready" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
 
 // The stage for a browser without speech recognition (one shared value, so it is the same between redraws)
 const UNSUPPORTED: Stage = { problem: "speech-unsupported" };
@@ -80,6 +80,39 @@ function LiveWords({ text }: { text: LiveText }) {
       )}
       {/* Words still being worked out, lighter */}
       {text.interim && <span className="text-ink-muted"> {text.interim}</span>}
+    </p>
+  );
+}
+
+// Words for the timing light, read out to screen readers and shown beside the lamp
+const SIGNAL_TEXT: Record<TimeSignal, string> = {
+  // Plenty of time left
+  none: "",
+  // Close to the goal
+  caution: "Under 45 seconds to the goal",
+  // Past the goal
+  over: "Past the goal",
+};
+
+// Fill for the lamp at each state
+const SIGNAL_LAMP: Record<TimeSignal, string> = {
+  // Off: an empty ring
+  none: "border-rule bg-transparent",
+  // Yellow
+  caution: "border-caution bg-caution",
+  // Red
+  over: "border-over bg-over",
+};
+
+// The timing light: a lamp that turns yellow near the goal and red past it
+function TimingLight({ signal }: { signal: TimeSignal }) {
+  // Lamp plus words, announced politely when they change
+  return (
+    <p role="status" aria-label="Timing light" data-signal={signal} className="mt-3 flex items-center gap-3">
+      {/* The lamp itself (decorative; the words carry the meaning) */}
+      <span aria-hidden="true" className={`inline-block size-6 flex-none rounded-full border-2 transition-colors ${SIGNAL_LAMP[signal]}`} />
+      {/* What the lamp means */}
+      <span className="italic">{SIGNAL_TEXT[signal]}</span>
     </p>
   );
 }
@@ -122,6 +155,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval> } | null>(null);
   // Guards against stopping twice (a click and the auto-stop at once)
   const stopping = useRef(false);
+  // Seconds of thinking time left before a talk
+  const [thinkLeft, setThinkLeft] = useState(THINK_SECONDS);
+  // The thinking countdown's timer, kept between renders
+  const thinkTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   // The browser's reason when saving failed, shown so the problem can be pinned down
   const [saveError, setSaveError] = useState("");
 
@@ -234,8 +271,18 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     [finishCapture],
   );
 
+  // Stop the thinking countdown, if one is running
+  const endThinking = useCallback(() => {
+    // Clear the timer
+    if (thinkTimer.current) clearInterval(thinkTimer.current);
+    // Forget it
+    thinkTimer.current = null;
+  }, []);
+
   // Ask for the microphone and start recording
   const start = useCallback(async () => {
+    // Thinking time is over
+    endThinking();
     // Show that the microphone is being requested
     setStage("starting");
     // Clear any earlier attempt
@@ -279,17 +326,40 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     transcriber.start(setText, (problem) => void fail(problem));
     // Now recording
     setStage("recording");
-  }, [clock, fail, limit, services, stop]);
+  }, [clock, endThinking, fail, limit, services, stop]);
+
+  // Before a talk: count down the thinking time, then start recording by itself
+  const beginThinking = useCallback(() => {
+    // Clear any earlier countdown
+    endThinking();
+    // Note when thinking began
+    const startedAt = clock();
+    // Show the full time
+    setThinkLeft(THINK_SECONDS);
+    // Show the thinking stage
+    setStage("thinking");
+    // Count down
+    thinkTimer.current = setInterval(() => {
+      // Seconds left
+      const left = THINK_SECONDS - (clock().getTime() - startedAt.getTime()) / 1000;
+      // Show them, never below zero
+      setThinkLeft(Math.max(0, left));
+      // Time is up: start speaking
+      if (left <= 0) void start();
+    }, TICK_MS);
+  }, [clock, endThinking, start]);
 
   // Stop everything without saving and go home
   const discard = useCallback(async () => {
+    // Stop any thinking countdown
+    endThinking();
     // Stop without saving
     stopping.current = true;
     // Stop everything
     await finishCapture();
     // Go home
     navigate("/");
-  }, [finishCapture, navigate]);
+  }, [endThinking, finishCapture, navigate]);
 
   // Space starts and stops; Escape discards (on a computer)
   useEffect(() => {
@@ -302,17 +372,18 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         // Stop the page from scrolling
         event.preventDefault();
         // Start or stop
-        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") void start();
+        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") void (mode === "talk" ? beginThinking() : start());
+        else if (stage === "thinking") void start();
         else if (stage === "recording") void stop();
       }
-      // Escape while recording: discard
-      if (event.key === "Escape" && stage === "recording") void discard();
+      // Escape while thinking or recording: discard
+      if (event.key === "Escape" && (stage === "recording" || stage === "thinking")) void discard();
     };
     // Listen for key presses
     window.addEventListener("keydown", onKey);
     // Stop listening when the screen changes
     return () => window.removeEventListener("keydown", onKey);
-  }, [discard, stage, start, stop]);
+  }, [beginThinking, discard, mode, stage, start, stop]);
 
   // The latest stop-everything function, for the cleanup below
   const finishLatest = useRef(finishCapture);
@@ -323,37 +394,47 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   }, [finishCapture]);
   // Release the microphone only when the screen actually closes mid-recording
   useEffect(() => () => void finishLatest.current(), []);
+  // Stop the thinking countdown when the screen closes
+  useEffect(() => endThinking, [endThinking]);
 
   // Whether recording is under way
   const recording = stage === "recording";
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = mode === "warmup" ? `${target} seconds` : "about a minute";
+  const lengthText = mode === "warmup" ? `${target} seconds` : mode === "talk" ? `a ${formatClock(target)} goal` : "about a minute";
+  // Whether the thinking countdown is showing
+  const thinking = stage === "thinking";
+  // The page title for this kind of session
+  const title = mode === "warmup" ? "Warm-up" : mode === "talk" ? "Three-minute talk" : retryOf ? "Second try" : "Recording";
+  // The keyboard hint for this stage
+  const hint = recording ? "space to stop · esc to discard" : thinking ? "space to start speaking · esc to leave" : mode === "talk" ? "space to start thinking" : "space to start";
 
   // Draw the page
   return (
     // One column on a phone, margin plus main column on a computer
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Title and keyboard hint */}
-      <Masthead title={mode === "warmup" ? "Warm-up" : retryOf ? "Second try" : "Recording"}>{recording ? "space to stop · esc to discard" : "space to start"}</Masthead>
+      <Masthead title={title}>{hint}</Masthead>
 
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Margin: time, length, prompt reminder, discard */}
         <aside className="mt-5 flex flex-col text-footnote text-ink-muted md:mt-0">
           {/* The clock, large */}
-          <p className="font-display text-statement text-ink tabular-nums">{formatClock(elapsed)}</p>
-          {/* The length to aim for */}
-          <p className="mt-1">of {lengthText}</p>
+          <p className="font-display text-statement text-ink tabular-nums">{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>
+          {/* The length to aim for, or what the countdown is for */}
+          <p className="mt-1">{thinking ? "to think" : `of ${lengthText}`}</p>
+          {/* During a talk, the timing light */}
+          {recording && mode === "talk" && <TimingLight signal={timeSignal(mode, elapsed)} />}
           {/* Prompt reminder while recording */}
           {recording && prompt && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
           {/* Push discard down */}
           <div className="hidden flex-1 md:block" />
           {/* Discard while recording */}
-          {recording && (
+          {(recording || thinking) && (
             <button type="button" onClick={() => void discard()} className="mt-4 self-start italic underline underline-offset-4 md:mb-10">
-              or discard this one without saving
+              {thinking ? "or leave without speaking" : "or discard this one without saving"}
             </button>
           )}
         </aside>
@@ -413,8 +494,14 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
           {/* The one action for this stage */}
           {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || (problem && problem !== "speech-unsupported")) && (
-            <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
+            mode === "talk" ? (
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${THINK_SECONDS} seconds to prepare`} onClick={beginThinking} />
+            ) : (
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
+            )
           )}
+          {/* Thinking: start speaking early */}
+          {thinking && <ActionButton action="Ready" aside="start speaking" onClick={() => void start()} />}
           {/* Waiting for the microphone */}
           {stage === "starting" && <ActionButton action="Starting…" aside="allow the microphone" onClick={() => {}} disabled />}
           {/* Recording */}
