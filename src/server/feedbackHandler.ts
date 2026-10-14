@@ -35,7 +35,7 @@ const RequestSchema = z.object({
   focusId: z.string().max(64),
   // The previous fix on a retry, or null
   previousChange: z.string().max(1_000).nullable(),
-  // Full session, warm-up, or three-minute talk (older app versions send none)
+  // Full session, warm-up, or Table Topic (older app versions send none)
   mode: z.enum(["standard", "warmup", "talk"]).optional(),
 });
 

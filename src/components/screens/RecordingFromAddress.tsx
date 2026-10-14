@@ -18,7 +18,7 @@ export function RecordingFromAddress() {
   const router = useRouter();
   // The kind of session named in the address (anything else is a full session)
   const named = params.get("mode");
-  // A warm-up, a three-minute talk, or a full session
+  // A warm-up, a Table Topic, or a full session
   const mode = named === "warmup" || named === "talk" ? named : "standard";
   // Draw the screen with the real browser pieces
   return (

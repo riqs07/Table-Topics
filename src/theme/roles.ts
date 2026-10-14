@@ -20,10 +20,12 @@ export const ROLES = [
   "filler",
   // Keyboard focus outline
   "focus-ring",
-  // Timing light near the goal of a talk (yellow)
-  "caution",
-  // Timing light past the goal of a talk (red)
-  "over",
+  // Table Topics timing light: the minimum is met (green)
+  "light-green",
+  // Table Topics timing light: start wrapping up (yellow)
+  "light-yellow",
+  // Table Topics timing light: finish now (red)
+  "light-red",
 ] as const;
 
 // One color role name
@@ -68,12 +70,16 @@ export const CONTRAST_RULES: ReadonlyArray<ContrastRule> = [
   { foreground: "focus-ring", background: "paper", minimum: NON_TEXT },
   // (same, on lifted surfaces)
   { foreground: "focus-ring", background: "paper-raised", minimum: NON_TEXT },
+  // The green timing light must stand out from both surfaces
+  { foreground: "light-green", background: "paper", minimum: NON_TEXT },
+  // (same, on lifted surfaces)
+  { foreground: "light-green", background: "paper-raised", minimum: NON_TEXT },
   // The yellow timing light must stand out from both surfaces
-  { foreground: "caution", background: "paper", minimum: NON_TEXT },
+  { foreground: "light-yellow", background: "paper", minimum: NON_TEXT },
   // (same, on lifted surfaces)
-  { foreground: "caution", background: "paper-raised", minimum: NON_TEXT },
+  { foreground: "light-yellow", background: "paper-raised", minimum: NON_TEXT },
   // The red timing light must stand out from both surfaces
-  { foreground: "over", background: "paper", minimum: NON_TEXT },
+  { foreground: "light-red", background: "paper", minimum: NON_TEXT },
   // (same, on lifted surfaces)
-  { foreground: "over", background: "paper-raised", minimum: NON_TEXT },
+  { foreground: "light-red", background: "paper-raised", minimum: NON_TEXT },
 ];

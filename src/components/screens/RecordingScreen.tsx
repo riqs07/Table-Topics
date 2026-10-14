@@ -18,7 +18,7 @@ import { findPrompt } from "@/content/prompts";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the recording length rules
-import { MIN_SECONDS, THINK_SECONDS, formatClock, maxSeconds, targetSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
+import { MIN_SECONDS, THINK_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, targetSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -84,27 +84,35 @@ function LiveWords({ text }: { text: LiveText }) {
   );
 }
 
-// Words for the timing light, read out to screen readers and shown beside the lamp
+// Words for the timing light, read out to screen readers and shown beside the lamp (Toastmasters meanings)
 const SIGNAL_TEXT: Record<TimeSignal, string> = {
-  // Plenty of time left
+  // Before 1:00
   none: "",
-  // Close to the goal
-  caution: "Under 45 seconds to the goal",
-  // Past the goal
-  over: "Past the goal",
+  // From 1:00
+  green: "Green: the minimum is met",
+  // From 1:30
+  yellow: "Yellow: start wrapping up",
+  // From 2:00
+  red: "Red: finish now",
+  // Past 2:30
+  overtime: "Over 2:30: past the limit",
 };
 
 // Fill for the lamp at each state
 const SIGNAL_LAMP: Record<TimeSignal, string> = {
   // Off: an empty ring
   none: "border-rule bg-transparent",
+  // Green
+  green: "border-light-green bg-light-green",
   // Yellow
-  caution: "border-caution bg-caution",
+  yellow: "border-light-yellow bg-light-yellow",
   // Red
-  over: "border-over bg-over",
+  red: "border-light-red bg-light-red",
+  // Still red past the limit, with a heavier ring
+  overtime: "border-ink bg-light-red",
 };
 
-// The timing light: a lamp that turns yellow near the goal and red past it
+// The timing light: a lamp that turns green, yellow, then red, as a Toastmasters timer shows
 function TimingLight({ signal }: { signal: TimeSignal }) {
   // Lamp plus words, announced politely when they change
   return (
@@ -402,11 +410,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = mode === "warmup" ? `${target} seconds` : mode === "talk" ? `a ${formatClock(target)} goal` : "about a minute";
+  const lengthText = mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // The page title for this kind of session
-  const title = mode === "warmup" ? "Warm-up" : mode === "talk" ? "Three-minute talk" : retryOf ? "Second try" : "Recording";
+  const title = mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : retryOf ? "Second try" : "Recording";
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? "space to start speaking · esc to leave" : mode === "talk" ? "space to start thinking" : "space to start";
 
@@ -424,7 +432,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The clock, large */}
           <p className="font-display text-statement text-ink tabular-nums">{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>
           {/* The length to aim for, or what the countdown is for */}
-          <p className="mt-1">{thinking ? "to think" : `of ${lengthText}`}</p>
+          <p className="mt-1">{thinking ? "to think" : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
           {/* During a talk, the timing light */}
           {recording && mode === "talk" && <TimingLight signal={timeSignal(mode, elapsed)} />}
           {/* Prompt reminder while recording */}
@@ -500,6 +508,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
             )
           )}
+          {/* Thinking: a note that real Table Topics give no thinking time */}
+          {thinking && <Footnote><span>Real Table Topics give no thinking time. As it gets easier, press Ready sooner.</span></Footnote>}
           {/* Thinking: start speaking early */}
           {thinking && <ActionButton action="Ready" aside="start speaking" onClick={() => void start()} />}
           {/* Waiting for the microphone */}

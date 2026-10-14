@@ -166,8 +166,8 @@ export function HomeScreen(props: ScreenProps) {
             <button type="button" onClick={() => setOffset(offset + 1)} className="italic hover:underline">or choose another</button>
             {/* Separator */}
             {" · "}
-            {/* A three-minute talk on the prompt shown, with thinking time first */}
-            {prompt && <Link href={`/session?mode=talk&prompt=${prompt.id}`} className="hover:underline">or give a three-minute talk</Link>}
+            {/* The prompt shown, answered as a Table Topic (Toastmasters timing), with thinking time first */}
+            {prompt && <Link href={`/session?mode=talk&prompt=${prompt.id}`} className="hover:underline">or answer it as a Table Topic</Link>}
             {/* Separator */}
             {prompt && " · "}
             {/* A 30-second warm-up on an easier prompt (counts for the streak, not for progress) */}

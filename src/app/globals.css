@@ -29,10 +29,12 @@
   --color-filler: var(--vl-filler);
   /* Keyboard focus outline */
   --color-focus-ring: var(--vl-focus-ring);
-  /* Timing light near the goal (yellow) */
-  --color-caution: var(--vl-caution);
-  /* Timing light past the goal (red) */
-  --color-over: var(--vl-over);
+  /* Table Topics timing light (green) */
+  --color-light-green: var(--vl-light-green);
+  /* Table Topics timing light (yellow) */
+  --color-light-yellow: var(--vl-light-yellow);
+  /* Table Topics timing light (red) */
+  --color-light-red: var(--vl-light-red);
   /* Running text, as font-body */
   --font-body: var(--vl-font-body);
   /* Headings and prompts, as font-display */
