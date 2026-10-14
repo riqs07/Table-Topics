@@ -17,7 +17,7 @@ export interface ScreenProps {
 }
 
 // A subscription that never fires, used to tell the browser apart from the server
-function subscribeToNothing(): () => void {
+export function subscribeToNothing(): () => void {
   // Nothing to unsubscribe from
   return () => {};
 }

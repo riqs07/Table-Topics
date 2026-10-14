@@ -2,13 +2,15 @@
 // The recording screen: shows the prompt, records speech with a live transcript and level meter, and saves the session
 
 // Load React's state, effect, reference, and callback tools
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionButton } from "@/components/script/ActionBand";
 import { Footnote } from "@/components/script/Footnote";
 import { Masthead } from "@/components/script/Masthead";
+// Load the never-firing subscription used to tell the browser apart from the server
+import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
@@ -45,6 +47,9 @@ interface RecordingScreenProps {
 
 // Where the screen is in the flow
 type Stage = "ready" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
+
+// The stage for a browser without speech recognition (one shared value, so it is the same between redraws)
+const UNSUPPORTED: Stage = { problem: "speech-unsupported" };
 
 // Plain explanations for each problem
 const PROBLEM_TEXT: Record<RecordingProblem, string> = {
@@ -99,8 +104,12 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [repo] = useState(() => repository ?? browserRepository());
   // Use the given clock, or the real one, kept the same between redraws (a new one each time would restart the effects below)
   const [clock] = useState(() => givenClock ?? (() => new Date()));
-  // Where the screen is in the flow (an unsupported browser starts with that problem)
-  const [stage, setStage] = useState<Stage>(() => (services.speechSupported() ? "ready" : { problem: "speech-unsupported" }));
+  // Whether this browser can turn speech into text (the server cannot tell, so it assumes yes and the browser corrects it)
+  const supported = useSyncExternalStore(subscribeToNothing, () => services.speechSupported(), () => true);
+  // Where the screen is in the flow
+  const [flowStage, setStage] = useState<Stage>("ready");
+  // An unsupported browser always shows that problem
+  const stage: Stage = supported ? flowStage : UNSUPPORTED;
   // Words heard so far
   const [text, setText] = useState<LiveText>({ final: "", interim: "" });
   // Seconds elapsed
