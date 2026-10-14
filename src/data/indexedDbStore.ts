@@ -5,9 +5,6 @@ import { COLLECTION_NAMES, type CollectionName, type Collections } from "@/data/
 // Load the storage contract
 import type { Store } from "@/data/store";
 
-// Version of the database layout; raise it when collections change
-const DATABASE_VERSION = 1;
-
 // Turn an IndexedDB request into a promise that settles when it finishes
 function settle<T>(request: IDBRequest<T>): Promise<T> {
   // Wrap the request's success and error events
@@ -27,13 +24,34 @@ export class IndexedDbStore implements Store {
   // Remember which database to use; "voicelab" in the app, unique names in tests
   constructor(private readonly name = "voicelab") {}
 
-  // Open the database once, creating its collections the first time
+  // Open the database once, adding any missing collections
   private open(): Promise<IDBDatabase> {
     // Reuse the database if it is already opening or open
     if (this.database) return this.database;
+    // Open whatever version exists (another app on the same address may have left a higher one), then fill gaps
+    this.database = this.openAt(undefined).then((database) => {
+      // Collections this app needs that the database lacks
+      const missing = COLLECTION_NAMES.filter((collection) => !database.objectStoreNames.contains(collection));
+      // Everything is there: use it as is
+      if (missing.length === 0) return this.watch(database);
+      // Note the current version before closing
+      const version = database.version;
+      // Close it so it can be upgraded
+      database.close();
+      // Reopen one version higher, which lets new collections be created
+      return this.openAt(version + 1).then((upgraded) => this.watch(upgraded));
+    });
+    // Forget a failed open, so the next call tries again
+    this.database.catch(() => (this.database = null));
+    // Hand it back
+    return this.database;
+  }
+
+  // Open the database at a version (or the current one), creating any missing collections during an upgrade
+  private openAt(version: number | undefined): Promise<IDBDatabase> {
     // Ask the browser to open (or create) the database
-    const request = indexedDB.open(this.name, DATABASE_VERSION);
-    // Create any missing collections when the database is new or upgraded
+    const request = version === undefined ? indexedDB.open(this.name) : indexedDB.open(this.name, version);
+    // Create any missing collections when the database is new or upgraded; existing ones are left alone
     request.onupgradeneeded = () => {
       // Check each collection
       for (const collection of COLLECTION_NAMES) {
@@ -41,10 +59,21 @@ export class IndexedDbStore implements Store {
         if (!request.result.objectStoreNames.contains(collection)) request.result.createObjectStore(collection);
       }
     };
-    // Keep the pending database so later calls share it
-    this.database = settle(request);
+    // Wait for it to open
+    return settle(request);
+  }
+
+  // Close and forget the database when another tab needs to upgrade it, so neither tab gets stuck
+  private watch(database: IDBDatabase): IDBDatabase {
+    // Another tab asks for a newer version
+    database.onversionchange = () => {
+      // Step aside
+      database.close();
+      // Reopen on next use
+      this.database = null;
+    };
     // Hand it back
-    return this.database;
+    return database;
   }
 
   // Run one operation on a collection inside a transaction and wait for it to finish

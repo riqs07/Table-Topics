@@ -7,7 +7,7 @@
 
 Everything is stored in the user's browser (IndexedDB). There is no server database in v1. A "Delete all my data" button in settings wipes everything. Browsers can clear this storage on their own (see risks.md R7), so v1 includes an "Export my data" file (checkpoint C8, defaulted to yes).
 
-Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads and writes), `src/data/indexedDbStore.ts` (browser storage), `src/data/exportFile.ts` (export and import). Dates are stored as ISO text so exports round-trip exactly.
+Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads and writes), `src/data/indexedDbStore.ts` (browser storage), `src/data/exportFile.ts` (export and import). Dates are stored as ISO text so exports round-trip exactly. The database is named "voicelab" and is opened at whatever version the browser already has; if any of the four collections are missing, it is reopened one version higher to add them, leaving anything else in it alone. (A user hit a "voicelab" database at version 10 left by another app on localhost, which a fixed version number could not open.)
 
 ## Stored records
 
