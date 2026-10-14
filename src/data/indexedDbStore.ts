@@ -5,6 +5,9 @@ import { COLLECTION_NAMES, type CollectionName, type Collections } from "@/data/
 // Load the storage contract
 import type { Store } from "@/data/store";
 
+// The app's own database name: distinctive, so it cannot collide with another app run on the same address (one user had a "voicelab" database from another project on localhost)
+const DATABASE_NAME = "voicelab-practice-journal";
+
 // Turn an IndexedDB request into a promise that settles when it finishes
 function settle<T>(request: IDBRequest<T>): Promise<T> {
   // Wrap the request's success and error events
@@ -21,8 +24,8 @@ export class IndexedDbStore implements Store {
   // The open database, created on first use
   private database: Promise<IDBDatabase> | null = null;
 
-  // Remember which database to use; "voicelab" in the app, unique names in tests
-  constructor(private readonly name = "voicelab") {}
+  // Remember which database to use; the app's own name by default, unique names in tests
+  constructor(private readonly name = DATABASE_NAME) {}
 
   // Open the database once, adding any missing collections
   private open(): Promise<IDBDatabase> {
@@ -32,6 +35,8 @@ export class IndexedDbStore implements Store {
     this.database = this.openAt(undefined).then((database) => {
       // Collections this app needs that the database lacks
       const missing = COLLECTION_NAMES.filter((collection) => !database.objectStoreNames.contains(collection));
+      // A collection with the right name but a different layout belongs to another app: refuse rather than mix data
+      this.checkLayout(database);
       // Everything is there: use it as is
       if (missing.length === 0) return this.watch(database);
       // Note the current version before closing
@@ -61,6 +66,24 @@ export class IndexedDbStore implements Store {
     };
     // Wait for it to open
     return settle(request);
+  }
+
+  // Make sure every existing collection stores records the way this app does (keys kept outside the record)
+  private checkLayout(database: IDBDatabase): void {
+    // Our collections that already exist
+    const present = COLLECTION_NAMES.filter((collection) => database.objectStoreNames.contains(collection));
+    // Nothing to check in a new database
+    if (present.length === 0) return;
+    // Look at each one in a single read-only transaction
+    const transaction = database.transaction(present, "readonly");
+    // Find any collection that keeps its keys inside the records
+    const foreign = present.filter((collection) => transaction.objectStore(collection).keyPath !== null);
+    // All fine
+    if (foreign.length === 0) return;
+    // Release the database before failing
+    database.close();
+    // Explain in plain words
+    throw new Error(`The browser database "${this.name}" belongs to something else on this address (its ${foreign.join(", ")} collection is laid out differently), so VoiceLab will not write to it.`);
   }
 
   // Close and forget the database when another tab needs to upgrade it, so neither tab gets stuck
