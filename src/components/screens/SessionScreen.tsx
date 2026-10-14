@@ -15,8 +15,8 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 import { dayLabel, formatRate } from "@/core/copy";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
-// Load the retry comparison
-import { retryComparison } from "@/core/progress";
+// Load the focus-based headlines and numbers
+import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
 import { promptForDay } from "@/content/prompts";
 // Load the session record type
@@ -74,6 +74,14 @@ function Transcript({ text }: { text: string }) {
   );
 }
 
+// The secondary number shown under the title: whichever the headline does not already say
+function sideNumber(session: SessionRecord): string {
+  // In pace week the headline says the speed, so show the fillers
+  if (measureFor(session.focus)?.unit === "words a minute") return `${formatRate(session.fillersPerMinute)} fillers a minute`;
+  // Otherwise show the speed
+  return `${Math.round(session.wordsPerMinute)} words a minute`;
+}
+
 // The Feedback screen for a first try or a warm-up
 function FeedbackView({ session, now, note }: { session: SessionRecord; now: Date; note: string }) {
   // Whether this was a warm-up (it leads into the full minute instead of a retry)
@@ -84,7 +92,7 @@ function FeedbackView({ session, now, note }: { session: SessionRecord; now: Dat
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : "Your take"}>{Math.round(session.wordsPerMinute)} words a minute</Masthead>
+      <Masthead title={warmup ? "Warm-up" : "Your take"}>{sideNumber(session)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -96,8 +104,10 @@ function FeedbackView({ session, now, note }: { session: SessionRecord; now: Dat
         </div>
         {/* The notes (first on a phone, margin on a computer) */}
         <aside className="order-first flex flex-1 flex-col md:order-2">
-          {/* The focus number as a sentence */}
-          <p className="mt-5 font-display text-3xl md:mt-0">{formatRate(session.fillersPerMinute)} fillers a minute.</p>
+          {/* The focus number as a sentence (or the focus's name when no number measures it) */}
+          <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
+          {/* When there is no number, say why */}
+          {!measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
           {/* Feedback, or a note that it has not arrived */}
           {session.feedback ? (
             <>
@@ -142,18 +152,12 @@ function FeedbackView({ session, now, note }: { session: SessionRecord; now: Dat
   );
 }
 
-// The headline sentence for a retry
-function retryHeadline(retry: SessionRecord, original: SessionRecord): string {
-  // Compare the two tries
-  const comparison = retryComparison(retry, original);
-  // Too close to call: say it held
-  if (comparison.same) return `Again about ${formatRate(comparison.after)} fillers a minute.`;
-  // Otherwise state both numbers plainly
-  return `From ${formatRate(comparison.before)} to ${formatRate(comparison.after)} fillers a minute.`;
-}
-
 // The Retry result screen
 function RetryView({ retry, original, now }: { retry: SessionRecord; original: SessionRecord; now: Date }) {
+  // The number for the focus, or the filler rate when the focus has none
+  const measure = measureFor(original.focus) ?? measureFor("cut-fillers");
+  // Write one try's number with its unit
+  const numberOf = (session: SessionRecord) => (measure ? `${measure.format(measure.read(session))} ${measure.unit}.` : "");
   // Draw the page
   return (
     <>
@@ -164,9 +168,9 @@ function RetryView({ retry, original, now }: { retry: SessionRecord; original: S
         {/* Both tries, in the margin on a computer (the headline already says both numbers on a phone) */}
         <aside className="hidden text-footnote text-ink-muted md:block">
           {/* First try */}
-          <p><em>First try.</em> {formatRate(original.fillersPerMinute)} fillers a minute.</p>
+          <p><em>First try.</em> {numberOf(original)}</p>
           {/* Second try */}
-          <p className="mt-3 border-t border-rule pt-3"><em className="text-ink">Second try.</em> {formatRate(retry.fillersPerMinute)} fillers a minute.</p>
+          <p className="mt-3 border-t border-rule pt-3"><em className="text-ink">Second try.</em> {numberOf(retry)}</p>
         </aside>
         {/* Main column */}
         <div className="flex flex-1 flex-col">
