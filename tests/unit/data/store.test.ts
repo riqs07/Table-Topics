@@ -116,13 +116,13 @@ describe.each([
 });
 
 // Open a database at a version and give it some collections, the way another app on the same address might have
-function makeExistingDatabase(name: string, version: number, collections: string[]): Promise<void> {
+function makeExistingDatabase(name: string, version: number, collections: string[], keyPath?: string): Promise<void> {
   // Wait for it to be created and closed
   return new Promise((resolve, reject) => {
     // Ask for the database at that version
     const request = indexedDB.open(name, version);
-    // Create the given collections
-    request.onupgradeneeded = () => collections.forEach((collection) => request.result.createObjectStore(collection));
+    // Create the given collections, with keys inside each record if a key path is given (the way many apps lay them out)
+    request.onupgradeneeded = () => collections.forEach((collection) => request.result.createObjectStore(collection, keyPath ? { keyPath } : undefined));
     // Close it so the app can open it
     request.onsuccess = () => {
       // Release the connection
@@ -159,5 +159,29 @@ describe("IndexedDbStore with an existing database", () => {
     await store.put("audio", "a1", new Blob(["voice"]));
     // Confirm it loads back
     expect(await (await store.get("audio", "a1"))?.text()).toBe("voice");
+  });
+
+  // Another app on the same address left a "voicelab" database whose collections keep keys inside records; the app must not use it
+  it("keeps its own database apart from another app's \"voicelab\" database", async () => {
+    // The other app's database, with collections named like ours but laid out differently
+    await makeExistingDatabase("voicelab", 10, ["sessions", "audio", "settings", "challenges"], "id");
+    // Use the app's default database
+    const store = new IndexedDbStore();
+    // Save a recording and a session
+    await store.put("audio", "a1", new Blob(["voice"]));
+    // Save the session too
+    await store.put("sessions", "s1", makeSession({ id: "s1" }));
+    // Confirm both load back
+    expect([await (await store.get("audio", "a1"))?.text(), (await store.get("sessions", "s1"))?.id]).toEqual(["voice", "s1"]);
+  });
+
+  // If a database does have collections laid out differently, say so plainly instead of failing on the first write
+  it("explains a database whose collections are laid out differently", async () => {
+    // A database whose audio collection keeps keys inside records
+    await makeExistingDatabase("voicelab-existing-3", 1, ["sessions", "audio", "settings", "challenges"], "id");
+    // Use it
+    const store = new IndexedDbStore("voicelab-existing-3");
+    // Confirm saving is refused with a clear reason
+    await expect(store.put("audio", "a1", new Blob(["voice"]))).rejects.toThrow(/belongs to something else/);
   });
 });
