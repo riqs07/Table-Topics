@@ -79,8 +79,8 @@ export function retryHeadline(retry: SessionRecord, original: SessionRecord): st
   const before = measure.read(original);
   // The retry's number
   const after = measure.read(retry);
-  // Too close to call: say it held
-  if (Math.abs(after - before) < measure.noticeable) return `Again about ${measure.format(after)} ${measure.unit}.`;
+  // Too close to call: say it held at the first try's number
+  if (Math.abs(after - before) < measure.noticeable) return `Again about ${measure.format(before)} ${measure.unit}.`;
   // Otherwise state both numbers plainly
   return `From ${measure.format(before)} to ${measure.format(after)} ${measure.unit}.`;
 }
