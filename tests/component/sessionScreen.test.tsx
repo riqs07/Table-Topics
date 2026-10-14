@@ -103,16 +103,16 @@ describe("SessionScreen", () => {
     expect(screen.getByText("Before the full minute")).toBeTruthy();
   });
 
-  // A talk says how the timing went, and its retry is another talk
-  it("shows the timing of a three-minute talk and retries as a talk", async () => {
-    // A talk that ran 12 seconds over
-    const session = makeSession({ id: "t1", mode: "talk", durationSec: 192, promptId: "p001", feedback: FEEDBACK, feedbackStatus: "done" });
+  // A Table Topic says whether it would qualify, and its retry is another Table Topic
+  it("shows the timing of a Table Topic and retries as one", async () => {
+    // A Table Topic in the grace period
+    const session = makeSession({ id: "t1", mode: "talk", durationSec: 132, promptId: "p001", feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="t1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the masthead names the kind of session
-    expect(await screen.findByText("Three-minute talk")).toBeTruthy();
+    expect(await screen.findByText("Table Topic")).toBeTruthy();
     // Confirm the timing line
-    expect(screen.getByText("3:12 against a 3:00 goal, 12 seconds over.")).toBeTruthy();
+    expect(screen.getByText("2:12, past 2:00 but inside the 30-second grace.")).toBeTruthy();
     // Confirm the retry is another talk
     expect(screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")).toBe("/session?mode=talk&prompt=p001&retryOf=t1");
   });

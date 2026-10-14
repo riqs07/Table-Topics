@@ -38,18 +38,18 @@ describe("formatClock", () => {
   });
 });
 
-// Group the checks about the three-minute talk
-describe("three-minute talk", () => {
-  // Up to 45 seconds to think, a three-minute goal, and room to run over before it stops itself at four
-  it("gives 45 seconds to think, aims for three minutes, and stops at four", () => {
-    // Confirm the think time, target, and limit
-    expect([THINK_SECONDS, targetSeconds("talk"), maxSeconds("talk")]).toEqual([45, 180, 240]);
+// Group the checks about a Table Topic, timed by Toastmasters rules
+describe("Table Topic", () => {
+  // Up to 45 seconds to think, a 1:00 to 2:00 window, and it stops itself at 3:00 so running over can be seen
+  it("gives 45 seconds to think, a 1:00 to 2:00 window, and stops at 3:00", () => {
+    // Confirm the think time, top of the window, and limit
+    expect([THINK_SECONDS, targetSeconds("talk"), maxSeconds("talk")]).toEqual([45, 120, 180]);
   });
 
-  // The light: off, then yellow in the last 45 seconds before the goal, then red past it
-  it("turns the light yellow 45 seconds before the goal and red after it", () => {
-    // Confirm the light at several moments
-    expect([timeSignal("talk", 0), timeSignal("talk", 134.9), timeSignal("talk", 135), timeSignal("talk", 180), timeSignal("talk", 180.1)]).toEqual(["none", "none", "caution", "caution", "over"]);
+  // The Toastmasters lights: green at 1:00, yellow at 1:30, red at 2:00 (staying on), and over time past 2:30
+  it("shows green at 1:00, yellow at 1:30, red at 2:00, and over time past 2:30", () => {
+    // Confirm the light at each boundary
+    expect([0, 59.9, 60, 89.9, 90, 119.9, 120, 150, 150.1].map((seconds) => timeSignal("talk", seconds))).toEqual(["none", "none", "green", "green", "yellow", "yellow", "red", "red", "overtime"]);
   });
 
   // The other kinds of session have no light
@@ -58,9 +58,20 @@ describe("three-minute talk", () => {
     expect([timeSignal("standard", 170), timeSignal("warmup", 29)]).toEqual(["none", "none"]);
   });
 
-  // After a talk, one plain sentence on the timing
-  it("says how the timing went against the goal", () => {
-    // Confirm under, on, and over
-    expect([timingSentence(170), timingSentence(180), timingSentence(192)]).toEqual(["2:50 against a 3:00 goal, 10 seconds to spare.", "3:00 against a 3:00 goal, right on time.", "3:12 against a 3:00 goal, 12 seconds over."]);
+  // After a Table Topic, one plain sentence on whether it would have qualified
+  it("says whether the length would qualify in a contest", () => {
+    // Confirm under, inside, in the grace, at the edge, and over
+    expect([timingSentence(52), timingSentence(107), timingSentence(132), timingSentence(150), timingSentence(161)]).toEqual([
+      // Under the minimum
+      "0:52, under the 1:00 minimum. In a contest this would not qualify.",
+      // Inside the window
+      "1:47, inside the 1:00 to 2:00 window.",
+      // Past red but inside the grace
+      "2:12, past 2:00 but inside the 30-second grace.",
+      // Exactly at the edge still qualifies
+      "2:30, past 2:00 but inside the 30-second grace.",
+      // Over the grace
+      "2:41, over 2:30. In a contest this would not qualify.",
+    ]);
   });
 });

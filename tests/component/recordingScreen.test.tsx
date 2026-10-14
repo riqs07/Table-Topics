@@ -193,7 +193,7 @@ describe("RecordingScreen", () => {
     // Draw a talk
     const { clock } = draw({ mode: "talk" });
     // Confirm the goal is stated
-    expect(await screen.findByText("of a 3:00 goal")).toBeTruthy();
+    expect(await screen.findByText("aim for 1:00 to 2:00")).toBeTruthy();
     // Begin the thinking time
     fireEvent.click(screen.getByRole("button", { name: /Start thinking/ }));
     // Confirm the countdown and the prompt stay up
@@ -218,8 +218,8 @@ describe("RecordingScreen", () => {
     expect(await screen.findByRole("button", { name: /Stop/ })).toBeTruthy();
   });
 
-  // The light turns yellow 45 seconds before the goal and red past it
-  it("shows the timing light during a talk", async () => {
+  // The Toastmasters lights: green at 1:00, yellow at 1:30, red at 2:00, and over time past 2:30
+  it("shows the timing light during a Table Topic", async () => {
     // Use fake timers that still let promises run
     vi.useFakeTimers({ shouldAdvanceTime: true });
     // Draw a talk
@@ -234,18 +234,26 @@ describe("RecordingScreen", () => {
     const light = () => screen.getByRole("status", { name: "Timing light" }).getAttribute("data-signal");
     // Confirm it starts off
     expect(light()).toBe("none");
-    // Move to 2:20
-    clock.advance(140_000);
-    // Let the timer tick
-    await act(async () => vi.advanceTimersByTime(200));
-    // Confirm yellow, with words for screen readers
-    expect([light(), screen.getByRole("status", { name: "Timing light" }).textContent]).toEqual(["caution", "Under 45 seconds to the goal"]);
-    // Move past 3:00
-    clock.advance(45_000);
-    // Let the timer tick
-    await act(async () => vi.advanceTimersByTime(200));
-    // Confirm red
-    expect([light(), screen.getByRole("status", { name: "Timing light" }).textContent]).toEqual(["over", "Past the goal"]);
+    // The light and its words after moving the clock forward
+    const after = async (ms: number) => {
+      // Move the clock
+      clock.advance(ms);
+      // Let the timer tick
+      await act(async () => vi.advanceTimersByTime(200));
+      // Read both
+      return [light(), screen.getByRole("status", { name: "Timing light" }).textContent];
+    };
+    // Confirm each light with words for screen readers: 1:05, 1:35, 2:05, 2:35
+    expect([await after(65_000), await after(30_000), await after(30_000), await after(30_000)]).toEqual([
+      // Green
+      ["green", "Green: the minimum is met"],
+      // Yellow
+      ["yellow", "Yellow: start wrapping up"],
+      // Red
+      ["red", "Red: finish now"],
+      // Over time
+      ["overtime", "Over 2:30: past the limit"],
+    ]);
   });
 
   // A one-minute session has no light

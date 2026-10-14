@@ -104,11 +104,11 @@ describe("checkFeedback", () => {
     expect(() => checkFeedback({ keep: "a", change: "  ", retryCue: "c" })).toThrow(/incomplete/);
   });
 
-  // A three-minute talk is flagged with its goal, so the coach looks at the whole arc and the timing
-  it("tells the coach when a session is a three-minute talk", () => {
-    // Build a talk message that ran 12 seconds over
-    const message = buildCoachMessage({ ...SESSION, durationSec: 192, mode: "talk" });
+  // A Table Topic is flagged with its rules, so the coach looks at the whole answer and the timing
+  it("tells the coach when a session is a Table Topic", () => {
+    // Build a Table Topic message in the grace period
+    const message = buildCoachMessage({ ...SESSION, durationSec: 132, mode: "talk" });
     // Confirm the note
-    expect(message).toContain("This is a three-minute talk after up to 45 seconds to prepare. The goal was 180 seconds and it ran 192. Comment on how the answer was organised across the whole time.");
+    expect(message).toContain("This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under 1:00 or over 2:30 would not qualify in a contest. It came after up to 45 seconds to think and ran 132 seconds. Comment on how the answer was organised across the whole time.");
   });
 });
