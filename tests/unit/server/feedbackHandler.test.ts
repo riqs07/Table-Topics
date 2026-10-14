@@ -93,10 +93,12 @@ describe("feedback handler", () => {
   it("accepts a warm-up and a request without a mode", async () => {
     // Call with a warm-up
     const warmup = await createFeedbackHandler(deps())(request({ ...BODY, mode: "warmup" }));
+    // Call with a three-minute talk
+    const talk = await createFeedbackHandler(deps())(request({ ...BODY, mode: "talk" }));
     // Call without a mode
     const noMode = await createFeedbackHandler(deps())(request(BODY));
-    // Confirm both succeed
-    expect([warmup.status, noMode.status]).toEqual([200, 200]);
+    // Confirm all succeed
+    expect([warmup.status, talk.status, noMode.status]).toEqual([200, 200, 200]);
   });
 
   // Bad input is refused before anything costs money

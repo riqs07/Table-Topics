@@ -49,6 +49,16 @@ describe("HomeScreen", () => {
     expect(action.getAttribute("href")).toBe(`/session?prompt=${promptForDay(NOW).id}`);
   });
 
+  // A quieter option starts a three-minute talk on the prompt shown
+  it("offers a three-minute talk", async () => {
+    // Draw the screen
+    render(<HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Find the talk link
+    const talk = await screen.findByRole("link", { name: /three-minute talk/ });
+    // Confirm it starts a talk with today's prompt
+    expect(talk.getAttribute("href")).toBe(`/session?mode=talk&prompt=${promptForDay(NOW).id}`);
+  });
+
   // A quieter option starts a 30-second warm-up on today's warm-up prompt
   it("offers a 30-second warm-up", async () => {
     // Draw the screen

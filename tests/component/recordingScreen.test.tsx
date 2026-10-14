@@ -186,6 +186,80 @@ describe("RecordingScreen", () => {
     expect((await repository.listSessions())[0]).toMatchObject({ mode: "warmup", durationSec: 30 });
   });
 
+  // A talk gives thinking time first, then starts recording by itself when it runs out
+  it("counts down 45 seconds of thinking time, then starts recording", async () => {
+    // Use fake timers that still let promises run
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Draw a talk
+    const { clock } = draw({ mode: "talk" });
+    // Confirm the goal is stated
+    expect(await screen.findByText("of a 3:00 goal")).toBeTruthy();
+    // Begin the thinking time
+    fireEvent.click(screen.getByRole("button", { name: /Start thinking/ }));
+    // Confirm the countdown and the prompt stay up
+    expect([!!(await screen.findByText("0:45")), !!screen.getByText(PROMPTS[0]!.text)]).toEqual([true, true]);
+    // Let 46 seconds pass
+    clock.advance(46_000);
+    // Let the timer tick
+    await act(async () => vi.advanceTimersByTime(500));
+    // Confirm recording began by itself
+    expect(await screen.findByRole("button", { name: /Stop/ })).toBeTruthy();
+  });
+
+  // Thinking can end early
+  it("starts speaking early when ready", async () => {
+    // Draw a talk
+    draw({ mode: "talk" });
+    // Begin the thinking time
+    fireEvent.click(await screen.findByRole("button", { name: /Start thinking/ }));
+    // Say ready
+    fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
+    // Confirm recording began
+    expect(await screen.findByRole("button", { name: /Stop/ })).toBeTruthy();
+  });
+
+  // The light turns yellow 45 seconds before the goal and red past it
+  it("shows the timing light during a talk", async () => {
+    // Use fake timers that still let promises run
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Draw a talk
+    const { clock } = draw({ mode: "talk" });
+    // Begin thinking, then start speaking
+    fireEvent.click(await screen.findByRole("button", { name: /Start thinking/ }));
+    // Say ready
+    fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Read the light's state
+    const light = () => screen.getByRole("status", { name: "Timing light" }).getAttribute("data-signal");
+    // Confirm it starts off
+    expect(light()).toBe("none");
+    // Move to 2:20
+    clock.advance(140_000);
+    // Let the timer tick
+    await act(async () => vi.advanceTimersByTime(200));
+    // Confirm yellow, with words for screen readers
+    expect([light(), screen.getByRole("status", { name: "Timing light" }).textContent]).toEqual(["caution", "Under a minute to the goal"]);
+    // Move past 3:00
+    clock.advance(45_000);
+    // Let the timer tick
+    await act(async () => vi.advanceTimersByTime(200));
+    // Confirm red
+    expect([light(), screen.getByRole("status", { name: "Timing light" }).textContent]).toEqual(["over", "Past the goal"]);
+  });
+
+  // A one-minute session has no light
+  it("shows no timing light outside a talk", async () => {
+    // Draw a one-minute session
+    draw();
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Confirm there is no light
+    expect(screen.queryByRole("status", { name: "Timing light" })).toBeNull();
+  });
+
   // Under ten seconds is too short to measure: nothing is saved, and the user is told
   it("does not save a recording under ten seconds", async () => {
     // Draw the screen
