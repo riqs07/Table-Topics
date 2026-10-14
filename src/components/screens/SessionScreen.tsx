@@ -21,6 +21,8 @@ import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 import { promptForDay } from "@/content/prompts";
 // Load the session record type
 import type { SessionRecord } from "@/data/records";
+// Load the repository type
+import type { Repository } from "@/data/repository";
 // Load the feedback requester and its outcomes
 import { requestFeedback, type FeedbackOutcome } from "@/data/feedbackClient";
 // Load the saved passphrase
@@ -74,6 +76,50 @@ function Transcript({ text }: { text: string }) {
   );
 }
 
+// A player for a session's saved audio (draws nothing if the audio is gone)
+function Playback({ repo, session }: { repo: Repository; session: SessionRecord }) {
+  // Temporary address of the audio in this browser
+  const [url, setUrl] = useState<string | null>(null);
+
+  // Load the audio and make an address for it; release it when leaving
+  useEffect(() => {
+    // Nothing to load if the audio was pruned
+    if (!session.audioKey) return;
+    // Ignore the result if the screen closes first
+    let cancelled = false;
+    // The address made, so it can be released
+    let made: string | null = null;
+    // Read the audio
+    repo.getAudio(session.audioKey).then((audio) => {
+      // Stop if the screen closed or the audio is missing
+      if (cancelled || !audio) return;
+      // Make the address
+      made = URL.createObjectURL(audio);
+      // Show the player
+      setUrl(made);
+    });
+    // Release the address when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+      // Free the memory behind the address
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [repo, session.audioKey]);
+
+  // Nothing to play
+  if (!url) return null;
+  // The player, with a note when this is the baseline
+  return (
+    <div className="mt-5">
+      {/* Small heading */}
+      <p className="text-footnote italic text-ink-muted">{session.isBaseline ? "Your first recording, the one progress is measured against" : "Listen back"}</p>
+      {/* The browser's own audio player */}
+      <audio controls src={url} aria-label="Your recording" className="mt-2 w-full" />
+    </div>
+  );
+}
+
 // The secondary number shown under the title: whichever the headline does not already say
 function sideNumber(session: SessionRecord): string {
   // In pace week the headline says the speed, so show the fillers
@@ -83,7 +129,7 @@ function sideNumber(session: SessionRecord): string {
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ session, now, note }: { session: SessionRecord; now: Date; note: string }) {
+function FeedbackView({ repo, session, now, note }: { repo: Repository; session: SessionRecord; now: Date; note: string }) {
   // Whether this was a warm-up (it leads into the full minute instead of a retry)
   const warmup = session.mode === "warmup";
   // Whether the transcript is open on a phone (it is always shown on a computer)
@@ -108,6 +154,8 @@ function FeedbackView({ session, now, note }: { session: SessionRecord; now: Dat
           <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
           {/* When there is no number, say why */}
           {!measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
+          {/* Listen back */}
+          <Playback repo={repo} session={session} />
           {/* Feedback, or a note that it has not arrived */}
           {session.feedback ? (
             <>
@@ -153,7 +201,7 @@ function FeedbackView({ session, now, note }: { session: SessionRecord; now: Dat
 }
 
 // The Retry result screen
-function RetryView({ retry, original, now }: { retry: SessionRecord; original: SessionRecord; now: Date }) {
+function RetryView({ repo, retry, original, now }: { repo: Repository; retry: SessionRecord; original: SessionRecord; now: Date }) {
   // The number for the focus, or the filler rate when the focus has none
   const measure = measureFor(original.focus) ?? measureFor("cut-fillers");
   // Write one try's number with its unit
@@ -178,6 +226,8 @@ function RetryView({ retry, original, now }: { retry: SessionRecord; original: S
           <h1 className="mt-6 font-display text-statement tracking-tight md:mt-0 md:max-w-[18ch] md:text-statement-xl">{retryHeadline(retry, original)}</h1>
           {/* The coach's notes on the retry */}
           {retry.feedback && <p className="mt-5 max-w-[48ch] text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
+          {/* Listen back to the second try */}
+          <div className="max-w-[48ch]"><Playback repo={repo} session={retry} /></div>
           {/* Push the action down */}
           <div className="flex-1" />
           {/* Finish */}
@@ -254,9 +304,9 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
         </>
       )}
       {/* A retry with its first try */}
-      {loaded?.session && loaded.original && today && <RetryView retry={loaded.session} original={loaded.original} now={today} />}
+      {loaded?.session && loaded.original && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && today && <FeedbackView session={loaded.session} now={today} note={note} />}
+      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} />}
     </main>
   );
 }
