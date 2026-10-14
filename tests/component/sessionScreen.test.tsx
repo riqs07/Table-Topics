@@ -150,4 +150,40 @@ describe("SessionScreen", () => {
     // Confirm the explanation
     expect(await screen.findByText(/not on this device/)).toBeTruthy();
   });
+
+  // A session with saved audio can be played back
+  it("plays back the saved recording", async () => {
+    // Stand in for the browser's object URLs
+    const create = vi.fn(() => "blob:take");
+    // Stand in for releasing them
+    const revoke = vi.fn();
+    // Install both stand-ins
+    Object.assign(URL, { createObjectURL: create, revokeObjectURL: revoke });
+    // A session with audio
+    const session = makeSession({ id: "s1", audioKey: "s1", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Repository holding it and its audio
+    const repository = await repositoryWith(session);
+    // Save the audio
+    await repository.saveAudio("s1", new Blob(["sound"], { type: "audio/webm" }));
+    // Draw the screen
+    const { unmount } = render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // Confirm the player points at the recording
+    expect((await screen.findByLabelText("Your recording")).getAttribute("src")).toBe("blob:take");
+    // Close the screen
+    unmount();
+    // Confirm the address was released
+    expect(revoke).toHaveBeenCalledWith("blob:take");
+  });
+
+  // Pruned audio shows no player
+  it("shows no player when the audio is gone", async () => {
+    // A session whose audio was pruned
+    const session = makeSession({ id: "s1", audioKey: null, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Wait for the page
+    await screen.findByText("You ended strongly.");
+    // Confirm there is no player
+    expect(screen.queryByLabelText("Your recording")).toBeNull();
+  });
 });
