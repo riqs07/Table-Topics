@@ -53,10 +53,10 @@ function fullSessions(sessions: ReadonlyArray<SessionRecord>): SessionRecord[] {
   return sessions.filter((session) => session.mode !== "warmup");
 }
 
-// Whether a new session should become the starting point: the first full session ever, never a warm-up
+// Whether a new session should become the starting point: the first Record Response (or old one-minute session), never a warm-up or Table Topic
 export function shouldBeBaseline(existing: ReadonlyArray<SessionRecord>, mode: SessionMode): boolean {
-  // Warm-ups never become the baseline, and there is only ever one
-  return mode === "standard" && !existing.some((session) => session.isBaseline);
+  // Only a Record Response or an old one-minute session can be the baseline, and there is only ever one
+  return (mode === "standard" || mode === "response") && !existing.some((session) => session.isBaseline);
 }
 
 // Compare the first recording with the most recent full session, or null if there is nothing to compare

@@ -49,7 +49,9 @@ function promptText(session: SessionRecord): string {
   // Mark warm-ups so they read differently from full sessions
   if (session.mode === "warmup") return `Warm-up: ${text}`;
   // Mark Table Topics the same way
-  return session.mode === "talk" ? `Table Topic: ${text}` : text;
+  if (session.mode === "talk") return `Table Topic: ${text}`;
+  // And Record Responses
+  return session.mode === "response" ? `Record Response: ${text}` : text;
 }
 
 // One line of the contents: day, prompt, dotted leader, result

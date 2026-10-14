@@ -8,7 +8,7 @@ import { WEEKLY_FOCUSES } from "@/core/focus";
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
 // Load the Table Topics timing rules
-import { THINK_SECONDS, TOPIC_LIMIT, TOPIC_WINDOW_START, formatClock } from "@/core/recordingRules";
+import { TOPIC_LIMIT, TOPIC_WINDOW_START, formatClock, targetSeconds, thinkSeconds } from "@/core/recordingRules";
 import type { Feedback, SessionMode } from "@/data/records";
 
 // The coach's standing instructions; kept free of per-session details so it can be cached
@@ -41,7 +41,7 @@ export interface CoachInput {
   focusId: string;
   // On a retry, the fix given last time; otherwise null
   previousChange: string | null;
-  // Full session, warm-up, or Table Topic (missing means a full session)
+  // Full session, warm-up, Table Topic, or Record Response (missing means a full session)
   mode?: SessionMode;
 }
 
@@ -68,7 +68,9 @@ export function buildCoachMessage(input: CoachInput): string {
     // On a warm-up, keep it brief and light
     ...(input.mode === "warmup" ? ["This is a 30-second warm-up. Keep every part to one short sentence, and keep it light."] : []),
     // On a Table Topic, its rules and how long it ran, so the coach looks at the whole answer
-    ...(input.mode === "talk" ? [`This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under ${formatClock(TOPIC_WINDOW_START)} or over ${formatClock(TOPIC_LIMIT)} would not qualify in a contest. It came after up to ${THINK_SECONDS} seconds to think and ran ${Math.round(input.durationSec)} seconds. Comment on how the answer was organised across the whole time.`] : []),
+    ...(input.mode === "talk" ? [`This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under ${formatClock(TOPIC_WINDOW_START)} or over ${formatClock(TOPIC_LIMIT)} would not qualify in a contest. It came after a ${thinkSeconds("talk")}-second countdown on a light question and ran ${Math.round(input.durationSec)} seconds. Judge it as a quick, unprepared answer.`] : []),
+    // On a Record Response, its preparation and goal, so the coach looks at the whole answer
+    ...(input.mode === "response" ? [`This is a prepared response: up to ${thinkSeconds("response")} seconds to think with hints, then a ${targetSeconds("response")}-second goal. It ran ${Math.round(input.durationSec)} seconds. Comment on how the answer was organised across the whole time.`] : []),
     // On a retry, the fix to check for
     ...(input.previousChange ? [`This is a retry. The fix you gave last time was: ${input.previousChange}`] : []),
     // A blank line before the transcript

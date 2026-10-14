@@ -12,7 +12,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the weekly challenge picker
 import { challengeForWeek, type Challenge } from "@/content/challenges";
 // Load the daily prompt picker
-import { promptForDay, warmupPromptForDay } from "@/content/prompts";
+import { promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
 // Load the day label helper
@@ -120,8 +120,10 @@ export function HomeScreen(props: ScreenProps) {
     setData({ ...data, challengeDone: done });
   }
 
-  // Today's prompt (after the time is known)
+  // Today's Record Response prompt (after the time is known)
   const prompt = today ? promptForDay(today, offset) : null;
+  // Today's Table Topic, kept off the page so it is a surprise
+  const topic = today ? tableTopicForDay(today, offset) : null;
 
   // Draw the page
   return (
@@ -160,18 +162,10 @@ export function HomeScreen(props: ScreenProps) {
               {prompt.text}
             </h1>
           )}
-          {/* Quieter options: swap the prompt, or warm up first */}
+          {/* A quieter option: swap the prompt (the Table Topic changes with it) */}
           <p className="mt-4 italic text-ink-muted">
             {/* Swap the prompt */}
             <button type="button" onClick={() => setOffset(offset + 1)} className="italic hover:underline">or choose another</button>
-            {/* Separator */}
-            {" · "}
-            {/* The prompt shown, answered as a Table Topic (Toastmasters timing), with thinking time first */}
-            {prompt && <Link href={`/session?mode=talk&prompt=${prompt.id}`} className="hover:underline">or answer it as a Table Topic</Link>}
-            {/* Separator */}
-            {prompt && " · "}
-            {/* A 30-second warm-up on an easier prompt (counts for the streak, not for progress) */}
-            {today && <Link href={`/session?mode=warmup&prompt=${warmupPromptForDay(today).id}`} className="hover:underline">or warm up for 30 seconds</Link>}
           </p>
           {/* Push the footer down */}
           <div className="flex-1" />
@@ -187,8 +181,10 @@ export function HomeScreen(props: ScreenProps) {
               </label>
             </Footnote>
           )}
-          {/* The one action */}
-          {prompt && <ActionBand action="Speak for a minute" aside="about a minute" href={`/session?prompt=${prompt.id}`} />}
+          {/* The two modes: a Table Topic on a surprise question, or a prepared response to the prompt above */}
+          {topic && <ActionBand quiet action="Table Topic" aside="surprise question · 1 to 2 min" href={`/session?mode=talk&prompt=${topic.id}`} />}
+          {/* The main action */}
+          {prompt && <ActionBand action="Record a response" aside="2 min to think · 3 to speak" href={`/session?mode=response&prompt=${prompt.id}`} />}
         </div>
       </div>
     </main>

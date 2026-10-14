@@ -7,6 +7,8 @@ import type { SessionMode } from "@/data/records";
 export function targetSeconds(mode: SessionMode): number {
   // A Table Topic aims for one to two minutes (Toastmasters contest rules)
   if (mode === "talk") return TOPIC_WINDOW_END;
+  // A Record Response aims for three minutes
+  if (mode === "response") return 180;
   // Warm-ups are 30 seconds; full sessions about a minute
   return mode === "warmup" ? 30 : 60;
 }
@@ -15,6 +17,8 @@ export function targetSeconds(mode: SessionMode): number {
 export function maxSeconds(mode: SessionMode): number {
   // A Table Topic runs to 3:00 so going over the 2:30 limit can be seen
   if (mode === "talk") return 180;
+  // A Record Response may run a minute past its goal
+  if (mode === "response") return 240;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
   return mode === "warmup" ? 30 : 180;
 }
@@ -30,8 +34,18 @@ export function formatClock(seconds: number): string {
 // The shortest recording kept, in seconds (shorter clips give unreliable rates)
 export const MIN_SECONDS = 10;
 
-// Longest thinking time before a Table Topic, in seconds (Toastmasters gives none; this is a practice aid and can be cut short)
-export const THINK_SECONDS = 45;
+// Seconds between seeing the prompt and recording: a short countdown for a Table Topic, time to prepare for a Record Response
+export function thinkSeconds(mode: SessionMode): number {
+  // A Table Topic gives very little waiting time
+  if (mode === "talk") return 10;
+  // A Record Response gives two minutes, which can be cut short
+  if (mode === "response") return 120;
+  // The older kinds start straight away
+  return 0;
+}
+
+// How long before a Record Response's goal its light turns yellow, in seconds
+const RESPONSE_YELLOW_LEAD = 45;
 
 // Toastmasters Table Topics timing: the shortest answer that qualifies (green light), in seconds
 export const TOPIC_WINDOW_START = 60;
@@ -45,9 +59,20 @@ export const TOPIC_LIMIT = 150;
 // The timing light: off, green, yellow, red, or past the limit (still red)
 export type TimeSignal = "none" | "green" | "yellow" | "red" | "overtime";
 
-// The timing light for a moment in a session (only Table Topics have one)
+// The timing light for a moment in a session (Table Topics and Record Responses have one)
 export function timeSignal(mode: SessionMode, seconds: number): TimeSignal {
-  // Only a Table Topic has a light
+  // A Record Response: yellow in the last stretch before the goal, red past it
+  if (mode === "response") {
+    // The goal
+    const goal = targetSeconds(mode);
+    // Past the goal
+    if (seconds > goal) return "red";
+    // Close to the goal
+    if (seconds >= goal - RESPONSE_YELLOW_LEAD) return "yellow";
+    // Otherwise off
+    return "none";
+  }
+  // Only a Table Topic has the full set of lights
   if (mode !== "talk") return "none";
   // Past the 2:30 limit
   if (seconds > TOPIC_LIMIT) return "overtime";
@@ -61,12 +86,25 @@ export function timeSignal(mode: SessionMode, seconds: number): TimeSignal {
   return "none";
 }
 
-// One plain sentence on whether a Table Topic's length would qualify in a contest
-export function timingSentence(durationSec: number): string {
+// One plain sentence on the timing: for a Table Topic, whether it would qualify; otherwise, how it compared with the goal
+export function timingSentence(mode: SessionMode, durationSec: number): string {
   // Whole seconds, as the timer would record them
   const seconds = Math.round(durationSec);
   // The length as a clock
   const clock = formatClock(seconds);
+  // Anything but a Table Topic compares with its goal
+  if (mode !== "talk") {
+    // The goal
+    const goal = targetSeconds(mode);
+    // How far over (negative means under)
+    const difference = seconds - goal;
+    // The shared opening
+    const opening = `${clock} against a ${formatClock(goal)} goal`;
+    // Right on time
+    if (difference === 0) return `${opening}, right on time.`;
+    // Over, or under
+    return difference > 0 ? `${opening}, ${difference} seconds over.` : `${opening}, ${-difference} seconds to spare.`;
+  }
   // Under the minimum
   if (seconds < TOPIC_WINDOW_START) return `${clock}, under the ${formatClock(TOPIC_WINDOW_START)} minimum. In a contest this would not qualify.`;
   // Inside the window

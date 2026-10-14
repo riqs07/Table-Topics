@@ -14,11 +14,11 @@ import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
-import { findPrompt } from "@/content/prompts";
+import { STRUCTURE_HINT, findPrompt } from "@/content/prompts";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the recording length rules
-import { MIN_SECONDS, THINK_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, targetSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
+import { MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, targetSeconds, thinkSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -84,8 +84,8 @@ function LiveWords({ text }: { text: LiveText }) {
   );
 }
 
-// Words for the timing light, read out to screen readers and shown beside the lamp (Toastmasters meanings)
-const SIGNAL_TEXT: Record<TimeSignal, string> = {
+// Words for the Table Topic light, read out to screen readers and shown beside the lamp (Toastmasters meanings)
+const TOPIC_SIGNAL_TEXT: Record<TimeSignal, string> = {
   // Before 1:00
   none: "",
   // From 1:00
@@ -96,6 +96,20 @@ const SIGNAL_TEXT: Record<TimeSignal, string> = {
   red: "Red: finish now",
   // Past 2:30
   overtime: "Over 2:30: past the limit",
+};
+
+// Words for the Record Response light, which only turns yellow and red
+const RESPONSE_SIGNAL_TEXT: Record<TimeSignal, string> = {
+  // Before 2:15
+  none: "",
+  // Not used by a Record Response
+  green: "",
+  // From 2:15
+  yellow: "Yellow: 45 seconds to the goal",
+  // Past 3:00
+  red: "Red: past the goal",
+  // Not used by a Record Response
+  overtime: "",
 };
 
 // Fill for the lamp at each state
@@ -112,16 +126,62 @@ const SIGNAL_LAMP: Record<TimeSignal, string> = {
   overtime: "border-ink bg-light-red",
 };
 
-// The timing light: a lamp that turns green, yellow, then red, as a Toastmasters timer shows
-function TimingLight({ signal }: { signal: TimeSignal }) {
+// The timing light: a lamp that changes color as the time goes on (green, yellow, red for a Table Topic; yellow, red for a Record Response)
+function TimingLight({ signal, mode }: { signal: TimeSignal; mode: SessionMode }) {
+  // The words for this kind of session
+  const words = mode === "talk" ? TOPIC_SIGNAL_TEXT : RESPONSE_SIGNAL_TEXT;
   // Lamp plus words, announced politely when they change
   return (
     <p role="status" aria-label="Timing light" data-signal={signal} className="mt-3 flex items-center gap-3">
       {/* The lamp itself (decorative; the words carry the meaning) */}
       <span aria-hidden="true" className={`inline-block size-6 flex-none rounded-full border-2 transition-colors ${SIGNAL_LAMP[signal]}`} />
       {/* What the lamp means */}
-      <span className="italic">{SIGNAL_TEXT[signal]}</span>
+      <span className="italic">{words[signal]}</span>
     </p>
+  );
+}
+
+// The hints for a Record Response: a simple structure plus this prompt's angles (large while thinking, compact in the margin while speaking)
+function Hints({ angles, compact }: { angles: ReadonlyArray<string>; compact: boolean }) {
+  // Compact: one line of structure and a short list of angles
+  if (compact) {
+    // Margin version
+    return (
+      <div className="mt-6 border-t border-rule pt-3">
+        {/* The structure on one line */}
+        <p>{STRUCTURE_HINT.map((step) => step.label).join(" · ")}</p>
+        {/* The angles */}
+        <ul className="mt-3 list-disc space-y-1 pl-4">
+          {/* One item per angle */}
+          {angles.map((angle) => <li key={angle}>{angle}</li>)}
+        </ul>
+      </div>
+    );
+  }
+  // Full version: structure and angles side by side on a computer
+  return (
+    <div className="mt-8 grid max-w-2xl gap-6 text-lede md:grid-cols-2">
+      {/* The structure */}
+      <div>
+        {/* Small heading */}
+        <p className="text-footnote italic text-ink-muted">A simple shape</p>
+        {/* The steps in order */}
+        <ol className="mt-2 space-y-1">
+          {/* One step per line */}
+          {STRUCTURE_HINT.map((step) => <li key={step.label}><em>{step.label}</em> <span className="text-ink-muted">{step.detail}</span></li>)}
+        </ol>
+      </div>
+      {/* The angles */}
+      <div>
+        {/* Small heading */}
+        <p className="text-footnote italic text-ink-muted">Angles to try</p>
+        {/* One per line */}
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {/* One item per angle */}
+          {angles.map((angle) => <li key={angle}>{angle}</li>)}
+        </ul>
+      </div>
+    </div>
   );
 }
 
@@ -163,8 +223,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval> } | null>(null);
   // Guards against stopping twice (a click and the auto-stop at once)
   const stopping = useRef(false);
-  // Seconds of thinking time left before a talk
-  const [thinkLeft, setThinkLeft] = useState(THINK_SECONDS);
+  // Seconds between seeing the prompt and recording for this kind of session
+  const think = thinkSeconds(mode);
+  // Seconds of thinking time (or countdown) left
+  const [thinkLeft, setThinkLeft] = useState(think);
   // The thinking countdown's timer, kept between renders
   const thinkTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   // The browser's reason when saving failed, shown so the problem can be pinned down
@@ -336,26 +398,26 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     setStage("recording");
   }, [clock, endThinking, fail, limit, services, stop]);
 
-  // Before a talk: count down the thinking time, then start recording by itself
+  // Before a Table Topic or Record Response: count down, then start recording by itself
   const beginThinking = useCallback(() => {
     // Clear any earlier countdown
     endThinking();
     // Note when thinking began
     const startedAt = clock();
     // Show the full time
-    setThinkLeft(THINK_SECONDS);
+    setThinkLeft(think);
     // Show the thinking stage
     setStage("thinking");
     // Count down
     thinkTimer.current = setInterval(() => {
       // Seconds left
-      const left = THINK_SECONDS - (clock().getTime() - startedAt.getTime()) / 1000;
+      const left = think - (clock().getTime() - startedAt.getTime()) / 1000;
       // Show them, never below zero
       setThinkLeft(Math.max(0, left));
       // Time is up: start speaking
       if (left <= 0) void start();
     }, TICK_MS);
-  }, [clock, endThinking, start]);
+  }, [clock, endThinking, start, think]);
 
   // Stop everything without saving and go home
   const discard = useCallback(async () => {
@@ -380,8 +442,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         // Stop the page from scrolling
         event.preventDefault();
         // Start or stop
-        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") void (mode === "talk" ? beginThinking() : start());
-        else if (stage === "thinking") void start();
+        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") void (think > 0 ? beginThinking() : start());
+        // While thinking about a Record Response, start early (a Table Topic's countdown cannot be skipped)
+        else if (stage === "thinking" && mode === "response") void start();
         else if (stage === "recording") void stop();
       }
       // Escape while thinking or recording: discard
@@ -391,7 +454,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     window.addEventListener("keydown", onKey);
     // Stop listening when the screen changes
     return () => window.removeEventListener("keydown", onKey);
-  }, [beginThinking, discard, mode, stage, start, stop]);
+  }, [beginThinking, discard, mode, stage, start, stop, think]);
 
   // The latest stop-everything function, for the cleanup below
   const finishLatest = useRef(finishCapture);
@@ -410,13 +473,19 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : "about a minute";
+  const lengthText = mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" ? `a ${formatClock(target)} goal` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // The page title for this kind of session
-  const title = mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : retryOf ? "Second try" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : "Recording";
   // The keyboard hint for this stage
-  const hint = recording ? "space to stop · esc to discard" : thinking ? "space to start speaking · esc to leave" : mode === "talk" ? "space to start thinking" : "space to start";
+  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : "space to start";
+  // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
+  const showPrompt = !recording && !!prompt && (mode !== "talk" || thinking);
+  // A Table Topic's briefing, shown before the question
+  const showBriefing = mode === "talk" && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed");
+  // This prompt's angles, for a Record Response
+  const angles = mode === "response" ? (prompt?.angles ?? []) : [];
 
   // Draw the page
   return (
@@ -432,11 +501,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The clock, large */}
           <p className="font-display text-statement text-ink tabular-nums">{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>
           {/* The length to aim for, or what the countdown is for */}
-          <p className="mt-1">{thinking ? "to think" : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
-          {/* During a talk, the timing light */}
-          {recording && mode === "talk" && <TimingLight signal={timeSignal(mode, elapsed)} />}
+          <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
+          {/* During a Table Topic or Record Response, the timing light */}
+          {recording && (mode === "talk" || mode === "response") && <TimingLight signal={timeSignal(mode, elapsed)} mode={mode} />}
           {/* Prompt reminder while recording */}
           {recording && prompt && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
+          {/* A Record Response keeps its hints in view while speaking */}
+          {recording && angles.length > 0 && <Hints angles={angles} compact />}
           {/* Push discard down */}
           <div className="hidden flex-1 md:block" />
           {/* Discard while recording */}
@@ -449,12 +520,23 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
         {/* Main column */}
         <div className="flex flex-1 flex-col">
+          {/* Before a Table Topic: the briefing instead of the question */}
+          {showBriefing && (
+            <>
+              {/* The headline */}
+              <h1 className="mt-8 font-display text-prompt tracking-tight md:mt-0 md:max-w-[18ch]">There is very little waiting time.</h1>
+              {/* How it works */}
+              <p className="mt-5 max-w-[48ch] text-lede">In Table Topics you hear the question and start almost straight away. Press the button to see yours: you get {think} seconds, then recording starts by itself. Speak for 1 to 2 minutes; the light turns green at 1:00, yellow at 1:30, and red at 2:00.</p>
+            </>
+          )}
           {/* Before recording: the prompt and, on a retry, last time's cue */}
-          {!recording && prompt && (
+          {showPrompt && prompt && (
             <h1 className="relative mt-8 font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:mt-0 md:max-w-[16ch] md:text-prompt-xl">
               {prompt.text}
             </h1>
           )}
+          {/* Thinking about a Record Response: the hints */}
+          {thinking && angles.length > 0 && <Hints angles={angles} compact={false} />}
           {/* On a retry, the cue to carry in */}
           {!recording && retryCue && (
             <div className="mt-6 max-w-md border-y border-ink py-4">
@@ -503,15 +585,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The one action for this stage */}
           {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || (problem && problem !== "speech-unsupported")) && (
             mode === "talk" ? (
-              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${THINK_SECONDS} seconds to prepare`} onClick={beginThinking} />
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Show my topic"} aside={`${think} seconds to start`} onClick={beginThinking} />
+            ) : mode === "response" ? (
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${think / 60} minutes to prepare`} onClick={beginThinking} />
             ) : (
               <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
             )
           )}
-          {/* Thinking: a note that real Table Topics give no thinking time */}
-          {thinking && <Footnote><span>Real Table Topics give no thinking time. As it gets easier, press Ready sooner.</span></Footnote>}
-          {/* Thinking: start speaking early */}
-          {thinking && <ActionButton action="Ready" aside="start speaking" onClick={() => void start()} />}
+          {/* Thinking about a Record Response: start speaking early */}
+          {thinking && mode === "response" && <ActionButton action="Ready" aside="start speaking" onClick={() => void start()} />}
+          {/* A Table Topic's countdown: no early start, just the time left */}
+          {thinking && mode === "talk" && <ActionButton action="Get ready" aside={`starting in ${Math.ceil(thinkLeft)}`} onClick={() => {}} disabled />}
           {/* Waiting for the microphone */}
           {stage === "starting" && <ActionButton action="Starting…" aside="allow the microphone" onClick={() => {}} disabled />}
           {/* Recording */}

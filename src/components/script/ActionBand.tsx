@@ -11,13 +11,15 @@ interface ActionBandProps {
   aside: string;
   // Where the action goes
   href: string;
+  // A second, quieter choice: outlined instead of filled, sitting just above the main band
+  quiet?: boolean;
 }
 
 // Draw the action as a link styled as a band
-export function ActionBand({ action, aside, href }: ActionBandProps) {
-  // Accent band that bleeds to the screen edges on a phone
+export function ActionBand({ action, aside, href, quiet = false }: ActionBandProps) {
+  // Filled accent band (or an outlined quiet one) that bleeds to the screen edges on a phone
   return (
-    <Link href={href} className="-mx-6 flex items-baseline justify-between gap-4 bg-accent px-6 pb-8 pt-5 text-accent-ink md:mx-0 md:mb-10 md:max-w-md md:pb-5">
+    <Link href={href} className={`-mx-6 flex items-baseline justify-between gap-4 px-6 pt-5 md:mx-0 md:max-w-md ${quiet ? "border-y-2 border-ink pb-5 text-ink md:mb-3 md:border-2" : "bg-accent pb-8 text-accent-ink md:mb-10 md:pb-5"}`}>
       {/* The action, large italic */}
       <span className="whitespace-nowrap text-band italic">{action}</span>
       {/* The aside */}
