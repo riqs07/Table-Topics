@@ -114,3 +114,50 @@ describe.each([
     expect(await loaded?.text()).toBe("fake audio");
   });
 });
+
+// Open a database at a version and give it some collections, the way another app on the same address might have
+function makeExistingDatabase(name: string, version: number, collections: string[]): Promise<void> {
+  // Wait for it to be created and closed
+  return new Promise((resolve, reject) => {
+    // Ask for the database at that version
+    const request = indexedDB.open(name, version);
+    // Create the given collections
+    request.onupgradeneeded = () => collections.forEach((collection) => request.result.createObjectStore(collection));
+    // Close it so the app can open it
+    request.onsuccess = () => {
+      // Release the connection
+      request.result.close();
+      // Done
+      resolve();
+    };
+    // Pass on failures
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Group the checks about a database that already exists on this address
+describe("IndexedDbStore with an existing database", () => {
+  // A higher version left by something else must not stop saving
+  it("works with a database at a higher version that lacks our collections", async () => {
+    // A database at version 10 with someone else's collection
+    await makeExistingDatabase("voicelab-existing-1", 10, ["other"]);
+    // Use it
+    const store = new IndexedDbStore("voicelab-existing-1");
+    // Save and load a session
+    await store.put("sessions", "s1", makeSession({ id: "s1" }));
+    // Confirm it loads back
+    expect((await store.get("sessions", "s1"))?.id).toBe("s1");
+  });
+
+  // A higher version that already has everything is used as is
+  it("works with a database at a higher version that has our collections", async () => {
+    // A database at version 10 with every collection
+    await makeExistingDatabase("voicelab-existing-2", 10, ["sessions", "challenges", "settings", "audio"]);
+    // Use it
+    const store = new IndexedDbStore("voicelab-existing-2");
+    // Save and load audio
+    await store.put("audio", "a1", new Blob(["voice"]));
+    // Confirm it loads back
+    expect(await (await store.get("audio", "a1"))?.text()).toBe("voice");
+  });
+});
