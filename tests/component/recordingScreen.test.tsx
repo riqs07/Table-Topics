@@ -3,6 +3,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and acting like a user
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+// Load the server renderer and the browser hydrator, to check the first drawing matches
+import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 // Load the screen being checked
 import { RecordingScreen } from "@/components/screens/RecordingScreen";
 // Load the recording contracts
@@ -334,5 +337,53 @@ describe("RecordingScreen", () => {
     fireEvent.keyDown(window, { key: " " });
     // Confirm it saved and moved on
     await waitFor(() => expect(navigate).toHaveBeenCalled());
+  });
+
+  // The server cannot tell whether the browser supports speech, so its drawing must match the browser's first drawing
+  it("draws the same first page on the server and in the browser", async () => {
+    // Fixed props for both drawings
+    const props = { promptId: PROMPTS[0]!.id, mode: "standard" as const, retryOf: null, repository: createRepository(new MemoryStore()), clock: () => new Date(2026, 9, 13, 10), navigate: vi.fn() };
+    // On the server there is no speech recognition
+    const html = renderToString(<RecordingScreen {...props} services={fakeServices({ supported: false }).services} />);
+    // Put the server's page into the document
+    const container = document.createElement("div");
+    // Fill it with the server's drawing
+    container.innerHTML = html;
+    // Attach it
+    document.body.appendChild(container);
+    // Record any mismatch React reports
+    const mismatch = vi.fn();
+    // Take over the page in a browser that does support speech
+    const root = await act(async () => hydrateRoot(container, <RecordingScreen {...props} services={fakeServices().services} />, { onRecoverableError: mismatch }));
+    // Confirm no mismatch, and the start action is offered
+    expect([mismatch.mock.calls.length, !!container.querySelector("button")?.textContent?.includes("Start speaking")]).toEqual([0, true]);
+    // Clean up
+    act(() => root.unmount());
+    // Remove the page
+    container.remove();
+  });
+
+  // A browser without speech recognition is still told so after the page loads
+  it("still explains missing speech support after taking over the server's page", async () => {
+    // Fixed props for both drawings
+    const props = { promptId: PROMPTS[0]!.id, mode: "standard" as const, retryOf: null, repository: createRepository(new MemoryStore()), clock: () => new Date(2026, 9, 13, 10), navigate: vi.fn() };
+    // Services without speech support, as on both the server and this browser
+    const services = fakeServices({ supported: false }).services;
+    // Put the server's page into the document
+    const container = document.createElement("div");
+    // Fill it with the server's drawing
+    container.innerHTML = renderToString(<RecordingScreen {...props} services={services} />);
+    // Attach it
+    document.body.appendChild(container);
+    // Take over the page
+    const root = await act(async () => hydrateRoot(container, <RecordingScreen {...props} services={services} />));
+    // Confirm the explanation appears
+    expect(container.textContent).toMatch(/cannot turn speech into text|speech/i);
+    // Confirm it is shown as an alert
+    expect(container.querySelector('[role="alert"]')).not.toBeNull();
+    // Clean up
+    act(() => root.unmount());
+    // Remove the page
+    container.remove();
   });
 });
