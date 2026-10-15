@@ -41,6 +41,20 @@ describe("earlierTake", () => {
     // Confirm nothing, because the only earlier p002 take is the same day
     expect(earlierTake([...SESSIONS, retry], retry)).toBeNull();
   });
+
+  // A rehearsal is compared with an earlier run of the same part of the talk, not a different section
+  it("matches rehearsals by section", () => {
+    // Earlier runs: the whole talk, then section 1
+    const whole = makeSession({ id: "w", mode: "rehearse", promptId: "talk", createdAt: oct(1, 9) });
+    // Section 1, a day later
+    const opening = makeSession({ id: "o", mode: "rehearse", promptId: "talk", sectionIndex: 0, createdAt: oct(2, 9) });
+    // Today: section 1 again, and a whole run
+    const openingAgain = makeSession({ id: "o2", mode: "rehearse", promptId: "talk", sectionIndex: 0, createdAt: oct(5, 9) });
+    // A whole run today
+    const wholeAgain = makeSession({ id: "w2", mode: "rehearse", promptId: "talk", sectionIndex: null, createdAt: oct(5, 10) });
+    // Confirm each finds its own kind
+    expect([earlierTake([whole, opening, openingAgain], openingAgain)?.id, earlierTake([whole, opening, wholeAgain], wholeAgain)?.id]).toEqual(["o", "w"]);
+  });
 });
 
 // Group the checks about practice day numbers
