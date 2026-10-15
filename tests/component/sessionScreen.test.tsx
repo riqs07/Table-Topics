@@ -246,4 +246,16 @@ describe("SessionScreen", () => {
     // Confirm "seven" is marked as not heard
     expect(screen.getByText("seven").getAttribute("data-read")).toBe("false");
   });
+
+  // Sessions with loudness readings say how the pauses went
+  it("describes the pauses when loudness was recorded", async () => {
+    // Speech, a one-second pause, speech
+    const loudness = [...Array<number>(20).fill(0.3), ...Array<number>(10).fill(0.01), ...Array<number>(20).fill(0.3)];
+    // A session with those readings
+    const session = makeSession({ id: "p", loudness, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="p" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the pause sentence
+    expect(await screen.findByText("1 pause, 1.0 seconds long; speaking 80% of the time.")).toBeTruthy();
+  });
 });

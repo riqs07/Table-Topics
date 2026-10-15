@@ -140,6 +140,33 @@ describe("RecordingScreen", () => {
     expect(await repository.getAudio(saved!.id)).toBeDefined();
   });
 
+  // The loudness readings taken for the meter are saved with the session, for finding pauses
+  it("saves the loudness readings with the session", async () => {
+    // Use fake timers that still let promises run
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Draw the screen
+    const { repository, clock, navigate } = draw();
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Let 20 seconds pass in ticks
+    for (let tick = 0; tick < 20; tick++) {
+      // Move the clock a second
+      clock.advance(1_000);
+      // Let the timer run
+      await act(async () => vi.advanceTimersByTime(100));
+    }
+    // Stop
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm readings were saved (the fake capture reads 0.5)
+    const [saved] = await repository.listSessions();
+    // At least one reading per tick
+    expect([(saved!.loudness?.length ?? 0) >= 20, saved!.loudness?.[0]]).toEqual([true, 0.5]);
+  });
+
   // A retry shows last time's cue and saves the link to the first try
   it("shows the retry cue and links the retry to its first try", async () => {
     // A repository with a first try that has feedback

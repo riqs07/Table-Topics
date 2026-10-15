@@ -82,4 +82,14 @@ describe("saveRecording", () => {
     // Confirm the old audio is gone
     expect(await repository.getAudio("old")).toBeUndefined();
   });
+
+  // The loudness readings are kept (rounded) so pauses can be found later
+  it("keeps the loudness readings, rounded to two decimals", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Save a recording with readings
+    const session = await saveRecording(repository, { ...RECORDING, loudness: [0.123, 0.5, 0.0049] }, NOW);
+    // Confirm the rounded readings
+    expect(session.loudness).toEqual([0.12, 0.5, 0]);
+  });
 });
