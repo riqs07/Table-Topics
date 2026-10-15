@@ -112,6 +112,14 @@ describe("checkFeedback", () => {
     expect([message.includes("This was read aloud from a known text. Comment only on delivery"), message.includes("<text>\nFour score and seven years ago")]).toEqual([true, true]);
   });
 
+  // A pause drill says how many pauses the text marks and includes the text
+  it("tells the coach about a pause drill", () => {
+    // Build a pause drill message
+    const message = buildCoachMessage({ ...SESSION, mode: "pause", promptId: "d001" });
+    // Confirm the note and the text
+    expect([/This was a pause drill: reading a known text with \d+ marked pauses \(shown as \/\)\. Comment only on pausing and pace\./.test(message), message.includes("<text>")]).toEqual([true, true]);
+  });
+
   // A Record Response is flagged with its goal and thinking time
   it("tells the coach when a session is a Record Response", () => {
     // Build a response message that ran 12 seconds over

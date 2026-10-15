@@ -258,4 +258,16 @@ describe("SessionScreen", () => {
     // Confirm the pause sentence
     expect(await screen.findByText("1 pause, 1.0 seconds long; speaking 80% of the time.")).toBeTruthy();
   });
+
+  // A pause drill compares the pauses taken with the marks in the passage
+  it("compares the pauses taken with the marks in a pause drill", async () => {
+    // Speech, a one-second pause, speech
+    const loudness = [...Array<number>(20).fill(0.3), ...Array<number>(10).fill(0.01), ...Array<number>(20).fill(0.3)];
+    // A pause drill on the first drill passage
+    const session = makeSession({ id: "d", mode: "pause", promptId: "d001", loudness, transcript: "words", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="d" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the title and the headline
+    expect([!!(await screen.findByText("Pause drill")), /^You paused once; the passage has \d+ pause marks\.$/.test(screen.getByTestId("reading-headline").textContent ?? "")]).toEqual([true, true]);
+  });
 });

@@ -99,8 +99,10 @@ describe("feedback handler", () => {
     const response = await createFeedbackHandler(deps())(request({ ...BODY, mode: "response" }));
     // Call with a read-aloud session and its passage id
     const read = await createFeedbackHandler(deps())(request({ ...BODY, mode: "read", promptId: "r001" }));
-    // Confirm reading succeeds too
-    expect(read.status).toBe(200);
+    // Call with a pause drill
+    const drill = await createFeedbackHandler(deps())(request({ ...BODY, mode: "pause", promptId: "d001" }));
+    // Confirm reading and the drill succeed too
+    expect([read.status, drill.status]).toEqual([200, 200]);
     // Call without a mode
     const noMode = await createFeedbackHandler(deps())(request(BODY));
     // Confirm all succeed

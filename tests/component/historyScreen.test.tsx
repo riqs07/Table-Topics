@@ -83,10 +83,12 @@ describe("HistoryScreen", () => {
     await repository.saveSession(makeSession({ id: "rr", createdAt: new Date(2026, 9, 13, 8).toISOString(), mode: "response", promptId: "p002" }));
     // A read-aloud session
     await repository.saveSession(makeSession({ id: "ra", createdAt: new Date(2026, 9, 13, 9).toISOString(), mode: "read", promptId: "r001" }));
+    // A pause drill
+    await repository.saveSession(makeSession({ id: "pd", createdAt: new Date(2026, 9, 13, 10).toISOString(), mode: "pause", promptId: "d001" }));
     // Draw the screen
     render(<HistoryScreen repository={repository} now={NOW} />);
-    // Confirm all three labels
-    expect([!!(await screen.findByText(/^Table Topic: /)), !!screen.getByText(/^Record Response: /), !!screen.getByText("Read aloud: The Gettysburg Address")]).toEqual([true, true, true]);
+    // Confirm all three labels, plus a pause drill
+    expect([!!(await screen.findByText(/^Table Topic: /)), !!screen.getByText(/^Record Response: /), !!screen.getByText("Read aloud: The Gettysburg Address"), !!screen.getByText(/^Pause drill: /)]).toEqual([true, true, true, true]);
   });
 
   // The first recording is labeled as such

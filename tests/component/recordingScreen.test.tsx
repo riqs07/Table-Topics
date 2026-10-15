@@ -14,7 +14,7 @@ import type { LiveText, RecordingProblem, RecordingServices } from "@/audio/serv
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the prompt lists
-import { PASSAGES, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@/content/prompts";
+import { PASSAGES, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@/content/prompts";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
 
@@ -352,6 +352,16 @@ describe("RecordingScreen", () => {
     await screen.findByRole("button", { name: /Stop/ });
     // Confirm the passage text is still on screen
     expect(screen.getByTestId("passage").textContent).toContain(PASSAGES[0]!.body.split(" ").slice(0, 4).join(" "));
+  });
+
+  // A pause drill shows its pause marks as visible pause signs, not slashes
+  it("shows the pause marks in a pause drill", async () => {
+    // Draw a pause drill
+    draw({ mode: "pause", promptId: PAUSE_DRILLS[0]!.id });
+    // Wait for the passage
+    const passage = await screen.findByTestId("passage");
+    // Confirm one pause sign per mark and no raw slashes
+    expect([screen.getAllByLabelText("pause here").length, passage.textContent?.includes(" / ")]).toEqual([PAUSE_DRILLS[0]!.body.split(" / ").length - 1, false]);
   });
 
   // A one-minute session has no light

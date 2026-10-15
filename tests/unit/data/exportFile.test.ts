@@ -121,9 +121,9 @@ describe("parseExport", () => {
   // Table Topics and Record Responses survive a round trip
   it("keeps both modes", () => {
     // A file with one talk
-    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "t1", mode: "talk" }), makeSession({ id: "r1", mode: "response" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
+    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "t1", mode: "talk" }), makeSession({ id: "r1", mode: "response" }), makeSession({ id: "d1", mode: "pause" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
     // Confirm it comes back as a talk
-    expect(parseExport(text).sessions.map((session) => session.mode)).toEqual(["talk", "response"]);
+    expect(parseExport(text).sessions.map((session) => session.mode)).toEqual(["talk", "response", "pause"]);
   });
 
   // A damaged file with a broken session

@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt library and picker
-import { PASSAGES, PROMPTS, STRUCTURE_HINT, TABLE_TOPICS, WARMUP_PROMPTS, findPassage, findPrompt, passageForDay, promptForDay, tableTopicForDay, warmupPromptForDay } from "@/content/prompts";
+import { PASSAGES, PAUSE_DRILLS, PROMPTS, STRUCTURE_HINT, TABLE_TOPICS, WARMUP_PROMPTS, drillForDay, findPassage, findPrompt, passageForDay, promptForDay, tableTopicForDay, warmupPromptForDay } from "@/content/prompts";
 // Load the challenge list and picker
 import { CHALLENGES, challengeForWeek } from "@/content/challenges";
 
@@ -72,7 +72,7 @@ describe("read-aloud passages", () => {
     // Practice passages
     const practice = PASSAGES.filter((passage) => passage.kind === "practice");
     // Confirm at least five of each, "r" ids, and ids unique across every list
-    expect([speeches.length >= 5, practice.length >= 5, PASSAGES.every((passage) => /^r\d{3}$/.test(passage.id)), new Set([...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES].map((item) => item.id)).size]).toEqual([true, true, true, PROMPTS.length + TABLE_TOPICS.length + WARMUP_PROMPTS.length + PASSAGES.length]);
+    expect([speeches.length >= 5, practice.length >= 5, PASSAGES.every((passage) => /^r\d{3}$/.test(passage.id)), new Set([...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS].map((item) => item.id)).size]).toEqual([true, true, true, PROMPTS.length + TABLE_TOPICS.length + WARMUP_PROMPTS.length + PASSAGES.length + PAUSE_DRILLS.length]);
   });
 
   // Every speech says who gave it and when (all before 1962, so public domain or a U.S. government work)
@@ -95,6 +95,25 @@ describe("read-aloud passages", () => {
     const passage = passageForDay(oct(12));
     // Confirm both lookups
     expect([findPassage(passage.id)?.title, findPrompt(passage.id)?.text]).toEqual([passage.title, passage.title]);
+  });
+});
+
+// Group the checks about the pause drills
+describe("pause drills", () => {
+  // Passages with marked pause points, each with its own id
+  it("has pause drills with at least four marked pauses each", () => {
+    // Confirm the count and ids
+    expect([PAUSE_DRILLS.length >= 4, PAUSE_DRILLS.every((drill) => /^d\d{3}$/.test(drill.id) && drill.kind === "pause")]).toEqual([true, true]);
+    // Confirm each has at least four " / " marks
+    for (const drill of PAUSE_DRILLS) expect(drill.body.split(" / ").length - 1).toBeGreaterThanOrEqual(4);
+  });
+
+  // The drill of the day rotates and can be found by id
+  it("picks a drill for the day and finds it by id", () => {
+    // Today's drill
+    const drill = drillForDay(oct(12));
+    // Confirm the lookups
+    expect([findPassage(drill.id)?.title, findPrompt(drill.id)?.text]).toEqual([drill.title, drill.title]);
   });
 });
 

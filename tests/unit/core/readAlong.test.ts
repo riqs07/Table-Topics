@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the reading check being checked
-import { alignReading } from "@/core/readAlong";
+import { alignReading, countPauseMarks } from "@/core/readAlong";
 
 // A short passage to read
 const TEXT = "Four score and seven years ago, our fathers brought forth a new nation.";
@@ -48,5 +48,13 @@ describe("alignReading", () => {
     const result = alignReading(TEXT, "four score and seven");
     // Confirm the count of read words
     expect(result.words.filter((word) => word.read).length).toBe(4);
+  });
+
+  // Pause marks are not words: they are counted, and ignored when lining up the reading
+  it("counts pause marks and ignores them when checking the reading", () => {
+    // A marked text
+    const marked = "Four score / and seven years ago, / our fathers brought forth / a new nation.";
+    // Confirm the count and a perfect reading
+    expect([countPauseMarks(marked), alignReading(marked, "four score and seven years ago our fathers brought forth a new nation").percentRead]).toEqual([3, 100]);
   });
 });

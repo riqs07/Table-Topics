@@ -116,4 +116,13 @@ describe("Read aloud", () => {
     expect([readingSeconds(Array(280).fill("word").join(" ")), readingSeconds(Array(50).fill("word").join(" "))]).toEqual([120, 60]);
   });
 });
+
+// Group the checks about the pause drill
+describe("Pause drill", () => {
+  // Like reading aloud: no thinking time, no light, a generous limit
+  it("starts straight away, has no light, and stops at 10 minutes", () => {
+    // Confirm all three
+    expect([thinkSeconds("pause"), timeSignal("pause", 500), maxSeconds("pause")]).toEqual([0, "none", 600]);
+  });
+});
 });

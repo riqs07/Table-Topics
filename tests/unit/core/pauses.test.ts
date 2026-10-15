@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the pause finder being checked
-import { findPauses, pauseSentence } from "@/core/pauses";
+import { findPauses, pauseDrillSentence, pauseSentence } from "@/core/pauses";
 
 // A run of the same loudness reading, one per tenth of a second
 const run = (level: number, ticks: number) => Array<number>(ticks).fill(level);
@@ -40,4 +40,13 @@ describe("pauseSentence", () => {
     // Confirm both forms
     expect([pauseSentence({ count: 1, averageSeconds: 1, longestSeconds: 1, speakingPercent: 81 }), pauseSentence({ count: 6, averageSeconds: 1.25, longestSeconds: 3, speakingPercent: 74 })]).toEqual(["1 pause, 1.0 seconds long; speaking 81% of the time.", "6 pauses, 1.3 seconds on average; speaking 74% of the time."]);
   });
+
+// Group the checks about the pause drill sentence
+describe("pauseDrillSentence", () => {
+  // The pauses taken against the marks in the passage
+  it("compares the pauses taken with the marks", () => {
+    // Confirm none, one, and several
+    expect([pauseDrillSentence(0, 5), pauseDrillSentence(1, 5), pauseDrillSentence(4, 5)]).toEqual(["You did not pause; the passage has 5 pause marks.", "You paused once; the passage has 5 pause marks.", "You paused 4 times; the passage has 5 pause marks."]);
+  });
+});
 });
