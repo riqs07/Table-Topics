@@ -1,18 +1,18 @@
 # Product Requirements: VoiceLab
 
-**Version:** 2.0 (rewritten around a new target user)
+**Version:** 3.0 (refocused on public speaking, 2026-10-15)
 **Status:** Draft for review
-**Last updated:** 2026-10-13
+**Last updated:** 2026-10-15
 
 ## 1. Summary
 
-VoiceLab is a private speech-practice app for people who want to speak better but find it uncomfortable. Each session is about one minute: speak, get **one** specific fix, retry with it, and see the result. Progress is shown against the user's own first recording.
+VoiceLab is a private practice app for public speaking. Each session is short: answer a topic, give part of a talk, or work on one skill. Then get **one** specific fix, retry with it, and see the result. Progress is shown against the user's own first recording. The plan for the public-speaking features is in [plan-public-speaking.md](plan-public-speaking.md).
 
 ## 2. Target user (ICP)
 
-> **Confirmed at C2 (2026-10-12):** we are building for the *shy and wants to be more outgoing* user. Two other possible users (the rambler who needs structure, and the already-outgoing person who wants polish) are out of scope for v1.
+> **Changed 2026-10-15 (decision 22):** we are building for *someone who has to speak to an audience*. This replaces the C2 choice (2026-10-12) of "the shy person who wants to be more outgoing". Nervous speakers are still welcome, but the goal is now a better talk, not easier small talk. The person who wants polish is now in scope.
 
-**Who:** an adult who feels they are not great at speaking. They hesitate, trail off, use filler words, or avoid speaking up. They want to be more outgoing and express themselves clearly.
+**Who:** an adult with a talk, pitch, toast, presentation or meeting update coming up, or someone who speaks regularly (for example a Toastmasters-style club member). They want to deliver it well: a clear point, a strong opening and close, steady pace and pauses, and few fillers. Many are nervous about it.
 
 **Where:** practicing alone at home, mostly on a phone. Privacy is a requirement, not a feature.
 
@@ -20,11 +20,12 @@ VoiceLab is a private speech-practice app for people who want to speak better bu
 
 | Problem | What the product does about it |
 |---------|--------------------------------|
+| A talk is coming up and practice has no plan | Rehearse my talk, and (planned) a countdown plan to the date |
 | Hearing their own voice is uncomfortable | Short, easy first sessions; recordings private by default |
 | "I'm bad at this" is vague, so nothing improves | Exactly one specific fix per session |
 | A wall of scores feels discouraging | Show one or two numbers at a time, tied to the current focus |
 | Progress is slow and invisible | Compare against a saved first recording (the baseline) |
-| Practice alone does not carry into real life | One real-world challenge per week |
+| Practice alone does not carry into real life | One real-world speaking challenge per week |
 
 ## 3. Core loop
 
@@ -55,7 +56,7 @@ Once a week: complete one **real-world challenge** and mark it done.
 | Retry flow with before/after numbers | Proves the fix worked within minutes |
 | Baseline recording (first session, saved) | Makes long-term progress visible |
 | Weekly focus (one skill at a time) | Prevents overwhelm; keeps feedback consistent |
-| Weekly real-world challenge | Bridges practice to real conversations |
+| Weekly real-world challenge | Bridges practice to real speaking moments |
 | Showing-up streak (counts any completed session) | Rewards practice, not performance |
 | Session history with transcript, feedback, and the recording to play back | Lets the user review, hear themselves, and see patterns |
 | Recordings and history stay on the device by default | Protects privacy for a vulnerable activity. Browser speech recognition may send audio to the browser maker, so the exact promise is decided at checkpoint C5 |
@@ -111,6 +112,8 @@ In v1 the focus changes every 7 calendar days, cycling through 1 to 4 and then s
 | Accounts and cloud sync | Later | Local-first protects privacy |
 | Push reminders | Later | Needed once habit data shows drop-off |
 | Freestyle mode, debate mode | Later | Not core to this user |
+| Small-talk and social conversation practice | Cut (2026-10-15) | Belongs to the old target user; VoiceLab is for speaking to an audience |
+| Video (eye contact, gestures) | Later | A big step in work and privacy; see plan-public-speaking.md |
 
 ## 9. Success metrics
 
@@ -121,10 +124,11 @@ In v1 the focus changes every 7 calendar days, cycling through 1 to 4 and then s
 | Returns on day 7 | 40% |
 | Filler words per minute, week 4 vs. baseline | Down 30% |
 | Completes at least 2 real-world challenges in first month | 50% |
+| Rehearses a talk at least three times before its date (once event prep ships) | 50% of talks with a date |
 
 ## 10. Open questions
 
-1. ~~Confirm the ICP assumption in section 2.~~ Confirmed at C2.
+1. ~~Confirm the ICP assumption in section 2.~~ Confirmed at C2, then changed to public speakers on 2026-10-15 (decision 22).
 2. How long do we keep audio locally? (Proposed: last 30 sessions.)
 3. Does the retry flow feel like progress or like repetition? (Test with real users early.)
 4. Is a typed fallback needed for people practicing where they cannot speak aloud?

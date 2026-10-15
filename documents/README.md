@@ -6,7 +6,7 @@
 
 ## What VoiceLab is (30 seconds)
 
-A private, practice-alone-at-home app that helps people who struggle to speak well become more articulate and outgoing. The user speaks for about a minute, gets one specific fix, retries with it, and sees whether it worked.
+A private, practice-alone app for public speaking. The user answers a topic, rehearses a talk, or works on one skill, gets one specific fix, retries with it, and sees whether it worked.
 
 ## Reading order
 

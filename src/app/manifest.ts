@@ -19,7 +19,7 @@ export default function manifest(): MetadataRoute.Manifest {
     // Name under the home-screen icon
     short_name: APP_NAME,
     // One-line description
-    description: "Private, one-minute speaking practice.",
+    description: "Private public-speaking practice.",
     // Open at Home
     start_url: "/",
     // Open without browser bars

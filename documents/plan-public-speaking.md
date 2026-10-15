@@ -32,7 +32,7 @@ Every step follows the playbook's definition of done (section 4). Docs change in
 - **Why now:** each new mode adds screens and journeys. Every bug that reached the user lived in those journeys (playbook T5, T10, T11, section 8).
 - **Done when:** `pnpm e2e` passes locally and in CI, and the playbook's section 7 item 1 is ticked.
 
-### A1. New target user, written down
+### A1. New target user, written down ✅ done 2026-10-15
 - **What:** the documents:
   - PRD version 3: section 2 gets the new target user. The cut and deferred lists are re-checked: social prompts are cut; "the already-outgoing person who wants polish" moves into scope.
   - Decision 22 in `architecture/decisions.md`.

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   // Use the app name as the tab title
   title: APP_NAME,
   // Describe the app in one sentence
-  description: "Private, one-minute speaking practice.",
+  description: "Private public-speaking practice.",
   // Settings for iPhone home-screen apps
   appleWebApp: {
     // Open full screen from the home screen
