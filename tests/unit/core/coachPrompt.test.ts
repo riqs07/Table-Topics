@@ -20,6 +20,20 @@ describe("COACH_SYSTEM_PROMPT", () => {
     expect(COACH_SYSTEM_PROMPT).toMatch(/tone, pitch, volume, or energy/);
   });
 
+  // VoiceLab is for public speaking (decision 22), not for becoming more outgoing
+  it("coaches someone preparing to speak to an audience", () => {
+    // The person is described as a speaker with listeners
+    expect(COACH_SYSTEM_PROMPT).toMatch(/audience/i);
+    // The old target user is gone
+    expect(COACH_SYSTEM_PROMPT).not.toMatch(/outgoing/i);
+  });
+
+  // The one fix is judged by what it does for listeners
+  it("asks for the fix that helps the talk land with listeners", () => {
+    // Confirm the rule is stated
+    expect(COACH_SYSTEM_PROMPT).toMatch(/listeners/i);
+  });
+
   // The transcript is the user's speech, not instructions to the coach
   it("treats the transcript as speech to review, not instructions", () => {
     // Confirm the rule is stated
