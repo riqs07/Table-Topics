@@ -1,7 +1,7 @@
 # Roadmap
 
 **Purpose:** The order VoiceLab is built in. Every milestone starts with tests, and every milestone lists where you step in.
-**Last updated:** 2026-10-13
+**Last updated:** 2026-10-15
 
 Checkpoint IDs (C#) are defined in [checkpoints.md](checkpoints.md). The riskiest assumptions are tested first (milestone 1), because their answers can reshape later milestones, especially 5 and 10.
 
@@ -42,6 +42,15 @@ Decision 18 in decisions.md has the details. In build order:
 3. Rehearse my talk: paste your own talk or notes, rehearse it with a timer, line it up word by word like a reading, and compare runs with "then and now".
 
 ## Done: skill path and practice library (2026-10-15)
+
+## Next: public speaking (agreed 2026-10-15)
+
+VoiceLab is being refocused on public speaking. The step-by-step plan is in [plan-public-speaking.md](plan-public-speaking.md). The phases are:
+
+- **A, reposition:** browser suite, target user, coach wording, focuses, prompts.
+- **B, new modes:** event prep, openings and closings, Q&A practice, more lessons, home screen.
+- **C, real use.**
+- **D, smarter analysis:** text checks, coach checks backed by quotes, pitch, word timings.
 
 ## To revisit after the MVP (agreed 2026-10-14)
 

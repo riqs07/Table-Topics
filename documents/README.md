@@ -2,7 +2,7 @@
 
 **Purpose:** One place for every decision about what VoiceLab is, how it is built, and the rules we build by.
 **Audience:** A human inspector. Each file is short and can be read on its own.
-**Last updated:** 2026-10-14
+**Last updated:** 2026-10-15
 
 ## What VoiceLab is (30 seconds)
 
@@ -23,6 +23,7 @@ A private, practice-alone-at-home app that helps people who struggle to speak we
 | 9 | [setup-requirements.md](setup-requirements.md) | Which accounts and keys must you set up? | 2 min |
 | 10 | [risks.md](risks.md) | What do we expect to go wrong, and what is the plan? | 3 min |
 | 11 | [ai-development-playbook.md](ai-development-playbook.md) | What have we learned about building with an AI agent, and which rules carry over to the next project? | 5 min |
+| 12 | [plan-public-speaking.md](plan-public-speaking.md) | What is being built next to make VoiceLab a public-speaking app, and in what order? | 6 min |
 
 ## Inspector checklist
 
