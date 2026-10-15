@@ -156,3 +156,18 @@ describe("Lessons", () => {
   });
 });
 });
+
+// Group the checks about the openings and closings drill
+describe("Openings and closings", () => {
+  // A 45-second goal, stopping at a minute, with no thinking time
+  it("aims for 45 seconds and stops at a minute", () => {
+    // Confirm the target, limit and thinking time
+    expect([targetSeconds("bookend"), maxSeconds("bookend"), thinkSeconds("bookend")]).toEqual([45, 60, 0]);
+  });
+
+  // Yellow from 30 seconds, red past 45
+  it("turns yellow at 30 seconds and red past 45", () => {
+    // Confirm the light at each point
+    expect([timeSignal("bookend", 29), timeSignal("bookend", 30), timeSignal("bookend", 45), timeSignal("bookend", 46)]).toEqual(["none", "yellow", "yellow", "red"]);
+  });
+});

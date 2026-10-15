@@ -101,6 +101,12 @@ describe("warm-ups and progress", () => {
     expect([shouldBeBaseline([], "read"), shouldBeBaseline([], "pause"), trendSeries([...WITH_WARMUP, makeSession({ id: "r1", createdAt: oct(10), fillersPerMinute: 0.1, mode: "read", promptId: "r001" }), makeSession({ id: "d1", createdAt: oct(11), fillersPerMinute: 0.2, mode: "pause", promptId: "d001" }), makeSession({ id: "h1", createdAt: oct(11, 14), fillersPerMinute: 0.3, mode: "rehearse", promptId: "talk-1" }), makeSession({ id: "l1", createdAt: oct(11, 15), fillersPerMinute: 0.3, mode: "lesson", promptId: "l002" })])]).toEqual([false, false, [6, 4.2, 3.1]]);
   });
 
+  // A 45-second opening or closing drill is too short to compare, so it stays out of the baseline and the trend
+  it("keeps openings and closings drills out of the baseline and the trend", () => {
+    // Confirm the baseline rule and the trend
+    expect([shouldBeBaseline([], "bookend"), trendSeries([...WITH_WARMUP, makeSession({ id: "b1", createdAt: oct(10), fillersPerMinute: 0.1, mode: "bookend", promptId: "b001" })])]).toEqual([false, [6, 4.2, 3.1]]);
+  });
+
   // The first Record Response becomes the starting point; a Table Topic never does
   it("makes the first Record Response the baseline, never a Table Topic", () => {
     // Confirm both

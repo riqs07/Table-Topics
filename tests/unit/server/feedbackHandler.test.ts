@@ -127,8 +127,10 @@ describe("feedback handler", () => {
     const rehearsal = await createFeedbackHandler(deps())(request({ ...BODY, mode: "rehearse", promptId: "talk-1" }));
     // Call with a lesson
     const lesson = await createFeedbackHandler(deps())(request({ ...BODY, mode: "lesson", promptId: "l002" }));
-    // Confirm reading, the drill, the rehearsal, and the lesson succeed too
-    expect([read.status, drill.status, rehearsal.status, lesson.status]).toEqual([200, 200, 200, 200]);
+    // Call with an openings and closings drill
+    const bookend = await createFeedbackHandler(deps())(request({ ...BODY, mode: "bookend", promptId: "b001" }));
+    // Confirm reading, the drill, the rehearsal, the lesson and the bookend drill succeed too
+    expect([read.status, drill.status, rehearsal.status, lesson.status, bookend.status]).toEqual([200, 200, 200, 200, 200]);
     // Call without a mode
     const noMode = await createFeedbackHandler(deps())(request(BODY));
     // Confirm all succeed

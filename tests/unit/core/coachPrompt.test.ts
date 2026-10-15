@@ -49,6 +49,12 @@ describe("buildCoachMessage", () => {
     expect(buildCoachMessage({ ...SESSION, focusId: "pace" })).toContain("Weekly focus: Pace:");
   });
 
+  // An openings and closings drill asks the coach about that part only
+  it("tells the coach a drill was only the opening, or only the close", () => {
+    // Confirm each note
+    expect([buildCoachMessage({ ...SESSION, mode: "bookend", promptId: "b001" }), buildCoachMessage({ ...SESSION, mode: "bookend", promptId: "b011" })].map((message) => /only the opening of a talk/.test(message) ? "opening" : /only the close of a talk/.test(message) ? "close" : "neither")).toEqual(["opening", "close"]);
+  });
+
   // The coach is told the week's focus
   it("names the weekly focus", () => {
     // Confirm the focus title and explanation are included
