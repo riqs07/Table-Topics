@@ -89,6 +89,8 @@ function isSession(value: unknown): value is SessionRecord {
     (value.mode === undefined || isSessionMode(value.mode)) &&
     // Measurements
     isNumber(value.durationSec) && isNumber(value.wordsPerMinute) && isNumber(value.fillersPerMinute) &&
+    // Q&A questions saved on a rehearsal or response, and the question a Q&A answer answered (both usually missing)
+    (value.questions === undefined || (Array.isArray(value.questions) && value.questions.every(isText))) && (value.question === undefined || isText(value.question)) &&
     // Section of a rehearsal (missing on most sessions)
     (value.sectionIndex === undefined || value.sectionIndex === null || isNumber(value.sectionIndex)) &&
     // Feedback and its status

@@ -12,9 +12,9 @@ export interface Feedback {
 }
 
 // Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up
-export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend"] as const;
+export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa"] as const;
 
-// One kind of session (bookend: an openings and closings drill, added 2026-10-15)
+// One kind of session (bookend: an openings and closings drill; qa: an answer to a likely audience question; both added 2026-10-15)
 export type SessionMode = (typeof SESSION_MODES)[number];
 
 // Whether a value names a kind of session
@@ -56,6 +56,10 @@ export interface SessionRecord {
   feedbackStatus: FeedbackStatus;
   // Loudness readings taken every tenth of a second while recording (0 to 1, two decimals), for finding pauses; missing on older sessions
   loudness?: number[];
+  // For a rehearsal or a response: likely audience questions for Q&A practice (written by the coach or typed by the user)
+  questions?: string[];
+  // For a Q&A answer: the question it answered (its prompt id is the session the question came from)
+  question?: string;
   // For a rehearsal: which section of the talk was rehearsed (counted from 0), or null or missing for the whole talk
   sectionIndex?: number | null;
   // Key of the saved audio, or null if there is none or it was pruned

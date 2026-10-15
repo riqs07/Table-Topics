@@ -55,6 +55,16 @@ describe("earlierTake", () => {
     // Confirm each finds its own kind
     expect([earlierTake([whole, opening, openingAgain], openingAgain)?.id, earlierTake([whole, opening, wholeAgain], wholeAgain)?.id]).toEqual(["o", "w"]);
   });
+
+  // A Q&A answer is compared with an earlier answer to the same question only
+  it("matches Q&A answers by question", () => {
+    // An earlier answer to another question from the same rehearsal
+    const other = makeSession({ id: "x", mode: "qa", promptId: "r1", question: "Why now?", createdAt: oct(1, 9) });
+    // Today's answer to a different question
+    const today = makeSession({ id: "y", mode: "qa", promptId: "r1", question: "What does it cost?", createdAt: oct(5, 9) });
+    // Confirm no comparison
+    expect(earlierTake([other, today], today)).toBeNull();
+  });
 });
 
 // Group the checks about practice day numbers

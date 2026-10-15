@@ -122,7 +122,7 @@ The first and last 30 seconds matter most, so they get a short drill of their ow
   - The coach's mode note asks it to comment only on the opening or the close.
 - **Tests:** timing rules for `bookend`; the coach mode note; screens for both choices.
 
-### B3. Q&A practice
+### B3. Q&A practice ✅ done 2026-10-15 (answers aim for one minute; see decision 24)
 After a rehearsal or a prepared response, VoiceLab asks the questions an audience would likely ask. You then answer each one under Table Topic timing.
 
 - **Privacy:** questions are written from the run's **transcript**, never the script. This keeps decision 20 ("a rehearsal's script never leaves the device"). The note before sending says what goes.

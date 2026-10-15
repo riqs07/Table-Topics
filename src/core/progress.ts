@@ -47,10 +47,10 @@ function oldestFirst(sessions: ReadonlyArray<SessionRecord>): SessionRecord[] {
   return [...sessions].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-// Keep only full sessions; warm-ups, readings, pause drills, rehearsals, lessons and openings and closings drills count for the streak but never for progress (reading a text has fewer fillers by nature)
+// Keep only full sessions; warm-ups, readings, pause drills, rehearsals, lessons, openings and closings drills and Q&A answers count for the streak but never for progress (reading a text has fewer fillers by nature)
 function fullSessions(sessions: ReadonlyArray<SessionRecord>): SessionRecord[] {
-  // Drop warm-ups, readings, drills, rehearsals, lessons and openings and closings drills
-  return sessions.filter((session) => session.mode !== "warmup" && session.mode !== "read" && session.mode !== "pause" && session.mode !== "rehearse" && session.mode !== "lesson" && session.mode !== "bookend");
+  // Drop warm-ups, readings, drills, rehearsals, lessons, openings and closings drills and Q&A answers
+  return sessions.filter((session) => session.mode !== "warmup" && session.mode !== "read" && session.mode !== "pause" && session.mode !== "rehearse" && session.mode !== "lesson" && session.mode !== "bookend" && session.mode !== "qa");
 }
 
 // Whether a new session should become the starting point: the first Record Response (or old one-minute session), never a warm-up or Table Topic

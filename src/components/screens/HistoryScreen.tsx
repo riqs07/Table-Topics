@@ -56,6 +56,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.mode === "read") return `Read aloud: ${text}`;
   // And pause drills
   if (session.mode === "pause") return `Pause drill: ${text}`;
+  // And Q&A answers, by their question
+  if (session.mode === "qa") return `Q&A: ${session.question ?? "a question"}`;
   // And openings and closings drills
   if (session.mode === "bookend") return `${BOOKENDS.find((item) => item.id === session.promptId)?.part === "close" ? "Closing" : "Opening"} drill: ${text}`;
   // And lessons, with their number

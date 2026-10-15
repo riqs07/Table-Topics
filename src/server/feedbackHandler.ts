@@ -4,33 +4,17 @@
 import { z } from "zod";
 // Load the list of session kinds
 import { SESSION_MODES } from "@/data/records";
-// Load the passphrase check and its header name
-import { PASSPHRASE_HEADER, passphraseMatches } from "@/server/accessGate";
-// Load the passphrase fingerprint and warnings, for logging a mismatch while developing
-import { passphraseFingerprint, passphraseWarnings } from "@/core/passphraseCheck";
 // Load the coach type
 import type { Coach } from "@/server/coach";
 // Load the settings type
 import type { ServerEnv } from "@/server/env";
-// Load the rate limiter and its types
-import { checkRateLimit, type CounterStore, type RateLimits } from "@/server/rateLimit";
+// Load the shared checks
+import { admit, reply, type GuardDeps } from "@/server/guard";
 
 // Everything the handler depends on, so tests can swap in fakes
-export interface FeedbackDeps {
-  // Read and check the server settings
-  readEnv(): ServerEnv;
+export interface FeedbackDeps extends GuardDeps {
   // Make the coach
   makeCoach(env: ServerEnv): Coach;
-  // Make the shared counter store
-  makeCounterStore(env: ServerEnv): CounterStore;
-  // The call limits
-  limits: RateLimits;
-  // The current time
-  now(): Date;
-  // True while developing locally: a passphrase mismatch is logged with both fingerprints
-  development?: boolean;
-  // Where log lines go (the server terminal)
-  log?: (line: string) => void;
 }
 
 // The request body the app sends
@@ -47,80 +31,25 @@ const RequestSchema = z.object({
   mode: z.enum(SESSION_MODES).optional(),
   // The prompt or passage id (the server looks up a passage's text itself rather than trusting text sent with the request)
   promptId: z.string().max(64).optional(),
+  // For a Q&A answer: the question it answered (written by the coach or typed by the user)
+  question: z.string().max(300).optional(),
 });
-
-// Build a JSON reply with a status code and optional headers
-function reply(status: number, body: unknown, headers: Record<string, string> = {}): Response {
-  // Send the body as JSON
-  return Response.json(body, { status, headers });
-}
 
 // Build the handler for POST /api/feedback
 export function createFeedbackHandler(deps: FeedbackDeps) {
   // Handle one request
   return async function handle(request: Request): Promise<Response> {
-    // Read the server settings, or explain what is missing
-    let env: ServerEnv;
-    // Try to read them
-    try {
-      // Read and check every setting
-      env = deps.readEnv();
-    } catch (error) {
-      // Tell the caller which setting to fix (messages name variables, never values)
-      return reply(500, { error: `The server is not set up: ${(error as Error).message}` });
-    }
-
-    // Refuse anyone without the passphrase, before anything costs money: read what was sent
-    const provided = request.headers.get(PASSPHRASE_HEADER);
-    // (compare it with the server's)
-    if (!passphraseMatches(provided, env.accessSecret)) {
-      // While developing, log both fingerprints and any stray characters in the server's setting, so the mismatch can be found
-      if (deps.development && deps.log) {
-        // Fingerprint of what the browser sent, or none
-        const sent = provided ? await passphraseFingerprint(provided) : "none (no passphrase saved in this browser)";
-        // Fingerprint of the server's setting
-        const expected = await passphraseFingerprint(env.accessSecret);
-        // Anything odd about the server's setting
-        const warnings = passphraseWarnings(env.accessSecret);
-        // One line, never the passphrase itself
-        deps.log(`Passphrase mismatch: this browser sent fingerprint ${sent}; APP_ACCESS_SECRET has fingerprint ${expected}.${warnings.length ? ` APP_ACCESS_SECRET: ${warnings.join(" ")}` : ""}`);
-      }
-      // Refuse
-      return reply(401, { error: "Wrong or missing passphrase." });
-    }
-
-    // Read the body as JSON
-    let body: unknown;
-    // Try to parse it
-    try {
-      // Parse the JSON body
-      body = await request.json();
-    } catch {
-      // Not JSON
-      return reply(400, { error: "The request was not valid JSON." });
-    }
-    // Check the body's shape and limits
-    const parsed = RequestSchema.safeParse(body);
-    // Refuse a bad body
-    if (!parsed.success) return reply(400, { error: "The request was missing a field or had a value out of range." });
-
-    // Count the call against the limits
-    let limit;
-    // Try the shared store
-    try {
-      // Check and count
-      limit = await checkRateLimit(deps.makeCounterStore(env), deps.limits, deps.now());
-    } catch {
-      // If the store is down, refuse rather than run without limits
-      return reply(503, { error: "Feedback is paused because the usage counter is unavailable. Your session is saved." });
-    }
-    // Refuse over the limit and say when to try again
-    if (!limit.allowed) return reply(429, { error: limit.reason === "day" ? "Today's feedback limit is reached." : "Too many requests. Wait a moment." }, { "retry-after": String(limit.retryAfterSec) });
+    // Settings, passphrase, body and rate limit, in that order
+    const admitted = await admit(request, deps, RequestSchema, "Feedback is paused because the usage counter is unavailable. Your session is saved.");
+    // Refused at one of the checks
+    if ("refusal" in admitted) return admitted.refusal;
+    // The checked settings and body
+    const { env, data } = admitted;
 
     // Ask the coach
     try {
       // Get feedback for the session
-      const result = await deps.makeCoach(env).getFeedback(parsed.data);
+      const result = await deps.makeCoach(env).getFeedback(data);
       // A safety decline gets its own answer
       if (result.status === "declined") return reply(422, { error: "The coach could not review this session." });
       // Send the feedback back

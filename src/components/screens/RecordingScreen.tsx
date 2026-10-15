@@ -50,6 +50,8 @@ interface RecordingScreenProps {
   sectionIndex?: number | null;
   // For a rehearsal: how much of the text to show at first
   ladder?: Ladder;
+  // For a Q&A answer: which of the session's questions (counted from 0)
+  questionIndex?: number;
 }
 
 // One tip for each end of a talk, shown before an openings and closings drill
@@ -223,7 +225,7 @@ function Meter({ levels }: { levels: number[] }) {
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full" }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0 }: RecordingScreenProps) {
   // Use the given repository, or the browser's
   const [repo] = useState(() => repository ?? browserRepository());
   // Use the given clock, or the real one, kept the same between redraws (a new one each time would restart the effects below)
@@ -255,8 +257,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The browser's reason when saving failed, shown so the problem can be pinned down
   const [saveError, setSaveError] = useState("");
 
-  // The prompt to speak to (for reading aloud, its title)
-  const prompt = findPrompt(promptId);
+  // For a Q&A answer, the question (loaded from the session it belongs to, below)
+  const [qaQuestion, setQaQuestion] = useState<string | null>(null);
+  // The prompt to speak to (for reading aloud, its title; for a Q&A answer, the question)
+  const prompt = mode === "qa" ? (qaQuestion ? { id: promptId, text: qaQuestion } : undefined) : findPrompt(promptId);
   // The passage, when reading aloud or doing a pause drill
   const passage = mode === "read" || mode === "pause" ? findPassage(promptId) : undefined;
   // The user's own talk, when rehearsing (loaded from storage below)
@@ -279,6 +283,24 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const script = passage ? { title: passage.title, source: passage.source, body: passage.body } : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, source: "", body: lesson.body } : talk ? { title: talk.title, source: section !== null ? `Your talk · section ${section + 1} of ${sections.length}` : "Your talk", body: talkText } : null;
   // A rehearsal's own goal in seconds, if it has one (whole-talk runs only)
   const goalSeconds = talk?.goalMinutes && section === null ? talk.goalMinutes * 60 : undefined;
+
+  // For a Q&A answer, load the question from the session it belongs to
+  useEffect(() => {
+    // Only for Q&A answers
+    if (mode !== "qa") return;
+    // Ignore the result if the screen closes first
+    let cancelled = false;
+    // Read the session
+    repo.getSession(promptId).then((source) => {
+      // Show the question if still open
+      if (!cancelled) setQaQuestion(source?.questions?.[questionIndex] ?? null);
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [mode, promptId, questionIndex, repo]);
 
   // When rehearsing, load the talk
   useEffect(() => {
@@ -378,7 +400,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, ...(mode === "rehearse" ? { sectionIndex: section } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
       // Open the new session's page (feedback is requested there)
       navigate(`/sessions?id=${session.id}`);
     } catch (error) {
@@ -391,7 +413,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [clock, finishCapture, mode, navigate, promptId, repo, retryOf, section]);
+  }, [clock, finishCapture, mode, navigate, promptId, qaQuestion, repo, retryOf, section]);
 
   // Stop because of a problem, saving nothing
   const fail = useCallback(
@@ -543,11 +565,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" || mode === "bookend" ? `a ${formatClock(target)} goal` : "about a minute";
+  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" || mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : "Recording";
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
@@ -573,7 +595,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The length to aim for, or what the countdown is for */}
           <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
           {/* During a Table Topic or Record Response, the timing light */}
-          {recording && (mode === "talk" || mode === "response" || mode === "bookend" || (mode === "rehearse" && goalSeconds)) && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds)} mode={mode} />}
+          {recording && (mode === "talk" || mode === "response" || mode === "bookend" || mode === "qa" || (mode === "rehearse" && goalSeconds)) && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds)} mode={mode} />}
           {/* Prompt reminder while recording */}
           {recording && prompt && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
           {/* A lesson keeps its tip in view while speaking */}

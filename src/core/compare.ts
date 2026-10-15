@@ -9,8 +9,8 @@ import type { SessionRecord } from "@/data/records";
 export function earlierTake(sessions: ReadonlyArray<SessionRecord>, session: SessionRecord): SessionRecord | null {
   // The day this session was recorded
   const today = dayKey(new Date(session.createdAt));
-  // Earlier sessions on the same prompt (and, for rehearsals, the same section), from a different day (a same-day retry has its own comparison screen)
-  const earlier = sessions.filter((other) => other.id !== session.id && other.promptId === session.promptId && (other.sectionIndex ?? null) === (session.sectionIndex ?? null) && other.createdAt < session.createdAt && dayKey(new Date(other.createdAt)) !== today);
+  // Earlier sessions on the same prompt (for rehearsals, the same section; for Q&A answers, the same question), from a different day (a same-day retry has its own comparison screen)
+  const earlier = sessions.filter((other) => other.id !== session.id && other.promptId === session.promptId && (other.sectionIndex ?? null) === (session.sectionIndex ?? null) && (other.question ?? null) === (session.question ?? null) && other.createdAt < session.createdAt && dayKey(new Date(other.createdAt)) !== today);
   // The earliest of them (ISO text sorts in time order)
   const first = [...earlier].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
   // Hand it back, or null

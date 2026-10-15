@@ -37,6 +37,8 @@ export function RecordingFromAddress() {
       navigate={(path) => router.push(path)}
       // A rehearsal of one section, when the address names one
       sectionIndex={/^\d+$/.test(params.get("section") ?? "") ? Number(params.get("section")) : null}
+      // For a Q&A answer, which question
+      questionIndex={/^\d+$/.test(params.get("question") ?? "") ? Number(params.get("question")) : 0}
       // The rung of the memory ladder to start on
       ladder={params.get("ladder") === "keywords" || params.get("ladder") === "none" ? (params.get("ladder") as "keywords" | "none") : "full"}
     />

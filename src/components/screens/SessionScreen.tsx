@@ -80,6 +80,8 @@ interface Loaded {
   earlier: { then: SessionRecord; thenDay: number; nowDay: number } | null;
   // For a rehearsal, the talk it rehearsed (null if deleted or not a rehearsal)
   talk: TalkRecord | null;
+  // For a Q&A answer, which of its session's questions it answered (null if that question has since been replaced)
+  qaIndex: number | null;
 }
 
 // The transcript with fillers marked quietly
@@ -249,7 +251,7 @@ function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: 
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null }) {
+function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null }) {
   // The lesson, on the skill path
   const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
   // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
@@ -265,7 +267,11 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
   // Whether this was a Table Topic
   const talk = session.mode === "talk";
   // Whether this kind of session has a timing line and a retry of the same kind (Table Topic or Record Response)
-  const timed = talk || session.mode === "response" || session.mode === "bookend";
+  const timed = talk || session.mode === "response" || session.mode === "bookend" || session.mode === "qa";
+  // Whether this is an answer to an audience question
+  const qa = session.mode === "qa";
+  // Where "try it again" leads: the same question for a Q&A answer (or its list, if the question was replaced), otherwise the same prompt
+  const retryHref = qa && qaIndex === null ? `/qa?from=${session.promptId}` : `/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}`;
   // An openings and closings drill's prompt, and what it measured
   const bookend = session.mode === "bookend" ? BOOKENDS.find((item) => item.id === session.promptId) : undefined;
   // The drill's two findings
@@ -276,7 +282,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
+      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -290,6 +296,15 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
         </div>
         {/* The notes (first on a phone, margin on a computer) */}
         <aside className="order-first flex flex-1 flex-col md:order-2">
+          {/* For a Q&A answer, the question it answered */}
+          {qa && session.question && (
+            <div className="mt-5 md:mt-0 md:mb-5">
+              {/* Small heading */}
+              <p className="text-footnote italic text-ink-muted">The question</p>
+              {/* The question itself */}
+              <p className="mt-1 font-display text-cue">{session.question}</p>
+            </div>
+          )}
           {/* The focus number as a sentence (or the focus's name when no number measures it) */}
           {reading ? (
             <>
@@ -350,6 +365,14 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
             </button>
             {/* Separator on a phone */}
             <span className="md:hidden">·</span>
+            {/* After a rehearsal or a response, practise the questions that would follow */}
+            {(session.mode === "rehearse" || session.mode === "response") && <Link href={`/qa?from=${session.id}`} className="underline underline-offset-4">Practise Q&amp;A</Link>}
+            {/* Separator */}
+            {(session.mode === "rehearse" || session.mode === "response") && <span>·</span>}
+            {/* After a Q&A answer, back to the questions */}
+            {qa && <Link href={`/qa?from=${session.promptId}`} className="underline underline-offset-4">Back to the questions</Link>}
+            {/* Separator */}
+            {qa && <span>·</span>}
             {/* After a rehearsal, back to the talk and its plan */}
             {rehearsed && <Link href={`/talk?id=${rehearsed.id}`} className="underline underline-offset-4">Back to your talk</Link>}
             {/* Separator */}
@@ -361,7 +384,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
           {warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (
-            <ActionBand action="Try it again" aside={rehearsed ? "same part of the talk" : "same prompt"} href={`/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}&retryOf=${session.id}`} />
+            <ActionBand action="Try it again" aside={rehearsed ? "same part of the talk" : qa ? "same question" : "same prompt"} href={retryHref} />
           )}
         </aside>
       </div>
@@ -441,8 +464,12 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       const earlier = session && then ? { then, thenDay: practiceDay(all, new Date(then.createdAt)), nowDay: practiceDay(all, new Date(session.createdAt)) } : null;
       // For a rehearsal, the talk
       const talk = session?.mode === "rehearse" ? ((await repo.getTalk(session.promptId)) ?? null) : null;
+      // For a Q&A answer, the session its question came from
+      const qaSource = session?.mode === "qa" ? ((await repo.getSession(session.promptId)) ?? null) : null;
+      // The question's place in that session's list, if it is still there
+      const qaIndex = qaSource?.questions && session?.question ? qaSource.questions.indexOf(session.question) : -1;
       // Hand them back
-      return { session, original, earlier, talk };
+      return { session, original, earlier, talk, qaIndex: qaIndex >= 0 ? qaIndex : null };
     };
     // Load, then ask the coach if feedback is still waiting
     (async () => {
@@ -488,7 +515,7 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       {/* A retry with its first try */}
       {loaded?.session && loaded.original && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} />}
+      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} />}
     </main>
   );
 }

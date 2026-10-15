@@ -36,6 +36,8 @@ export const ROUTES: ReadonlyArray<string> = [
   "/talk?id=missing",
   // Openings and closings
   "/bookends",
+  // Q&A practice for a session that does not exist
+  "/qa?from=missing",
   // An opening drill
   "/session?mode=bookend&prompt=b001",
   // The design style tile
