@@ -35,7 +35,7 @@ Decision 18 in decisions.md has the details. In build order:
 
 ## Done: then and now, read aloud, reading checks (2026-10-15)
 
-## Next: pause drill and Rehearse my talk (agreed 2026-10-15)
+## Done: pauses, pause drill, Rehearse my talk (agreed and built 2026-10-15)
 
 1. Pause detection on the device from the loudness the level meter already reads: count and length of pauses, and how much of the time was spent speaking.
 2. Pause drill: a passage with marked pause points; the session page says which pauses were taken.

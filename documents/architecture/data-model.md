@@ -20,7 +20,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | promptId | Which prompt was used |
 | isBaseline | True for the user's first full session (never a warm-up) |
 | retryOf | Id of the session this one retries, or empty |
-| mode | `talk` (Table Topic: 10-second countdown, then Toastmasters timing of 1:00 to 2:00, with under 1:00 or over 2:30 marked as not qualifying; stops itself at 3:00), `response` (Record Response: 2 minutes to think with hints, then a 3:00 goal; stops itself at 4:00), `read` (reading a passage aloud; no light, stops at 10 minutes; never the baseline and left out of progress numbers, since reading has fewer fillers by nature), or the retired `standard` (one-minute session) and `warmup` (30 seconds). The baseline is the first `response` (or an old `standard`). Table Topics count for the streak and progress numbers (both are per-minute rates) but never become the baseline. Warm-ups count for the streak but are left out of the baseline, the trend, and progress numbers. Exports from before modes existed load as `standard` |
+| mode | `talk` (Table Topic: 10-second countdown, then Toastmasters timing of 1:00 to 2:00, with under 1:00 or over 2:30 marked as not qualifying; stops itself at 3:00), `response` (Record Response: 2 minutes to think with hints, then a 3:00 goal; stops itself at 4:00), `pause` (pause drill: a marked passage, like `read`), `rehearse` (the user's own talk; up to 30 minutes; light only when the talk has a goal), `read` (reading a passage aloud; no light, stops at 10 minutes; never the baseline and left out of progress numbers, since reading has fewer fillers by nature), or the retired `standard` (one-minute session) and `warmup` (30 seconds). The baseline is the first `response` (or an old `standard`). Table Topics count for the streak and progress numbers (both are per-minute rates) but never become the baseline. Warm-ups count for the streak but are left out of the baseline, the trend, and progress numbers. Exports from before modes existed load as `standard` |
 | durationSec | Length of the recording |
 | transcript | Full text of what was said |
 | wordsPerMinute | Computed from transcript and duration |
@@ -28,6 +28,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | focus | The weekly focus active at the time |
 | feedback | Keep / change / retry cue, or empty if not yet received |
 | feedbackStatus | pending, done, or failed |
+| loudness | Loudness readings every tenth of a second while recording (0 to 1, two decimals), used to find pauses; missing on older sessions |
 | audioKey | Link to the saved audio, or empty if pruned |
 
 ### Challenge (one per week)
@@ -38,6 +39,18 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | weekStart | Date the week began |
 | text | The real-world task |
 | completedAt | When the user marked it done, or empty |
+
+### Talk (one per saved talk, for Rehearse my talk; added 2026-10-15)
+
+| Field | Meaning |
+|-------|---------|
+| id | Unique id; also the prompt id of its rehearsals, so "then and now" pairs rehearsals of the same talk |
+| title | Short title shown in lists |
+| body | The words of the talk or notes (up to 50,000 characters) |
+| goalMinutes | Target length in whole minutes, or empty |
+| createdAt | When it was saved |
+
+Talks are stored in their own collection (added to existing databases by raising the version) and included in the export file; files made before talks existed still import.
 
 ### Settings (one record)
 
