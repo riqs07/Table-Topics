@@ -214,4 +214,36 @@ describe("SessionScreen", () => {
     // Confirm there is no player
     expect(screen.queryByLabelText("Your recording")).toBeNull();
   });
+
+  // Then and now: an earlier day's recording of the same prompt plays beside this one, with both sets of numbers
+  it("plays an earlier recording of the same prompt beside this one", async () => {
+    // Stand in for the browser's object URLs
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:take"), revokeObjectURL: vi.fn() });
+    // Day 1 on prompt p001
+    const first = makeSession({ id: "a", promptId: "p001", createdAt: new Date(2026, 9, 1, 12).toISOString(), audioKey: "a", fillersPerMinute: 4.2, wordsPerMinute: 172, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Day 13 on the same prompt
+    const now = makeSession({ id: "b", promptId: "p001", createdAt: new Date(2026, 9, 13, 12).toISOString(), audioKey: "b", fillersPerMinute: 1.8, wordsPerMinute: 148, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Repository with both and their audio
+    const repository = await repositoryWith(first, now);
+    // Save the first audio
+    await repository.saveAudio("a", new Blob(["then"]));
+    // Save the second audio
+    await repository.saveAudio("b", new Blob(["now"]));
+    // Draw the later session
+    render(<SessionScreen sessionId="b" repository={repository} now={NOW} />);
+    // Confirm both players and both lines of numbers
+    expect([!!(await screen.findByLabelText("Your recording from day 1")), !!(await screen.findByLabelText("Your recording from day 13")), !!screen.getByText("Day 1: 4.2 fillers a minute, 172 words a minute."), !!screen.getByText("Day 13: 1.8 fillers a minute, 148 words a minute."), !!screen.getByRole("button", { name: /Play both/ })]).toEqual([true, true, true, true, true]);
+  });
+
+  // A read-aloud session shows how much of the text was read, with skipped words marked on the passage
+  it("shows how much of the passage was read", async () => {
+    // A reading of the start of the Gettysburg Address that skipped "seven"
+    const session = makeSession({ id: "r", mode: "read", promptId: "r001", transcript: "four score and years ago", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="r" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the title and that the headline gives a percentage
+    expect([!!(await screen.findByText("Read aloud")), /^You read \d+% of the words\.$/.test(screen.getByTestId("reading-headline").textContent ?? "")]).toEqual([true, true]);
+    // Confirm "seven" is marked as not heard
+    expect(screen.getByText("seven").getAttribute("data-read")).toBe("false");
+  });
 });

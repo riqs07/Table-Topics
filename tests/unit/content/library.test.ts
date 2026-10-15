@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt library and picker
-import { PROMPTS, STRUCTURE_HINT, TABLE_TOPICS, WARMUP_PROMPTS, findPrompt, promptForDay, tableTopicForDay, warmupPromptForDay } from "@/content/prompts";
+import { PASSAGES, PROMPTS, STRUCTURE_HINT, TABLE_TOPICS, WARMUP_PROMPTS, findPassage, findPrompt, passageForDay, promptForDay, tableTopicForDay, warmupPromptForDay } from "@/content/prompts";
 // Load the challenge list and picker
 import { CHALLENGES, challengeForWeek } from "@/content/challenges";
 
@@ -60,6 +60,41 @@ describe("mode content", () => {
     const topic = tableTopicForDay(oct(12, 7));
     // Confirm it holds all day, changes the next day, and can be looked up
     expect([tableTopicForDay(oct(12, 22)).id, tableTopicForDay(oct(13)).id !== topic.id, findPrompt(topic.id)?.text]).toEqual([topic.id, true, topic.text]);
+  });
+});
+
+// Group the checks about the read-aloud passages
+describe("read-aloud passages", () => {
+  // Public-domain speeches and passages written for the app, each with its own id
+  it("has public-domain speeches and practice passages with their own ids", () => {
+    // Speeches
+    const speeches = PASSAGES.filter((passage) => passage.kind === "speech");
+    // Practice passages
+    const practice = PASSAGES.filter((passage) => passage.kind === "practice");
+    // Confirm at least five of each, "r" ids, and ids unique across every list
+    expect([speeches.length >= 5, practice.length >= 5, PASSAGES.every((passage) => /^r\d{3}$/.test(passage.id)), new Set([...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES].map((item) => item.id)).size]).toEqual([true, true, true, PROMPTS.length + TABLE_TOPICS.length + WARMUP_PROMPTS.length + PASSAGES.length]);
+  });
+
+  // Every speech says who gave it and when (all before 1962, so public domain or a U.S. government work)
+  it("credits every speech with a speaker and a year", () => {
+    // Check every speech
+    for (const passage of PASSAGES.filter((item) => item.kind === "speech")) expect(passage.source).toMatch(/^.+, (1[78]\d\d|19[0-6]\d)$/);
+  });
+
+  // Passages are long enough to practise with but short enough for one sitting
+  it("keeps passages between 40 and 300 words", () => {
+    // Check every passage
+    for (const passage of PASSAGES) expect(passage.body.split(/\s+/).length).toBeGreaterThanOrEqual(40);
+    // And the upper bound
+    for (const passage of PASSAGES) expect(passage.body.split(/\s+/).length).toBeLessThanOrEqual(300);
+  });
+
+  // The passage of the day rotates, and passages can be looked up by id (also through findPrompt, for history labels)
+  it("picks a passage for the day and finds it by id", () => {
+    // Today's passage
+    const passage = passageForDay(oct(12));
+    // Confirm both lookups
+    expect([findPassage(passage.id)?.title, findPrompt(passage.id)?.text]).toEqual([passage.title, passage.title]);
   });
 });
 

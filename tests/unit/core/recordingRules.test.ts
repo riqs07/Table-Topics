@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the recording rules being checked
-import { MIN_SECONDS, formatClock, maxSeconds, targetSeconds, thinkSeconds, timeSignal, timingSentence } from "@/core/recordingRules";
+import { MIN_SECONDS, formatClock, maxSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, timingSentence } from "@/core/recordingRules";
 
 // Group the checks about how long recordings run
 describe("recording length", () => {
@@ -101,4 +101,19 @@ describe("Record Response", () => {
     // Confirm under, on, and over
     expect([timingSentence("response", 170), timingSentence("response", 180), timingSentence("response", 192)]).toEqual(["2:50 against a 3:00 goal, 10 seconds to spare.", "3:00 against a 3:00 goal, right on time.", "3:12 against a 3:00 goal, 12 seconds over."]);
   });
+
+// Group the checks about reading aloud
+describe("Read aloud", () => {
+  // No thinking time, no light, and a generous limit
+  it("starts straight away, has no light, and stops at 10 minutes", () => {
+    // Confirm the think time, light, and limit
+    expect([thinkSeconds("read"), timeSignal("read", 500), maxSeconds("read")]).toEqual([0, "none", 600]);
+  });
+
+  // The expected length comes from the passage: about 140 words a minute, at least one minute
+  it("estimates reading time from the passage", () => {
+    // Confirm 280 words and 50 words
+    expect([readingSeconds(Array(280).fill("word").join(" ")), readingSeconds(Array(50).fill("word").join(" "))]).toEqual([120, 60]);
+  });
+});
 });

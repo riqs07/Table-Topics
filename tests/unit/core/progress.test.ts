@@ -95,6 +95,12 @@ describe("warm-ups and progress", () => {
     expect(shouldBeBaseline([makeSession({ isBaseline: true })], "standard")).toBe(false);
   });
 
+  // Reading aloud never becomes the starting point, and reading sessions stay out of the trend (reading a text has fewer fillers by nature)
+  it("keeps read-aloud sessions out of the baseline and the trend", () => {
+    // Confirm the baseline rule and the trend
+    expect([shouldBeBaseline([], "read"), trendSeries([...WITH_WARMUP, makeSession({ id: "r1", createdAt: oct(10), fillersPerMinute: 0.1, mode: "read", promptId: "r001" })])]).toEqual([false, [6, 4.2, 3.1]]);
+  });
+
   // The first Record Response becomes the starting point; a Table Topic never does
   it("makes the first Record Response the baseline, never a Table Topic", () => {
     // Confirm both

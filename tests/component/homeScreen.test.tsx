@@ -11,7 +11,7 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the prompt and challenge pickers
-import { promptForDay, tableTopicForDay } from "@/content/prompts";
+import { passageForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
 import { CHALLENGES } from "@/content/challenges";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
@@ -59,8 +59,18 @@ describe("HomeScreen", () => {
     expect([talk.getAttribute("href"), screen.queryByText(tableTopicForDay(NOW).text)]).toEqual([`/session?mode=talk&prompt=${tableTopicForDay(NOW).id}`, null]);
   });
 
+  // Reading aloud is offered on today's passage
+  it("offers reading aloud", async () => {
+    // Draw the screen
+    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
+    // Find the read-aloud action
+    const read = await screen.findByRole("link", { name: /Read aloud/ });
+    // Confirm it starts today's passage
+    expect(read.getAttribute("href")).toBe(`/session?mode=read&prompt=${passageForDay(NOW).id}`);
+  });
+
   // The warm-up and the one-minute session are retired from the home screen
-  it("offers only the two modes", async () => {
+  it("offers only the current modes", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
     // Wait for the page

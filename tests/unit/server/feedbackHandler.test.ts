@@ -97,6 +97,10 @@ describe("feedback handler", () => {
     const talk = await createFeedbackHandler(deps())(request({ ...BODY, mode: "talk" }));
     // Call with a Record Response
     const response = await createFeedbackHandler(deps())(request({ ...BODY, mode: "response" }));
+    // Call with a read-aloud session and its passage id
+    const read = await createFeedbackHandler(deps())(request({ ...BODY, mode: "read", promptId: "r001" }));
+    // Confirm reading succeeds too
+    expect(read.status).toBe(200);
     // Call without a mode
     const noMode = await createFeedbackHandler(deps())(request(BODY));
     // Confirm all succeed

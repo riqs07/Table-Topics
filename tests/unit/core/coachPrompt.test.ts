@@ -104,6 +104,14 @@ describe("checkFeedback", () => {
     expect(() => checkFeedback({ keep: "a", change: "  ", retryCue: "c" })).toThrow(/incomplete/);
   });
 
+  // A read-aloud session includes the text that was read, looked up by its id, and asks only about delivery
+  it("tells the coach the text that was read aloud", () => {
+    // Build a read-aloud message for the Gettysburg Address
+    const message = buildCoachMessage({ ...SESSION, mode: "read", promptId: "r001" });
+    // Confirm the note and the text are included
+    expect([message.includes("This was read aloud from a known text. Comment only on delivery"), message.includes("<text>\nFour score and seven years ago")]).toEqual([true, true]);
+  });
+
   // A Record Response is flagged with its goal and thinking time
   it("tells the coach when a session is a Record Response", () => {
     // Build a response message that ran 12 seconds over

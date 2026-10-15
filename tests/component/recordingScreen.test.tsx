@@ -14,7 +14,7 @@ import type { LiveText, RecordingProblem, RecordingServices } from "@/audio/serv
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the prompt lists
-import { PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@/content/prompts";
+import { PASSAGES, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@/content/prompts";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
 
@@ -311,6 +311,20 @@ describe("RecordingScreen", () => {
     };
     // Confirm 2:20 and 3:05
     expect([await after(140_000), await after(45_000)]).toEqual([["yellow", "Yellow: 45 seconds to the goal"], ["red", "Red: past the goal"]]);
+  });
+
+  // Reading aloud shows the passage with its source, and keeps it in view while recording
+  it("shows the passage to read before and during recording", async () => {
+    // Draw a read-aloud session on the first passage
+    draw({ mode: "read", promptId: PASSAGES[0]!.id });
+    // Confirm the title, the source, and the start action
+    expect([!!(await screen.findByText(PASSAGES[0]!.title)), !!screen.getByText(PASSAGES[0]!.source), !!screen.getByRole("button", { name: /Start reading/ })]).toEqual([true, true, true]);
+    // Start
+    fireEvent.click(screen.getByRole("button", { name: /Start reading/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Confirm the passage text is still on screen
+    expect(screen.getByTestId("passage").textContent).toContain(PASSAGES[0]!.body.split(" ").slice(0, 4).join(" "));
   });
 
   // A one-minute session has no light
