@@ -18,6 +18,22 @@ describe("prompt library", () => {
     expect(new Set(PROMPTS.map((prompt) => prompt.id)).size).toBe(PROMPTS.length);
   });
 
+  // Record Response prompts are speaking tasks an audience would hear (decision 22)
+  it("labels every prompt with the kind of talk it asks for, with each kind well stocked", () => {
+    // Every prompt names its kind
+    for (const prompt of PROMPTS) expect(["explain", "persuade", "toast", "update", "story", "opinion"]).toContain(prompt.kind);
+    // The four kinds added for speakers each have at least three prompts
+    for (const kind of ["explain", "persuade", "toast", "update"]) expect(PROMPTS.filter((prompt) => prompt.kind === kind).length).toBeGreaterThanOrEqual(3);
+  });
+
+  // Prompts retired on 2026-10-15 leave the rotation, but old sessions still show their text
+  it("keeps retired prompts findable but out of the rotation", () => {
+    // Out of the rotation
+    expect(PROMPTS.some((prompt) => prompt.id === "p001")).toBe(false);
+    // Still findable
+    expect(findPrompt("p001")?.text).toBe("Describe a small thing that made your week better.");
+  });
+
   // Prompts are short enough to read at a glance and end like a sentence
   it("keeps every prompt short and complete", () => {
     // Check every prompt
