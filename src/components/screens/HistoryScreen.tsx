@@ -40,8 +40,8 @@ function Trend({ values }: { values: number[] }) {
   );
 }
 
-// Find a prompt's text by id
-function promptText(session: SessionRecord): string {
+// Find a prompt's text by id (talk titles come from the user's saved talks)
+function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, string>): string {
   // The first recording is named as such
   if (session.isBaseline) return "Your first recording";
   // Look up the prompt, falling back to a plain label
@@ -54,12 +54,14 @@ function promptText(session: SessionRecord): string {
   if (session.mode === "read") return `Read aloud: ${text}`;
   // And pause drills
   if (session.mode === "pause") return `Pause drill: ${text}`;
+  // And rehearsals, named after the talk (or plainly, if the talk was deleted)
+  if (session.mode === "rehearse") return talkTitles.has(session.promptId) ? `Rehearsal: ${talkTitles.get(session.promptId)}` : "Rehearsal";
   // And Record Responses
   return session.mode === "response" ? `Record Response: ${text}` : text;
 }
 
 // One line of the contents: day, prompt, dotted leader, result
-function Row({ row, now }: { row: HistoryRow; now: Date }) {
+function Row({ row, now, talkTitles }: { row: HistoryRow; now: Date; talkTitles: ReadonlyMap<string, string> }) {
   // First try's rate, and the retry's if there was one
   const result = row.retry ? `${formatRate(row.session.fillersPerMinute)}, then ${formatRate(row.retry.fillersPerMinute)}` : formatRate(row.session.fillersPerMinute);
   // A link to the session, laid out as a baseline-aligned row
@@ -69,7 +71,7 @@ function Row({ row, now }: { row: HistoryRow; now: Date }) {
         {/* Day in italic, fixed width so prompts line up */}
         <span className="w-20 flex-none italic text-ink-muted max-md:w-16">{dayLabel(new Date(row.session.createdAt), now)}</span>
         {/* The prompt: wraps on a phone, cut short on a computer where the leader takes the space */}
-        <span className="min-w-0 flex-1 md:flex-none md:truncate">{promptText(row.session)}</span>
+        <span className="min-w-0 flex-1 md:flex-none md:truncate">{promptText(row.session, talkTitles)}</span>
         {/* Dotted leader, on a computer only */}
         <span className="hidden min-w-6 flex-1 border-b border-dotted border-ink-muted md:block" />
         {/* The result */}
@@ -85,6 +87,8 @@ export function HistoryScreen(props: ScreenProps) {
   const { repo, today } = useScreenBasics(props);
   // Saved sessions, once loaded
   const [sessions, setSessions] = useState<SessionRecord[] | null>(null);
+  // Titles of the user's saved talks, by id, for naming rehearsals
+  const [talkTitles, setTalkTitles] = useState<ReadonlyMap<string, string>>(new Map());
 
   // Load the sessions once the date is known
   useEffect(() => {
@@ -96,6 +100,11 @@ export function HistoryScreen(props: ScreenProps) {
     repo.listSessions().then((loaded) => {
       // Keep them only if the screen is still open
       if (!cancelled) setSessions(loaded);
+    });
+    // Load the talk titles too
+    repo.listTalks().then((talks) => {
+      // Keep them only if the screen is still open
+      if (!cancelled) setTalkTitles(new Map(talks.map((talk) => [talk.id, talk.title])));
     });
     // Mark as closed when leaving
     return () => {
@@ -144,7 +153,7 @@ export function HistoryScreen(props: ScreenProps) {
           {/* The contents list */}
           <ul className="mt-6 border-t border-ink pt-2 text-lede md:mt-0 md:border-t-0 md:pt-0">
             {/* One row per first try, newest first */}
-            {rows.map((row) => <Row key={row.session.id} row={row} now={today} />)}
+            {rows.map((row) => <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} />)}
           </ul>
         </div>
       )}

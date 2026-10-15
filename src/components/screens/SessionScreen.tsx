@@ -28,7 +28,7 @@ import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
 import { findPassage, promptForDay } from "@/content/prompts";
 // Load the session record type
-import type { SessionRecord } from "@/data/records";
+import type { SessionRecord, TalkRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the feedback requester and its outcomes
@@ -70,6 +70,8 @@ interface Loaded {
   original: SessionRecord | null;
   // An earlier day's recording of the same prompt, with both practice day numbers, for "then and now"
   earlier: { then: SessionRecord; thenDay: number; nowDay: number } | null;
+  // For a rehearsal, the talk it rehearsed (null if deleted or not a rehearsal)
+  talk: TalkRecord | null;
 }
 
 // The transcript with fillers marked quietly
@@ -229,9 +231,9 @@ function sideNumber(session: SessionRecord): string {
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"] }) {
-  // The passage, for a read-aloud session
-  const passage = session.mode === "read" || session.mode === "pause" ? findPassage(session.promptId) : undefined;
+function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null }) {
+  // The text that was read or rehearsed: a passage, or the user's talk
+  const passage = session.mode === "read" || session.mode === "pause" ? findPassage(session.promptId) : rehearsed ? { title: rehearsed.title, body: rehearsed.body } : undefined;
   // The pauses, when loudness was recorded
   const pauses = session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS) : null;
   // How much of the passage was heard
@@ -248,7 +250,7 @@ function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository;
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : session.mode === "pause" ? "Pause drill" : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
+      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -266,7 +268,7 @@ function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository;
           {reading ? (
             <>
               {/* How much of the passage was read */}
-              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : `You read ${reading.percentRead}% of the words.`}</p>
+              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? `You covered ${reading.percentRead}% of your script.` : `You read ${reading.percentRead}% of the words.`}</p>
               {/* The detail */}
               <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" ? `You read ${reading.percentRead}% of the words; ` : ""}{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
             </>
@@ -280,6 +282,8 @@ function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository;
           {pauses && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(pauses)}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
           {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec)}</p>}
+          {/* After a rehearsal with a goal, how the timing went */}
+          {rehearsed?.goalMinutes && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
           {/* Listen back */}
           {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
           {/* Feedback, or a note that it has not arrived */}
@@ -391,8 +395,10 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       const then = session ? earlierTake(all, session) : null;
       // With its practice day number and this session's
       const earlier = session && then ? { then, thenDay: practiceDay(all, new Date(then.createdAt)), nowDay: practiceDay(all, new Date(session.createdAt)) } : null;
+      // For a rehearsal, the talk
+      const talk = session?.mode === "rehearse" ? ((await repo.getTalk(session.promptId)) ?? null) : null;
       // Hand them back
-      return { session, original, earlier };
+      return { session, original, earlier, talk };
     };
     // Load, then ask the coach if feedback is still waiting
     (async () => {
@@ -438,7 +444,7 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       {/* A retry with its first try */}
       {loaded?.session && loaded.original && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} />}
+      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} />}
     </main>
   );
 }

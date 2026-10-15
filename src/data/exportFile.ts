@@ -1,8 +1,8 @@
-// "Export my data": a JSON file of sessions, challenges and settings that can be imported again (checkpoint C8)
+// "Export my data": a JSON file of sessions, challenges, settings and saved talks that can be imported again (checkpoint C8)
 // Audio is left out to keep the file small; transcripts, numbers and feedback are all included
 
 // Load the record types
-import type { ChallengeRecord, SessionRecord, SettingsRecord } from "@/data/records";
+import type { ChallengeRecord, SessionRecord, SettingsRecord, TalkRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -25,6 +25,8 @@ export interface ExportFile {
   challenges: ChallengeRecord[];
   // The user's settings
   settings: SettingsRecord;
+  // The user's own talks (missing in files made before Rehearse my talk)
+  talks: TalkRecord[];
 }
 
 // Gather everything into an export file
@@ -32,7 +34,7 @@ export async function buildExport(repo: Repository, now: Date): Promise<ExportFi
   // Read the sessions and clear their audio pointers, since audio is not in the file
   const sessions = (await repo.listSessions()).map((session) => ({ ...session, audioKey: null }));
   // Put the file together
-  return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions, challenges: await repo.listChallenges(), settings: await repo.getSettings(now) };
+  return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions, challenges: await repo.listChallenges(), settings: await repo.getSettings(now), talks: await repo.listTalks() };
 }
 
 // Save everything from an export file, adding to existing data; returns what was imported
@@ -41,6 +43,8 @@ export async function importExport(repo: Repository, file: ExportFile): Promise<
   for (const session of file.sessions) await repo.saveSession(session);
   // Save each challenge (one with the same id is replaced)
   for (const challenge of file.challenges) await repo.saveChallenge(challenge);
+  // Save each talk (one with the same id is replaced)
+  for (const talk of file.talks) await repo.saveTalk(talk);
   // Use the file's settings
   await repo.saveSettings(file.settings);
   // Report the counts to show the user
@@ -82,7 +86,7 @@ function isSession(value: unknown): value is SessionRecord {
     // Optional links
     isTextOrNull(value.retryOf) && isTextOrNull(value.audioKey) &&
     // Session kind (missing in files made before warm-ups existed)
-    (value.mode === undefined || value.mode === "standard" || value.mode === "warmup" || value.mode === "talk" || value.mode === "response" || value.mode === "read" || value.mode === "pause") &&
+    (value.mode === undefined || value.mode === "standard" || value.mode === "warmup" || value.mode === "talk" || value.mode === "response" || value.mode === "read" || value.mode === "pause" || value.mode === "rehearse") &&
     // Measurements
     isNumber(value.durationSec) && isNumber(value.wordsPerMinute) && isNumber(value.fillersPerMinute) &&
     // Feedback and its status
@@ -94,6 +98,12 @@ function isSession(value: unknown): value is SessionRecord {
 function isChallenge(value: unknown): value is ChallengeRecord {
   // Must be an object with text fields and an optional completion time
   return isObject(value) && isText(value.id) && isText(value.weekStart) && isText(value.text) && isTextOrNull(value.completedAt);
+}
+
+// Check that a value has the shape of a saved talk
+function isTalk(value: unknown): value is TalkRecord {
+  // Must be an object with text fields and a goal that is a number or null
+  return isObject(value) && isText(value.id) && isText(value.title) && isText(value.body) && isText(value.createdAt) && (value.goalMinutes === null || isNumber(value.goalMinutes));
 }
 
 // Check that a value has the shape of the settings record
@@ -121,11 +131,11 @@ export function parseExport(text: string): ExportFile {
   // Must be this version (anything else is damaged)
   if (data.version !== VERSION) throw new Error(DAMAGED);
   // Every part must have the right shape
-  const valid = isText(data.exportedAt) && Array.isArray(data.sessions) && data.sessions.every(isSession) && Array.isArray(data.challenges) && data.challenges.every(isChallenge) && isSettings(data.settings);
+  const valid = isText(data.exportedAt) && Array.isArray(data.sessions) && data.sessions.every(isSession) && Array.isArray(data.challenges) && data.challenges.every(isChallenge) && isSettings(data.settings) && (data.talks === undefined || (Array.isArray(data.talks) && data.talks.every(isTalk)));
   // Refuse a damaged file
   if (!valid) throw new Error(DAMAGED);
   // The file has been checked, so it can be used as an export
   const file = data as unknown as ExportFile;
   // Sessions from before warm-ups existed are full sessions
-  return { ...file, sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
+  return { ...file, talks: file.talks ?? [], sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
 }

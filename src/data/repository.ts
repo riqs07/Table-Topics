@@ -3,7 +3,7 @@
 // Load the start-of-day helper for default settings
 import { startOfDay } from "@/core/dates";
 // Load the record types
-import { COLLECTION_NAMES, type ChallengeRecord, type SessionRecord, type SettingsRecord } from "@/data/records";
+import { COLLECTION_NAMES, type ChallengeRecord, type SessionRecord, type SettingsRecord, type TalkRecord } from "@/data/records";
 // Load the storage contract
 import type { Store } from "@/data/store";
 
@@ -34,6 +34,14 @@ export interface Repository {
   saveChallenge(challenge: ChallengeRecord): Promise<void>;
   // Load every challenge, newest week first
   listChallenges(): Promise<ChallengeRecord[]>;
+  // Save a new talk or update an existing one
+  saveTalk(talk: TalkRecord): Promise<void>;
+  // Load a talk by id
+  getTalk(id: string): Promise<TalkRecord | undefined>;
+  // Load every talk, newest first
+  listTalks(): Promise<TalkRecord[]>;
+  // Remove a talk (its rehearsals stay in history)
+  deleteTalk(id: string): Promise<void>;
   // Remove every stored record and recording
   deleteAllData(): Promise<void>;
 }
@@ -113,6 +121,20 @@ export function createRepository(store: Store): Repository {
       // Read all challenges and sort by week start, newest first
       return (await store.getAll("challenges")).sort((a, b) => b.weekStart.localeCompare(a.weekStart));
     },
+
+    // Save a talk under its id
+    saveTalk: (talk) => store.put("talks", talk.id, talk),
+    // Load a talk by id
+    getTalk: (id) => store.get("talks", id),
+
+    // Load every talk, newest first
+    async listTalks() {
+      // Read all talks and sort by save time, newest first
+      return (await store.getAll("talks")).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+
+    // Remove a talk by id
+    deleteTalk: (id) => store.delete("talks", id),
 
     // Remove everything
     async deleteAllData() {

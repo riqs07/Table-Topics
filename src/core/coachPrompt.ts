@@ -81,6 +81,8 @@ export function buildCoachMessage(input: CoachInput): string {
     ...(input.mode === "response" ? [`This is a prepared response: up to ${thinkSeconds("response")} seconds to think with hints, then a ${targetSeconds("response")}-second goal. It ran ${Math.round(input.durationSec)} seconds. Comment on how the answer was organised across the whole time.`] : []),
     // On a reading, ask about delivery only
     ...(input.mode === "read" ? ["This was read aloud from a known text. Comment only on delivery (pace, pauses, skipped or repeated words, fillers), not on the content, which the speaker did not write."] : []),
+    // On a rehearsal, what it is (the script stays on the device)
+    ...(input.mode === "rehearse" ? ["This was a rehearsal of the speaker's own prepared talk. Comment on delivery and clarity."] : []),
     // On a pause drill, the number of marked pauses
     ...(input.mode === "pause" && passage ? [`This was a pause drill: reading a known text with ${countPauseMarks(passage.body)} marked pauses (shown as /). Comment only on pausing and pace.`] : []),
     // On a retry, the fix to check for

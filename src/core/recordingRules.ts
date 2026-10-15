@@ -21,6 +21,8 @@ export function maxSeconds(mode: SessionMode): number {
   if (mode === "response") return 240;
   // Reading aloud and the pause drill: enough for any passage at a slow pace
   if (mode === "read" || mode === "pause") return 600;
+  // A rehearsal: long enough for most real talks
+  if (mode === "rehearse") return 1800;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
   return mode === "warmup" ? 30 : 180;
 }
@@ -72,12 +74,14 @@ export const TOPIC_LIMIT = 150;
 // The timing light: off, green, yellow, red, or past the limit (still red)
 export type TimeSignal = "none" | "green" | "yellow" | "red" | "overtime";
 
-// The timing light for a moment in a session (Table Topics and Record Responses have one)
-export function timeSignal(mode: SessionMode, seconds: number): TimeSignal {
-  // A Record Response: yellow in the last stretch before the goal, red past it
-  if (mode === "response") {
-    // The goal
-    const goal = targetSeconds(mode);
+// The timing light for a moment in a session (Table Topics, Record Responses, and rehearsals with a goal have one)
+export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: number): TimeSignal {
+  // A rehearsal without a goal has no light
+  if (mode === "rehearse" && !goalSeconds) return "none";
+  // A Record Response or a rehearsal: yellow in the last stretch before the goal, red past it
+  if (mode === "response" || mode === "rehearse") {
+    // The goal: the rehearsal's own, or the Record Response's
+    const goal = goalSeconds ?? targetSeconds(mode);
     // Past the goal
     if (seconds > goal) return "red";
     // Close to the goal
@@ -99,16 +103,16 @@ export function timeSignal(mode: SessionMode, seconds: number): TimeSignal {
   return "none";
 }
 
-// One plain sentence on the timing: for a Table Topic, whether it would qualify; otherwise, how it compared with the goal
-export function timingSentence(mode: SessionMode, durationSec: number): string {
+// One plain sentence on the timing: for a Table Topic, whether it would qualify; otherwise, how it compared with the goal (a rehearsal passes its own goal)
+export function timingSentence(mode: SessionMode, durationSec: number, goalSeconds?: number): string {
   // Whole seconds, as the timer would record them
   const seconds = Math.round(durationSec);
   // The length as a clock
   const clock = formatClock(seconds);
   // Anything but a Table Topic compares with its goal
   if (mode !== "talk") {
-    // The goal
-    const goal = targetSeconds(mode);
+    // The goal: a rehearsal's own, or this kind's
+    const goal = goalSeconds ?? targetSeconds(mode);
     // How far over (negative means under)
     const difference = seconds - goal;
     // The shared opening

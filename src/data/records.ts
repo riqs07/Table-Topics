@@ -11,8 +11,8 @@ export interface Feedback {
   retryCue: string;
 }
 
-// The kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, or the retired one-minute session and 30-second warm-up
-export type SessionMode = "standard" | "warmup" | "talk" | "response" | "read" | "pause";
+// The kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, or the retired one-minute session and 30-second warm-up
+export type SessionMode = "standard" | "warmup" | "talk" | "response" | "read" | "pause" | "rehearse";
 
 // Where a session's feedback request stands
 export type FeedbackStatus = "pending" | "done" | "failed";
@@ -51,6 +51,20 @@ export interface SessionRecord {
   audioKey: string | null;
 }
 
+// One of the user's own talks, saved for Rehearse my talk (stays on the device)
+export interface TalkRecord {
+  // Unique id, also used as the session's prompt id
+  id: string;
+  // Short title shown in lists
+  title: string;
+  // The words of the talk, or notes
+  body: string;
+  // Target length in whole minutes, or null for none
+  goalMinutes: number | null;
+  // When it was saved (ISO text)
+  createdAt: string;
+}
+
 // One weekly real-world challenge
 export interface ChallengeRecord {
   // Unique identifier
@@ -83,10 +97,12 @@ export interface Collections {
   settings: SettingsRecord;
   // Recorded audio, keyed by audio key
   audio: Blob;
+  // The user's own talks, keyed by talk id
+  talks: TalkRecord;
 }
 
 // One collection name
 export type CollectionName = keyof Collections;
 
 // Every collection name, for creating and clearing storage
-export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio"];
+export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio", "talks"];

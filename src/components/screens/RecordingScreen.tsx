@@ -22,7 +22,7 @@ import { LOUDNESS_TICK_MS, MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeco
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
-import type { SessionMode } from "@/data/records";
+import type { SessionMode, TalkRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the recording saver
 import { saveRecording } from "@/data/saveRecording";
@@ -232,8 +232,34 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
   // The prompt to speak to (for reading aloud, its title)
   const prompt = findPrompt(promptId);
-  // The passage, when reading aloud
+  // The passage, when reading aloud or doing a pause drill
   const passage = mode === "read" || mode === "pause" ? findPassage(promptId) : undefined;
+  // The user's own talk, when rehearsing (loaded from storage below)
+  const [talk, setTalk] = useState<TalkRecord | null>(null);
+  // Whether the rehearsal text is hidden, to practise from memory
+  const [textHidden, setTextHidden] = useState(false);
+  // The text on screen: a passage, or the talk being rehearsed
+  const script = passage ? { title: passage.title, source: passage.source, body: passage.body } : talk ? { title: talk.title, source: "Your talk", body: talk.body } : null;
+  // A rehearsal's own goal in seconds, if it has one
+  const goalSeconds = talk?.goalMinutes ? talk.goalMinutes * 60 : undefined;
+
+  // When rehearsing, load the talk
+  useEffect(() => {
+    // Only for rehearsals
+    if (mode !== "rehearse") return;
+    // Ignore the result if the screen closes first
+    let cancelled = false;
+    // Read the talk
+    repo.getTalk(promptId).then((loaded) => {
+      // Show it if still open
+      if (!cancelled) setTalk(loaded ?? null);
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [mode, promptId, repo]);
   // Target and limit for this kind of session
   const target = targetSeconds(mode);
   // The limit
@@ -480,13 +506,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = passage ? `about ${Math.round(readingSeconds(passage.body) / 60)} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" ? `a ${formatClock(target)} goal` : "about a minute";
+  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" ? `a ${formatClock(target)} goal` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : "Recording";
   // The keyboard hint for this stage
-  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : passage ? "space to start reading" : "space to start";
+  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
   const showPrompt = !recording && !!prompt && !passage && (mode !== "talk" || thinking);
   // A Table Topic's briefing, shown before the question
@@ -510,7 +536,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The length to aim for, or what the countdown is for */}
           <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
           {/* During a Table Topic or Record Response, the timing light */}
-          {recording && (mode === "talk" || mode === "response") && <TimingLight signal={timeSignal(mode, elapsed)} mode={mode} />}
+          {recording && (mode === "talk" || mode === "response" || (mode === "rehearse" && goalSeconds)) && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds)} mode={mode} />}
           {/* Prompt reminder while recording */}
           {recording && prompt && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
@@ -537,27 +563,35 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             </>
           )}
           {/* Reading aloud: the title and source before starting, and the text throughout */}
-          {passage && (
+          {script && (
             <>
               {/* Title and source, before starting */}
-              {!recording && <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">{passage.title}</h1>}
+              {!recording && <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">{script.title}</h1>}
               {/* Who said it, or that it is a practice passage */}
-              {!recording && <p className="mt-1 italic text-ink-muted">{passage.source}</p>}
+              {!recording && <p className="mt-1 italic text-ink-muted">{script.source}</p>}
+              {/* When rehearsing, hide or show the text to practise from memory */}
+              {mode === "rehearse" && (
+                <button type="button" onClick={() => setTextHidden(!textHidden)} className="mt-4 self-start italic underline underline-offset-4">
+                  {textHidden ? "Show the text" : "Hide the text"}
+                </button>
+              )}
               {/* For a pause drill, how it works */}
               {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Read the passage aloud and pause for about a second at each ‖. Take your time.</p>}
-              {/* The words to read, large enough to read from a distance */}
-              <p data-testid="passage" className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] font-display text-cue leading-relaxed`}>
-                {/* The text, with each pause mark shown as a pause sign in the accent color */}
-                {passage.body.split(" / ").map((part, index) => (
-                  // One stretch between pauses
-                  <span key={index}>
-                    {/* A pause sign before every stretch but the first */}
-                    {index > 0 && <span role="img" aria-label="pause here" className="mx-2 text-accent">‖</span>}
-                    {/* The words */}
-                    {part}
-                  </span>
-                ))}
-              </p>
+              {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
+              {!textHidden && (
+                <p data-testid="passage" className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`}>
+                  {/* The text, with each pause mark (in a pause drill) shown as a pause sign in the accent color */}
+                  {(mode === "pause" ? script.body.split(" / ") : [script.body]).map((part, index) => (
+                    // One stretch between pauses
+                    <span key={index}>
+                      {/* A pause sign before every stretch but the first */}
+                      {index > 0 && <span role="img" aria-label="pause here" className="mx-2 text-accent">‖</span>}
+                      {/* The words */}
+                      {part}
+                    </span>
+                  ))}
+                </p>
+              )}
             </>
           )}
           {/* Before recording: the prompt and, on a retry, last time's cue */}
@@ -584,7 +618,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {/* Live level meter */}
               <Meter levels={levels} />
               {/* Words so far (not while reading: the text itself is on screen) */}
-              {!passage && <div className="mt-8"><LiveWords text={text} /></div>}
+              {(!script || textHidden) && <div className="mt-8"><LiveWords text={text} /></div>}
             </>
           )}
 
@@ -620,7 +654,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             ) : mode === "response" ? (
               <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${think / 60} minutes to prepare`} onClick={beginThinking} />
             ) : (
-              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : passage ? "Start reading" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "rehearse" ? "Start rehearsing" : passage ? "Start reading" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
             )
           )}
           {/* Thinking about a Record Response: start speaking early */}
