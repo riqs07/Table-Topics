@@ -19,6 +19,7 @@ import { STRUCTURE_HINT, findPassage, findPrompt } from "@/content/prompts";
 import { findLesson } from "@/content/lessons";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
+import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 // Load the recording length rules
 import { LOUDNESS_TICK_MS, MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
 // Load the shared browser repository
@@ -45,7 +46,21 @@ interface RecordingScreenProps {
   repository?: Repository;
   // The current time (the real clock by default)
   clock?: () => Date;
+  // For a rehearsal: one section of the talk (counted from 0), or null for the whole talk
+  sectionIndex?: number | null;
+  // For a rehearsal: how much of the text to show at first
+  ladder?: Ladder;
 }
+
+// The rungs of the memory ladder, with their button names
+const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
+  // All the words
+  { ladder: "full", name: "Full text" },
+  // Cue words only
+  { ladder: "keywords", name: "Keywords" },
+  // Nothing
+  { ladder: "none", name: "From memory" },
+];
 
 // Where the screen is in the flow
 type Stage = "ready" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
@@ -200,7 +215,7 @@ function Meter({ levels }: { levels: number[] }) {
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full" }: RecordingScreenProps) {
   // Use the given repository, or the browser's
   const [repo] = useState(() => repository ?? browserRepository());
   // Use the given clock, or the real one, kept the same between redraws (a new one each time would restart the effects below)
@@ -238,15 +253,22 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const passage = mode === "read" || mode === "pause" ? findPassage(promptId) : undefined;
   // The user's own talk, when rehearsing (loaded from storage below)
   const [talk, setTalk] = useState<TalkRecord | null>(null);
-  // Whether the rehearsal text is hidden, to practise from memory
-  const [textHidden, setTextHidden] = useState(false);
-  // The text on screen: a passage, or the talk being rehearsed
+  // How much of the rehearsal text shows: all of it, cue words, or nothing
+  const [ladder, setLadder] = useState<Ladder>(startingLadder);
+  // Whether the text is hidden, to practise from memory
+  const textHidden = mode === "rehearse" && ladder === "none";
+  // The talk's sections
+  const sections = talk ? talkSections(talk.body) : [];
+  // The section being rehearsed, if it exists in the talk
+  const section = sectionIndex !== null && sectionIndex >= 0 && sectionIndex < sections.length ? sectionIndex : null;
+  // The rehearsal's text: one section, or the whole talk, at the chosen rung
+  const talkText = talk ? memoryLadder(section !== null ? (sections[section] ?? "") : talk.body, ladder) : "";
   // The lesson, on the skill path
   const lesson = mode === "lesson" ? findLesson(promptId) : undefined;
   // The text on screen: a passage, a lesson's practice text, or the talk being rehearsed
-  const script = passage ? { title: passage.title, source: passage.source, body: passage.body } : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, source: "", body: lesson.body } : talk ? { title: talk.title, source: "Your talk", body: talk.body } : null;
-  // A rehearsal's own goal in seconds, if it has one
-  const goalSeconds = talk?.goalMinutes ? talk.goalMinutes * 60 : undefined;
+  const script = passage ? { title: passage.title, source: passage.source, body: passage.body } : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, source: "", body: lesson.body } : talk ? { title: talk.title, source: section !== null ? `Your talk · section ${section + 1} of ${sections.length}` : "Your talk", body: talkText } : null;
+  // A rehearsal's own goal in seconds, if it has one (whole-talk runs only)
+  const goalSeconds = talk?.goalMinutes && section === null ? talk.goalMinutes * 60 : undefined;
 
   // When rehearsing, load the talk
   useEffect(() => {
@@ -346,7 +368,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, ...(mode === "rehearse" ? { sectionIndex: section } : {}) }, clock());
       // Open the new session's page (feedback is requested there)
       navigate(`/sessions?id=${session.id}`);
     } catch (error) {
@@ -359,7 +381,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [clock, finishCapture, mode, navigate, promptId, repo, retryOf]);
+  }, [clock, finishCapture, mode, navigate, promptId, repo, retryOf, section]);
 
   // Stop because of a problem, saving nothing
   const fail = useCallback(
@@ -585,11 +607,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                   <p className="mt-1 text-lede">{lesson.tip}</p>
                 </div>
               )}
-              {/* When rehearsing, hide or show the text to practise from memory */}
+              {/* When rehearsing, the memory ladder: full text, cue words, or nothing */}
               {mode === "rehearse" && (
-                <button type="button" onClick={() => setTextHidden(!textHidden)} className="mt-4 self-start italic underline underline-offset-4">
-                  {textHidden ? "Show the text" : "Hide the text"}
-                </button>
+                <div role="group" aria-label="How much text to show" className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
+                  {/* One button per rung */}
+                  {LADDER_RUNGS.map((rung) => (
+                    // The current rung is plain; the others are links-style buttons
+                    <button key={rung.ladder} type="button" aria-pressed={ladder === rung.ladder} onClick={() => setLadder(rung.ladder)} className={ladder === rung.ladder ? "text-ink" : "italic text-ink-muted underline underline-offset-4"}>
+                      {rung.name}
+                    </button>
+                  ))}
+                </div>
               )}
               {/* For a pause drill, how it works */}
               {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Read the passage aloud and pause for about a second at each ‖. Take your time.</p>}

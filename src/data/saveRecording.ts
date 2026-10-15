@@ -29,6 +29,8 @@ export interface FinishedRecording {
   retryOf: string | null;
   // Loudness readings taken while recording, if any
   loudness?: number[];
+  // For a rehearsal of one section: which section (counted from 0)
+  sectionIndex?: number | null;
 }
 
 // Save the recording and hand back the new session (now is when recording stopped)
@@ -62,6 +64,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     audioKey: recording.id,
     // The loudness readings, rounded to two decimals to keep the record small
     ...(recording.loudness ? { loudness: recording.loudness.map((level) => Math.round(level * 100) / 100) } : {}),
+    // Keep the section of a section rehearsal
+    ...(recording.sectionIndex !== undefined && recording.sectionIndex !== null ? { sectionIndex: recording.sectionIndex } : {}),
   };
   // Save the audio first, so the session never points at missing audio
   await repository.saveAudio(recording.id, recording.audio);

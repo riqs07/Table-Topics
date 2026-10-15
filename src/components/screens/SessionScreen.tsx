@@ -21,6 +21,8 @@ import { earlierTake, practiceDay } from "@/core/compare";
 import { findPauses, pauseDrillSentence, pauseSentence } from "@/core/pauses";
 // Load the reading check
 import { alignReading, countPauseMarks, type ReadingCheck } from "@/core/readAlong";
+// Load the section splitter, for rehearsals of one section
+import { talkSections } from "@/core/eventPrep";
 // Load the Table Topics timing sentence
 import { LOUDNESS_TICK_MS, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
@@ -234,12 +236,22 @@ function sideNumber(session: SessionRecord): string {
   return `${Math.round(session.wordsPerMinute)} words a minute`;
 }
 
+// The text a rehearsal was checked against: one section, or the whole talk
+function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: string; body: string } {
+  // The talk's sections
+  const sections = talkSections(talk.body);
+  // One section, if it still exists
+  const section = sectionIndex !== null ? sections[sectionIndex] : undefined;
+  // The section with its place, or the whole talk
+  return section !== undefined ? { title: `${talk.title} · section ${(sectionIndex ?? 0) + 1} of ${sections.length}`, body: section } : { title: talk.title, body: talk.body };
+}
+
 // The Feedback screen for a first try or a warm-up
 function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null }) {
   // The lesson, on the skill path
   const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
   // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
-  const passage = session.mode === "read" || session.mode === "pause" ? findPassage(session.promptId) : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, body: lesson.body.replace(/\*/g, "") } : rehearsed ? { title: rehearsed.title, body: rehearsed.body } : undefined;
+  const passage = session.mode === "read" || session.mode === "pause" ? findPassage(session.promptId) : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, body: lesson.body.replace(/\*/g, "") } : rehearsed ? rehearsedText(rehearsed, session.sectionIndex ?? null) : undefined;
   // A lesson's own result
   const lessonOutcome = lesson ? lessonResult(lesson, session) : null;
   // The pauses, when loudness was recorded
@@ -293,7 +305,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
           {/* After a Table Topic or Record Response, how the timing went */}
           {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec)}</p>}
           {/* After a rehearsal with a goal, how the timing went */}
-          {rehearsed?.goalMinutes && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
+          {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
           {/* Listen back */}
           {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
           {/* Feedback, or a note that it has not arrived */}
@@ -325,6 +337,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
             </button>
             {/* Separator on a phone */}
             <span className="md:hidden">·</span>
+            {/* After a rehearsal, back to the talk and its plan */}
+            {rehearsed && <Link href={`/talk?id=${rehearsed.id}`} className="underline underline-offset-4">Back to your talk</Link>}
+            {/* Separator */}
+            {rehearsed && <span>·</span>}
             {/* Finish */}
             <Link href="/" className="italic text-ink-muted underline underline-offset-4">or finish for today</Link>
           </Footnote>
@@ -332,7 +348,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
           {warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (
-            <ActionBand action="Try it again" aside="same prompt" href={`/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}&retryOf=${session.id}`} />
+            <ActionBand action="Try it again" aside={rehearsed ? "same part of the talk" : "same prompt"} href={`/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}&retryOf=${session.id}`} />
           )}
         </aside>
       </div>

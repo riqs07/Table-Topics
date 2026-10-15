@@ -89,6 +89,8 @@ function isSession(value: unknown): value is SessionRecord {
     (value.mode === undefined || value.mode === "standard" || value.mode === "warmup" || value.mode === "talk" || value.mode === "response" || value.mode === "read" || value.mode === "pause" || value.mode === "rehearse" || value.mode === "lesson") &&
     // Measurements
     isNumber(value.durationSec) && isNumber(value.wordsPerMinute) && isNumber(value.fillersPerMinute) &&
+    // Section of a rehearsal (missing on most sessions)
+    (value.sectionIndex === undefined || value.sectionIndex === null || isNumber(value.sectionIndex)) &&
     // Feedback and its status
     (value.feedback === null || isFeedback(value.feedback)) && ["pending", "done", "failed"].includes(value.feedbackStatus as string)
   );
@@ -103,7 +105,7 @@ function isChallenge(value: unknown): value is ChallengeRecord {
 // Check that a value has the shape of a saved talk
 function isTalk(value: unknown): value is TalkRecord {
   // Must be an object with text fields and a goal that is a number or null
-  return isObject(value) && isText(value.id) && isText(value.title) && isText(value.body) && isText(value.createdAt) && (value.goalMinutes === null || isNumber(value.goalMinutes));
+  return isObject(value) && isText(value.id) && isText(value.title) && isText(value.body) && isText(value.createdAt) && (value.goalMinutes === null || isNumber(value.goalMinutes)) && (value.eventDate === undefined || value.eventDate === null || (isText(value.eventDate) && /^\d{4}-\d{2}-\d{2}$/.test(value.eventDate)));
 }
 
 // Check that a value has the shape of the settings record

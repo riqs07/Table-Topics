@@ -47,6 +47,8 @@ export interface SessionRecord {
   feedbackStatus: FeedbackStatus;
   // Loudness readings taken every tenth of a second while recording (0 to 1, two decimals), for finding pauses; missing on older sessions
   loudness?: number[];
+  // For a rehearsal: which section of the talk was rehearsed (counted from 0), or null or missing for the whole talk
+  sectionIndex?: number | null;
   // Key of the saved audio, or null if there is none or it was pruned
   audioKey: string | null;
 }
@@ -61,6 +63,8 @@ export interface TalkRecord {
   body: string;
   // Target length in whole minutes, or null for none
   goalMinutes: number | null;
+  // The day the talk will be given, as "2026-10-22", or null or missing for none
+  eventDate?: string | null;
   // When it was saved (ISO text)
   createdAt: string;
 }
