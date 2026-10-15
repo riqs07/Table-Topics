@@ -65,6 +65,14 @@ describe("RehearseScreen", () => {
     expect([screen.getByRole("link", { name: "Pitch" }).getAttribute("href"), !!screen.getByText(/in 7 days/)]).toEqual([`/talk?id=${talk!.id}`, true]);
   });
 
+  // The page is called by its plain name
+  it("is called Your talks", async () => {
+    // Draw the screen
+    render(<RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the title
+    expect(await screen.findByText("Your talks")).toBeTruthy();
+  });
+
   // A talk needs a title and some words
   it("will not save an empty talk", async () => {
     // An empty repository

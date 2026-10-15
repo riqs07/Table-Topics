@@ -19,6 +19,8 @@ import { PASSAGES, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@
 import { findLesson } from "@/content/lessons";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
+// Load the mode catalogue, for the how-it-works note
+import { modeForSession } from "@/content/modes";
 
 // Remove drawn screens and fake timers after each check
 afterEach(() => {
@@ -699,5 +701,23 @@ describe("RecordingScreen", () => {
     const instruction = await screen.findByText("Stop here and count to three in silence.");
     // Confirm it is set apart and has no brackets around it
     expect([instruction.tagName, screen.getByTestId("passage").textContent?.includes("[")]).toEqual(["EM", false]);
+  });
+
+  // Before starting, every mode says how it works and what comes afterwards; while recording, that note steps aside
+  it("explains how the mode works before starting, then hides it", async () => {
+    // Draw a prepared answer
+    draw({ mode: "response" });
+    // The note
+    const note = await screen.findByRole("note", { name: "How this works" });
+    // Confirm its words and the plain title
+    expect([note.textContent?.includes(modeForSession("response")!.youDo), note.textContent?.includes("Afterwards:"), !!screen.getByText("Prepared answer")]).toEqual([true, true, true]);
+    // Start thinking, then start speaking
+    fireEvent.click(screen.getByRole("button", { name: /Start thinking/ }));
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Confirm the note is gone
+    expect(screen.queryByRole("note", { name: "How this works" })).toBeNull();
   });
 });

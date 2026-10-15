@@ -110,7 +110,7 @@ describe("SessionScreen", () => {
     // Draw the screen
     render(<SessionScreen sessionId="r1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the masthead names the kind of session
-    expect(await screen.findByText("Your response")).toBeTruthy();
+    expect(await screen.findByText("Prepared answer")).toBeTruthy();
     // Confirm the timing line
     expect(screen.getByText("3:12 against a 3:00 goal, 12 seconds over.")).toBeTruthy();
     // Confirm the retry is another Record Response
