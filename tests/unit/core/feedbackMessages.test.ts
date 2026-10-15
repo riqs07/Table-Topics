@@ -21,4 +21,10 @@ describe("sendResultMessage", () => {
     // Confirm the sentence
     expect(sendResultMessage(sent, stoppedBy)).toBe(expected);
   });
+
+  // When the server gave a reason, it is added so the cause can be seen
+  it("adds the server's reason when there is one", () => {
+    // Confirm the reason is appended
+    expect(sendResultMessage(0, "retry-later", "401 authentication_error: invalid x-api-key")).toBe("The coach could not be reached; it will try again later. Reason: 401 authentication_error: invalid x-api-key");
+  });
 });

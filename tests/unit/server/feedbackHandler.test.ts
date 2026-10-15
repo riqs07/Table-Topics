@@ -89,6 +89,18 @@ describe("feedback handler", () => {
     expect(coach.calls).toBe(0);
   });
 
+  // While developing, a failed coach call sends back the reason so the page can show it; in production it does not
+  it("sends the coach failure's reason back only while developing", async () => {
+    // A coach that fails the way the API does with a bad key
+    const coach = fakeCoach(new Error("401 authentication_error: invalid x-api-key"));
+    // In development
+    const developing = await (await createFeedbackHandler({ ...deps({ coach }), development: true, log: () => {} })(request(BODY))).json();
+    // In production
+    const live = await (await createFeedbackHandler({ ...deps({ coach }), development: false, log: () => {} })(request(BODY))).json();
+    // Confirm the detail only while developing
+    expect([developing.detail, live.detail]).toEqual(["401 authentication_error: invalid x-api-key", undefined]);
+  });
+
   // While developing, a mismatch is logged with both fingerprints so the cause can be seen without showing the passphrase
   it("logs both fingerprints on a mismatch while developing", async () => {
     // Collect log lines

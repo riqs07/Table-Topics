@@ -159,6 +159,20 @@ describe("SessionScreen", () => {
     expect(await screen.findByText(/APP_ACCESS_SECRET must be at least 16 characters long/)).toBeTruthy();
   });
 
+  // While developing, a failed coach call shows its reason on the page
+  it("shows why the coach could not be reached", async () => {
+    // Save a passphrase on this device
+    savePassphrase("a-long-enough-passphrase");
+    // A session waiting for feedback
+    const session = makeSession({ id: "s1", feedback: null, feedbackStatus: "pending" });
+    // A server whose coach call failed
+    const network = vi.fn(async () => Response.json({ error: "Feedback is unavailable right now.", detail: "401 authentication_error: invalid x-api-key" }, { status: 502 }));
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} fetchFn={network} />);
+    // Confirm the reason is shown
+    expect(await screen.findByText(/401 authentication_error: invalid x-api-key/)).toBeTruthy();
+  });
+
   // A session the coach could not review says so, instead of promising feedback forever
   it("says when the coach could not review a session", async () => {
     // A session whose feedback request was refused earlier

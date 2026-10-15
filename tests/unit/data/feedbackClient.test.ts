@@ -148,4 +148,17 @@ describe("sendPendingFeedback", () => {
     // Confirm only one request was made
     expect(network).toHaveBeenCalledTimes(1);
   });
+
+// Group the checks about passing on the reason for a temporary failure
+describe("temporary failures", () => {
+  // The detail sent while developing is passed on, from one request and from sending all waiting sessions
+  it("passes on the coach failure's detail", async () => {
+    // A repository with one waiting session
+    const repository = await repositoryWith(makeSession({ id: "s1" }));
+    // A server whose coach call failed
+    const network = answer(502, { error: "Feedback is unavailable right now.", detail: "401 authentication_error: invalid x-api-key" });
+    // Confirm both report the detail
+    expect([(await requestFeedbackDetail(repository, "s1", { passphrase: "a-long-enough-passphrase", fetchFn: network })).reason, (await sendPendingFeedback(repository, { passphrase: "a-long-enough-passphrase", fetchFn: network })).reason]).toEqual(["401 authentication_error: invalid x-api-key", "401 authentication_error: invalid x-api-key"]);
+  });
+});
 });
