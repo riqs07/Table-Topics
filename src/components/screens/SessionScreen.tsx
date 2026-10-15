@@ -427,7 +427,7 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       // Stop if the screen closed meanwhile
       if (cancelled) return;
       // Say how it went
-      setNote(outcome === "not-set-up" && reason ? `Feedback is paused. ${reason} Your session is saved.` : FEEDBACK_NOTES[outcome]);
+      setNote(outcome === "not-set-up" && reason ? `Feedback is paused. ${reason} Your session is saved.` : outcome === "retry-later" && reason ? `The coach could not be reached. Reason: ${reason}. Your session is saved.` : FEEDBACK_NOTES[outcome]);
       // Reload to show the feedback (or the new status)
       setLoaded(await load());
     })();

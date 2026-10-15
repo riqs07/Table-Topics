@@ -130,7 +130,7 @@ describe("sendPendingFeedback", () => {
     // Send everything waiting
     const result = await sendPendingFeedback(repository, { passphrase: "pass", fetchFn: network });
     // Confirm two were sent
-    expect(result).toEqual({ sent: 2, stoppedBy: null });
+    expect(result).toEqual({ sent: 2, stoppedBy: null, reason: null });
     // Confirm none are left waiting
     expect((await repository.listSessions()).every((session) => session.feedbackStatus === "done")).toBe(true);
   });
@@ -144,7 +144,7 @@ describe("sendPendingFeedback", () => {
     // Send everything waiting
     const result = await sendPendingFeedback(repository, { passphrase: "pass", fetchFn: network });
     // Confirm it stopped after one try
-    expect(result).toEqual({ sent: 0, stoppedBy: "retry-later" });
+    expect(result).toEqual({ sent: 0, stoppedBy: "retry-later", reason: null });
     // Confirm only one request was made
     expect(network).toHaveBeenCalledTimes(1);
   });

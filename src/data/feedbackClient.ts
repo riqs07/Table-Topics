@@ -45,17 +45,17 @@ export async function requestFeedback(repository: Repository, sessionId: string,
   return (await requestFeedbackDetail(repository, sessionId, options)).outcome;
 }
 
-// Read the server's reason from an error reply, if it sent one
-async function serverReason(response: Response): Promise<string | null> {
+// Read the server's reason from an error reply, if it sent one: its message, and a detail it adds while developing
+async function serverReason(response: Response): Promise<{ error: string | null; detail: string | null }> {
   // The reply may not be JSON
   try {
-    // Read the error text
-    const body = (await response.json()) as { error?: unknown };
-    // Keep it only if it is text
-    return typeof body.error === "string" ? body.error : null;
+    // Read the error text and detail
+    const body = (await response.json()) as { error?: unknown; detail?: unknown };
+    // Keep each only if it is text
+    return { error: typeof body.error === "string" ? body.error : null, detail: typeof body.detail === "string" ? body.detail : null };
   } catch {
     // No readable reason
-    return null;
+    return { error: null, detail: null };
   }
 }
 
@@ -102,18 +102,18 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
     // Mark the session as failed so it is not sent again
     await repository.saveSession({ ...session, feedbackStatus: "failed" });
     // Say which, with the server's reason
-    return { outcome: response.status === 422 ? "declined" : "invalid", reason: await serverReason(response) };
+    return { outcome: response.status === 422 ? "declined" : "invalid", reason: (await serverReason(response)).error };
   }
   // Wrong or missing passphrase
-  if (response.status === 401) return { outcome: "needs-passphrase", reason: await serverReason(response) };
+  if (response.status === 401) return { outcome: "needs-passphrase", reason: (await serverReason(response)).error };
   // The server is missing a setting, and says which
-  if (response.status === 500) return { outcome: "not-set-up", reason: await serverReason(response) };
-  // Anything else (rate limit, coach failure, counter store down) is temporary
-  return { outcome: "retry-later", reason: await serverReason(response) };
+  if (response.status === 500) return { outcome: "not-set-up", reason: (await serverReason(response)).error };
+  // Anything else (rate limit, coach failure, counter store down) is temporary; the detail, sent only while developing, says why
+  return { outcome: "retry-later", reason: (await serverReason(response)).detail };
 }
 
 // Send every session still waiting for feedback, oldest first, stopping at the first blocking outcome
-export async function sendPendingFeedback(repository: Repository, options: FeedbackOptions): Promise<{ sent: number; stoppedBy: FeedbackOutcome | null }> {
+export async function sendPendingFeedback(repository: Repository, options: FeedbackOptions): Promise<{ sent: number; stoppedBy: FeedbackOutcome | null; reason: string | null }> {
   // Find waiting sessions, oldest first (the list comes newest first)
   const pending = (await repository.listSessions()).filter((session) => session.feedbackStatus === "pending").reverse();
   // Count successes
@@ -121,12 +121,12 @@ export async function sendPendingFeedback(repository: Repository, options: Feedb
   // Send each in turn
   for (const session of pending) {
     // Ask for its feedback
-    const outcome = await requestFeedback(repository, session.id, options);
+    const { outcome, reason } = await requestFeedbackDetail(repository, session.id, options);
     // Count it if it worked
     if (outcome === "done") sent += 1;
     // Stop if the same problem would block the rest
-    if (BLOCKING.includes(outcome)) return { sent, stoppedBy: outcome };
+    if (BLOCKING.includes(outcome)) return { sent, stoppedBy: outcome, reason };
   }
   // Everything waiting was tried
-  return { sent, stoppedBy: null };
+  return { sent, stoppedBy: null, reason: null };
 }

@@ -10,7 +10,7 @@ function sessions(n: number): string {
 }
 
 // Describe what happened when waiting feedback was sent
-export function sendResultMessage(sent: number, stoppedBy: FeedbackOutcome | null): string {
+export function sendResultMessage(sent: number, stoppedBy: FeedbackOutcome | null, serverReason: string | null = null): string {
   // What arrived
   const arrived = sent > 0 ? `Feedback arrived for ${sessions(sent)}.` : "";
   // Why sending stopped, if it did
@@ -24,5 +24,5 @@ export function sendResultMessage(sent: number, stoppedBy: FeedbackOutcome | nul
     // Nothing stopped it
     : "";
   // Join the two parts, or say there was nothing to send
-  return [arrived, reason].filter(Boolean).join(" ") || "Nothing was waiting.";
+  return [arrived, reason, serverReason ? `Reason: ${serverReason}` : ""].filter(Boolean).join(" ") || "Nothing was waiting.";
 }

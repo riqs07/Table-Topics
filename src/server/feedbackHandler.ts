@@ -124,10 +124,12 @@ export function createFeedbackHandler(deps: FeedbackDeps) {
       // Send the feedback back
       return reply(200, { feedback: result.feedback });
     } catch (error) {
-      // Record the failure in the server log for debugging (no transcript is logged)
-      console.error("Coach request failed:", (error as Error).message);
-      // The AI failed; the app keeps the session and asks again later
-      return reply(502, { error: "Feedback is unavailable right now. Your session is saved and feedback will be retried." });
+      // The failure's message (from the API: a status and error type, never the key or the transcript)
+      const message = (error as Error).message;
+      // Record the failure in the server log for debugging
+      (deps.log ?? console.error)(`Coach request failed: ${message}`);
+      // The AI failed; the app keeps the session and asks again later (while developing, the reason goes back so the page can show it)
+      return reply(502, { error: "Feedback is unavailable right now. Your session is saved and feedback will be retried.", ...(deps.development ? { detail: message } : {}) });
     }
   };
 }

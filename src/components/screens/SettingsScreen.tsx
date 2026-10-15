@@ -187,7 +187,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     // Update the waiting count
     setPendingCount((await repo.listSessions()).filter((session) => session.feedbackStatus === "pending").length);
     // Say what happened
-    setMessage(sendResultMessage(result.sent, result.stoppedBy));
+    setMessage(sendResultMessage(result.sent, result.stoppedBy, result.reason));
   }
 
   // Delete everything after the second tap
