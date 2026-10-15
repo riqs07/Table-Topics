@@ -102,4 +102,16 @@ describe("SettingsScreen", () => {
     // Confirm the explanation and that nothing was saved
     expect([!!screen.getByText(/at least 16 characters/), readPassphrase()]).toEqual([true, ""]);
   });
+
+  // After saving, the passphrase's fingerprint is shown, to compare with the server's (from pnpm live-check)
+  it("shows the saved passphrase's fingerprint", async () => {
+    // Draw the screen
+    render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Type a passphrase
+    await userEvent.type(await screen.findByLabelText("Passphrase"), "walnut-harbor-quietly-71");
+    // Save it
+    await userEvent.click(screen.getByRole("button", { name: "Save passphrase" }));
+    // Confirm a fingerprint is shown
+    expect(await screen.findByText(/Fingerprint: [0-9a-f]{6}/)).toBeTruthy();
+  });
 });

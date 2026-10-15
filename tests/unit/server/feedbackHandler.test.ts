@@ -89,6 +89,16 @@ describe("feedback handler", () => {
     expect(coach.calls).toBe(0);
   });
 
+  // While developing, a mismatch is logged with both fingerprints so the cause can be seen without showing the passphrase
+  it("logs both fingerprints on a mismatch while developing", async () => {
+    // Collect log lines
+    const lines: string[] = [];
+    // Call with a wrong passphrase, in development, with a logger
+    await createFeedbackHandler({ ...deps(), development: true, log: (line) => lines.push(line) })(request(BODY, "not the passphrase"));
+    // Confirm one line naming both fingerprints and never the passphrase itself
+    expect([lines.length, /this browser sent fingerprint [0-9a-f]{6}.*APP_ACCESS_SECRET has fingerprint [0-9a-f]{6}/.test(lines[0] ?? ""), (lines[0] ?? "").includes(SECRET)]).toEqual([1, true, false]);
+  });
+
   // Warm-ups are accepted, and an older app that sends no mode still works
   it("accepts a warm-up and a request without a mode", async () => {
     // Call with a warm-up
