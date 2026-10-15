@@ -6,8 +6,14 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 // Load the screens that must all share the same navigation
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
-import { LessonsScreen } from "@/components/screens/LessonsScreen";
-import { LibraryScreen } from "@/components/screens/LibraryScreen";
+import { PracticeScreen } from "@/components/screens/PracticeScreen";
+// Load the Skills screen
+import { SkillsScreen } from "@/components/screens/SkillsScreen";
+// Load the talk page
+import { TalkScreen } from "@/components/screens/TalkScreen";
+import { BookendsScreen } from "@/components/screens/BookendsScreen";
+// Load the Q&A page
+import { QaScreen } from "@/components/screens/QaScreen";
 import { RehearseScreen } from "@/components/screens/RehearseScreen";
 import { SessionScreen } from "@/components/screens/SessionScreen";
 import { SettingsScreen } from "@/components/screens/SettingsScreen";
@@ -24,7 +30,7 @@ const NOW = new Date(2026, 9, 15, 10);
 afterEach(cleanup);
 
 // Where the main navigation must lead, in order
-const DESTINATIONS = [["Home", "/"], ["Lessons", "/lessons"], ["Library", "/library"], ["Rehearse", "/rehearse"], ["History", "/history"], ["Settings", "/settings"]];
+const DESTINATIONS = [["Today", "/"], ["Talks", "/rehearse"], ["Practice", "/practice"], ["Skills", "/skills"], ["History", "/history"], ["Settings", "/settings"]];
 
 // Read the main navigation's links as [name, address] pairs, and which one is marked as the current page
 async function readNavigation() {
@@ -41,7 +47,9 @@ describe("main navigation", () => {
   // Every screen offers the same way to every section, with its own section marked
   it.each([
     // Home
-    ["Home", "Home", async () => <HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    ["Today", "Today", async () => <HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    ["Practice", "Practice", async () => <PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    ["Skills", "Skills", async () => <SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // History
     ["History", "History", async () => <HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Lessons
