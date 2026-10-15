@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 // Load the tool for acting like a user
 import userEvent from "@testing-library/user-event";
 // Load the screen being checked
@@ -41,6 +41,28 @@ describe("RehearseScreen", () => {
     const [talk] = await repository.listTalks();
     // Check the link
     expect(screen.getByRole("link", { name: /Rehearse “Wedding toast”/ }).getAttribute("href")).toBe(`/session?mode=rehearse&prompt=${talk!.id}`);
+  });
+
+  // A talk can be saved with the date it will be given, and each talk links to its own page with the days left
+  it("saves a talk's date and links to the talk's page", async () => {
+    // An empty repository
+    const repository = createRepository(new MemoryStore());
+    // Draw the screen
+    render(<RehearseScreen repository={repository} now={NOW} />);
+    // Fill in the title
+    await userEvent.type(await screen.findByLabelText("Title"), "Pitch");
+    // Fill in the talk
+    await userEvent.type(screen.getByLabelText("Your talk or notes"), "We help small shops sell online.");
+    // Set the date a week out
+    fireEvent.change(screen.getByLabelText(/Date of the talk/), { target: { value: "2026-10-22" } });
+    // Save it
+    await userEvent.click(screen.getByRole("button", { name: "Save talk" }));
+    // The saved talk
+    await waitFor(async () => expect((await repository.listTalks())[0]?.eventDate).toBe("2026-10-22"));
+    // Its id
+    const [talk] = await repository.listTalks();
+    // Confirm the link to its page and the days left
+    expect([screen.getByRole("link", { name: "Pitch" }).getAttribute("href"), !!screen.getByText(/in 7 days/)]).toEqual([`/talk?id=${talk!.id}`, true]);
   });
 
   // A talk needs a title and some words
