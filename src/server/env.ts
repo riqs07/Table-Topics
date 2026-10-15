@@ -1,6 +1,9 @@
 // Reads server-only settings and fails with a clear message when one is missing (setup-requirements.md)
 // None of these may start with NEXT_PUBLIC_, which would expose them in the browser
 
+// Load the shortest passphrase allowed (shared with the Settings screen)
+import { MIN_PASSPHRASE_LENGTH } from "@/config/headers";
+
 // Address and token for the shared counter store used by rate limits
 export interface CounterStoreSettings {
   // The store's REST address
@@ -21,9 +24,6 @@ export interface ServerEnv {
 
 // The environment variables, as a plain map (process.env in the app, a fixed object in tests)
 type EnvSource = Record<string, string | undefined>;
-
-// Shortest passphrase accepted
-const MIN_SECRET_LENGTH = 16;
 
 // Read one required variable or explain how to set it
 function required(source: EnvSource, name: string): string {
@@ -52,7 +52,7 @@ export function readServerEnv(source: EnvSource = process.env): ServerEnv {
   // The passphrase is required
   const accessSecret = required(source, "APP_ACCESS_SECRET");
   // The passphrase must be long enough to resist guessing
-  if (accessSecret.length < MIN_SECRET_LENGTH) throw new Error(`APP_ACCESS_SECRET must be at least ${MIN_SECRET_LENGTH} characters long.`);
+  if (accessSecret.length < MIN_PASSPHRASE_LENGTH) throw new Error(`APP_ACCESS_SECRET must be at least ${MIN_PASSPHRASE_LENGTH} characters long.`);
   // Read the shared counter store
   const store = counterStore(source);
   // In production, counters in server memory do not hold up, so the store is required (risk R4)

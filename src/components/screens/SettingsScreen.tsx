@@ -21,6 +21,8 @@ import { sampleSessions } from "@/data/sampleData";
 import { sendPendingFeedback } from "@/data/feedbackClient";
 // Load the passphrase storage
 import { readPassphrase, savePassphrase } from "@/data/passphrase";
+// Load the shortest passphrase allowed
+import { MIN_PASSPHRASE_LENGTH } from "@/config/headers";
 // Load the sentence for send results
 import { sendResultMessage } from "@/core/feedbackMessages";
 
@@ -152,6 +154,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
 
   // Save the passphrase on this device
   function storePassphrase() {
+    // A passphrase shorter than the server accepts can never work, so say so instead of saving it
+    if (passphrase.trim() && passphrase.trim().length < MIN_PASSPHRASE_LENGTH) return setMessage(`The passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters, the same as APP_ACCESS_SECRET on the server. It was not saved.`);
     // Save it
     savePassphrase(passphrase);
     // Say what happened

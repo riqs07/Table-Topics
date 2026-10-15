@@ -36,7 +36,7 @@ import type { SessionRecord, TalkRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the feedback requester and its outcomes
-import { requestFeedback, type FeedbackOutcome } from "@/data/feedbackClient";
+import { requestFeedbackDetail, type FeedbackOutcome } from "@/data/feedbackClient";
 // Load the saved passphrase
 import { readPassphrase } from "@/data/passphrase";
 
@@ -313,7 +313,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
             </>
           ) : (
             // Feedback has not come back yet
-            <p className="mt-5 text-lede text-ink-muted">{note || "Feedback is on its way. It appears here once it arrives; your session is saved."}</p>
+            <p className="mt-5 text-lede text-ink-muted">{note || (session.feedbackStatus === "failed" ? "The coach could not review this session." : "Feedback is on its way. It appears here once it arrives; your session is saved.")}</p>
           )}
           {/* Push the footer down */}
           <div className="flex-1" />
@@ -423,11 +423,11 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       // Say the coach is being asked
       setNote(FEEDBACK_NOTES.asking);
       // Ask the coach
-      const outcome = await requestFeedback(repo, sessionId, { passphrase: readPassphrase(), ...(fetchFn ? { fetchFn } : {}) });
+      const { outcome, reason } = await requestFeedbackDetail(repo, sessionId, { passphrase: readPassphrase(), ...(fetchFn ? { fetchFn } : {}) });
       // Stop if the screen closed meanwhile
       if (cancelled) return;
       // Say how it went
-      setNote(FEEDBACK_NOTES[outcome]);
+      setNote(outcome === "not-set-up" && reason ? `Feedback is paused. ${reason} Your session is saved.` : FEEDBACK_NOTES[outcome]);
       // Reload to show the feedback (or the new status)
       setLoaded(await load());
     })();

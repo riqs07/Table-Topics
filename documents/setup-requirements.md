@@ -16,7 +16,7 @@
 | 3 | **A real phone for testing** | M1 | Free | Tell me iPhone or Android and which browser you use. Several risks depend on this |
 | 4 | **OpenAI API account** (for Whisper transcription) | M1 optional, M5/M10 if Whisper is chosen | Pay per use, small | Create an account, add billing, set a monthly spend limit, create a key |
 | 5 | **Anthropic API account** (Anthropic Console) | M6 | Pay per use, about a cent or two per session (to be verified) | Create a Console account, add billing, set a monthly spend limit, create a key. The Claude chat subscription does **not** include API access; the API is billed separately |
-| 6 | **Access passphrase** | M6 | Free | Invent a long passphrase. It gates the AI routes so strangers cannot use them |
+| 6 | **Access passphrase** | M6 | Free | Invent a passphrase of **at least 16 characters** (for example four random words). Put it in `APP_ACCESS_SECRET` and type the same text into the app's Settings page. It gates the AI routes so strangers cannot use them |
 | 7 | **Small shared store** for rate limits: **Upstash Redis**, added through the Vercel Marketplace | M6 (needed before deploying) | Free tier | Add the integration in Vercel; it sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Not needed for local use |
 | 8 | **Vercel account**, connected to GitHub | M11 | Free tier | Create the project and enter the variables below |
 | 9 | **Domain name** | M11, optional | About $10 to $15 per year | Only if you want a custom address |
@@ -42,4 +42,4 @@ Rules:
 
 - Create accounts, add payment details, or generate keys.
 - Run anything that needs a microphone or your phone.
-- Call the live AI or Whisper from my workspace. You run `pnpm live-check` locally (it reads `.env.local`, sends three sample sessions, and prints the feedback, timing, and estimated cost) and share the output (never the key).
+- Call the live AI or Whisper from my workspace. You run `pnpm live-check` locally (it reads `.env.local`, checks the key and passphrase exactly as the app does, sends three sample sessions, and prints the feedback, timing, and estimated cost) and share the output (never the key). Keys from the Console's API keys page start with `sk-ant-api03-`.

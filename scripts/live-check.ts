@@ -1,8 +1,10 @@
 // Live check: sends three sample sessions to the real coach and prints the feedback and cost.
-// Run it yourself with `pnpm live-check` after putting ANTHROPIC_API_KEY in .env.local.
+// Run it yourself with `pnpm live-check` after putting ANTHROPIC_API_KEY and APP_ACCESS_SECRET in .env.local; it checks both, as the app does.
 // It never prints the key. Share the output (not the key) in the chat.
 
 // Load the coach model settings and prices
+// Load the same settings check the app uses
+import { readServerEnv } from "@/server/env";
 import { COACH_EFFORT, COACH_MODEL, COACH_PRICE_PER_MILLION } from "@/config/models";
 // Load the coach input type
 import type { CoachInput } from "@/core/coachPrompt";
@@ -21,10 +23,12 @@ const SAMPLES: Array<{ name: string; input: CoachInput }> = [
 
 // Run every sample and report
 async function main() {
-  // Stop early with a clear message if the key is missing
-  if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set. Add it to .env.local and run `pnpm live-check` again.");
+  // Check every setting the app's feedback route needs (key, passphrase length), so a pass here means the app can work too
+  const env = readServerEnv(process.env);
+  // Say the settings passed
+  console.log("Settings: ANTHROPIC_API_KEY and APP_ACCESS_SECRET look right.");
   // Make the real coach
-  const coach = createClaudeCoach(process.env.ANTHROPIC_API_KEY);
+  const coach = createClaudeCoach(env.anthropicApiKey);
   // Running total of estimated cost
   let totalCost = 0;
   // Say which model and effort are being checked
