@@ -14,7 +14,7 @@ import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
-import { STRUCTURE_HINT, findPassage, findPrompt } from "@/content/prompts";
+import { BOOKENDS, STRUCTURE_HINT, findPassage, findPrompt } from "@/content/prompts";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the filler marker
@@ -51,6 +51,14 @@ interface RecordingScreenProps {
   // For a rehearsal: how much of the text to show at first
   ladder?: Ladder;
 }
+
+// One tip for each end of a talk, shown before an openings and closings drill
+const BOOKEND_TIPS = {
+  // Openings
+  opening: "Stand still, breathe in, look up, and only then speak. Start on your first real word, not “so” or “um”.",
+  // Closes
+  close: "End on your point, say your last line a little slower, then stop. No “so, yeah, that’s it”.",
+} as const;
 
 // The rungs of the memory ladder, with their button names
 const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
@@ -265,6 +273,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const talkText = talk ? memoryLadder(section !== null ? (sections[section] ?? "") : talk.body, ladder) : "";
   // The lesson, on the skill path
   const lesson = mode === "lesson" ? findLesson(promptId) : undefined;
+  // The openings and closings drill prompt, with which end of a talk it practises
+  const bookend = mode === "bookend" ? BOOKENDS.find((item) => item.id === promptId) : undefined;
   // The text on screen: a passage, a lesson's practice text, or the talk being rehearsed
   const script = passage ? { title: passage.title, source: passage.source, body: passage.body } : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, source: "", body: lesson.body } : talk ? { title: talk.title, source: section !== null ? `Your talk · section ${section + 1} of ${sections.length}` : "Your talk", body: talkText } : null;
   // A rehearsal's own goal in seconds, if it has one (whole-talk runs only)
@@ -533,11 +543,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" ? `a ${formatClock(target)} goal` : "about a minute";
+  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" || mode === "bookend" ? `a ${formatClock(target)} goal` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : "Recording";
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
@@ -563,7 +573,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The length to aim for, or what the countdown is for */}
           <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
           {/* During a Table Topic or Record Response, the timing light */}
-          {recording && (mode === "talk" || mode === "response" || (mode === "rehearse" && goalSeconds)) && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds)} mode={mode} />}
+          {recording && (mode === "talk" || mode === "response" || mode === "bookend" || (mode === "rehearse" && goalSeconds)) && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds)} mode={mode} />}
           {/* Prompt reminder while recording */}
           {recording && prompt && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
           {/* A lesson keeps its tip in view while speaking */}
@@ -644,6 +654,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {prompt.text}
             </h1>
           )}
+          {/* An openings and closings drill: one tip for that end of a talk */}
+          {showPrompt && bookend && <p className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4 text-lede">{BOOKEND_TIPS[bookend.part]}</p>}
           {/* Thinking about a Record Response: the hints */}
           {thinking && angles.length > 0 && <Hints angles={angles} compact={false} />}
           {/* On a retry, the cue to carry in */}

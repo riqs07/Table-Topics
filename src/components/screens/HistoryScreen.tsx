@@ -10,7 +10,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the prompt library
-import { findPrompt } from "@/content/prompts";
+import { BOOKENDS, findPrompt } from "@/content/prompts";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the sentence builders
@@ -56,6 +56,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.mode === "read") return `Read aloud: ${text}`;
   // And pause drills
   if (session.mode === "pause") return `Pause drill: ${text}`;
+  // And openings and closings drills
+  if (session.mode === "bookend") return `${BOOKENDS.find((item) => item.id === session.promptId)?.part === "close" ? "Closing" : "Opening"} drill: ${text}`;
   // And lessons, with their number
   if (session.mode === "lesson") {
     // The lesson

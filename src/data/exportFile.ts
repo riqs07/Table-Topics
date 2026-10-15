@@ -2,7 +2,7 @@
 // Audio is left out to keep the file small; transcripts, numbers and feedback are all included
 
 // Load the record types
-import type { ChallengeRecord, SessionRecord, SettingsRecord, TalkRecord } from "@/data/records";
+import { isSessionMode, type ChallengeRecord, type SessionRecord, type SettingsRecord, type TalkRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -86,7 +86,7 @@ function isSession(value: unknown): value is SessionRecord {
     // Optional links
     isTextOrNull(value.retryOf) && isTextOrNull(value.audioKey) &&
     // Session kind (missing in files made before warm-ups existed)
-    (value.mode === undefined || value.mode === "standard" || value.mode === "warmup" || value.mode === "talk" || value.mode === "response" || value.mode === "read" || value.mode === "pause" || value.mode === "rehearse" || value.mode === "lesson") &&
+    (value.mode === undefined || isSessionMode(value.mode)) &&
     // Measurements
     isNumber(value.durationSec) && isNumber(value.wordsPerMinute) && isNumber(value.fillersPerMinute) &&
     // Section of a rehearsal (missing on most sessions)

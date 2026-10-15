@@ -208,6 +208,59 @@ export const WARMUP_PROMPTS: ReadonlyArray<Prompt> = [
   { id: "w024", text: "Tell me about the last film or show you watched." },
 ];
 
+// Which end of a talk an openings and closings drill practises
+export type BookendPart = "opening" | "close";
+
+// An openings and closings drill prompt
+export interface Bookend extends Prompt {
+  // The opening or the close
+  part: BookendPart;
+}
+
+// Openings and closings drill prompts: the first or last 30 to 45 seconds of a talk (plan step B2). DRAFT: approved at checkpoint C13
+export const BOOKENDS: ReadonlyArray<Bookend> = [
+  // Opening 1
+  { id: "b001", part: "opening", text: "Open a talk on why your team needs a new tool." },
+  // Opening 2
+  { id: "b002", part: "opening", text: "Open a wedding toast for an old friend." },
+  // Opening 3
+  { id: "b003", part: "opening", text: "Open a welcome talk for new starters on their first day." },
+  // Opening 4
+  { id: "b004", part: "opening", text: "Open a pitch for a small business idea." },
+  // Opening 5
+  { id: "b005", part: "opening", text: "Open a talk about a book that changed your mind." },
+  // Opening 6
+  { id: "b006", part: "opening", text: "Open a team update after a hard month." },
+  // Opening 7
+  { id: "b007", part: "opening", text: "Open a talk at a school career day." },
+  // Opening 8
+  { id: "b008", part: "opening", text: "Open a talk on your hobby to a room of beginners." },
+  // Opening 9
+  { id: "b009", part: "opening", text: "Open a fundraising appeal for a local cause." },
+  // Opening 10
+  { id: "b010", part: "opening", text: "Open a talk on a lesson you learned the hard way." },
+  // Close 1
+  { id: "b011", part: "close", text: "Close a talk asking your team to try a new tool." },
+  // Close 2
+  { id: "b012", part: "close", text: "Close a wedding toast and raise a glass." },
+  // Close 3
+  { id: "b013", part: "close", text: "Close a welcome talk for new starters." },
+  // Close 4
+  { id: "b014", part: "close", text: "Close a pitch with a clear ask." },
+  // Close 5
+  { id: "b015", part: "close", text: "Close a talk about a book with one line to remember." },
+  // Close 6
+  { id: "b016", part: "close", text: "Close a team update with what happens next." },
+  // Close 7
+  { id: "b017", part: "close", text: "Close a career-day talk with advice for students." },
+  // Close 8
+  { id: "b018", part: "close", text: "Close a talk on your hobby with a way to get started." },
+  // Close 9
+  { id: "b019", part: "close", text: "Close a fundraising appeal with what to give." },
+  // Close 10
+  { id: "b020", part: "close", text: "Close a talk on a lesson with the lesson itself." },
+];
+
 // Light questions for Table Topic: quick to grasp and easy to answer on the spot. DRAFT: approved at checkpoint C13
 export const TABLE_TOPICS: ReadonlyArray<Prompt> = [
   // Table Topic 1
@@ -411,14 +464,20 @@ export function drillForDay(day: Date, offset = 0): Passage {
   return pickForDay(PAUSE_DRILLS, day, offset) as Passage;
 }
 
+// The opening or closing drill prompt for a given day
+export function bookendForDay(day: Date, part: BookendPart, offset = 0): Bookend {
+  // Pick from that part's prompts
+  return pickForDay(BOOKENDS.filter((item) => item.part === part), day, offset) as Bookend;
+}
+
 // Find a passage, pause drill, or word list by its saved id
 export function findPassage(id: string): Passage | undefined {
   // Look in every list of texts
   return [...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS].find((passage) => passage.id === id);
 }
 
-// Find any prompt (Record Response, Table Topic, warm-up, or the title of a passage, drill, word list, or lesson) by its saved id
+// Find any prompt (Record Response, Table Topic, opening or close, warm-up, or the title of a passage, drill, word list, or lesson) by its saved id
 export function findPrompt(id: string): Prompt | undefined {
   // Look in every list
-  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS].find((prompt) => prompt.id === id);
+  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...BOOKENDS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS].find((prompt) => prompt.id === id);
 }

@@ -9,6 +9,8 @@ import { browserRecordingServices } from "@/audio/browserServices";
 import { RecordingScreen } from "@/components/screens/RecordingScreen";
 // Load the daily prompt picker, for an address without a prompt
 import { promptForDay } from "@/content/prompts";
+// Load the check for a known kind of session
+import { isSessionMode } from "@/data/records";
 
 // Show the recording screen for the prompt in the address
 export function RecordingFromAddress() {
@@ -19,7 +21,7 @@ export function RecordingFromAddress() {
   // The kind of session named in the address (anything else is a full session)
   const named = params.get("mode");
   // A Table Topic, a Record Response, reading aloud, a pause drill, a rehearsal, a lesson, an old warm-up, or (with no mode) an old one-minute session
-  const mode = named === "warmup" || named === "talk" || named === "response" || named === "read" || named === "pause" || named === "rehearse" || named === "lesson" ? named : "standard";
+  const mode = isSessionMode(named) ? named : "standard";
   // Draw the screen with the real browser pieces
   return (
     <RecordingScreen

@@ -2,6 +2,8 @@
 
 // Load the schema library to check the request body
 import { z } from "zod";
+// Load the list of session kinds
+import { SESSION_MODES } from "@/data/records";
 // Load the passphrase check and its header name
 import { PASSPHRASE_HEADER, passphraseMatches } from "@/server/accessGate";
 // Load the passphrase fingerprint and warnings, for logging a mismatch while developing
@@ -42,7 +44,7 @@ const RequestSchema = z.object({
   // The previous fix on a retry, or null
   previousChange: z.string().max(1_000).nullable(),
   // The kind of session (older app versions send none)
-  mode: z.enum(["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson"]).optional(),
+  mode: z.enum(SESSION_MODES).optional(),
   // The prompt or passage id (the server looks up a passage's text itself rather than trusting text sent with the request)
   promptId: z.string().max(64).optional(),
 });

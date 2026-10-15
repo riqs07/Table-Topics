@@ -108,7 +108,7 @@ A talk in Rehearse my talk can be given an event date. VoiceLab then builds a co
   - How far ahead a plan can go. *Default:* up to 30 days; beyond that, it shows "check back closer to the date".
   - Whether reminders (notifications) are wanted. *Default:* no, and it goes on the later list.
 
-### B2. Openings and closings drill
+### B2. Openings and closings drill ✅ done 2026-10-15
 The first and last 30 seconds matter most, so they get a short drill of their own.
 
 - **What:** a new mode, `bookend`, with two choices:

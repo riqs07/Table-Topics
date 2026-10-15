@@ -8,7 +8,7 @@ import { findFocus } from "@/core/focus";
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
 // Load the passage lookup, for reading aloud and pause drills
-import { findPassage } from "@/content/prompts";
+import { BOOKENDS, findPassage } from "@/content/prompts";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the pause mark counter
@@ -67,6 +67,8 @@ export function buildCoachMessage(input: CoachInput): string {
   const lesson = input.mode === "lesson" && input.promptId ? findLesson(input.promptId) : undefined;
   // On a reading, find the passage from the app's own copy
   const passage = (input.mode === "read" || input.mode === "pause") && input.promptId ? findPassage(input.promptId) : undefined;
+  // For an openings and closings drill, which end of a talk it was
+  const bookend = input.mode === "bookend" ? BOOKENDS.find((item) => item.id === input.promptId) : undefined;
   // Put the message together line by line
   return [
     // The week's skill, or none if the id is unknown
@@ -92,6 +94,7 @@ export function buildCoachMessage(input: CoachInput): string {
     // On a pause drill, the number of marked pauses
     ...(input.mode === "pause" && passage ? [`This was a pause drill: reading a known text with ${countPauseMarks(passage.body)} marked pauses (shown as /). Comment only on pausing and pace.`] : []),
     // On a retry, the fix to check for
+    ...(bookend ? [`This was a ${Math.round(input.durationSec)}-second drill on only the ${bookend.part === "opening" ? "opening" : "close"} of a talk, for the task: ${bookend.text} Comment only on how it ${bookend.part === "opening" ? "opened: the first words, whether it earned attention, and whether it set up a point" : "closed: whether it ended on the point, with a clear last line, and stopped cleanly"}.`] : []),
     ...(input.previousChange ? [`This is a retry. The fix you gave last time was: ${input.previousChange}`] : []),
     // A blank line before the transcript
     "",

@@ -17,8 +17,16 @@ import type { SessionRecord } from "@/data/records";
 const SLOW_PACE = 140;
 // Seconds of silence that count as a proper opening pause
 const OPENING_PAUSE = 1;
+// How long the speaker waited before the first word, as a sentence (shared with the openings drill)
+export function openingPauseSentence(loudness: ReadonlyArray<number>): string {
+  // Seconds before the first word
+  const seconds = leadingSilenceSeconds(loudness, LOUDNESS_TICK_MS);
+  // Enough, or not
+  return seconds >= OPENING_PAUSE ? `You waited ${seconds.toFixed(1)} seconds before your first word. Good.` : `You started after ${seconds.toFixed(1)} seconds. Try waiting a full breath.`;
+}
+
 // How many of the last words count as the closing
-const CLOSING_WORDS = 20;
+export const CLOSING_WORDS = 20;
 
 // A lesson's result: a headline for its own skill and a detail line on the reading
 export interface LessonResult {
@@ -46,10 +54,8 @@ function skillSentence(lesson: Lesson, session: SessionRecord, percentRead: numb
     case "opening-pause": {
       // Needs loudness
       if (!loudness.length) return noLoudness;
-      // Seconds before the first word
-      const seconds = leadingSilenceSeconds(loudness, LOUDNESS_TICK_MS);
-      // Enough, or not
-      return seconds >= OPENING_PAUSE ? `You waited ${seconds.toFixed(1)} seconds before your first word. Good.` : `You started after ${seconds.toFixed(1)} seconds. Try waiting a full breath.`;
+      // How long the pause before the first word was
+      return openingPauseSentence(loudness);
     }
     // Words heard clearly
     case "clear-words":

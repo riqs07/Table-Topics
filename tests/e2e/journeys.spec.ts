@@ -110,6 +110,30 @@ test("Event prep: date a talk, follow today's step, see progress", async ({ page
   await expect(page.getByRole("list", { name: "Today" }).getByRole("listitem").first()).toContainText("1 of 2");
 });
 
+// Openings and closings: from home, an opening drill with its light, then its findings
+test("Openings and closings: an opening drill from home to its findings", async ({ page }) => {
+  // Use the stand-in microphone and speech
+  await useStandIns(page);
+  // Start at home
+  await page.goto("/");
+  // Open the drills
+  await page.getByRole("link", { name: "openings & closings" }).click();
+  // Pick today's opening (the first prompt link under "Today")
+  await page.locator("section", { hasText: "Today" }).getByRole("link").first().click();
+  // The drill opens with its tip
+  await expect(page.getByText(/Stand still, breathe in, look up/)).toBeVisible();
+  // Start speaking
+  await page.getByRole("button", { name: /Start speaking/ }).click();
+  // Recording is under way, with a timing light
+  await expect(page.getByRole("status", { name: "Timing light" })).toBeVisible({ timeout: 10_000 });
+  // Speak past the 10-second minimum
+  await page.waitForTimeout(11_500);
+  // Stop recording
+  await page.getByRole("button", { name: /Stop/ }).click();
+  // The saved session opens with the drill's findings
+  await expect(page.getByText(/You opened with “Um so”/)).toBeVisible({ timeout: 15_000 });
+});
+
 // Storage left by another project at the same address (bugs B2 and B4)
 test("works when another app left a database called voicelab", async ({ page }) => {
   // Use the stand-in microphone and speech

@@ -34,6 +34,10 @@ export const ROUTES: ReadonlyArray<string> = [
   "/sessions?id=missing",
   // A talk's page for a talk that does not exist
   "/talk?id=missing",
+  // Openings and closings
+  "/bookends",
+  // An opening drill
+  "/session?mode=bookend&prompt=b001",
   // The design style tile
   "/style",
   // The wireframes
@@ -60,6 +64,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/sessions?id=missing", current: null },
   // A talk's page belongs to Rehearse
   { path: "/talk?id=missing", current: "Rehearse" },
+  // So do openings and closings
+  { path: "/bookends", current: "Rehearse" },
 ];
 
 // Where each main navigation link should lead

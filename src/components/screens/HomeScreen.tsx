@@ -196,6 +196,10 @@ export function HomeScreen(props: ScreenProps) {
             <Link href="/lessons" className="underline underline-offset-4">skill path</Link>
             {/* Separator */}
             {" · "}
+            {/* Openings and closings */}
+            <Link href="/bookends" className="underline underline-offset-4">openings &amp; closings</Link>
+            {/* Separator */}
+            {" · "}
             {/* Pausing on purpose */}
             {drill && <Link href={`/session?mode=pause&prompt=${drill.id}`} className="underline underline-offset-4">pause drill</Link>}
             {/* Separator */}

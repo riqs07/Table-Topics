@@ -11,8 +11,17 @@ export interface Feedback {
   retryCue: string;
 }
 
-// The kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, or the retired one-minute session and 30-second warm-up
-export type SessionMode = "standard" | "warmup" | "talk" | "response" | "read" | "pause" | "rehearse" | "lesson";
+// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up
+export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend"] as const;
+
+// One kind of session (bookend: an openings and closings drill, added 2026-10-15)
+export type SessionMode = (typeof SESSION_MODES)[number];
+
+// Whether a value names a kind of session
+export function isSessionMode(value: unknown): value is SessionMode {
+  // One of the listed kinds
+  return typeof value === "string" && (SESSION_MODES as ReadonlyArray<string>).includes(value);
+}
 
 // Where a session's feedback request stands
 export type FeedbackStatus = "pending" | "done" | "failed";

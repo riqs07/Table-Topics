@@ -28,11 +28,13 @@ import { LOUDNESS_TICK_MS, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
 import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
-import { findPassage, promptForDay } from "@/content/prompts";
+import { BOOKENDS, findPassage, promptForDay } from "@/content/prompts";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the lesson checks
 import { lessonResult } from "@/core/lessonCheck";
+// Load the openings and closings drill check
+import { bookendResult } from "@/core/bookend";
 // Load the session record type
 import type { SessionRecord, TalkRecord } from "@/data/records";
 // Load the repository type
@@ -263,14 +265,18 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
   // Whether this was a Table Topic
   const talk = session.mode === "talk";
   // Whether this kind of session has a timing line and a retry of the same kind (Table Topic or Record Response)
-  const timed = talk || session.mode === "response";
+  const timed = talk || session.mode === "response" || session.mode === "bookend";
+  // An openings and closings drill's prompt, and what it measured
+  const bookend = session.mode === "bookend" ? BOOKENDS.find((item) => item.id === session.promptId) : undefined;
+  // The drill's two findings
+  const bookendOutcome = bookend ? bookendResult(bookend.part, session) : null;
   // Whether the transcript is open on a phone (it is always shown on a computer)
   const [showTranscript, setShowTranscript] = useState(false);
   // Draw the page
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
+      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -294,12 +300,19 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
               {/* A lesson's tip, as a reminder */}
               {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
             </>
+          ) : bookendOutcome ? (
+            <>
+              {/* The drill's main finding */}
+              <p className="mt-5 font-display text-3xl md:mt-0">{bookendOutcome.headline}</p>
+              {/* Its second finding */}
+              <p className="mt-2 text-footnote italic text-ink-muted">{bookendOutcome.detail}</p>
+            </>
           ) : (
             // The focus number as a sentence
             <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
           )}
           {/* When there is no number, say why */}
-          {!reading && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
+          {!reading && !bookendOutcome && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
           {/* How the pauses went, when loudness was recorded */}
           {pauses && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(pauses)}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}

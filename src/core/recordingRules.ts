@@ -9,6 +9,8 @@ export function targetSeconds(mode: SessionMode): number {
   if (mode === "talk") return TOPIC_WINDOW_END;
   // A Record Response aims for three minutes
   if (mode === "response") return 180;
+  // An openings and closings drill aims for 45 seconds
+  if (mode === "bookend") return 45;
   // Warm-ups are 30 seconds; full sessions about a minute
   return mode === "warmup" ? 30 : 60;
 }
@@ -23,6 +25,8 @@ export function maxSeconds(mode: SessionMode): number {
   if (mode === "read" || mode === "pause" || mode === "lesson") return 600;
   // A rehearsal: long enough for most real talks
   if (mode === "rehearse") return 1800;
+  // An openings and closings drill stops at a minute
+  if (mode === "bookend") return 60;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
   return mode === "warmup" ? 30 : 180;
 }
@@ -62,6 +66,9 @@ export function thinkSeconds(mode: SessionMode): number {
 // How long before a Record Response's goal its light turns yellow, in seconds
 const RESPONSE_YELLOW_LEAD = 45;
 
+// How long before an openings and closings drill's goal its light turns yellow, in seconds
+const BOOKEND_YELLOW_LEAD = 15;
+
 // Toastmasters Table Topics timing: the shortest answer that qualifies (green light), in seconds
 export const TOPIC_WINDOW_START = 60;
 // The yellow light, in seconds
@@ -78,6 +85,8 @@ export type TimeSignal = "none" | "green" | "yellow" | "red" | "overtime";
 export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: number): TimeSignal {
   // A rehearsal without a goal has no light
   if (mode === "rehearse" && !goalSeconds) return "none";
+  // An openings and closings drill: yellow for the last 15 seconds, red past 45
+  if (mode === "bookend") return seconds > targetSeconds(mode) ? "red" : seconds >= targetSeconds(mode) - BOOKEND_YELLOW_LEAD ? "yellow" : "none";
   // A Record Response or a rehearsal: yellow in the last stretch before the goal, red past it
   if (mode === "response" || mode === "rehearse") {
     // The goal: the rehearsal's own, or the Record Response's
