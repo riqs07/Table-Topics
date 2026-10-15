@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the feedback client being checked
-import { requestFeedback, sendPendingFeedback } from "@/data/feedbackClient";
+import { requestFeedback, requestFeedbackDetail, sendPendingFeedback } from "@/data/feedbackClient";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -29,6 +29,16 @@ async function repositoryWith(...sessions: ReturnType<typeof makeSession>[]) {
 
 // Group the checks about asking for one session's feedback
 describe("requestFeedback", () => {
+  // When the server says which setting is wrong, that reason is passed on (it names the setting, never its value)
+  it("passes on the server's reason when it is not set up", async () => {
+    // A repository with one session
+    const repository = await repositoryWith(makeSession({ id: "s1" }));
+    // The server refuses because the passphrase setting is too short
+    const network = answer(500, { error: "The server is not set up: APP_ACCESS_SECRET must be at least 16 characters long." });
+    // Confirm the outcome and the reason
+    expect(await requestFeedbackDetail(repository, "s1", { passphrase: "a-long-enough-passphrase", fetchFn: network })).toEqual({ outcome: "not-set-up", reason: "The server is not set up: APP_ACCESS_SECRET must be at least 16 characters long." });
+  });
+
   // Success saves the feedback on the session
   it("saves feedback when the route answers", async () => {
     // A pending session

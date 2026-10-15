@@ -14,6 +14,8 @@ import { createRepository } from "@/data/repository";
 import { buildExport } from "@/data/exportFile";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
+// Load the passphrase storage
+import { readPassphrase } from "@/data/passphrase";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 13, 18);
@@ -87,5 +89,17 @@ describe("SettingsScreen", () => {
     await userEvent.selectOptions(await screen.findByLabelText("Keep recordings from your last"), "10");
     // Confirm it was saved
     await waitFor(async () => expect((await repository.getSettings(NOW)).audioRetention).toBe(10));
+  });
+
+  // A passphrase shorter than the server allows is refused at once, with the reason
+  it("refuses a passphrase shorter than 16 characters", async () => {
+    // Draw the screen
+    render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Type a short passphrase
+    await userEvent.type(await screen.findByLabelText("Passphrase"), "short");
+    // Try to save it
+    await userEvent.click(screen.getByRole("button", { name: "Save passphrase" }));
+    // Confirm the explanation and that nothing was saved
+    expect([!!screen.getByText(/at least 16 characters/), readPassphrase()]).toEqual([true, ""]);
   });
 });

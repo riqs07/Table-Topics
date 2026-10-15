@@ -145,6 +145,30 @@ describe("SessionScreen", () => {
     expect(await screen.findByText(/Feedback will arrive when you are back online/)).toBeTruthy();
   });
 
+  // A server that is not set up says exactly which setting is wrong
+  it("shows the server's reason when feedback is paused", async () => {
+    // Save a passphrase on this device
+    savePassphrase("a-long-enough-passphrase");
+    // A session waiting for feedback
+    const session = makeSession({ id: "s1", feedback: null, feedbackStatus: "pending" });
+    // A server whose passphrase setting is too short
+    const network = vi.fn(async () => Response.json({ error: "The server is not set up: APP_ACCESS_SECRET must be at least 16 characters long." }, { status: 500 }));
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} fetchFn={network} />);
+    // Confirm the reason is shown
+    expect(await screen.findByText(/APP_ACCESS_SECRET must be at least 16 characters long/)).toBeTruthy();
+  });
+
+  // A session the coach could not review says so, instead of promising feedback forever
+  it("says when the coach could not review a session", async () => {
+    // A session whose feedback request was refused earlier
+    const session = makeSession({ id: "s1", feedback: null, feedbackStatus: "failed" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the plain explanation and no false promise
+    expect([!!(await screen.findByText("The coach could not review this session.")), screen.queryByText(/Feedback is on its way/)]).toEqual([true, null]);
+  });
+
   // A new session asks the coach straight away and shows the feedback when it arrives
   it("asks for feedback for a waiting session and shows it", async () => {
     // Save a passphrase on this device
