@@ -52,7 +52,8 @@ Tests written by the same agent that writes the code share its blind spots. A pa
 | **T6. Reproduce the user's exact error before fixing it** | Write a test that produces the same message the user saw. If the test can't produce it, the cause isn't understood yet. After the fix, ask: "did I fix the cause, or the first symptom?" |
 | **T7. Test the defaults, not only the injected fakes** | If a component takes a clock, service or store as an optional setting, have at least one test that leaves it out and uses the real default |
 | **T8. Check layouts at phone width with screenshots** | Look at every new screen at 375 px wide, and check that nothing scrolls sideways |
-| **T9. Write the failing test first, as its own commit** | This caught real mistakes here (rounding, the theme bug). Keep it |
+| **T9. For a bug fix, reproduce the bug in a failing test first** | Reproducing the user's exact error is what pinned down B2 and B4 (see T6). For new features, writing tests alongside the code is enough; committing every failing test as its own commit was ceremony that added time without catching anything extra (revised 2026-10-15, see section 8) |
+| **T12. Test logic thoroughly, screens broadly** | Pure logic (counting, timing, measuring, data) gets thorough unit tests: they are cheap, fast, and caught the most. Each screen gets a few tests for its main path and its failure path, not one per detail. Journeys between screens and real-browser conditions belong to the browser suite (T5, T10, T11) |
 | **T10. Browser checks belong in the repository and in CI** | In this project the browser checks lived in throwaway scripts, so they only ran when the agent remembered. Keep end-to-end checks with the code and run them on every push |
 | **T11. Test the journeys between screens, not just each screen** | One test runs over every screen and checks the shared parts: the main navigation leads to every section, and the current one is marked. A browser check loads each page directly and clicks every navigation link. When a new screen is added, it joins that list |
 
@@ -60,7 +61,7 @@ Tests written by the same agent that writes the code share its blind spots. A pa
 
 Before saying "done", the agent confirms each of these and reports any that were skipped:
 
-- [ ] A failing test was written first, then passed.
+- [ ] New logic has tests; a bug fix has a test that reproduced the bug before the fix (T9).
 - [ ] The failure path is tested (T1, T2), not just the success path.
 - [ ] Lint, typecheck, unit tests and the production build all pass. Read the "Test Files" count too, not just "Tests": a file that fails to load drops its tests from the total silently (this happened on 2026-10-15 and was caught only because the total shrank).
 - [ ] The change was run in a real browser, each touched page was loaded directly, and the console was clean (T5).
@@ -78,6 +79,7 @@ Things that would have prevented B2 to B4 if done on day one:
 - **S3. Turn on a lint rule that flags promises nobody waits for** (for TypeScript, `@typescript-eslint/no-floating-promises`). B1 started as a `void save()` whose errors vanished.
 - **S4. Set up the end-to-end browser suite and CI in the first week**, not later (T10).
 - **S5. Write the "not chosen" and "revisit later" lists in a decisions file from the start**, so the reasons survive between sessions.
+- **S6. Ask for comments that explain why, not one on every line.** A rule requiring a comment above every line made about 40% of this project's app code comments, many of them restating the code ("Show the time" above the line that shows the time). That cost more than the tests did.
 
 ## 6. Working with an AI agent on product decisions
 
@@ -94,3 +96,30 @@ Concrete steps that follow from the rules above, not yet done:
 1. **Move the browser checks into the repository as a Playwright suite and run it in CI** (T5, T10). It would cover both modes end to end, load every page directly, and fail on console errors.
 2. **Turn on typed linting with `no-floating-promises`** (S3).
 3. **Do a real-voice test on desktop and a phone test** (checkpoints C3 and C5). Nothing so far has used a real microphone.
+4. **Bring the coding standards in line with section 8**: test-first only for bug fixes, fewer and broader screen tests, and comments that explain why. Waiting on the user's go-ahead, since the standards are theirs.
+
+## 8. Are AI-written tests worth it? (measured on VoiceLab, 2026-10-15)
+
+The user asked whether the tests were worth their cost, given that they will never read them. The honest answer from this project: **yes, but not in the way you might expect, and not on their own.**
+
+**What they cost.** About 5,300 lines of tests next to 7,400 lines of app code. Running them takes about 16 seconds, so they never slowed anything down. Writing them added roughly a quarter to a third of the time per feature, mostly in screen tests.
+
+**What they bought.** Almost every feature after the first two modes changed the same shared screens and data code. The tests caught the breakage each time, before the user saw it:
+- a name clash that silently stopped a whole test file from loading;
+- a change to what is sent to the coach;
+- a change to which recordings keep their audio;
+- a rounding slip (3.05 shown as "3.0");
+- a colour too faint to read;
+- the recording stopping itself whenever the screen redrew.
+
+They also made large changes safe: adding the skill path touched about fifteen files, and 500 checks confirmed nothing else broke.
+
+**What they did not buy.** Every bug that reached the user (B1 to B5) passed every test. Unit and screen tests check what the agent imagined, with stand-ins. The user's bugs came from real conditions: leftover browser data, loading a page directly, moving between screens. Only running the real app catches those, which is why the browser suite (T10) matters more than adding more unit tests.
+
+**The verdict, as rules:**
+1. Keep thorough tests for logic: they are the cheapest insurance in the project (T12).
+2. Keep screen tests few and broad: the main path and the failure path (T12).
+3. Make the browser suite the priority for catching what users actually hit (T10, T11).
+4. Reproduce a bug in a test before fixing it; skip the separate-commit ritual for features (T9).
+5. The bigger source of bloat was a comment on every line, not the tests (S6).
+6. The user never needs to read the tests. They exist so the agent can change code quickly without breaking what already works, and the agent reports what they did and did not cover.
