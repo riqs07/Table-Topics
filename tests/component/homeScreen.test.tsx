@@ -34,7 +34,7 @@ describe("HomeScreen", () => {
     // Confirm today's prompt is the main heading
     expect(await screen.findByRole("heading", { level: 1 })).toHaveProperty("textContent", promptForDay(NOW).text);
     // Confirm the first-time line
-    expect(screen.getByText(/Your first recording becomes your starting point/)).toBeTruthy();
+    expect(screen.getByText(/Your first Record Response becomes your starting point/)).toBeTruthy();
     // Confirm the first weekly challenge
     expect(screen.getByText(CHALLENGES[0]!.text.charAt(0).toLowerCase() + CHALLENGES[0]!.text.slice(1))).toBeTruthy();
   });

@@ -146,7 +146,7 @@ export function HomeScreen(props: ScreenProps) {
         {/* Context: streak, focus, challenge (above the prompt on a phone, in the margin on a computer) */}
         <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
           {/* Streak, or a first-time line */}
-          {data && <p>{data.sessionCount === 0 ? "Your first recording becomes your starting point, to look back on later." : streakSentence(data.streak)}</p>}
+          {data && <p>{data.sessionCount === 0 ? "Your first Record Response becomes your starting point, to look back on later." : streakSentence(data.streak)}</p>}
           {/* This week's focus */}
           {data && (
             <p className="md:mt-6 md:border-t md:border-rule md:pt-3">

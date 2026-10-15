@@ -33,6 +33,14 @@ Decision 18 in decisions.md has the details. In build order:
 3. Record Response: 2-minute thinking screen with the structure hint and angles, hints kept in the margin while speaking, 3:00 goal light.
 4. Home screen offers just the two modes; the one-minute session and warm-up are retired (old sessions stay in history). Baseline moves to the first Record Response.
 
+## Done: then and now, read aloud, reading checks (2026-10-15)
+
+## Next: pause drill and Rehearse my talk (agreed 2026-10-15)
+
+1. Pause detection on the device from the loudness the level meter already reads: count and length of pauses, and how much of the time was spent speaking.
+2. Pause drill: a passage with marked pause points; the session page says which pauses were taken.
+3. Rehearse my talk: paste your own talk or notes, rehearse it with a timer, line it up word by word like a reading, and compare runs with "then and now".
+
 ## To revisit after the MVP (agreed 2026-10-14)
 
 Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:

@@ -20,7 +20,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | promptId | Which prompt was used |
 | isBaseline | True for the user's first full session (never a warm-up) |
 | retryOf | Id of the session this one retries, or empty |
-| mode | `talk` (Table Topic: 10-second countdown, then Toastmasters timing of 1:00 to 2:00, with under 1:00 or over 2:30 marked as not qualifying; stops itself at 3:00), `response` (Record Response: 2 minutes to think with hints, then a 3:00 goal; stops itself at 4:00), or the retired `standard` (one-minute session) and `warmup` (30 seconds). The baseline is the first `response` (or an old `standard`). Table Topics count for the streak and progress numbers (both are per-minute rates) but never become the baseline. Warm-ups count for the streak but are left out of the baseline, the trend, and progress numbers. Exports from before modes existed load as `standard` |
+| mode | `talk` (Table Topic: 10-second countdown, then Toastmasters timing of 1:00 to 2:00, with under 1:00 or over 2:30 marked as not qualifying; stops itself at 3:00), `response` (Record Response: 2 minutes to think with hints, then a 3:00 goal; stops itself at 4:00), `read` (reading a passage aloud; no light, stops at 10 minutes; never the baseline and left out of progress numbers, since reading has fewer fillers by nature), or the retired `standard` (one-minute session) and `warmup` (30 seconds). The baseline is the first `response` (or an old `standard`). Table Topics count for the streak and progress numbers (both are per-minute rates) but never become the baseline. Warm-ups count for the streak but are left out of the baseline, the trend, and progress numbers. Exports from before modes existed load as `standard` |
 | durationSec | Length of the recording |
 | transcript | Full text of what was said |
 | wordsPerMinute | Computed from transcript and duration |
@@ -60,7 +60,7 @@ Prompts ship inside the app as fixed content. They are not user data.
 
 | Data | Kept |
 |------|------|
-| Audio | Last 30 sessions, then deleted automatically. **The baseline (first) recording's audio is always kept** |
+| Audio | Last 30 sessions, then deleted automatically. **Always kept:** the baseline (first) recording, and the first recording of each prompt or passage, so "then and now" can play it beside later takes |
 | Transcripts, metrics, feedback | Until the user deletes them |
 
 ## Export file
