@@ -140,7 +140,7 @@ After a rehearsal or a prepared response, VoiceLab asks the questions an audienc
   - the question screen: main path and failure path.
 - **Decision for the user:** how many questions. *Default:* three, and you can skip any of them.
 
-### B4. More lessons for the skill path
+### B4. More lessons for the skill path ✅ done 2026-10-15 (awaiting approval at C13)
 New lessons, each pairing one tip with a text and an on-device check, as decision 21 requires:
 
 | # | Lesson | Check |

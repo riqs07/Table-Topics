@@ -27,6 +27,8 @@ export function openingPauseSentence(loudness: ReadonlyArray<number>): string {
 
 // How many of the last words count as the closing
 export const CLOSING_WORDS = 20;
+// Seconds of silence that count as stopping on purpose in the blank-recovery lesson
+const RECOVERY_PAUSE = 2;
 
 // A lesson's result: a headline for its own skill and a detail line on the reading
 export interface LessonResult {
@@ -38,8 +40,8 @@ export interface LessonResult {
 
 // Remove the stress marks from a lesson text before comparing it with what was heard
 function plainText(body: string): string {
-  // Drop the asterisks around stressed words
-  return body.replace(/\*/g, "");
+  // Drop the asterisks around stressed words and any [bracketed instruction]
+  return body.replace(/\*/g, "").replace(/\[[^\]]*\]/g, " ");
 }
 
 // The sentence for the lesson's own skill
@@ -87,6 +89,15 @@ function skillSentence(lesson: Lesson, session: SessionRecord, percentRead: numb
       const closing = markFillers(session.transcript.split(/\s+/).slice(-CLOSING_WORDS).join(" ")).filter((piece) => piece.filler).map((piece) => piece.text.toLowerCase());
       // Clean, or which fillers
       return closing.length === 0 ? "No fillers in your closing." : `Fillers crept into your closing: ${closing.join(", ")}.`;
+    }
+    // Recovering from a blank: a deliberate stop, then carrying on
+    case "recovery": {
+      // Needs loudness
+      if (!loudness.length) return noLoudness;
+      // The longest pause between words (every counted pause has speech after it)
+      const longest = findPauses(loudness, LOUDNESS_TICK_MS).longestSeconds;
+      // A real stop and a restart, or not yet
+      return longest >= RECOVERY_PAUSE ? `You stopped for ${longest.toFixed(1)} seconds and carried on. That is the recovery.` : `Your longest pause was ${longest.toFixed(1)} seconds. Stop for a full three seconds where the text says, then carry on.`;
     }
     // Judgement lessons wait for the coach
     case "coach":

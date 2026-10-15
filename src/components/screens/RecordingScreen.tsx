@@ -662,8 +662,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                     <span key={index}>
                       {/* A pause sign before every stretch but the first */}
                       {index > 0 && <span role="img" aria-label="pause here" className="mx-2 text-accent">‖</span>}
-                      {/* The words, with *stressed* words in bold */}
-                      {part.split(/(\*[^*]+\*)/).map((piece, pieceIndex) => (piece.startsWith("*") && piece.endsWith("*") && piece.length > 2 ? <strong key={pieceIndex}>{piece.slice(1, -1)}</strong> : <span key={pieceIndex}>{piece}</span>))}
+                      {/* The words, with *stressed* words in bold and [instructions] in quiet italics */}
+                      {part.split(/(\*[^*]+\*|\[[^\]]+\])/).map((piece, pieceIndex) => (piece.startsWith("*") && piece.endsWith("*") && piece.length > 2 ? <strong key={pieceIndex}>{piece.slice(1, -1)}</strong> : piece.startsWith("[") && piece.endsWith("]") ? <em key={pieceIndex} className="text-ink-muted">{piece.slice(1, -1)}</em> : <span key={pieceIndex}>{piece}</span>))}
                     </span>
                   ))}
                 </p>

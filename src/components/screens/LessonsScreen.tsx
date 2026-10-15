@@ -1,5 +1,5 @@
 "use client";
-// The skill path: ten short lessons, all open, each with how often it has been practised
+// The skill path: sixteen short lessons, all open, each with how often it has been practised
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -54,7 +54,7 @@ export function LessonsScreen(props: ScreenProps) {
       {/* Navigation and title */}
       <Masthead title="Skill path" section="lessons" />
       {/* What this is */}
-      <p className="mt-6 max-w-[52ch] text-lede">Ten short lessons, one practical tip each. Take them in any order and repeat them as often as you like.</p>
+      <p className="mt-6 max-w-[52ch] text-lede">Sixteen short lessons, one practical tip each. Take them in any order and repeat them as often as you like.</p>
       {/* The lessons */}
       <ol className="mt-8 divide-y divide-rule border-y border-rule">
         {/* One row per lesson */}

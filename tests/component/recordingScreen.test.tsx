@@ -690,4 +690,14 @@ describe("RecordingScreen", () => {
     // Confirm the answer saved its question
     expect((await repository.listSessions()).find((session) => session.mode === "qa")).toMatchObject({ promptId: "r1", question: "Why now?" });
   });
+
+  // A lesson's [instruction] shows as a quiet instruction, not words to read
+  it("shows a lesson's bracketed instruction in italics, without brackets", async () => {
+    // Draw the blank-recovery lesson
+    draw({ mode: "lesson", promptId: "l015" });
+    // The instruction
+    const instruction = await screen.findByText("Stop here and count to three in silence.");
+    // Confirm it is set apart and has no brackets around it
+    expect([instruction.tagName, screen.getByTestId("passage").textContent?.includes("[")]).toEqual(["EM", false]);
+  });
 });
