@@ -6,12 +6,12 @@ import { PASSAGES, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, TRICKY_WORDS, WARMUP_PRO
 
 // Group the checks about the skill path
 describe("skill path lessons", () => {
-  // Ten lessons in order, each with its own id
-  it("has ten numbered lessons with ids unique across every list", () => {
+  // Sixteen lessons in order, each with its own id (six added for public speaking on 2026-10-15)
+  it("has sixteen numbered lessons with ids unique across every list", () => {
     // Every id in the app
     const ids = [...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS].map((item) => item.id);
     // Confirm the count, the numbering, the id pattern, and uniqueness
-    expect([LESSONS.length, LESSONS.map((lesson) => lesson.number), LESSONS.every((lesson) => /^l\d{3}$/.test(lesson.id)), new Set(ids).size]).toEqual([10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], true, ids.length]);
+    expect([LESSONS.length, LESSONS.map((lesson) => lesson.number), LESSONS.every((lesson) => /^l\d{3}$/.test(lesson.id)), new Set(ids).size]).toEqual([16, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], true, ids.length]);
   });
 
   // Every lesson teaches one practical tip, briefly, with a practice text built for it
@@ -34,6 +34,19 @@ describe("skill path lessons", () => {
   });
 
   // Lessons are found by id, and their titles serve as prompt text in history
+  it("adds the six public-speaking lessons from the plan", () => {
+    // Confirm the titles and how each is checked
+    expect(LESSONS.slice(10).map((lesson) => [lesson.title, lesson.check])).toEqual([
+      ["Open with a hook", "coach"],
+      ["Tell a short story", "coach"],
+      ["Bridges between points", "coach"],
+      ["Answer with point, reason, example", "coach"],
+      ["Recover from a blank", "recovery"],
+      ["Vocal variety", "coach"],
+    ]);
+  });
+
+  // Find a lesson again by its saved id
   it("finds a lesson by id", () => {
     // Confirm both lookups
     expect([findLesson("l002")?.title, findPrompt("l002")?.text]).toEqual(["Crisp consonants", "Crisp consonants"]);

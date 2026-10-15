@@ -50,6 +50,24 @@ describe("lessonResult", () => {
     expect(lessonResult(lesson("l005"), makeSession({ loudness })).headline).toBe("1 of 2 stretches faded at the end.");
   });
 
+  // Recovering from a blank: a long pause followed by more speech is the recovery
+  it("finds the recovery pause in the blank-recovery lesson", () => {
+    // Speech, a 3-second pause, then speech again
+    const recovered = lessonResult(lesson("l015"), makeSession({ loudness: [...run(0.3, 30), ...run(0.01, 30), ...run(0.3, 30)] }));
+    // Speech with only short pauses
+    const rushed = lessonResult(lesson("l015"), makeSession({ loudness: [...run(0.3, 30), ...run(0.01, 8), ...run(0.3, 30)] }));
+    // Confirm both
+    expect([recovered.headline, rushed.headline]).toEqual(["You stopped for 3.0 seconds and carried on. That is the recovery.", "Your longest pause was 0.8 seconds. Stop for a full three seconds where the text says, then carry on."]);
+  });
+
+  // Instructions in square brackets are not words to read, so they do not count as missed
+  it("leaves bracketed instructions out of the reading check", () => {
+    // The text without its bracketed instruction, read in full
+    const body = lesson("l015").body.replace(/\[[^\]]*\]/g, " ").replace(/\*/g, "");
+    // Confirm every word counts as read
+    expect(lessonResult(lesson("l015"), makeSession({ transcript: body })).detail).toBe("You read 100% of the words.");
+  });
+
   // The closing lesson looks for fillers near the end
   it("looks for fillers in the closing", () => {
     // A clean close and one with fillers
