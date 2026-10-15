@@ -144,6 +144,22 @@ describe("parseExport", () => {
     expect([(await fresh.listTalks()).map((talk) => talk.title), parseExport(older).talks]).toEqual([["Team update"], []]);
   });
 
+  // A talk's date and a rehearsal's section survive the round trip; a damaged date does not import
+  it("carries a talk's date and a rehearsal's section, and rejects a damaged date", async () => {
+    // A repository with a dated talk and a section rehearsal
+    const repository = createRepository(new MemoryStore());
+    // Save the talk
+    await repository.saveTalk(makeTalk({ eventDate: "2026-10-22" }));
+    // Save the rehearsal
+    await repository.saveSession(makeSession({ id: "s1", mode: "rehearse", sectionIndex: 2 }));
+    // Export and read the file back
+    const file = parseExport(JSON.stringify(await buildExport(repository, NOW)));
+    // The same file with the date damaged
+    const damaged = JSON.stringify({ ...file, talks: [{ ...file.talks[0], eventDate: 22 }] });
+    // Confirm both survived, and the damaged file is refused
+    expect([file.talks[0]?.eventDate, file.sessions[0]?.sectionIndex, (() => { try { parseExport(damaged); return "accepted"; } catch { return "refused"; } })()]).toEqual(["2026-10-22", 2, "refused"]);
+  });
+
   // A damaged file with a broken session
   it("rejects a file with a damaged record", () => {
     // Build a file whose session is missing its transcript

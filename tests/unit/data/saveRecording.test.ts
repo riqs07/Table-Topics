@@ -92,4 +92,14 @@ describe("saveRecording", () => {
     // Confirm the rounded readings
     expect(session.loudness).toEqual([0.12, 0.5, 0]);
   });
+
+  // A rehearsal of one section remembers which section it was
+  it("keeps the section of a rehearsal", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Save a rehearsal of section 2
+    const session = await saveRecording(repository, { ...RECORDING, mode: "rehearse", sectionIndex: 1 }, NOW);
+    // Confirm the section is saved
+    expect((await repository.getSession(session.id))?.sectionIndex).toBe(1);
+  });
 });
