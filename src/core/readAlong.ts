@@ -34,7 +34,13 @@ function displayWords(text: string): string[] {
   return text.replace(/—/g, "— ").split(/\s+/).filter((word) => normalize(word) !== "");
 }
 
-// Compare a reading with its text, word by word (longest common sequence of words)
+// How many pause marks (" / ") a text has
+export function countPauseMarks(text: string): number {
+  // Count slashes standing alone between words
+  return text.split(/\s\/\s/).length - 1;
+}
+
+// Compare a reading with its text, word by word (longest common sequence of words); pause marks are not words and are skipped
 export function alignReading(text: string, spoken: string): ReadingCheck {
   // The text's words for display
   const shown = displayWords(text);

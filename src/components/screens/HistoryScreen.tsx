@@ -52,6 +52,8 @@ function promptText(session: SessionRecord): string {
   if (session.mode === "talk") return `Table Topic: ${text}`;
   // And readings
   if (session.mode === "read") return `Read aloud: ${text}`;
+  // And pause drills
+  if (session.mode === "pause") return `Pause drill: ${text}`;
   // And Record Responses
   return session.mode === "response" ? `Record Response: ${text}` : text;
 }

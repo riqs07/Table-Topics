@@ -76,6 +76,18 @@ export function findPauses(levels: ReadonlyArray<number>, tickMs: number): Pause
   };
 }
 
+// For a pause drill: the pauses taken against the marks in the passage
+export function pauseDrillSentence(taken: number, marks: number): string {
+  // The marks, said the same way every time
+  const ending = `the passage has ${marks} pause marks.`;
+  // None
+  if (taken === 0) return `You did not pause; ${ending}`;
+  // One
+  if (taken === 1) return `You paused once; ${ending}`;
+  // Several
+  return `You paused ${taken} times; ${ending}`;
+}
+
 // One plain sentence about the pauses
 export function pauseSentence(summary: PauseSummary): string {
   // The speaking share, said the same way every time

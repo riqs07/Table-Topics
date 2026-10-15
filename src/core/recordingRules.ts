@@ -19,8 +19,8 @@ export function maxSeconds(mode: SessionMode): number {
   if (mode === "talk") return 180;
   // A Record Response may run a minute past its goal
   if (mode === "response") return 240;
-  // Reading aloud: enough for any passage at a slow pace
-  if (mode === "read") return 600;
+  // Reading aloud and the pause drill: enough for any passage at a slow pace
+  if (mode === "read" || mode === "pause") return 600;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
   return mode === "warmup" ? 30 : 180;
 }

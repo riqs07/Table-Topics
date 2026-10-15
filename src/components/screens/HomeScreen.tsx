@@ -12,7 +12,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the weekly challenge picker
 import { challengeForWeek, type Challenge } from "@/content/challenges";
 // Load the daily prompt picker
-import { passageForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { drillForDay, passageForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
 // Load the day label helper
@@ -126,6 +126,8 @@ export function HomeScreen(props: ScreenProps) {
   const topic = today ? tableTopicForDay(today, offset) : null;
   // Today's passage to read aloud
   const passage = today ? passageForDay(today, offset) : null;
+  // Today's pause drill
+  const drill = today ? drillForDay(today, offset) : null;
 
   // Draw the page
   return (
@@ -168,6 +170,17 @@ export function HomeScreen(props: ScreenProps) {
           <p className="mt-4 italic text-ink-muted">
             {/* Swap the prompt */}
             <button type="button" onClick={() => setOffset(offset + 1)} className="italic hover:underline">or choose another</button>
+          </p>
+          {/* The drills: short, focused practice */}
+          <p className="mt-2 italic text-ink-muted">
+            {/* Label */}
+            {"Drills: "}
+            {/* Pausing on purpose */}
+            {drill && <Link href={`/session?mode=pause&prompt=${drill.id}`} className="underline underline-offset-4">pause drill</Link>}
+            {/* Separator */}
+            {" · "}
+            {/* Rehearsing the user's own talk */}
+            <Link href="/rehearse" className="underline underline-offset-4">rehearse my talk</Link>
           </p>
           {/* Push the footer down */}
           <div className="flex-1" />

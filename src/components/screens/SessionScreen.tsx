@@ -18,9 +18,9 @@ import { markFillers } from "@/core/fillers";
 // Load the then-and-now helpers
 import { earlierTake, practiceDay } from "@/core/compare";
 // Load the pause finder
-import { findPauses, pauseSentence } from "@/core/pauses";
+import { findPauses, pauseDrillSentence, pauseSentence } from "@/core/pauses";
 // Load the reading check
-import { alignReading, type ReadingCheck } from "@/core/readAlong";
+import { alignReading, countPauseMarks, type ReadingCheck } from "@/core/readAlong";
 // Load the Table Topics timing sentence
 import { LOUDNESS_TICK_MS, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
@@ -231,7 +231,9 @@ function sideNumber(session: SessionRecord): string {
 // The Feedback screen for a first try or a warm-up
 function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"] }) {
   // The passage, for a read-aloud session
-  const passage = session.mode === "read" ? findPassage(session.promptId) : undefined;
+  const passage = session.mode === "read" || session.mode === "pause" ? findPassage(session.promptId) : undefined;
+  // The pauses, when loudness was recorded
+  const pauses = session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS) : null;
   // How much of the passage was heard
   const reading = passage ? alignReading(passage.body, session.transcript) : null;
   // Whether this was an old warm-up (it leads into a Record Response instead of a retry)
@@ -246,7 +248,7 @@ function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository;
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
+      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : session.mode === "pause" ? "Pause drill" : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -264,9 +266,9 @@ function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository;
           {reading ? (
             <>
               {/* How much of the passage was read */}
-              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">You read {reading.percentRead}% of the words.</p>
+              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : `You read ${reading.percentRead}% of the words.`}</p>
               {/* The detail */}
-              <p className="mt-2 text-footnote italic text-ink-muted">{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
+              <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" ? `You read ${reading.percentRead}% of the words; ` : ""}{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
             </>
           ) : (
             // The focus number as a sentence
@@ -275,7 +277,7 @@ function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository;
           {/* When there is no number, say why */}
           {!reading && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
           {/* How the pauses went, when loudness was recorded */}
-          {session.loudness && session.loudness.length > 0 && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(findPauses(session.loudness, LOUDNESS_TICK_MS))}</p>}
+          {pauses && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(pauses)}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
           {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec)}</p>}
           {/* Listen back */}

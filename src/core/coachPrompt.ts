@@ -7,8 +7,10 @@ import { WEEKLY_FOCUSES } from "@/core/focus";
 // Load the session measurements
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
-// Load the passage lookup, for reading aloud
+// Load the passage lookup, for reading aloud and pause drills
 import { findPassage } from "@/content/prompts";
+// Load the pause mark counter
+import { countPauseMarks } from "@/core/readAlong";
 // Load the Table Topics timing rules
 import { TOPIC_LIMIT, TOPIC_WINDOW_START, formatClock, targetSeconds, thinkSeconds } from "@/core/recordingRules";
 import type { Feedback, SessionMode } from "@/data/records";
@@ -60,7 +62,7 @@ export function buildCoachMessage(input: CoachInput): string {
   // Find the weekly focus by id
   const focus = WEEKLY_FOCUSES.find((item) => item.id === input.focusId);
   // On a reading, find the passage from the app's own copy
-  const passage = input.mode === "read" && input.promptId ? findPassage(input.promptId) : undefined;
+  const passage = (input.mode === "read" || input.mode === "pause") && input.promptId ? findPassage(input.promptId) : undefined;
   // Put the message together line by line
   return [
     // The week's skill, or none if the id is unknown
@@ -79,6 +81,8 @@ export function buildCoachMessage(input: CoachInput): string {
     ...(input.mode === "response" ? [`This is a prepared response: up to ${thinkSeconds("response")} seconds to think with hints, then a ${targetSeconds("response")}-second goal. It ran ${Math.round(input.durationSec)} seconds. Comment on how the answer was organised across the whole time.`] : []),
     // On a reading, ask about delivery only
     ...(input.mode === "read" ? ["This was read aloud from a known text. Comment only on delivery (pace, pauses, skipped or repeated words, fillers), not on the content, which the speaker did not write."] : []),
+    // On a pause drill, the number of marked pauses
+    ...(input.mode === "pause" && passage ? [`This was a pause drill: reading a known text with ${countPauseMarks(passage.body)} marked pauses (shown as /). Comment only on pausing and pace.`] : []),
     // On a retry, the fix to check for
     ...(input.previousChange ? [`This is a retry. The fix you gave last time was: ${input.previousChange}`] : []),
     // A blank line before the transcript
@@ -86,7 +90,7 @@ export function buildCoachMessage(input: CoachInput): string {
     // The transcript, fenced off as data
     `<transcript>\n${fenceSafe(input.transcript)}\n</transcript>`,
     // On a reading, the text that was on screen, fenced off as data too
-    ...(input.mode === "read" && passage ? ["", `<text>\n${passage.body}\n</text>`] : []),
+    ...(passage ? ["", `<text>\n${passage.body}\n</text>`] : []),
   ].join("\n");
 }
 

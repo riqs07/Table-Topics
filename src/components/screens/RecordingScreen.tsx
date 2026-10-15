@@ -233,7 +233,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The prompt to speak to (for reading aloud, its title)
   const prompt = findPrompt(promptId);
   // The passage, when reading aloud
-  const passage = mode === "read" ? findPassage(promptId) : undefined;
+  const passage = mode === "read" || mode === "pause" ? findPassage(promptId) : undefined;
   // Target and limit for this kind of session
   const target = targetSeconds(mode);
   // The limit
@@ -484,9 +484,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : "Recording";
   // The keyboard hint for this stage
-  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : mode === "read" ? "space to start reading" : "space to start";
+  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : passage ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
   const showPrompt = !recording && !!prompt && !passage && (mode !== "talk" || thinking);
   // A Table Topic's briefing, shown before the question
@@ -543,8 +543,21 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {!recording && <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">{passage.title}</h1>}
               {/* Who said it, or that it is a practice passage */}
               {!recording && <p className="mt-1 italic text-ink-muted">{passage.source}</p>}
+              {/* For a pause drill, how it works */}
+              {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Read the passage aloud and pause for about a second at each ‖. Take your time.</p>}
               {/* The words to read, large enough to read from a distance */}
-              <p data-testid="passage" className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] font-display text-cue leading-relaxed`}>{passage.body}</p>
+              <p data-testid="passage" className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] font-display text-cue leading-relaxed`}>
+                {/* The text, with each pause mark shown as a pause sign in the accent color */}
+                {passage.body.split(" / ").map((part, index) => (
+                  // One stretch between pauses
+                  <span key={index}>
+                    {/* A pause sign before every stretch but the first */}
+                    {index > 0 && <span role="img" aria-label="pause here" className="mx-2 text-accent">‖</span>}
+                    {/* The words */}
+                    {part}
+                  </span>
+                ))}
+              </p>
             </>
           )}
           {/* Before recording: the prompt and, on a retry, last time's cue */}
