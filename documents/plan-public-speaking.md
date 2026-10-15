@@ -39,7 +39,7 @@ Every step follows the playbook's definition of done (section 4). Docs change in
   - The one-line summary in `documents/README.md`.
 - **Decision for the user:** the target user wording above. *Default:* as written.
 
-### A2. Coach instructions for a speaker
+### A2. Coach instructions for a speaker ✅ done 2026-10-15
 - **What:** rewrite `COACH_SYSTEM_PROMPT` in `src/core/coachPrompt.ts`:
   - The person is preparing to speak to an audience, so the fix should make the talk land better for listeners.
   - The rules stay the same: three parts, one fix, quotes from the transcript, no comments on tone.
