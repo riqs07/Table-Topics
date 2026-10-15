@@ -14,11 +14,11 @@ import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
-import { STRUCTURE_HINT, findPrompt } from "@/content/prompts";
+import { STRUCTURE_HINT, findPassage, findPrompt } from "@/content/prompts";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the recording length rules
-import { MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, targetSeconds, thinkSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
+import { MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -232,8 +232,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The browser's reason when saving failed, shown so the problem can be pinned down
   const [saveError, setSaveError] = useState("");
 
-  // The prompt to speak to
+  // The prompt to speak to (for reading aloud, its title)
   const prompt = findPrompt(promptId);
+  // The passage, when reading aloud
+  const passage = mode === "read" ? findPassage(promptId) : undefined;
   // Target and limit for this kind of session
   const target = targetSeconds(mode);
   // The limit
@@ -473,15 +475,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" ? `a ${formatClock(target)} goal` : "about a minute";
+  const lengthText = passage ? `about ${Math.round(readingSeconds(passage.body) / 60)} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" ? `a ${formatClock(target)} goal` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : "Recording";
   // The keyboard hint for this stage
-  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : "space to start";
+  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : mode === "read" ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
-  const showPrompt = !recording && !!prompt && (mode !== "talk" || thinking);
+  const showPrompt = !recording && !!prompt && !passage && (mode !== "talk" || thinking);
   // A Table Topic's briefing, shown before the question
   const showBriefing = mode === "talk" && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed");
   // This prompt's angles, for a Record Response
@@ -529,6 +531,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               <p className="mt-5 max-w-[48ch] text-lede">In Table Topics you hear the question and start almost straight away. Press the button to see yours: you get {think} seconds, then recording starts by itself. Speak for 1 to 2 minutes; the light turns green at 1:00, yellow at 1:30, and red at 2:00.</p>
             </>
           )}
+          {/* Reading aloud: the title and source before starting, and the text throughout */}
+          {passage && (
+            <>
+              {/* Title and source, before starting */}
+              {!recording && <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">{passage.title}</h1>}
+              {/* Who said it, or that it is a practice passage */}
+              {!recording && <p className="mt-1 italic text-ink-muted">{passage.source}</p>}
+              {/* The words to read, large enough to read from a distance */}
+              <p data-testid="passage" className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] font-display text-cue leading-relaxed`}>{passage.body}</p>
+            </>
+          )}
           {/* Before recording: the prompt and, on a retry, last time's cue */}
           {showPrompt && prompt && (
             <h1 className="relative mt-8 font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:mt-0 md:max-w-[16ch] md:text-prompt-xl">
@@ -552,8 +565,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             <>
               {/* Live level meter */}
               <Meter levels={levels} />
-              {/* Words so far */}
-              <div className="mt-8"><LiveWords text={text} /></div>
+              {/* Words so far (not while reading: the text itself is on screen) */}
+              {!passage && <div className="mt-8"><LiveWords text={text} /></div>}
             </>
           )}
 
@@ -589,7 +602,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             ) : mode === "response" ? (
               <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${think / 60} minutes to prepare`} onClick={beginThinking} />
             ) : (
-              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : passage ? "Start reading" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
             )
           )}
           {/* Thinking about a Record Response: start speaking early */}

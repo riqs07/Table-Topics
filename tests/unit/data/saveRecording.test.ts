@@ -71,6 +71,8 @@ describe("saveRecording", () => {
     const repository = createRepository(new MemoryStore());
     // Save the limit
     await repository.saveSettings({ focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 1 });
+    // An even older take of the same prompt, so the next one is not the prompt's first take (those are always kept)
+    await repository.saveSession(makeSession({ id: "first", createdAt: "2026-09-30T10:00:00.000Z", isBaseline: false }));
     // Save an older session with audio
     await repository.saveSession(makeSession({ id: "old", createdAt: "2026-10-01T10:00:00.000Z", audioKey: "old", isBaseline: false }));
     // Save its audio

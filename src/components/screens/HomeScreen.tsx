@@ -12,7 +12,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the weekly challenge picker
 import { challengeForWeek, type Challenge } from "@/content/challenges";
 // Load the daily prompt picker
-import { promptForDay, tableTopicForDay } from "@/content/prompts";
+import { passageForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
 // Load the day label helper
@@ -124,6 +124,8 @@ export function HomeScreen(props: ScreenProps) {
   const prompt = today ? promptForDay(today, offset) : null;
   // Today's Table Topic, kept off the page so it is a surprise
   const topic = today ? tableTopicForDay(today, offset) : null;
+  // Today's passage to read aloud
+  const passage = today ? passageForDay(today, offset) : null;
 
   // Draw the page
   return (
@@ -183,6 +185,8 @@ export function HomeScreen(props: ScreenProps) {
           )}
           {/* The two modes: a Table Topic on a surprise question, or a prepared response to the prompt above */}
           {topic && <ActionBand quiet action="Table Topic" aside="surprise question · 1 to 2 min" href={`/session?mode=talk&prompt=${topic.id}`} />}
+          {/* Reading aloud: a famous speech or a practice passage */}
+          {passage && <ActionBand quiet action="Read aloud" aside={passage.kind === "speech" ? "a famous speech" : "a practice passage"} href={`/session?mode=read&prompt=${passage.id}`} />}
           {/* The main action */}
           {prompt && <ActionBand action="Record a response" aside="2 min to think · 3 to speak" href={`/session?mode=response&prompt=${prompt.id}`} />}
         </div>

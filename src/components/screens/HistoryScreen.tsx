@@ -50,6 +50,8 @@ function promptText(session: SessionRecord): string {
   if (session.mode === "warmup") return `Warm-up: ${text}`;
   // Mark Table Topics the same way
   if (session.mode === "talk") return `Table Topic: ${text}`;
+  // And readings
+  if (session.mode === "read") return `Read aloud: ${text}`;
   // And Record Responses
   return session.mode === "response" ? `Record Response: ${text}` : text;
 }

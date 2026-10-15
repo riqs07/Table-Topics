@@ -237,6 +237,46 @@ export const TABLE_TOPICS: ReadonlyArray<Prompt> = [
   { id: "t036", text: "What is the best way to spend a long train ride?" },
 ];
 
+// One text to read aloud: a public-domain speech or a passage written for practice
+export interface Passage extends Prompt {
+  // A famous speech, or a passage written for the app
+  kind: "speech" | "practice";
+  // Short title shown above the text (also used as the prompt text in history)
+  title: string;
+  // Who gave the speech and when, or "Practice passage"
+  source: string;
+  // The words to read
+  body: string;
+}
+
+// Texts to read aloud: public-domain speeches (all U.S. works from before 1962 or official addresses by U.S. presidents) and passages written for practice. DRAFT: approved at checkpoint C13; speech texts to be checked against a published source
+export const PASSAGES: ReadonlyArray<Passage> = [
+  // Passage 1
+  { id: "r001", kind: "speech", title: "The Gettysburg Address", source: "Abraham Lincoln, 1863", text: "The Gettysburg Address", body: "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle-field of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live. It is altogether fitting and proper that we should do this. But, in a larger sense, we can not dedicate—we can not consecrate—we can not hallow—this ground. The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract. The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced. It is rather for us to be here dedicated to the great task remaining before us—that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion—that we here highly resolve that these dead shall not have died in vain—that this nation, under God, shall have a new birth of freedom—and that government of the people, by the people, for the people, shall not perish from the earth." },
+  // Passage 2
+  { id: "r002", kind: "speech", title: "With malice toward none", source: "Abraham Lincoln, 1865", text: "With malice toward none", body: "With malice toward none, with charity for all, with firmness in the right as God gives us to see the right, let us strive on to finish the work we are in, to bind up the nation's wounds, to care for him who shall have borne the battle and for his widow and his orphan, to do all which may achieve and cherish a just and lasting peace among ourselves and with all nations." },
+  // Passage 3
+  { id: "r003", kind: "speech", title: "The only thing we have to fear", source: "Franklin D. Roosevelt, 1933", text: "The only thing we have to fear", body: "This is preeminently the time to speak the truth, the whole truth, frankly and boldly. Nor need we shrink from honestly facing conditions in our country today. This great Nation will endure as it has endured, will revive and will prosper. So, first of all, let me assert my firm belief that the only thing we have to fear is fear itself—nameless, unreasoning, unjustified terror which paralyzes needed efforts to convert retreat into advance." },
+  // Passage 4
+  { id: "r004", kind: "speech", title: "Ask not", source: "John F. Kennedy, 1961", text: "Ask not", body: "In the long history of the world, only a few generations have been granted the role of defending freedom in its hour of maximum danger. I do not shrink from this responsibility—I welcome it. I do not believe that any of us would exchange places with any other people or any other generation. The energy, the faith, the devotion which we bring to this endeavor will light our country and all who serve it—and the glow from that fire can truly light the world. And so, my fellow Americans: ask not what your country can do for you—ask what you can do for your country." },
+  // Passage 5
+  { id: "r005", kind: "speech", title: "The man in the arena", source: "Theodore Roosevelt, 1910", text: "The man in the arena", body: "It is not the critic who counts; not the man who points out how the strong man stumbles, or where the doer of deeds could have done them better. The credit belongs to the man who is actually in the arena, whose face is marred by dust and sweat and blood; who strives valiantly; who errs, who comes short again and again, because there is no effort without error and shortcoming; but who does actually strive to do the deeds; who knows great enthusiasms, the great devotions; who spends himself in a worthy cause; who at the best knows in the end the triumph of high achievement, and who at the worst, if he fails, at least fails while daring greatly, so that his place shall never be with those cold and timid souls who neither know victory nor defeat." },
+  // Passage 6
+  { id: "r006", kind: "speech", title: "On women's right to vote", source: "Susan B. Anthony, 1873", text: "On women's right to vote", body: "Friends and fellow citizens: I stand before you tonight under indictment for the alleged crime of having voted at the last presidential election, without having a lawful right to vote. It shall be my work this evening to prove to you that in thus voting, I not only committed no crime, but, instead, simply exercised my citizen's rights, guaranteed to me and all United States citizens by the National Constitution, beyond the power of any state to deny." },
+  // Passage 7
+  { id: "r007", kind: "practice", title: "Short and steady", source: "Practice passage", text: "Short and steady", body: "The morning was cold. The bus was late. I stood at the corner with my hands in my pockets and watched the street wake up. A baker carried trays into a shop. A dog pulled its owner toward the park. Somewhere a radio played an old song. When the bus finally came, I was almost sorry to leave. Some mornings ask you to wait. This one gave me something to watch while I did." },
+  // Passage 8
+  { id: "r008", kind: "practice", title: "Pause at the commas", source: "Practice passage", text: "Pause at the commas", body: "When you speak to a room, the pauses matter as much as the words. A pause before a key point tells the audience to listen. A pause after it, short and deliberate, lets the point land. Most nervous speakers rush, because silence feels long from the inside. From the outside, it feels like confidence. So slow down, breathe at the commas, and let each sentence finish before you begin the next one." },
+  // Passage 9
+  { id: "r009", kind: "practice", title: "Names and numbers", source: "Practice passage", text: "Names and numbers", body: "Our team grew from four people in 2019 to forty-two people today. We opened offices in Denver, Toronto, and Lisbon, and we now serve customers in eleven countries. Last year, revenue rose by thirty-eight percent, and customer complaints fell by half. Maria Gonzalez leads operations, David Okafor leads engineering, and Priya Raman leads design. Next quarter, we plan to hire fifteen more people and open a fourth office in Melbourne." },
+  // Passage 10
+  { id: "r010", kind: "practice", title: "One long sentence", source: "Practice passage", text: "One long sentence", body: "If you have ever stood up to speak and felt your heart pounding, your hands shaking, and your mind racing ahead to everything that could go wrong, then you already know that the hardest part of any talk is not the middle or the end, but the first few seconds, when every eye in the room turns toward you and waits, and the only thing that carries you through is a first sentence you have practised so often that it comes out on its own." },
+  // Passage 11
+  { id: "r011", kind: "practice", title: "Crisp consonants", source: "Practice passage", text: "Crisp consonants", body: "Clear speech starts with the ends of words. Practise saying the last letter of each word: the t in fact, the d in planned, the k in task. Try it with this line: the project's budget, timeline and key results were checked twice, signed off, and sent back by Tuesday. Then try it faster without losing a single sound. Precise speech sounds prepared, and prepared speech sounds trustworthy." },
+  // Passage 12
+  { id: "r012", kind: "practice", title: "A small story", source: "Practice passage", text: "A small story", body: "My grandmother kept a jar of buttons on the kitchen windowsill. When I was small, she would pour them onto the table and tell me where each one came from. This one, she said, was from the coat she wore to her first job. That one came from my grandfather's wedding shirt. I thought they were just buttons. Years later, when the jar came to me, I understood. She had not been keeping buttons. She had been keeping the stories that went with them." },
+];
+
 // Day the rotation counts from
 const START = new Date(2026, 0, 1);
 
@@ -286,8 +326,20 @@ export function tableTopicForDay(day: Date, offset = 0): Prompt {
   return pickForDay(TABLE_TOPICS, day, offset);
 }
 
-// Find any prompt (Record Response, Table Topic, or warm-up) by its saved id
+// The passage to read aloud for a given day; "choose another" moves it along with the main prompt
+export function passageForDay(day: Date, offset = 0): Passage {
+  // Pick from the passages
+  return pickForDay(PASSAGES, day, offset) as Passage;
+}
+
+// Find a passage by its saved id
+export function findPassage(id: string): Passage | undefined {
+  // Look in the passages
+  return PASSAGES.find((passage) => passage.id === id);
+}
+
+// Find any prompt (Record Response, Table Topic, warm-up, or passage title) by its saved id
 export function findPrompt(id: string): Prompt | undefined {
   // Look in every list
-  return [...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS].find((prompt) => prompt.id === id);
+  return [...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES].find((prompt) => prompt.id === id);
 }

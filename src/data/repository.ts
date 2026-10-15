@@ -73,8 +73,23 @@ export function createRepository(store: Store): Repository {
       const { audioRetention } = await getSettings(new Date());
       // Make the limit a whole number of zero or more, so a bad value cannot prune the wrong sessions
       const keep = Math.max(0, Math.floor(audioRetention) || 0);
-      // Find older sessions that still have audio and are not the baseline
-      const toPrune = (await listSessions()).slice(keep).filter((session) => session.audioKey && !session.isBaseline);
+      // Every session, newest first
+      const sessions = await listSessions();
+      // The first recording of each prompt, kept so "then and now" can play it beside later ones
+      const firstTakes = new Set<string>();
+      // Oldest first, the first session seen for each prompt is its first take
+      const seenPrompts = new Set<string>();
+      // Walk from the oldest
+      for (const session of [...sessions].reverse()) {
+        // Skip prompts already seen
+        if (seenPrompts.has(session.promptId)) continue;
+        // Note the prompt
+        seenPrompts.add(session.promptId);
+        // Keep this session's audio
+        firstTakes.add(session.id);
+      }
+      // Find older sessions that still have audio and are neither the baseline nor a prompt's first take
+      const toPrune = sessions.slice(keep).filter((session) => session.audioKey && !session.isBaseline && !firstTakes.has(session.id));
       // Remove each one's audio and clear its pointer
       for (const session of toPrune) {
         // Delete the recording

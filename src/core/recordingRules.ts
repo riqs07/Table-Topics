@@ -19,8 +19,18 @@ export function maxSeconds(mode: SessionMode): number {
   if (mode === "talk") return 180;
   // A Record Response may run a minute past its goal
   if (mode === "response") return 240;
+  // Reading aloud: enough for any passage at a slow pace
+  if (mode === "read") return 600;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
   return mode === "warmup" ? 30 : 180;
+}
+
+// Expected time to read a text aloud, in seconds: about 140 words a minute, at least one minute
+export function readingSeconds(text: string): number {
+  // Count the words
+  const words = text.split(/\s+/).filter((word) => word !== "").length;
+  // Time at 140 words a minute, rounded, never under a minute
+  return Math.max(60, Math.round((words / 140) * 60));
 }
 
 // Show seconds as a clock, such as "0:42" or "1:01"

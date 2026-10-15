@@ -2,7 +2,7 @@
 // One saved session: the Feedback screen for a first try, or the Retry result screen for a retry
 
 // Load React's state and effect tools
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
@@ -15,12 +15,16 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 import { dayLabel, formatRate } from "@/core/copy";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
+// Load the then-and-now helpers
+import { earlierTake, practiceDay } from "@/core/compare";
+// Load the reading check
+import { alignReading, type ReadingCheck } from "@/core/readAlong";
 // Load the Table Topics timing sentence
 import { timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
 import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
-import { promptForDay } from "@/content/prompts";
+import { findPassage, promptForDay } from "@/content/prompts";
 // Load the session record type
 import type { SessionRecord } from "@/data/records";
 // Load the repository type
@@ -62,6 +66,8 @@ interface Loaded {
   session: SessionRecord | null;
   // The first try, when the session is a retry
   original: SessionRecord | null;
+  // An earlier day's recording of the same prompt, with both practice day numbers, for "then and now"
+  earlier: { then: SessionRecord; thenDay: number; nowDay: number } | null;
 }
 
 // The transcript with fillers marked quietly
@@ -78,21 +84,21 @@ function Transcript({ text }: { text: string }) {
   );
 }
 
-// A player for a session's saved audio (draws nothing if the audio is gone)
-function Playback({ repo, session }: { repo: Repository; session: SessionRecord }) {
+// Load a session's saved audio and make a temporary address for it (null while loading or if the audio is gone)
+function useAudioUrl(repo: Repository, audioKey: string | null): string | null {
   // Temporary address of the audio in this browser
   const [url, setUrl] = useState<string | null>(null);
 
   // Load the audio and make an address for it; release it when leaving
   useEffect(() => {
     // Nothing to load if the audio was pruned
-    if (!session.audioKey) return;
+    if (!audioKey) return;
     // Ignore the result if the screen closes first
     let cancelled = false;
     // The address made, so it can be released
     let made: string | null = null;
     // Read the audio
-    repo.getAudio(session.audioKey).then((audio) => {
+    repo.getAudio(audioKey).then((audio) => {
       // Stop if the screen closed or the audio is missing
       if (cancelled || !audio) return;
       // Make the address
@@ -107,8 +113,16 @@ function Playback({ repo, session }: { repo: Repository; session: SessionRecord 
       // Free the memory behind the address
       if (made) URL.revokeObjectURL(made);
     };
-  }, [repo, session.audioKey]);
+  }, [repo, audioKey]);
 
+  // Hand back the address
+  return url;
+}
+
+// A player for a session's saved audio (draws nothing if the audio is gone)
+function Playback({ repo, session }: { repo: Repository; session: SessionRecord }) {
+  // The audio's address
+  const url = useAudioUrl(repo, session.audioKey);
   // Nothing to play
   if (!url) return null;
   // The player, with a note when this is the baseline
@@ -122,6 +136,88 @@ function Playback({ repo, session }: { repo: Repository; session: SessionRecord 
   );
 }
 
+// One line of numbers for a take, such as "Day 1: 4.2 fillers a minute, 172 words a minute."
+function takeNumbers(day: number, session: SessionRecord): string {
+  // Day, filler rate, and speed
+  return `Day ${day}: ${formatRate(session.fillersPerMinute)} fillers a minute, ${Math.round(session.wordsPerMinute)} words a minute.`;
+}
+
+// Then and now: an earlier day's recording of the same prompt beside this one, with a button to hear them in turn
+function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; then: SessionRecord; now: SessionRecord; thenDay: number; nowDay: number }) {
+  // The earlier audio's address
+  const thenUrl = useAudioUrl(repo, then.audioKey);
+  // This session's audio address
+  const nowUrl = useAudioUrl(repo, now.audioKey);
+  // The earlier player
+  const thenPlayer = useRef<HTMLAudioElement>(null);
+  // This session's player
+  const nowPlayer = useRef<HTMLAudioElement>(null);
+
+  // Play the earlier take, then this one when it ends
+  function playBoth() {
+    // Both players are needed
+    const first = thenPlayer.current;
+    // (and the second)
+    const second = nowPlayer.current;
+    // Nothing to do without both
+    if (!first || !second) return;
+    // Start the second when the first finishes
+    first.onended = () => {
+      // Only once
+      first.onended = null;
+      // Play from the start
+      second.currentTime = 0;
+      // Start it (the browser may refuse without a click, which is fine)
+      void second.play().catch(() => {});
+    };
+    // Play the first from the start
+    first.currentTime = 0;
+    // Start it
+    void first.play().catch(() => {});
+  }
+
+  // Draw both takes
+  return (
+    <div className="mt-5 border-y border-rule py-4">
+      {/* Small heading */}
+      <p className="text-footnote italic text-ink-muted">Then and now, same prompt</p>
+      {/* The earlier take */}
+      <p className="mt-3 text-footnote">{takeNumbers(thenDay, then)}</p>
+      {/* Its player, if the audio is still on this device */}
+      {thenUrl && <audio ref={thenPlayer} controls src={thenUrl} aria-label={`Your recording from day ${thenDay}`} className="mt-1 w-full" />}
+      {/* This take */}
+      <p className="mt-3 text-footnote">{takeNumbers(nowDay, now)}</p>
+      {/* Its player */}
+      {nowUrl && <audio ref={nowPlayer} controls src={nowUrl} aria-label={`Your recording from day ${nowDay}`} className="mt-1 w-full" />}
+      {/* Hear both in turn */}
+      {thenUrl && nowUrl && (
+        <button type="button" onClick={playBoth} className="mt-3 italic underline underline-offset-4">
+          Play both, then and now
+        </button>
+      )}
+    </div>
+  );
+}
+
+// A read-aloud passage with each word marked as heard or not
+function MarkedPassage({ check }: { check: ReadingCheck }) {
+  // Words in order, separated by spaces; unheard words struck through in the quiet filler color
+  return (
+    <p className="text-running">
+      {/* One span per word */}
+      {check.words.map((word, index) => (
+        // A single word
+        <span key={index}>
+          {/* The word, marked */}
+          <span data-read={word.read ? "true" : "false"} className={word.read ? "" : "text-filler line-through decoration-1"}>{word.text}</span>
+          {/* The space after it */}
+          {" "}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 // The secondary number shown under the title: whichever the headline does not already say
 function sideNumber(session: SessionRecord): string {
   // In pace week the headline says the speed, so show the fillers
@@ -131,7 +227,11 @@ function sideNumber(session: SessionRecord): string {
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ repo, session, now, note }: { repo: Repository; session: SessionRecord; now: Date; note: string }) {
+function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"] }) {
+  // The passage, for a read-aloud session
+  const passage = session.mode === "read" ? findPassage(session.promptId) : undefined;
+  // How much of the passage was heard
+  const reading = passage ? alignReading(passage.body, session.transcript) : null;
   // Whether this was an old warm-up (it leads into a Record Response instead of a retry)
   const warmup = session.mode === "warmup";
   // Whether this was a Table Topic
@@ -144,26 +244,38 @@ function FeedbackView({ repo, session, now, note }: { repo: Repository; session:
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
+      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
         <div className={`${showTranscript ? "mt-6" : "hidden"} md:order-1 md:mt-0 md:block`}>
           {/* Small heading */}
-          <p className="italic text-ink-muted">What you said</p>
-          {/* The words */}
-          <div className="mt-3 max-w-[46ch]"><Transcript text={session.transcript} /></div>
+          <p className="italic text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}</p>
+          {/* The words: the passage marked for a reading, otherwise the transcript */}
+          <div className="mt-3 max-w-[46ch]">{reading ? <MarkedPassage check={reading} /> : <Transcript text={session.transcript} />}</div>
+          {/* For a reading, what the marks mean */}
+          {reading && <p className="mt-3 max-w-[46ch] text-footnote italic text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.</p>}
         </div>
         {/* The notes (first on a phone, margin on a computer) */}
         <aside className="order-first flex flex-1 flex-col md:order-2">
           {/* The focus number as a sentence (or the focus's name when no number measures it) */}
-          <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
+          {reading ? (
+            <>
+              {/* How much of the passage was read */}
+              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">You read {reading.percentRead}% of the words.</p>
+              {/* The detail */}
+              <p className="mt-2 text-footnote italic text-ink-muted">{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
+            </>
+          ) : (
+            // The focus number as a sentence
+            <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
+          )}
           {/* When there is no number, say why */}
-          {!measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
+          {!reading && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
           {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec)}</p>}
           {/* Listen back */}
-          <Playback repo={repo} session={session} />
+          {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
           {/* Feedback, or a note that it has not arrived */}
           {session.feedback ? (
             <>
@@ -200,7 +312,7 @@ function FeedbackView({ repo, session, now, note }: { repo: Repository; session:
           {warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (
-            <ActionBand action="Try it again" aside="same prompt" href={`/session?${timed ? `mode=${session.mode}&` : ""}prompt=${session.promptId}&retryOf=${session.id}`} />
+            <ActionBand action="Try it again" aside="same prompt" href={`/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}&retryOf=${session.id}`} />
           )}
         </aside>
       </div>
@@ -267,8 +379,14 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       const session = (await repo.getSession(sessionId)) ?? null;
       // Read the first try if this is a retry
       const original = session?.retryOf ? ((await repo.getSession(session.retryOf)) ?? null) : null;
-      // Hand both back
-      return { session, original };
+      // Every session, to find an earlier take of the same prompt
+      const all = session ? await repo.listSessions() : [];
+      // The first earlier day's recording of this prompt
+      const then = session ? earlierTake(all, session) : null;
+      // With its practice day number and this session's
+      const earlier = session && then ? { then, thenDay: practiceDay(all, new Date(then.createdAt)), nowDay: practiceDay(all, new Date(session.createdAt)) } : null;
+      // Hand them back
+      return { session, original, earlier };
     };
     // Load, then ask the coach if feedback is still waiting
     (async () => {
@@ -314,7 +432,7 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       {/* A retry with its first try */}
       {loaded?.session && loaded.original && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} />}
+      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} />}
     </main>
   );
 }

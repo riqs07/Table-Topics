@@ -7,6 +7,8 @@ import { WEEKLY_FOCUSES } from "@/core/focus";
 // Load the session measurements
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
+// Load the passage lookup, for reading aloud
+import { findPassage } from "@/content/prompts";
 // Load the Table Topics timing rules
 import { TOPIC_LIMIT, TOPIC_WINDOW_START, formatClock, targetSeconds, thinkSeconds } from "@/core/recordingRules";
 import type { Feedback, SessionMode } from "@/data/records";
@@ -41,8 +43,10 @@ export interface CoachInput {
   focusId: string;
   // On a retry, the fix given last time; otherwise null
   previousChange: string | null;
-  // Full session, warm-up, Table Topic, or Record Response (missing means a full session)
+  // Full session, warm-up, Table Topic, Record Response, or reading aloud (missing means a full session)
   mode?: SessionMode;
+  // The prompt or passage id; for reading aloud, the passage text is looked up from it
+  promptId?: string;
 }
 
 // Remove transcript tags from the speech itself so it cannot close its own fence
@@ -55,6 +59,8 @@ function fenceSafe(transcript: string): string {
 export function buildCoachMessage(input: CoachInput): string {
   // Find the weekly focus by id
   const focus = WEEKLY_FOCUSES.find((item) => item.id === input.focusId);
+  // On a reading, find the passage from the app's own copy
+  const passage = input.mode === "read" && input.promptId ? findPassage(input.promptId) : undefined;
   // Put the message together line by line
   return [
     // The week's skill, or none if the id is unknown
@@ -71,12 +77,16 @@ export function buildCoachMessage(input: CoachInput): string {
     ...(input.mode === "talk" ? [`This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under ${formatClock(TOPIC_WINDOW_START)} or over ${formatClock(TOPIC_LIMIT)} would not qualify in a contest. It came after a ${thinkSeconds("talk")}-second countdown on a light question and ran ${Math.round(input.durationSec)} seconds. Judge it as a quick, unprepared answer.`] : []),
     // On a Record Response, its preparation and goal, so the coach looks at the whole answer
     ...(input.mode === "response" ? [`This is a prepared response: up to ${thinkSeconds("response")} seconds to think with hints, then a ${targetSeconds("response")}-second goal. It ran ${Math.round(input.durationSec)} seconds. Comment on how the answer was organised across the whole time.`] : []),
+    // On a reading, ask about delivery only
+    ...(input.mode === "read" ? ["This was read aloud from a known text. Comment only on delivery (pace, pauses, skipped or repeated words, fillers), not on the content, which the speaker did not write."] : []),
     // On a retry, the fix to check for
     ...(input.previousChange ? [`This is a retry. The fix you gave last time was: ${input.previousChange}`] : []),
     // A blank line before the transcript
     "",
     // The transcript, fenced off as data
     `<transcript>\n${fenceSafe(input.transcript)}\n</transcript>`,
+    // On a reading, the text that was on screen, fenced off as data too
+    ...(input.mode === "read" && passage ? ["", `<text>\n${passage.body}\n</text>`] : []),
   ].join("\n");
 }
 
