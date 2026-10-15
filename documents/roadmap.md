@@ -47,9 +47,8 @@ Decision 18 in decisions.md has the details. In build order:
 
 VoiceLab is being refocused on public speaking. The step-by-step plan is in [plan-public-speaking.md](plan-public-speaking.md). The phases are:
 
-- **A, reposition:** browser suite, target user, coach wording, focuses, prompts.
+- **A, reposition:** browser suite, target user, coach wording, focuses, prompts. **Done 2026-10-15.**
 - **B, new modes:** event prep, openings and closings, Q&A practice, more lessons, home screen. **Done 2026-10-15.**
-- **A, reposition:** done 2026-10-15.
 - **C, real use.**
 - **D, smarter analysis:** text checks, coach checks backed by quotes, pitch, word timings.
 
