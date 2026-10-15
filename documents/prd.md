@@ -20,7 +20,7 @@ VoiceLab is a private practice app for public speaking. Each session is short: a
 
 | Problem | What the product does about it |
 |---------|--------------------------------|
-| A talk is coming up and practice has no plan | Rehearse my talk, and (planned) a countdown plan to the date |
+| A talk is coming up and practice has no plan | Rehearse my talk, with a countdown plan to the date |
 | Hearing their own voice is uncomfortable | Short, easy first sessions; recordings private by default |
 | "I'm bad at this" is vague, so nothing improves | Exactly one specific fix per session |
 | A wall of scores feels discouraging | Show one or two numbers at a time, tied to the current focus |
@@ -48,7 +48,8 @@ Once a week: complete one **real-world challenge** and mark it done.
 | Read aloud (added 2026-10-15) | Practise delivery on a known text: six public-domain speech excerpts (Lincoln, F. D. Roosevelt, Kennedy, T. Roosevelt, Susan B. Anthony) and six practice passages. Afterwards the passage is shown with words that were not heard struck through, with the percentage read, repeats, and extra words. Reading never sets the baseline and stays out of progress numbers |
 | Pauses on every session (added 2026-10-15) | The loudness readings taken for the level meter are saved, and the session page says how many pauses of at least 0.6 seconds there were, how long on average, and how much of the time was spent speaking. Measured on the device |
 | Pause drill (added 2026-10-15) | Five passages with marked pause points (shown as ‖). Afterwards: how many pauses were taken against the number of marks, plus the reading check |
-| Rehearse my talk (added 2026-10-15) | Paste your own talk or notes with an optional goal in minutes, rehearse with a timing light, hide the text to practise from memory, see how much of the script each run covered, and compare runs from different days. Talks stay on the device; the coach never receives the script |
+| Rehearse my talk (added 2026-10-15) | Paste your own talk or notes with an optional goal in minutes, rehearse with a timing light, step down a memory ladder (full text, keywords, nothing), see how much of the script each run covered, and compare runs from different days. Talks stay on the device; the coach never receives the script |
+| Event prep (added 2026-10-15, plan step B1) | Give a talk the date it will be given, and its page plans each day until then: each section once, then the opening and close twice each, then whole runs with the text, from keywords and from memory, a full rehearsal the day before and a warm-up on the day (compressed when there are fewer days; open practice when the date is more than 30 days away). Sections come from blank lines in the text. Today's step shows its progress, the home screen leads with the next dated talk, and each whole run's length is shown against the goal |
 | Skill path (added 2026-10-15) | Ten short lessons, all open, each one practical public-speaking tip with a practice text built for it: pause before you start, crisp consonants, slow down for numbers and names, pause before the point, land the ending, stress the key word, signposting, the rule of three, a tongue-twister warm-up, a strong close. The tip stays in view while practising; afterwards each lesson has its own check (opening silence, clear words, pace, pauses at the marks, endings that fade, fillers in the close) or, for judgement skills, the coach. Lessons can be repeated any time |
 | Practice library (added 2026-10-15) | Every speech, practice passage, pause drill and tricky-word list in one place, picked freely and repeated as often as wanted; replaces the daily read-aloud option on the home screen |
 | Live transcript | Lets the user see their words as they speak |

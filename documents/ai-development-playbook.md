@@ -32,6 +32,7 @@ These were caught by the agent's own checks. Keep doing these.
 - **A gray filler-word color was slightly too faint (contrast 4.49 instead of 4.5):** caught by the automatic contrast test.
 - **Buttons overflowing on a phone, or not fitting:** caught by screenshots at phone width (rule T8).
 - **Rounding: 3.05 shown as "3.0":** caught by a test written before the code.
+- **Every browser check failed at once (2026-10-15):** an app server left running from a screenshot was still serving the previous build, and the suite reused it. The suite now always starts its own server.
 - **A failing test pushed anyway (2026-10-15):** the agent's commit command piped the test output through `grep` to shorten it. The pipe reported success, so the commit and push went ahead with one test failing. It was fixed in the next commit, before CI finished. The lesson: gate commits on the check's own exit code (`set -o pipefail`, or `pnpm check` on its own), never on filtered output.
 
 ## 2. The one big lesson

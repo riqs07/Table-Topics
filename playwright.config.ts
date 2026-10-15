@@ -40,8 +40,8 @@ export default defineConfig({
     command: `pnpm exec next start --port ${PORT}`,
     // Wait until the home page answers
     url: `http://localhost:${PORT}`,
-    // Reuse a server that is already running, except in CI
-    reuseExistingServer: !process.env.CI,
+    // Always start a fresh server: a leftover one can serve an older build and fail every check (2026-10-15)
+    reuseExistingServer: false,
     // Starting can take a little while
     timeout: 60_000,
   },

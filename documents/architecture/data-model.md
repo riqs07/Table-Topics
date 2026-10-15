@@ -29,6 +29,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | feedback | Keep / change / retry cue, or empty if not yet received |
 | feedbackStatus | pending, done, or failed |
 | loudness | Loudness readings every tenth of a second while recording (0 to 1, two decimals), used to find pauses; missing on older sessions |
+| sectionIndex | For a rehearsal of one section of a talk: which section (counted from 0). Missing or empty for a whole run and for every other mode |
 | audioKey | Link to the saved audio, or empty if pruned |
 
 ### Challenge (one per week)
@@ -48,7 +49,10 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | title | Short title shown in lists |
 | body | The words of the talk or notes (up to 50,000 characters) |
 | goalMinutes | Target length in whole minutes, or empty |
+| eventDate | The day the talk will be given ("2026-10-22"), or missing or empty for none. Drives the countdown plan |
 | createdAt | When it was saved |
+
+A talk's sections are not stored: they are worked out from blank lines in its text each time (`talkSections`), so editing the text never leaves stale sections behind.
 
 Talks are stored in their own collection (added to existing databases by raising the version) and included in the export file; files made before talks existed still import.
 

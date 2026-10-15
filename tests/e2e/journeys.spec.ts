@@ -63,6 +63,53 @@ test("Rehearse my talk: save, rehearse, saved session, history", async ({ page }
   await expect(page.getByRole("link", { name: /Team update|Rehearsal/ }).first()).toBeVisible();
 });
 
+// Event prep: a dated talk in sections, today's step from its page, and progress after the run
+test("Event prep: date a talk, follow today's step, see progress", async ({ page }) => {
+  // Use the stand-in microphone and speech
+  await useStandIns(page);
+  // Open the rehearse page
+  await page.goto("/rehearse");
+  // Give the talk a title
+  await page.getByLabel("Title").fill("Pitch");
+  // Two sections, so the plan has an opening and a close
+  await page.getByLabel("Your talk or notes").fill("The best part of my week was walking home.\n\nI saw a tiny dog in a raincoat.");
+  // A date three days from today, in the browser's own time zone
+  const date = await page.evaluate(() => {
+    // Three days ahead
+    const day = new Date(Date.now() + 3 * 86_400_000);
+    // As "2026-10-18"
+    return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+  });
+  // Set it
+  await page.getByLabel(/Date of the talk/).fill(date);
+  // Save the talk
+  await page.getByRole("button", { name: "Save talk" }).click();
+  // Open its page
+  await page.getByRole("link", { name: "Pitch", exact: true }).click();
+  // Today's step, three days out
+  await expect(page.getByText("Your talk is in 3 days. Today: rehearse the opening and the close, twice each.")).toBeVisible();
+  // Rehearse the opening
+  await page.getByRole("list", { name: "Today" }).getByRole("link").first().click();
+  // Only the opening shows
+  await expect(page.getByTestId("passage")).toHaveText("The best part of my week was walking home.");
+  // Start rehearsing
+  await page.getByRole("button", { name: /Start rehearsing/ }).click();
+  // Recording is under way
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // Wait for it
+  await expect(stop).toBeVisible({ timeout: 10_000 });
+  // Speak past the 10-second minimum
+  await page.waitForTimeout(11_500);
+  // Stop recording
+  await stop.click();
+  // The saved session opens
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+  // Go back to the talk
+  await page.getByRole("link", { name: "Back to your talk" }).click();
+  // The opening shows one of two runs done
+  await expect(page.getByRole("list", { name: "Today" }).getByRole("listitem").first()).toContainText("1 of 2");
+});
+
 // Storage left by another project at the same address (bugs B2 and B4)
 test("works when another app left a database called voicelab", async ({ page }) => {
   // Use the stand-in microphone and speech

@@ -75,7 +75,7 @@ Every step follows the playbook's definition of done (section 4). Docs change in
 
 ## Phase B: New modes
 
-### B1. Event prep: "I'm speaking on [date]" (the main new feature)
+### B1. Event prep: "I'm speaking on [date]" (the main new feature) ✅ done 2026-10-15
 A talk in Rehearse my talk can be given an event date. VoiceLab then builds a countdown plan and shows today's step on the home screen.
 
 - **Data:**
