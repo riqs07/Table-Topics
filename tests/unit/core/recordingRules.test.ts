@@ -171,3 +171,18 @@ describe("Openings and closings", () => {
     expect([timeSignal("bookend", 29), timeSignal("bookend", 30), timeSignal("bookend", 45), timeSignal("bookend", 46)]).toEqual(["none", "yellow", "yellow", "red"]);
   });
 });
+
+// Group the checks about answering an audience question
+describe("Q&A answers", () => {
+  // A one-minute goal, stopping at two, with no countdown
+  it("aims for a minute and stops at two", () => {
+    // Confirm the target, limit and thinking time
+    expect([targetSeconds("qa"), maxSeconds("qa"), thinkSeconds("qa")]).toEqual([60, 120, 0]);
+  });
+
+  // Yellow from 45 seconds, red past a minute
+  it("turns yellow at 45 seconds and red past a minute", () => {
+    // Confirm the light at each point
+    expect([timeSignal("qa", 44), timeSignal("qa", 45), timeSignal("qa", 61)]).toEqual(["none", "yellow", "red"]);
+  });
+});

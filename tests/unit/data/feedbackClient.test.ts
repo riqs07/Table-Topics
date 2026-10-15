@@ -29,6 +29,18 @@ async function repositoryWith(...sessions: ReturnType<typeof makeSession>[]) {
 
 // Group the checks about asking for one session's feedback
 describe("requestFeedback", () => {
+  // A Q&A answer sends its question with it
+  it("sends the question with a Q&A answer", async () => {
+    // A Q&A answer
+    const repository = await repositoryWith(makeSession({ id: "q1", mode: "qa", promptId: "r1", question: "What does it cost?" }));
+    // A network that answers
+    const network = answer(200, { feedback: FEEDBACK });
+    // Ask for feedback
+    await requestFeedback(repository, "q1", { passphrase: "pass", fetchFn: network });
+    // Confirm the question was in the body
+    expect(JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)).question).toBe("What does it cost?");
+  });
+
   // When the server says which setting is wrong, that reason is passed on (it names the setting, never its value)
   it("passes on the server's reason when it is not set up", async () => {
     // A repository with one session
