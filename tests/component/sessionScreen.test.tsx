@@ -11,7 +11,7 @@ import { SessionScreen } from "@/components/screens/SessionScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load a sample session builder
-import { makeSession } from "../support/fixtures";
+import { makeSession, makeTalk } from "../support/fixtures";
 // Load the passphrase storage
 import { savePassphrase } from "@/data/passphrase";
 // Load the daily prompt picker
@@ -269,5 +269,19 @@ describe("SessionScreen", () => {
     render(<SessionScreen sessionId="d" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the title and the headline
     expect([!!(await screen.findByText("Pause drill")), /^You paused once; the passage has \d+ pause marks\.$/.test(screen.getByTestId("reading-headline").textContent ?? "")]).toEqual([true, true]);
+  });
+
+  // A rehearsal says how much of the script was covered
+  it("shows how much of the script a rehearsal covered", async () => {
+    // A repository with the talk
+    const repository = createRepository(new MemoryStore());
+    // Save it
+    await repository.saveTalk(makeTalk());
+    // A rehearsal that said only the first sentence
+    await repository.saveSession(makeSession({ id: "h", mode: "rehearse", promptId: "talk-1", transcript: "good morning everyone", feedback: FEEDBACK, feedbackStatus: "done" }));
+    // Draw the screen
+    render(<SessionScreen sessionId="h" repository={repository} now={NOW} />);
+    // Confirm the title and the headline
+    expect([!!(await screen.findByText("Rehearsal")), /^You covered \d+% of your script\.$/.test((await screen.findByTestId("reading-headline")).textContent ?? "")]).toEqual([true, true]);
   });
 });

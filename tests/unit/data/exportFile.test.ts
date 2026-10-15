@@ -7,7 +7,7 @@ import { createRepository } from "@/data/repository";
 // Load the export and import tools being checked
 import { buildExport, importExport, parseExport } from "@/data/exportFile";
 // Load a sample session builder
-import { makeSession } from "../../support/fixtures";
+import { makeSession, makeTalk } from "../../support/fixtures";
 
 // A fixed "now" for predictable output
 const NOW = new Date(Date.UTC(2026, 9, 12, 18));
@@ -119,11 +119,29 @@ describe("parseExport", () => {
   });
 
   // Table Topics and Record Responses survive a round trip
-  it("keeps both modes", () => {
+  it("keeps every mode", () => {
     // A file with one talk
-    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "t1", mode: "talk" }), makeSession({ id: "r1", mode: "response" }), makeSession({ id: "d1", mode: "pause" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
+    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "t1", mode: "talk" }), makeSession({ id: "r1", mode: "response" }), makeSession({ id: "d1", mode: "pause" }), makeSession({ id: "h1", mode: "rehearse" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
     // Confirm it comes back as a talk
-    expect(parseExport(text).sessions.map((session) => session.mode)).toEqual(["talk", "response", "pause"]);
+    expect(parseExport(text).sessions.map((session) => session.mode)).toEqual(["talk", "response", "pause", "rehearse"]);
+  });
+
+  // Saved talks go into the file and come back; files from before talks existed still import
+  it("carries saved talks, and accepts files without them", async () => {
+    // A repository with a talk
+    const repository = createRepository(new MemoryStore());
+    // Save it
+    await repository.saveTalk(makeTalk());
+    // Export and read the file back
+    const file = parseExport(JSON.stringify(await buildExport(repository, NOW)));
+    // Import into an empty repository
+    const fresh = createRepository(new MemoryStore());
+    // Import it
+    await importExport(fresh, file);
+    // An older file with no talks field
+    const older = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
+    // Confirm the talk round-tripped and the older file parses
+    expect([(await fresh.listTalks()).map((talk) => talk.title), parseExport(older).talks]).toEqual([["Team update"], []]);
   });
 
   // A damaged file with a broken session

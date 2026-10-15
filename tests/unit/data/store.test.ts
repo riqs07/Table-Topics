@@ -184,4 +184,16 @@ describe("IndexedDbStore with an existing database", () => {
     // Confirm saving is refused with a clear reason
     await expect(store.put("audio", "a1", new Blob(["voice"]))).rejects.toThrow(/belongs to something else/);
   });
+
+  // A database made before talks existed gains the new collection without losing anything
+  it("adds the talks collection to a database made before it existed", async () => {
+    // A database with only the original four collections
+    await makeExistingDatabase("voicelab-existing-4", 1, ["sessions", "challenges", "settings", "audio"]);
+    // Use it
+    const store = new IndexedDbStore("voicelab-existing-4");
+    // Save a talk
+    await store.put("talks", "t1", { id: "t1", title: "Toast", body: "Words.", goalMinutes: null, createdAt: "2026-10-12T15:00:00.000Z" });
+    // Confirm it loads back
+    expect((await store.get("talks", "t1"))?.title).toBe("Toast");
+  });
 });

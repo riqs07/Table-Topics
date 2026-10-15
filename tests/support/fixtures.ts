@@ -1,7 +1,7 @@
 // Sample records for tests, so each test only spells out what it cares about
 
 // Load the record types
-import type { SessionRecord } from "@/data/records";
+import type { SessionRecord, TalkRecord } from "@/data/records";
 
 // Build a complete session record, overriding any fields a test needs
 export function makeSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
@@ -35,6 +35,25 @@ export function makeSession(overrides: Partial<SessionRecord> = {}): SessionReco
     feedbackStatus: "pending",
     // No saved audio
     audioKey: null,
+    // Apply the test's changes
+    ...overrides,
+  };
+}
+
+// Build a saved talk for Rehearse my talk, overriding any fields a test needs
+export function makeTalk(overrides: Partial<TalkRecord> = {}): TalkRecord {
+  // Start from sensible defaults and apply the overrides
+  return {
+    // Unique id
+    id: "talk-1",
+    // Title shown in lists
+    title: "Team update",
+    // The words of the talk
+    body: "Good morning everyone. This quarter we shipped three things. First, the new sign-up page. Second, faster search. Third, the mobile app. Thank you.",
+    // A five-minute goal
+    goalMinutes: 5,
+    // When it was saved
+    createdAt: "2026-10-12T15:00:00.000Z",
     // Apply the test's changes
     ...overrides,
   };

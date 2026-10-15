@@ -120,6 +120,14 @@ describe("checkFeedback", () => {
     expect([/This was a pause drill: reading a known text with \d+ marked pauses \(shown as \/\)\. Comment only on pausing and pace\./.test(message), message.includes("<text>")]).toEqual([true, true]);
   });
 
+  // A rehearsal is flagged as the speaker's own talk; the script itself stays on the device
+  it("tells the coach about a rehearsal without sending the script", () => {
+    // Build a rehearsal message
+    const message = buildCoachMessage({ ...SESSION, mode: "rehearse", promptId: "talk-1" });
+    // Confirm the note, and that no text block is included
+    expect([message.includes("This was a rehearsal of the speaker's own prepared talk. Comment on delivery and clarity."), message.includes("<text>")]).toEqual([true, false]);
+  });
+
   // A Record Response is flagged with its goal and thinking time
   it("tells the coach when a session is a Record Response", () => {
     // Build a response message that ran 12 seconds over

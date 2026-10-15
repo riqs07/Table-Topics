@@ -16,7 +16,7 @@ import { createRepository } from "@/data/repository";
 // Load the prompt lists
 import { PASSAGES, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@/content/prompts";
 // Load a sample session builder
-import { makeSession } from "../support/fixtures";
+import { makeSession, makeTalk } from "../support/fixtures";
 
 // Remove drawn screens and fake timers after each check
 afterEach(() => {
@@ -362,6 +362,22 @@ describe("RecordingScreen", () => {
     const passage = await screen.findByTestId("passage");
     // Confirm one pause sign per mark and no raw slashes
     expect([screen.getAllByLabelText("pause here").length, passage.textContent?.includes(" / ")]).toEqual([PAUSE_DRILLS[0]!.body.split(" / ").length - 1, false]);
+  });
+
+  // Rehearsing shows your saved talk, can hide it to practise from memory, and shows the goal
+  it("shows the saved talk when rehearsing, and can hide it", async () => {
+    // A repository with a talk
+    const repository = createRepository(new MemoryStore());
+    // Save it
+    await repository.saveTalk(makeTalk());
+    // Draw a rehearsal of it
+    draw({ mode: "rehearse", promptId: "talk-1", repository });
+    // Confirm the title, the text, the goal, and the start action
+    expect([!!(await screen.findByText("Team update")), !!screen.getByTestId("passage"), !!screen.getByText("of a 5:00 goal"), !!screen.getByRole("button", { name: /Start rehearsing/ })]).toEqual([true, true, true, true]);
+    // Hide the text
+    fireEvent.click(screen.getByRole("button", { name: "Hide the text" }));
+    // Confirm it is hidden and can be shown again
+    expect([screen.queryByTestId("passage"), !!screen.getByRole("button", { name: "Show the text" })]).toEqual([null, true]);
   });
 
   // A one-minute session has no light

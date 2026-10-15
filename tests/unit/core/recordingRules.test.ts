@@ -125,4 +125,25 @@ describe("Pause drill", () => {
     expect([thinkSeconds("pause"), timeSignal("pause", 500), maxSeconds("pause")]).toEqual([0, "none", 600]);
   });
 });
+
+// Group the checks about rehearsing your own talk
+describe("Rehearse my talk", () => {
+  // No thinking time, and up to 30 minutes
+  it("starts straight away and stops at 30 minutes", () => {
+    // Confirm both
+    expect([thinkSeconds("rehearse"), maxSeconds("rehearse")]).toEqual([0, 1800]);
+  });
+
+  // With a goal, the light turns yellow 45 seconds before it and red past it; without one, no light
+  it("lights up only when the talk has a goal", () => {
+    // Confirm with a five-minute goal, then without
+    expect([timeSignal("rehearse", 254, 300), timeSignal("rehearse", 255, 300), timeSignal("rehearse", 301, 300), timeSignal("rehearse", 301)]).toEqual(["none", "yellow", "red", "none"]);
+  });
+
+  // The timing sentence uses the talk's own goal
+  it("compares the length with the talk's goal", () => {
+    // Confirm 12 seconds over a five-minute goal
+    expect(timingSentence("rehearse", 312, 300)).toBe("5:12 against a 5:00 goal, 12 seconds over.");
+  });
+});
 });

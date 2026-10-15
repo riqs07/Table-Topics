@@ -5,7 +5,7 @@ import { MemoryStore } from "@/data/memoryStore";
 // Load the repository being checked
 import { createRepository, type Repository } from "@/data/repository";
 // Load a sample session builder
-import { makeSession } from "../../support/fixtures";
+import { makeSession, makeTalk } from "../../support/fixtures";
 
 // A fixed "now" so default settings are predictable
 const NOW = new Date(2026, 9, 12, 15, 30);
@@ -211,5 +211,22 @@ describe("deleteAllData", () => {
     await repo.pruneAudio();
     // Confirm the first takes of p1, p2, p3 and the latest session keep their audio
     expect((await repo.listSessions()).filter((session) => session.audioKey).map((session) => session.id)).toEqual(["s5", "s3", "s2", "s1"]);
+  });
+});
+
+// Group the checks about saved talks for Rehearse my talk
+describe("talks", () => {
+  // Talks are saved, listed newest first, loaded by id, and deleted
+  it("saves, lists, loads, and deletes talks", async () => {
+    // Save two talks
+    await repo.saveTalk(makeTalk({ id: "t1", createdAt: "2026-10-01T10:00:00.000Z" }));
+    // A newer one
+    await repo.saveTalk(makeTalk({ id: "t2", title: "Toast", createdAt: "2026-10-05T10:00:00.000Z" }));
+    // Confirm the list order and a lookup
+    expect([(await repo.listTalks()).map((talk) => talk.id), (await repo.getTalk("t2"))?.title]).toEqual([["t2", "t1"], "Toast"]);
+    // Delete one
+    await repo.deleteTalk("t1");
+    // Confirm it is gone
+    expect((await repo.listTalks()).map((talk) => talk.id)).toEqual(["t2"]);
   });
 });
