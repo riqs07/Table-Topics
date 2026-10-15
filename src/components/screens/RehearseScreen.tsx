@@ -11,6 +11,8 @@ import { Masthead } from "@/components/script/Masthead";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the reading-time estimate
 import { readingSeconds } from "@/core/recordingRules";
+// Load the days-to-go counter
+import { daysAway, daysUntil } from "@/core/eventPrep";
 // Load the talk record type
 import type { TalkRecord } from "@/data/records";
 
@@ -29,6 +31,8 @@ export function RehearseScreen(props: ScreenProps) {
   const [body, setBody] = useState("");
   // The form's goal in minutes, as typed
   const [goal, setGoal] = useState("");
+  // The date of the talk, as typed ("2026-10-22"), or empty
+  const [eventDate, setEventDate] = useState("");
   // A message about the form, if any
   const [message, setMessage] = useState("");
   // The talk waiting for delete confirmation, if any
@@ -68,6 +72,8 @@ export function RehearseScreen(props: ScreenProps) {
       body: body.trim().slice(0, MAX_LENGTH),
       // The goal, if it is sensible
       goalMinutes: minutes >= 1 && minutes <= 60 ? minutes : null,
+      // The date, when a valid one was picked
+      eventDate: /^\d{4}-\d{2}-\d{2}$/.test(eventDate) ? eventDate : null,
       // When it was saved
       createdAt: (today ?? new Date()).toISOString(),
     };
@@ -81,6 +87,8 @@ export function RehearseScreen(props: ScreenProps) {
     setBody("");
     // (the goal)
     setGoal("");
+    // Clear the date
+    setEventDate("");
     // Confirm
     setMessage(`Saved “${talk.title}”.`);
   }
@@ -119,10 +127,10 @@ export function RehearseScreen(props: ScreenProps) {
             <li key={talk.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3">
               {/* Title and length */}
               <span className="min-w-0 flex-1">
-                {/* Title */}
-                <span className="font-display text-cue">{talk.title}</span>
+                {/* Title, leading to the talk's page and plan */}
+                <Link href={`/talk?id=${talk.id}`} className="font-display text-cue underline-offset-4 hover:underline">{talk.title}</Link>
                 {/* Length */}
-                <span className="ml-2 text-footnote italic text-ink-muted">about {Math.round(readingSeconds(talk.body) / 60)} min{talk.goalMinutes ? ` · goal ${talk.goalMinutes} min` : ""}</span>
+                <span className="ml-2 text-footnote italic text-ink-muted">about {Math.round(readingSeconds(talk.body) / 60)} min{talk.goalMinutes ? ` · goal ${talk.goalMinutes} min` : ""}{today && talk.eventDate ? ` · ${daysAway(daysUntil(talk.eventDate, today))}` : ""}</span>
               </span>
               {/* Rehearse it */}
               <Link href={`/session?mode=rehearse&prompt=${talk.id}`} aria-label={`Rehearse “${talk.title}”`} className="underline underline-offset-4">Rehearse</Link>
@@ -168,6 +176,13 @@ export function RehearseScreen(props: ScreenProps) {
           <input type="number" min={1} max={60} value={goal} onChange={(event) => setGoal(event.target.value)} className="w-20 border-b border-ink bg-transparent py-1" />
         </label>
         {/* Save */}
+        {/* The date of the talk, for a countdown plan */}
+        <label className="flex items-baseline gap-3">
+          {/* Its name */}
+          <span>Date of the talk (optional)</span>
+          {/* The field */}
+          <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="border-b border-ink bg-transparent py-1" />
+        </label>
         <button type="submit" className="self-start bg-accent px-5 py-2 text-accent-ink">Save talk</button>
         {/* Message */}
         {message && <p role="status" className="text-ink-muted">{message}</p>}

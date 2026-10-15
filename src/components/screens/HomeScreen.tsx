@@ -25,6 +25,10 @@ import { practiceWeek } from "@/core/practiceWeek";
 import { currentStreak } from "@/core/streak";
 // Load the repository type
 import type { Repository } from "@/data/repository";
+// Load the talk record type
+import type { TalkRecord } from "@/data/records";
+// Load the event-prep rules, for the next talk's countdown
+import { daysAway, daysUntil, eventPlan, prepHeadline } from "@/core/eventPrep";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 
@@ -44,6 +48,24 @@ interface HomeData {
   weekStart: string;
   // Whether the challenge is done
   challengeDone: boolean;
+  // The soonest talk with a date still to come, with days left and today's step, or null
+  nextTalk: { talk: TalkRecord; daysLeft: number; headline: string } | null;
+}
+
+// The soonest talk whose date is today or later, with its days left and today's step
+function nextTalkFrom(talks: ReadonlyArray<TalkRecord>, now: Date): HomeData["nextTalk"] {
+  // Dated talks still to come, soonest first
+  const coming = talks
+    .filter((talk) => talk.eventDate)
+    .map((talk) => ({ talk, daysLeft: daysUntil(talk.eventDate ?? "", now) }))
+    .filter((entry) => entry.daysLeft >= 0)
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+  // The soonest
+  const soonest = coming[0];
+  // Today's step for it
+  const step = soonest ? eventPlan(soonest.daysLeft)?.[0] : undefined;
+  // Hand it back with its sentence, or nothing
+  return soonest && step ? { ...soonest, headline: prepHeadline(soonest.daysLeft, step) } : null;
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
@@ -80,6 +102,8 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     weekStart: week.weekStart.toISOString(),
     // Whether it is done
     challengeDone: Boolean(record?.completedAt),
+    // The next talk with a date
+    nextTalk: nextTalkFrom(await repository.listTalks(), now),
   };
 }
 
@@ -146,6 +170,8 @@ export function HomeScreen(props: ScreenProps) {
               This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>. {data.focus.description}
             </p>
           )}
+          {/* The next talk's countdown */}
+          {data?.nextTalk && <p className="mt-2 text-ink md:mt-4">{data.nextTalk.headline}</p>}
         </aside>
 
         {/* Main column */}
@@ -191,6 +217,8 @@ export function HomeScreen(props: ScreenProps) {
               </label>
             </Footnote>
           )}
+          {/* The next talk with a date, leading to its plan */}
+          {data?.nextTalk && <ActionBand quiet action={`“${data.nextTalk.talk.title}”`} aside={`${daysAway(data.nextTalk.daysLeft)} · today’s plan`} href={`/talk?id=${data.nextTalk.talk.id}`} />}
           {/* The two modes: a Table Topic on a surprise question, or a prepared response to the prompt above */}
           {topic && <ActionBand quiet action="Table Topic" aside="surprise question · 1 to 2 min" href={`/session?mode=talk&prompt=${topic.id}`} />}
           {/* The practice library: pick any speech, passage, drill or word list to read aloud */}

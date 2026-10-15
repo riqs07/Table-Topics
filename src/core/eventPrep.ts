@@ -90,6 +90,12 @@ export function daysUntil(eventDate: string, today: Date): number {
   return daysBetween(today, new Date(year ?? 0, (month ?? 1) - 1, day ?? 1));
 }
 
+// How far away a talk's date is, in words
+export function daysAway(days: number): string {
+  // Past, today, tomorrow, or a number of days
+  return days < 0 ? "date passed" : days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
+}
+
 // The plan from today to the talk, one step a day; null once the date has passed
 export function eventPlan(daysLeft: number): PrepStep[] | null {
   // Past dates have no plan
@@ -169,6 +175,14 @@ const STEP_TEXT: Readonly<Record<StepKind, string>> = {
   // Warm-up (not used; the day itself has its own sentence)
   warmup: "an easy run from keywords.",
 };
+
+// What a later day holds, as a sentence of its own (for the list of coming days)
+export function stepText(kind: StepKind): string {
+  // The day itself
+  if (kind === "warmup") return "The day of the talk: warm up, then one easy run from keywords.";
+  // Any other day, starting with a capital
+  return STEP_TEXT[kind].charAt(0).toUpperCase() + STEP_TEXT[kind].slice(1);
+}
 
 // The sentence for the home screen: how long is left and what to do today
 export function prepHeadline(daysLeft: number, step: PrepStep): string {
