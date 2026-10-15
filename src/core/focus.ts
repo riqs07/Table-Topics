@@ -18,7 +18,7 @@ export interface Focus {
 // Every focus, in the order a new user meets them (public-speaking skills, decision 22)
 export const WEEKLY_FOCUSES: ReadonlyArray<Focus> = [
   // Focus 1: the first seconds of a talk
-  { id: "strong-opening", title: "Strong opening", description: "Pause, then start with something worth hearing. No \"so, um\".", needsAudioAnalysis: false },
+  { id: "strong-opening", title: "Strong opening", description: "Pause, then start with something worth hearing. No “so, um”.", needsAudioAnalysis: false },
   // Focus 2: a point the audience can follow
   { id: "clear-structure", title: "Clear structure", description: "Say your point first, then a reason and an example.", needsAudioAnalysis: false },
   // Focus 3: silence as a tool
@@ -26,7 +26,7 @@ export const WEEKLY_FOCUSES: ReadonlyArray<Focus> = [
   // Focus 4: fewer ums and uhs
   { id: "cut-fillers", title: "Cut filler words", description: "Replace um and uh with a short pause.", needsAudioAnalysis: false },
   // Focus 5: the last thing the audience hears
-  { id: "strong-close", title: "Strong close", description: "End on your point, then stop. No trailing \"so, yeah\".", needsAudioAnalysis: false },
+  { id: "strong-close", title: "Strong close", description: "End on your point, then stop. No trailing “so, yeah”.", needsAudioAnalysis: false },
   // Focus 6: needs pitch, which the app cannot measure yet (plan step D4)
   { id: "vocal-variety", title: "Vocal variety", description: "Change your pace and pitch to keep listeners with you.", needsAudioAnalysis: true },
 ];
