@@ -342,4 +342,20 @@ describe("SessionScreen", () => {
     // Confirm the title, the opening-words finding, the timing, and the retry link
     expect([!!(await screen.findByText("Opening drill")), !!screen.getByText("You opened with “Um, so”. Start on your first real word instead."), !!screen.getByText("0:38 against a 0:45 goal, 7 seconds to spare."), screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, true, true, "/session?mode=bookend&prompt=b001&retryOf=b"]);
   });
+
+  // A rehearsal leads to Q&A practice, and a Q&A answer shows its question and leads back
+  it("links a rehearsal to Q&A practice, and shows a Q&A answer's question", async () => {
+    // A rehearsal and an answer to one of its questions
+    const repository = await repositoryWith(makeSession({ id: "r1", mode: "rehearse", promptId: "talk-1", questions: ["Why now?"], feedback: FEEDBACK, feedbackStatus: "done" }), makeSession({ id: "q1", mode: "qa", promptId: "r1", question: "Why now?", durationSec: 50, feedback: FEEDBACK, feedbackStatus: "done" }));
+    // Draw the rehearsal
+    render(<SessionScreen sessionId="r1" repository={repository} now={NOW} />);
+    // Confirm the link to Q&A practice
+    expect((await screen.findByRole("link", { name: "Practise Q&A" })).getAttribute("href")).toBe("/qa?from=r1");
+    // Clear the page
+    cleanup();
+    // Draw the answer
+    render(<SessionScreen sessionId="q1" repository={repository} now={NOW} />);
+    // Confirm the title, the question, the timing, and the retry of the same question
+    expect([!!(await screen.findByText("Q&A answer")), !!screen.getByText("Why now?"), !!screen.getByText("0:50 against a 1:00 goal, 10 seconds to spare."), screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, true, true, "/session?mode=qa&prompt=r1&question=0&retryOf=q1"]);
+  });
 });

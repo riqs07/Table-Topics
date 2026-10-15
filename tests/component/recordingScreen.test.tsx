@@ -666,4 +666,28 @@ describe("RecordingScreen", () => {
     // Confirm the task, the tip, and the goal
     expect([!!(await screen.findByText("Open a talk on why your team needs a new tool.")), !!screen.getByText(/Stand still, breathe in, look up/), !!screen.getByText("of a 0:45 goal")]).toEqual([true, true, true]);
   });
+
+  // A Q&A answer shows the question it answers, and saves it with the answer
+  it("shows the question for a Q&A answer and saves it", async () => {
+    // A repository with a rehearsal that has questions
+    const repository = createRepository(new MemoryStore());
+    // Save it
+    await repository.saveSession(makeSession({ id: "r1", mode: "rehearse", questions: ["What does it cost?", "Why now?"] }));
+    // Draw an answer to the second question
+    const { clock, navigate } = draw({ mode: "qa", promptId: "r1", questionIndex: 1, repository });
+    // Confirm the question and the one-minute goal
+    expect([!!(await screen.findByText("Why now?")), !!screen.getByText("of a 1:00 goal")]).toEqual([true, true]);
+    // Start
+    fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
+    // Speak for 20 seconds
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Advance the clock
+    clock.advance(20_000);
+    // Stop
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm the answer saved its question
+    expect((await repository.listSessions()).find((session) => session.mode === "qa")).toMatchObject({ promptId: "r1", question: "Why now?" });
+  });
 });
