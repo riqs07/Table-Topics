@@ -49,6 +49,8 @@ describe("createClaudeCoach", () => {
     expect(sent.output_config.format.type).toBe("json_schema");
     // Confirm the transcript was in the user message
     expect(JSON.stringify(sent.messages)).toContain("<transcript>");
+    // Confirm there is room for the model's thinking plus the reply (thinking is always on for this model; a small cap cut replies off)
+    expect(sent.max_tokens).toBeGreaterThanOrEqual(16000);
   });
 
   // A safety decline is reported as such, not as a crash

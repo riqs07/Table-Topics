@@ -11,8 +11,8 @@ import { COACH_SYSTEM_PROMPT, FeedbackSchema, buildCoachMessage, checkFeedback, 
 // Load the feedback record type
 import type { Feedback } from "@/data/records";
 
-// Room for the model's thinking plus a short JSON reply
-const MAX_TOKENS = 4000;
+// Room for the model's thinking (always on for the coach model) plus a short JSON reply; too small a cap cuts the reply off and no feedback arrives
+const MAX_TOKENS = 16000;
 
 // What asking the coach can produce
 export type CoachResult =
