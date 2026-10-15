@@ -55,6 +55,36 @@ describe("HomeScreen", () => {
     expect([band.getAttribute("href"), band.textContent?.includes("in 7 days"), !!screen.getByText(/Today: rehearse each section once/), screen.queryByRole("link", { name: /Old toast/ })]).toEqual(["/talk?id=soon", true, true, null]);
   });
 
+  // With a dated talk, the talk's plan becomes the main action at the bottom and a response becomes a quieter option
+  it("makes the next talk the main action when it has a date", async () => {
+    // A repository with a talk a week away
+    const repository = emptyRepository();
+    // Save it
+    await repository.saveTalk(makeTalk({ id: "soon", title: "Pitch", eventDate: "2026-10-20" }));
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // Wait for the band
+    await screen.findByRole("link", { name: /Pitch/ });
+    // The bands, top to bottom
+    const bands = screen.getAllByRole("link").filter((link) => /Pitch|Table Topic|Record a response|Practice library/.test(link.textContent ?? "")).map((link) => (link.textContent ?? "").replace(/\s+/g, " ").split(" ")[0]);
+    // Confirm the order, with the talk last (the filled main band)
+    expect(bands).toEqual(["Table", "Record", "Practice", "“Pitch”"]);
+  });
+
+  // Q&A practice is offered after the latest rehearsal or response
+  it("offers Q&A practice on the latest rehearsal or response", async () => {
+    // A repository with an older response and a newer rehearsal
+    const repository = emptyRepository();
+    // The response
+    await repository.saveSession(makeSession({ id: "old", mode: "response", createdAt: "2026-10-11T10:00:00.000Z" }));
+    // The rehearsal
+    await repository.saveSession(makeSession({ id: "new", mode: "rehearse", promptId: "talk-1", createdAt: "2026-10-12T10:00:00.000Z" }));
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // Confirm the link goes to the newest
+    expect((await screen.findByRole("link", { name: "Q&A practice" })).getAttribute("href")).toBe("/qa?from=new");
+  });
+
   // The main action records a response to today's prompt
   it("links the main action to a Record Response on today's prompt", async () => {
     // Draw the screen
