@@ -44,7 +44,7 @@ describe("createClaudeCoach", () => {
     // Confirm the model
     expect(sent.model).toBe(COACH_MODEL);
     // Confirm the coach instructions were sent as the system prompt
-    expect(JSON.stringify(sent.system)).toContain("VoiceLab's speaking coach");
+    expect(JSON.stringify(sent.system)).toContain("VoiceLab's public-speaking coach");
     // Confirm the response must follow the JSON schema
     expect(sent.output_config.format.type).toBe("json_schema");
     // Confirm the transcript was in the user message
