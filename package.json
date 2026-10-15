@@ -17,7 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "live-check": "tsx --env-file-if-exists=.env.local scripts/live-check.ts"
+    "live-check": "tsx --env-file-if-exists=.env.local scripts/live-check.ts",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.133.0",
@@ -28,6 +29,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.0",
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",

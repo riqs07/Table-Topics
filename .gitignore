@@ -17,3 +17,7 @@ next-env.d.ts
 # Logs and OS clutter
 *.log
 .DS_Store
+
+# Browser check output
+test-results/
+playwright-report/

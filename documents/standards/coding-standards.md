@@ -24,7 +24,7 @@ Evidence the inspector can check:
 |-------|------|----------------|----------------|
 | Unit | Vitest | Pure logic in `core/`: metrics, feedback parsing, focus rules, streaks | Most |
 | Component | Testing Library | Screens and components, with fakes for audio and the AI | Some |
-| End to end | Playwright | The full loop: prompt, record, feedback, retry | A few |
+| End to end | Playwright (`tests/e2e`, run with `pnpm build && pnpm e2e`, and in CI) | Every page loaded directly with a clean console and no sideways scrolling at phone width; the main navigation from every page; whole journeys with a stand-in microphone; storage left by another app | Every page, plus a few journeys. A new page or mode joins the list in `tests/e2e/support/fixtures.ts` |
 
 ## 3. What is faked in tests
 

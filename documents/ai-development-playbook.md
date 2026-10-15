@@ -95,7 +95,7 @@ Things that would have prevented B2 to B4 if done on day one:
 
 Concrete steps that follow from the rules above, not yet done:
 
-1. **Move the browser checks into the repository as a Playwright suite and run it in CI** (T5, T10). It would cover both modes end to end, load every page directly, and fail on console errors.
+1. ~~**Move the browser checks into the repository as a Playwright suite and run it in CI** (T5, T10).~~ Done 2026-10-15: `tests/e2e` loads every page directly, checks phone width and the navigation from every page, runs Table Topic, a rehearsal and the leftover-database case end to end, and fails on any console error. A planted console error was used to confirm it really fails.
 2. **Turn on typed linting with `no-floating-promises`** (S3).
 3. **Do a real-voice test on desktop and a phone test** (checkpoints C3 and C5). Nothing so far has used a real microphone.
 4. **Bring the coding standards in line with section 8**: test-first only for bug fixes, fewer and broader screen tests, and comments that explain why. Waiting on the user's go-ahead, since the standards are theirs.

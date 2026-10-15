@@ -35,3 +35,14 @@ jobs:
       - run: pnpm test
       # Confirm the app builds for production
       - run: pnpm build
+      # Install the browser the browser checks use
+      - run: pnpm exec playwright install --with-deps chromium
+      # Run the browser checks against the production build (playbook rule T10)
+      - run: pnpm e2e
+      # Keep the traces of failed browser checks for debugging
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-check-traces
+          path: test-results/
+          retention-days: 7

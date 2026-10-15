@@ -23,7 +23,7 @@ Every step follows the playbook's definition of done (section 4). Docs change in
 
 ## Phase A: Reposition for public speaking
 
-### A0. Browser test suite in the repository (done first, because B adds screens)
+### A0. Browser test suite in the repository (done first, because B adds screens) ✅ done 2026-10-15
 - **What:** move the scratchpad Playwright checks into `tests/e2e/`. Then:
   - load every page directly and fail on any console error;
   - click every navigation link;

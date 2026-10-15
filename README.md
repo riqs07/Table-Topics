@@ -14,6 +14,7 @@ You need Node.js 22 or newer and pnpm 10.
 pnpm fresh     # get the latest code, install new packages, clear the cache, start the app
 pnpm dev       # just start the app at http://localhost:3000
 pnpm check     # lint, type check, and run tests
+pnpm build && pnpm e2e   # browser checks in Chromium (set CHROMIUM_PATH to use a local Chromium)
 ```
 
 Use `pnpm fresh` whenever new work has been pushed. The first time on a new computer, run `pnpm install` once before it.
