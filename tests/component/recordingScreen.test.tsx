@@ -658,4 +658,12 @@ describe("RecordingScreen", () => {
     // Remove the page
     container.remove();
   });
+
+  // An openings drill shows its task, a tip, and the 45-second goal
+  it("shows an opening drill's task, tip and goal", async () => {
+    // Draw an opening drill
+    draw({ mode: "bookend", promptId: "b001" });
+    // Confirm the task, the tip, and the goal
+    expect([!!(await screen.findByText("Open a talk on why your team needs a new tool.")), !!screen.getByText(/Stand still, breathe in, look up/), !!screen.getByText("of a 0:45 goal")]).toEqual([true, true, true]);
+  });
 });

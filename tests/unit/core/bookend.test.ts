@@ -23,7 +23,7 @@ describe("bookendResult for an opening", () => {
     // Speech straight away
     const session = makeSession({ mode: "bookend", transcript: "So, um, today I want to talk about tools.", loudness: run(0.5, 40) });
     // Confirm both sentences
-    expect(bookendResult("opening", session)).toEqual({ headline: "You started after 0.0 seconds. Try waiting a full breath.", detail: "You opened with “So, um,”. Start on your first real word instead." });
+    expect(bookendResult("opening", session)).toEqual({ headline: "You started after 0.0 seconds. Try waiting a full breath.", detail: "You opened with “So, um”. Start on your first real word instead." });
   });
 });
 
@@ -32,7 +32,7 @@ describe("bookendResult for a close", () => {
   // A clean last line
   it("praises a close without fillers", () => {
     // A clean close; the voice holds up
-    const session = makeSession({ mode: "bookend", transcript: "So pick one customer and call them this week. Thank you.", loudness: [...run(0.5, 30), ...run(0, 10)] });
+    const session = makeSession({ mode: "bookend", transcript: "Pick one customer and call them this week. Thank you.", loudness: [...run(0.5, 30), ...run(0, 10)] });
     // Confirm both sentences
     expect(bookendResult("close", session)).toEqual({ headline: "No fillers in your closing.", detail: "None of your sentences faded at the end." });
   });
