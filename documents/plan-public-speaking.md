@@ -46,7 +46,7 @@ Every step follows the playbook's definition of done (section 4). Docs change in
   - The mode notes stay as they are.
 - **Tests:** the existing coach-message tests are updated. A new test checks that the prompt no longer mentions being "outgoing".
 
-### A3. Weekly focuses become speaking skills
+### A3. Weekly focuses become speaking skills ✅ done 2026-10-15
 - **What:** the new focus list in `src/core/focus.ts`, in this order:
   1. Strong opening
   2. Clear structure

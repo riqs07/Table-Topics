@@ -25,7 +25,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | transcript | Full text of what was said |
 | wordsPerMinute | Computed from transcript and duration |
 | fillersPerMinute | Computed from transcript and duration |
-| focus | The weekly focus active at the time |
+| focus | The weekly focus active at the time. Ids of focuses retired on 2026-10-15 (`start-and-finish`, `pace`, `structure`, `warmth-and-energy`) stay valid; `findFocus` in `core/focus.ts` still knows their names |
 | feedback | Keep / change / retry cue, or empty if not yet received |
 | feedbackStatus | pending, done, or failed |
 | loudness | Loudness readings every tenth of a second while recording (0 to 1, two decimals), used to find pauses; missing on older sessions |

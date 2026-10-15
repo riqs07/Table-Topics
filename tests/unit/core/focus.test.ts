@@ -49,7 +49,7 @@ describe("currentFocus", () => {
     // Work out the focus six days after starting
     const result = currentFocus({ focusIndex: 0, focusStartedOn: day(10, 12) }, day(10, 18, 23));
     // Confirm it is still the first focus
-    expect(result.focus.id).toBe("start-and-finish");
+    expect(result.focus.id).toBe("strong-opening");
     // Confirm the stored start date does not move
     expect(result.focusStartedOn).toEqual(day(10, 12, 0));
   });
@@ -59,7 +59,7 @@ describe("currentFocus", () => {
     // Work out the focus exactly a week after starting
     const result = currentFocus({ focusIndex: 0, focusStartedOn: day(10, 12) }, day(10, 19, 8));
     // Confirm it moved to the second focus
-    expect(result.focus.id).toBe("cut-fillers");
+    expect(result.focus.id).toBe("clear-structure");
     // Confirm the new index is saved
     expect(result.focusIndex).toBe(1);
     // Confirm the start date moved forward one week
@@ -71,7 +71,7 @@ describe("currentFocus", () => {
     // Work out the focus three weeks and two days after starting
     const result = currentFocus({ focusIndex: 0, focusStartedOn: day(10, 1) }, day(10, 24));
     // Confirm it advanced three times
-    expect(result.focus.id).toBe("structure");
+    expect(result.focus.id).toBe("cut-fillers");
     // Confirm the start date is the most recent week boundary
     expect(result.focusStartedOn).toEqual(day(10, 22, 0));
   });
@@ -79,9 +79,9 @@ describe("currentFocus", () => {
   // After the last v1 focus the cycle begins again
   it("wraps back to the first focus after the last v1 focus", () => {
     // Work out the focus a week after starting the last v1 focus
-    const result = currentFocus({ focusIndex: 3, focusStartedOn: day(10, 1) }, day(10, 8));
-    // Confirm it wrapped to the first focus, skipping warmth and energy
-    expect(result.focus.id).toBe("start-and-finish");
+    const result = currentFocus({ focusIndex: 4, focusStartedOn: day(10, 1) }, day(10, 8));
+    // Confirm it wrapped to the first focus, skipping vocal variety
+    expect(result.focus.id).toBe("strong-opening");
     // Confirm the saved index wrapped too
     expect(result.focusIndex).toBe(0);
   });
@@ -91,7 +91,7 @@ describe("currentFocus", () => {
     // Work out the focus on a date before the start
     const result = currentFocus({ focusIndex: 2, focusStartedOn: day(10, 12) }, day(10, 5));
     // Confirm the focus is unchanged
-    expect(result.focus.id).toBe("pace");
+    expect(result.focus.id).toBe("pausing");
     // Confirm the start date is unchanged
     expect(result.focusStartedOn).toEqual(day(10, 12, 0));
   });
@@ -99,9 +99,9 @@ describe("currentFocus", () => {
   // A saved index outside the v1 list (for example from a later version) is brought back into range
   it("brings an out-of-range saved index back into the v1 list", () => {
     // Work out the focus with an index past the end of the list
-    const result = currentFocus({ focusIndex: 5, focusStartedOn: day(10, 12) }, day(10, 12));
-    // Confirm it maps onto the list (5 wraps to 1)
-    expect(result.focus.id).toBe("cut-fillers");
+    const result = currentFocus({ focusIndex: 6, focusStartedOn: day(10, 12) }, day(10, 12));
+    // Confirm it maps onto the list (6 wraps to 1)
+    expect(result.focus.id).toBe("clear-structure");
   });
 
   // A week is seven calendar days even when the clocks change (November 1, 2026 in the test time zone)
@@ -109,6 +109,6 @@ describe("currentFocus", () => {
     // Work out the focus one week after a start just before the clocks change
     const result = currentFocus({ focusIndex: 0, focusStartedOn: day(10, 29) }, day(11, 5, 0));
     // Confirm it advanced exactly once
-    expect(result.focus.id).toBe("cut-fillers");
+    expect(result.focus.id).toBe("clear-structure");
   });
 });

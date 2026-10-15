@@ -345,7 +345,12 @@ function RetryView({ repo, retry, original, now }: { repo: Repository; retry: Se
   // The number for the focus, or the filler rate when the focus has none
   const measure = measureFor(original.focus) ?? measureFor("cut-fillers");
   // Write one try's number with its unit
-  const numberOf = (session: SessionRecord) => (measure ? `${measure.format(measure.read(session))} ${measure.unit}.` : "");
+  const numberOf = (session: SessionRecord) => {
+    // The number, if this try has one (old tries have no pause count)
+    const value = measure?.read(session) ?? null;
+    // The number and its unit, or a plain note
+    return measure && value !== null ? `${measure.format(value)} ${measure.unit}.` : "No count for this try.";
+  };
   // Draw the page
   return (
     <>

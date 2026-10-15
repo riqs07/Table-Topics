@@ -70,12 +70,13 @@ We only show numbers we can compute reliably from a transcript.
 | Filler words per minute | Transcript | Yes |
 | Words per minute | Transcript and duration | Yes |
 | Session length | Timer | Yes |
-| Pauses and hesitation | Needs word timestamps (Whisper) | Later |
+| Pauses (count, length, time spent speaking) | Loudness readings, on the device | Yes (added 2026-10-15) |
+| Exactly where each pause falls | Needs word timestamps (Whisper) | Later |
 | Pitch, tone, energy | Needs audio analysis | Later |
 
 We do **not** present guesses about tone or vocal variety as fact. A transcript cannot support them.
 
-The headline number follows the weekly focus (decided 2026-10-14): fillers a minute in filler week, words a minute in pace week. Weeks with no transcript measure (start and finish, structure) show the focus name and say the notes are what count; the retry screen then says "Your second try is in." instead of comparing numbers. The other number stays visible in smaller type.
+The headline number follows the weekly focus (decided 2026-10-14, focuses changed 2026-10-15): fillers a minute in filler week, pauses a minute in pausing week. Weeks with no measure yet (opening, structure, close) show the focus name and say the notes are what count, as do sessions saved before loudness was kept; the retry screen then says "Your second try is in." instead of comparing numbers. The other number stays visible in smaller type.
 
 ## 6. Feedback format
 
@@ -91,15 +92,18 @@ Tone is direct and kind. No empty praise, no lists of five problems.
 
 The app assigns one focus per week, in this order for a new user:
 
-1. Start and finish: complete your sentences, stop trailing off
-2. Cut filler words
-3. Pace: slow down, pause instead of filling
-4. Structure: point first, then reason
-5. Warmth and energy (needs later audio analysis)
+1. Strong opening: pause, then start with something worth hearing
+2. Clear structure: point first, then a reason and an example
+3. Pausing: pause between ideas instead of filling the gap
+4. Cut filler words
+5. Strong close: end on your point, then stop
+6. Vocal variety (needs pitch analysis, plan step D4)
 
 Feedback and numbers all relate to the current focus.
 
-In v1 the focus changes every 7 calendar days, cycling through 1 to 4 and then starting again. Focus 5 is skipped until audio analysis exists. A user who is away advances one focus per full week missed. (Default set in M3; change it with a note in architecture/decisions.md.)
+These public-speaking skills replaced the earlier focuses (start and finish, pace, structure, warmth and energy) on 2026-10-15. Old sessions keep their focus's name.
+
+In v1 the focus changes every 7 calendar days, cycling through 1 to 5 and then starting again. Focus 6 is skipped until pitch can be measured. A user who is away advances one focus per full week missed. (Default set in M3; change it with a note in architecture/decisions.md.)
 
 ## 8. Removed or deferred
 

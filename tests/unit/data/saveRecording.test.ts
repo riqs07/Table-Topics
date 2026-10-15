@@ -28,7 +28,7 @@ describe("saveRecording", () => {
       durationSec: 30,
       wordsPerMinute: 18,
       fillersPerMinute: 2,
-      focus: "start-and-finish",
+      focus: "strong-opening",
       feedback: null,
       feedbackStatus: "pending",
       audioKey: "new",

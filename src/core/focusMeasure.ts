@@ -2,8 +2,12 @@
 
 // Load the number formatter for filler rates
 import { formatRate } from "@/core/copy";
-// Load the list of weekly focuses, for their titles
-import { WEEKLY_FOCUSES } from "@/core/focus";
+// Load the focus lookup, for titles of current and retired focuses
+import { findFocus } from "@/core/focus";
+// Load the pause finder, for pausing week
+import { findPauses } from "@/core/pauses";
+// Load the spacing of loudness readings
+import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the session record type
 import type { SessionRecord } from "@/data/records";
 
@@ -11,8 +15,8 @@ import type { SessionRecord } from "@/data/records";
 export interface FocusMeasure {
   // Words that follow the number, like "fillers a minute"
   unit: string;
-  // Reads the number from a session
-  read: (session: SessionRecord) => number;
+  // Reads the number from a session, or null when the session cannot give it
+  read: (session: SessionRecord) => number | null;
   // Writes the number for people to read
   format: (value: number) => string;
   // Smallest change worth calling a change
@@ -43,42 +47,58 @@ const PACE: FocusMeasure = {
   noticeable: 3,
 };
 
+// Pausing week: pauses a minute, from the loudness readings, one decimal place
+const PAUSES: FocusMeasure = {
+  // Unit words
+  unit: "pauses a minute",
+  // Count pauses, or nothing for sessions saved before loudness was kept
+  read: (session) => (session.loudness && session.durationSec > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS).count / (session.durationSec / 60) : null),
+  // One decimal place
+  format: formatRate,
+  // Less than one pause a minute either way is noise
+  noticeable: 1,
+};
+
 // The number for a focus, or null when a transcript cannot measure it
 export function measureFor(focusId: string): FocusMeasure | null {
   // Filler week
   if (focusId === "cut-fillers") return FILLERS;
-  // Pace week
+  // Pausing week
+  if (focusId === "pausing") return PAUSES;
+  // Pace week (retired 2026-10-15, still used for old sessions)
   if (focusId === "pace") return PACE;
-  // Finishing sentences, structure, and anything else have no number
+  // Openings, structure, closes, and anything else have no number
   return null;
 }
 
 // The focus title, or a plain fallback if the id is unknown
 function focusTitle(focusId: string): string {
   // Look up the title
-  return WEEKLY_FOCUSES.find((focus) => focus.id === focusId)?.title ?? "Your take";
+  return findFocus(focusId)?.title ?? "Your take";
 }
 
 // The headline sentence on the Feedback screen
 export function headlineFor(session: SessionRecord): string {
   // Find the focus's number
   const measure = measureFor(session.focus);
+  // The number, if there is one
+  const value = measure?.read(session) ?? null;
   // No number: name the focus
-  if (!measure) return `${focusTitle(session.focus)}.`;
+  if (!measure || value === null) return `${focusTitle(session.focus)}.`;
   // Otherwise the number and its unit
-  return `${measure.format(measure.read(session))} ${measure.unit}.`;
+  return `${measure.format(value)} ${measure.unit}.`;
 }
 
 // The headline sentence on the Retry result screen
 export function retryHeadline(retry: SessionRecord, original: SessionRecord): string {
   // Measure by the focus the first try was made under
   const measure = measureFor(original.focus);
-  // No number: a plain statement
-  if (!measure) return "Your second try is in.";
   // Read both numbers
-  const before = measure.read(original);
+  const before = measure?.read(original) ?? null;
   // The retry's number
-  const after = measure.read(retry);
+  const after = measure?.read(retry) ?? null;
+  // No number on either try: a plain statement
+  if (!measure || before === null || after === null) return "Your second try is in.";
   // Too close to call: say it held at the first try's number
   if (Math.abs(after - before) < measure.noticeable) return `Again about ${measure.format(before)} ${measure.unit}.`;
   // Otherwise state both numbers plainly

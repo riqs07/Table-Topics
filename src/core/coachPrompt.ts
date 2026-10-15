@@ -2,8 +2,8 @@
 
 // Load the schema library used to describe and check the feedback shape
 import { z } from "zod";
-// Load the weekly focus list
-import { WEEKLY_FOCUSES } from "@/core/focus";
+// Load the focus lookup, which also knows retired focuses
+import { findFocus } from "@/core/focus";
 // Load the session measurements
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
@@ -62,7 +62,7 @@ function fenceSafe(transcript: string): string {
 // Build the per-session message for the coach
 export function buildCoachMessage(input: CoachInput): string {
   // Find the weekly focus by id
-  const focus = WEEKLY_FOCUSES.find((item) => item.id === input.focusId);
+  const focus = findFocus(input.focusId);
   // On a lesson, find it from the app's own copy
   const lesson = input.mode === "lesson" && input.promptId ? findLesson(input.promptId) : undefined;
   // On a reading, find the passage from the app's own copy

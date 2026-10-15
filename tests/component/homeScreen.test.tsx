@@ -132,7 +132,7 @@ describe("HomeScreen", () => {
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
     // Confirm the second focus is shown
-    expect(await screen.findByText(/cut filler words/i)).toBeTruthy();
+    expect(await screen.findByText(/clear structure/i)).toBeTruthy();
     // Confirm the advance was saved
     await waitFor(async () => expect((await repository.getSettings(NOW)).focusIndex).toBe(1));
   });

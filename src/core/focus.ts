@@ -15,19 +15,39 @@ export interface Focus {
   needsAudioAnalysis: boolean;
 }
 
-// Every focus, in the order a new user meets them
+// Every focus, in the order a new user meets them (public-speaking skills, decision 22)
 export const WEEKLY_FOCUSES: ReadonlyArray<Focus> = [
-  // Focus 1: finish sentences instead of trailing off
-  { id: "start-and-finish", title: "Start and finish", description: "Complete your sentences. Stop trailing off.", needsAudioAnalysis: false },
-  // Focus 2: fewer filler words
+  // Focus 1: the first seconds of a talk
+  { id: "strong-opening", title: "Strong opening", description: "Pause, then start with something worth hearing. No \"so, um\".", needsAudioAnalysis: false },
+  // Focus 2: a point the audience can follow
+  { id: "clear-structure", title: "Clear structure", description: "Say your point first, then a reason and an example.", needsAudioAnalysis: false },
+  // Focus 3: silence as a tool
+  { id: "pausing", title: "Pausing", description: "Pause between ideas instead of filling the gap.", needsAudioAnalysis: false },
+  // Focus 4: fewer ums and uhs
   { id: "cut-fillers", title: "Cut filler words", description: "Replace um and uh with a short pause.", needsAudioAnalysis: false },
-  // Focus 3: slow down
+  // Focus 5: the last thing the audience hears
+  { id: "strong-close", title: "Strong close", description: "End on your point, then stop. No trailing \"so, yeah\".", needsAudioAnalysis: false },
+  // Focus 6: needs pitch, which the app cannot measure yet (plan step D4)
+  { id: "vocal-variety", title: "Vocal variety", description: "Change your pace and pitch to keep listeners with you.", needsAudioAnalysis: true },
+];
+
+// Focuses used before 2026-10-15; old sessions still carry their ids and need their names
+const RETIRED_FOCUSES: ReadonlyArray<Focus> = [
+  // Finish sentences instead of trailing off
+  { id: "start-and-finish", title: "Start and finish", description: "Complete your sentences. Stop trailing off.", needsAudioAnalysis: false },
+  // Slow down
   { id: "pace", title: "Pace", description: "Slow down. Pause instead of filling.", needsAudioAnalysis: false },
-  // Focus 4: make the point first
+  // Point first
   { id: "structure", title: "Structure", description: "Say your point first, then your reason.", needsAudioAnalysis: false },
-  // Focus 5: needs pitch and energy measurement, planned for later
+  // Energy in the voice
   { id: "warmth-and-energy", title: "Warmth and energy", description: "Let your voice carry some feeling.", needsAudioAnalysis: true },
 ];
+
+// Find a focus by its id, current or retired
+export function findFocus(id: string): Focus | undefined {
+  // Current focuses first, then the retired ones
+  return [...WEEKLY_FOCUSES, ...RETIRED_FOCUSES].find((focus) => focus.id === id);
+}
 
 // The focuses v1 can actually measure, in order
 export const V1_FOCUSES: ReadonlyArray<Focus> = WEEKLY_FOCUSES.filter((focus) => !focus.needsAudioAnalysis);
