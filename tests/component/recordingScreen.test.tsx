@@ -366,8 +366,8 @@ describe("RecordingScreen", () => {
     expect([screen.getAllByLabelText("pause here").length, passage.textContent?.includes(" / ")]).toEqual([PAUSE_DRILLS[0]!.body.split(" / ").length - 1, false]);
   });
 
-  // Rehearsing shows your saved talk, can hide it to practise from memory, and shows the goal
-  it("shows the saved talk when rehearsing, and can hide it", async () => {
+  // Rehearsing shows your saved talk and its goal, and the memory ladder moves from full text to keywords to nothing
+  it("shows the saved talk when rehearsing, and steps down the memory ladder", async () => {
     // A repository with a talk
     const repository = createRepository(new MemoryStore());
     // Save it
@@ -376,10 +376,50 @@ describe("RecordingScreen", () => {
     draw({ mode: "rehearse", promptId: "talk-1", repository });
     // Confirm the title, the text, the goal, and the start action
     expect([!!(await screen.findByText("Team update")), !!screen.getByTestId("passage"), !!screen.getByText("of a 5:00 goal"), !!screen.getByRole("button", { name: /Start rehearsing/ })]).toEqual([true, true, true, true]);
-    // Hide the text
-    fireEvent.click(screen.getByRole("button", { name: "Hide the text" }));
-    // Confirm it is hidden and can be shown again
-    expect([screen.queryByTestId("passage"), !!screen.getByRole("button", { name: "Show the text" })]).toEqual([null, true]);
+    // Step to keywords
+    fireEvent.click(screen.getByRole("button", { name: "Keywords" }));
+    // Confirm cue words only
+    expect(screen.getByTestId("passage").textContent).toBe("Good morning … This quarter … First, the … Second, faster … Third, the … Thank you.");
+    // Step to memory
+    fireEvent.click(screen.getByRole("button", { name: "From memory" }));
+    // Confirm the text is gone and that rung is marked
+    expect([screen.queryByTestId("passage"), screen.getByRole("button", { name: "From memory" }).getAttribute("aria-pressed")]).toEqual([null, "true"]);
+  });
+
+  // A rehearsal can start on a rung of the ladder, as today's plan asks
+  it("starts on the rung of the ladder it is given", async () => {
+    // A repository with a talk
+    const repository = createRepository(new MemoryStore());
+    // Save it
+    await repository.saveTalk(makeTalk());
+    // Draw a rehearsal from memory
+    draw({ mode: "rehearse", promptId: "talk-1", repository, ladder: "none" });
+    // Confirm no text once the talk has loaded
+    expect([!!(await screen.findByText("Team update")), screen.queryByTestId("passage")]).toEqual([true, null]);
+  });
+
+  // Rehearsing one section shows only that section, without the whole talk's goal, and saves which section it was
+  it("rehearses one section and saves which one", async () => {
+    // A repository with a talk in three sections
+    const repository = createRepository(new MemoryStore());
+    // Save it
+    await repository.saveTalk(makeTalk({ body: "Good morning.\n\nWe shipped three things.\n\nThank you." }));
+    // Draw a rehearsal of the middle section
+    const { clock, navigate } = draw({ mode: "rehearse", promptId: "talk-1", repository, sectionIndex: 1 });
+    // Confirm only that section shows, named as such, with no goal
+    expect([(await screen.findByTestId("passage")).textContent, !!screen.getByText("Your talk · section 2 of 3"), screen.queryByText("of a 5:00 goal")]).toEqual(["We shipped three things.", true, null]);
+    // Start
+    fireEvent.click(screen.getByRole("button", { name: /Start rehearsing/ }));
+    // Speak for 20 seconds
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Advance the clock
+    clock.advance(20_000);
+    // Stop
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm the section was saved
+    expect((await repository.listSessions())[0]?.sectionIndex).toBe(1);
   });
 
   // The main navigation is there before recording, and hidden while recording so a stray click cannot lose the take
