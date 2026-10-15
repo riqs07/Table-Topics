@@ -66,9 +66,9 @@ describe("HomeScreen", () => {
     // Wait for the band
     await screen.findByRole("link", { name: /Pitch/ });
     // The bands, top to bottom
-    const bands = screen.getAllByRole("link").filter((link) => /Pitch|Table Topic|Record a response|Practice library/.test(link.textContent ?? "")).map((link) => (link.textContent ?? "").replace(/\s+/g, " ").split(" ")[0]);
+    const bands = screen.getAllByRole("link").filter((link) => /Pitch|Table Topic|Record a response|Practice library/.test(link.textContent ?? "")).map((link) => ["Table Topic", "Record a response", "Practice library", "Pitch"].find((name) => (link.textContent ?? "").includes(name)));
     // Confirm the order, with the talk last (the filled main band)
-    expect(bands).toEqual(["Table", "Record", "Practice", "“Pitch”"]);
+    expect(bands).toEqual(["Table Topic", "Record a response", "Practice library", "Pitch"]);
   });
 
   // Q&A practice is offered after the latest rehearsal or response

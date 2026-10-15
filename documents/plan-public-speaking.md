@@ -155,7 +155,7 @@ New lessons, each pairing one tip with a text and an on-device check, as decisio
 - **Content approval:** the lesson texts go to C13.
 - **Tests:** lesson data (every lesson has a tip, text and known check); the l015 check.
 
-### B5. A home screen for speakers
+### B5. A home screen for speakers ✅ done 2026-10-15 (the next talk with a date becomes the filled main band at the bottom; Record a response turns quiet while it does)
 The home screen order:
 
 1. your next talk (B1), when one has a date;

@@ -50,6 +50,8 @@ interface HomeData {
   challengeDone: boolean;
   // The soonest talk with a date still to come, with days left and today's step, or null
   nextTalk: { talk: TalkRecord; daysLeft: number; headline: string } | null;
+  // The latest rehearsal or response, for Q&A practice, or null
+  qaFrom: string | null;
 }
 
 // The soonest talk whose date is today or later, with its days left and today's step
@@ -104,6 +106,8 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     challengeDone: Boolean(record?.completedAt),
     // The next talk with a date
     nextTalk: nextTalkFrom(await repository.listTalks(), now),
+    // The newest rehearsal or response (the list is newest first)
+    qaFrom: sessions.find((session) => session.mode === "rehearse" || session.mode === "response")?.id ?? null,
   };
 }
 
@@ -206,6 +210,15 @@ export function HomeScreen(props: ScreenProps) {
             {" · "}
             {/* Rehearsing the user's own talk */}
             <Link href="/rehearse" className="underline underline-offset-4">rehearse my talk</Link>
+            {/* Q&A practice on the latest rehearsal or response */}
+            {data?.qaFrom && (
+              <>
+                {/* Separator */}
+                {" · "}
+                {/* The link */}
+                <Link href={`/qa?from=${data.qaFrom}`} className="underline underline-offset-4">Q&amp;A practice</Link>
+              </>
+            )}
           </p>
           {/* Push the footer down */}
           <div className="flex-1" />
@@ -221,14 +234,20 @@ export function HomeScreen(props: ScreenProps) {
               </label>
             </Footnote>
           )}
-          {/* The next talk with a date, leading to its plan */}
-          {data?.nextTalk && <ActionBand quiet action={`“${data.nextTalk.talk.title}”`} aside={`${daysAway(data.nextTalk.daysLeft)} · today’s plan`} href={`/talk?id=${data.nextTalk.talk.id}`} />}
-          {/* The two modes: a Table Topic on a surprise question, or a prepared response to the prompt above */}
+          {/* A Table Topic on a surprise question */}
           {topic && <ActionBand quiet action="Table Topic" aside="surprise question · 1 to 2 min" href={`/session?mode=talk&prompt=${topic.id}`} />}
+          {/* With a talk coming up, a response to the prompt above becomes a quieter option */}
+          {data?.nextTalk && prompt && <ActionBand quiet action="Record a response" aside="2 min to think · 3 to speak" href={`/session?mode=response&prompt=${prompt.id}`} />}
           {/* The practice library: pick any speech, passage, drill or word list to read aloud */}
           <ActionBand quiet action="Practice library" aside="speeches, passages, tricky words" href="/library" />
-          {/* The main action */}
-          {prompt && <ActionBand action="Record a response" aside="2 min to think · 3 to speak" href={`/session?mode=response&prompt=${prompt.id}`} />}
+          {/* The main action: the next talk's plan when one has a date, otherwise a response to the prompt above */}
+          {data?.nextTalk ? (
+            // The talk
+            <ActionBand action={`“${data.nextTalk.talk.title}”`} aside={`${daysAway(data.nextTalk.daysLeft)} · today’s plan`} href={`/talk?id=${data.nextTalk.talk.id}`} />
+          ) : (
+            // A response
+            prompt && <ActionBand action="Record a response" aside="2 min to think · 3 to speak" href={`/session?mode=response&prompt=${prompt.id}`} />
+          )}
         </div>
       </div>
     </main>
