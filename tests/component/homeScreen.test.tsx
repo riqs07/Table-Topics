@@ -11,7 +11,7 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the prompt and challenge pickers
-import { drillForDay, passageForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { drillForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
 import { CHALLENGES } from "@/content/challenges";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
@@ -59,22 +59,20 @@ describe("HomeScreen", () => {
     expect([talk.getAttribute("href"), screen.queryByText(tableTopicForDay(NOW).text)]).toEqual([`/session?mode=talk&prompt=${tableTopicForDay(NOW).id}`, null]);
   });
 
-  // Reading aloud is offered on today's passage
-  it("offers reading aloud", async () => {
+  // The practice library replaces the daily read-aloud option
+  it("offers the practice library instead of a daily reading", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Find the read-aloud action
-    const read = await screen.findByRole("link", { name: /Read aloud/ });
-    // Confirm it starts today's passage
-    expect(read.getAttribute("href")).toBe(`/session?mode=read&prompt=${passageForDay(NOW).id}`);
+    // Confirm the library link and that the daily reading link is gone
+    expect([(await screen.findByRole("link", { name: /Practice library/ })).getAttribute("href"), screen.queryByRole("link", { name: /Read aloud/ })]).toEqual(["/library", null]);
   });
 
-  // The drills: a pause drill on today's drill passage, and rehearsing your own talk
-  it("offers the pause drill and Rehearse my talk", async () => {
+  // More practice: the skill path, a pause drill on today's drill passage, and rehearsing your own talk
+  it("offers the skill path, the pause drill and Rehearse my talk", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Confirm both links
-    expect([(await screen.findByRole("link", { name: /pause drill/ })).getAttribute("href"), screen.getByRole("link", { name: /rehearse my talk/ }).getAttribute("href")]).toEqual([`/session?mode=pause&prompt=${drillForDay(NOW).id}`, "/rehearse"]);
+    // Confirm all three links
+    expect([(await screen.findByRole("link", { name: /skill path/ })).getAttribute("href"), screen.getByRole("link", { name: /pause drill/ }).getAttribute("href"), screen.getByRole("link", { name: /rehearse my talk/ }).getAttribute("href")]).toEqual(["/lessons", `/session?mode=pause&prompt=${drillForDay(NOW).id}`, "/rehearse"]);
   });
 
   // The warm-up and the one-minute session are retired from the home screen

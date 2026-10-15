@@ -128,6 +128,14 @@ describe("checkFeedback", () => {
     expect([message.includes("This was a rehearsal of the speaker's own prepared talk. Comment on delivery and clarity."), message.includes("<text>")]).toEqual([true, false]);
   });
 
+  // A lesson names the skill and its tip, includes the text, and asks only about that skill
+  it("tells the coach which lesson was practised", () => {
+    // Build a message for the key-word lesson
+    const message = buildCoachMessage({ ...SESSION, mode: "lesson", promptId: "l006" });
+    // Confirm the note and the text
+    expect([message.includes("This was a skill lesson: Stress the key word. The tip was:"), message.includes("Comment only on that skill."), message.includes("<text>")]).toEqual([true, true, true]);
+  });
+
   // A Record Response is flagged with its goal and thinking time
   it("tells the coach when a session is a Record Response", () => {
     // Build a response message that ran 12 seconds over

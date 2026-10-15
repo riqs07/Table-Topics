@@ -103,8 +103,10 @@ describe("feedback handler", () => {
     const drill = await createFeedbackHandler(deps())(request({ ...BODY, mode: "pause", promptId: "d001" }));
     // Call with a rehearsal
     const rehearsal = await createFeedbackHandler(deps())(request({ ...BODY, mode: "rehearse", promptId: "talk-1" }));
-    // Confirm reading, the drill, and the rehearsal succeed too
-    expect([read.status, drill.status, rehearsal.status]).toEqual([200, 200, 200]);
+    // Call with a lesson
+    const lesson = await createFeedbackHandler(deps())(request({ ...BODY, mode: "lesson", promptId: "l002" }));
+    // Confirm reading, the drill, the rehearsal, and the lesson succeed too
+    expect([read.status, drill.status, rehearsal.status, lesson.status]).toEqual([200, 200, 200, 200]);
     // Call without a mode
     const noMode = await createFeedbackHandler(deps())(request(BODY));
     // Confirm all succeed

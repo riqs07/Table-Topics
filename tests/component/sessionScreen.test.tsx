@@ -284,4 +284,14 @@ describe("SessionScreen", () => {
     // Confirm the title and the headline
     expect([!!(await screen.findByText("Rehearsal")), /^You covered \d+% of your script\.$/.test((await screen.findByTestId("reading-headline")).textContent ?? "")]).toEqual([true, true]);
   });
+
+  // A lesson shows its own check and a reminder of the tip
+  it("shows a lesson's check and a reminder of its tip", async () => {
+    // A crisp-consonants session that read the first few words
+    const session = makeSession({ id: "l", mode: "lesson", promptId: "l002", transcript: "clear speech starts with the ends of words", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="l" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the title, the check, and the tip reminder
+    expect([!!(await screen.findByText("Lesson 2: Crisp consonants")), /^You read \d+% of the words clearly\.$/.test(screen.getByTestId("reading-headline").textContent ?? ""), !!screen.getByText(/^Remember: /)]).toEqual([true, true, true]);
+  });
 });

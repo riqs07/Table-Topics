@@ -121,9 +121,9 @@ describe("parseExport", () => {
   // Table Topics and Record Responses survive a round trip
   it("keeps every mode", () => {
     // A file with one talk
-    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "t1", mode: "talk" }), makeSession({ id: "r1", mode: "response" }), makeSession({ id: "d1", mode: "pause" }), makeSession({ id: "h1", mode: "rehearse" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
+    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "t1", mode: "talk" }), makeSession({ id: "r1", mode: "response" }), makeSession({ id: "d1", mode: "pause" }), makeSession({ id: "h1", mode: "rehearse" }), makeSession({ id: "l1", mode: "lesson" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
     // Confirm it comes back as a talk
-    expect(parseExport(text).sessions.map((session) => session.mode)).toEqual(["talk", "response", "pause", "rehearse"]);
+    expect(parseExport(text).sessions.map((session) => session.mode)).toEqual(["talk", "response", "pause", "rehearse", "lesson"]);
   });
 
   // Saved talks go into the file and come back; files from before talks existed still import

@@ -6,6 +6,8 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 // Load the screens that must all share the same navigation
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
+import { LessonsScreen } from "@/components/screens/LessonsScreen";
+import { LibraryScreen } from "@/components/screens/LibraryScreen";
 import { RehearseScreen } from "@/components/screens/RehearseScreen";
 import { SessionScreen } from "@/components/screens/SessionScreen";
 import { SettingsScreen } from "@/components/screens/SettingsScreen";
@@ -22,7 +24,7 @@ const NOW = new Date(2026, 9, 15, 10);
 afterEach(cleanup);
 
 // Where the main navigation must lead, in order
-const DESTINATIONS = [["Home", "/"], ["History", "/history"], ["Rehearse", "/rehearse"], ["Settings", "/settings"]];
+const DESTINATIONS = [["Home", "/"], ["Lessons", "/lessons"], ["Library", "/library"], ["Rehearse", "/rehearse"], ["History", "/history"], ["Settings", "/settings"]];
 
 // Read the main navigation's links as [name, address] pairs, and which one is marked as the current page
 async function readNavigation() {
@@ -42,6 +44,10 @@ describe("main navigation", () => {
     ["Home", "Home", async () => <HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // History
     ["History", "History", async () => <HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Lessons
+    ["Lessons", "Lessons", async () => <LessonsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Library
+    ["Library", "Library", async () => <LibraryScreen />],
     // Rehearse
     ["Rehearse", "Rehearse", async () => <RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Settings

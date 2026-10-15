@@ -15,6 +15,8 @@ import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the prompt lists
 import { PASSAGES, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@/content/prompts";
+// Load the lessons
+import { findLesson } from "@/content/lessons";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -392,6 +394,16 @@ describe("RecordingScreen", () => {
     await screen.findByRole("button", { name: /Stop/ });
     // Confirm the navigation is gone
     expect(screen.queryByRole("navigation", { name: "Main" })).toBeNull();
+  });
+
+  // A lesson shows its tip and its practice text, with stressed words in bold and no raw asterisks
+  it("shows a lesson's tip and practice text", async () => {
+    // The key-word lesson, which marks words to stress
+    const lesson = findLesson("l006")!;
+    // Draw it
+    draw({ mode: "lesson", promptId: lesson.id });
+    // Confirm the lesson title, the tip, bold words, and the start action
+    expect([!!(await screen.findByText(`Lesson ${lesson.number}: ${lesson.title}`)), !!screen.getByText(lesson.tip), (await screen.findByTestId("passage")).querySelectorAll("strong").length > 0, screen.getByTestId("passage").textContent?.includes("*"), !!screen.getByRole("button", { name: /Start reading/ })]).toEqual([true, true, true, false, true]);
   });
 
   // A one-minute session has no light

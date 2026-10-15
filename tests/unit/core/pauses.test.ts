@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the pause finder being checked
-import { findPauses, pauseDrillSentence, pauseSentence } from "@/core/pauses";
+import { fadingEnds, findPauses, leadingSilenceSeconds, pauseDrillSentence, pauseSentence } from "@/core/pauses";
 
 // A run of the same loudness reading, one per tenth of a second
 const run = (level: number, ticks: number) => Array<number>(ticks).fill(level);
@@ -47,6 +47,23 @@ describe("pauseDrillSentence", () => {
   it("compares the pauses taken with the marks", () => {
     // Confirm none, one, and several
     expect([pauseDrillSentence(0, 5), pauseDrillSentence(1, 5), pauseDrillSentence(4, 5)]).toEqual(["You did not pause; the passage has 5 pause marks.", "You paused once; the passage has 5 pause marks.", "You paused 4 times; the passage has 5 pause marks."]);
+  });
+});
+
+// Group the checks about the silence before the first word, and endings that fade
+describe("opening silence and fading endings", () => {
+  // Time before the first speech reading
+  it("measures the silence before the first word", () => {
+    // 1.2 seconds of quiet, then speech
+    expect(leadingSilenceSeconds([...run(0.01, 12), ...run(0.3, 20)], 100)).toBe(1.2);
+  });
+
+  // A stretch fades when its last 0.3 seconds are much quieter than the stretch as a whole; very short stretches are ignored
+  it("counts stretches of speech whose ends fade", () => {
+    // A fading stretch, a pause, a steady stretch, a pause, a stretch too short to judge
+    const levels = [...run(0.3, 17), ...run(0.12, 3), ...run(0.01, 10), ...run(0.3, 20), ...run(0.01, 10), ...run(0.3, 5)];
+    // Confirm two judged, one faded
+    expect(fadingEnds(levels, 100)).toEqual({ stretches: 2, faded: 1 });
   });
 });
 });

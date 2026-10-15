@@ -146,4 +146,13 @@ describe("Rehearse my talk", () => {
     expect(timingSentence("rehearse", 312, 300)).toBe("5:12 against a 5:00 goal, 12 seconds over.");
   });
 });
+
+// Group the checks about skill-path lessons
+describe("Lessons", () => {
+  // Like reading aloud: no thinking time, no light, a generous limit
+  it("starts straight away, has no light, and stops at 10 minutes", () => {
+    // Confirm all three
+    expect([thinkSeconds("lesson"), timeSignal("lesson", 500), maxSeconds("lesson")]).toEqual([0, "none", 600]);
+  });
+});
 });
