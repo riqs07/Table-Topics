@@ -18,7 +18,7 @@ import { STRUCTURE_HINT, findPassage, findPrompt } from "@/content/prompts";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the recording length rules
-import { MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -65,8 +65,6 @@ const PROBLEM_TEXT: Record<RecordingProblem, string> = {
 
 // Number of bars in the level meter
 const METER_BARS = 24;
-// Milliseconds between timer and meter updates
-const TICK_MS = 100;
 
 // Draw the transcript so far, with fillers marked and unsettled words lighter
 function LiveWords({ text }: { text: LiveText }) {
@@ -220,7 +218,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // On a retry, the cue from last time's feedback
   const [retryCue, setRetryCue] = useState<string | null>(null);
   // The live transcriber, audio capture, start time, and timer, kept between renders
-  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval> } | null>(null);
+  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[] } | null>(null);
   // Guards against stopping twice (a click and the auto-stop at once)
   const stopping = useRef(false);
   // Seconds between seeing the prompt and recording for this kind of session
@@ -273,8 +271,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const durationSec = Math.min(limit, Math.round((clock().getTime() - current.startedAt.getTime()) / 1000));
     // Stop transcribing and recording together
     const [transcript, audio] = await Promise.all([current.transcriber.stop(), current.capture.stop()]);
-    // Hand back the results
-    return { transcript, audio, durationSec };
+    // Hand back the results, with the loudness readings for finding pauses
+    return { transcript, audio, durationSec, loudness: current.readings };
   }, [clock, limit]);
 
   // Stop recording, then save the session and open it (or explain that nothing was heard)
@@ -317,7 +315,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness }, clock());
       // Open the new session's page (feedback is requested there)
       navigate(`/sessions?id=${session.id}`);
     } catch (error) {
@@ -382,18 +380,25 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // Note the start time
     const startedAt = clock();
     // Update the timer and meter, and stop at the limit
+    // Loudness readings for the whole recording, kept for finding pauses afterwards
+    const readings: number[] = [];
+    // Tick
     const timer = setInterval(() => {
       // Seconds since starting
       const seconds = (clock().getTime() - startedAt.getTime()) / 1000;
       // Show the time
       setElapsed(seconds);
-      // Add the latest loudness reading, dropping the oldest
-      setLevels((previous) => [...previous.slice(1), capture.level()]);
+      // Read the loudness once
+      const level = capture.level();
+      // Keep it
+      readings.push(level);
+      // Add it to the meter, dropping the oldest
+      setLevels((previous) => [...previous.slice(1), level]);
       // Stop by itself at the limit
       if (seconds >= limit) void stop();
-    }, TICK_MS);
+    }, LOUDNESS_TICK_MS);
     // Keep the running pieces
-    live.current = { transcriber, capture, startedAt, timer };
+    live.current = { transcriber, capture, startedAt, timer, readings };
     // Begin transcribing, showing words and handling problems
     transcriber.start(setText, (problem) => void fail(problem));
     // Now recording
@@ -418,7 +423,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       setThinkLeft(Math.max(0, left));
       // Time is up: start speaking
       if (left <= 0) void start();
-    }, TICK_MS);
+    }, LOUDNESS_TICK_MS);
   }, [clock, endThinking, start, think]);
 
   // Stop everything without saving and go home

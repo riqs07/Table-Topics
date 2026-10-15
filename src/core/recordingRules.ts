@@ -41,6 +41,9 @@ export function formatClock(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
+// Milliseconds between loudness readings while recording (also the timer and meter refresh)
+export const LOUDNESS_TICK_MS = 100;
+
 // The shortest recording kept, in seconds (shorter clips give unreliable rates)
 export const MIN_SECONDS = 10;
 

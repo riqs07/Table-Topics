@@ -17,10 +17,12 @@ import { dayLabel, formatRate } from "@/core/copy";
 import { markFillers } from "@/core/fillers";
 // Load the then-and-now helpers
 import { earlierTake, practiceDay } from "@/core/compare";
+// Load the pause finder
+import { findPauses, pauseSentence } from "@/core/pauses";
 // Load the reading check
 import { alignReading, type ReadingCheck } from "@/core/readAlong";
 // Load the Table Topics timing sentence
-import { timingSentence } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
 import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
@@ -272,6 +274,8 @@ function FeedbackView({ repo, session, now, note, earlier }: { repo: Repository;
           )}
           {/* When there is no number, say why */}
           {!reading && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
+          {/* How the pauses went, when loudness was recorded */}
+          {session.loudness && session.loudness.length > 0 && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(findPauses(session.loudness, LOUDNESS_TICK_MS))}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
           {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec)}</p>}
           {/* Listen back */}

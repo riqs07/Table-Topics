@@ -23,10 +23,12 @@ export interface FinishedRecording {
   audio: Blob;
   // Which prompt was used
   promptId: string;
-  // Full session or warm-up
+  // The kind of session
   mode: SessionMode;
   // The session this retries, or null
   retryOf: string | null;
+  // Loudness readings taken while recording, if any
+  loudness?: number[];
 }
 
 // Save the recording and hand back the new session (now is when recording stopped)
@@ -58,6 +60,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     feedback: null, feedbackStatus: "pending",
     // The audio is saved under the session id
     audioKey: recording.id,
+    // The loudness readings, rounded to two decimals to keep the record small
+    ...(recording.loudness ? { loudness: recording.loudness.map((level) => Math.round(level * 100) / 100) } : {}),
   };
   // Save the audio first, so the session never points at missing audio
   await repository.saveAudio(recording.id, recording.audio);

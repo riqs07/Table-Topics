@@ -45,6 +45,8 @@ export interface SessionRecord {
   feedback: Feedback | null;
   // Whether feedback is pending, done, or failed
   feedbackStatus: FeedbackStatus;
+  // Loudness readings taken every tenth of a second while recording (0 to 1, two decimals), for finding pauses; missing on older sessions
+  loudness?: number[];
   // Key of the saved audio, or null if there is none or it was pruned
   audioKey: string | null;
 }
