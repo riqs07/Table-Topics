@@ -27,6 +27,10 @@ import { LOUDNESS_TICK_MS, timingSentence } from "@/core/recordingRules";
 import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
 import { findPassage, promptForDay } from "@/content/prompts";
+// Load the lesson lookup
+import { findLesson } from "@/content/lessons";
+// Load the lesson checks
+import { lessonResult } from "@/core/lessonCheck";
 // Load the session record type
 import type { SessionRecord, TalkRecord } from "@/data/records";
 // Load the repository type
@@ -232,8 +236,12 @@ function sideNumber(session: SessionRecord): string {
 
 // The Feedback screen for a first try or a warm-up
 function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null }) {
-  // The text that was read or rehearsed: a passage, or the user's talk
-  const passage = session.mode === "read" || session.mode === "pause" ? findPassage(session.promptId) : rehearsed ? { title: rehearsed.title, body: rehearsed.body } : undefined;
+  // The lesson, on the skill path
+  const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
+  // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
+  const passage = session.mode === "read" || session.mode === "pause" ? findPassage(session.promptId) : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, body: lesson.body.replace(/\*/g, "") } : rehearsed ? { title: rehearsed.title, body: rehearsed.body } : undefined;
+  // A lesson's own result
+  const lessonOutcome = lesson ? lessonResult(lesson, session) : null;
   // The pauses, when loudness was recorded
   const pauses = session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS) : null;
   // How much of the passage was heard
@@ -250,7 +258,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
+      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : timed ? "Your response" : "Your take"}>{sideNumber(session)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -268,9 +276,11 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
           {reading ? (
             <>
               {/* How much of the passage was read */}
-              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? `You covered ${reading.percentRead}% of your script.` : `You read ${reading.percentRead}% of the words.`}</p>
+              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? `You covered ${reading.percentRead}% of your script.` : `You read ${reading.percentRead}% of the words.`}</p>
               {/* The detail */}
-              <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" ? `You read ${reading.percentRead}% of the words; ` : ""}{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
+              <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" || lesson ? `You read ${reading.percentRead}% of the words; ` : ""}{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
+              {/* A lesson's tip, as a reminder */}
+              {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
             </>
           ) : (
             // The focus number as a sentence

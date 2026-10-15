@@ -11,6 +11,8 @@ import { Masthead } from "@/components/script/Masthead";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the prompt library
 import { findPrompt } from "@/content/prompts";
+// Load the lesson lookup
+import { findLesson } from "@/content/lessons";
 // Load the sentence builders
 import { dayLabel, formatRate, progressSentence } from "@/core/copy";
 // Load the progress calculations
@@ -54,6 +56,13 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.mode === "read") return `Read aloud: ${text}`;
   // And pause drills
   if (session.mode === "pause") return `Pause drill: ${text}`;
+  // And lessons, with their number
+  if (session.mode === "lesson") {
+    // The lesson
+    const lesson = findLesson(session.promptId);
+    // Its number and title, or a plain label
+    return lesson ? `Lesson ${lesson.number}: ${lesson.title}` : "Lesson";
+  }
   // And rehearsals, named after the talk (or plainly, if the talk was deleted)
   if (session.mode === "rehearse") return talkTitles.has(session.promptId) ? `Rehearsal: ${talkTitles.get(session.promptId)}` : "Rehearsal";
   // And Record Responses

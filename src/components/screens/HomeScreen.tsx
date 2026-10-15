@@ -12,7 +12,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the weekly challenge picker
 import { challengeForWeek, type Challenge } from "@/content/challenges";
 // Load the daily prompt picker
-import { drillForDay, passageForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { drillForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
 // Load the day label helper
@@ -124,8 +124,6 @@ export function HomeScreen(props: ScreenProps) {
   const prompt = today ? promptForDay(today, offset) : null;
   // Today's Table Topic, kept off the page so it is a surprise
   const topic = today ? tableTopicForDay(today, offset) : null;
-  // Today's passage to read aloud
-  const passage = today ? passageForDay(today, offset) : null;
   // Today's pause drill
   const drill = today ? drillForDay(today, offset) : null;
 
@@ -164,10 +162,14 @@ export function HomeScreen(props: ScreenProps) {
             {/* Swap the prompt */}
             <button type="button" onClick={() => setOffset(offset + 1)} className="italic hover:underline">or choose another</button>
           </p>
-          {/* The drills: short, focused practice */}
+          {/* More practice: the skill path and the drills */}
           <p className="mt-2 italic text-ink-muted">
             {/* Label */}
-            {"Drills: "}
+            {"More: "}
+            {/* The skill path */}
+            <Link href="/lessons" className="underline underline-offset-4">skill path</Link>
+            {/* Separator */}
+            {" · "}
             {/* Pausing on purpose */}
             {drill && <Link href={`/session?mode=pause&prompt=${drill.id}`} className="underline underline-offset-4">pause drill</Link>}
             {/* Separator */}
@@ -191,8 +193,8 @@ export function HomeScreen(props: ScreenProps) {
           )}
           {/* The two modes: a Table Topic on a surprise question, or a prepared response to the prompt above */}
           {topic && <ActionBand quiet action="Table Topic" aside="surprise question · 1 to 2 min" href={`/session?mode=talk&prompt=${topic.id}`} />}
-          {/* Reading aloud: a famous speech or a practice passage */}
-          {passage && <ActionBand quiet action="Read aloud" aside={passage.kind === "speech" ? "a famous speech" : "a practice passage"} href={`/session?mode=read&prompt=${passage.id}`} />}
+          {/* The practice library: pick any speech, passage, drill or word list to read aloud */}
+          <ActionBand quiet action="Practice library" aside="speeches, passages, tricky words" href="/library" />
           {/* The main action */}
           {prompt && <ActionBand action="Record a response" aside="2 min to think · 3 to speak" href={`/session?mode=response&prompt=${prompt.id}`} />}
         </div>

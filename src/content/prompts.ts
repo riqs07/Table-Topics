@@ -2,6 +2,8 @@
 
 // Load the calendar-day helpers
 import { daysBetween } from "@/core/dates";
+// Load the lessons, so their titles can be found like prompts
+import { LESSONS } from "@/content/lessons";
 
 // One daily prompt
 export interface Prompt {
@@ -239,8 +241,8 @@ export const TABLE_TOPICS: ReadonlyArray<Prompt> = [
 
 // One text to read aloud: a public-domain speech or a passage written for practice
 export interface Passage extends Prompt {
-  // A famous speech, a passage written for the app, or a pause drill (a passage with " / " where to pause)
-  kind: "speech" | "practice" | "pause";
+  // A famous speech, a passage written for the app, a pause drill (a passage with " / " where to pause), or a list of tricky words
+  kind: "speech" | "practice" | "pause" | "words";
   // Short title shown above the text (also used as the prompt text in history)
   title: string;
   // Who gave the speech and when, or "Practice passage"
@@ -289,6 +291,18 @@ export const PAUSE_DRILLS: ReadonlyArray<Passage> = [
   { id: "d004", kind: "pause", title: "A short story", source: "Pause drill", text: "A short story", body: "When I was nine, / I forgot every word of my school speech. / I stood there, / silent, / for what felt like an hour. / Then a teacher at the back nodded at me. / Just a nod. / I found my first line, / and the rest came with it. / I still look for that nod in every room." },
   // Drill 5
   { id: "d005", kind: "pause", title: "The closing line", source: "Pause drill", text: "The closing line", body: "Thank you all for being here. / We have covered a lot today, / but if you remember one thing, / let it be this. / You do not need to be fearless to speak well. / You only need to keep going / while the fear is still there. / Thank you." },
+];
+
+// Lists of words that are easy to stumble on, for the practice library. DRAFT: approved at checkpoint C13
+export const TRICKY_WORDS: ReadonlyArray<Passage> = [
+  // List 1
+  { id: "k001", kind: "words", title: "Everyday tricky words", source: "Tricky words", text: "Everyday tricky words", body: "specific, statistics, particularly, February, library, probably, recognize, comfortable, temperature, vegetable, sixth, clothes" },
+  // List 2
+  { id: "k002", kind: "words", title: "Business words", source: "Tricky words", text: "Business words", body: "entrepreneur, quarterly, deliverables, prioritize, accessibility, infrastructure, regulatory, anonymity, preliminary, simultaneously, thoroughly, hierarchy" },
+  // List 3
+  { id: "k003", kind: "words", title: "Sound-alike pairs", source: "Tricky words", text: "Sound-alike pairs", body: "accept, except, affect, effect, then, than, quite, quiet, desert, dessert, specific, Pacific, conscience, conscious" },
+  // List 4
+  { id: "k004", kind: "words", title: "Long words, steady pace", source: "Tricky words", text: "Long words, steady pace", body: "responsibility, opportunity, organization, communication, collaboration, determination, characteristic, representative, unfortunately, approximately, environmental, extraordinary" },
 ];
 
 // Day the rotation counts from
@@ -352,14 +366,14 @@ export function drillForDay(day: Date, offset = 0): Passage {
   return pickForDay(PAUSE_DRILLS, day, offset) as Passage;
 }
 
-// Find a passage or pause drill by its saved id
+// Find a passage, pause drill, or word list by its saved id
 export function findPassage(id: string): Passage | undefined {
-  // Look in both lists
-  return [...PASSAGES, ...PAUSE_DRILLS].find((passage) => passage.id === id);
+  // Look in every list of texts
+  return [...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS].find((passage) => passage.id === id);
 }
 
-// Find any prompt (Record Response, Table Topic, warm-up, or passage or drill title) by its saved id
+// Find any prompt (Record Response, Table Topic, warm-up, or the title of a passage, drill, word list, or lesson) by its saved id
 export function findPrompt(id: string): Prompt | undefined {
   // Look in every list
-  return [...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS].find((prompt) => prompt.id === id);
+  return [...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS].find((prompt) => prompt.id === id);
 }

@@ -6,16 +6,20 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 // The sections the main navigation leads to
-export type Section = "home" | "history" | "rehearse" | "settings";
+export type Section = "home" | "lessons" | "library" | "rehearse" | "history" | "settings";
 
 // Each section's name and address, in order
 const SECTIONS: ReadonlyArray<{ id: Section; name: string; href: string }> = [
   // The starting page
   { id: "home", name: "Home", href: "/" },
-  // Past sessions
-  { id: "history", name: "History", href: "/history" },
+  // The skill path
+  { id: "lessons", name: "Lessons", href: "/lessons" },
+  // The practice library
+  { id: "library", name: "Library", href: "/library" },
   // Rehearse my talk
   { id: "rehearse", name: "Rehearse", href: "/rehearse" },
+  // Past sessions
+  { id: "history", name: "History", href: "/history" },
   // Settings
   { id: "settings", name: "Settings", href: "/settings" },
 ];
@@ -37,9 +41,9 @@ export function Masthead({ title, children, section, nav = true }: MastheadProps
   // Navigation row, then a baseline-aligned title row over a solid hairline
   return (
     <>
-      {/* The main navigation: the same four places on every screen */}
+      {/* The main navigation: the same places on every screen (wrapping onto a second line on a narrow phone if needed) */}
       {nav && (
-        <nav aria-label="Main" className="mb-3 flex gap-5 text-footnote md:mb-4">
+        <nav aria-label="Main" className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-footnote md:mb-4 md:gap-x-5">
           {/* One link per section */}
           {SECTIONS.map((item) => (
             // The current section is marked and shown in ink without an underline; the others are quiet links

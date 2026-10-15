@@ -25,16 +25,77 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-// Find the pauses in a list of loudness readings taken every tickMs milliseconds
-export function findPauses(levels: ReadonlyArray<number>, tickMs: number): PauseSummary {
+// Which readings are speech, judged against the speaker's own typical loudness
+function speechMask(levels: ReadonlyArray<number>): boolean[] {
   // The speaker's typical loudness: the 80th percentile reading
   const sorted = [...levels].sort((a, b) => a - b);
   // (the reading at that position)
   const typical = sorted[Math.floor(0.8 * Math.max(0, sorted.length - 1))] ?? 0;
   // Below this is silence
   const threshold = Math.max(FLOOR, typical * SHARE_OF_SPEECH);
+  // Mark each reading
+  return levels.map((level) => level >= threshold);
+}
+
+// Seconds of silence before the first word (all of it, if nothing was said)
+export function leadingSilenceSeconds(levels: ReadonlyArray<number>, tickMs: number): number {
+  // The first speech reading
+  const first = speechMask(levels).indexOf(true);
+  // Convert readings to seconds, to two decimals
+  return round2(((first === -1 ? levels.length : first) * tickMs) / 1000);
+}
+
+// Stretches of speech (between pauses) whose last 0.3 seconds are much quieter than the stretch as a whole
+export function fadingEnds(levels: ReadonlyArray<number>, tickMs: number): { stretches: number; faded: number } {
   // Which readings are speech
-  const speaking = levels.map((level) => level >= threshold);
+  const speaking = speechMask(levels);
+  // Readings that make a pause
+  const pauseTicks = Math.round((PAUSE_MIN_SECONDS * 1000) / tickMs);
+  // Readings at the end of a stretch that are compared
+  const endTicks = Math.max(1, Math.round(300 / tickMs));
+  // Shortest stretch worth judging: one second
+  const minTicks = Math.round(1000 / tickMs);
+  // Speech readings of each stretch
+  const stretches: number[][] = [];
+  // The stretch being collected
+  let current: number[] = [];
+  // Silent readings since the last speech
+  let silent = 0;
+  // Walk every reading
+  levels.forEach((level, index) => {
+    // Speech joins the current stretch
+    if (speaking[index]) {
+      // A long enough silence before it starts a new stretch
+      if (silent >= pauseTicks && current.length) {
+        // Close the previous stretch
+        stretches.push(current);
+        // Start a new one
+        current = [];
+      }
+      // Add the reading
+      current.push(level);
+      // Reset the silence count
+      silent = 0;
+    }
+    // Silence is counted
+    else silent += 1;
+  });
+  // Close the last stretch
+  if (current.length) stretches.push(current);
+  // Average of a list of readings
+  const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  // Only stretches long enough to judge
+  const judged = stretches.filter((stretch) => stretch.length >= minTicks);
+  // A stretch fades when its end is under 60% of its own average
+  const faded = judged.filter((stretch) => mean(stretch.slice(-endTicks)) < 0.6 * mean(stretch)).length;
+  // Hand back the counts
+  return { stretches: judged.length, faded };
+}
+
+// Find the pauses in a list of loudness readings taken every tickMs milliseconds
+export function findPauses(levels: ReadonlyArray<number>, tickMs: number): PauseSummary {
+  // Which readings are speech
+  const speaking = speechMask(levels);
   // First and last speech readings
   const first = speaking.indexOf(true);
   // (last)

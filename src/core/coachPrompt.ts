@@ -9,6 +9,8 @@ import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
 // Load the passage lookup, for reading aloud and pause drills
 import { findPassage } from "@/content/prompts";
+// Load the lesson lookup
+import { findLesson } from "@/content/lessons";
 // Load the pause mark counter
 import { countPauseMarks } from "@/core/readAlong";
 // Load the Table Topics timing rules
@@ -61,6 +63,8 @@ function fenceSafe(transcript: string): string {
 export function buildCoachMessage(input: CoachInput): string {
   // Find the weekly focus by id
   const focus = WEEKLY_FOCUSES.find((item) => item.id === input.focusId);
+  // On a lesson, find it from the app's own copy
+  const lesson = input.mode === "lesson" && input.promptId ? findLesson(input.promptId) : undefined;
   // On a reading, find the passage from the app's own copy
   const passage = (input.mode === "read" || input.mode === "pause") && input.promptId ? findPassage(input.promptId) : undefined;
   // Put the message together line by line
@@ -81,6 +85,8 @@ export function buildCoachMessage(input: CoachInput): string {
     ...(input.mode === "response" ? [`This is a prepared response: up to ${thinkSeconds("response")} seconds to think with hints, then a ${targetSeconds("response")}-second goal. It ran ${Math.round(input.durationSec)} seconds. Comment on how the answer was organised across the whole time.`] : []),
     // On a reading, ask about delivery only
     ...(input.mode === "read" ? ["This was read aloud from a known text. Comment only on delivery (pace, pauses, skipped or repeated words, fillers), not on the content, which the speaker did not write."] : []),
+    // On a lesson, the skill and its tip
+    ...(lesson ? [`This was a skill lesson: ${lesson.title}. The tip was: ${lesson.tip} Comment only on that skill.`] : []),
     // On a rehearsal, what it is (the script stays on the device)
     ...(input.mode === "rehearse" ? ["This was a rehearsal of the speaker's own prepared talk. Comment on delivery and clarity."] : []),
     // On a pause drill, the number of marked pauses
@@ -93,6 +99,8 @@ export function buildCoachMessage(input: CoachInput): string {
     `<transcript>\n${fenceSafe(input.transcript)}\n</transcript>`,
     // On a reading, the text that was on screen, fenced off as data too
     ...(passage ? ["", `<text>\n${passage.body}\n</text>`] : []),
+    // On a lesson, its practice text
+    ...(lesson ? ["", `<text>\n${lesson.body}\n</text>`] : []),
   ].join("\n");
 }
 

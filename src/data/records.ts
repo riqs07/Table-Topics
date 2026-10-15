@@ -11,8 +11,8 @@ export interface Feedback {
   retryCue: string;
 }
 
-// The kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, or the retired one-minute session and 30-second warm-up
-export type SessionMode = "standard" | "warmup" | "talk" | "response" | "read" | "pause" | "rehearse";
+// The kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, or the retired one-minute session and 30-second warm-up
+export type SessionMode = "standard" | "warmup" | "talk" | "response" | "read" | "pause" | "rehearse" | "lesson";
 
 // Where a session's feedback request stands
 export type FeedbackStatus = "pending" | "done" | "failed";
