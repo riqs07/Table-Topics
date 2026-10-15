@@ -31,6 +31,18 @@ import type { TalkRecord } from "@/data/records";
 import { daysUntil, eventPlan, prepHeadline } from "@/core/eventPrep";
 // Load the one-next-step recommender
 import { nextStep } from "@/core/nextStep";
+// Load the welcome flag, kept in this browser
+import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
+
+// The welcome question's answers and where each leads
+const WELCOME_CHOICES: ReadonlyArray<{ text: string; href: string }> = [
+  // A talk coming up
+  { text: "I have a talk coming up", href: "/rehearse" },
+  // Speaking without a script
+  { text: "I want to speak better on the spot", href: "/practice" },
+  // One skill
+  { text: "I want to work on one skill", href: "/skills" },
+];
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 
@@ -52,6 +64,8 @@ interface HomeData {
   challengeDone: boolean;
   // The soonest talk with a date still to come, with days left and today's step, or null
   nextTalk: { talk: TalkRecord; daysLeft: number; headline: string } | null;
+  // Whether to ask the welcome question: a first visit with nothing saved yet
+  showWelcome: boolean;
 }
 
 // The soonest talk whose date is today or later, with its days left and today's step
@@ -86,6 +100,8 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
   const week = practiceWeek(first ? new Date(first.createdAt) : null, now);
   // Id of this week's challenge record
   const challengeRecordId = `week-${dayKey(week.weekStart)}`;
+  // The saved talks
+  const talks = await repository.listTalks();
   // Look for a saved record of this week's challenge
   const record = (await repository.listChallenges()).find((challenge) => challenge.id === challengeRecordId);
   // Put everything together
@@ -105,7 +121,9 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     // Whether it is done
     challengeDone: Boolean(record?.completedAt),
     // The next talk with a date
-    nextTalk: nextTalkFrom(await repository.listTalks(), now),
+    nextTalk: nextTalkFrom(talks, now),
+    // A first visit: nothing saved, and the welcome not yet answered in this browser
+    showWelcome: sessions.length === 0 && talks.length === 0 && !readWelcomeSeen(),
   };
 }
 
@@ -144,6 +162,14 @@ export function HomeScreen(props: ScreenProps) {
     setData({ ...data, challengeDone: done });
   }
 
+  // Answer or skip the welcome, so it does not come back
+  function finishWelcome() {
+    // Remember it in this browser
+    markWelcomeSeen();
+    // Show Today as usual
+    if (data) setData({ ...data, showWelcome: false });
+  }
+
   // The one recommended next step, once the data is in
   const step = data && today ? nextStep({ day: today, sessionCount: data.sessionCount, focusId: data.focus.id, nextTalk: data.nextTalk ? { id: data.nextTalk.talk.id, title: data.nextTalk.talk.title, headline: data.nextTalk.headline } : null }) : null;
 
@@ -170,8 +196,33 @@ export function HomeScreen(props: ScreenProps) {
 
         {/* Main column */}
         <div className="flex flex-1 flex-col">
+          {/* A first visit: one question, then straight to the right place */}
+          {data?.showWelcome && (
+            <section aria-label="Welcome" className="mt-8 md:mt-0">
+              {/* The greeting */}
+              <h1 className="font-display text-prompt tracking-tight md:text-prompt-xl">Welcome to VoiceLab</h1>
+              {/* What it is, and the privacy promise */}
+              <p className="mt-3 max-w-[52ch] text-lede">Practise speaking, privately. Your recordings stay on this device.</p>
+              {/* The question */}
+              <p className="mt-6 italic text-ink-muted">What brings you here?</p>
+              {/* The three answers */}
+              <ul aria-label="What brings you here?" className="mt-2 divide-y divide-rule border-y border-ink">
+                {/* Each answer */}
+                {WELCOME_CHOICES.map((choice) => (
+                  // One answer
+                  <li key={choice.href}>
+                    {/* It leads to its job */}
+                    <Link href={choice.href} onClick={finishWelcome} className="block py-3 font-display text-cue hover:text-accent">{choice.text}</Link>
+                  </li>
+                ))}
+              </ul>
+              {/* Skip */}
+              <button type="button" onClick={finishWelcome} className="mt-4 italic text-ink-muted underline underline-offset-4">Skip</button>
+            </section>
+          )}
+
           {/* The one next step */}
-          {step && (
+          {step && !data?.showWelcome && (
             <section aria-label="Next for you" className="mt-8 md:mt-0">
               {/* What it is */}
               <p className="text-footnote italic text-ink-muted">Next for you · {step.label}</p>
@@ -182,8 +233,8 @@ export function HomeScreen(props: ScreenProps) {
             </section>
           )}
 
-          {/* The three jobs */}
-          <nav aria-label="Or choose" className="mt-8">
+          {/* The three jobs (the welcome asks the same thing, so they wait until it is answered) */}
+          {!data?.showWelcome && <nav aria-label="Or choose" className="mt-8">
             {/* Small heading */}
             <p className="text-footnote italic text-ink-muted">Or choose</p>
             {/* One row per job */}
@@ -202,7 +253,7 @@ export function HomeScreen(props: ScreenProps) {
                 </li>
               ))}
             </ul>
-          </nav>
+          </nav>}
 
           {/* Push the footer down */}
           <div className="flex-1" />
@@ -219,7 +270,7 @@ export function HomeScreen(props: ScreenProps) {
             </Footnote>
           )}
           {/* The main action: start the next step */}
-          {step && <ActionBand action={step.action} aside={step.label} href={step.href} />}
+          {step && !data?.showWelcome && <ActionBand action={step.action} aside={step.label} href={step.href} />}
         </div>
       </div>
     </main>
