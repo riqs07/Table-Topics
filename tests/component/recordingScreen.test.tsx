@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and acting like a user
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 // Load the server renderer and the browser hydrator, to check the first drawing matches
 import { renderToString } from "react-dom/server";
 import { hydrateRoot } from "react-dom/client";
@@ -378,6 +378,20 @@ describe("RecordingScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Hide the text" }));
     // Confirm it is hidden and can be shown again
     expect([screen.queryByTestId("passage"), !!screen.getByRole("button", { name: "Show the text" })]).toEqual([null, true]);
+  });
+
+  // The main navigation is there before recording, and hidden while recording so a stray click cannot lose the take
+  it("shows the main navigation before recording and hides it while recording", async () => {
+    // Draw the screen
+    draw();
+    // Confirm the navigation is there and leads home
+    expect(within(await screen.findByRole("navigation", { name: "Main" })).getByRole("link", { name: "Home" }).getAttribute("href")).toBe("/");
+    // Start
+    fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Confirm the navigation is gone
+    expect(screen.queryByRole("navigation", { name: "Main" })).toBeNull();
   });
 
   // A one-minute session has no light
