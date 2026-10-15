@@ -1,14 +1,16 @@
 // Whole journeys with the stand-in microphone: record, save, and read the result (rules T1, T3, T11)
 import { expect, test, useStandIns } from "./support/fixtures";
 
-// A Table Topic from the home page to the saved session
-test("Table Topic: countdown, recording, saved session", async ({ page }) => {
+// A Table Topic from Today, through Practice, to the saved session
+test("Table Topic: from Today through Practice, countdown, recording, saved session", async ({ page }) => {
   // Use the stand-in microphone and speech
   await useStandIns(page);
   // Start at home
   await page.goto("/");
-  // Pick the Table Topic band
-  await page.getByRole("link", { name: /Table Topic/ }).click();
+  // Choose to speak on the spot
+  await page.getByRole("link", { name: /Speak on the spot/ }).click();
+  // Start a Table Topic
+  await page.getByRole("link", { name: "Start a Table Topic" }).click();
   // The topic page opens
   await expect(page).toHaveURL(/mode=talk/);
   // Reveal the topic and start the countdown

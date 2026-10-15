@@ -11,8 +11,8 @@ import { Footnote } from "@/components/script/Footnote";
 import { Masthead } from "@/components/script/Masthead";
 // Load the weekly challenge picker
 import { challengeForWeek, type Challenge } from "@/content/challenges";
-// Load the daily prompt picker
-import { drillForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
+// Load the three jobs
+import { JOBS } from "@/content/modes";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
 // Load the day label helper
@@ -28,7 +28,9 @@ import type { Repository } from "@/data/repository";
 // Load the talk record type
 import type { TalkRecord } from "@/data/records";
 // Load the event-prep rules, for the next talk's countdown
-import { daysAway, daysUntil, eventPlan, prepHeadline } from "@/core/eventPrep";
+import { daysUntil, eventPlan, prepHeadline } from "@/core/eventPrep";
+// Load the one-next-step recommender
+import { nextStep } from "@/core/nextStep";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 
@@ -50,8 +52,6 @@ interface HomeData {
   challengeDone: boolean;
   // The soonest talk with a date still to come, with days left and today's step, or null
   nextTalk: { talk: TalkRecord; daysLeft: number; headline: string } | null;
-  // The latest rehearsal or response, for Q&A practice, or null
-  qaFrom: string | null;
 }
 
 // The soonest talk whose date is today or later, with its days left and today's step
@@ -106,8 +106,6 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     challengeDone: Boolean(record?.completedAt),
     // The next talk with a date
     nextTalk: nextTalkFrom(await repository.listTalks(), now),
-    // The newest rehearsal or response (the list is newest first)
-    qaFrom: sessions.find((session) => session.mode === "rehearse" || session.mode === "response")?.id ?? null,
   };
 }
 
@@ -115,8 +113,6 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
 export function HomeScreen(props: ScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
-  // Which prompt along from today's ("or choose another" adds one)
-  const [offset, setOffset] = useState(0);
   // Saved data, once loaded
   const [data, setData] = useState<HomeData | null>(null);
 
@@ -148,12 +144,8 @@ export function HomeScreen(props: ScreenProps) {
     setData({ ...data, challengeDone: done });
   }
 
-  // Today's Record Response prompt (after the time is known)
-  const prompt = today ? promptForDay(today, offset) : null;
-  // Today's Table Topic, kept off the page so it is a surprise
-  const topic = today ? tableTopicForDay(today, offset) : null;
-  // Today's pause drill
-  const drill = today ? drillForDay(today, offset) : null;
+  // The one recommended next step, once the data is in
+  const step = data && today ? nextStep({ day: today, sessionCount: data.sessionCount, focusId: data.focus.id, nextTalk: data.nextTalk ? { id: data.nextTalk.talk.id, title: data.nextTalk.talk.title, headline: data.nextTalk.headline } : null }) : null;
 
   // Draw the page
   return (
@@ -164,62 +156,54 @@ export function HomeScreen(props: ScreenProps) {
 
       {/* Two columns on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
-        {/* Context: streak, focus, challenge (above the prompt on a phone, in the margin on a computer) */}
+        {/* Context: streak and focus (above the step on a phone, in the margin on a computer) */}
         <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
           {/* Streak, or a first-time line */}
-          {data && <p>{data.sessionCount === 0 ? "Your first Record Response becomes your starting point, to look back on later." : streakSentence(data.streak)}</p>}
+          {data && <p>{data.sessionCount === 0 ? "Welcome. Start anywhere below." : streakSentence(data.streak)}</p>}
           {/* This week's focus */}
           {data && (
             <p className="md:mt-6 md:border-t md:border-rule md:pt-3">
               This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>. {data.focus.description}
             </p>
           )}
-          {/* The next talk's countdown */}
-          {data?.nextTalk && <p className="mt-2 text-ink md:mt-4">{data.nextTalk.headline}</p>}
         </aside>
 
         {/* Main column */}
         <div className="flex flex-1 flex-col">
-          {/* The prompt, set like a headline with a hanging quote */}
-          {prompt && (
-            <h1 className="relative mt-9 font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:mt-0 md:max-w-[16ch] md:text-prompt-xl">
-              {/* The prompt text (the hanging quote is drawn by the style above, so it is not read aloud) */}
-              {prompt.text}
-            </h1>
+          {/* The one next step */}
+          {step && (
+            <section aria-label="Next for you" className="mt-8 md:mt-0">
+              {/* What it is */}
+              <p className="text-footnote italic text-ink-muted">Next for you · {step.label}</p>
+              {/* The task, or today's step for a talk, set like a headline */}
+              <h1 className="mt-2 font-display text-prompt tracking-tight md:max-w-[18ch] md:text-prompt-xl">{step.detail}</h1>
+              {/* Why this one */}
+              <p className="mt-3 max-w-[52ch] italic text-ink-muted">{step.why}</p>
+            </section>
           )}
-          {/* A quieter option: swap the prompt (the Table Topic changes with it) */}
-          <p className="mt-4 italic text-ink-muted">
-            {/* Swap the prompt */}
-            <button type="button" onClick={() => setOffset(offset + 1)} className="italic hover:underline">or choose another</button>
-          </p>
-          {/* More practice: the skill path and the drills */}
-          <p className="mt-2 italic text-ink-muted">
-            {/* Label */}
-            {"More: "}
-            {/* The skill path */}
-            <Link href="/lessons" className="underline underline-offset-4">skill path</Link>
-            {/* Separator */}
-            {" · "}
-            {/* Openings and closings */}
-            <Link href="/bookends" className="underline underline-offset-4">openings &amp; closings</Link>
-            {/* Separator */}
-            {" · "}
-            {/* Pausing on purpose */}
-            {drill && <Link href={`/session?mode=pause&prompt=${drill.id}`} className="underline underline-offset-4">pause drill</Link>}
-            {/* Separator */}
-            {" · "}
-            {/* Rehearsing the user's own talk */}
-            <Link href="/rehearse" className="underline underline-offset-4">rehearse my talk</Link>
-            {/* Q&A practice on the latest rehearsal or response */}
-            {data?.qaFrom && (
-              <>
-                {/* Separator */}
-                {" · "}
-                {/* The link */}
-                <Link href={`/qa?from=${data.qaFrom}`} className="underline underline-offset-4">Q&amp;A practice</Link>
-              </>
-            )}
-          </p>
+
+          {/* The three jobs */}
+          <nav aria-label="Or choose" className="mt-8">
+            {/* Small heading */}
+            <p className="text-footnote italic text-ink-muted">Or choose</p>
+            {/* One row per job */}
+            <ul aria-label="Or choose" className="mt-2 divide-y divide-rule border-y border-rule">
+              {/* Each job */}
+              {JOBS.map((job) => (
+                // One job
+                <li key={job.id}>
+                  {/* The link, with its line of explanation */}
+                  <Link href={job.href} className="flex flex-wrap items-baseline justify-between gap-x-4 py-3 hover:text-accent">
+                    {/* Its name */}
+                    <span className="font-display text-cue">{job.name} →</span>
+                    {/* What it covers */}
+                    <span className="text-footnote text-ink-muted">{job.blurb}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
           {/* Push the footer down */}
           <div className="flex-1" />
           {/* This week's challenge as a footnote with a checkbox */}
@@ -234,20 +218,8 @@ export function HomeScreen(props: ScreenProps) {
               </label>
             </Footnote>
           )}
-          {/* A Table Topic on a surprise question */}
-          {topic && <ActionBand quiet action="Table Topic" aside="surprise question · 1 to 2 min" href={`/session?mode=talk&prompt=${topic.id}`} />}
-          {/* With a talk coming up, a response to the prompt above becomes a quieter option */}
-          {data?.nextTalk && prompt && <ActionBand quiet action="Record a response" aside="2 min to think · 3 to speak" href={`/session?mode=response&prompt=${prompt.id}`} />}
-          {/* The practice library: pick any speech, passage, drill or word list to read aloud */}
-          <ActionBand quiet action="Practice library" aside="speeches, passages, tricky words" href="/library" />
-          {/* The main action: the next talk's plan when one has a date, otherwise a response to the prompt above */}
-          {data?.nextTalk ? (
-            // The talk
-            <ActionBand action={`“${data.nextTalk.talk.title}”`} aside={`${daysAway(data.nextTalk.daysLeft)} · today’s plan`} href={`/talk?id=${data.nextTalk.talk.id}`} />
-          ) : (
-            // A response
-            prompt && <ActionBand action="Record a response" aside="2 min to think · 3 to speak" href={`/session?mode=response&prompt=${prompt.id}`} />
-          )}
+          {/* The main action: start the next step */}
+          {step && <ActionBand action={step.action} aside={step.label} href={step.href} />}
         </div>
       </div>
     </main>

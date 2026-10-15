@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 // Load the screen being checked
 import { PracticeScreen } from "@/components/screens/PracticeScreen";
 // Load the in-memory store and repository
@@ -52,5 +52,15 @@ describe("PracticeScreen", () => {
     render(<PracticeScreen repository={repository} now={NOW} />);
     // Confirm the link
     expect((await screen.findByRole("link", { name: /Practise Q&A/ })).getAttribute("href")).toBe("/qa?from=r1");
+  });
+
+  // "Or choose another" swaps the prepared-answer task, and the start link follows
+  it("swaps to another prepared-answer task", async () => {
+    // Draw the page
+    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Ask for another
+    fireEvent.click(await screen.findByRole("button", { name: /choose another/ }));
+    // Confirm the task and the link follow
+    expect([!!screen.getByText(`“${promptForDay(NOW, 1).text}”`), screen.getByRole("link", { name: "Start a prepared answer" }).getAttribute("href")]).toEqual([true, `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`]);
   });
 });
