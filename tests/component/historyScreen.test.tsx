@@ -51,8 +51,8 @@ describe("HistoryScreen", () => {
   it("lists sessions with retries paired and links to each", async () => {
     // Draw the screen with sample data
     render(<HistoryScreen repository={await sampleRepository()} now={NOW} />);
-    // Find the list items
-    const links = await screen.findAllByRole("link", { name: /^(Today|Yesterday|Sat|Sun|Mon|Tue|Wed|Thu|Fri|\d+ (Sep|Oct))/ });
+    // Find the list items (not the menu's "Today", which is only that word)
+    const links = await screen.findAllByRole("link", { name: /^(Today|Yesterday|Sat|Sun|Mon|Tue|Wed|Thu|Fri|\d+ (Sep|Oct))(?!$)/ });
     // Confirm one row per first try (8 full sessions and 1 warm-up in the sample)
     expect(links).toHaveLength(9);
     // Confirm the newest row shows the first try and the retry

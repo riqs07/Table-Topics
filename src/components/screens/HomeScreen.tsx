@@ -160,7 +160,7 @@ export function HomeScreen(props: ScreenProps) {
     // Full-height page: one column on a phone, margin plus main column on a computer
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Name and links */}
-      <Masthead title="VoiceLab" section="home" />
+      <Masthead title="VoiceLab" section="today" />
 
       {/* Two columns on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">

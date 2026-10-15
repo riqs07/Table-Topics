@@ -114,7 +114,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
   }
 
   // Still loading
-  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Q&A practice" section="rehearse" /></main>;
+  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Q&A practice" section="practice" /></main>;
 
   // The session is not here
   if (!loaded.source) {
@@ -122,7 +122,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
     return (
       <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Heading and navigation */}
-        <Masthead title="Q&A practice" section="rehearse" />
+        <Masthead title="Q&A practice" section="practice" />
         {/* The note */}
         <p className="mt-6 text-lede">This session is not on this device.</p>
       </main>
@@ -136,7 +136,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
   return (
     <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title="Q&A practice" section="rehearse" />
+      <Masthead title="Q&A practice" section="practice" />
 
       {/* What this is */}
       <p className="mt-6 max-w-[52ch] text-lede">After a talk come the questions. Answer each one in about a minute: answer it directly, give one reason or example, then stop.</p>

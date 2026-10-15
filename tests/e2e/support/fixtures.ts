@@ -6,13 +6,16 @@ export const SPOKEN = "Um so the best part of my week was uh walking home and se
 
 // Every page the app has, as a user would type it in (rule T5: load each one directly)
 export const ROUTES: ReadonlyArray<string> = [
-  // Home
+  // Today
   "/",
-  // Skill path
+  // Practice
+  "/practice",
+  // The old Lessons and Library addresses, which now lead to Skills
   "/lessons",
-  // Practice library
   "/library",
-  // Rehearse my talk
+  // Skills
+  "/skills",
+  // Talks
   "/rehearse",
   // History
   "/history",
@@ -48,14 +51,14 @@ export const ROUTES: ReadonlyArray<string> = [
 
 // Pages that carry the main navigation, with the section each one marks as current
 export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> = [
-  // Home marks Home
-  { path: "/", current: "Home" },
-  // Lessons marks Lessons
-  { path: "/lessons", current: "Lessons" },
-  // Library marks Library
-  { path: "/library", current: "Library" },
-  // Rehearse marks Rehearse
-  { path: "/rehearse", current: "Rehearse" },
+  // Today marks Today
+  { path: "/", current: "Today" },
+  // Practice marks Practice
+  { path: "/practice", current: "Practice" },
+  // Skills marks Skills
+  { path: "/skills", current: "Skills" },
+  // Talks marks Talks
+  { path: "/rehearse", current: "Talks" },
   // History marks History
   { path: "/history", current: "History" },
   // Settings marks Settings
@@ -64,22 +67,22 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/session?mode=response&prompt=p001", current: null },
   // A saved-session page that does not exist still offers the way out
   { path: "/sessions?id=missing", current: null },
-  // A talk's page belongs to Rehearse
-  { path: "/talk?id=missing", current: "Rehearse" },
-  // So do openings and closings
-  { path: "/bookends", current: "Rehearse" },
+  // A talk's page belongs to Talks
+  { path: "/talk?id=missing", current: "Talks" },
+  // Openings and closings belong to Practice
+  { path: "/bookends", current: "Practice" },
 ];
 
 // Where each main navigation link should lead
 export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
-  // Home
-  { name: "Home", path: "/" },
-  // Lessons
-  { name: "Lessons", path: "/lessons" },
-  // Library
-  { name: "Library", path: "/library" },
-  // Rehearse
-  { name: "Rehearse", path: "/rehearse" },
+  // Today
+  { name: "Today", path: "/" },
+  // Talks
+  { name: "Talks", path: "/rehearse" },
+  // Practice
+  { name: "Practice", path: "/practice" },
+  // Skills
+  { name: "Skills", path: "/skills" },
   // History
   { name: "History", path: "/history" },
   // Settings

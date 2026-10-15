@@ -427,7 +427,7 @@ describe("RecordingScreen", () => {
     // Draw the screen
     draw();
     // Confirm the navigation is there and leads home
-    expect(within(await screen.findByRole("navigation", { name: "Main" })).getByRole("link", { name: "Home" }).getAttribute("href")).toBe("/");
+    expect(within(await screen.findByRole("navigation", { name: "Main" })).getByRole("link", { name: "Today" }).getAttribute("href")).toBe("/");
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // Wait for recording

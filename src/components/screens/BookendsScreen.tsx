@@ -54,7 +54,7 @@ export function BookendsScreen(props: ScreenProps) {
   return (
     <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title="Openings and closings" section="rehearse" />
+      <Masthead title="Openings and closings" section="practice" />
 
       {/* Why this exists */}
       <p className="mt-6 max-w-[52ch] text-lede">An audience decides in the first seconds whether to listen, and remembers the last thing you say. Practise just those parts: 45 seconds, then stop.</p>

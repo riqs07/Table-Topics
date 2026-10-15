@@ -1,15 +1,8 @@
-// The skill path page (logic and tests live in components/screens/LessonsScreen.tsx)
+// The old Lessons address: lessons now live on the Skills page
+import { redirect } from "next/navigation";
 
-// Load the type for page metadata
-import type { Metadata } from "next";
-// Load the Lessons screen
-import { LessonsScreen } from "@/components/screens/LessonsScreen";
-
-// Tab title
-export const metadata: Metadata = { title: "Lessons · VoiceLab" };
-
-// Draw the Lessons screen with the browser's saved data
+// Send old links and bookmarks to the lessons on Skills
 export default function LessonsPage() {
-  // The screen loads its own data in the browser
-  return <LessonsScreen />;
+  // Go there
+  redirect("/skills#lessons");
 }

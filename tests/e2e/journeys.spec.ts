@@ -116,8 +116,10 @@ test("Openings and closings: an opening drill from home to its findings", async 
   await useStandIns(page);
   // Start at home
   await page.goto("/");
-  // Open the drills
-  await page.getByRole("link", { name: "openings & closings" }).click();
+  // Open the drills from Practice
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Practice", exact: true }).click();
+  // Its page
+  await page.getByRole("link", { name: "Choose an opening or a close" }).click();
   // Pick today's opening (the first prompt link under "Today")
   await page.locator("section", { hasText: "Today" }).getByRole("link").first().click();
   // The drill opens with its tip

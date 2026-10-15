@@ -6,21 +6,21 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 // The sections the main navigation leads to
-export type Section = "home" | "lessons" | "library" | "rehearse" | "history" | "settings";
+export type Section = "today" | "talks" | "practice" | "skills" | "history" | "settings";
 
 // Each section's name and address, in order
 const SECTIONS: ReadonlyArray<{ id: Section; name: string; href: string }> = [
-  // The starting page
-  { id: "home", name: "Home", href: "/" },
-  // The skill path
-  { id: "lessons", name: "Lessons", href: "/lessons" },
-  // The practice library
-  { id: "library", name: "Library", href: "/library" },
-  // Rehearse my talk
-  { id: "rehearse", name: "Rehearse", href: "/rehearse" },
+  // The one next step, and the three jobs
+  { id: "today", name: "Today", href: "/" },
+  // Your own talks and their plans
+  { id: "talks", name: "Talks", href: "/rehearse" },
+  // Speaking on the spot
+  { id: "practice", name: "Practice", href: "/practice" },
+  // Lessons and readings
+  { id: "skills", name: "Skills", href: "/skills" },
   // Past sessions
   { id: "history", name: "History", href: "/history" },
-  // Settings
+  // Passphrase, themes, data
   { id: "settings", name: "Settings", href: "/settings" },
 ];
 

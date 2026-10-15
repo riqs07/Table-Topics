@@ -6,11 +6,13 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 // Load the screens that must all share the same navigation
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
+// Load the Practice screen
 import { PracticeScreen } from "@/components/screens/PracticeScreen";
 // Load the Skills screen
 import { SkillsScreen } from "@/components/screens/SkillsScreen";
 // Load the talk page
 import { TalkScreen } from "@/components/screens/TalkScreen";
+// Load the openings and closings page
 import { BookendsScreen } from "@/components/screens/BookendsScreen";
 // Load the Q&A page
 import { QaScreen } from "@/components/screens/QaScreen";
@@ -46,18 +48,22 @@ async function readNavigation() {
 describe("main navigation", () => {
   // Every screen offers the same way to every section, with its own section marked
   it.each([
-    // Home
+    // Today
     ["Today", "Today", async () => <HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Practice
     ["Practice", "Practice", async () => <PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Skills
     ["Skills", "Skills", async () => <SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // History
     ["History", "History", async () => <HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />],
-    // Lessons
-    ["Lessons", "Lessons", async () => <LessonsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
-    // Library
-    ["Library", "Library", async () => <LibraryScreen />],
-    // Rehearse
-    ["Rehearse", "Rehearse", async () => <RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Talks
+    ["Talks", "Talks", async () => <RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // A talk's page belongs to Talks
+    ["a talk's page", "Talks", async () => <TalkScreen talkId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Openings and closings belong to Practice
+    ["Openings and closings", "Practice", async () => <BookendsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // So does Q&A practice
+    ["Q&A practice", "Practice", async () => <QaScreen fromId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
     // Settings
     ["Settings", "Settings", async () => <SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // A session page belongs to no section, so nothing is marked
