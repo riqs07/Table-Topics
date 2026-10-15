@@ -1,0 +1,17 @@
+{
+  "id": "msg_test_questions",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-5-5",
+  "content": [
+    { "type": "thinking", "thinking": "", "signature": "sig" },
+    {
+      "type": "text",
+      "text": "{\"first\":\"How much will the new tool cost us?\",\"second\":\"  What happens to the work we already have in the old system?  \",\"third\":\"Who will train the team?\"}"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "stop_details": null,
+  "usage": { "input_tokens": 600, "output_tokens": 120, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0 }
+}
