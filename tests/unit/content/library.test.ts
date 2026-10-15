@@ -21,9 +21,9 @@ describe("prompt library", () => {
   // Record Response prompts are speaking tasks an audience would hear (decision 22)
   it("labels every prompt with the kind of talk it asks for, with each kind well stocked", () => {
     // Every prompt names its kind
-    for (const prompt of PROMPTS) expect(["explain", "persuade", "toast", "update", "story", "opinion"]).toContain(prompt.kind);
+    for (const prompt of PROMPTS) expect(["explain", "persuade", "toast", "update", "story", "opinion"]).toContain(prompt.talkKind);
     // The four kinds added for speakers each have at least three prompts
-    for (const kind of ["explain", "persuade", "toast", "update"]) expect(PROMPTS.filter((prompt) => prompt.kind === kind).length).toBeGreaterThanOrEqual(3);
+    for (const kind of ["explain", "persuade", "toast", "update"]) expect(PROMPTS.filter((prompt) => prompt.talkKind === kind).length).toBeGreaterThanOrEqual(3);
   });
 
   // Prompts retired on 2026-10-15 leave the rotation, but old sessions still show their text

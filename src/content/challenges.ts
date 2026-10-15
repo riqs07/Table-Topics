@@ -10,34 +10,34 @@ export interface Challenge {
 
 // Every challenge, in the order a new user meets them
 export const CHALLENGES: ReadonlyArray<Challenge> = [
-  // Week 1
-  { id: "c01", text: "Say good morning first to someone you see every day." },
-  // Week 2
-  { id: "c02", text: "Ask a shop or cafe worker how their day is going." },
-  // Week 3
-  { id: "c03", text: "Ask one question in a meeting or class." },
-  // Week 4
-  { id: "c04", text: "Give someone a specific compliment." },
-  // Week 5
-  { id: "c05", text: "Phone a business instead of messaging or booking online." },
-  // Week 6
-  { id: "c06", text: "Share one opinion in a group conversation." },
-  // Week 7
-  { id: "c07", text: "Start a short chat with a neighbor or colleague you rarely talk to." },
-  // Week 8
-  { id: "c08", text: "Tell a friend a short story about your week, out loud." },
-  // Week 9
-  { id: "c09", text: "Ask someone you do not know well for a recommendation." },
-  // Week 10
+  // Speak up early
   { id: "c10", text: "Speak first in a meeting or group, even for one sentence." },
-  // Week 11
-  { id: "c11", text: "Disagree politely about something small." },
-  // Week 12
-  { id: "c12", text: "Introduce yourself to someone new." },
-  // Week 13
-  { id: "c13", text: "Leave a voice message instead of a text." },
-  // Week 14
+  // Ask in public
+  { id: "c03", text: "Ask one question in a meeting or class." },
+  // Point first, for real
+  { id: "c15", text: "Give a 30-second update in a meeting, with your point first." },
+  // Explain it
   { id: "c14", text: "Explain something you know well to someone who does not." },
+  // The opening pause
+  { id: "c16", text: "Pause for two seconds before you start speaking in a meeting." },
+  // Say what you think
+  { id: "c06", text: "Share one opinion in a group conversation." },
+  // Structure on the spot
+  { id: "c17", text: "Answer a question in a meeting with a point, a reason and an example." },
+  // A clean ending
+  { id: "c18", text: "Tell a short story to a group, and end it on purpose." },
+  // Volunteer to speak
+  { id: "c19", text: "Offer to give a toast, a thank-you, or an introduction at the next gathering." },
+  // An introduction
+  { id: "c20", text: "Introduce a colleague or friend to a group." },
+  // Take the floor
+  { id: "c21", text: "Volunteer to present one item or slide at work or in a club." },
+  // Speak it, don't type it
+  { id: "c22", text: "Send someone a one-minute voice note explaining an idea." },
+  // Disagree out loud
+  { id: "c23", text: "Disagree politely in a meeting, and give your reason." },
+  // Find a room to practise in
+  { id: "c24", text: "Visit a speaking club, such as Toastmasters, as a guest." },
 ];
 
 // The challenge for the nth week of practice (0 is the first week); cycles once the list is used up

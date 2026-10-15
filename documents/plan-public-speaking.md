@@ -61,7 +61,7 @@ Every step follows the playbook's definition of done (section 4). Docs change in
 - **Tests:** rotation over six focuses (five shown); old focus ids still get titles; `measureFor` for each new focus.
 - **Decision for the user:** the order. *Default:* as listed.
 
-### A4. Prompts a speaker would get
+### A4. Prompts a speaker would get ✅ done 2026-10-15 (awaiting approval at C13)
 - **What:** Record a response gets about 12 new speaking prompts in four groups:
   - explain something to a newcomer;
   - persuade a group;

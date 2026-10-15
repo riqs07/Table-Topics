@@ -13,7 +13,12 @@ export interface Prompt {
   text: string;
   // For a Record Response: two or three angles to help shape an answer (none for other kinds)
   angles?: ReadonlyArray<string>;
+  // The kind of talk a Record Response prompt asks for, so feedback can expect the right shape
+  talkKind?: TalkKind;
 }
+
+// The kinds of talk a Record Response prompt can ask for
+export type TalkKind = "explain" | "persuade" | "toast" | "update" | "story" | "opinion";
 
 // One step of the structure hint shown while thinking about a Record Response
 export interface StructureStep {
@@ -35,24 +40,84 @@ export const STRUCTURE_HINT: ReadonlyArray<StructureStep> = [
   { label: "Point again", detail: "Repeat your answer in new words, then stop." },
 ];
 
-// Record Response prompts; ids never change once used, so old sessions keep their prompt
+// Record Response prompts: speaking tasks for an audience (decision 22); ids never change once used, so old sessions keep their prompt
 export const PROMPTS: ReadonlyArray<Prompt> = [
+  // Prompt 3
+  { id: "p003", text: "What is something you changed your mind about?", angles: ["What you used to think", "The moment or person that changed it", "What you think now, and what it cost to change"], talkKind: "opinion" },
+  // Prompt 5
+  { id: "p005", text: "What is a skill you would like to learn, and why?", angles: ["The skill and when you first wanted it", "What has stopped you so far", "The first small step you could take"], talkKind: "opinion" },
+  // Prompt 8
+  { id: "p008", text: "What is a piece of advice that stuck with you?", angles: ["Who said it and when", "What was happening in your life", "A time you actually used it"], talkKind: "story" },
+  // Prompt 14
+  { id: "p014", text: "What would you teach a class on?", angles: ["The subject", "What the first lesson would be", "Why you would be the right person to teach it"], talkKind: "explain" },
+  // Prompt 15
+  { id: "p015", text: "Tell me about a book, film or show you would recommend.", angles: ["What it is about, in one sentence", "The moment that won you over", "Who it is for"], talkKind: "persuade" },
+  // Prompt 17
+  { id: "p017", text: "Describe a problem you solved this month.", angles: ["What the problem was", "What you tried first", "What finally worked, and what you learned"], talkKind: "story" },
+  // Prompt 19
+  { id: "p019", text: "Tell me about your first job.", angles: ["What the job was and how you got it", "A day you remember from it", "What it taught you that you still use"], talkKind: "story" },
+  // Prompt 21
+  { id: "p021", text: "Explain how to make something you cook often.", angles: ["What you make and why you make it often", "The steps in order", "The one tip that makes it work"], talkKind: "explain" },
+  // Prompt 22
+  { id: "p022", text: "What is one thing you would change about your town?", angles: ["What you would change", "Why it bothers you", "What the town would be like after"], talkKind: "persuade" },
+  // Prompt 23
+  { id: "p023", text: "Describe a time you tried something new.", angles: ["What you tried and why", "The moment it went right or wrong", "What you would tell someone about to try it"], talkKind: "story" },
+  // Prompt 24
+  { id: "p024", text: "What makes a good friend, in your view?", angles: ["The one quality that matters most", "A friend who shows it", "How you try to be that kind of friend"], talkKind: "opinion" },
+  // Prompt 32
+  { id: "p032", text: "What is a rule you think should exist?", angles: ["The rule", "The problem it would fix", "How people would react to it"], talkKind: "persuade" },
+  // Prompt 33
+  { id: "p033", text: "Tell me about a person you admire and why.", angles: ["Who they are", "One thing they did that shows why", "What you have taken from them"], talkKind: "toast" },
+  // Explain your work to an outsider
+  { id: "p037", text: "Explain what you do at work to someone outside your field.", angles: ["The one-sentence version", "A task or day that shows it", "Why it matters to the people it serves"], talkKind: "explain" },
+  // Teach a beginner
+  { id: "p038", text: "Teach a newcomer one thing about a hobby you know well.", angles: ["The one thing worth knowing first", "The mistake most beginners make", "How they can try it this week"], talkKind: "explain" },
+  // Explain a decision
+  { id: "p039", text: "Explain a decision you made recently and how you made it.", angles: ["The decision, in one sentence", "The options you weighed", "What tipped it"], talkKind: "explain" },
+  // Persuade a team
+  { id: "p040", text: "Convince your team to try one new way of working.", angles: ["The change, in one sentence", "The problem it fixes", "A small first step to try"], talkKind: "persuade" },
+  // Persuade a friend
+  { id: "p041", text: "Persuade a friend to take up something you enjoy.", angles: ["What it is and what it gives you", "The worry they will have, and your answer", "How they could start"], talkKind: "persuade" },
+  // Make the case for a cause
+  { id: "p042", text: "Make the case for a cause or charity you care about.", angles: ["The problem it works on", "One person or story that shows the need", "What you are asking listeners to do"], talkKind: "persuade" },
+  // Argue for a change
+  { id: "p043", text: "Argue for one change at your workplace or school.", angles: ["The change", "Who it would help, and how", "Why now"], talkKind: "persuade" },
+  // A birthday toast
+  { id: "p044", text: "Give a short toast at a friend's birthday dinner.", angles: ["A quick story that shows who they are", "What they bring to the people around them", "The raise-your-glass line"], talkKind: "toast" },
+  // Thank a team
+  { id: "p045", text: "Thank a team after a project ends.", angles: ["What the project was and what it took", "One person or moment worth naming", "What you hope the team remembers"], talkKind: "toast" },
+  // Welcome a newcomer
+  { id: "p046", text: "Welcome a new colleague or member to your group.", angles: ["Who they are and where they come from", "What they bring", "How the group can help them settle in"], talkKind: "toast" },
+  // Introduce a speaker
+  { id: "p047", text: "Introduce a speaker you admire to an audience.", angles: ["Who they are, in one line", "Why this audience should listen", "Hand over with their name, said last"], talkKind: "toast" },
+  // A work update
+  { id: "p048", text: "Give a short update on something you are working on.", angles: ["Where it stands, in one sentence", "What went well and what is stuck", "What you need from your listeners"], talkKind: "update" },
+  // Report back
+  { id: "p049", text: "Report back on an event or trip to people who missed it.", angles: ["The headline", "One detail worth hearing", "What it means for them"], talkKind: "update" },
+  // Share news that changes plans
+  { id: "p050", text: "Share some news that changes plans for your group.", angles: ["The news, said first", "Why it happened", "What happens next"], talkKind: "update" },
+  // A mistake that taught you
+  { id: "p051", text: "Tell the story of a mistake that taught you something.", angles: ["What happened", "The moment you realised", "What you do differently now"], talkKind: "story" },
+  // A time you spoke up
+  { id: "p052", text: "Tell a story about a time you had to speak up.", angles: ["The situation", "What you said", "What happened next"], talkKind: "story" },
+  // What makes a good talk
+  { id: "p053", text: "What makes a talk worth listening to?", angles: ["The one quality that matters most", "A talk or speaker that had it", "How you could do the same"], talkKind: "opinion" },
+  // Script or notes
+  { id: "p054", text: "Should you write a talk out word for word, or speak from notes?", angles: ["Your answer, in one sentence", "When the other way works better", "What you will do next time"], talkKind: "opinion" },
+];
+
+// Prompts retired on 2026-10-15 for being small talk rather than speaking tasks; old sessions still show their text
+const RETIRED_PROMPTS: ReadonlyArray<Prompt> = [
   // Prompt 1
   { id: "p001", text: "Describe a small thing that made your week better.", angles: ["What the small thing was, exactly", "Why it landed that week", "Whether you could make it happen again"] },
   // Prompt 2
   { id: "p002", text: "Tell me about a place you love going to.", angles: ["What it looks and sounds like when you arrive", "What you usually do there", "Why it matters to you more than other places"] },
-  // Prompt 3
-  { id: "p003", text: "What is something you changed your mind about?", angles: ["What you used to think", "The moment or person that changed it", "What you think now, and what it cost to change"] },
   // Prompt 4
   { id: "p004", text: "Describe your last really good meal.", angles: ["Where you were and who you were with", "The one dish you still remember", "What made it more than just food"] },
-  // Prompt 5
-  { id: "p005", text: "What is a skill you would like to learn, and why?", angles: ["The skill and when you first wanted it", "What has stopped you so far", "The first small step you could take"] },
   // Prompt 6
   { id: "p006", text: "Walk me through your ideal morning.", angles: ["The first thing you do after waking", "What you would cut from a normal morning", "How the rest of the day feels after it"] },
   // Prompt 7
   { id: "p007", text: "Tell me about a song you never skip.", angles: ["Where you first heard it", "The part you wait for every time", "What it brings back or makes you feel"] },
-  // Prompt 8
-  { id: "p008", text: "What is a piece of advice that stuck with you?", angles: ["Who said it and when", "What was happening in your life", "A time you actually used it"] },
   // Prompt 9
   { id: "p009", text: "Describe someone who made you laugh recently.", angles: ["Who they are to you", "What they said or did", "Why it was so funny in the moment"] },
   // Prompt 10
@@ -63,28 +128,12 @@ export const PROMPTS: ReadonlyArray<Prompt> = [
   { id: "p012", text: "What is something you are quietly proud of?", angles: ["What it is", "Why you have kept it quiet", "What it says about you"] },
   // Prompt 13
   { id: "p013", text: "Describe your favorite room and what is in it.", angles: ["Where the room is and what it is for", "Two or three things in it that matter", "How you feel when you are in it"] },
-  // Prompt 14
-  { id: "p014", text: "What would you teach a class on?", angles: ["The subject", "What the first lesson would be", "Why you would be the right person to teach it"] },
-  // Prompt 15
-  { id: "p015", text: "Tell me about a book, film or show you would recommend.", angles: ["What it is about, in one sentence", "The moment that won you over", "Who it is for"] },
   // Prompt 16
   { id: "p016", text: "What does a good weekend look like for you?", angles: ["How it starts on Saturday morning", "The one thing that has to happen", "How you want to feel by Sunday night"] },
-  // Prompt 17
-  { id: "p017", text: "Describe a problem you solved this month.", angles: ["What the problem was", "What you tried first", "What finally worked, and what you learned"] },
   // Prompt 18
   { id: "p018", text: "What is something you are looking forward to?", angles: ["What it is and when it happens", "Why you are looking forward to it", "How you will make the most of it"] },
-  // Prompt 19
-  { id: "p019", text: "Tell me about your first job.", angles: ["What the job was and how you got it", "A day you remember from it", "What it taught you that you still use"] },
   // Prompt 20
   { id: "p020", text: "What is a smell or sound that brings back a memory?", angles: ["The smell or sound", "The memory it brings back", "Why that memory stayed with you"] },
-  // Prompt 21
-  { id: "p021", text: "Explain how to make something you cook often.", angles: ["What you make and why you make it often", "The steps in order", "The one tip that makes it work"] },
-  // Prompt 22
-  { id: "p022", text: "What is one thing you would change about your town?", angles: ["What you would change", "Why it bothers you", "What the town would be like after"] },
-  // Prompt 23
-  { id: "p023", text: "Describe a time you tried something new.", angles: ["What you tried and why", "The moment it went right or wrong", "What you would tell someone about to try it"] },
-  // Prompt 24
-  { id: "p024", text: "What makes a good friend, in your view?", angles: ["The one quality that matters most", "A friend who shows it", "How you try to be that kind of friend"] },
   // Prompt 25
   { id: "p025", text: "Tell me about an object you have kept for years.", angles: ["What the object is", "How you came to have it", "Why you have never let it go"] },
   // Prompt 26
@@ -99,10 +148,6 @@ export const PROMPTS: ReadonlyArray<Prompt> = [
   { id: "p030", text: "What is something you do differently from most people?", angles: ["What you do differently", "Where the habit came from", "Whether you would recommend it"] },
   // Prompt 31
   { id: "p031", text: "Describe a perfect rainy day.", angles: ["Where you would be", "What you would do, hour by hour", "Why rain makes it better"] },
-  // Prompt 32
-  { id: "p032", text: "What is a rule you think should exist?", angles: ["The rule", "The problem it would fix", "How people would react to it"] },
-  // Prompt 33
-  { id: "p033", text: "Tell me about a person you admire and why.", angles: ["Who they are", "One thing they did that shows why", "What you have taken from them"] },
   // Prompt 34
   { id: "p034", text: "What did you want to be when you were ten?", angles: ["What you wanted to be", "Why it appealed to you then", "What is left of that wish today"] },
   // Prompt 35
@@ -375,5 +420,5 @@ export function findPassage(id: string): Passage | undefined {
 // Find any prompt (Record Response, Table Topic, warm-up, or the title of a passage, drill, word list, or lesson) by its saved id
 export function findPrompt(id: string): Prompt | undefined {
   // Look in every list
-  return [...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS].find((prompt) => prompt.id === id);
+  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS].find((prompt) => prompt.id === id);
 }
