@@ -52,6 +52,10 @@ VoiceLab is being refocused on public speaking. The step-by-step plan is in [pla
 - **C, real use.**
 - **D, smarter analysis:** text checks, coach checks backed by quotes, pitch, word timings.
 
+## Done: user experience round (2026-10-15)
+
+The menu is organised by job (Today, Talks, Practice, Skills, History, Settings). Today recommends one next step. A first visit asks one welcome question. Every mode says what it is for, how long it takes, and what you get afterwards. "Record Response" became "Prepared answer". See decision 25.
+
 ## To revisit after the MVP (agreed 2026-10-14)
 
 Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:

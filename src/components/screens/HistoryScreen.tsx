@@ -69,8 +69,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   }
   // And rehearsals, named after the talk (or plainly, if the talk was deleted)
   if (session.mode === "rehearse") return talkTitles.has(session.promptId) ? `Rehearsal: ${talkTitles.get(session.promptId)}` : "Rehearsal";
-  // And Record Responses
-  return session.mode === "response" ? `Record Response: ${text}` : text;
+  // And prepared answers
+  return session.mode === "response" ? `Prepared answer: ${text}` : text;
 }
 
 // One line of the contents: day, prompt, dotted leader, result

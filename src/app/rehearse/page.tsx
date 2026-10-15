@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { RehearseScreen } from "@/components/screens/RehearseScreen";
 
 // Tab title
-export const metadata: Metadata = { title: "Rehearse my talk · VoiceLab" };
+export const metadata: Metadata = { title: "Your talks · VoiceLab" };
 
 // Draw the Rehearse screen with the browser's saved data
 export default function RehearsePage() {

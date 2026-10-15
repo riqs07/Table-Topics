@@ -151,6 +151,8 @@ describe("HomeScreen", () => {
     const repository = emptyRepository();
     // Save settings with the first focus started eight days ago
     await repository.saveSettings({ focusIndex: 0, focusStartedOn: new Date(2026, 9, 5).toISOString(), audioRetention: 30 });
+    // The welcome was already answered
+    localStorage.setItem("voicelab-welcome-seen", "yes");
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
     // Confirm the second focus is shown

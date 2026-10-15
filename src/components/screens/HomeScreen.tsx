@@ -185,9 +185,9 @@ export function HomeScreen(props: ScreenProps) {
         {/* Context: streak and focus (above the step on a phone, in the margin on a computer) */}
         <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
           {/* Streak, or a first-time line */}
-          {data && <p>{data.sessionCount === 0 ? "Welcome. Start anywhere below." : streakSentence(data.streak)}</p>}
-          {/* This week's focus */}
-          {data && (
+          {data && !data.showWelcome && <p>{data.sessionCount === 0 ? "First time here? Start with the step below." : streakSentence(data.streak)}</p>}
+          {/* This week's focus (held back during the welcome, which asks one thing only) */}
+          {data && !data.showWelcome && (
             <p className="md:mt-6 md:border-t md:border-rule md:pt-3">
               This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>. {data.focus.description}
             </p>

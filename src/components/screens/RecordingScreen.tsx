@@ -17,6 +17,8 @@ import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, Recordi
 import { BOOKENDS, STRUCTURE_HINT, findPassage, findPrompt } from "@/content/prompts";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
+// Load the plain descriptions of each mode
+import { modeForSession } from "@/content/modes";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
@@ -568,8 +570,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" || mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
+  // How this kind of session works, from the catalogue
+  const howItWorks = modeForSession(mode);
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Record Response" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared answer" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : "Recording";
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
@@ -602,6 +606,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
           {recording && angles.length > 0 && <Hints angles={angles} compact />}
+          {/* Before starting: how this kind of session works and what comes afterwards */}
+          {howItWorks && !(recording || thinking || stage === "starting" || stage === "saving") && (
+            <div role="note" aria-label="How this works" className="mt-6 border-t border-rule pt-3">
+              {/* Small heading */}
+              <p className="italic">How this works</p>
+              {/* What you do */}
+              <p className="mt-1 text-ink">{howItWorks.youDo}</p>
+              {/* What you get */}
+              <p className="mt-1">Afterwards: {howItWorks.youGet.charAt(0).toLowerCase() + howItWorks.youGet.slice(1)}</p>
+            </div>
+          )}
           {/* Push discard down */}
           <div className="hidden flex-1 md:block" />
           {/* Discard while recording */}
