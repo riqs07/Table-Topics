@@ -14,7 +14,7 @@ import { createRepository } from "@/data/repository";
 import { drillForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
 import { CHALLENGES } from "@/content/challenges";
 // Load a sample session builder
-import { makeSession } from "../support/fixtures";
+import { makeSession, makeTalk } from "../support/fixtures";
 
 // A fixed "now": Tuesday 13 October 2026, mid-morning
 const NOW = new Date(2026, 9, 13, 10);
@@ -37,6 +37,22 @@ describe("HomeScreen", () => {
     expect(screen.getByText(/Your first Record Response becomes your starting point/)).toBeTruthy();
     // Confirm the first weekly challenge
     expect(screen.getByText(CHALLENGES[0]!.text.charAt(0).toLowerCase() + CHALLENGES[0]!.text.slice(1))).toBeTruthy();
+  });
+
+  // A talk with a date coming up leads the page with today's step; a past date does not
+  it("shows the next talk with a date, and today's step", async () => {
+    // A repository with a talk a week away and one whose date has passed
+    const repository = emptyRepository();
+    // A week away
+    await repository.saveTalk(makeTalk({ id: "soon", title: "Pitch", eventDate: "2026-10-20" }));
+    // Already given
+    await repository.saveTalk(makeTalk({ id: "past", title: "Old toast", eventDate: "2026-10-01" }));
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The band for the upcoming talk
+    const band = await screen.findByRole("link", { name: /Pitch/ });
+    // Confirm where it leads, what it says, and that the past talk is not offered
+    expect([band.getAttribute("href"), band.textContent?.includes("in 7 days"), !!screen.getByText(/Today: rehearse each section once/), screen.queryByRole("link", { name: /Old toast/ })]).toEqual(["/talk?id=soon", true, true, null]);
   });
 
   // The main action records a response to today's prompt

@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the event-prep rules being checked
-import { daysUntil, eventPlan, memoryLadder, prepHeadline, runTimes, stepTasks, talkSections, taskProgress } from "@/core/eventPrep";
+import { daysUntil, eventPlan, memoryLadder, prepHeadline, runTimes, stepTasks, stepText, talkSections, taskProgress } from "@/core/eventPrep";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -191,6 +191,15 @@ describe("prepHeadline", () => {
     expect(prepHeadline(1, { kind: "dress" })).toBe("Your talk is tomorrow. Today: a full rehearsal, from memory, timed.");
     // Confirm the day itself
     expect(prepHeadline(0, { kind: "warmup" })).toBe("Your talk is today. Warm up with the tongue twisters, then one easy run from keywords.");
+  });
+});
+
+// Group the checks about the list of coming days
+describe("stepText", () => {
+  // Each later day as its own sentence
+  it("writes a later day as a sentence, and names the day of the talk", () => {
+    // Confirm two kinds
+    expect([stepText("keywords"), stepText("warmup")]).toEqual(["One whole run from keywords only.", "The day of the talk: warm up, then one easy run from keywords."]);
   });
 });
 

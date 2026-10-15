@@ -45,9 +45,9 @@ describe("TalkScreen", () => {
     // Today's tasks
     const today = screen.getByRole("list", { name: "Today" });
     // Confirm each task's progress and link
-    expect(within(today).getAllByRole("listitem").map((item) => [item.textContent?.replace(/\s+/g, " ").trim(), within(item).getByRole("link").getAttribute("href")])).toEqual([
-      ["The opening 1 of 2 Rehearse", "/session?mode=rehearse&prompt=talk-1&section=0&ladder=full"],
-      ["The close 0 of 2 Rehearse", "/session?mode=rehearse&prompt=talk-1&section=2&ladder=full"],
+    expect(within(today).getAllByRole("listitem").map((item) => [...Array.from(item.children).map((part) => part.textContent), within(item).getByRole("link").getAttribute("href")])).toEqual([
+      ["The opening", "1 of 2", "Rehearse", "/session?mode=rehearse&prompt=talk-1&section=0&ladder=full"],
+      ["The close", "0 of 2", "Rehearse", "/session?mode=rehearse&prompt=talk-1&section=2&ladder=full"],
     ]);
   });
 
