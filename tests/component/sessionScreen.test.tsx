@@ -292,6 +292,6 @@ describe("SessionScreen", () => {
     // Draw the screen
     render(<SessionScreen sessionId="l" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the title, the check, and the tip reminder
-    expect([!!(await screen.findByText("Lesson 2: Crisp consonants")), /^You read \d+% of the words clearly\.$/.test(screen.getByTestId("reading-headline").textContent ?? ""), !!screen.getByText(/^Remember: /)]).toEqual([true, true, true]);
+    expect([!!(await screen.findByText("Lesson 2: Crisp consonants")), /^You read \d+% of the words clearly\.$/.test(screen.getByTestId("reading-headline").textContent ?? ""), !!screen.getByText(/^Remember: /), screen.getAllByText(/You read \d+% of the words/).length]).toEqual([true, true, true, 1]);
   });
 });

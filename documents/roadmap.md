@@ -41,6 +41,8 @@ Decision 18 in decisions.md has the details. In build order:
 2. Pause drill: a passage with marked pause points; the session page says which pauses were taken.
 3. Rehearse my talk: paste your own talk or notes, rehearse it with a timer, line it up word by word like a reading, and compare runs with "then and now".
 
+## Done: skill path and practice library (2026-10-15)
+
 ## To revisit after the MVP (agreed 2026-10-14)
 
 Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:

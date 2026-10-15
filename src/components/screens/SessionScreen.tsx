@@ -278,7 +278,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed }: { repo: 
               {/* How much of the passage was read */}
               <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? `You covered ${reading.percentRead}% of your script.` : `You read ${reading.percentRead}% of the words.`}</p>
               {/* The detail */}
-              <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" || lesson ? `You read ${reading.percentRead}% of the words; ` : ""}{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
+              <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? `You read ${reading.percentRead}% of the words; ` : ""}{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
               {/* A lesson's tip, as a reminder */}
               {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
             </>

@@ -62,7 +62,7 @@ export function LessonsScreen(props: ScreenProps) {
           // One row
           <li key={lesson.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-4">
             {/* Number */}
-            <span className="w-6 font-display text-cue text-ink-muted tabular-nums">{lesson.number}</span>
+            <span className="w-8 flex-none font-display text-cue text-ink-muted tabular-nums">{lesson.number}</span>
             {/* Title and tip */}
             <span className="min-w-0 flex-1">
               {/* Title */}
