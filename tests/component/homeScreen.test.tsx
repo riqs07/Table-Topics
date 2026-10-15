@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 // Load the tool for acting like a user
 import userEvent from "@testing-library/user-event";
 // Load the screen being checked
@@ -10,9 +10,8 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
-// Load the prompt and challenge pickers
-import { drillForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
-import { CHALLENGES } from "@/content/challenges";
+// Load the day's pickers
+import { bookendForDay, promptForDay } from "@/content/prompts";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -27,20 +26,16 @@ const emptyRepository = () => createRepository(new MemoryStore());
 
 // Group the checks about the Home screen
 describe("HomeScreen", () => {
-  // A new user sees today's prompt, a welcome line, and the first challenge
-  it("shows today's prompt and a first-time line for a new user", async () => {
+  // A new user is pointed at a first prepared answer, with the reason
+  it("starts a new user with a prepared answer, and says why", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Confirm today's prompt is the main heading
-    expect(await screen.findByRole("heading", { level: 1 })).toHaveProperty("textContent", promptForDay(NOW).text);
-    // Confirm the first-time line
-    expect(screen.getByText(/Your first Record Response becomes your starting point/)).toBeTruthy();
-    // Confirm the first weekly challenge
-    expect(screen.getByText(CHALLENGES[0]!.text.charAt(0).toLowerCase() + CHALLENGES[0]!.text.slice(1))).toBeTruthy();
+    // Confirm the task is the main heading, the reason, and where the main action leads
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText(/becomes your starting point/), screen.getByRole("link", { name: /^Start/ }).getAttribute("href")]).toEqual([promptForDay(NOW).text, true, `/session?mode=response&prompt=${promptForDay(NOW).id}`]);
   });
 
-  // A talk with a date coming up leads the page with today's step; a past date does not
-  it("shows the next talk with a date, and today's step", async () => {
+  // A talk with a date comes first, and a past date does not count
+  it("puts the next talk with a date first", async () => {
     // A repository with a talk a week away and one whose date has passed
     const repository = emptyRepository();
     // A week away
@@ -49,86 +44,30 @@ describe("HomeScreen", () => {
     await repository.saveTalk(makeTalk({ id: "past", title: "Old toast", eventDate: "2026-10-01" }));
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // The band for the upcoming talk
-    const band = await screen.findByRole("link", { name: /Pitch/ });
-    // Confirm where it leads, what it says, and that the past talk is not offered
-    expect([band.getAttribute("href"), band.textContent?.includes("in 7 days"), !!screen.getByText(/Today: rehearse each section once/), screen.queryByRole("link", { name: /Old toast/ })]).toEqual(["/talk?id=soon", true, true, null]);
+    // Confirm today's step is the heading and the main action opens the talk's plan
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, screen.getByRole("link", { name: /^Open today’s plan/ }).getAttribute("href"), screen.queryByText(/Old toast/)]).toEqual(["Your talk is in 7 days. Today: rehearse each section once, with the text.", "/talk?id=soon", null]);
   });
 
-  // With a dated talk, the talk's plan becomes the main action at the bottom and a response becomes a quieter option
-  it("makes the next talk the main action when it has a date", async () => {
-    // A repository with a talk a week away
+  // After the first session, the week's focus picks the mode
+  it("recommends the mode that trains this week's focus", async () => {
+    // A repository with one earlier session, in the first focus week (strong opening)
     const repository = emptyRepository();
-    // Save it
-    await repository.saveTalk(makeTalk({ id: "soon", title: "Pitch", eventDate: "2026-10-20" }));
+    // The session
+    await repository.saveSession(makeSession({ id: "s1", createdAt: new Date(2026, 9, 12, 9).toISOString() }));
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // Wait for the band
-    await screen.findByRole("link", { name: /Pitch/ });
-    // The bands, top to bottom
-    const bands = screen.getAllByRole("link").filter((link) => /Pitch|Table Topic|Record a response|Practice library/.test(link.textContent ?? "")).map((link) => ["Table Topic", "Record a response", "Practice library", "Pitch"].find((name) => (link.textContent ?? "").includes(name)));
-    // Confirm the order, with the talk last (the filled main band)
-    expect(bands).toEqual(["Table Topic", "Record a response", "Practice library", "Pitch"]);
+    // Confirm the opening drill is recommended
+    expect([(await screen.findByText("Opening drill · 45 seconds")) !== null, screen.getByRole("link", { name: /^Start/ }).getAttribute("href")]).toEqual([true, `/session?mode=bookend&prompt=${bookendForDay(NOW, "opening").id}`]);
   });
 
-  // Q&A practice is offered after the latest rehearsal or response
-  it("offers Q&A practice on the latest rehearsal or response", async () => {
-    // A repository with an older response and a newer rehearsal
-    const repository = emptyRepository();
-    // The response
-    await repository.saveSession(makeSession({ id: "old", mode: "response", createdAt: "2026-10-11T10:00:00.000Z" }));
-    // The rehearsal
-    await repository.saveSession(makeSession({ id: "new", mode: "rehearse", promptId: "talk-1", createdAt: "2026-10-12T10:00:00.000Z" }));
-    // Draw the screen
-    render(<HomeScreen repository={repository} now={NOW} />);
-    // Confirm the link goes to the newest
-    expect((await screen.findByRole("link", { name: "Q&A practice" })).getAttribute("href")).toBe("/qa?from=new");
-  });
-
-  // The main action records a response to today's prompt
-  it("links the main action to a Record Response on today's prompt", async () => {
+  // The three jobs are always one tap away, each with a line on what it covers
+  it("offers the three jobs", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Find the action
-    const action = await screen.findByRole("link", { name: /Record a response/ });
-    // Confirm it points at a Record Response with the prompt id
-    expect(action.getAttribute("href")).toBe(`/session?mode=response&prompt=${promptForDay(NOW).id}`);
-  });
-
-  // The other mode is a Table Topic on a light question, kept hidden until it starts
-  it("offers a Table Topic without showing its question", async () => {
-    // Draw the screen
-    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Find the Table Topic action
-    const talk = await screen.findByRole("link", { name: /Table Topic/ });
-    // Confirm it starts today's Table Topic, and its question is not on the page
-    expect([talk.getAttribute("href"), screen.queryByText(tableTopicForDay(NOW).text)]).toEqual([`/session?mode=talk&prompt=${tableTopicForDay(NOW).id}`, null]);
-  });
-
-  // The practice library replaces the daily read-aloud option
-  it("offers the practice library instead of a daily reading", async () => {
-    // Draw the screen
-    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Confirm the library link and that the daily reading link is gone
-    expect([(await screen.findByRole("link", { name: /Practice library/ })).getAttribute("href"), screen.queryByRole("link", { name: /Read aloud/ })]).toEqual(["/library", null]);
-  });
-
-  // More practice: the skill path, a pause drill on today's drill passage, and rehearsing your own talk
-  it("offers the skill path, the pause drill and Rehearse my talk", async () => {
-    // Draw the screen
-    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Confirm all three links
-    expect([(await screen.findByRole("link", { name: /skill path/ })).getAttribute("href"), screen.getByRole("link", { name: /pause drill/ }).getAttribute("href"), screen.getByRole("link", { name: /rehearse my talk/ }).getAttribute("href")]).toEqual(["/lessons", `/session?mode=pause&prompt=${drillForDay(NOW).id}`, "/rehearse"]);
-  });
-
-  // The warm-up and the one-minute session are retired from the home screen
-  it("offers only the current modes", async () => {
-    // Draw the screen
-    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Wait for the page
-    await screen.findByRole("link", { name: /Record a response/ });
-    // Confirm the old options are gone
-    expect([screen.queryByRole("link", { name: /warm up/ }), screen.queryByRole("link", { name: /Speak for a minute/ })]).toEqual([null, null]);
+    // The jobs list
+    const jobs = await screen.findByRole("list", { name: "Or choose" });
+    // Confirm each link
+    expect(within(jobs).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/rehearse", "/practice", "/skills"]);
   });
 
   // A returning user sees the streak as a sentence
@@ -141,18 +80,6 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={repository} now={NOW} />);
     // Confirm the streak sentence
     expect(await screen.findByText(/Third day running\./)).toBeTruthy();
-  });
-
-  // "Or choose another" swaps the prompt and the link follows
-  it("swaps to another prompt", async () => {
-    // Draw the screen
-    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Ask for another prompt
-    await userEvent.click(await screen.findByRole("button", { name: /choose another/ }));
-    // Confirm the heading changed to the next prompt
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(promptForDay(NOW, 1).text);
-    // Confirm the link follows
-    expect(screen.getByRole("link", { name: /Record a response/ }).getAttribute("href")).toBe(`/session?mode=response&prompt=${promptForDay(NOW, 1).id}`);
   });
 
   // Ticking the challenge saves it as done
@@ -178,7 +105,7 @@ describe("HomeScreen", () => {
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
     // Confirm the second focus is shown
-    expect(await screen.findByText(/clear structure/i)).toBeTruthy();
+    expect((await screen.findAllByText(/clear structure/i)).length).toBeGreaterThan(0);
     // Confirm the advance was saved
     await waitFor(async () => expect((await repository.getSettings(NOW)).focusIndex).toBe(1));
   });
