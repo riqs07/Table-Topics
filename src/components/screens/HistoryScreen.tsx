@@ -127,9 +127,7 @@ export function HistoryScreen(props: ScreenProps) {
     // One column on a phone, margin plus main column on a computer
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
       {/* Title and a link home */}
-      <Masthead title="History">
-        <Link href="/" className="hover:underline">Back to the prompt</Link>
-      </Masthead>
+      <Masthead title="History" section="history" />
 
       {/* Empty state */}
       {sessions && sessions.length === 0 && <p className="mt-6 text-lede text-ink-muted">Nothing here yet. Your first recording will start the page.</p>}

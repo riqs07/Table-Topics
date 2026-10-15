@@ -524,8 +524,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   return (
     // One column on a phone, margin plus main column on a computer
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
-      {/* Title and keyboard hint */}
-      <Masthead title={title}>{hint}</Masthead>
+      {/* Navigation (hidden while recording), title and keyboard hint */}
+      <Masthead title={title} nav={!(recording || thinking || stage === "starting" || stage === "saving")}>{hint}</Masthead>
 
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">

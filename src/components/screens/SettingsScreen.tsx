@@ -193,9 +193,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     // A single readable column
     <main className="mx-auto min-h-dvh max-w-2xl bg-paper-raised px-6 pt-6 pb-16 md:pt-10">
       {/* Title and a link home */}
-      <Masthead title="Settings">
-        <Link href="/" className="hover:underline">Back to the prompt</Link>
-      </Masthead>
+      <Masthead title="Settings" section="settings" />
 
       {/* Result of the last action, read out to screen readers */}
       <p role="status" className="mt-4 min-h-6 italic text-accent">{message}</p>

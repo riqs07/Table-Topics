@@ -12,6 +12,7 @@ Rules for every screen:
 
 - **Serif type throughout** (Newsreader). The daily prompt is set like a headline, with a hanging opening quote in the accent.
 - **Prose instead of widgets.** Streak, focus, and progress are written as sentences ("Fourth day running."). Numbers appear inside sentences ("From 4.2 to 1.8 fillers a minute.").
+- **Main navigation** above the masthead on every screen (added 2026-10-15): Home · History · Rehearse · Settings in small type, the current section in ink without an underline. It is hidden while recording, counting down, or saving, so a stray click cannot lose a take.
 - **A masthead line** on every screen: title in small capitals on the left, an italic note on the right, a solid hairline underneath.
 - **Run-in italic headings** ("*What to keep.*") instead of labels above blocks.
 - **One full-width action band** at the bottom of a screen, square-cornered, with the action in large italic. Secondary actions are footnotes above it.

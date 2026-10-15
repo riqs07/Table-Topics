@@ -18,6 +18,7 @@ Every one of these passed the full test suite and a browser check. The pattern i
 | B2 | 2026-10-14 | "The requested version (1) is less than the existing version (10)" | Another project on `localhost:3000` had already made a browser database called "voicelab" | Every test and browser run started with empty storage | T3, S1 |
 | B3 | 2026-10-14 | "Hydration failed because the server rendered HTML didn't match the client" | The page asked "does this browser support speech?" while the server was drawing it. The server always said no | Component tests only drew pages in a browser-like setting. Browser checks always clicked through from the home page, so the server never drew that page | T4, T5 |
 | B4 | 2026-10-14 | "The object store uses in-line keys and the key parameter was provided" | The fix for B2 reused the other project's database, whose collections were laid out differently | The test for the B2 fix built the "existing" database the way **our** app would, not the way the other project did. The fix treated the symptom (a version number), not the cause (sharing a name) | T3, T6, S1 |
+| B5 | 2026-10-15 | No way to get back to the starting page from a prompt or session | Screens were designed and approved one at a time; only the home page linked to other sections, and the recording page linked nowhere | Each screen's tests checked its own content. Nothing checked the app as a whole: "from every screen, can you reach every section?" The approved wireframes had the same gap | T11 |
 
 ### Caught before they reached you (what worked)
 
@@ -53,6 +54,7 @@ Tests written by the same agent that writes the code share its blind spots. A pa
 | **T8. Check layouts at phone width with screenshots** | Look at every new screen at 375 px wide, and check that nothing scrolls sideways |
 | **T9. Write the failing test first, as its own commit** | This caught real mistakes here (rounding, the theme bug). Keep it |
 | **T10. Browser checks belong in the repository and in CI** | In this project the browser checks lived in throwaway scripts, so they only ran when the agent remembered. Keep end-to-end checks with the code and run them on every push |
+| **T11. Test the journeys between screens, not just each screen** | One test runs over every screen and checks the shared parts: the main navigation leads to every section, and the current one is marked. A browser check loads each page directly and clicks every navigation link. When a new screen is added, it joins that list |
 
 ## 4. Definition of done for an AI change
 
