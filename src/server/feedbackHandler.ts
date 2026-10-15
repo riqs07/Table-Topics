@@ -4,6 +4,8 @@
 import { z } from "zod";
 // Load the passphrase check and its header name
 import { PASSPHRASE_HEADER, passphraseMatches } from "@/server/accessGate";
+// Load the passphrase fingerprint and warnings, for logging a mismatch while developing
+import { passphraseFingerprint, passphraseWarnings } from "@/core/passphraseCheck";
 // Load the coach type
 import type { Coach } from "@/server/coach";
 // Load the settings type
@@ -23,6 +25,10 @@ export interface FeedbackDeps {
   limits: RateLimits;
   // The current time
   now(): Date;
+  // True while developing locally: a passphrase mismatch is logged with both fingerprints
+  development?: boolean;
+  // Where log lines go (the server terminal)
+  log?: (line: string) => void;
 }
 
 // The request body the app sends
@@ -62,8 +68,24 @@ export function createFeedbackHandler(deps: FeedbackDeps) {
       return reply(500, { error: `The server is not set up: ${(error as Error).message}` });
     }
 
-    // Refuse anyone without the passphrase, before anything costs money
-    if (!passphraseMatches(request.headers.get(PASSPHRASE_HEADER), env.accessSecret)) return reply(401, { error: "Wrong or missing passphrase." });
+    // Refuse anyone without the passphrase, before anything costs money: read what was sent
+    const provided = request.headers.get(PASSPHRASE_HEADER);
+    // (compare it with the server's)
+    if (!passphraseMatches(provided, env.accessSecret)) {
+      // While developing, log both fingerprints and any stray characters in the server's setting, so the mismatch can be found
+      if (deps.development && deps.log) {
+        // Fingerprint of what the browser sent, or none
+        const sent = provided ? await passphraseFingerprint(provided) : "none (no passphrase saved in this browser)";
+        // Fingerprint of the server's setting
+        const expected = await passphraseFingerprint(env.accessSecret);
+        // Anything odd about the server's setting
+        const warnings = passphraseWarnings(env.accessSecret);
+        // One line, never the passphrase itself
+        deps.log(`Passphrase mismatch: this browser sent fingerprint ${sent}; APP_ACCESS_SECRET has fingerprint ${expected}.${warnings.length ? ` APP_ACCESS_SECRET: ${warnings.join(" ")}` : ""}`);
+      }
+      // Refuse
+      return reply(401, { error: "Wrong or missing passphrase." });
+    }
 
     // Read the body as JSON
     let body: unknown;

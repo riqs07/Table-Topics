@@ -5,6 +5,8 @@
 // Load the coach model settings and prices
 // Load the same settings check the app uses
 import { readServerEnv } from "@/server/env";
+// Load the passphrase fingerprint and warnings
+import { passphraseFingerprint, passphraseWarnings } from "@/core/passphraseCheck";
 import { COACH_EFFORT, COACH_MODEL, COACH_PRICE_PER_MILLION } from "@/config/models";
 // Load the coach input type
 import type { CoachInput } from "@/core/coachPrompt";
@@ -23,6 +25,12 @@ const SAMPLES: Array<{ name: string; input: CoachInput }> = [
 
 // Run every sample and report
 async function main() {
+  // Describe the passphrase setting first (fingerprint and stray characters), so a mismatch with Settings can be spotted
+  const secret = process.env.APP_ACCESS_SECRET ?? "";
+  // Its length and fingerprint, never the passphrase itself
+  console.log(`APP_ACCESS_SECRET: ${secret.length} characters, fingerprint ${await passphraseFingerprint(secret)} (compare with Settings in the app)`);
+  // Anything that would stop it matching what is typed in Settings
+  for (const warning of passphraseWarnings(secret)) console.log(`  Warning: ${warning}`);
   // Check every setting the app's feedback route needs (key, passphrase length), so a pass here means the app can work too
   const env = readServerEnv(process.env);
   // Say the settings passed

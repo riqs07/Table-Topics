@@ -23,6 +23,8 @@ import { sendPendingFeedback } from "@/data/feedbackClient";
 import { readPassphrase, savePassphrase } from "@/data/passphrase";
 // Load the shortest passphrase allowed
 import { MIN_PASSPHRASE_LENGTH } from "@/config/headers";
+// Load the passphrase fingerprint
+import { passphraseFingerprint } from "@/core/passphraseCheck";
 // Load the sentence for send results
 import { sendResultMessage } from "@/core/feedbackMessages";
 
@@ -68,6 +70,18 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   const [settings, setSettings] = useState<SettingsRecord | null>(null);
   // A message to show after an action
   const [message, setMessage] = useState("");
+  // Fingerprint of the passphrase saved on this device, to compare with the server's (shown by pnpm live-check)
+  const [fingerprint, setFingerprint] = useState("");
+
+  // Work out the saved passphrase's fingerprint once in the browser
+  useEffect(() => {
+    // The saved passphrase
+    const saved = readPassphrase();
+    // Nothing saved, nothing to show
+    if (!saved) return;
+    // Work it out and show it
+    void passphraseFingerprint(saved).then(setFingerprint);
+  }, []);
   // Whether the delete confirmation is showing
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -160,6 +174,10 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     savePassphrase(passphrase);
     // Say what happened
     setMessage(passphrase.trim() ? "Passphrase saved on this device." : "Passphrase removed.");
+    // Show the new fingerprint, or none
+    if (passphrase.trim()) void passphraseFingerprint(passphrase.trim()).then(setFingerprint);
+    // (none when removed)
+    else setFingerprint("");
   }
 
   // Send every session waiting for feedback now
@@ -226,6 +244,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           {/* Save */}
           <button type="button" onClick={storePassphrase} className="underline underline-offset-4">Save passphrase</button>
         </p>
+        {/* The saved passphrase's fingerprint, to compare with the one pnpm live-check prints for APP_ACCESS_SECRET */}
+        {fingerprint && <p className="mt-2 text-footnote italic text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
         {/* Waiting sessions, with a way to send them now */}
         {pendingCount > 0 && (
           <p className="mt-3">

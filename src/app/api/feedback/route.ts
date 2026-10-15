@@ -26,4 +26,8 @@ export const POST = createFeedbackHandler({
   limits: FEEDBACK_LIMITS,
   // The real clock
   now: () => new Date(),
+  // While developing, log a passphrase mismatch with fingerprints to the terminal
+  development: process.env.NODE_ENV !== "production",
+  // The server terminal
+  log: (line) => console.warn(line),
 });
