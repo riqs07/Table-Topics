@@ -160,6 +160,22 @@ describe("parseExport", () => {
     expect([file.talks[0]?.eventDate, file.sessions[0]?.sectionIndex, (() => { try { parseExport(damaged); return "accepted"; } catch { return "refused"; } })()]).toEqual(["2026-10-22", 2, "refused"]);
   });
 
+  // A session's Q&A questions and a Q&A answer's question survive the round trip; a damaged list does not import
+  it("carries Q&A questions, and rejects a damaged list", async () => {
+    // A repository with a rehearsal that has questions, and an answer
+    const repository = createRepository(new MemoryStore());
+    // The rehearsal
+    await repository.saveSession(makeSession({ id: "r1", mode: "rehearse", questions: ["A?", "B?"] }));
+    // The answer
+    await repository.saveSession(makeSession({ id: "q1", mode: "qa", promptId: "r1", question: "A?" }));
+    // Export and read back
+    const file = parseExport(JSON.stringify(await buildExport(repository, NOW)));
+    // The same file with a damaged list
+    const damaged = JSON.stringify({ ...file, sessions: file.sessions.map((session) => (session.id === "r1" ? { ...session, questions: [1, 2] } : session)) });
+    // Confirm both survived, and the damaged file is refused
+    expect([file.sessions.find((session) => session.id === "r1")?.questions, file.sessions.find((session) => session.id === "q1")?.question, (() => { try { parseExport(damaged); return "accepted"; } catch { return "refused"; } })()]).toEqual([["A?", "B?"], "A?", "refused"]);
+  });
+
   // A damaged file with a broken session
   it("rejects a file with a damaged record", () => {
     // Build a file whose session is missing its transcript
