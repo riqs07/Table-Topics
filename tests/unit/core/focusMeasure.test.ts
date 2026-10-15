@@ -5,6 +5,9 @@ import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
+// Loudness readings (one every 100 ms): two seconds of speech, then a one-second pause, three times over
+const TWO_PAUSES = [...Array(20).fill(0.5), ...Array(10).fill(0), ...Array(20).fill(0.5), ...Array(10).fill(0), ...Array(20).fill(0.5)];
+
 // Group the checks about which number goes with each weekly focus
 describe("measureFor", () => {
   // Filler week measures fillers
@@ -23,10 +26,26 @@ describe("measureFor", () => {
     expect(measureFor("pace")?.unit).toBe("words a minute");
   });
 
-  // Finishing sentences and structure cannot be measured from a transcript, so there is no number
-  it("has no number for start-and-finish or structure", () => {
-    // Confirm both have none
-    expect([measureFor("start-and-finish"), measureFor("structure")]).toEqual([null, null]);
+  // Pausing week counts pauses from the loudness readings
+  it("measures pauses a minute in pausing week", () => {
+    // The measure
+    const measure = measureFor("pausing");
+    // Confirm the unit
+    expect(measure?.unit).toBe("pauses a minute");
+    // Two pauses in half a minute is four a minute
+    expect(measure?.read(makeSession({ durationSec: 30, loudness: TWO_PAUSES }))).toBe(4);
+  });
+
+  // Sessions saved before loudness was kept have no pause count
+  it("has no pause number for a session without loudness readings", () => {
+    // Confirm nothing to read
+    expect(measureFor("pausing")?.read(makeSession({ loudness: undefined }))).toBeNull();
+  });
+
+  // Openings, structure and closes need judgement, not a count (until the text checks in plan step D1)
+  it("has no number for opening, structure, close, or the retired start-and-finish", () => {
+    // Confirm none have one
+    expect(["strong-opening", "clear-structure", "strong-close", "start-and-finish", "structure"].map(measureFor)).toEqual([null, null, null, null, null]);
   });
 });
 
@@ -44,10 +63,28 @@ describe("headlineFor", () => {
     expect(headlineFor(makeSession({ focus: "pace", wordsPerMinute: 162.4 }))).toBe("162 words a minute.");
   });
 
+  // Pausing week: one decimal place
+  it("writes the pause rate in pausing week", () => {
+    // Confirm the sentence
+    expect(headlineFor(makeSession({ focus: "pausing", durationSec: 30, loudness: TWO_PAUSES }))).toBe("4.0 pauses a minute.");
+  });
+
   // No number: name the focus instead
   it("names the focus when there is no number", () => {
     // Confirm the sentence
+    expect(headlineFor(makeSession({ focus: "strong-opening" }))).toBe("Strong opening.");
+  });
+
+  // An old session keeps its retired focus's name
+  it("names a retired focus on an old session", () => {
+    // Confirm the sentence
     expect(headlineFor(makeSession({ focus: "start-and-finish" }))).toBe("Start and finish.");
+  });
+
+  // Pausing week without readings names the focus
+  it("names the focus when the pause count cannot be read", () => {
+    // Confirm the sentence
+    expect(headlineFor(makeSession({ focus: "pausing", loudness: undefined }))).toBe("Pausing.");
   });
 });
 
@@ -69,6 +106,12 @@ describe("retryHeadline", () => {
   it("says when the number held steady", () => {
     // Confirm the sentence for fillers
     expect(retryHeadline(makeSession({ fillersPerMinute: 3.05 }), makeSession({ fillersPerMinute: 3.1 }))).toBe("Again about 3.1 fillers a minute.");
+  });
+
+  // Either try without readings: a plain statement
+  it("uses a plain statement when a pause count is missing", () => {
+    // Confirm the sentence
+    expect(retryHeadline(makeSession({ focus: "pausing", durationSec: 30, loudness: TWO_PAUSES }), makeSession({ focus: "pausing", loudness: undefined }))).toBe("Your second try is in.");
   });
 
   // No number: a plain statement

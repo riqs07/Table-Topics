@@ -43,6 +43,12 @@ describe("COACH_SYSTEM_PROMPT", () => {
 
 // Group the checks about the per-session message
 describe("buildCoachMessage", () => {
+  // An old session's retry still tells the coach its retired focus
+  it("names a retired focus on an old session", () => {
+    // Confirm the old title is included
+    expect(buildCoachMessage({ ...SESSION, focusId: "pace" })).toContain("Weekly focus: Pace:");
+  });
+
   // The coach is told the week's focus
   it("names the weekly focus", () => {
     // Confirm the focus title and explanation are included

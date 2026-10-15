@@ -1,23 +1,44 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the weekly focus rules being checked
-import { V1_FOCUSES, WEEKLY_FOCUSES, currentFocus } from "@/core/focus";
+import { V1_FOCUSES, WEEKLY_FOCUSES, currentFocus, findFocus } from "@/core/focus";
 
 // Build a local date for a day in 2026 (month counted from 1) at noon
 const day = (month: number, date: number, hour = 12) => new Date(2026, month - 1, date, hour);
 
 // Group the checks about the list of focuses
 describe("weekly focus list", () => {
-  // The PRD lists five focuses in a fixed order for a new user
+  // Public-speaking skills, in the order agreed on 2026-10-15 (plan step A3)
   it("follows the PRD order", () => {
     // Confirm the ids are in the PRD's order
-    expect(WEEKLY_FOCUSES.map((focus) => focus.id)).toEqual(["start-and-finish", "cut-fillers", "pace", "structure", "warmth-and-energy"]);
+    expect(WEEKLY_FOCUSES.map((focus) => focus.id)).toEqual(["strong-opening", "clear-structure", "pausing", "cut-fillers", "strong-close", "vocal-variety"]);
   });
 
-  // Warmth and energy needs audio analysis, which v1 does not have
+  // Vocal variety needs pitch, which the app cannot measure yet
   it("leaves out focuses that need audio analysis in v1", () => {
-    // Confirm the v1 list has the first four only
-    expect(V1_FOCUSES.map((focus) => focus.id)).toEqual(["start-and-finish", "cut-fillers", "pace", "structure"]);
+    // Confirm the v1 list has the first five only
+    expect(V1_FOCUSES.map((focus) => focus.id)).toEqual(["strong-opening", "clear-structure", "pausing", "cut-fillers", "strong-close"]);
+  });
+});
+
+// Group the checks about finding a focus by its id
+describe("findFocus", () => {
+  // A current focus
+  it("finds a current focus", () => {
+    // Confirm the title
+    expect(findFocus("strong-close")?.title).toBe("Strong close");
+  });
+
+  // Sessions saved before 2026-10-15 carry the old focus ids, and still need their titles
+  it("finds the retired focuses that old sessions carry", () => {
+    // Confirm each old title
+    expect(["start-and-finish", "pace", "structure", "warmth-and-energy"].map((id) => findFocus(id)?.title)).toEqual(["Start and finish", "Pace", "Structure", "Warmth and energy"]);
+  });
+
+  // An unknown id
+  it("returns nothing for an unknown id", () => {
+    // Confirm nothing
+    expect(findFocus("nonsense")).toBeUndefined();
   });
 });
 
