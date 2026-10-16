@@ -91,10 +91,10 @@ describe("read-aloud passages", () => {
     expect([speeches.length >= 5, practice.length >= 5, PASSAGES.every((passage) => /^r\d{3}$/.test(passage.id)), new Set([...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS].map((item) => item.id)).size]).toEqual([true, true, true, PROMPTS.length + TABLE_TOPICS.length + WARMUP_PROMPTS.length + PASSAGES.length + PAUSE_DRILLS.length]);
   });
 
-  // Twenty-two speeches: the first six, twelve more short ones, and four longer ones (all added at the user's request)
-  it("has twenty-two public-domain speeches", () => {
+  // Eighteen speeches: the first six plus twelve added on 2026-10-16 because the user wanted more
+  it("has eighteen public-domain speeches", () => {
     // Confirm the count
-    expect(PASSAGES.filter((passage) => passage.kind === "speech").length).toBe(22);
+    expect(PASSAGES.filter((passage) => passage.kind === "speech").length).toBe(18);
   });
 
   // Every speech says who gave it and when (all before 1962, so public domain or a U.S. government work)
@@ -103,20 +103,12 @@ describe("read-aloud passages", () => {
     for (const passage of PASSAGES.filter((item) => item.kind === "speech")) expect(passage.source).toMatch(/^.+, (1[78]\d\d|19[0-6]\d)$/);
   });
 
-  // Passages are long enough to practise with; practice passages fit one sitting, and speeches can run to about ten minutes
-  it("keeps practice passages to 300 words and speeches to 1,500", () => {
+  // Passages are long enough to practise with but short enough for one sitting
+  it("keeps passages between 40 and 300 words", () => {
     // Check every passage
     for (const passage of PASSAGES) expect(passage.body.split(/\s+/).length).toBeGreaterThanOrEqual(40);
-    // Practice passages
-    for (const passage of PASSAGES.filter((item) => item.kind === "practice")) expect(passage.body.split(/\s+/).length).toBeLessThanOrEqual(300);
-    // Speeches
-    for (const passage of PASSAGES.filter((item) => item.kind === "speech")) expect(passage.body.split(/\s+/).length).toBeLessThanOrEqual(1500);
-  });
-
-  // Longer speeches, for a full sitting (added 2026-10-16 at the user's request)
-  it("has at least four longer speeches of more than 300 words", () => {
-    // Confirm the count
-    expect(PASSAGES.filter((item) => item.kind === "speech" && item.body.split(/\s+/).length > 300).length).toBeGreaterThanOrEqual(4);
+    // And the upper bound
+    for (const passage of PASSAGES) expect(passage.body.split(/\s+/).length).toBeLessThanOrEqual(300);
   });
 
   // The passage of the day rotates, and passages can be looked up by id (also through findPrompt, for history labels)
