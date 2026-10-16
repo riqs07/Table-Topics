@@ -400,6 +400,24 @@ describe("RecordingScreen", () => {
     expect([saved!.spokenTimes, saved!.scriptTimes?.slice(0, 5)]).toEqual([[2, 2, 12, 12], [2, 2, 12, 12, null]]);
   });
 
+  // A reading counts only fillers added to the text, so "so" in the Gettysburg Address is not one
+  it("does not count words of the text as fillers", async () => {
+    // A reading whose transcript is the text itself, "so" included
+    const { clock, repository, navigate } = draw({ mode: "read", promptId: PASSAGES[0]!.id }, { finalText: "so conceived and so dedicated can long endure" });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start reading/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Read for twelve seconds
+    clock.advance(12_000);
+    // Stop
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm no fillers were counted
+    expect((await repository.listSessions())[0]?.fillersPerMinute).toBe(0);
+  });
+
   // A pause drill shows its pause marks as visible pause signs, not slashes
   it("shows the pause marks in a pause drill", async () => {
     // Draw a pause drill

@@ -40,14 +40,8 @@ export function countPauseMarks(text: string): number {
   return text.split(/\s\/\s/).length - 1;
 }
 
-// Compare a reading with its text, word by word (longest common sequence of words); pause marks are not words and are skipped
-export function alignReading(text: string, spoken: string): ReadingCheck {
-  // The text's words for display
-  const shown = displayWords(text);
-  // The same words, normalized
-  const expected = shown.map(normalize);
-  // The heard words, normalized
-  const heard = spoken.split(/\s+/).map(normalize).filter((word) => word !== "");
+// Match two lists of normalised words in order (the longest common sequence): which expected words were heard, and which heard words matched
+export function matchWords(expected: ReadonlyArray<string>, heard: ReadonlyArray<string>): { read: boolean[]; matched: boolean[] } {
   // Table of best match lengths: cell [i][j] covers expected from i and heard from j
   const best: number[][] = Array.from({ length: expected.length + 1 }, () => new Array<number>(heard.length + 1).fill(0));
   // Fill the table from the end backwards
@@ -58,9 +52,9 @@ export function alignReading(text: string, spoken: string): ReadingCheck {
       best[i]![j] = expected[i] === heard[j] ? best[i + 1]![j + 1]! + 1 : Math.max(best[i + 1]![j]!, best[i]![j + 1]!);
     }
   }
-  // Which text words were heard
+  // Which expected words were heard
   const read = new Array<boolean>(expected.length).fill(false);
-  // Which heard words matched the text
+  // Which heard words matched
   const matched = new Array<boolean>(heard.length).fill(false);
   // Walk the table from the start to recover the matches
   let i = 0;
@@ -70,7 +64,7 @@ export function alignReading(text: string, spoken: string): ReadingCheck {
   while (i < expected.length && j < heard.length) {
     // A match: mark both and move on
     if (expected[i] === heard[j]) {
-      // Mark the text word as read
+      // Mark the expected word as read
       read[i] = true;
       // Mark the heard word as matched
       matched[j] = true;
@@ -79,11 +73,25 @@ export function alignReading(text: string, spoken: string): ReadingCheck {
       // (both)
       j += 1;
     }
-    // Skipping the text word loses nothing: it was missed
+    // Skipping the expected word loses nothing: it was missed
     else if (best[i + 1]![j]! >= best[i]![j + 1]!) i += 1;
     // Otherwise the heard word is extra
     else j += 1;
   }
+  // Hand back both
+  return { read, matched };
+}
+
+// Compare a reading with its text, word by word (longest common sequence of words); pause marks are not words and are skipped
+export function alignReading(text: string, spoken: string): ReadingCheck {
+  // The text's words for display
+  const shown = displayWords(text);
+  // The same words, normalized
+  const expected = shown.map(normalize);
+  // The heard words, normalized
+  const heard = spoken.split(/\s+/).map(normalize).filter((word) => word !== "");
+  // Which were read and which matched
+  const { read, matched } = matchWords(expected, heard);
   // Count the text words heard
   const readCount = read.filter(Boolean).length;
   // Extra words heard

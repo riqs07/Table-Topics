@@ -336,11 +336,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const tokens = scriptBody === null ? [] : readingTokens(scriptBody);
   // The words to listen for, kept current for the recording to read when it starts
   const wordsToHear = useRef<string[]>([]);
-  // Update them when the text changes
+  // The whole text being read, for counting fillers against it (a rehearsal counts against the full talk or section, whatever the memory rung)
+  const fullText = talk ? (section !== null ? (sections[section] ?? "") : talk.body) : scriptBody;
+  // Kept current for saving
+  const textForFillers = useRef<string | null>(null);
+  // Update both when the text changes
   useEffect(() => {
     // The numbered words of the text, or none
     wordsToHear.current = scriptBody === null ? [] : scriptWords(readingTokens(scriptBody));
-  }, [scriptBody]);
+    // The full text, or none
+    textForFillers.current = fullText;
+  }, [scriptBody, fullText]);
   // A rehearsal's own goal in seconds, if it has one (whole-talk runs only)
   const goalSeconds = talk?.goalMinutes && section === null ? talk.goalMinutes * 60 : undefined;
 
@@ -462,7 +468,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
       // Open the new session's page (feedback is requested there)
       navigate(`/sessions?id=${session.id}`);
     } catch (error) {

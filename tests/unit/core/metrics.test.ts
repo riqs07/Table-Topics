@@ -61,3 +61,12 @@ describe("fillersPerMinute", () => {
     expect(fillersPerMinute("um uh", 0)).toBe(0);
   });
 });
+
+// Group the checks about the filler rate of a reading
+describe("fillersPerMinute with a known text", () => {
+  // Only words added to the text count
+  it("counts only fillers added to the text", () => {
+    // "so" is in the text; the added "um" is not
+    expect(fillersPerMinute("um conceived and so dedicated", 30, "conceived and so dedicated")).toBe(2);
+  });
+});

@@ -1,7 +1,7 @@
 // Per-session measurements computed from the transcript and the recording length
 
 // Load the filler counter
-import { countFillers } from "@/core/fillers";
+import { countFillers, countScriptFillers } from "@/core/fillers";
 // Load the shared helper that splits a transcript into clean words
 import { toWords } from "@/core/words";
 
@@ -25,8 +25,8 @@ export function wordsPerMinute(transcript: string, durationSec: number): number 
   return perMinute(countWords(transcript), durationSec);
 }
 
-// How many fillers were spoken per minute
-export function fillersPerMinute(transcript: string, durationSec: number): number {
+// How many fillers were spoken per minute; with a known text (a reading), only fillers added to it count
+export function fillersPerMinute(transcript: string, durationSec: number, script?: string): number {
   // Divide the filler count by the minutes spoken
-  return perMinute(countFillers(transcript).total, durationSec);
+  return perMinute(script === undefined ? countFillers(transcript).total : countScriptFillers(script, transcript), durationSec);
 }

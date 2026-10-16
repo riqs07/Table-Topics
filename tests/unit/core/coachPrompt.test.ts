@@ -81,6 +81,14 @@ describe("buildCoachMessage", () => {
     expect(message).toContain("Fillers per minute: 6.0");
   });
 
+  // A reading's filler rate counts only words added to the known text, so "so" from the Gettysburg Address is not a filler
+  it("counts a reading's fillers against its text", () => {
+    // A reading of part of the Gettysburg Address
+    const message = buildCoachMessage({ ...SESSION, transcript: "so conceived and so dedicated can long endure", mode: "read", promptId: "r001" });
+    // Confirm no fillers
+    expect(message).toContain("Fillers per minute: 0.0");
+  });
+
   // The transcript is fenced off so it reads as data
   it("wraps the transcript in tags", () => {
     // Confirm the tags surround the text

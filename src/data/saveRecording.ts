@@ -29,6 +29,8 @@ export interface FinishedRecording {
   retryOf: string | null;
   // Loudness readings taken while recording, if any
   loudness?: number[];
+  // For a reading, a lesson or a rehearsal: the text being read, so words in it are not counted as fillers
+  script?: string;
   // Seconds when each word of the transcript was first heard, if noted
   spokenTimes?: number[];
   // For text on screen: seconds when each word of it was first read, or null
@@ -64,7 +66,7 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     transcript: recording.transcript, durationSec: recording.durationSec,
     // Measured numbers
     wordsPerMinute: wordsPerMinute(recording.transcript, recording.durationSec),
-    fillersPerMinute: fillersPerMinute(recording.transcript, recording.durationSec),
+    fillersPerMinute: fillersPerMinute(recording.transcript, recording.durationSec, recording.script),
     // The week's focus
     focus: focus.id,
     // Feedback is requested next

@@ -80,7 +80,7 @@ export function buildCoachMessage(input: CoachInput): string {
     // Speaking speed, as a whole number
     `Words per minute: ${Math.round(wordsPerMinute(input.transcript, input.durationSec))}`,
     // Filler rate, to one decimal place
-    `Fillers per minute: ${fillersPerMinute(input.transcript, input.durationSec).toFixed(1)}`,
+    `Fillers per minute: ${fillersPerMinute(input.transcript, input.durationSec, passage?.body ?? lesson?.body).toFixed(1)}`,
     // On a warm-up, keep it brief and light
     ...(input.mode === "warmup" ? ["This is a 30-second warm-up. Keep every part to one short sentence, and keep it light."] : []),
     // On a Table Topic, its rules and how long it ran, so the coach looks at the whole answer

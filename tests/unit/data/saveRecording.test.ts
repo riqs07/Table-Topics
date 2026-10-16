@@ -93,6 +93,16 @@ describe("saveRecording", () => {
     expect(session.loudness).toEqual([0.12, 0.5, 0]);
   });
 
+  // A reading's filler rate counts only words added to its text
+  it("counts fillers against the text when there is one", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // A 30-second reading with "so" in the text and nothing added
+    const session = await saveRecording(repository, { ...RECORDING, transcript: "conceived and so dedicated", durationSec: 30, script: "conceived and so dedicated" }, NOW);
+    // Confirm no fillers
+    expect(session.fillersPerMinute).toBe(0);
+  });
+
   // Word times are kept to a tenth of a second, so pace and pauses can be worked out later
   it("keeps the word times, rounded to a tenth of a second", async () => {
     // A repository
