@@ -161,9 +161,9 @@ function TimingLight({ signal, mode }: { signal: TimeSignal; mode: SessionMode }
   return (
     <p role="status" aria-label="Timing light" data-signal={signal} className="mt-3 flex items-center gap-3">
       {/* The lamp itself (decorative; the words carry the meaning) */}
-      <span aria-hidden="true" className={`inline-block size-6 flex-none rounded-full border-2 transition-colors ${SIGNAL_LAMP[signal]}`} />
+      <span aria-hidden="true" className={`inline-block size-10 flex-none rounded-full border-2 transition-colors ${SIGNAL_LAMP[signal]}`} />
       {/* What the lamp means */}
-      <span className="italic">{words[signal]}</span>
+      <span className="text-lede italic">{words[signal]}</span>
     </p>
   );
 }
@@ -216,7 +216,7 @@ function Hints({ angles, compact }: { angles: ReadonlyArray<string>; compact: bo
 function Meter({ levels }: { levels: number[] }) {
   // A row of bars; recent loud bars in the accent
   return (
-    <div className="flex h-14 items-end gap-1.5" role="img" aria-label="Microphone level">
+    <div className="flex h-24 items-end gap-1.5" role="img" aria-label="Microphone level">
       {/* One bar per reading, at least a sliver tall */}
       {levels.map((level, index) => (
         // A single bar
@@ -595,7 +595,16 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         {/* Margin: time, length, prompt reminder, discard */}
         <aside className="mt-5 flex flex-col text-footnote text-ink-muted md:mt-0">
           {/* The clock, large */}
-          <p className="font-display text-statement text-ink tabular-nums">{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>
+          <p className={`font-display text-ink tabular-nums ${recording || thinking ? "text-prompt-xl" : "text-statement"}`}>{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>
+          {/* While recording: a plain, pulsing marker that says so */}
+          {recording && (
+            <p role="status" aria-label="Recording" className="mt-2 flex items-center gap-2 text-ink">
+              {/* The red dot (pulses only when motion is welcome) */}
+              <span aria-hidden="true" className="inline-block size-3 rounded-full bg-light-red motion-safe:animate-pulse" />
+              {/* The word */}
+              Recording
+            </p>
+          )}
           {/* The length to aim for, or what the countdown is for */}
           <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
           {/* During a Table Topic or Record Response, the timing light */}
@@ -606,17 +615,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
           {recording && angles.length > 0 && <Hints angles={angles} compact />}
-          {/* Before starting: how this kind of session works and what comes afterwards */}
-          {howItWorks && !(recording || thinking || stage === "starting" || stage === "saving") && (
-            <div role="note" aria-label="How this works" className="mt-6 border-t border-rule pt-3">
-              {/* Small heading */}
-              <p className="italic">How this works</p>
-              {/* What you do */}
-              <p className="mt-1 text-ink">{howItWorks.youDo}</p>
-              {/* What you get */}
-              <p className="mt-1">Afterwards: {howItWorks.youGet.charAt(0).toLowerCase() + howItWorks.youGet.slice(1)}</p>
-            </div>
-          )}
           {/* Push discard down */}
           <div className="hidden flex-1 md:block" />
           {/* Discard while recording */}
@@ -724,6 +722,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
           {/* Saving failed */}
           {stage === "save-failed" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
+          {/* Before starting: how this kind of session works and what comes afterwards (after the task, so a phone shows the task first) */}
+          {howItWorks && !(recording || thinking || stage === "starting" || stage === "saving") && (
+            <div role="note" aria-label="How this works" className="mt-8 max-w-[52ch] border-t border-rule pt-3 text-footnote text-ink-muted">
+              {/* Small heading */}
+              <p className="italic">How this works</p>
+              {/* What you do */}
+              <p className="mt-1 text-ink">{howItWorks.youDo}</p>
+              {/* What you get */}
+              <p className="mt-1">Afterwards: {howItWorks.youGet.charAt(0).toLowerCase() + howItWorks.youGet.slice(1)}</p>
+            </div>
+          )}
           {/* Push the footer down */}
           <div className="flex-1" />
 
@@ -757,7 +766,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* Waiting for the microphone */}
           {stage === "starting" && <ActionButton action="Starting…" aside="allow the microphone" onClick={() => {}} disabled />}
           {/* Recording */}
-          {recording && <ActionButton action="Stop" aside={formatClock(elapsed)} onClick={() => void stop()} />}
+          {recording && <ActionButton action="Stop" aside={formatClock(elapsed)} onClick={() => void stop()} variant="stop" />}
           {/* Saving */}
           {stage === "saving" && <ActionButton action="Saving…" aside="one moment" onClick={() => {}} disabled />}
         </div>
