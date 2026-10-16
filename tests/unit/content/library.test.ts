@@ -91,6 +91,12 @@ describe("read-aloud passages", () => {
     expect([speeches.length >= 5, practice.length >= 5, PASSAGES.every((passage) => /^r\d{3}$/.test(passage.id)), new Set([...PROMPTS, ...TABLE_TOPICS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS].map((item) => item.id)).size]).toEqual([true, true, true, PROMPTS.length + TABLE_TOPICS.length + WARMUP_PROMPTS.length + PASSAGES.length + PAUSE_DRILLS.length]);
   });
 
+  // Eighteen speeches: the first six plus twelve added on 2026-10-16 because the user wanted more
+  it("has eighteen public-domain speeches", () => {
+    // Confirm the count
+    expect(PASSAGES.filter((passage) => passage.kind === "speech").length).toBe(18);
+  });
+
   // Every speech says who gave it and when (all before 1962, so public domain or a U.S. government work)
   it("credits every speech with a speaker and a year", () => {
     // Check every speech
