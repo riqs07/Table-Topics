@@ -29,11 +29,18 @@ export interface FinishedRecording {
   retryOf: string | null;
   // Loudness readings taken while recording, if any
   loudness?: number[];
+  // Seconds when each word of the transcript was first heard, if noted
+  spokenTimes?: number[];
+  // For text on screen: seconds when each word of it was first read, or null
+  scriptTimes?: (number | null)[];
   // For a rehearsal of one section: which section (counted from 0)
   sectionIndex?: number | null;
   // For a Q&A answer: the question it answered
   question?: string;
 }
+
+// Round seconds to a tenth
+const tenth = (seconds: number) => Math.round(seconds * 10) / 10;
 
 // Save the recording and hand back the new session (now is when recording stopped)
 export async function saveRecording(repository: Repository, recording: FinishedRecording, now: Date): Promise<SessionRecord> {
@@ -66,6 +73,10 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     audioKey: recording.id,
     // The loudness readings, rounded to two decimals to keep the record small
     ...(recording.loudness ? { loudness: recording.loudness.map((level) => Math.round(level * 100) / 100) } : {}),
+    // Word times, rounded to a tenth of a second (they are only approximate anyway)
+    ...(recording.spokenTimes ? { spokenTimes: recording.spokenTimes.map(tenth) } : {}),
+    // Script word times, rounded the same way, keeping the words never read as null
+    ...(recording.scriptTimes ? { scriptTimes: recording.scriptTimes.map((time) => (time === null ? null : tenth(time))) } : {}),
     // Keep the question a Q&A answer answered
     ...(recording.question ? { question: recording.question } : {}),
     // Keep the section of a section rehearsal

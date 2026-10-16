@@ -14,6 +14,10 @@ import { Player } from "@/components/script/Player";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the sentence helpers
 import { dayLabel, formatRate } from "@/core/copy";
+// Load the findings from word times
+import { marksPaused, marksSentence, paceAcross } from "@/core/wordTiming";
+// Load the script splitter, to place the pause marks among the timed words
+import { readingTokens } from "@/core/liveReading";
 // Load the compact row of numbers
 import { resultNumbers } from "@/core/resultNumbers";
 // Load the filler marker
@@ -276,6 +280,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }:
   const pauses = session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS) : null;
   // How much of the passage was heard
   const reading = passage ? alignReading(passage.body, session.transcript) : null;
+  // How the pace changed from start to finish, when word times were saved
+  const pace = session.spokenTimes ? paceAcross(session.spokenTimes) : null;
+  // In a pause drill with word times, which marks had a pause
+  const marks = session.mode === "pause" && passage && session.scriptTimes ? marksSentence(marksPaused(readingTokens(passage.body), session.scriptTimes)) : "";
   // Whether this was an old warm-up (it leads into a Record Response instead of a retry)
   const warmup = session.mode === "warmup";
   // Whether this was a Table Topic
@@ -360,6 +368,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }:
           {!reading && !bookendOutcome && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
           {/* How the pauses went, when loudness was recorded */}
           {pauses && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(pauses)}</p>}
+          {/* Which pause marks had a pause */}
+          {marks && <p className="mt-2 text-footnote italic text-ink-muted">{marks}</p>}
+          {/* How the pace changed */}
+          {pace && <p className="mt-2 text-footnote italic text-ink-muted">{pace.sentence}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
           {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec)}</p>}
           {/* After a rehearsal with a goal, how the timing went */}

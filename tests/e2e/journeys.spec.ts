@@ -184,6 +184,28 @@ test("Q&A practice: write questions after a response and answer one", async ({ p
   await expect(page.getByText("answered once")).toBeVisible();
 });
 
+// Reading aloud: the words light up as they are read, and the reading is saved
+test("Read aloud: words light up as they are read, then the reading is saved", async ({ page }) => {
+  // The stand-in speech reads the opening of the Gettysburg Address
+  await useStandIns(page, "Four score and seven years ago our fathers brought forth on this continent a new nation conceived in Liberty");
+  // Open the reading
+  await page.goto("/session?mode=read&prompt=r001");
+  // Start reading
+  await page.getByRole("button", { name: /Start reading/ }).click();
+  // Recording is under way
+  await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 10_000 });
+  // The words read so far light up, with the next word marked
+  await expect(page.locator('[data-read="read"]')).toHaveCount(19, { timeout: 10_000 });
+  // The next word to read is marked
+  await expect(page.locator('[data-read="current"]')).toHaveCount(1);
+  // Speak past the 10-second minimum
+  await page.waitForTimeout(8_000);
+  // Stop
+  await page.getByRole("button", { name: /Stop/ }).click();
+  // The saved reading says how much was read
+  await expect(page.getByTestId("reading-headline")).toHaveText(/^You read \d+% of the words\.$/, { timeout: 15_000 });
+});
+
 // Storage left by another project at the same address (bugs B2 and B4)
 test("works when another app left a database called voicelab", async ({ page }) => {
   // Use the stand-in microphone and speech

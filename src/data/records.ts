@@ -56,6 +56,10 @@ export interface SessionRecord {
   feedbackStatus: FeedbackStatus;
   // Loudness readings taken every tenth of a second while recording (0 to 1, two decimals), for finding pauses; missing on older sessions
   loudness?: number[];
+  // Seconds from the start when each word of the transcript was first heard (a tenth of a second, approximate); missing on older sessions
+  spokenTimes?: number[];
+  // For a session with text on screen: seconds when each word of that text was first read, or null if it never was; missing on older sessions
+  scriptTimes?: (number | null)[];
   // For a rehearsal or a response: likely audience questions for Q&A practice (written by the coach or typed by the user)
   questions?: string[];
   // For a Q&A answer: the question it answered (its prompt id is the session the question came from)

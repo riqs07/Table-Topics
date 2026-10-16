@@ -23,7 +23,7 @@ export interface ReadingCheck {
 }
 
 // Reduce a word to letters, digits and apostrophes in lower case, so punctuation and capitals do not matter
-function normalize(word: string): string {
+export function normalize(word: string): string {
   // Lower case, then drop everything else
   return word.toLowerCase().replace(/[^a-z0-9']/g, "");
 }

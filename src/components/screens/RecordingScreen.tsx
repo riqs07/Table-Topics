@@ -21,6 +21,8 @@ import { findLesson } from "@/content/lessons";
 import { modeForSession } from "@/content/modes";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
+// Load the live reading tools
+import { followReading, readingTokens, scriptWords, stampFirstRead, stampSpoken, type ReadingToken } from "@/core/liveReading";
 import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 // Load the recording length rules
 import { LOUDNESS_TICK_MS, MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
@@ -212,6 +214,49 @@ function Hints({ angles, compact }: { angles: ReadonlyArray<string>; compact: bo
   );
 }
 
+// The text to read, with pause marks as pause signs, *stressed* words in bold and [directions] in quiet italics; while recording, words already read are lit, the next word is marked, and the rest is dimmed
+function ScriptText({ tokens, place, className }: { tokens: ReadonlyArray<ReadingToken>; place: number | null; className: string }) {
+  // The text's element, for keeping the reader's line in view
+  const box = useRef<HTMLParagraphElement>(null);
+
+  // Keep the next word in view as the reader moves down the page
+  useEffect(() => {
+    // Only while recording
+    if (place === null) return;
+    // The next word
+    const word = box.current?.querySelector(`[data-word="${place}"]`);
+    // Nothing to do if it is missing
+    if (!word) return;
+    // Where it is on screen
+    const where = word.getBoundingClientRect();
+    // Scroll only when it nears the bottom (where the action bar sits) or has gone above the top
+    if (where.bottom > window.innerHeight * 0.6 || where.top < 0) word.scrollIntoView?.({ block: "center", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [place]);
+
+  // Draw each piece
+  return (
+    <p ref={box} data-testid="passage" className={className}>
+      {/* One element per piece */}
+      {tokens.map((token, index) => {
+        // A pause mark, as a pause sign in the accent color
+        if (token.kind === "pause") return <span key={index} role="img" aria-label="pause here" className="mx-2 text-accent">‖</span>;
+        // Where a numbered word stands while recording: read, next, or still ahead
+        const status = place === null || token.word === null ? null : token.word < place ? "read" : token.word === place ? "current" : "ahead";
+        // Its look: ahead is dimmed, the next word has a soft mark
+        const look = status === "ahead" ? "text-ink-muted" : status === "current" ? "bg-accent/15" : "";
+        // Shared attributes
+        const marks = { "data-read": status ?? undefined, "data-word": token.word ?? undefined, className: look || undefined };
+        // Stressed words in bold
+        if (token.style === "stress") return <strong key={index} {...marks}>{token.text}</strong>;
+        // Directions in quiet italics
+        if (token.style === "note") return <em key={index} className="text-ink-muted">{token.text}</em>;
+        // Everything else plain
+        return <span key={index} {...marks}>{token.text}</span>;
+      })}
+    </p>
+  );
+}
+
 // Draw the level meter from recent loudness readings
 function Meter({ levels }: { levels: number[] }) {
   // A row of bars; recent loud bars in the accent
@@ -247,7 +292,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // On a retry, the cue from last time's feedback
   const [retryCue, setRetryCue] = useState<string | null>(null);
   // The live transcriber, audio capture, start time, and timer, kept between renders
-  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[] } | null>(null);
+  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; spokenTimes: number[]; scriptTimes: (number | null)[] } | null>(null);
+  // While reading, the number of the next word to read (every word before it is lit up)
+  const [place, setPlace] = useState(0);
   // Guards against stopping twice (a click and the auto-stop at once)
   const stopping = useRef(false);
   // Seconds between seeing the prompt and recording for this kind of session
@@ -283,6 +330,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const bookend = mode === "bookend" ? BOOKENDS.find((item) => item.id === promptId) : undefined;
   // The text on screen: a passage, a lesson's practice text, or the talk being rehearsed
   const script = passage ? { title: passage.title, source: passage.source, body: passage.body } : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, source: "", body: lesson.body } : talk ? { title: talk.title, source: section !== null ? `Your talk · section ${section + 1} of ${sections.length}` : "Your talk", body: talkText } : null;
+  // The text on screen as pieces that can be lit up, and the words to listen for
+  const scriptBody = script?.body ?? null;
+  // The pieces (the compiler keeps them until the text changes)
+  const tokens = scriptBody === null ? [] : readingTokens(scriptBody);
+  // The words to listen for, kept current for the recording to read when it starts
+  const wordsToHear = useRef<string[]>([]);
+  // Update them when the text changes
+  useEffect(() => {
+    // The numbered words of the text, or none
+    wordsToHear.current = scriptBody === null ? [] : scriptWords(readingTokens(scriptBody));
+  }, [scriptBody]);
   // A rehearsal's own goal in seconds, if it has one (whole-talk runs only)
   const goalSeconds = talk?.goalMinutes && section === null ? talk.goalMinutes * 60 : undefined;
 
@@ -358,8 +416,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const durationSec = Math.min(limit, Math.round((clock().getTime() - current.startedAt.getTime()) / 1000));
     // Stop transcribing and recording together
     const [transcript, audio] = await Promise.all([current.transcriber.stop(), current.capture.stop()]);
-    // Hand back the results, with the loudness readings for finding pauses
-    return { transcript, audio, durationSec, loudness: current.readings };
+    // One time per word of the final transcript: the noted times, filled with the end time where the final words ran past them
+    const spokenTimes = stampSpoken(current.spokenTimes, transcript.split(/\s+/).filter((word) => word !== "").length, durationSec).slice(0, transcript.split(/\s+/).filter((word) => word !== "").length);
+    // Hand back the results, with the loudness readings for finding pauses and the word times
+    return { transcript, audio, durationSec, loudness: current.readings, spokenTimes, scriptTimes: current.scriptTimes.length > 0 ? current.scriptTimes : null };
   }, [clock, limit]);
 
   // Stop recording, then save the session and open it (or explain that nothing was heard)
@@ -402,7 +462,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
       // Open the new session's page (feedback is requested there)
       navigate(`/sessions?id=${session.id}`);
     } catch (error) {
@@ -444,6 +504,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     setStage("starting");
     // Clear any earlier attempt
     setText({ final: "", interim: "" });
+    // Back to the first word
+    setPlace(0);
     // Reset the timer display
     setElapsed(0);
     // Reset the stop guard
@@ -484,10 +546,33 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Stop by itself at the limit
       if (seconds >= limit) void stop();
     }, LOUDNESS_TICK_MS);
-    // Keep the running pieces
-    live.current = { transcriber, capture, startedAt, timer, readings };
+    // The words to listen for in the text on screen (none without text)
+    const expected = wordsToHear.current;
+    // Keep the running pieces, with no word times yet
+    const pieces = { transcriber, capture, startedAt, timer, readings, spokenTimes: [] as number[], scriptTimes: expected.map((): number | null => null) };
+    // Keep them between renders
+    live.current = pieces;
+    // Each time words arrive: show them, note when each was first heard, and move the place in the text
+    const heardWords = (latest: LiveText) => {
+      // Show them
+      setText(latest);
+      // Seconds since starting
+      const seconds = (clock().getTime() - startedAt.getTime()) / 1000;
+      // Everything heard so far
+      const heard = `${latest.final} ${latest.interim}`;
+      // Note the new word positions
+      pieces.spokenTimes = stampSpoken(pieces.spokenTimes, heard.split(/\s+/).filter((word) => word !== "").length, seconds);
+      // Nothing more without text on screen
+      if (expected.length === 0) return;
+      // Follow the reader through the text
+      const follow = followReading(expected, heard);
+      // Note when each word was first read
+      pieces.scriptTimes = stampFirstRead(pieces.scriptTimes, follow.read, seconds);
+      // Move the place forward, never back
+      setPlace((previous) => Math.max(previous, follow.next));
+    };
     // Begin transcribing, showing words and handling problems
-    transcriber.start(setText, (problem) => void fail(problem));
+    transcriber.start(heardWords, (problem) => void fail(problem));
     // Now recording
     setStage("recording");
   }, [clock, endThinking, fail, limit, services, stop]);
@@ -668,18 +753,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Read the passage aloud and pause for about a second at each ‖. Take your time.</p>}
               {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
               {!textHidden && (
-                <p data-testid="passage" className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`}>
-                  {/* The text, with each pause mark (in a pause drill) shown as a pause sign in the accent color */}
-                  {script.body.split(" / ").map((part, index) => (
-                    // One stretch between pauses
-                    <span key={index}>
-                      {/* A pause sign before every stretch but the first */}
-                      {index > 0 && <span role="img" aria-label="pause here" className="mx-2 text-accent">‖</span>}
-                      {/* The words, with *stressed* words in bold and [instructions] in quiet italics */}
-                      {part.split(/(\*[^*]+\*|\[[^\]]+\])/).map((piece, pieceIndex) => (piece.startsWith("*") && piece.endsWith("*") && piece.length > 2 ? <strong key={pieceIndex}>{piece.slice(1, -1)}</strong> : piece.startsWith("[") && piece.endsWith("]") ? <em key={pieceIndex} className="text-ink-muted">{piece.slice(1, -1)}</em> : <span key={pieceIndex}>{piece}</span>))}
-                    </span>
-                  ))}
-                </p>
+<ScriptText tokens={tokens} place={recording ? place : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
               )}
             </>
           )}

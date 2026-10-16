@@ -89,8 +89,8 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Settings", path: "/settings" },
 ];
 
-// Replace the microphone and speech recognition before any page script runs
-export async function useStandIns(page: Page): Promise<void> {
+// Replace the microphone and speech recognition before any page script runs (the stand-in "hears" the given words, by default SPOKEN)
+export async function useStandIns(page: Page, spoken: string = SPOKEN): Promise<void> {
   // Runs inside the browser on every page load
   await page.addInitScript((spoken: string) => {
     // The words, one at a time
@@ -157,7 +157,7 @@ export async function useStandIns(page: Page): Promise<void> {
       // Hand the stream to the app
       return destination.stream;
     };
-  }, SPOKEN);
+  }, spoken);
 }
 
 // The checks' own "test", which fails any check whose page logged an error (rule T5)
