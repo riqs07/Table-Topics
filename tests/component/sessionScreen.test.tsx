@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 // Load the tool for acting like a user
 import userEvent from "@testing-library/user-event";
 // Load the screen being checked
@@ -71,6 +71,66 @@ describe("SessionScreen", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Read what I said" }));
     // Confirm the filler is marked
     expect(screen.getByText("Um").className).toContain("text-filler");
+  });
+
+  // Filler marks are a soft highlight, not an underline that reads as a link
+  it("marks fillers without underlining them", async () => {
+    // A finished first try with fillers
+    const session = makeSession({ id: "s1", transcript: "Um, I think it went well.", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Open the transcript
+    await userEvent.click(await screen.findByRole("button", { name: "Read what I said" }));
+    // The mark's classes
+    const marked = screen.getByText("Um").className;
+    // Confirm a highlight and no underline
+    expect([marked.includes("bg-filler"), marked.includes("underline")]).toEqual([true, false]);
+  });
+
+  // The page leads with what to do next: the one change and the cue come before what to keep
+  it("puts the one change and the cue before what to keep", async () => {
+    // A finished first try
+    const session = makeSession({ id: "s1", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Where each part sits in the page's text
+    const text = (await screen.findByText(FEEDBACK.keep)).ownerDocument.body.textContent ?? "";
+    // Confirm the order: change, cue, keep
+    expect([text.indexOf(FEEDBACK.change) < text.indexOf(FEEDBACK.retryCue), text.indexOf(FEEDBACK.retryCue) < text.indexOf(FEEDBACK.keep)]).toEqual([true, true]);
+  });
+
+  // The numbers sit together in one compact row
+  it("shows the numbers together in one row", async () => {
+    // A 2:14 session
+    const session = makeSession({ id: "s1", fillersPerMinute: 2.4, wordsPerMinute: 128, durationSec: 134, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // The row
+    const row = within(await screen.findByRole("region", { name: "Your numbers" }));
+    // Confirm each number with its label
+    expect([!!row.getByText("2.4"), !!row.getByText("fillers a minute"), !!row.getByText("128"), !!row.getByText("2:14")]).toEqual([true, true, true, true]);
+  });
+
+  // The recording plays from one large button that becomes Pause
+  it("plays the recording from its own button", async () => {
+    // Stand in for the browser's object URLs
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:take"), revokeObjectURL: vi.fn() });
+    // Stand in for playing (jsdom cannot play sound)
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    // A session with audio
+    const session = makeSession({ id: "s1", audioKey: "s1", durationSec: 75, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Repository holding it and its audio
+    const repository = await repositoryWith(session);
+    // Save the audio
+    await repository.saveAudio("s1", new Blob(["sound"], { type: "audio/webm" }));
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // Press play
+    await userEvent.click(await screen.findByRole("button", { name: "Play your recording" }));
+    // Confirm it played, the button now pauses, and the length shows
+    expect([play.mock.calls.length, !!screen.getByRole("button", { name: "Pause your recording" }), !!screen.getByText("0:00 / 1:15")]).toEqual([1, true, true]);
+    // Put playing back
+    play.mockRestore();
   });
 
   // A retry shows the before and after
