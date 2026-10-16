@@ -93,6 +93,16 @@ describe("saveRecording", () => {
     expect(session.loudness).toEqual([0.12, 0.5, 0]);
   });
 
+  // Word times are kept to a tenth of a second, so pace and pauses can be worked out later
+  it("keeps the word times, rounded to a tenth of a second", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Save a recording with spoken and script word times
+    const session = await saveRecording(repository, { ...RECORDING, spokenTimes: [0.43, 1.06], scriptTimes: [0.48, null] }, NOW);
+    // Confirm both, rounded
+    expect([session.spokenTimes, session.scriptTimes]).toEqual([[0.4, 1.1], [0.5, null]]);
+  });
+
   // A rehearsal of one section remembers which section it was
   it("keeps the section of a rehearsal", async () => {
     // A repository

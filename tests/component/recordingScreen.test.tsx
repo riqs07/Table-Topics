@@ -358,6 +358,48 @@ describe("RecordingScreen", () => {
     expect(screen.getByTestId("passage").textContent).toContain(PASSAGES[0]!.body.split(" ").slice(0, 4).join(" "));
   });
 
+  // While reading, the words already read light up and the next word is marked
+  it("lights up the words as they are read", async () => {
+    // Draw a read-aloud session on the Gettysburg Address
+    const { fake } = draw({ mode: "read", promptId: PASSAGES[0]!.id });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start reading/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Read the first three words
+    await fake.say({ final: "Four score", interim: "and" });
+    // The words in the passage, in order
+    const marks = Array.from(screen.getByTestId("passage").querySelectorAll("[data-read]")).slice(0, 5).map((word) => word.getAttribute("data-read"));
+    // Confirm three read, the fourth is next, the fifth is ahead
+    expect(marks).toEqual(["read", "read", "read", "current", "ahead"]);
+  });
+
+  // The times words were first heard are saved with the session
+  it("saves when each word was first heard", async () => {
+    // Draw a read-aloud session on the Gettysburg Address
+    const { fake, clock, repository, navigate } = draw({ mode: "read", promptId: PASSAGES[0]!.id }, { finalText: "Four score and seven" });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start reading/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Two words after two seconds
+    clock.advance(2_000);
+    // Heard
+    await fake.say({ final: "Four score", interim: "" });
+    // Two more after twelve
+    clock.advance(10_000);
+    // Heard
+    await fake.say({ final: "Four score and seven", interim: "" });
+    // Stop
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // The saved session
+    const [saved] = await repository.listSessions();
+    // Confirm the spoken times and the first script words' times
+    expect([saved!.spokenTimes, saved!.scriptTimes?.slice(0, 5)]).toEqual([[2, 2, 12, 12], [2, 2, 12, 12, null]]);
+  });
+
   // A pause drill shows its pause marks as visible pause signs, not slashes
   it("shows the pause marks in a pause drill", async () => {
     // Draw a pause drill

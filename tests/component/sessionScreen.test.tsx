@@ -14,8 +14,10 @@ import { createRepository } from "@/data/repository";
 import { makeSession, makeTalk } from "../support/fixtures";
 // Load the passphrase storage
 import { savePassphrase } from "@/data/passphrase";
-// Load the daily prompt picker
-import { promptForDay } from "@/content/prompts";
+// Load the daily prompt picker and the pause drills
+import { PAUSE_DRILLS, promptForDay } from "@/content/prompts";
+// Load the script splitter
+import { readingTokens, scriptWords } from "@/core/liveReading";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 13, 18);
@@ -417,5 +419,29 @@ describe("SessionScreen", () => {
     render(<SessionScreen sessionId="q1" repository={repository} now={NOW} />);
     // Confirm the title, the question, the timing, and the retry of the same question
     expect([!!(await screen.findByText("Q&A answer")), !!screen.getByText("Why now?"), !!screen.getByText("0:50 against a 1:00 goal, 10 seconds to spare."), screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, true, true, "/session?mode=qa&prompt=r1&question=0&retryOf=q1"]);
+  });
+
+  // With word times saved, the page says how the pace changed from start to finish
+  it("says how the pace changed across the take", async () => {
+    // 40 words in the first 20 seconds, 50 in the middle, 60 in the last
+    const spokenTimes = [...Array.from({ length: 40 }, (_, index) => index * 0.5), ...Array.from({ length: 50 }, (_, index) => 20 + index * 0.4), ...Array.from({ length: 60 }, (_, index) => 40 + index / 3)];
+    // A session with those times
+    const session = makeSession({ id: "s1", durationSec: 60, spokenTimes, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the sentence
+    expect(await screen.findByText("You sped up: 120 words a minute at the start, 180 by the end.")).toBeTruthy();
+  });
+
+  // A pause drill with word times says which marks had a pause
+  it("says which pause marks had a pause", async () => {
+    // A drill's words, each 0.3 seconds apart with no pauses at all
+    const words = scriptWords(readingTokens(PAUSE_DRILLS[0]!.body));
+    // A pause drill session with those times
+    const session = makeSession({ id: "s1", mode: "pause", promptId: PAUSE_DRILLS[0]!.id, scriptTimes: words.map((_, index) => index * 0.3), feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm none of the marks had a pause
+    expect(await screen.findByText(/^You paused at 0 of the \d+ marks\. No pause after /)).toBeTruthy();
   });
 });
