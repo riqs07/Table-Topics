@@ -34,4 +34,12 @@ describe("SkillsScreen", () => {
       ["#lessons", "#readings", "#pause-drills", "#tricky-words"].every((anchor) => hrefs.includes(anchor)),
     ]).toEqual([true, true, true, true]);
   });
+
+  // Longer speeches have their own group, each with how long it takes
+  it("groups the longer speeches with their reading time", async () => {
+    // Draw the page
+    render(<SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the group and a time beside one of them
+    expect([!!(await screen.findByText("Longer speeches")), screen.getAllByText(/^about \d+ min$/).length >= 4]).toEqual([true, true]);
+  });
 });

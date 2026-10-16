@@ -105,9 +105,9 @@ describe("Record Response", () => {
 // Group the checks about reading aloud
 describe("Read aloud", () => {
   // No thinking time, no light, and a generous limit
-  it("starts straight away, has no light, and stops at 10 minutes", () => {
+  it("starts straight away, has no light, and stops at 15 minutes", () => {
     // Confirm the think time, light, and limit
-    expect([thinkSeconds("read"), timeSignal("read", 500), maxSeconds("read")]).toEqual([0, "none", 600]);
+    expect([thinkSeconds("read"), timeSignal("read", 500), maxSeconds("read")]).toEqual([0, "none", 900]);
   });
 
   // The expected length comes from the passage: about 140 words a minute, at least one minute
