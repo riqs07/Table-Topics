@@ -3,8 +3,8 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
-// Load the app's link
-import Link from "next/link";
+// Load the shared button and row styles
+import { RowLink, SecondaryLink } from "@/components/script/Buttons";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen set-up
@@ -69,11 +69,14 @@ export function BookendsScreen(props: ScreenProps) {
             {/* Each one */}
             {pair.map((item) => (
               // One prompt
-              <li key={item.id} className="py-3">
-                {/* Its part */}
-                <span className="block text-footnote italic text-ink-muted">{item.part === "opening" ? "Opening" : "Close"}</span>
-                {/* The prompt, as the link */}
-                <Link href={drillHref(item)} className="font-display text-cue underline-offset-4 hover:underline">{item.text}</Link>
+              <li key={item.id}>
+                {/* The whole row starts the drill */}
+                <RowLink href={drillHref(item)} label={item.text}>
+                  {/* Its part */}
+                  <span className="block text-footnote italic text-ink-muted">{item.part === "opening" ? "Opening" : "Close"}</span>
+                  {/* The prompt */}
+                  <span className="block font-display text-cue">{item.text}</span>
+                </RowLink>
               </li>
             ))}
           </ul>
@@ -94,9 +97,9 @@ export function BookendsScreen(props: ScreenProps) {
                 {/* Its title */}
                 <span className="flex-1">{talk.title}</span>
                 {/* Its first section */}
-                <Link href={sectionHref(talk, 0)} aria-label={`Opening of “${talk.title}”`} className="underline underline-offset-4">opening</Link>
+                <SecondaryLink href={sectionHref(talk, 0)} label={`Opening of “${talk.title}”`}>opening</SecondaryLink>
                 {/* Its last section */}
-                <Link href={sectionHref(talk, count - 1)} aria-label={`Close of “${talk.title}”`} className="underline underline-offset-4">close</Link>
+                <SecondaryLink href={sectionHref(talk, count - 1)} label={`Close of “${talk.title}”`}>close</SecondaryLink>
               </li>
             ))}
           </ul>
@@ -112,13 +115,13 @@ export function BookendsScreen(props: ScreenProps) {
             {/* Small heading */}
             <h2 className="text-footnote italic text-ink-muted">{part === "opening" ? "More openings" : "More closes"}</h2>
             {/* The prompts */}
-            <ul className="mt-2 space-y-1">
+            <ul className="mt-2 divide-y divide-rule border-y border-rule">
               {/* Each prompt */}
               {BOOKENDS.filter((item) => item.part === part && !pair?.some((today) => today.id === item.id)).map((item) => (
                 // One prompt
                 <li key={item.id}>
                   {/* The link */}
-                  <Link href={drillHref(item)} className="underline underline-offset-4">{item.text}</Link>
+                  <RowLink href={drillHref(item)}>{item.text}</RowLink>
                 </li>
               ))}
             </ul>

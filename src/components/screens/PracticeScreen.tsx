@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
+// Load the shared button styles
+import { PrimaryLink, SecondaryLink } from "@/components/script/Buttons";
 // Load a mode's heading and description
 import { ModeHeader } from "@/components/script/ModeHeader";
 // Load the shared screen set-up
@@ -64,7 +66,7 @@ export function PracticeScreen(props: ScreenProps) {
           {/* What it is */}
           <ModeHeader mode={mode("table-topic")} />
           {/* Start it */}
-          {topic && <Link href={`/session?mode=talk&prompt=${topic.id}`} className="mt-3 inline-block bg-accent px-4 py-1.5 text-accent-ink">Start a Table Topic</Link>}
+          {topic && <p className="mt-3"><PrimaryLink href={`/session?mode=talk&prompt=${topic.id}`}>Start a Table Topic</PrimaryLink></p>}
         </section>
 
         {/* A prepared answer */}
@@ -76,9 +78,9 @@ export function PracticeScreen(props: ScreenProps) {
           {/* Start it, or swap the task */}
           <p className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-2">
             {/* Start */}
-            {prompt && <Link href={`/session?mode=response&prompt=${prompt.id}`} className="inline-block bg-accent px-4 py-1.5 text-accent-ink">Start a prepared answer</Link>}
+            {prompt && <PrimaryLink href={`/session?mode=response&prompt=${prompt.id}`}>Start a prepared answer</PrimaryLink>}
             {/* Another task */}
-            <button type="button" onClick={() => setOffset(offset + 1)} className="italic text-ink-muted underline underline-offset-4">or choose another</button>
+            <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">or choose another</button>
           </p>
         </section>
 
@@ -87,7 +89,7 @@ export function PracticeScreen(props: ScreenProps) {
           {/* What it is */}
           <ModeHeader mode={mode("openings")} />
           {/* Its page */}
-          <Link href="/bookends" className="mt-3 inline-block underline underline-offset-4">Choose an opening or a close</Link>
+          <p className="mt-3"><SecondaryLink href="/bookends">Choose an opening or a close</SecondaryLink></p>
         </section>
 
         {/* Q&A practice */}
@@ -97,7 +99,7 @@ export function PracticeScreen(props: ScreenProps) {
           {/* Its page, once there is something to ask about */}
           {qaFrom ? (
             // The newest rehearsal or prepared answer
-            <Link href={`/qa?from=${qaFrom}`} className="mt-3 inline-block underline underline-offset-4">Practise Q&amp;A on your latest run</Link>
+            <p className="mt-3"><SecondaryLink href={`/qa?from=${qaFrom}`}>Practise Q&amp;A on your latest run</SecondaryLink></p>
           ) : (
             // Nothing yet
             qaFrom === null && <p className="mt-3 text-footnote italic text-ink-muted">Opens after a rehearsal or a prepared answer: the questions come from what you said.</p>
@@ -106,7 +108,7 @@ export function PracticeScreen(props: ScreenProps) {
       </div>
 
       {/* Your own talk lives elsewhere */}
-      <p className="mt-8 text-footnote italic text-ink-muted">
+      <p data-inline className="mt-8 text-footnote italic text-ink-muted">
         {/* The pointer */}
         Preparing a talk of your own? <Link href="/rehearse" className="underline underline-offset-4">Go to Talks</Link>.
       </p>

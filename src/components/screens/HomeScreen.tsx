@@ -217,7 +217,7 @@ export function HomeScreen(props: ScreenProps) {
                 ))}
               </ul>
               {/* Skip */}
-              <button type="button" onClick={finishWelcome} className="mt-4 italic text-ink-muted underline underline-offset-4">Skip</button>
+              <button type="button" onClick={finishWelcome} className="inline-flex min-h-11 items-center mt-4 italic text-ink-muted underline underline-offset-4">Skip</button>
             </section>
           )}
 
@@ -244,7 +244,7 @@ export function HomeScreen(props: ScreenProps) {
                 // One job
                 <li key={job.id}>
                   {/* The link, with its line of explanation */}
-                  <Link href={job.href} className="flex flex-wrap items-baseline justify-between gap-x-4 py-3 hover:text-accent">
+                  <Link href={job.href} className="flex min-h-14 flex-wrap items-baseline justify-between gap-x-4 py-3 hover:text-accent">
                     {/* Its name */}
                     <span className="font-display text-cue">{job.name} →</span>
                     {/* What it covers */}
@@ -261,9 +261,9 @@ export function HomeScreen(props: ScreenProps) {
           {data && (
             <Footnote>
               {/* Label wraps the box and text so either can be tapped */}
-              <label className="flex cursor-pointer items-start gap-3">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3">
                 {/* Square checkbox, filled with the accent when ticked */}
-                <input type="checkbox" checked={data.challengeDone} onChange={(event) => toggleChallenge(event.target.checked)} className="mt-1 size-3.5 flex-none appearance-none border-2 border-ink checked:border-accent checked:bg-accent" />
+                <input type="checkbox" checked={data.challengeDone} onChange={(event) => toggleChallenge(event.target.checked)} className="mt-0.5 size-6 flex-none appearance-none border-2 border-ink checked:border-accent checked:bg-accent" />
                 {/* The challenge */}
                 <span>Off the page this week: <span>{data.challenge.text.charAt(0).toLowerCase() + data.challenge.text.slice(1)}</span></span>
               </label>

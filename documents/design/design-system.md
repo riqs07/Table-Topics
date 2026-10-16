@@ -1,7 +1,7 @@
 # Design System
 
 **Purpose:** How you control colors, fonts, and feel, and the rules that keep the look in one place.
-**Last updated:** 2026-10-13
+**Last updated:** 2026-10-16
 **Status:** Built in milestone 2. **Calm studio with a forest green accent was chosen at C6 (2026-10-12).** All three themes stay on the style page (`/style`) for comparison.
 
 ## Direction: the script page (chosen 2026-10-13)
@@ -12,10 +12,11 @@ Rules for every screen:
 
 - **Serif type throughout** (Newsreader). The daily prompt is set like a headline, with a hanging opening quote in the accent.
 - **Prose instead of widgets.** Streak, focus, and progress are written as sentences ("Fourth day running."). Numbers appear inside sentences ("From 4.2 to 1.8 fillers a minute.").
-- **Main navigation** above the masthead on every screen (added 2026-10-15): Home · Lessons · Library · Rehearse · History · Settings in small type (wrapping to a second line on a narrow phone), the current section in ink without an underline. It is hidden while recording, counting down, or saving, so a stray click cannot lose a take.
+- **Main navigation** (changed 2026-10-16, decision 26): Today · Talks · Practice · Skills · History · Settings. On a phone it is a tab bar fixed to the bottom of the screen, an icon over a small label, the current section filled in the accent. On a computer it is a quiet row of text links above the masthead. It is hidden while recording, counting down, or saving, so a stray click cannot lose a take.
 - **A masthead line** on every screen: title in small capitals on the left, an italic note on the right, a solid hairline underneath.
 - **Run-in italic headings** ("*What to keep.*") instead of labels above blocks.
-- **One full-width action band** at the bottom of a screen, square-cornered, with the action in large italic. Secondary actions are footnotes above it.
+- **One full-width action band** for the main action, square-cornered, with the action in large italic. On a phone it is fixed to the bottom of the screen, just above the tab bar, so it is always in reach (`ActionBand`, `ActionButton`; the page leaves room for it). Secondary actions are footnotes above it.
+- **Tap targets are at least 44 pixels tall on a phone** (added 2026-10-16). Inside a page, use the shared styles in `src/components/script/Buttons.tsx`: `PrimaryLink` (filled accent), `SecondaryLink` (outlined in ink), and `RowLink` (a whole row with a chevron). A browser check measures every control on every main page; links inside running sentences carry `data-inline` and are exempt.
 - **Footnotes** (a thin rule, smaller text) for anything secondary: the weekly challenge, "or choose another", "Listen to your first recording."
 - **Left-aligned, square edges, hairline rules.** Lists use dotted leaders like a table of contents.
 

@@ -621,7 +621,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           <div className="hidden flex-1 md:block" />
           {/* Discard while recording */}
           {(recording || thinking) && (
-            <button type="button" onClick={() => void discard()} className="mt-4 self-start italic underline underline-offset-4 md:mb-10">
+            <button type="button" onClick={() => void discard()} className="mt-4 self-start inline-flex min-h-11 items-center italic underline underline-offset-4 md:mb-10">
               {thinking ? "or leave without speaking" : "or discard this one without saving"}
             </button>
           )}
@@ -736,7 +736,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* A way home when stuck on a problem */}
           {problem && (
             <Footnote>
-              <Link href="/" className="underline underline-offset-4">Back to the prompt</Link>
+              <Link href="/" className="inline-flex min-h-11 items-center underline underline-offset-4">Back to Today</Link>
             </Footnote>
           )}
 

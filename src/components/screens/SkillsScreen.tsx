@@ -7,6 +7,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
+// Load the whole-row link
+import { RowLink } from "@/components/script/Buttons";
+// Load the chevron that marks a row as tappable
+import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load a mode's heading and description
 import { ModeHeader } from "@/components/script/ModeHeader";
 // Load the shared screen starting points
@@ -39,11 +43,9 @@ function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passag
         {/* One row per text */}
         {items.map((item) => (
           // One text
-          <li key={item.id} className="flex flex-wrap items-baseline justify-between gap-x-4 py-3">
-            {/* Its title, starting it */}
-            <Link href={`/session?mode=${sessionMode}&prompt=${item.id}`} className="underline underline-offset-4">{item.title}</Link>
-            {/* Who gave it, for speeches */}
-            {item.kind === "speech" && <span className="text-footnote italic text-ink-muted">{item.source}</span>}
+          <li key={item.id}>
+            {/* The whole row starts it; speeches show who gave them */}
+            <RowLink href={`/session?mode=${sessionMode}&prompt=${item.id}`} meta={item.kind === "speech" ? item.source : undefined}>{item.title}</RowLink>
           </li>
         ))}
       </ul>
@@ -88,11 +90,11 @@ export function SkillsScreen(props: ScreenProps) {
       {/* What this is */}
       <p className="mt-6 max-w-[52ch] text-lede">One skill at a time. Everything here is open, in any order, as often as you like.</p>
       {/* Jump to a part */}
-      <nav aria-label="On this page" className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-footnote">
+      <nav aria-label="On this page" className="mt-4 flex flex-wrap gap-x-5 text-footnote">
         {/* One link per part */}
         {["lessons", "readings", "pause-drills", "tricky-words"].map((id) => (
           // A jump link
-          <a key={id} href={`#${id}`} className="underline underline-offset-4">{mode(id).name}</a>
+          <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">{mode(id).name}</a>
         ))}
       </nav>
 
@@ -105,20 +107,23 @@ export function SkillsScreen(props: ScreenProps) {
           {/* One row per lesson */}
           {LESSONS.map((lesson) => (
             // One lesson
-            <li key={lesson.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-4">
-              {/* Number */}
-              <span className="w-8 flex-none font-display text-cue text-ink-muted tabular-nums">{lesson.number}</span>
-              {/* Title and tip */}
-              <span className="min-w-0 flex-1">
-                {/* Title */}
-                <span className="block font-display text-cue">{lesson.title}</span>
-                {/* The tip's first sentence */}
-                <span className="block text-footnote text-ink-muted">{lesson.tip.split(". ")[0]}.</span>
-                {/* How often practised */}
-                <span className="block text-footnote italic text-ink-muted">{practisedText(counts.get(lesson.id) ?? 0)}</span>
-              </span>
-              {/* Practise it */}
-              <Link href={`/session?mode=lesson&prompt=${lesson.id}`} aria-label={`Practise ${lesson.title}`} className="underline underline-offset-4">Practise</Link>
+            <li key={lesson.id}>
+              {/* The whole row starts the lesson */}
+              <Link href={`/session?mode=lesson&prompt=${lesson.id}`} aria-label={`Practise ${lesson.title}`} className="flex items-baseline gap-x-4 py-4 hover:text-accent">
+                {/* Number */}
+                <span className="w-8 flex-none font-display text-cue text-ink-muted tabular-nums">{lesson.number}</span>
+                {/* Title and tip */}
+                <span className="min-w-0 flex-1">
+                  {/* Title */}
+                  <span className="block font-display text-cue">{lesson.title}</span>
+                  {/* The tip's first sentence */}
+                  <span className="block text-footnote text-ink-muted">{lesson.tip.split(". ")[0]}.</span>
+                  {/* How often practised */}
+                  <span className="block text-footnote italic text-ink-muted">{practisedText(counts.get(lesson.id) ?? 0)}</span>
+                </span>
+                {/* The chevron */}
+                <CaretRightIcon aria-hidden="true" className="size-5 flex-none self-center text-ink-muted" />
+              </Link>
             </li>
           ))}
         </ol>

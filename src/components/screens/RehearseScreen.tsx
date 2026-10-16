@@ -6,6 +6,8 @@ import { useEffect, useState, type FormEvent } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
+// Load the shared button style
+import { SecondaryLink } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -128,22 +130,22 @@ export function RehearseScreen(props: ScreenProps) {
               {/* Title and length */}
               <span className="min-w-0 flex-1">
                 {/* Title, leading to the talk's page and plan */}
-                <Link href={`/talk?id=${talk.id}`} className="font-display text-cue underline-offset-4 hover:underline">{talk.title}</Link>
+                <Link href={`/talk?id=${talk.id}`} className="inline-flex min-h-11 items-center font-display text-cue underline-offset-4 hover:underline">{talk.title}</Link>
                 {/* Length */}
                 <span className="ml-2 text-footnote italic text-ink-muted">about {Math.round(readingSeconds(talk.body) / 60)} min{talk.goalMinutes ? ` · goal ${talk.goalMinutes} min` : ""}{today && talk.eventDate ? ` · ${daysAway(daysUntil(talk.eventDate, today))}` : ""}</span>
               </span>
               {/* Rehearse it */}
-              <Link href={`/session?mode=rehearse&prompt=${talk.id}`} aria-label={`Rehearse “${talk.title}”`} className="underline underline-offset-4">Rehearse</Link>
+              <SecondaryLink href={`/session?mode=rehearse&prompt=${talk.id}`} label={`Rehearse “${talk.title}”`}>Rehearse</SecondaryLink>
               {/* Delete, with a confirmation step */}
               {confirming === talk.id ? (
                 <span className="flex gap-3">
                   {/* Confirm */}
-                  <button type="button" onClick={() => void remove(talk.id)} className="bg-ink px-3 py-1 text-paper-raised">Yes, delete it</button>
+                  <button type="button" onClick={() => void remove(talk.id)} className="min-h-11 bg-ink px-3 text-paper-raised">Yes, delete it</button>
                   {/* Keep */}
-                  <button type="button" onClick={() => setConfirming(null)} className="underline underline-offset-4">Keep it</button>
+                  <button type="button" onClick={() => setConfirming(null)} className="inline-flex min-h-11 items-center underline underline-offset-4">Keep it</button>
                 </span>
               ) : (
-                <button type="button" onClick={() => setConfirming(talk.id)} aria-label={`Delete “${talk.title}”`} className="italic text-ink-muted underline underline-offset-4">Delete</button>
+                <button type="button" onClick={() => setConfirming(talk.id)} aria-label={`Delete “${talk.title}”`} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Delete</button>
               )}
             </li>
           ))}
@@ -159,7 +161,7 @@ export function RehearseScreen(props: ScreenProps) {
           {/* Label text */}
           <span>Title</span>
           {/* Field */}
-          <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} className="border-b border-ink bg-transparent py-1" />
+          <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} className="min-h-11 border-b border-ink bg-transparent py-1" />
         </label>
         {/* The words */}
         <label className="flex flex-col gap-1">
@@ -173,7 +175,7 @@ export function RehearseScreen(props: ScreenProps) {
           {/* Label text */}
           <span>Goal in minutes (optional)</span>
           {/* Field */}
-          <input type="number" min={1} max={60} value={goal} onChange={(event) => setGoal(event.target.value)} className="w-20 border-b border-ink bg-transparent py-1" />
+          <input type="number" min={1} max={60} value={goal} onChange={(event) => setGoal(event.target.value)} className="min-h-11 w-20 border-b border-ink bg-transparent py-1" />
         </label>
         {/* Save */}
         {/* The date of the talk, for a countdown plan */}
@@ -181,9 +183,9 @@ export function RehearseScreen(props: ScreenProps) {
           {/* Its name */}
           <span>Date of the talk (optional)</span>
           {/* The field */}
-          <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="border-b border-ink bg-transparent py-1" />
+          <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="min-h-11 border-b border-ink bg-transparent py-1" />
         </label>
-        <button type="submit" className="self-start bg-accent px-5 py-2 text-accent-ink">Save talk</button>
+        <button type="submit" className="min-h-11 self-start bg-accent px-5 text-accent-ink">Save talk</button>
         {/* Message */}
         {message && <p role="status" className="text-ink-muted">{message}</p>}
       </form>

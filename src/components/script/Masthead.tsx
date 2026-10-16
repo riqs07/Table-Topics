@@ -2,6 +2,10 @@
 
 // Load Next.js's link component
 import Link from "next/link";
+// Load the tab icons
+import { ClockCounterClockwiseIcon, GearIcon, GraduationCapIcon, MicrophoneIcon, PresentationIcon, SunIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the icon type
+import type { Icon } from "@phosphor-icons/react";
 // Load the type for content passed in
 import type { ReactNode } from "react";
 
@@ -9,19 +13,19 @@ import type { ReactNode } from "react";
 export type Section = "today" | "talks" | "practice" | "skills" | "history" | "settings";
 
 // Each section's name and address, in order
-const SECTIONS: ReadonlyArray<{ id: Section; name: string; href: string }> = [
+const SECTIONS: ReadonlyArray<{ id: Section; name: string; href: string; icon: Icon }> = [
   // The one next step, and the three jobs
-  { id: "today", name: "Today", href: "/" },
+  { id: "today", name: "Today", href: "/", icon: SunIcon },
   // Your own talks and their plans
-  { id: "talks", name: "Talks", href: "/rehearse" },
+  { id: "talks", name: "Talks", href: "/rehearse", icon: PresentationIcon },
   // Speaking on the spot
-  { id: "practice", name: "Practice", href: "/practice" },
+  { id: "practice", name: "Practice", href: "/practice", icon: MicrophoneIcon },
   // Lessons and readings
-  { id: "skills", name: "Skills", href: "/skills" },
+  { id: "skills", name: "Skills", href: "/skills", icon: GraduationCapIcon },
   // Past sessions
-  { id: "history", name: "History", href: "/history" },
+  { id: "history", name: "History", href: "/history", icon: ClockCounterClockwiseIcon },
   // Passphrase, themes, data
-  { id: "settings", name: "Settings", href: "/settings" },
+  { id: "settings", name: "Settings", href: "/settings", icon: GearIcon },
 ];
 
 // What the masthead shows
@@ -41,16 +45,25 @@ export function Masthead({ title, children, section, nav = true }: MastheadProps
   // Navigation row, then a baseline-aligned title row over a solid hairline
   return (
     <>
-      {/* The main navigation: the same places on every screen (wrapping onto a second line on a narrow phone if needed) */}
+      {/* The main navigation: a tab bar fixed to the bottom of a phone, a quiet row of links above the title on a computer */}
       {nav && (
-        <nav aria-label="Main" className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-footnote md:mb-4 md:gap-x-5">
+        <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:mb-4 md:flex md:gap-x-5 md:border-0 md:bg-transparent md:p-0">
           {/* One link per section */}
-          {SECTIONS.map((item) => (
-            // The current section is marked and shown in ink without an underline; the others are quiet links
-            <Link key={item.id} href={item.href} aria-current={item.id === section ? "page" : undefined} className={item.id === section ? "text-ink" : "text-ink-muted underline underline-offset-4 hover:text-ink"}>
-              {item.name}
-            </Link>
-          ))}
+          {SECTIONS.map((item) => {
+            // Whether this is the current section
+            const current = item.id === section;
+            // The section's icon
+            const TabIcon = item.icon;
+            // On a phone: icon over a small label, at least 44 pixels tall; on a computer: a text link
+            return (
+              <Link key={item.id} href={item.href} aria-current={current ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-tab md:min-h-0 md:text-footnote ${current ? "text-accent md:text-ink" : "text-ink-muted hover:text-ink md:underline md:underline-offset-4"}`}>
+                {/* The icon, phone only (filled for the current section) */}
+                <TabIcon aria-hidden="true" weight={current ? "fill" : "regular"} className="size-6 md:hidden" />
+                {/* The name */}
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
       )}
       {/* Header landmark with the ink rule underneath */}

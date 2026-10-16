@@ -80,7 +80,7 @@ function Row({ row, now, talkTitles }: { row: HistoryRow; now: Date; talkTitles:
   // A link to the session, laid out as a baseline-aligned row
   return (
     <li>
-      <Link href={`/sessions?id=${row.session.id}`} className="flex items-baseline gap-3 py-2 hover:text-accent">
+      <Link href={`/sessions?id=${row.session.id}`} className="flex min-h-11 items-baseline gap-3 py-3 hover:text-accent">
         {/* Day in italic, fixed width so prompts line up */}
         <span className="w-20 flex-none italic text-ink-muted max-md:w-16">{dayLabel(new Date(row.session.createdAt), now)}</span>
         {/* The prompt: wraps on a phone, cut short on a computer where the leader takes the space */}
@@ -157,7 +157,7 @@ export function HistoryScreen(props: ScreenProps) {
             {/* Listen to the first recording, if its audio is kept */}
             {baseline?.audioKey && (
               <p className="mt-6 border-t border-rule pt-3 text-footnote">
-                <Link href={`/sessions?id=${baseline.id}`} className="underline underline-offset-4">Listen to your first recording.</Link>
+                <Link href={`/sessions?id=${baseline.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Listen to your first recording.</Link>
               </p>
             )}
           </aside>

@@ -3,8 +3,8 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
-// Load the app's link
-import Link from "next/link";
+// Load the shared button style
+import { SecondaryLink } from "@/components/script/Buttons";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen set-up
@@ -153,7 +153,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
               {/* How often it was answered */}
               <span className="text-footnote italic text-ink-muted">{answeredText(loaded.answers.filter((answer) => answer.question === question).length)}</span>
               {/* Answer it */}
-              <Link href={`/session?mode=qa&prompt=${fromId}&question=${index}`} aria-label={`Answer “${question}”`} className="underline underline-offset-4">Answer</Link>
+              <SecondaryLink href={`/session?mode=qa&prompt=${fromId}&question=${index}`} label={`Answer “${question}”`}>Answer</SecondaryLink>
             </li>
           ))}
         </ol>
@@ -162,7 +162,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
       {/* Ask the coach */}
       <section className="mt-8">
         {/* The button */}
-        <button type="button" disabled={asking} onClick={() => void suggest()} className="bg-accent px-5 py-2 text-accent-ink disabled:opacity-60">{asking ? "Asking…" : questions.length ? "Suggest three new questions" : "Suggest three questions"}</button>
+        <button type="button" disabled={asking} onClick={() => void suggest()} className="min-h-11 bg-accent px-5 text-accent-ink disabled:opacity-60">{asking ? "Asking…" : questions.length ? "Suggest three new questions" : "Suggest three questions"}</button>
         {/* What is sent */}
         <p className="mt-2 max-w-[52ch] text-footnote italic text-ink-muted">Sends what you said in this run to the coach. A rehearsal’s script never leaves this device.</p>
         {/* Why it did not work */}
@@ -179,7 +179,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
           <textarea value={ownText} onChange={(event) => setOwnText(event.target.value)} rows={4} maxLength={1500} className="border border-rule bg-paper p-3" />
         </label>
         {/* Use them */}
-        <button type="button" onClick={() => void applyOwn()} className="self-start underline underline-offset-4">Use these</button>
+        <button type="button" onClick={() => void applyOwn()} className="self-start inline-flex min-h-11 items-center underline underline-offset-4">Use these</button>
       </section>
     </main>
   );

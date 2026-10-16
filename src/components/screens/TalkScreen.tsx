@@ -5,6 +5,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 // Load the app's link
 import Link from "next/link";
+// Load the shared button style
+import { SecondaryLink } from "@/components/script/Buttons";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen set-up
@@ -96,7 +98,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
         {/* The note */}
         <p className="mt-6 text-lede">This talk is not on this device. It may have been deleted, or saved in another browser.</p>
         {/* The way back */}
-        <Link href="/rehearse" className="mt-4 inline-block underline underline-offset-4">Back to your talks</Link>
+        <Link href="/rehearse" className="mt-4 inline-flex min-h-11 items-center underline underline-offset-4">Back to your talks</Link>
       </main>
     );
   }
@@ -133,10 +135,10 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
           {/* Its name */}
           <span>Date of the talk</span>
           {/* The field */}
-          <input type="date" value={dateInput} onChange={(event) => setDateInput(event.target.value)} className="border-b border-ink bg-transparent py-1" />
+          <input type="date" value={dateInput} onChange={(event) => setDateInput(event.target.value)} className="min-h-11 border-b border-ink bg-transparent py-1" />
         </label>
         {/* Save it */}
-        <button type="submit" className="underline underline-offset-4">Save date</button>
+        <button type="submit" className="inline-flex min-h-11 items-center underline underline-offset-4">Save date</button>
         {/* The saved date, written out */}
         {talk.eventDate && daysLeft !== null && daysLeft >= 0 && <span className="text-footnote italic text-ink-muted">{longDay(addDays(today, daysLeft))}</span>}
       </form>
@@ -157,7 +159,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
                 {/* How many runs so far */}
                 <span className={`text-footnote italic ${(done[index] ?? 0) >= task.times ? "text-ink" : "text-ink-muted"}`}>{done[index] ?? 0} of {task.times}</span>
                 {/* Open the rehearsal */}
-                <Link href={rehearseHref(talk.id, task.sectionIndex, task.ladder)} className="underline underline-offset-4">Rehearse</Link>
+                <SecondaryLink href={rehearseHref(talk.id, task.sectionIndex, task.ladder)}>Rehearse</SecondaryLink>
               </li>
             ))}
           </ul>
@@ -209,7 +211,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
                 {section.split("\n")[0]}
               </span>
               {/* Rehearse it */}
-              <Link href={rehearseHref(talk.id, index, "full")} aria-label={`Rehearse section ${index + 1}`} className="underline underline-offset-4">Rehearse</Link>
+              <SecondaryLink href={rehearseHref(talk.id, index, "full")} label={`Rehearse section ${index + 1}`}>Rehearse</SecondaryLink>
             </li>
           ))}
           {/* The whole talk, at each rung */}
@@ -217,11 +219,11 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
             {/* Its name */}
             <span className="flex-1">The whole talk</span>
             {/* With the text */}
-            <Link href={rehearseHref(talk.id, null, "full")} className="underline underline-offset-4">with the text</Link>
+            <SecondaryLink href={rehearseHref(talk.id, null, "full")}>with the text</SecondaryLink>
             {/* From keywords */}
-            <Link href={rehearseHref(talk.id, null, "keywords")} className="underline underline-offset-4">from keywords</Link>
+            <SecondaryLink href={rehearseHref(talk.id, null, "keywords")}>from keywords</SecondaryLink>
             {/* From memory */}
-            <Link href={rehearseHref(talk.id, null, "none")} className="underline underline-offset-4">from memory</Link>
+            <SecondaryLink href={rehearseHref(talk.id, null, "none")}>from memory</SecondaryLink>
           </li>
         </ul>
         {/* How sections are made */}

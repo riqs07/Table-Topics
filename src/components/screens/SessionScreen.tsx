@@ -205,7 +205,7 @@ function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; th
       {nowUrl && <audio ref={nowPlayer} controls src={nowUrl} aria-label={`Your recording from day ${nowDay}`} className="mt-1 w-full" />}
       {/* Hear both in turn */}
       {thenUrl && nowUrl && (
-        <button type="button" onClick={playBoth} className="mt-3 italic underline underline-offset-4">
+        <button type="button" onClick={playBoth} className="inline-flex min-h-11 items-center mt-3 italic underline underline-offset-4">
           Play both, then and now
         </button>
       )}
@@ -360,25 +360,25 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }:
           {/* Quieter options */}
           <Footnote>
             {/* Open the transcript on a phone */}
-            <button type="button" onClick={() => setShowTranscript(!showTranscript)} className="underline underline-offset-4 md:hidden">
+            <button type="button" onClick={() => setShowTranscript(!showTranscript)} className="inline-flex min-h-11 items-center underline underline-offset-4 md:hidden">
               {showTranscript ? "Hide what I said" : "Read what I said"}
             </button>
             {/* Separator on a phone */}
             <span className="md:hidden">·</span>
             {/* After a rehearsal or a response, practise the questions that would follow */}
-            {(session.mode === "rehearse" || session.mode === "response") && <Link href={`/qa?from=${session.id}`} className="underline underline-offset-4">Practise Q&amp;A</Link>}
+            {(session.mode === "rehearse" || session.mode === "response") && <Link href={`/qa?from=${session.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Practise Q&amp;A</Link>}
             {/* Separator */}
             {(session.mode === "rehearse" || session.mode === "response") && <span>·</span>}
             {/* After a Q&A answer, back to the questions */}
-            {qa && <Link href={`/qa?from=${session.promptId}`} className="underline underline-offset-4">Back to the questions</Link>}
+            {qa && <Link href={`/qa?from=${session.promptId}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Back to the questions</Link>}
             {/* Separator */}
             {qa && <span>·</span>}
             {/* After a rehearsal, back to the talk and its plan */}
-            {rehearsed && <Link href={`/talk?id=${rehearsed.id}`} className="underline underline-offset-4">Back to your talk</Link>}
+            {rehearsed && <Link href={`/talk?id=${rehearsed.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Back to your talk</Link>}
             {/* Separator */}
             {rehearsed && <span>·</span>}
             {/* Finish */}
-            <Link href="/" className="italic text-ink-muted underline underline-offset-4">or finish for today</Link>
+            <Link href="/" className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">or finish for today</Link>
           </Footnote>
           {/* After an old warm-up, a Record Response; otherwise the retry */}
           {warmup ? (
@@ -509,7 +509,7 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
           {/* Title */}
           <Masthead title="Session" />
           {/* Explanation and a way back */}
-          <p className="mt-6 text-lede text-ink-muted">This session is not on this device. <Link href="/history" className="underline underline-offset-4">Back to history</Link></p>
+          <p data-inline className="mt-6 text-lede text-ink-muted">This session is not on this device. <Link href="/history" className="inline-flex min-h-11 items-center underline underline-offset-4">Back to history</Link></p>
         </>
       )}
       {/* A retry with its first try */}

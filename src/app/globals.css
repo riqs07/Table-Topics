@@ -45,6 +45,8 @@
 @theme {
   /* Footnotes and asides */
   --text-footnote: 0.9375rem;
+  /* Tab labels in the phone's bottom bar */
+  --text-tab: 0.75rem;
   /* Lead paragraphs and coach notes */
   --text-lede: 1.0625rem;
   /* Lead line height */
@@ -101,5 +103,35 @@
     outline: 2px solid var(--vl-focus-ring);
     /* Leave a small gap so the outline is not lost against the element */
     outline-offset: 2px;
+  }
+}
+
+/* Phone layout (UX round, option B): room at the bottom of the page for the tab bar and the sticky main action */
+@layer base {
+  /* Nothing to make room for by default */
+  :root {
+    /* Height of the bottom tab bar */
+    --vl-tabbar-h: 0px;
+    /* Height of the sticky main action */
+    --vl-band-h: 0px;
+  }
+}
+
+/* Only on a phone-sized screen */
+@media (max-width: 47.99rem) {
+  /* A page with the tab bar */
+  body:has(nav[data-tabbar]) {
+    /* The bar's height, plus the phone's home-indicator area */
+    --vl-tabbar-h: calc(4rem + env(safe-area-inset-bottom));
+  }
+  /* A page with a sticky main action */
+  body:has([data-action-band]) {
+    /* The band's height */
+    --vl-band-h: 5rem;
+  }
+  /* Keep the last content clear of both */
+  body {
+    /* The space they take */
+    padding-bottom: calc(var(--vl-tabbar-h) + var(--vl-band-h));
   }
 }

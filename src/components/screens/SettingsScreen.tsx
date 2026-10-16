@@ -225,7 +225,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {/* The limit as a sentence with a choice in it */}
         <p>
           Keep recordings from your last{" "}
-          <select aria-label="Keep recordings from your last" value={settings?.audioRetention ?? 30} onChange={changeRetention} className="border-b border-ink bg-transparent">
+          <select aria-label="Keep recordings from your last" value={settings?.audioRetention ?? 30} onChange={changeRetention} className="min-h-11 border-b border-ink bg-transparent">
             {/* One option per choice */}
             {RETENTION_CHOICES.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
           </select>{" "}
@@ -240,9 +240,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {/* Passphrase field and save */}
         <p className="mt-3 flex flex-wrap items-baseline gap-3">
           {/* The field */}
-          <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-w-0 flex-1 border-b border-ink bg-transparent py-1" />
+          <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 border-b border-ink bg-transparent py-1" />
           {/* Save */}
-          <button type="button" onClick={storePassphrase} className="underline underline-offset-4">Save passphrase</button>
+          <button type="button" onClick={storePassphrase} className="inline-flex min-h-11 items-center underline underline-offset-4">Save passphrase</button>
         </p>
         {/* The saved passphrase's fingerprint, to compare with the one pnpm live-check prints for APP_ACCESS_SECRET */}
         {fingerprint && <p className="mt-2 text-footnote italic text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
@@ -251,7 +251,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           <p className="mt-3">
             {pendingCount} {pendingCount === 1 ? "session is" : "sessions are"} waiting for feedback.{" "}
             {/* Send now */}
-            <button type="button" onClick={sendNow} className="underline underline-offset-4">Send now</button>
+            <button type="button" onClick={sendNow} className="inline-flex min-h-11 items-center underline underline-offset-4">Send now</button>
           </p>
         )}
       </Section>}
@@ -261,7 +261,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {/* Why to export */}
         <p className="text-ink-muted">Everything lives on this device. Browsers can clear saved data, so keep a copy now and then.</p>
         {/* Export */}
-        <button type="button" onClick={exportData} className="mt-3 underline underline-offset-4">Export my data</button>
+        <button type="button" onClick={exportData} className="inline-flex min-h-11 items-center mt-3 underline underline-offset-4">Export my data</button>
         {/* Import */}
         <p className="mt-3">
           <label className="cursor-pointer underline underline-offset-4">
@@ -276,7 +276,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       <Section title="Start over">
         {/* First step */}
         {!confirmingDelete && (
-          <button type="button" onClick={() => setConfirmingDelete(true)} className="underline underline-offset-4">Delete all my data</button>
+          <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-11 items-center underline underline-offset-4">Delete all my data</button>
         )}
         {/* Confirmation step */}
         {confirmingDelete && (
@@ -284,9 +284,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             {/* What will happen */}
             <p>This removes every recording, transcript, and setting on this device. It cannot be undone.</p>
             {/* Confirm */}
-            <button type="button" onClick={deleteEverything} className="mt-3 bg-ink px-4 py-2 text-paper-raised">Yes, delete everything</button>
+            <button type="button" onClick={deleteEverything} className="mt-3 min-h-11 bg-ink px-4 text-paper-raised">Yes, delete everything</button>
             {/* Back out */}
-            <button type="button" onClick={() => setConfirmingDelete(false)} className="ml-4 italic text-ink-muted underline underline-offset-4">Keep my data</button>
+            <button type="button" onClick={() => setConfirmingDelete(false)} className="ml-4 inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Keep my data</button>
           </div>
         )}
       </Section>
@@ -295,12 +295,12 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {DEVELOPMENT && (
         <Section title="While building (not in the released app)">
           {/* Fill with sample sessions */}
-          <button type="button" onClick={loadSamples} className="underline underline-offset-4">Fill with sample sessions</button>
+          <button type="button" onClick={loadSamples} className="inline-flex min-h-11 items-center underline underline-offset-4">Fill with sample sessions</button>
           {/* Links to design pages */}
           <p className="mt-3 text-ink-muted">
-            <Link href="/style" className="underline underline-offset-4">Style page</Link>
+            <Link href="/style" className="inline-flex min-h-11 items-center underline underline-offset-4">Style page</Link>
             {" · "}
-            <Link href="/wireframes" className="underline underline-offset-4">Wireframes</Link>
+            <Link href="/wireframes" className="inline-flex min-h-11 items-center underline underline-offset-4">Wireframes</Link>
           </p>
         </Section>
       )}
