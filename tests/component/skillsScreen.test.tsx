@@ -52,4 +52,16 @@ describe("SkillsScreen", () => {
     // Confirm the marks
     expect([!!(await first.findByText("Done")), !!second.getByText("Next")]).toEqual([true, true]);
   });
+
+  // The famous speeches are cards in a named list, each showing who gave it
+  it("shows the famous speeches as a named list of cards", async () => {
+    // Draw the screen
+    render(<SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The list
+    const list = within(await screen.findByRole("list", { name: "Famous speeches" }));
+    // Every speech, each with its speaker in the card
+    const speeches = PASSAGES.filter((passage) => passage.kind === "speech");
+    // Confirm one card per speech, and the first names its speaker
+    expect([list.getAllByRole("listitem").length, list.getAllByRole("link")[0]?.textContent?.includes(speeches[0]?.source ?? "?")]).toEqual([speeches.length, true]);
+  });
 });

@@ -63,4 +63,14 @@ describe("PracticeScreen", () => {
     // Confirm the task and the link follow
     expect([!!screen.getByText(`“${promptForDay(NOW, 1).text}”`), screen.getByRole("link", { name: "Start a prepared answer" }).getAttribute("href")]).toEqual([true, `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`]);
   });
+
+  // Each mode is its own card, named by its heading, so the page reads as four choices
+  it("shows each mode as a card named by its heading", async () => {
+    // Draw the page
+    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Wait for the page
+    await screen.findByRole("heading", { name: "Table Topic" });
+    // Confirm the four cards, in order
+    expect(screen.getAllByRole("region").map((card) => card.getAttribute("aria-labelledby"))).toEqual(["table-topic", "prepared", "openings", "qa"]);
+  });
 });
