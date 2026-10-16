@@ -57,6 +57,33 @@ function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passag
   );
 }
 
+// The famous speeches as a grid of cards: title, then who gave it and when
+function SpeechCards({ items }: { items: ReadonlyArray<Passage> }) {
+  // The cards
+  return (
+    <>
+      {/* Small heading */}
+      <h3 className="mt-4 text-footnote italic text-ink-muted">Famous speeches</h3>
+      {/* One card per speech, two across on a wider screen */}
+      <ul aria-label="Famous speeches" className="mt-2 grid gap-3 sm:grid-cols-2">
+        {/* Each speech */}
+        {items.map((item) => (
+          // One card
+          <li key={item.id}>
+            {/* The whole card starts the reading */}
+            <Link href={`/session?mode=read&prompt=${item.id}`} className="flex h-full min-h-16 flex-col justify-between gap-1 border border-rule bg-paper px-4 py-3 hover:border-accent">
+              {/* The title */}
+              <span className="font-display text-lede leading-tight sm:text-cue">{item.title}</span>
+              {/* Who gave it, and when */}
+              <span className="text-footnote italic text-ink-muted">{item.source}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 // A lesson's place on the path: a filled tick when done, an accent ring marked "Next", a quiet ring otherwise
 function PathMark({ mark, number }: { mark: LessonMark; number: number }) {
   // Done: a filled square with a tick
@@ -159,7 +186,7 @@ export function SkillsScreen(props: ScreenProps) {
         {/* What they are */}
         <ModeHeader mode={mode("readings")} />
         {/* Speeches */}
-        <TextList items={PASSAGES.filter((passage) => passage.kind === "speech")} sessionMode="read" heading="Famous speeches" />
+        <SpeechCards items={PASSAGES.filter((passage) => passage.kind === "speech")} />
         {/* Practice passages */}
         <TextList items={PASSAGES.filter((passage) => passage.kind === "practice")} sessionMode="read" heading="Practice passages" />
       </section>

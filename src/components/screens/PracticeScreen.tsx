@@ -11,6 +11,10 @@ import { Masthead } from "@/components/script/Masthead";
 import { PrimaryLink, SecondaryLink } from "@/components/script/Buttons";
 // Load a mode's heading and description
 import { ModeHeader } from "@/components/script/ModeHeader";
+// Load the shared card
+import { Card } from "@/components/script/Card";
+// Load an icon for each mode
+import { ChatsCircleIcon, LightningIcon, NotePencilIcon, QuotesIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the catalogue
@@ -60,51 +64,51 @@ export function PracticeScreen(props: ScreenProps) {
       <p className="mt-6 max-w-[52ch] text-lede">Practise speaking without a script. Each takes a few minutes, and afterwards you get one specific fix.</p>
 
       {/* Each mode */}
-      <div className="mt-8 divide-y divide-rule border-y border-ink">
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
         {/* A Table Topic */}
-        <section className="py-5">
+        <Card labelledBy="table-topic" icon={LightningIcon}>
           {/* What it is */}
           <ModeHeader mode={mode("table-topic")} />
           {/* Start it */}
-          {topic && <p className="mt-3"><PrimaryLink href={`/session?mode=talk&prompt=${topic.id}`}>Start a Table Topic</PrimaryLink></p>}
-        </section>
+          {topic && <p className="mt-auto pt-3"><PrimaryLink href={`/session?mode=talk&prompt=${topic.id}`}>Start a Table Topic</PrimaryLink></p>}
+        </Card>
 
         {/* A prepared answer */}
-        <section className="py-5">
+        <Card labelledBy="prepared" icon={NotePencilIcon}>
           {/* What it is */}
           <ModeHeader mode={mode("prepared")} />
           {/* Today's task */}
           {prompt && <p className="mt-3 font-display text-cue">“{prompt.text}”</p>}
           {/* Start it, or swap the task */}
-          <p className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+          <p className="mt-auto flex flex-wrap items-baseline gap-x-4 gap-y-2 pt-3">
             {/* Start */}
             {prompt && <PrimaryLink href={`/session?mode=response&prompt=${prompt.id}`}>Start a prepared answer</PrimaryLink>}
             {/* Another task */}
             <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">or choose another</button>
           </p>
-        </section>
+        </Card>
 
         {/* Openings and closings */}
-        <section className="py-5">
+        <Card labelledBy="openings" icon={QuotesIcon}>
           {/* What it is */}
           <ModeHeader mode={mode("openings")} />
           {/* Its page */}
-          <p className="mt-3"><SecondaryLink href="/bookends">Choose an opening or a close</SecondaryLink></p>
-        </section>
+          <p className="mt-auto pt-3"><SecondaryLink href="/bookends">Choose an opening or a close</SecondaryLink></p>
+        </Card>
 
         {/* Q&A practice */}
-        <section className="py-5">
+        <Card labelledBy="qa" icon={ChatsCircleIcon}>
           {/* What it is */}
           <ModeHeader mode={mode("qa")} />
           {/* Its page, once there is something to ask about */}
           {qaFrom ? (
             // The newest rehearsal or prepared answer
-            <p className="mt-3"><SecondaryLink href={`/qa?from=${qaFrom}`}>Practise Q&amp;A on your latest run</SecondaryLink></p>
+            <p className="mt-auto pt-3"><SecondaryLink href={`/qa?from=${qaFrom}`}>Practise Q&amp;A on your latest run</SecondaryLink></p>
           ) : (
             // Nothing yet
             qaFrom === null && <p className="mt-3 text-footnote italic text-ink-muted">Opens after a rehearsal or a prepared answer: the questions come from what you said.</p>
           )}
-        </section>
+        </Card>
       </div>
 
       {/* Your own talk lives elsewhere */}

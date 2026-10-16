@@ -21,11 +21,12 @@ Rules for every screen:
 - **Recordings play from the app's own player** (`src/components/script/Player.tsx`): one large square play button in the accent, a bar to move through the recording, and the time against the length that was saved with the session, because recorded audio often cannot report its own length.
 - **Progress you can see at a glance** (added 2026-10-16). Today shows the last seven days as seven squares under the streak sentence, filled in the accent where there was practice, with today outlined (`src/core/weekStrip.ts`). The lessons on Skills read as a path: a filled square with a tick for a lesson done, the number in an accent outline with "Next" above the title for the first lesson not yet done, a quiet outline for the rest, joined by a thin line (`src/core/lessonPath.ts`). The trend on History has a caption saying what it measures, and its first and latest values at either end; a flat trend sits in the middle, not along the top edge.
 - **An empty page offers one thing to do**, as a filled button: History's empty state leads to "Record your first session".
+- **Cards for choices** (added 2026-10-16, decision 27; relaxes the earlier "no cards" rule). Where a page offers several things to choose between, each is a card: square corners, a hairline edge in `rule`, the plain `paper` behind it, no shadow (`src/components/script/Card.tsx`). The Practice modes are cards with an accent icon at the top and their start button at the bottom; the famous speeches on Skills are cards showing the title and who gave it. Lists of many small items (lessons, practice passages, history) stay as ruled rows.
 - **Tap targets are at least 44 pixels tall on a phone** (added 2026-10-16). Inside a page, use the shared styles in `src/components/script/Buttons.tsx`: `PrimaryLink` (filled accent), `SecondaryLink` (outlined in ink), and `RowLink` (a whole row with a chevron). A browser check measures every control on every main page; links inside running sentences carry `data-inline` and are exempt.
 - **Footnotes** (a thin rule, smaller text) for anything secondary: the weekly challenge, "or choose another", "Listen to your first recording."
 - **Left-aligned, square edges, hairline rules.** Lists use dotted leaders like a table of contents.
 
-Never: pill-shaped buttons, uppercase letter-spaced micro-labels, rounded cards with borders, centered stacks of widgets, emoji, gradients, or cheerleading copy. A test fails if the wireframes use pill buttons or uppercase labels.
+Never: pill-shaped buttons, uppercase letter-spaced micro-labels, rounded or shadowed cards, centered stacks of widgets, emoji, gradients, or cheerleading copy. A test fails if the wireframes use pill buttons or uppercase labels.
 
 Type sizes are named in `src/app/globals.css` (`text-footnote`, `text-lede`, `text-running`, `text-cue`, `text-band`, `text-statement`, `text-prompt`); components use the names, not pixel values.
 
@@ -84,7 +85,7 @@ Dark mode follows the phone's setting automatically.
 
 ## Shape and layout
 
-- Flat surfaces separated by thin rules, not shadowed cards. Square corners.
+- Flat surfaces separated by thin rules, not shadowed cards. Square corners. Where a page offers a set of choices, each may be a flat card (see "Cards for choices").
 - Phone first. One main action per screen, generous spacing.
 - Transcripts read like notes; fillers are marked quietly, not as errors.
 
