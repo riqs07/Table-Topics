@@ -29,6 +29,9 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | feedback | Keep / change / retry cue, or empty if not yet received |
 | feedbackStatus | pending, done, or failed |
 | loudness | Loudness readings every tenth of a second while recording (0 to 1, two decimals), used to find pauses; missing on older sessions |
+| spokenTimes | Seconds from the start when each word of the transcript was first heard (a tenth of a second, approximate; decision 28). Missing on older sessions |
+| scriptTimes | With text on screen: seconds when each word of that text was first read, or empty if never read. Missing on older sessions and sessions without text |
+| selfReview | The user's notes after listening back (decision 30): what worked, what to change, quick tags, whether they skipped, and when. Empty while a new first try waits for notes; missing on older sessions and retries |
 | questions | On a rehearsal or a response: likely audience questions for Q&A practice, suggested by the coach or typed by the user. Usually missing |
 | question | On a Q&A answer (`mode` `qa`, whose `promptId` is the session the question came from): the question it answered |
 | sectionIndex | For a rehearsal of one section of a talk: which section (counted from 0). Missing or empty for a whole run and for every other mode |

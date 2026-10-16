@@ -92,15 +92,15 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   if (response.ok) {
     // Read the feedback from the reply
     const { feedback } = (await response.json()) as { feedback: NonNullable<typeof session.feedback> };
-    // Save it and mark the session done
-    await repository.saveSession({ ...session, feedback, feedbackStatus: "done" });
+    // Save it on the session as it is now (the user may have saved notes while the coach was thinking), and mark it done
+    await repository.saveSession({ ...((await repository.getSession(sessionId)) ?? session), feedback, feedbackStatus: "done" });
     // Report success
     return plain("done");
   }
   // The coach declined, or the data was refused: stop trying for this session
   if (response.status === 422 || response.status === 400) {
-    // Mark the session as failed so it is not sent again
-    await repository.saveSession({ ...session, feedbackStatus: "failed" });
+    // Mark the session as it is now as failed, so it is not sent again
+    await repository.saveSession({ ...((await repository.getSession(sessionId)) ?? session), feedbackStatus: "failed" });
     // Say which, with the server's reason
     return { outcome: response.status === 422 ? "declined" : "invalid", reason: (await serverReason(response)).error };
   }

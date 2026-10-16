@@ -23,6 +23,20 @@ export function isSessionMode(value: unknown): value is SessionMode {
   return typeof value === "string" && (SESSION_MODES as ReadonlyArray<string>).includes(value);
 }
 
+// The user's own notes after listening back to a session
+export interface SelfReview {
+  // What worked, in their words (may be empty)
+  worked: string;
+  // What they would change, in their words (may be empty)
+  change: string;
+  // Quick tags they tapped (ids from src/core/selfReview.ts)
+  tags: string[];
+  // True if they chose "skip this time" instead of listening
+  skipped: boolean;
+  // When the notes were saved (ISO text)
+  savedAt: string;
+}
+
 // Where a session's feedback request stands
 export type FeedbackStatus = "pending" | "done" | "failed";
 
@@ -66,6 +80,8 @@ export interface SessionRecord {
   question?: string;
   // For a rehearsal: which section of the talk was rehearsed (counted from 0), or null or missing for the whole talk
   sectionIndex?: number | null;
+  // The user's notes after listening back: null while waiting for them (new first tries), missing on older sessions and retries, which skip the step
+  selfReview?: SelfReview | null;
   // Key of the saved audio, or null if there is none or it was pruned
   audioKey: string | null;
 }

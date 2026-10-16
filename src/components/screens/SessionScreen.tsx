@@ -12,6 +12,12 @@ import { Masthead } from "@/components/script/Masthead";
 import { Player } from "@/components/script/Player";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
+// Load the saved-audio loader
+import { useAudioUrl } from "@/components/screens/useAudioUrl";
+// Load the listen-back step
+import { ReviewStep } from "@/components/screens/ReviewStep";
+// Load the quick tags, for showing the user's notes
+import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
 // Load the sentence helpers
 import { dayLabel, formatRate } from "@/core/copy";
 // Load the findings from word times
@@ -105,45 +111,10 @@ function Transcript({ text }: { text: string }) {
   );
 }
 
-// Load a session's saved audio and make a temporary address for it (null while loading or if the audio is gone)
-function useAudioUrl(repo: Repository, audioKey: string | null): string | null {
-  // Temporary address of the audio in this browser
-  const [url, setUrl] = useState<string | null>(null);
-
-  // Load the audio and make an address for it; release it when leaving
-  useEffect(() => {
-    // Nothing to load if the audio was pruned
-    if (!audioKey) return;
-    // Ignore the result if the screen closes first
-    let cancelled = false;
-    // The address made, so it can be released
-    let made: string | null = null;
-    // Read the audio
-    repo.getAudio(audioKey).then((audio) => {
-      // Stop if the screen closed or the audio is missing
-      if (cancelled || !audio) return;
-      // Make the address
-      made = URL.createObjectURL(audio);
-      // Show the player
-      setUrl(made);
-    });
-    // Release the address when leaving
-    return () => {
-      // Stop the pending update
-      cancelled = true;
-      // Free the memory behind the address
-      if (made) URL.revokeObjectURL(made);
-    };
-  }, [repo, audioKey]);
-
-  // Hand back the address
-  return url;
-}
-
 // A player for a session's saved audio (draws nothing if the audio is gone)
 function Playback({ repo, session }: { repo: Repository; session: SessionRecord }) {
   // The audio's address
-  const url = useAudioUrl(repo, session.audioKey);
+  const url = useAudioUrl(repo, session.audioKey).url;
   // Nothing to play
   if (!url) return null;
   // The player, with a note when this is the baseline
@@ -166,9 +137,9 @@ function takeNumbers(day: number, session: SessionRecord): string {
 // Then and now: an earlier day's recording of the same prompt beside this one, with a button to hear them in turn
 function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; then: SessionRecord; now: SessionRecord; thenDay: number; nowDay: number }) {
   // The earlier audio's address
-  const thenUrl = useAudioUrl(repo, then.audioKey);
+  const thenUrl = useAudioUrl(repo, then.audioKey).url;
   // This session's audio address
-  const nowUrl = useAudioUrl(repo, now.audioKey);
+  const nowUrl = useAudioUrl(repo, now.audioKey).url;
   // The earlier player
   const thenPlayer = useRef<HTMLAudioElement>(null);
   // This session's player
@@ -269,7 +240,7 @@ function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: 
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null }) {
+function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void }) {
   // The lesson, on the skill path
   const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
   // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
@@ -300,11 +271,29 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }:
   const bookendOutcome = bookend ? bookendResult(bookend.part, session) : null;
   // Whether the transcript is open on a phone (it is always shown on a computer)
   const [showTranscript, setShowTranscript] = useState(false);
+  // The page title for this kind of session
+  const title = warmup ? "Warm-up" : talk ? "Table Topic" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared answer" : timed ? "Your answer" : "Your take";
+  // The user's notes, with their tags as words
+  const review = session.selfReview && !session.selfReview.skipped ? session.selfReview : null;
+  // The tag words
+  const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
+  // A new first try asks the user to listen back and write notes before anything else
+  if (session.selfReview === null) {
+    // The listening step in place of the feedback
+    return (
+      <>
+        {/* Title and day */}
+        <Masthead title={title}>{dayLabel(new Date(session.createdAt), now)}</Masthead>
+        {/* Listen, write, continue */}
+        <ReviewStep repo={repo} session={session} onSaved={onReviewed} />
+      </>
+    );
+  }
   // Draw the page
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared answer" : timed ? "Your answer" : "Your take"}>{dayLabel(new Date(session.createdAt), now)}</Masthead>
+      <Masthead title={title}>{dayLabel(new Date(session.createdAt), now)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -348,7 +337,20 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }:
             // The focus number as a sentence
             <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
           )}
-          {/* The next step first: the one change and the cue, or a note that feedback has not arrived */}
+          {/* The user's own notes, first */}
+          {review && (review.worked || review.change || tagWords.length > 0) && (
+            <div className="mt-5 border-y border-rule py-3 text-lede">
+              {/* Small heading */}
+              <p className="text-footnote italic text-ink-muted">Your notes</p>
+              {/* What worked */}
+              {review.worked && <p className="mt-1"><em>Worked.</em> {review.worked}</p>}
+              {/* What to change */}
+              {review.change && <p className="mt-1"><em>Change.</em> {review.change}</p>}
+              {/* The tags */}
+              {tagWords.length > 0 && <p className="mt-1 text-footnote text-ink-muted">Tagged: {tagWords.join(", ")}.</p>}
+            </div>
+          )}
+          {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
           {session.feedback ? (
             <div className="mt-5 border-l-4 border-accent bg-paper px-4 py-4">
               {/* One change */}
@@ -540,7 +542,7 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       {/* A retry with its first try */}
       {loaded?.session && loaded.original && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} />}
+      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} onReviewed={(updated) => setLoaded((previous) => (previous ? { ...previous, session: updated } : previous))} />}
     </main>
   );
 }

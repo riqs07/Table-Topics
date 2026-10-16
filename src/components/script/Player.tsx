@@ -20,16 +20,32 @@ interface PlayerProps {
   durationSec: number;
   // Hands the audio element to a parent that plays it itself (as "Play both" does)
   onAudio?: (element: HTMLAudioElement | null) => void;
+  // Told the position as it plays, and whether it is playing (for following the transcript)
+  onTime?: (seconds: number, playing: boolean) => void;
+  // Offer a button to play at 1.5 times the speed
+  speeds?: boolean;
 }
 
 // Draw the player
-export function Player({ src, label, name, durationSec, onAudio }: PlayerProps) {
+export function Player({ src, label, name, durationSec, onAudio, onTime, speeds = false }: PlayerProps) {
   // The audio element, for playing and moving through it
   const audio = useRef<HTMLAudioElement | null>(null);
   // Whether it is playing
   const [playing, setPlaying] = useState(false);
   // How far through it is, in seconds
   const [position, setPosition] = useState(0);
+  // Whether it plays faster than normal
+  const [fast, setFast] = useState(false);
+
+  // Switch between normal speed and 1.5 times
+  function toggleSpeed() {
+    // The new setting
+    const next = !fast;
+    // Apply it, if drawn
+    if (audio.current) audio.current.playbackRate = next ? 1.5 : 1;
+    // Show it
+    setFast(next);
+  }
 
   // Play or pause
   function toggle() {
@@ -74,7 +90,14 @@ export function Player({ src, label, name, durationSec, onAudio }: PlayerProps) 
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
-        onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)}
+        onTimeUpdate={(event) => {
+          // Where it is now
+          const seconds = event.currentTarget.currentTime;
+          // Show it
+          setPosition(seconds);
+          // Tell the parent, with whether it is playing
+          onTime?.(seconds, !event.currentTarget.paused);
+        }}
       />
       {/* Play or pause, a large square button in the accent */}
       <button type="button" onClick={toggle} aria-label={action} className="flex size-12 flex-none items-center justify-center bg-accent text-accent-ink">
@@ -88,6 +111,13 @@ export function Player({ src, label, name, durationSec, onAudio }: PlayerProps) 
         {/* Time so far and the length */}
         <p className="text-footnote text-ink-muted">{`${formatClock(position)} / ${formatClock(durationSec)}`}</p>
       </div>
+      {/* Faster or normal speed, when offered */}
+      {speeds && (
+        <button type="button" onClick={toggleSpeed} aria-pressed={fast} aria-label="Play at 1.5 times the speed" className="min-h-11 flex-none border border-rule px-3 text-footnote">
+          {/* The speed */}
+          {fast ? "1.5×" : "1×"}
+        </button>
+      )}
     </div>
   );
 }

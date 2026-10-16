@@ -93,6 +93,18 @@ describe("saveRecording", () => {
     expect(session.loudness).toEqual([0.12, 0.5, 0]);
   });
 
+  // A first try waits for the user's notes; a retry skips that step
+  it("asks for notes on a first try only", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // A first try
+    const first = await saveRecording(repository, { ...RECORDING, id: "a" }, NOW);
+    // A retry of it
+    const retry = await saveRecording(repository, { ...RECORDING, id: "b", retryOf: "a" }, NOW);
+    // Confirm waiting on the first, and nothing on the retry
+    expect([first.selfReview, "selfReview" in retry]).toEqual([null, false]);
+  });
+
   // A reading's filler rate counts only words added to its text
   it("counts fillers against the text when there is one", async () => {
     // A repository

@@ -79,6 +79,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.spokenTimes ? { spokenTimes: recording.spokenTimes.map(tenth) } : {}),
     // Script word times, rounded the same way, keeping the words never read as null
     ...(recording.scriptTimes ? { scriptTimes: recording.scriptTimes.map((time) => (time === null ? null : tenth(time))) } : {}),
+    // A first try waits for the user to listen back and write notes before the feedback shows
+    ...(recording.retryOf === null ? { selfReview: null } : {}),
     // Keep the question a Q&A answer answered
     ...(recording.question ? { question: recording.question } : {}),
     // Keep the section of a section rehearsal

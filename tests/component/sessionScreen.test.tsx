@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 // Load the tool for acting like a user
 import userEvent from "@testing-library/user-event";
 // Load the screen being checked
@@ -443,5 +443,104 @@ describe("SessionScreen", () => {
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm none of the marks had a pause
     expect(await screen.findByText(/^You paused at 0 of the \d+ marks\. No pause after /)).toBeTruthy();
+  });
+
+  // A new first try asks you to listen back before the feedback opens
+  describe("listening back first", () => {
+    // A new first try with audio and word times
+    const fresh = () => makeSession({ id: "s1", audioKey: "s1", durationSec: 4, transcript: "Um I went home", spokenTimes: [1, 1.5, 2, 3], selfReview: null, feedback: FEEDBACK, feedbackStatus: "done" });
+    // A repository holding it and its audio
+    const withAudio = async (session = fresh()) => {
+      // Stand in for the browser's object URLs
+      Object.assign(URL, { createObjectURL: vi.fn(() => "blob:take"), revokeObjectURL: vi.fn() });
+      // The repository
+      const repository = await repositoryWith(session);
+      // Its audio
+      await repository.saveAudio("s1", new Blob(["sound"], { type: "audio/webm" }));
+      // Hand it back
+      return repository;
+    };
+    // Play the recording from start to end, a second at a time
+    const playThrough = async (seconds: number) => {
+      // The audio element
+      const audio = (await screen.findByLabelText("Your recording")) as HTMLAudioElement;
+      // Report it as playing
+      Object.defineProperty(audio, "paused", { configurable: true, value: false });
+      // Each second
+      for (let second = 0; second < seconds; second++) {
+        // The position
+        Object.defineProperty(audio, "currentTime", { configurable: true, writable: true, value: second + 0.5 });
+        // Tell the page
+        fireEvent.timeUpdate(audio);
+      }
+    };
+
+    // The step comes first: no feedback, and saving waits until you have listened
+    it("asks you to listen before showing the feedback", async () => {
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} />);
+      // The step
+      await screen.findByRole("heading", { name: "Listen back first." });
+      // Confirm no feedback and a waiting save button
+      expect([screen.queryByText(FEEDBACK.change), (screen.getByRole("button", { name: /Save my notes/ }) as HTMLButtonElement).disabled]).toEqual([null, true]);
+    });
+
+    // Skipping opens the feedback and remembers the skip
+    it("opens the feedback when you skip", async () => {
+      // The repository
+      const repository = await withAudio();
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+      // Skip
+      await userEvent.click(await screen.findByRole("button", { name: "Skip this time" }));
+      // Confirm the feedback shows and the skip was saved
+      expect([!!(await screen.findByText(FEEDBACK.change)), (await repository.getSession("s1"))?.selfReview?.skipped]).toEqual([true, true]);
+    });
+
+    // After listening through, your notes and tags are saved and shown with the feedback
+    it("saves your notes after you listen, and shows them", async () => {
+      // The repository
+      const repository = await withAudio();
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+      // Listen to it all
+      await playThrough(4);
+      // Write what to change
+      await userEvent.type(screen.getByLabelText("What would you change?"), "Breathe first");
+      // Tap a tag
+      await userEvent.click(screen.getByRole("button", { name: "Fillers" }));
+      // Save
+      await userEvent.click(screen.getByRole("button", { name: /Save my notes/ }));
+      // Confirm the notes, the tag and the feedback show, and the notes were saved
+      expect([!!(await screen.findByText("Breathe first")), !!screen.getByText("Tagged: fillers."), !!screen.getByText(FEEDBACK.change), (await repository.getSession("s1"))?.selfReview?.tags]).toEqual([true, true, true, ["fillers"]]);
+    });
+
+    // Tapping a word plays from just before it
+    it("plays from a word when you tap it", async () => {
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} />);
+      // The audio element
+      const audio = (await screen.findByLabelText("Your recording")) as HTMLAudioElement;
+      // Tap "home", heard at 3 seconds
+      await userEvent.click(screen.getByRole("button", { name: "home" }));
+      // Confirm it moved to 1.7 seconds
+      expect(audio.currentTime).toBe(1.7);
+    });
+
+    // With the audio gone, notes can still be written and saved
+    it("lets you continue when the recording is not on this device", async () => {
+      // A new first try whose audio was pruned
+      render(<SessionScreen sessionId="s1" repository={await repositoryWith({ ...fresh(), audioKey: null })} now={NOW} />);
+      // Confirm the explanation and an open save button
+      expect([!!(await screen.findByText(/not on this device, so there is nothing to play/)), (screen.getByRole("button", { name: /Save my notes/ }) as HTMLButtonElement).disabled]).toEqual([true, false]);
+    });
+
+    // Older sessions skip the step
+    it("does not ask on older sessions", async () => {
+      // A session from before the step existed
+      render(<SessionScreen sessionId="s1" repository={await repositoryWith(makeSession({ id: "s1", feedback: FEEDBACK, feedbackStatus: "done" }))} now={NOW} />);
+      // Confirm the feedback shows at once
+      expect(!!(await screen.findByText(FEEDBACK.change))).toBe(true);
+    });
   });
 });

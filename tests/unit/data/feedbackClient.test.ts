@@ -63,6 +63,27 @@ describe("requestFeedback", () => {
     expect(await repository.getSession("s1")).toMatchObject({ feedback: FEEDBACK, feedbackStatus: "done" });
   });
 
+  // Notes saved while the coach is thinking are kept when the feedback arrives
+  it("keeps notes saved while the request was under way", async () => {
+    // A session waiting for feedback
+    const repository = await repositoryWith(makeSession({ id: "s1", selfReview: null }));
+    // A network that lets the user save notes before answering
+    const network = vi.fn(async () => {
+      // The user saves notes meanwhile
+      const latest = await repository.getSession("s1");
+      // Save them
+      await repository.saveSession({ ...latest!, selfReview: { worked: "w", change: "c", tags: [], skipped: false, savedAt: "2026-10-16T10:00:00.000Z" } });
+      // Then the coach answers
+      return Response.json({ feedback: FEEDBACK }, { status: 200 });
+    });
+    // Ask
+    await requestFeedback(repository, "s1", { passphrase: "pass", fetchFn: network });
+    // Confirm both the feedback and the notes are there
+    const saved = await repository.getSession("s1");
+    // Both
+    expect([saved?.feedback, saved?.selfReview?.worked]).toEqual([FEEDBACK, "w"]);
+  });
+
   // The request carries the passphrase and the session details
   it("sends the passphrase and the session, with the previous fix on a retry", async () => {
     // A first try with feedback, and its pending retry
