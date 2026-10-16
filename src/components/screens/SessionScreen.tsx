@@ -9,10 +9,13 @@ import Link from "next/link";
 import { ActionBand } from "@/components/script/ActionBand";
 import { Footnote } from "@/components/script/Footnote";
 import { Masthead } from "@/components/script/Masthead";
+import { Player } from "@/components/script/Player";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the sentence helpers
 import { dayLabel, formatRate } from "@/core/copy";
+// Load the compact row of numbers
+import { resultNumbers } from "@/core/resultNumbers";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the then-and-now helpers
@@ -91,8 +94,8 @@ function Transcript({ text }: { text: string }) {
     <p className="text-running">
       {/* One span per piece */}
       {markFillers(text).map((piece, index) =>
-        // Fillers in the quiet filler style, everything else plain
-        piece.filler ? <span key={index} className="text-filler underline decoration-dotted underline-offset-4">{piece.text}</span> : <span key={index}>{piece.text}</span>,
+        // Fillers as a soft highlight (not an underline, which reads as a link), everything else plain
+        piece.filler ? <mark key={index} className="bg-filler/15 px-0.5 text-filler">{piece.text}</mark> : <span key={index}>{piece.text}</span>,
       )}
     </p>
   );
@@ -144,8 +147,8 @@ function Playback({ repo, session }: { repo: Repository; session: SessionRecord 
     <div className="mt-5">
       {/* Small heading */}
       <p className="text-footnote italic text-ink-muted">{session.isBaseline ? "Your first recording, the one progress is measured against" : "Listen back"}</p>
-      {/* The browser's own audio player */}
-      <audio controls src={url} aria-label="Your recording" className="mt-2 w-full" />
+      {/* The player */}
+      <div className="mt-2"><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} /></div>
     </div>
   );
 }
@@ -198,11 +201,11 @@ function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; th
       {/* The earlier take */}
       <p className="mt-3 text-footnote">{takeNumbers(thenDay, then)}</p>
       {/* Its player, if the audio is still on this device */}
-      {thenUrl && <audio ref={thenPlayer} controls src={thenUrl} aria-label={`Your recording from day ${thenDay}`} className="mt-1 w-full" />}
+      {thenUrl && <div className="mt-1"><Player src={thenUrl} label={`Your recording from day ${thenDay}`} name={`day ${thenDay}`} durationSec={then.durationSec} onAudio={(element) => { thenPlayer.current = element; }} /></div>}
       {/* This take */}
       <p className="mt-3 text-footnote">{takeNumbers(nowDay, now)}</p>
       {/* Its player */}
-      {nowUrl && <audio ref={nowPlayer} controls src={nowUrl} aria-label={`Your recording from day ${nowDay}`} className="mt-1 w-full" />}
+      {nowUrl && <div className="mt-1"><Player src={nowUrl} label={`Your recording from day ${nowDay}`} name={`day ${nowDay}`} durationSec={now.durationSec} onAudio={(element) => { nowPlayer.current = element; }} /></div>}
       {/* Hear both in turn */}
       {thenUrl && nowUrl && (
         <button type="button" onClick={playBoth} className="inline-flex min-h-11 items-center mt-3 italic underline underline-offset-4">
@@ -232,12 +235,23 @@ function MarkedPassage({ check }: { check: ReadingCheck }) {
   );
 }
 
-// The secondary number shown under the title: whichever the headline does not already say
-function sideNumber(session: SessionRecord): string {
-  // In pace week the headline says the speed, so show the fillers
-  if (measureFor(session.focus)?.unit === "words a minute") return `${formatRate(session.fillersPerMinute)} fillers a minute`;
-  // Otherwise show the speed
-  return `${Math.round(session.wordsPerMinute)} words a minute`;
+// The compact row of numbers: fillers, speed, length, and pauses when measured
+function NumbersRow({ session, pauseCount }: { session: SessionRecord; pauseCount: number | null }) {
+  // One cell per number, the number large and its words small beneath
+  return (
+    <section aria-label="Your numbers" className="mt-5 flex border-y border-rule py-3">
+      {/* Each number */}
+      {resultNumbers(session, pauseCount).map((item) => (
+        // One cell
+        <div key={item.label} className="min-w-0 flex-1">
+          {/* The number */}
+          <p className="font-display text-cue">{item.value}</p>
+          {/* Its words */}
+          <p className="text-footnote leading-tight text-ink-muted">{item.label}</p>
+        </div>
+      ))}
+    </section>
+  );
 }
 
 // The text a rehearsal was checked against: one section, or the whole talk
@@ -282,7 +296,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }:
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared answer" : timed ? "Your answer" : "Your take"}>{sideNumber(session)}</Masthead>
+      <Masthead title={warmup ? "Warm-up" : talk ? "Table Topic" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared answer" : timed ? "Your answer" : "Your take"}>{dayLabel(new Date(session.createdAt), now)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -326,6 +340,22 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }:
             // The focus number as a sentence
             <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
           )}
+          {/* The next step first: the one change and the cue, or a note that feedback has not arrived */}
+          {session.feedback ? (
+            <div className="mt-5 border-l-4 border-accent bg-paper px-4 py-4">
+              {/* One change */}
+              <p className="text-lede"><em>One change.</em> <span>{session.feedback.change}</span></p>
+              {/* Small heading for the cue */}
+              <p className="mt-4 text-footnote italic text-ink-muted">{warmup ? "Before your response" : "Before you try again"}</p>
+              {/* The cue */}
+              <p className="mt-1 font-display text-cue">{session.feedback.retryCue}</p>
+            </div>
+          ) : (
+            // Feedback has not come back yet
+            <p className="mt-5 text-lede text-ink-muted">{note || (session.feedbackStatus === "failed" ? "The coach could not review this session." : "Feedback is on its way. It appears here once it arrives; your session is saved.")}</p>
+          )}
+          {/* The numbers together */}
+          <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} />
           {/* When there is no number, say why */}
           {!reading && !bookendOutcome && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
           {/* How the pauses went, when loudness was recorded */}
@@ -336,25 +366,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex }:
           {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
           {/* Listen back */}
           {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
-          {/* Feedback, or a note that it has not arrived */}
-          {session.feedback ? (
-            <>
-              {/* What to keep */}
-              <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>
-              {/* One change, with the accent rule in the margin */}
-              <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede"><em>One change.</em> <span>{session.feedback.change}</span></p>
-              {/* The cue, as a pull quote */}
-              <div className="mt-6 border-y border-ink py-4">
-                {/* Small heading */}
-                <p className="text-footnote italic text-ink-muted">{warmup ? "Before your response" : "Before you try again"}</p>
-                {/* The cue */}
-                <p className="mt-1 font-display text-cue">{session.feedback.retryCue}</p>
-              </div>
-            </>
-          ) : (
-            // Feedback has not come back yet
-            <p className="mt-5 text-lede text-ink-muted">{note || (session.feedbackStatus === "failed" ? "The coach could not review this session." : "Feedback is on its way. It appears here once it arrives; your session is saved.")}</p>
-          )}
+          {/* What the coach said to keep, after the next step and the numbers */}
+          {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
           {/* Push the footer down */}
           <div className="flex-1" />
           {/* Quieter options */}

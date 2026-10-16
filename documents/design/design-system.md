@@ -11,12 +11,14 @@ VoiceLab reads like a **printed speech script or a magazine page**, not an app d
 Rules for every screen:
 
 - **Serif type throughout** (Newsreader). The daily prompt is set like a headline, with a hanging opening quote in the accent.
-- **Prose instead of widgets.** Streak, focus, and progress are written as sentences ("Fourth day running."). Numbers appear inside sentences ("From 4.2 to 1.8 fillers a minute.").
+- **Prose instead of widgets.** Streak, focus, and progress are written as sentences ("Fourth day running."). Numbers appear inside sentences ("From 4.2 to 1.8 fillers a minute."); the one exception is the compact row of numbers on a session's page.
 - **Main navigation** (changed 2026-10-16, decision 26): Today · Talks · Practice · Skills · History · Settings. On a phone it is a tab bar fixed to the bottom of the screen, an icon over a small label, the current section filled in the accent. On a computer it is a quiet row of text links above the masthead. It is hidden while recording, counting down, or saving, so a stray click cannot lose a take.
 - **A masthead line** on every screen: title in small capitals on the left, an italic note on the right, a solid hairline underneath.
 - **Run-in italic headings** ("*What to keep.*") instead of labels above blocks.
 - **One full-width action band** for the main action, square-cornered, with the action in large italic. On a phone it is fixed to the bottom of the screen, just above the tab bar, so it is always in reach (`ActionBand`, `ActionButton`; the page leaves room for it). Secondary actions are footnotes above it.
 - **Recording looks like recording** (added 2026-10-16). While the microphone is on, the Stop band turns ink (`ActionButton variant="stop"`), a red dot marked "Recording" pulses under the clock (still when the user asks for reduced motion), the clock grows to `text-prompt-xl`, and the timing lamp and level meter are larger. The prompt stays in view above any how-this-works note, so the note never pushes the prompt off a phone screen.
+- **A session's page leads with the next step** (added 2026-10-16). Under the headline comes the one change and the cue for the next try, together in a block with a thick accent rule on the left. Then the numbers in one compact row (fillers a minute, words a minute, length, and pauses when measured; `src/core/resultNumbers.ts`). Then the timing notes, the player, and what to keep. The headline sentence still carries the focus number; the row is for glancing.
+- **Recordings play from the app's own player** (`src/components/script/Player.tsx`): one large square play button in the accent, a bar to move through the recording, and the time against the length that was saved with the session, because recorded audio often cannot report its own length.
 - **Tap targets are at least 44 pixels tall on a phone** (added 2026-10-16). Inside a page, use the shared styles in `src/components/script/Buttons.tsx`: `PrimaryLink` (filled accent), `SecondaryLink` (outlined in ink), and `RowLink` (a whole row with a chevron). A browser check measures every control on every main page; links inside running sentences carry `data-inline` and are exempt.
 - **Footnotes** (a thin rule, smaller text) for anything secondary: the weekly challenge, "or choose another", "Listen to your first recording."
 - **Left-aligned, square edges, hairline rules.** Lists use dotted leaders like a table of contents.
@@ -46,7 +48,7 @@ Components never use a raw color, font, or size. They use a **role** (a named pu
 | `rule` | Thin dividing lines and borders |
 | `accent` | The record button and "your one fix" only |
 | `accent-ink` | Text placed on the accent |
-| `filler` | Filler words in a transcript (soft pencil gray, never red) |
+| `filler` | Filler words in a transcript: gray text on a faint gray highlight, never red and never underlined (an underline reads as a link) |
 | `focus-ring` | Keyboard focus outline |
 | `light-green` | Table Topics timing light from 1:00: the minimum is met |
 | `light-yellow` | Table Topics timing light from 1:30: start wrapping up |
