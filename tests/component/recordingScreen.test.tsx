@@ -720,4 +720,32 @@ describe("RecordingScreen", () => {
     // Confirm the note is gone
     expect(screen.queryByRole("note", { name: "How this works" })).toBeNull();
   });
+
+  // While recording, the page says so plainly and the stop band looks different from the start band
+  it("marks the recording state and sets the stop band apart", async () => {
+    // Draw the screen
+    draw();
+    // The start band
+    const start = await screen.findByRole("button", { name: /Start speaking/ });
+    // Its look
+    const startVariant = start.getAttribute("data-variant");
+    // Start
+    fireEvent.click(start);
+    // The stop band
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Confirm the recording marker and the different look
+    expect([!!screen.getByRole("status", { name: "Recording" }), startVariant, stop.getAttribute("data-variant")]).toEqual([true, "start", "stop"]);
+  });
+
+  // The prompt comes before the how-it-works note, so a phone shows the task first
+  it("puts the prompt before the how-it-works note", async () => {
+    // Draw a prepared answer
+    draw({ mode: "response" });
+    // The note and the prompt
+    const note = await screen.findByRole("note", { name: "How this works" });
+    // The prompt heading
+    const prompt = screen.getByRole("heading", { level: 1 });
+    // Confirm the order in the page
+    expect(prompt.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
