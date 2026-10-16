@@ -160,4 +160,18 @@ describe("HomeScreen", () => {
     // Confirm the advance was saved
     await waitFor(async () => expect((await repository.getSettings(NOW)).focusIndex).toBe(1));
   });
+
+  // Practice this week shows as a strip of seven days, with today marked
+  it("shows the last seven days as a strip", async () => {
+    // A repository with a session yesterday
+    const repository = emptyRepository();
+    // Yesterday afternoon
+    await repository.saveSession(makeSession({ id: "y", createdAt: new Date(2026, 9, 12, 15).toISOString() }));
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The strip
+    const strip = within(await screen.findByRole("list", { name: "The last seven days" }));
+    // Confirm seven days, yesterday practised, today not yet
+    expect([strip.getAllByRole("listitem").length, !!strip.getByLabelText("Monday: practised"), !!strip.getByLabelText("Tuesday, today: not yet")]).toEqual([7, true, true]);
+  });
 });

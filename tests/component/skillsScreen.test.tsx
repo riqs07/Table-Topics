@@ -2,12 +2,14 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 // Load the screen being checked
 import { SkillsScreen } from "@/components/screens/SkillsScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
+// Load a sample session builder
+import { makeSession } from "../support/fixtures";
 // Load the content
 import { LESSONS } from "@/content/lessons";
 import { PASSAGES, PAUSE_DRILLS, TRICKY_WORDS } from "@/content/prompts";
@@ -33,5 +35,21 @@ describe("SkillsScreen", () => {
       PAUSE_DRILLS.every((item) => hrefs.includes(`/session?mode=pause&prompt=${item.id}`)),
       ["#lessons", "#readings", "#pause-drills", "#tricky-words"].every((anchor) => hrefs.includes(anchor)),
     ]).toEqual([true, true, true, true]);
+  });
+
+  // The lessons read as a path: practised ones done, the first one not done marked next
+  it("marks lessons done and the next one to try", async () => {
+    // A repository where lesson one has been practised
+    const repository = createRepository(new MemoryStore());
+    // Lesson one, once
+    await repository.saveSession(makeSession({ id: "l", mode: "lesson", promptId: LESSONS[0]!.id }));
+    // Draw the screen
+    render(<SkillsScreen repository={repository} now={NOW} />);
+    // The first two lesson rows
+    const first = within(await screen.findByRole("link", { name: `Practise ${LESSONS[0]!.title}` }));
+    // (and the second)
+    const second = within(screen.getByRole("link", { name: `Practise ${LESSONS[1]!.title}` }));
+    // Confirm the marks
+    expect([!!(await first.findByText("Done")), !!second.getByText("Next")]).toEqual([true, true]);
   });
 });

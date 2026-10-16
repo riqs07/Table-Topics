@@ -39,6 +39,24 @@ describe("HistoryScreen", () => {
     expect(await screen.findByText(/Nothing here yet/)).toBeTruthy();
   });
 
+  // The empty state offers one thing to do
+  it("offers a first recording when there is nothing yet", async () => {
+    // Draw the screen with no data
+    render(<HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the one action leads to Today
+    expect((await screen.findByRole("link", { name: "Record your first session" })).getAttribute("href")).toBe("/");
+  });
+
+  // The trend is labelled, so it reads without guessing
+  it("labels the trend with what it measures and where it started and ended", async () => {
+    // Draw the screen with sample data
+    render(<HistoryScreen repository={await sampleRepository()} now={NOW} />);
+    // The chart's caption
+    const figure = within(await screen.findByRole("figure", { name: /Fillers a minute/ }));
+    // Confirm the end labels
+    expect([!!figure.getByText(/^First: \d+\.\d$/), !!figure.getByText(/^Latest: \d+\.\d$/)]).toEqual([true, true]);
+  });
+
   // Progress since the first recording is one sentence
   it("opens with progress since the first recording", async () => {
     // Draw the screen with sample data
