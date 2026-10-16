@@ -17,6 +17,10 @@ import { ModeHeader } from "@/components/script/ModeHeader";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the lessons
 import { LESSONS } from "@/content/lessons";
+// Load the done and next marks
+import { lessonPath, type LessonMark } from "@/core/lessonPath";
+// Load the tick for a done lesson
+import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the catalogue
 import { MODES, type ModeInfo } from "@/content/modes";
 // Load the texts
@@ -53,6 +57,21 @@ function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passag
   );
 }
 
+// A lesson's place on the path: a filled tick when done, an accent ring marked "Next", a quiet ring otherwise
+function PathMark({ mark, number }: { mark: LessonMark; number: number }) {
+  // Done: a filled square with a tick
+  if (mark === "done") return (
+    <span className="flex size-9 flex-none items-center justify-center bg-accent text-accent-ink">
+      {/* The tick */}
+      <CheckIcon aria-hidden="true" weight="bold" className="size-5" />
+      {/* Said aloud */}
+      <span className="sr-only">Done</span>
+    </span>
+  );
+  // Next or still open: the lesson's number in a square outline
+  return <span className={`flex size-9 flex-none items-center justify-center border-2 font-display tabular-nums ${mark === "next" ? "border-accent text-accent" : "border-rule text-ink-muted"}`}>{number}</span>;
+}
+
 // The page
 export function SkillsScreen(props: ScreenProps) {
   // The repository
@@ -82,6 +101,8 @@ export function SkillsScreen(props: ScreenProps) {
     };
   }, [repo]);
 
+  // The done and next marks, in lesson order
+  const marks = lessonPath(LESSONS.map((lesson) => lesson.id), counts);
   // Draw the page
   return (
     <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
@@ -103,17 +124,21 @@ export function SkillsScreen(props: ScreenProps) {
         {/* What they are */}
         <ModeHeader mode={mode("lessons")} />
         {/* The lessons */}
-        <ol className="mt-4 divide-y divide-rule border-y border-rule">
+        <ol className="mt-4">
           {/* One row per lesson */}
-          {LESSONS.map((lesson) => (
-            // One lesson
-            <li key={lesson.id}>
+          {LESSONS.map((lesson, index) => (
+            // One lesson, joined to the next by a line down the path
+            <li key={lesson.id} className="relative">
+              {/* The line to the next lesson (not after the last) */}
+              {index < LESSONS.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
               {/* The whole row starts the lesson */}
-              <Link href={`/session?mode=lesson&prompt=${lesson.id}`} aria-label={`Practise ${lesson.title}`} className="flex items-baseline gap-x-4 py-4 hover:text-accent">
-                {/* Number */}
-                <span className="w-8 flex-none font-display text-cue text-ink-muted tabular-nums">{lesson.number}</span>
+              <Link href={`/session?mode=lesson&prompt=${lesson.id}`} aria-label={`Practise ${lesson.title}`} className="relative flex items-start gap-x-4 py-4 hover:text-accent">
+                {/* Its mark on the path */}
+                <PathMark mark={marks[index] ?? "open"} number={lesson.number} />
                 {/* Title and tip */}
                 <span className="min-w-0 flex-1">
+                  {/* "Next" above the title of the lesson to try next */}
+                  {marks[index] === "next" && <span className="block text-footnote italic text-accent">Next</span>}
                   {/* Title */}
                   <span className="block font-display text-cue">{lesson.title}</span>
                   {/* The tip's first sentence */}

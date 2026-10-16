@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
+// Load the filled button link
+import { PrimaryLink } from "@/components/script/Buttons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the prompt library
@@ -23,22 +25,38 @@ import type { SessionRecord } from "@/data/records";
 // Size of the trend drawing (it stretches to fit its column)
 const CHART = { width: 300, height: 80 };
 
-// The trend line of fillers per minute, with a dotted guide at the first value
+// The trend line of fillers per minute, with a dotted guide at the first value, a caption and labels at each end
 function Trend({ values }: { values: number[] }) {
   // Highest value, for scaling
   const top = Math.max(...values);
-  // Vertical position of a value
-  const y = (value: number) => CHART.height - (top === 0 ? 0 : (value / top) * (CHART.height - 8));
+  // Lowest value, so the line uses the whole height
+  const bottom = Math.min(...values);
+  // Space kept above and below the line
+  const pad = 8;
+  // Vertical position of a value: highest at the top, lowest at the bottom, a flat line in the middle
+  const y = (value: number) => (top === bottom ? CHART.height / 2 : pad + ((top - value) / (top - bottom)) * (CHART.height - 2 * pad));
   // The line's points
   const points = values.map((value, index) => `${(index / (values.length - 1)) * CHART.width},${y(value)}`).join(" ");
-  // Draw it in the accent color
+  // Draw it in the accent color, inside a captioned figure
   return (
-    <svg viewBox={`0 0 ${CHART.width} ${CHART.height}`} preserveAspectRatio="none" className="mt-5 h-20 w-full text-accent" role="img" aria-label={`Fillers per minute, from ${formatRate(values[0] ?? 0)} to ${formatRate(values.at(-1) ?? 0)}`}>
-      {/* Dotted guide at the first recording's value */}
-      <line x1="0" x2={CHART.width} y1={y(values[0] ?? 0)} y2={y(values[0] ?? 0)} stroke="currentColor" strokeOpacity="0.35" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
-      {/* The trend line */}
-      <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-    </svg>
+    <figure aria-label="Fillers a minute, first try of each session" className="mt-5">
+      {/* What the line measures */}
+      <figcaption className="text-footnote italic text-ink-muted">Fillers a minute, first try of each session. Lower is better.</figcaption>
+      {/* The drawing, stretched to the column */}
+      <svg viewBox={`0 0 ${CHART.width} ${CHART.height}`} preserveAspectRatio="none" className="mt-3 h-20 w-full text-accent" role="img" aria-label={`Fillers per minute, from ${formatRate(values[0] ?? 0)} to ${formatRate(values.at(-1) ?? 0)}`}>
+        {/* Dotted guide at the first recording's value */}
+        <line x1="0" x2={CHART.width} y1={y(values[0] ?? 0)} y2={y(values[0] ?? 0)} stroke="currentColor" strokeOpacity="0.35" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
+        {/* The trend line */}
+        <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+      </svg>
+      {/* The values at each end */}
+      <p className="mt-1 flex justify-between text-footnote text-ink-muted">
+        {/* Where it started */}
+        <span>{`First: ${formatRate(values[0] ?? 0)}`}</span>
+        {/* Where it is now */}
+        <span className="text-ink">{`Latest: ${formatRate(values.at(-1) ?? 0)}`}</span>
+      </p>
+    </figure>
   );
 }
 
@@ -143,7 +161,14 @@ export function HistoryScreen(props: ScreenProps) {
       <Masthead title="History" section="history" />
 
       {/* Empty state */}
-      {sessions && sessions.length === 0 && <p className="mt-6 text-lede text-ink-muted">Nothing here yet. Your first recording will start the page.</p>}
+      {sessions && sessions.length === 0 && (
+        <div className="mt-6">
+          {/* What will appear */}
+          <p className="text-lede text-ink-muted">Nothing here yet. Your first recording will start the page.</p>
+          {/* The one thing to do */}
+          <p className="mt-5"><PrimaryLink href="/">Record your first session</PrimaryLink></p>
+        </div>
+      )}
 
       {/* Progress and sessions */}
       {sessions && sessions.length > 0 && today && (

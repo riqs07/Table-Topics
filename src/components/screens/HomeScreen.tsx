@@ -23,6 +23,8 @@ import { currentFocus, type Focus } from "@/core/focus";
 import { practiceWeek } from "@/core/practiceWeek";
 // Load the streak calculator
 import { currentStreak } from "@/core/streak";
+// Load the seven-day strip
+import { weekStrip, type StripDay } from "@/core/weekStrip";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the talk record type
@@ -52,6 +54,8 @@ interface HomeData {
   sessionCount: number;
   // Consecutive practice days
   streak: number;
+  // The last seven days, marked where there was practice
+  strip: StripDay[];
   // This week's focus
   focus: Focus;
   // This week's challenge
@@ -110,6 +114,8 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     sessionCount: sessions.length,
     // Consecutive days with a session
     streak: currentStreak(sessions.map((session) => new Date(session.createdAt)), now),
+    // The last seven days
+    strip: weekStrip(sessions.map((session) => new Date(session.createdAt)), now),
     // This week's focus
     focus: active.focus,
     // This week's challenge
@@ -186,6 +192,19 @@ export function HomeScreen(props: ScreenProps) {
         <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
           {/* Streak, or a first-time line */}
           {data && !data.showWelcome && <p>{data.sessionCount === 0 ? "First time here? Start with the step below." : streakSentence(data.streak)}</p>}
+          {/* The last seven days as squares, filled where there was practice */}
+          {data && !data.showWelcome && data.sessionCount > 0 && (
+            <ul aria-label="The last seven days" className="mt-3 mb-4 flex gap-1.5">
+              {/* Each day */}
+              {data.strip.map((day) => (
+                // One square with the day's letter; today has a darker edge
+                <li key={day.key} aria-label={`${day.name}${day.isToday ? ", today" : ""}: ${day.practised ? "practised" : "not yet"}`} className={`flex size-8 items-center justify-center border text-tab ${day.practised ? "border-accent bg-accent text-accent-ink" : "border-rule text-ink-muted"} ${day.isToday ? "outline-2 outline-offset-2 outline-ink" : ""}`}>
+                  {/* The letter, which the label already says */}
+                  <span aria-hidden="true">{day.letter}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           {/* This week's focus (held back during the welcome, which asks one thing only) */}
           {data && !data.showWelcome && (
             <p className="md:mt-6 md:border-t md:border-rule md:pt-3">
