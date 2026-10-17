@@ -150,7 +150,7 @@
   /* A page with a sticky main action */
   body:has([data-action-band]) {
     /* The band's height */
-    --vl-band-h: 5rem;
+    --vl-band-h: 4rem;
   }
   /* Keep the last content clear of both */
   body {

@@ -110,7 +110,7 @@ export function RehearseScreen(props: ScreenProps) {
     // One column, like settings
     <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title and a way back */}
-      <Masthead title="Your talks" section="talks" />
+      <Masthead title="Your talks" section="practice" />
 
       {/* What this is for */}
       <p className="mt-6 max-w-[52ch] text-lede">Paste a talk you are preparing, or your notes for it. Rehearse it with the timer, then compare runs from different days. Your talks stay on this device.</p>

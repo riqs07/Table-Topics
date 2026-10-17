@@ -11,7 +11,7 @@ import { createRepository } from "@/data/repository";
 // Load the day's pickers
 import { promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load a sample session builder
-import { makeSession } from "../support/fixtures";
+import { makeSession, makeTalk } from "../support/fixtures";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 15, 10);
@@ -70,8 +70,22 @@ describe("PracticeScreen", () => {
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Wait for the page
     await screen.findByRole("heading", { name: "Table Topic" });
-    // Confirm the four cards, in order
-    expect(screen.getAllByRole("region").map((card) => card.getAttribute("aria-labelledby"))).toEqual(["table-topic", "prepared", "openings", "qa"]);
+    // Confirm your talks first, then the four cards, in order
+    expect(screen.getAllByRole("region").map((card) => card.getAttribute("aria-labelledby"))).toEqual(["your-talks", "table-topic", "prepared", "openings", "qa"]);
+  });
+
+  // Your talks come first: each saved talk with its date, and a way to add one (what used to be the Talks tab)
+  it("lists your talks first, with a way to add one", async () => {
+    // A repository with a talk in two days
+    const repository = createRepository(new MemoryStore());
+    // The talk
+    await repository.saveTalk(makeTalk({ id: "pitch", title: "Pitch", eventDate: "2026-10-17" }));
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // The rows
+    const rows = within(await screen.findByRole("region", { name: "Your talks" })).findAllByRole("link");
+    // Confirm the talk, its date, and the way to add one
+    expect((await rows).map((row) => [row.textContent, row.getAttribute("href")])).toEqual([["Pitchin 2 days", "/talk?id=pitch"], ["Add a talk, or rehearse one", "/rehearse"]]);
   });
 
   // This week's challenge off the page lives here, and ticking it saves it as done

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { Footnote } from "@/components/script/Footnote";
+import { RowButton, RowLink } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 import { Player } from "@/components/script/Player";
 // Load the shared screen starting points
@@ -42,6 +42,8 @@ import { earlierTake, practiceDay } from "@/core/compare";
 import { findPauses, pauseDrillSentence, pauseSentence } from "@/core/pauses";
 // Load the reading check
 import { alignReading, countPauseMarks, type ReadingCheck } from "@/core/readAlong";
+// Load where each kind of session belongs
+import { sessionHome } from "@/core/sessionHome";
 // Load the change picked from the numbers, for when the coach has not answered
 import { localChange } from "@/core/localChange";
 // Load the section splitter, for rehearsals of one section
@@ -299,6 +301,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const checks = compareNotes(session);
   // One change picked from the numbers, shown until the coach's arrives
   const ownChange = localChange(session);
+  // Where the session belongs
+  const home = sessionHome(session.mode, session.promptId, plan !== null);
   // For one part of a full speech: the speech, and the part read
   const speechPart = session.mode === "read" ? partOf(session.promptId) : undefined;
   // A new first try asks the user to listen back and write notes before anything else
@@ -306,8 +310,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
     // The listening step in place of the feedback
     return (
       <>
-        {/* Title and day */}
-        <Masthead title={title}>{plan ? `Today’s practice · step ${plan.step} of ${plan.total}` : dayLabel(new Date(session.createdAt), now)}</Masthead>
+        {/* Title and day, and a way out instead of the tab bar (focus mode) */}
+        <Masthead title={title} nav={false} close={home}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(session.createdAt), now)}</Masthead>
         {/* Listen, write, continue */}
         <ReviewStep repo={repo} session={session} onSaved={onReviewed} plan={plan} retryHref={retryHref} navigate={navigate} />
       </>
@@ -316,8 +320,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // Draw the page
   return (
     <>
-      {/* Title and the secondary number */}
-      <Masthead title={title}>{plan ? `Today’s practice · step ${plan.step} of ${plan.total}` : dayLabel(new Date(session.createdAt), now)}</Masthead>
+      {/* Title and the secondary number; the tab bar marks where the session belongs (Today inside the plan) */}
+      <Masthead title={title} section={home.section}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(session.createdAt), now)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -415,43 +419,23 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
           {/* What the coach said to keep, after the next step and the numbers */}
           {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
-          {/* Push the footer down */}
-          <div className="flex-1" />
-          {/* Quieter options */}
-          <Footnote>
+          {/* Quieter options, as a short list of rows (no empty space above them) */}
+          <ul aria-label="More options" className="mt-6 mb-6 divide-y divide-rule border-y border-rule">
             {/* Open the transcript on a phone */}
-            <button type="button" onClick={() => setShowTranscript(!showTranscript)} className="inline-flex min-h-11 items-center underline underline-offset-4 md:hidden">
-              {showTranscript ? "Hide what I said" : "Read what I said"}
-            </button>
-            {/* Separator on a phone */}
-            <span className="md:hidden">·</span>
+            <li className="md:hidden"><RowButton onClick={() => setShowTranscript(!showTranscript)}>{showTranscript ? "Hide what I said" : "Read what I said"}</RowButton></li>
             {/* After a rehearsal or a response, practise the questions that would follow */}
-            {(session.mode === "rehearse" || session.mode === "response") && <Link href={`/qa?from=${session.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Practise Q&amp;A</Link>}
-            {/* Separator */}
-            {(session.mode === "rehearse" || session.mode === "response") && <span>·</span>}
+            {(session.mode === "rehearse" || session.mode === "response") && <li><RowLink href={`/qa?from=${session.id}`}>Practise Q&amp;A</RowLink></li>}
             {/* After a part of a full speech, the next part, or the speech's page after the last */}
-            {speechPart && (speechPart.part < speechPart.speech.parts.length ? (
-              <Link href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Read part {speechPart.part + 1}</Link>
-            ) : (
-              <Link href={`/speech?id=${speechPart.speech.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">That was the last part</Link>
-            ))}
-            {/* Separator */}
-            {speechPart && <span>·</span>}
+            {speechPart && <li>{speechPart.part < speechPart.speech.parts.length ? <RowLink href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`}>Read part {speechPart.part + 1}</RowLink> : <RowLink href={`/speech?id=${speechPart.speech.id}`}>That was the last part</RowLink>}</li>}
             {/* After a Q&A answer, back to the questions */}
-            {qa && <Link href={`/qa?from=${session.promptId}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Back to the questions</Link>}
-            {/* Separator */}
-            {qa && <span>·</span>}
+            {qa && <li><RowLink href={`/qa?from=${session.promptId}`}>Back to the questions</RowLink></li>}
             {/* After a rehearsal, back to the talk and its plan */}
-            {rehearsed && <Link href={`/talk?id=${rehearsed.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Back to your talk</Link>}
-            {/* Separator */}
-            {rehearsed && <span>·</span>}
+            {rehearsed && <li><RowLink href={`/talk?id=${rehearsed.id}`}>Back to your talk</RowLink></li>}
             {/* Inside today's practice, trying again is offered here (the main action moves on) */}
-            {plan && <Link href={retryHref} className="inline-flex min-h-11 items-center underline underline-offset-4">Try it again</Link>}
-            {/* Separator */}
-            {plan && <span>·</span>}
+            {plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
             {/* Finish */}
-            <Link href="/" className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">or finish for today</Link>
-          </Footnote>
+            <li><RowLink href="/">Finish for today</RowLink></li>
+          </ul>
           {/* Inside today's practice, the next step; after an old warm-up, a Record Response; otherwise the retry */}
           {plan ? (
             <PlanBand plan={plan} />
@@ -462,6 +446,19 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           )}
         </aside>
       </div>
+    </>
+  );
+}
+
+// Inside today's practice: which step this is, short on a phone so the title keeps its line
+function PlanNote({ plan }: { plan: PlanNav }) {
+  // Two spellings, one per screen size
+  return (
+    <>
+      {/* Phone */}
+      <span className="md:hidden">Step {plan.step} of {plan.total}</span>
+      {/* Computer */}
+      <span className="hidden md:inline">Today’s practice · step {plan.step} of {plan.total}</span>
     </>
   );
 }
@@ -487,7 +484,7 @@ function RetryView({ repo, retry, original, now, plan }: { repo: Repository; ret
   return (
     <>
       {/* Title and day */}
-      <Masthead title="Second try">{plan ? `Today’s practice · step ${plan.step} of ${plan.total}` : dayLabel(new Date(retry.createdAt), now)}</Masthead>
+      <Masthead title="Second try" section={sessionHome(retry.mode, retry.promptId, plan !== null).section}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(retry.createdAt), now)}</Masthead>
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Both tries, in the margin on a computer (the headline already says both numbers on a phone) */}

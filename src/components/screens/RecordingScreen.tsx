@@ -35,6 +35,8 @@ import type { SessionMode, TalkRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the recording saver
 import { saveRecording } from "@/data/saveRecording";
+// Load where each kind of session belongs
+import { sessionHome } from "@/core/sessionHome";
 // Load the change picked from the numbers, for a retry cue without the coach
 import { localChange } from "@/core/localChange";
 // Load the flag for explaining the microphone first
@@ -785,6 +787,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode) ? `${formatClock(speakingWindow(mode)!.start)} to ${formatClock(speakingWindow(mode)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
+  // Whether a take is under way (no way out but discard, and no clock in the masthead)
+  const busy = recording || thinking || stage === "starting" || stage === "saving";
+  // Where this kind of session belongs, for the close button (practising hides the tab bar)
+  const home = sessionHome(mode, promptId, planStep !== null);
   // How this kind of session works, from the catalogue
   const howItWorks = modeForSession(mode);
   // The page title for this kind of session
@@ -804,7 +810,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     return (
       <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
         {/* Navigation, title, no keyboard hint */}
-        <Masthead title={title}>{""}</Masthead>
+        <Masthead title={title} nav={false} close={home}>{""}</Masthead>
         {/* The explanation */}
         <section aria-label="Your microphone" className="flex flex-1 flex-col md:max-w-2xl md:pt-8">
           {/* What it is for */}
@@ -827,14 +833,19 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // One column on a phone, margin plus main column on a computer
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Navigation (hidden while recording), title and keyboard hint */}
-      <Masthead title={title} nav={!(recording || thinking || stage === "starting" || stage === "saving")}>{hint}</Masthead>
+      <Masthead title={title} nav={false} close={busy ? null : home}>
+        {/* The keyboard hint, on computers only */}
+        <span className="hidden pointer-fine:inline">{hint}</span>
+        {/* Before reading on a phone: the length, small, in place of the big clock */}
+        {script && !busy && <span className="pointer-fine:hidden md:hidden">{lengthText}</span>}
+      </Masthead>
       {/* Inside today's practice, which step this is */}
       {planStep && <p className="mt-3 text-footnote italic text-accent">Today’s practice · step {planStep}{planTotal ? ` of ${planTotal}` : ""}</p>}
 
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Margin: time, length, prompt reminder, discard */}
-        <aside className="mt-5 flex flex-col text-footnote text-ink-muted md:mt-0">
+        <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${script && !busy ? "hidden" : "flex"}`}>
           {/* The clock, large */}
           <p className={`font-display text-ink tabular-nums ${recording || thinking ? "text-prompt-xl" : "text-statement"}`}>{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>
           {/* While recording: a plain, pulsing marker that says so */}

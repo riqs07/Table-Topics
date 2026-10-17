@@ -86,7 +86,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   }
 
   // Still loading, or not yet in the browser
-  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Your talk" section="talks" /></main>;
+  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Your talk" section="practice" /></main>;
 
   // The talk is not here
   if (!loaded.talk) {
@@ -94,7 +94,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
     return (
       <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Heading and navigation */}
-        <Masthead title="Your talk" section="talks" />
+        <Masthead title="Your talk" section="practice" />
         {/* The note */}
         <p className="mt-6 text-lede">This talk is not on this device. It may have been deleted, or saved in another browser.</p>
         {/* The way back */}
@@ -126,7 +126,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   return (
     <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title={talk.title} section="talks" />
+      <Masthead title={talk.title} section="practice" />
 
       {/* When the talk is, and a way to set or change it */}
       <form onSubmit={(event) => void saveDate(event)} className="mt-6 flex flex-wrap items-baseline gap-x-4 gap-y-2">

@@ -3,12 +3,14 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
-// Load the app's link
-import Link from "next/link";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared button styles
-import { PrimaryLink, SecondaryLink } from "@/components/script/Buttons";
+import { PrimaryLink, RowLink, SecondaryLink } from "@/components/script/Buttons";
+// Load the days-left counter, for a talk's date
+import { daysUntil } from "@/core/eventPrep";
+// Load the talk record type
+import type { TalkRecord } from "@/data/records";
 // Load a mode's heading and description
 import { ModeHeader } from "@/components/script/ModeHeader";
 // Load the shared card
@@ -27,6 +29,14 @@ import { promptForDay, tableTopicForDay } from "@/content/prompts";
 // The catalogue entry for an id (always present for the ids used here)
 const mode = (id: string) => MODES.find((item) => item.id === id) as ModeInfo;
 
+// When a talk is, in a few words ("today", "in 3 days"), or nothing once it has passed
+function talkWhen(days: number): string | undefined {
+  // Past: say nothing
+  if (days < 0) return undefined;
+  // Today, tomorrow, or later
+  return days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
+}
+
 // The page
 export function PracticeScreen(props: ScreenProps) {
   // The repository and today (null until in the browser)
@@ -35,6 +45,8 @@ export function PracticeScreen(props: ScreenProps) {
   const [offset, setOffset] = useState(0);
   // The newest rehearsal or prepared speech, for Q&A (undefined while loading)
   const [qaFrom, setQaFrom] = useState<string | null | undefined>(undefined);
+  // The user's saved talks (null while loading)
+  const [talks, setTalks] = useState<TalkRecord[] | null>(null);
 
   // Find the newest rehearsal or prepared speech
   useEffect(() => {
@@ -44,6 +56,11 @@ export function PracticeScreen(props: ScreenProps) {
     repo.listSessions().then((sessions) => {
       // Keep the newest that Q&A can follow
       if (!cancelled) setQaFrom(sessions.find((session) => session.mode === "rehearse" || session.mode === "response")?.id ?? null);
+    });
+    // Read the saved talks
+    repo.listTalks().then((saved) => {
+      // Keep them if the page is still open
+      if (!cancelled) setTalks(saved);
     });
     // Mark as closed when leaving
     return () => {
@@ -61,9 +78,30 @@ export function PracticeScreen(props: ScreenProps) {
   return (
     <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title="Speak on the spot" section="practice" />
+      <Masthead title="Practice" section="practice" />
+
+      {/* Your own talks first (what used to be the Talks tab) */}
+      <section aria-labelledby="your-talks" className="mt-6">
+        {/* Run-in heading */}
+        <h2 id="your-talks" className="italic">Your talks</h2>
+        {/* Each saved talk, then a way to add one */}
+        {talks && (
+          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+            {/* Each talk */}
+            {talks.map((talk) => (
+              // One talk, with its date if it has one
+              <li key={talk.id}><RowLink href={`/talk?id=${talk.id}`} meta={talk.eventDate && today ? talkWhen(daysUntil(talk.eventDate, today)) : undefined}>{talk.title}</RowLink></li>
+            ))}
+            {/* Add or rehearse */}
+            <li><RowLink href="/rehearse">{talks.length > 0 ? "Add a talk, or rehearse one" : "Preparing a talk? Save it and rehearse it here"}</RowLink></li>
+          </ul>
+        )}
+      </section>
+
+      {/* Speaking on the spot */}
+      <h2 className="mt-10 italic">Speak on the spot</h2>
       {/* What this is */}
-      <p className="mt-6 max-w-[52ch] text-lede">Practise speaking without a script. Each takes a few minutes, and afterwards you get one specific fix.</p>
+      <p className="mt-2 max-w-[52ch] text-lede">Practise speaking without a script. Each takes a few minutes, and afterwards you get one specific fix.</p>
 
       {/* Each mode */}
       <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -113,11 +151,6 @@ export function PracticeScreen(props: ScreenProps) {
         </Card>
       </div>
 
-      {/* Your own talk lives elsewhere */}
-      <p data-inline className="mt-8 text-footnote italic text-ink-muted">
-        {/* The pointer */}
-        Preparing a talk of your own? <Link href="/rehearse" className="underline underline-offset-4">Go to Talks</Link>.
-      </p>
       {/* This week's challenge off the page */}
       {today && <WeeklyChallenge repo={repo} today={today} />}
     </main>

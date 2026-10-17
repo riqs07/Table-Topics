@@ -28,17 +28,17 @@ The idea in one line: **the loop is right; smooth the edges.** The first minutes
 
 ## Wave 2: screen space and navigation
 
-**5. Four tabs plus a settings icon (M).**
+**5. Four tabs plus a settings icon (M).** Built (decision 41).
 - Tabs: **Today, Practice, Skills, History**. Talks becomes the first section of Practice ("Your talks"); Settings becomes a gear icon in the masthead.
 - Inside today's practice, the tab bar marks Today, not Skills.
 - Evidence: Apple and Google both say 3 to 5 tabs, always labelled.
 
-**6. Focus mode for practising (S).**
+**6. Focus mode for practising (S).** Built (decision 41).
 - On the recording and listen-back pages, hide the tab bar entirely (a close button in the masthead leads back). The action band becomes a little shorter.
 - Keyboard hints show only on computers (devices with a fine pointer).
 - On a reading's start screen, the text comes first; the clock sits small in the masthead line until recording starts.
 
-**7. A tidier results page (S).**
+**7. A tidier results page (S).** Built (decision 41).
 - Close the empty middle. Secondary actions (read what I said, next part, try again, finish) become a short list of rows instead of four links squeezed into one line.
 
 ## Wave 3: self-review, inclusivity and habits

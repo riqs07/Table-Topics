@@ -534,18 +534,18 @@ describe("RecordingScreen", () => {
     expect((await repository.listSessions())[0]?.sectionIndex).toBe(1);
   });
 
-  // The main navigation is there before recording, and hidden while recording so a stray click cannot lose the take
-  it("shows the main navigation before recording and hides it while recording", async () => {
+  // Practising is focus mode: no tab bar, only a close button, which goes too while recording so a stray tap cannot lose the take
+  it("hides the tab bar while practising, with a way out until recording starts", async () => {
     // Draw the screen
     draw();
-    // Confirm the navigation is there and leads home
-    expect(within(await screen.findByRole("navigation", { name: "Main" })).getByRole("link", { name: "Today" }).getAttribute("href")).toBe("/");
+    // Confirm no tab bar, and a close button back to Practice
+    expect([screen.queryByRole("navigation", { name: "Main" }), (await screen.findByRole("link", { name: "Close, back to Practice" })).getAttribute("href")]).toEqual([null, "/practice"]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // Wait for recording
     await screen.findByRole("button", { name: /Stop/ });
-    // Confirm the navigation is gone
-    expect(screen.queryByRole("navigation", { name: "Main" })).toBeNull();
+    // Confirm the close button is gone too (discarding is the way out)
+    expect(screen.queryByRole("link", { name: /^Close/ })).toBeNull();
   });
 
   // A lesson shows its tip and its practice text, with stressed words in bold and no raw asterisks

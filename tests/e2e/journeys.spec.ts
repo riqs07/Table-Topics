@@ -11,6 +11,8 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   await page.getByRole("link", { name: "I want to speak better on the spot" }).click();
   // It opens today's first step, a short reading, ready to start
   await expect(page).toHaveURL(/mode=read&prompt=[a-z0-9-]+&plan=1/);
+  // Close it (practising hides the tab bar), back to Today
+  await page.getByRole("link", { name: "Close, back to Today" }).click();
   // Go to Practice instead
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Practice", exact: true }).click();
   // Start a Table Topic

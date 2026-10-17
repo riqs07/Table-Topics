@@ -31,8 +31,8 @@ const NOW = new Date(2026, 9, 15, 10);
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
-// Where the main navigation must lead, in order
-const DESTINATIONS = [["Today", "/"], ["Talks", "/rehearse"], ["Practice", "/practice"], ["Skills", "/skills"], ["History", "/history"], ["Settings", "/settings"]];
+// Where the four tabs must lead, in order (Settings is the gear in the title row)
+const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Skills", "/skills"], ["History", "/history"]];
 
 // Read the main navigation's links as [name, address] pairs, and which one is marked as the current page
 async function readNavigation() {
@@ -40,8 +40,10 @@ async function readNavigation() {
   const nav = await screen.findByRole("navigation", { name: "Main" });
   // Its links
   const links = within(nav).getAllByRole("link");
-  // Names and addresses
-  return { links: links.map((link) => [link.textContent, link.getAttribute("href")]), current: links.find((link) => link.getAttribute("aria-current") === "page")?.textContent ?? null };
+  // The settings gear
+  const gear = screen.getByRole("link", { name: "Settings" });
+  // Names and addresses, the marked tab (or the gear, on Settings), and where the gear leads
+  return { links: links.map((link) => [link.textContent, link.getAttribute("href")]), current: links.find((link) => link.getAttribute("aria-current") === "page")?.textContent ?? (gear.getAttribute("aria-current") === "page" ? "Settings" : null), gear: gear.getAttribute("href") };
 }
 
 // Group the checks about getting around the app
@@ -56,18 +58,18 @@ describe("main navigation", () => {
     ["Skills", "Skills", async () => <SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // History
     ["History", "History", async () => <HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />],
-    // Talks
-    ["Talks", "Talks", async () => <RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />],
-    // A talk's page belongs to Talks
-    ["a talk's page", "Talks", async () => <TalkScreen talkId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Your talks belong to Practice
+    ["Talks", "Practice", async () => <RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // So does a talk's page
+    ["a talk's page", "Practice", async () => <TalkScreen talkId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
     // Openings and closings belong to Practice
     ["Openings and closings", "Practice", async () => <BookendsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // So does Q&A practice
     ["Q&A practice", "Practice", async () => <QaScreen fromId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
     // Settings
     ["Settings", "Settings", async () => <SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
-    // A session page belongs to no section, so nothing is marked
-    ["a session", null, async () => {
+    // A session's results belong to where that kind of session lives (here speaking on the spot)
+    ["a session", "Practice", async () => {
       // A repository with one session
       const repository = createRepository(new MemoryStore());
       // Save it
@@ -81,6 +83,6 @@ describe("main navigation", () => {
     // Draw the screen
     render(await build());
     // Confirm the links and the marked page
-    expect(await readNavigation()).toEqual({ links: DESTINATIONS, current });
+    expect(await readNavigation()).toEqual({ links: DESTINATIONS, current, gear: "/settings" });
   });
 });

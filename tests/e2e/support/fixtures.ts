@@ -63,18 +63,16 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/practice", current: "Practice" },
   // Skills marks Skills
   { path: "/skills", current: "Skills" },
-  // Talks marks Talks
-  { path: "/rehearse", current: "Talks" },
+  // Your talks belong to Practice
+  { path: "/rehearse", current: "Practice" },
   // History marks History
   { path: "/history", current: "History" },
-  // Settings marks Settings
-  { path: "/settings", current: "Settings" },
-  // A session before recording marks nothing
-  { path: "/session?mode=response&prompt=p001", current: null },
+  // Settings marks nothing in the tab bar (its gear is marked instead)
+  { path: "/settings", current: null },
   // A saved-session page that does not exist still offers the way out
   { path: "/sessions?id=missing", current: null },
-  // A talk's page belongs to Talks
-  { path: "/talk?id=missing", current: "Talks" },
+  // A talk's page belongs to Practice
+  { path: "/talk?id=missing", current: "Practice" },
   // Openings and closings belong to Practice
   { path: "/bookends", current: "Practice" },
   // A full speech belongs to Skills
@@ -85,8 +83,6 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
 export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   // Today
   { name: "Today", path: "/" },
-  // Talks
-  { name: "Talks", path: "/rehearse" },
   // Practice
   { name: "Practice", path: "/practice" },
   // Skills
