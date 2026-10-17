@@ -401,3 +401,25 @@ test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
   // The answer is listed
   await expect(page.getByRole("region", { name: "Your answers" })).toContainText("How was your weekend?");
 });
+
+// One moment a day: record a short private note from the Small talk page, and find it listed there
+test("One moment a day: record a note and see it on the Small talk page", async ({ page }) => {
+  // The stand-in speech tells the moment
+  await useStandIns(page, "I fixed the bike chain myself and rode to the river");
+  // Start at the Small talk page
+  await page.goto("/small-talk");
+  // Record today's moment
+  await page.getByRole("link", { name: "Record today’s moment" }).click();
+  // Start speaking
+  await page.getByRole("button", { name: /Start speaking/ }).click();
+  // Recording is under way
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // Wait for it
+  await expect(stop).toBeVisible({ timeout: 10_000 });
+  // Speak past the minimum
+  await page.waitForTimeout(11_500);
+  // Stop
+  await stop.click();
+  // Straight back to the page, with the note listed
+  await expect(page.getByRole("list", { name: "Your moments" })).toContainText("I fixed the bike chain myself", { timeout: 15_000 });
+});

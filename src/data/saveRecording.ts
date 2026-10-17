@@ -69,8 +69,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     fillersPerMinute: fillersPerMinute(recording.transcript, recording.durationSec, recording.script),
     // The week's focus
     focus: focus.id,
-    // Feedback is requested next
-    feedback: null, feedbackStatus: "pending",
+    // Feedback is requested next (never for a private moment note, which is not sent anywhere)
+    feedback: null, feedbackStatus: recording.mode === "moment" ? "done" : "pending",
     // The audio is saved under the session id
     audioKey: recording.id,
     // The loudness readings, rounded to two decimals to keep the record small
@@ -79,8 +79,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.spokenTimes ? { spokenTimes: recording.spokenTimes.map(tenth) } : {}),
     // Script word times, rounded the same way, keeping the words never read as null
     ...(recording.scriptTimes ? { scriptTimes: recording.scriptTimes.map((time) => (time === null ? null : tenth(time))) } : {}),
-    // A first try waits for the user to listen back and write notes before the feedback shows
-    ...(recording.retryOf === null ? { selfReview: null } : {}),
+    // A first try waits for the user to listen back and write notes before the feedback shows (a moment note has no listening step)
+    ...(recording.retryOf === null && recording.mode !== "moment" ? { selfReview: null } : {}),
     // Keep the question a Q&A answer answered
     ...(recording.question ? { question: recording.question } : {}),
     // Keep the section of a section rehearsal

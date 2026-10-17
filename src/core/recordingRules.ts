@@ -15,6 +15,8 @@ export function targetSeconds(mode: SessionMode): number {
   if (mode === "qa") return 60;
   // A small-talk answer aims for the top of its window
   if (mode === "smalltalk") return SMALL_TALK_WINDOW.end;
+  // A moment note is a few sentences
+  if (mode === "moment") return 30;
   // Warm-ups are 30 seconds; full sessions about a minute
   return mode === "warmup" ? 30 : 60;
 }
@@ -33,8 +35,8 @@ export function maxSeconds(mode: SessionMode): number {
   if (mode === "bookend") return 60;
   // A Q&A answer stops at two minutes
   if (mode === "qa") return 120;
-  // A small-talk answer stops by itself at one minute
-  if (mode === "smalltalk") return 60;
+  // A small-talk answer or a moment note stops by itself at one minute
+  if (mode === "smalltalk" || mode === "moment") return 60;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
   return mode === "warmup" ? 30 : 180;
 }

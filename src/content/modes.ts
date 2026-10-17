@@ -70,6 +70,8 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   { id: "tricky-words", job: "skill", name: "Tricky words", subtitle: "crisp consonants", length: "1 min", youDo: "Read a list of words that are easy to swallow.", youGet: "Which words came through clearly." },
   // Small talk
   { id: "small-talk", job: "connect", name: "Small talk", subtitle: "everyday questions", length: "under a minute", youDo: "Hear an everyday question, like \u201cHow was your weekend?\u201d, and answer with one short story: a moment, a hook, how it felt, and a question back.", youGet: "Which of the four you heard yourself do, and one change." },
+  // One moment a day
+  { id: "moments", job: "connect", name: "One moment a day", subtitle: "a short private voice note", length: "under a minute", youDo: "Say one thing from today worth telling, while you still remember it.", youGet: "A list of your own stories to draw on when someone asks what you have been up to." },
 ];
 
 // How each kind of session is explained before recording ("rehearse" is a run of your talk)
@@ -92,6 +94,8 @@ const SESSION_TO_MODE: Readonly<Partial<Record<SessionMode, string>>> = {
   lesson: "lessons",
   // A small-talk answer
   smalltalk: "small-talk",
+  // A moment note
+  moment: "moments",
 };
 
 // The catalogue entry that explains a kind of session, if it has one

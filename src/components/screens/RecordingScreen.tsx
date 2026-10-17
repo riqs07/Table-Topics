@@ -38,7 +38,7 @@ import { saveRecording } from "@/data/saveRecording";
 // Load where each kind of session belongs
 import { sessionHome } from "@/core/sessionHome";
 // Load the small-talk content, the strip's level, and the strip
-import { findSmallTalk } from "@/content/smallTalk";
+import { asksWhatYouDid, findSmallTalk } from "@/content/smallTalk";
 import { stripLevel } from "@/core/smallTalk";
 import { RecipeStrip } from "@/components/script/RecipeStrip";
 // Load the change picked from the numbers, for a retry cue without the coach
@@ -94,6 +94,9 @@ const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
 
 // Where the screen is in the flow
 type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
+
+// How many recent moment notes to show beside a question about what you have been up to
+const RECENT_MOMENTS = 3;
 
 // The stage for a browser without speech recognition (one shared value, so it is the same between redraws)
 const UNSUPPORTED: Stage = { problem: "speech-unsupported" };
@@ -371,6 +374,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const smallTalk = mode === "smalltalk" ? findSmallTalk(promptId) : undefined;
   // The user's earlier small-talk answers, for how much of the strip to show (newest first)
   const [earlierAnswers, setEarlierAnswers] = useState<SessionRecord[]>([]);
+  // For a question about what you have been up to, your moment notes from the last week (newest first)
+  const [recentMoments, setRecentMoments] = useState<SessionRecord[]>([]);
   // The openings and closings drill prompt, with which end of a talk it practises
   const bookend = mode === "bookend" ? BOOKENDS.find((item) => item.id === promptId) : undefined;
   // The text on screen: a passage, a lesson's practice text, or the talk being rehearsed
@@ -405,15 +410,21 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     let cancelled = false;
     // Read them
     repo.listSessions().then((sessions) => {
-      // Keep the small-talk ones if still open
-      if (!cancelled) setEarlierAnswers(sessions.filter((session) => session.mode === "smalltalk"));
+      // Stop if closed
+      if (cancelled) return;
+      // Keep the small-talk answers
+      setEarlierAnswers(sessions.filter((session) => session.mode === "smalltalk"));
+      // A week ago
+      const weekAgo = clock().getTime() - 7 * 86_400_000;
+      // And, for a question about what you have been up to, the last few moments of the week
+      setRecentMoments(asksWhatYouDid(promptId) ? sessions.filter((session) => session.mode === "moment" && new Date(session.createdAt).getTime() >= weekAgo).slice(0, RECENT_MOMENTS) : []);
     });
     // Mark as closed when leaving
     return () => {
       // Stop the pending update
       cancelled = true;
     };
-  }, [mode, promptId, repo, services]);
+  }, [clock, mode, promptId, repo, services]);
 
   // For a Q&A answer, load the question from the session it belongs to
   useEffect(() => {
@@ -558,8 +569,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       }
       // Save the session with its audio
       const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
-      // Open the new session's page (feedback is requested there)
-      navigate(`/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`);
+      // A moment note goes straight back to the Small talk page, where it is listed; anything else opens its page (feedback is requested there)
+      navigate(mode === "moment" ? "/small-talk#moments" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`);
     } catch (error) {
       // Keep the details in the browser console for debugging
       console.error("Saving the recording failed", error);
@@ -825,7 +836,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode) ? `${formatClock(speakingWindow(mode)!.start)} to ${formatClock(speakingWindow(mode)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : "about a minute";
+  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode) ? `${formatClock(speakingWindow(mode)!.start)} to ${formatClock(speakingWindow(mode)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
@@ -835,7 +846,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // How this kind of session works, from the catalogue
   const howItWorks = modeForSession(mode);
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : "Recording";
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "smalltalk" ? "space to hear the question" : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
@@ -1007,6 +1018,18 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {stage === "asking" && <p role="status" className="mt-3 italic text-ink-muted">Listen to the question. Recording starts when it ends.</p>}
               {/* The recipe */}
               <RecipeStrip level={stripLevel(earlierAnswers)} focus={smallTalk.lesson?.beat ?? null} />
+              {/* For a question about what you have been up to: your own moments from this week, as material */}
+              {recentMoments.length > 0 && (
+                <section aria-label="Your moments this week" className="mt-5 max-w-[52ch]">
+                  {/* Small heading */}
+                  <p className="text-footnote italic text-ink-muted">From your moments this week</p>
+                  {/* Each moment, in the words it was said */}
+                  <ul className="mt-1 space-y-1 text-footnote">
+                    {/* One moment */}
+                    {recentMoments.map((moment) => <li key={moment.id} className="border-l-2 border-rule pl-3">{moment.transcript}</li>)}
+                  </ul>
+                </section>
+              )}
             </>
           )}
           {/* Before recording: the prompt and, on a retry, last time's cue */}

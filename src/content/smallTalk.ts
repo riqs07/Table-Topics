@@ -163,8 +163,22 @@ export function findSmallTalk(id: string): { question: string; lesson: SmallTalk
   return question ? { question: question.text, lesson: null } : undefined;
 }
 
+// The "one moment a day" note's question
+export const MOMENT_PROMPT = { id: "moment", text: "What's one thing from today worth telling?" } as const;
+
+// The lessons whose question is about what you have been up to (your moments help with these)
+const RECENT_LESSONS = ["stl1", "stl2", "stl6"];
+
+// Whether a prompt asks what you have been up to, where your recent moments are worth seeing first
+export function asksWhatYouDid(promptId: string): boolean {
+  // A recent-past question, or a lesson asking one
+  return RECENT_LESSONS.includes(promptId) || SMALL_TALK_QUESTIONS.some((item) => item.id === promptId && item.group === "recent");
+}
+
 // Every small-talk prompt as id and text, so the app's prompt lookup finds them too
 export const SMALL_TALK_PROMPTS: ReadonlyArray<{ id: string; text: string }> = [
+  // The moment note's question
+  MOMENT_PROMPT,
   // The everyday questions
   ...SMALL_TALK_QUESTIONS.map((item) => ({ id: item.id, text: item.text })),
   // The lessons' questions

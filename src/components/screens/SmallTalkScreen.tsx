@@ -15,18 +15,22 @@ import { PathMark } from "@/components/script/PathMark";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the small-talk content
-import { BEATS, QUESTION_GROUPS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, findSmallTalk, smallTalkForDay } from "@/content/smallTalk";
+import { BEATS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, findSmallTalk, smallTalkForDay } from "@/content/smallTalk";
 // Load the beat counter
 import { beatCount } from "@/core/smallTalk";
 // Load the done and next marks for a path of lessons
 import { lessonPath } from "@/core/lessonPath";
 // Load the day label
 import { dayLabel } from "@/core/copy";
+// Load the calendar-day key
+import { dayKey } from "@/core/dates";
 // Load the record type
 import type { SessionRecord } from "@/data/records";
 
 // How many recent answers to list
 const RECENT_ANSWERS = 10;
+// How many recent moments to list
+const RECENT_MOMENTS = 5;
 
 // The address that starts an answer to a prompt (an everyday question or a lesson's turn)
 const answerHref = (promptId: string) => `/session?mode=smalltalk&prompt=${promptId}`;
@@ -37,6 +41,8 @@ export function SmallTalkScreen(props: ScreenProps) {
   const { repo, today } = useScreenBasics(props);
   // The user's small-talk answers, newest first (null while loading)
   const [answers, setAnswers] = useState<SessionRecord[] | null>(null);
+  // The user's moment notes, newest first
+  const [moments, setMoments] = useState<SessionRecord[]>([]);
   // How many questions along from today's ("another question" adds one)
   const [offset, setOffset] = useState(0);
 
@@ -46,8 +52,12 @@ export function SmallTalkScreen(props: ScreenProps) {
     let cancelled = false;
     // Read the sessions and keep the small-talk ones
     repo.listSessions().then((sessions) => {
-      // Keep them if still open
-      if (!cancelled) setAnswers(sessions.filter((session) => session.mode === "smalltalk"));
+      // Stop if closed
+      if (cancelled) return;
+      // The answers
+      setAnswers(sessions.filter((session) => session.mode === "smalltalk"));
+      // The moments
+      setMoments(sessions.filter((session) => session.mode === "moment"));
     });
     // Mark as closed when leaving
     return () => {
@@ -91,6 +101,33 @@ export function SmallTalkScreen(props: ScreenProps) {
             {/* Another */}
             <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">or another question</button>
           </p>
+        </section>
+      )}
+
+      {/* One moment a day: material for the next time someone asks */}
+      {today && (
+        <section id="moments" aria-labelledby="moments-heading" className="mt-10 scroll-mt-6">
+          {/* Run-in heading */}
+          <h2 id="moments-heading" className="italic">One moment a day</h2>
+          {/* What it is for */}
+          <p className="mt-2 max-w-[52ch] text-lede">{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Today\u2019s moment is saved. When someone asks what you have been up to, it will be there." : "What\u2019s one thing from today worth telling? Saying it now means you will have it when someone asks. It stays on this phone."}</p>
+          {/* Record one */}
+          <p className="mt-2"><Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Add another moment" : "Record today\u2019s moment"}</Link></p>
+          {/* The latest few, in the words they were said */}
+          {moments.length > 0 && (
+            <ul aria-label="Your moments" className="mt-2 divide-y divide-rule border-y border-rule">
+              {/* Each moment */}
+              {moments.slice(0, RECENT_MOMENTS).map((moment) => (
+                // One moment: the day, then what was said
+                <li key={moment.id} className="py-3">
+                  {/* The day */}
+                  <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
+                  {/* The words */}
+                  <span className="block text-lede">{moment.transcript || "(no words were caught)"}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 

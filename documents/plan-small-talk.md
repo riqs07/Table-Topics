@@ -132,8 +132,8 @@ A short voice note on the Small talk page: "What's one thing from today worth te
 2. **The mode.** Built (decision 42); the lessons' teaching lives on the recording page before the question, so there are no separate lesson pages. A new session mode `smalltalk` kept out of the speech numbers, the Small talk tab and page, the recording page with the strip and its fading, the timing window, the four listen-back questions, and notes by beat (phone checks first).
 3. **The voice.** Built (decision 43). The `/api/voice` route with a stand-in for tests, the "Hear it" button, auto-start after the voice, caching, and the phone-voice fallback.
 4. **The coach.** Built. The small-talk prompt and schema (moment, hooks, feeling, hand-back, livelier version, one change), shown by beat.
-5. **Lessons and moments.** The lesson pages (idea, flat and good examples, your turn) and the one-moment note, all on the Small talk page.
-6. **Docs, decisions, screenshots,** and a browser journey through a whole answer.
+5. **Lessons and moments.** Built (decision 44). The lesson pages (idea, flat and good examples, your turn) and the one-moment note, all on the Small talk page.
+6. **Docs, decisions, screenshots,** Done. and a browser journey through a whole answer.
 
 ## Open questions
 

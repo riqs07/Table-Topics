@@ -97,4 +97,16 @@ describe("small talk", () => {
     // Confirm the coach's count and quotes, and the gap marked in the livelier version
     expect([screen.getByText("3 of 4 beats.").tagName, !!within(beats).getByText("“I built an app”"), screen.getByText("[how it felt]").tagName, screen.queryByText("From your numbers")]).toEqual(["P", true, "EM", null]);
   });
+
+  // Today's moment: saved moments are listed with their words, and the page says today's is done
+  it("lists your moments and says when today's is saved", async () => {
+    // A moment from this morning
+    const repository = await repositoryWith(makeSession({ id: "m1", mode: "moment", promptId: "moment", transcript: "I fixed the bike chain myself", createdAt: new Date(2026, 9, 17, 8).toISOString(), feedbackStatus: "done" }));
+    // Draw the page
+    render(<SmallTalkScreen repository={repository} now={NOW} />);
+    // The moments
+    const moments = await screen.findByRole("list", { name: "Your moments" });
+    // Confirm the words, today's state, and the way to add another
+    expect([!!within(moments).getByText("I fixed the bike chain myself"), !!screen.getByText(/Today\u2019s moment is saved/), screen.getByRole("link", { name: "Add another moment" }).getAttribute("href")]).toEqual([true, true, "/session?mode=moment&prompt=moment"]);
+  });
 });

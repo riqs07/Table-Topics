@@ -480,6 +480,48 @@ describe("RecordingScreen", () => {
     await waitFor(async () => expect((await repository.listSessions()).map((session) => [session.mode, session.promptId])).toEqual([["smalltalk", "st01"]]));
   });
 
+  // A moment note is private: saved without feedback or a listening step, then back to the Small talk page
+  it("saves a moment privately and goes back to Small talk", async () => {
+    // Draw a moment note
+    const { clock, repository, navigate } = draw({ mode: "moment", promptId: "moment" });
+    // Confirm the question
+    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("What's one thing from today worth telling?");
+    // Start
+    fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
+    // Recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Speak past the minimum
+    clock.advance(15_000);
+    // Stop
+    fireEvent.click(stop);
+    // Wait for the way back
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/small-talk#moments"));
+    // The saved note
+    const [saved] = await repository.listSessions();
+    // Confirm it needs no feedback and no listening step
+    expect([saved?.mode, saved?.feedbackStatus, saved?.selfReview]).toEqual(["moment", "done", undefined]);
+  });
+
+  // Asked what you have been up to, your moments from this week are there as material (and not for other questions)
+  it("shows this week's moments beside a question about what you have been up to", async () => {
+    // A repository with a moment from two days ago
+    const repository = createRepository(new MemoryStore());
+    // The moment
+    await repository.saveSession(makeSession({ id: "m1", mode: "moment", promptId: "moment", transcript: "I fixed the bike chain myself", createdAt: new Date(2026, 9, 11, 9).toISOString(), feedbackStatus: "done" }));
+    // Draw "How was your weekend?"
+    draw({ mode: "smalltalk", promptId: "st01", repository });
+    // Confirm the moment is shown
+    expect(within(await screen.findByRole("region", { name: "Your moments this week" })).getByText("I fixed the bike chain myself")).toBeTruthy();
+    // Draw "How's work going?" instead
+    cleanup();
+    // The work question
+    draw({ mode: "smalltalk", promptId: "st10", repository });
+    // Give the load time to finish
+    await screen.findByRole("list", { name: "The recipe" });
+    // Confirm no moments
+    expect(screen.queryByRole("region", { name: "Your moments this week" })).toBeNull();
+  });
+
   // Inside today's practice, the saved session opens with the plan step, and the page says which step it is
   it("keeps today's practice step through to the saved session", async () => {
     // Draw step 1 of the plan
