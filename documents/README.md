@@ -28,6 +28,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 14 | [content-sources.md](content-sources.md) | Where do the speech texts come from, and how were they checked? | 2 min |
 | 15 | [research/ux-research-2026-10.md](research/ux-research-2026-10.md) | What did the UX review and research find, and how strong is the evidence? | 6 min |
 | 16 | [design/ux-improvements-plan.md](design/ux-improvements-plan.md) | Which design changes follow from the UX research, in what order? | 4 min |
+| 17 | [plan-small-talk.md](plan-small-talk.md) | How will VoiceLab train small talk and storytelling, and what did the user decide? | 6 min |
 
 ## Inspector checklist
 
