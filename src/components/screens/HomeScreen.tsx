@@ -1,5 +1,5 @@
 "use client";
-// The Home screen: today's prompt as the page, with streak, focus, and the weekly challenge around it
+// The Home screen: today's practice, the three main ways to practise on your own, and a short line on the streak and the week's focus
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -7,20 +7,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { Footnote } from "@/components/script/Footnote";
 import { Masthead } from "@/components/script/Masthead";
-// Load the weekly challenge picker
-import { challengeForWeek, type Challenge } from "@/content/challenges";
-// Load the three jobs
-import { JOBS } from "@/content/modes";
+// Load the day's prompts for practising on your own
+import { promptForDay, tableTopicForDay } from "@/content/prompts";
+// Load the icons for the three ways to practise
+import { BookOpenTextIcon, LightningIcon, PresentationIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
-// Load the day label helper
-import { dayKey } from "@/core/dates";
 // Load the weekly focus rules
 import { currentFocus, type Focus } from "@/core/focus";
-// Load the practice week calculator
-import { practiceWeek } from "@/core/practiceWeek";
 // Load the streak calculator
 import { currentStreak } from "@/core/streak";
 // Load the seven-day strip
@@ -60,14 +55,6 @@ interface HomeData {
   strip: StripDay[];
   // This week's focus
   focus: Focus;
-  // This week's challenge
-  challenge: Challenge;
-  // Id of this week's challenge record
-  challengeRecordId: string;
-  // Day this practice week began (ISO text)
-  weekStart: string;
-  // Whether the challenge is done
-  challengeDone: boolean;
   // Whether to ask the welcome question: a first visit with nothing saved yet
   showWelcome: boolean;
   // Today's practice
@@ -84,16 +71,8 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
   const active = currentFocus({ focusIndex: settings.focusIndex, focusStartedOn: new Date(settings.focusStartedOn) }, now);
   // Save the settings so a new user's start date sticks and any advance is kept
   await repository.saveSettings({ ...settings, focusIndex: active.focusIndex, focusStartedOn: active.focusStartedOn.toISOString() });
-  // Find the first session's time (the list is newest first)
-  const first = sessions.at(-1);
-  // Work out which practice week it is
-  const week = practiceWeek(first ? new Date(first.createdAt) : null, now);
-  // Id of this week's challenge record
-  const challengeRecordId = `week-${dayKey(week.weekStart)}`;
   // The saved talks
   const talks = await repository.listTalks();
-  // Look for a saved record of this week's challenge
-  const record = (await repository.listChallenges()).find((challenge) => challenge.id === challengeRecordId);
   // Put everything together
   return {
     // How many sessions there are
@@ -104,14 +83,6 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     strip: weekStrip(sessions.map((session) => new Date(session.createdAt)), now),
     // This week's focus
     focus: active.focus,
-    // This week's challenge
-    challenge: challengeForWeek(week.weekNumber),
-    // Its record id
-    challengeRecordId,
-    // When the week began
-    weekStart: week.weekStart.toISOString(),
-    // Whether it is done
-    challengeDone: Boolean(record?.completedAt),
     // A first visit: nothing saved, and the welcome not yet answered in this browser
     showWelcome: sessions.length === 0 && talks.length === 0 && !readWelcomeSeen(),
     // Today's practice (after the focus is saved, so both agree)
@@ -143,16 +114,6 @@ export function HomeScreen(props: ScreenProps) {
       cancelled = true;
     };
   }, [repo, today]);
-
-  // Save the weekly challenge as done (or not) when the box is ticked
-  async function toggleChallenge(done: boolean) {
-    // Nothing to do before data has loaded
-    if (!data || !today) return;
-    // Save the challenge record
-    await repo.saveChallenge({ id: data.challengeRecordId, weekStart: data.weekStart, text: data.challenge.text, completedAt: done ? today.toISOString() : null });
-    // Show the new state
-    setData({ ...data, challengeDone: done });
-  }
 
   // Answer or skip the welcome, so it does not come back
   function finishWelcome() {
@@ -195,12 +156,8 @@ export function HomeScreen(props: ScreenProps) {
               ))}
             </ul>
           )}
-          {/* This week's focus (held back during the welcome, which asks one thing only) */}
-          {data && !data.showWelcome && (
-            <p className="md:mt-6 md:border-t md:border-rule md:pt-3">
-              This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>. {data.focus.description}
-            </p>
-          )}
+          {/* This week's focus, in a few words (held back during the welcome, which asks one thing only) */}
+          {data && !data.showWelcome && <p className="md:mt-3">This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
         </aside>
 
         {/* Main column */}
@@ -275,42 +232,44 @@ export function HomeScreen(props: ScreenProps) {
             </section>
           )}
 
-          {/* The three jobs (the welcome asks the same thing, so they wait until it is answered) */}
-          {!data?.showWelcome && <nav aria-label="Or choose" className="mt-8">
-            {/* Small heading */}
-            <p className="text-footnote italic text-ink-muted">Or choose</p>
-            {/* One row per job */}
-            <ul aria-label="Or choose" className="mt-2 divide-y divide-rule border-y border-rule">
-              {/* Each job */}
-              {JOBS.map((job) => (
-                // One job
-                <li key={job.id}>
-                  {/* The link, with its line of explanation */}
-                  <Link href={job.href} className="flex min-h-14 flex-wrap items-baseline justify-between gap-x-4 py-3 hover:text-accent">
-                    {/* Its name */}
-                    <span className="font-display text-cue">{job.name} →</span>
-                    {/* What it covers */}
-                    <span className="text-footnote text-ink-muted">{job.blurb}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>}
-
-          {/* Push the footer down */}
-          <div className="flex-1" />
-          {/* This week's challenge as a footnote with a checkbox */}
-          {data && (
-            <Footnote>
-              {/* Label wraps the box and text so either can be tapped */}
-              <label className="flex min-h-11 cursor-pointer items-center gap-3">
-                {/* Square checkbox, filled with the accent when ticked */}
-                <input type="checkbox" checked={data.challengeDone} onChange={(event) => toggleChallenge(event.target.checked)} className="mt-0.5 size-6 flex-none appearance-none border-2 border-ink checked:border-accent checked:bg-accent" />
-                {/* The challenge */}
-                <span>Off the page this week: <span>{data.challenge.text.charAt(0).toLowerCase() + data.challenge.text.slice(1)}</span></span>
-              </label>
-            </Footnote>
+          {/* The three main ways to practise on your own (held back during the welcome) */}
+          {data && !data.showWelcome && today && (
+            <section aria-labelledby="on-your-own" className="mt-10 mb-8">
+              {/* Small heading */}
+              <h2 id="on-your-own" className="text-footnote italic text-ink-muted">Or practise on your own</h2>
+              {/* Three tiles, one row on a wider screen */}
+              <ul className="mt-2 grid gap-3 sm:grid-cols-3">
+                {/* Each way */}
+                {[
+                  // Reading a speech aloud
+                  { href: "/skills#readings", icon: BookOpenTextIcon, name: "Read aloud", detail: "A famous speech, a minute at a time" },
+                  // A Table Topic
+                  { href: `/session?mode=talk&prompt=${tableTopicForDay(today, 1).id}`, icon: LightningIcon, name: "Table Topic", detail: "A surprise question, 1 to 2 minutes" },
+                  // A prepared speech
+                  { href: `/session?mode=response&prompt=${promptForDay(today, 1).id}`, icon: PresentationIcon, name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4" },
+                ].map((way) => (
+                  // One tile
+                  <li key={way.name}>
+                    {/* The whole tile starts it */}
+                    <Link href={way.href} className="flex h-full min-h-20 items-center gap-3 border border-rule bg-paper px-4 py-3 hover:border-accent sm:flex-col sm:items-start">
+                      {/* Its icon */}
+                      <way.icon aria-hidden="true" className="size-7 flex-none text-accent" />
+                      {/* Its name and what it is */}
+                      <span>
+                        {/* The name */}
+                        <span className="block font-display text-cue leading-tight">{way.name}</span>
+                        {/* What it is */}
+                        <span className="block text-footnote text-ink-muted">{way.detail}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
+
+          {/* Push the action down */}
+          <div className="flex-1" />
           {/* The main action: start or carry on with today's practice, or practise more once it is done */}
           {plan && (nextIndex === -1 ? (
             <ActionBand action="Practise more" aside="on your own" href="/practice" />

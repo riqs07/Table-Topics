@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 // Load the screen being checked
 import { PracticeScreen } from "@/components/screens/PracticeScreen";
 // Load the in-memory store and repository
@@ -72,5 +72,17 @@ describe("PracticeScreen", () => {
     await screen.findByRole("heading", { name: "Table Topic" });
     // Confirm the four cards, in order
     expect(screen.getAllByRole("region").map((card) => card.getAttribute("aria-labelledby"))).toEqual(["table-topic", "prepared", "openings", "qa"]);
+  });
+
+  // This week's challenge off the page lives here, and ticking it saves it as done
+  it("marks the weekly challenge done", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // Tick the challenge
+    fireEvent.click(await screen.findByRole("checkbox"));
+    // Confirm it is saved with a completion time, and shows as ticked
+    await waitFor(async () => expect([(await repository.listChallenges())[0]?.completedAt, (screen.getByRole("checkbox") as HTMLInputElement).checked]).toEqual([NOW.toISOString(), true]));
   });
 });

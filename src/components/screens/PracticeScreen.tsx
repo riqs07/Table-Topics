@@ -17,6 +17,8 @@ import { Card } from "@/components/script/Card";
 import { ChatsCircleIcon, LightningIcon, NotePencilIcon, QuotesIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
+// Load this week's challenge
+import { WeeklyChallenge } from "@/components/screens/WeeklyChallenge";
 // Load the catalogue
 import { MODES, type ModeInfo } from "@/content/modes";
 // Load the day's pickers
@@ -116,6 +118,8 @@ export function PracticeScreen(props: ScreenProps) {
         {/* The pointer */}
         Preparing a talk of your own? <Link href="/rehearse" className="underline underline-offset-4">Go to Talks</Link>.
       </p>
+      {/* This week's challenge off the page */}
+      {today && <WeeklyChallenge repo={repo} today={today} />}
     </main>
   );
 }

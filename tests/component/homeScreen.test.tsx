@@ -11,7 +11,7 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the day's pickers
-import { promptForDay } from "@/content/prompts";
+import { promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -125,16 +125,16 @@ describe("HomeScreen", () => {
     expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 1: Warm up" })).getByText("Done"), !!screen.getByRole("link", { name: /^Continue: step 2/ })]).toEqual(["Pick up where you left off.", true, true]);
   });
 
-  // The three jobs are always one tap away, each with a line on what it covers
-  it("offers the three jobs", async () => {
+  // Beyond today's practice, the three main ways to practise are one tap away
+  it("offers reading aloud, a Table Topic and a prepared speech", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // The jobs list
-    const jobs = await screen.findByRole("list", { name: "Or choose" });
-    // Confirm each link
-    expect(within(jobs).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/rehearse", "/practice", "/skills"]);
+    // The tiles
+    const tiles = within((await screen.findByRole("heading", { name: "Or practise on your own" })).closest("section") as HTMLElement).getAllByRole("link");
+    // Confirm where each leads
+    expect(tiles.map((tile) => tile.getAttribute("href"))).toEqual(["/skills#readings", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`, `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`]);
   });
 
   // A returning user sees the streak as a sentence
@@ -147,20 +147,6 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={repository} now={NOW} />);
     // Confirm the streak sentence
     expect(await screen.findByText(/Third day running\./)).toBeTruthy();
-  });
-
-  // Ticking the challenge saves it as done
-  it("marks the weekly challenge done", async () => {
-    // Make a repository
-    const repository = emptyRepository();
-    // Draw the screen
-    render(<HomeScreen repository={repository} now={NOW} />);
-    // Tick the challenge
-    await userEvent.click(await screen.findByRole("checkbox"));
-    // Confirm it is saved with a completion time
-    await waitFor(async () => expect((await repository.listChallenges())[0]?.completedAt).toBe(NOW.toISOString()));
-    // Confirm the box shows as ticked
-    expect(screen.getByRole("checkbox")).toHaveProperty("checked", true);
   });
 
   // When a week has passed, the next focus is shown and saved
