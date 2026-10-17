@@ -63,6 +63,40 @@ describe("requestFeedback", () => {
     expect(await repository.getSession("s1")).toMatchObject({ feedback: FEEDBACK, feedbackStatus: "done" });
   });
 
+  // With sharing on, feedback waits for the notes, then sends them
+  it("waits for notes the coach may read, then sends them", async () => {
+    // A session waiting for notes
+    const repository = await repositoryWith(makeSession({ id: "s1", selfReview: null }));
+    // Sharing is on
+    await repository.saveSettings({ ...(await repository.getSettings(new Date())), shareNotes: true });
+    // The network
+    const network = answer(200, { feedback: FEEDBACK });
+    // Ask before the notes exist
+    const before = await requestFeedback(repository, "s1", { passphrase: "pass", fetchFn: network });
+    // Save notes
+    await repository.saveSession({ ...(await repository.getSession("s1"))!, selfReview: { worked: "", change: "Slow down", tags: ["too-fast"], skipped: false, savedAt: "2026-10-16T10:00:00.000Z" } });
+    // Ask again
+    await requestFeedback(repository, "s1", { passphrase: "pass", fetchFn: network });
+    // What was sent
+    const body = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { notes?: unknown };
+    // Confirm it waited without calling, then sent the notes
+    expect([before, network.mock.calls.length, body.notes]).toEqual(["awaiting-notes", 1, { worked: "", change: "Slow down", tags: ["too-fast"] }]);
+  });
+
+  // With sharing off (the default), notes are never sent
+  it("does not send notes unless sharing is on", async () => {
+    // A session with notes
+    const repository = await repositoryWith(makeSession({ id: "s1", selfReview: { worked: "w", change: "c", tags: [], skipped: false, savedAt: "2026-10-16T10:00:00.000Z" } }));
+    // The network
+    const network = answer(200, { feedback: FEEDBACK });
+    // Ask
+    await requestFeedback(repository, "s1", { passphrase: "pass", fetchFn: network });
+    // What was sent
+    const body = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { notes?: unknown };
+    // Confirm no notes
+    expect(body.notes).toBeUndefined();
+  });
+
   // Notes saved while the coach is thinking are kept when the feedback arrives
   it("keeps notes saved while the request was under way", async () => {
     // A session waiting for feedback

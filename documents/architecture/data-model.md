@@ -68,6 +68,7 @@ Talks are stored in their own collection (added to existing databases by raising
 | focusIndex | Which weekly focus the user is on (position in the v1 focus list in `core/focus.ts`) |
 | focusStartedOn | Date the current focus began |
 | audioRetention | Number of recent sessions whose audio is kept (default 30) |
+| shareNotes | Whether the coach may read the user's notes after listening back (decision 31). Off unless chosen; missing on older settings |
 
 ### Prompts
 

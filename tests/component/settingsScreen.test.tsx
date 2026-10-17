@@ -114,4 +114,20 @@ describe("SettingsScreen", () => {
     // Confirm a fingerprint is shown
     expect(await screen.findByText(/Fingerprint: [0-9a-f]{6}/)).toBeTruthy();
   });
+
+  // The coach may read your notes only when you switch it on
+  it("saves whether the coach may read your notes", async () => {
+    // An empty repository
+    const repository = createRepository(new MemoryStore());
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // The switch, off by default
+    const share = (await screen.findByLabelText(/Let the coach read my notes/)) as HTMLInputElement;
+    // Was it off?
+    const before = share.checked;
+    // Switch it on
+    await userEvent.click(share);
+    // Confirm it was off, and is now saved on
+    await waitFor(async () => expect([before, (await repository.getSettings(NOW)).shareNotes]).toEqual([false, true]));
+  });
 });

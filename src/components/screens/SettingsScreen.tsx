@@ -108,6 +108,20 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     };
   }, [repo, today]);
 
+  // Let the coach read the user's notes, or stop it
+  async function changeShareNotes(event: ChangeEvent<HTMLInputElement>) {
+    // Nothing to do before settings load
+    if (!settings) return;
+    // Build the new settings
+    const next = { ...settings, shareNotes: event.target.checked };
+    // Save them
+    await repo.saveSettings(next);
+    // Show the new value
+    setSettings(next);
+    // Say what happened
+    setMessage("Saved.");
+  }
+
   // Save a new audio limit and remove audio beyond it
   async function changeRetention(event: ChangeEvent<HTMLSelectElement>) {
     // Nothing to do before settings load
@@ -254,6 +268,18 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             <button type="button" onClick={sendNow} className="inline-flex min-h-11 items-center underline underline-offset-4">Send now</button>
           </p>
         )}
+        {/* Whether the coach may read the user's own notes */}
+        <label className="mt-4 flex min-h-11 items-start gap-3">
+          {/* The switch */}
+          <input type="checkbox" checked={settings?.shareNotes === true} onChange={changeShareNotes} className="mt-1 size-5 flex-none accent-accent" />
+          {/* What it does */}
+          <span>
+            {/* The choice */}
+            Let the coach read my notes after I listen back.
+            {/* What that means */}
+            <span className="block text-footnote text-ink-muted">Your notes are sent with the transcript, and the coach answers them. Feedback then waits until you have saved your notes. Off by default.</span>
+          </span>
+        </label>
       </Section>}
 
       {/* Export and import */}

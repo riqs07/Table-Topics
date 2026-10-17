@@ -33,6 +33,8 @@ const RequestSchema = z.object({
   promptId: z.string().max(64).optional(),
   // For a Q&A answer: the question it answered (written by the coach or typed by the user)
   question: z.string().max(300).optional(),
+  // The user's own notes after listening back, only when they let the coach read them
+  notes: z.object({ worked: z.string().max(500), change: z.string().max(500), tags: z.array(z.string().max(40)).max(12) }).optional(),
 });
 
 // Build the handler for POST /api/feedback

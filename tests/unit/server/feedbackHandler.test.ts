@@ -65,6 +65,22 @@ describe("feedback handler", () => {
     expect(await response.json()).toEqual({ feedback: FEEDBACK });
   });
 
+  // Shared notes pass the checks and reach the coach; oversized notes are refused
+  it("accepts the speaker's notes, within limits", async () => {
+    // A coach that remembers what it was given
+    const seen: unknown[] = [];
+    // The coach
+    const coach: Coach = { async getFeedback(input) { seen.push(input); return { status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } }; } };
+    // The handler
+    const handle = createFeedbackHandler(deps({ coach }));
+    // Notes of a normal size
+    const ok = await handle(request({ ...BODY, notes: { worked: "w", change: "c", tags: ["fillers"] } }));
+    // Notes far too long
+    const tooLong = await handle(request({ ...BODY, notes: { worked: "x".repeat(501), change: "", tags: [] } }));
+    // Confirm the first reached the coach with its notes, and the second was refused
+    expect([ok.status, (seen[0] as { notes?: unknown }).notes, tooLong.status]).toEqual([200, { worked: "w", change: "c", tags: ["fillers"] }, 400]);
+  });
+
   // A missing setting fails clearly, naming what to fix
   it("explains a missing server setting", async () => {
     // Make the settings reader fail as it would with a missing key

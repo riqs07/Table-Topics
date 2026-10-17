@@ -83,6 +83,8 @@ const FEEDBACK_NOTES: Record<FeedbackOutcome | "asking", string> = {
   declined: "The coach could not review this session.",
   // Refused as invalid
   invalid: "The coach could not review this session.",
+  // Waiting for the notes the coach may read
+  "awaiting-notes": "The coach will read your notes once you save them.",
 };
 
 // What was loaded: the session (or null if missing) and, for a retry, its first try
@@ -484,6 +486,8 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   // A note about feedback being asked for, or why it has not come
   const [note, setNote] = useState("");
+  // Bumped to ask the coach again, once notes it was waiting for are saved
+  const [askAgain, setAskAgain] = useState(0);
 
   // Load the session (and its first try, for a retry) once the date is known
   useEffect(() => {
@@ -538,7 +542,7 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo, today, sessionId, fetchFn]);
+  }, [repo, today, sessionId, fetchFn, askAgain]);
 
   // Draw the page
   return (
@@ -556,7 +560,12 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
       {/* A retry with its first try */}
       {loaded?.session && loaded.original && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} onReviewed={(updated) => setLoaded((previous) => (previous ? { ...previous, session: updated } : previous))} />}
+      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} onReviewed={(updated) => {
+        // Show the notes and the feedback
+        setLoaded((previous) => (previous ? { ...previous, session: updated } : previous));
+        // If the coach was waiting for the notes, ask it now
+        if (note === FEEDBACK_NOTES["awaiting-notes"]) setAskAgain((count) => count + 1);
+      }} />}
     </main>
   );
 }

@@ -545,6 +545,32 @@ describe("SessionScreen", () => {
       expect(within(await screen.findByRole("list", { name: "Your notes against the numbers" })).getByText(/^You said too fast, and it was: 182 words a minute/)).toBeTruthy();
     });
 
+    // With sharing on, the coach is asked only after the notes are saved, and gets them
+    it("asks the coach after your notes when it may read them", async () => {
+      // A saved passphrase
+      savePassphrase("a-long-enough-passphrase");
+      // A new first try waiting for feedback, with no audio to listen to
+      const repository = await repositoryWith({ ...fresh(), audioKey: null, feedback: null, feedbackStatus: "pending" });
+      // Sharing is on
+      await repository.saveSettings({ ...(await repository.getSettings(NOW)), shareNotes: true });
+      // A network that answers with feedback
+      const network = vi.fn(async () => Response.json({ feedback: FEEDBACK }, { status: 200 }));
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} fetchFn={network} />);
+      // Write a note
+      await userEvent.type(await screen.findByLabelText("What would you change?"), "Slow down");
+      // Nothing sent yet
+      const before = network.mock.calls.length;
+      // Save
+      await userEvent.click(screen.getByRole("button", { name: /Save my notes/ }));
+      // The feedback arrives
+      await screen.findByText(FEEDBACK.change);
+      // What was sent
+      const body = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { notes?: { change: string } };
+      // Confirm nothing went before saving, then the note went
+      expect([before, body.notes?.change]).toEqual([0, "Slow down"]);
+    });
+
     // Older sessions skip the step
     it("does not ask on older sessions", async () => {
       // A session from before the step existed

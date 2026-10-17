@@ -18,7 +18,9 @@ export type FeedbackOutcome =
   // The server is missing a setting; tell the user
   | "not-set-up"
   // Offline, rate limited, or a temporary failure; try again later
-  | "retry-later";
+  | "retry-later"
+  // The user lets the coach read their notes, and has not written them yet; ask after they do
+  | "awaiting-notes";
 
 // Outcomes that will block every other waiting session too, so sending stops
 const BLOCKING: ReadonlyArray<FeedbackOutcome> = ["needs-passphrase", "not-set-up", "retry-later"];
@@ -69,6 +71,12 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   const session = await repository.getSession(sessionId);
   // A missing session cannot be sent
   if (!session) return plain("invalid");
+  // Whether the coach may read the user's notes
+  const shareNotes = (await repository.getSettings(new Date())).shareNotes === true;
+  // Wait for notes the coach is allowed to read
+  if (shareNotes && session.selfReview === null) return plain("awaiting-notes");
+  // The notes to send: only when allowed, written, and not skipped
+  const review = shareNotes && session.selfReview && !session.selfReview.skipped && (session.selfReview.worked || session.selfReview.change || session.selfReview.tags.length > 0) ? session.selfReview : null;
   // On a retry, find the fix given last time
   const original = session.retryOf ? await repository.getSession(session.retryOf) : undefined;
   // Send the request, treating a network failure as "try later"
@@ -82,7 +90,7 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
       // JSON body and the passphrase header
       headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase },
       // The session details the coach needs
-      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}) }),
+      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}) }),
     });
   } catch {
     // Offline or unreachable: the session waits

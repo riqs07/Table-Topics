@@ -122,6 +122,8 @@ export interface SettingsRecord {
   focusStartedOn: string;
   // How many recent sessions keep their audio
   audioRetention: number;
+  // Whether the coach may read the user's own notes after listening back (off unless chosen; missing on older settings)
+  shareNotes?: boolean;
 }
 
 // What each stored collection holds
