@@ -60,3 +60,21 @@ export function readServerEnv(source: EnvSource = process.env): ServerEnv {
   // Hand back the checked settings
   return { anthropicApiKey, accessSecret, counterStore: store };
 }
+
+// The ElevenLabs settings for the question voice
+export interface VoiceSettings {
+  // The API key (kept on the server; never sent to the browser)
+  apiKey: string;
+  // The voice to use
+  voiceId: string;
+}
+
+// Read the voice settings, or null when the voice is not set up (the phone's own voice is used instead)
+export function readVoiceSettings(source: EnvSource = process.env): VoiceSettings | null {
+  // The key
+  const apiKey = source.ELEVENLABS_API_KEY?.trim();
+  // The voice
+  const voiceId = source.ELEVENLABS_VOICE_ID?.trim();
+  // Both are needed
+  return apiKey && voiceId ? { apiKey, voiceId } : null;
+}

@@ -11,6 +11,16 @@ const at = (hour: number, minute: number) => new Date(Date.UTC(2026, 9, 12, hour
 
 // Group the checks about the limiter
 describe("checkRateLimit", () => {
+  // Each route counts on its own: the voice does not use up feedback calls
+  it("keeps separate counts for each scope", async () => {
+    // One store shared by both
+    const store = new MemoryCounterStore();
+    // Two voice calls fill the voice's minute
+    for (let call = 0; call < 2; call++) await checkRateLimit(store, { ...LIMITS, scope: "voice" }, at(10, 0));
+    // Confirm the voice is now refused but feedback is still allowed
+    expect([(await checkRateLimit(store, { ...LIMITS, scope: "voice" }, at(10, 0))).allowed, (await checkRateLimit(store, LIMITS, at(10, 0))).allowed]).toEqual([false, true]);
+  });
+
   // Requests under the limit are allowed
   it("allows requests under both limits", async () => {
     // Use an empty store

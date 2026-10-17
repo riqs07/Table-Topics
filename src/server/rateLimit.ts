@@ -15,6 +15,8 @@ export interface RateLimits {
   perMinute: number;
   // Calls allowed per day (the cost cap)
   perDay: number;
+  // Which counters to use, so different routes keep separate counts (feedback when not given)
+  scope?: string;
 }
 
 // The outcome of a limit check
@@ -34,11 +36,11 @@ export async function checkRateLimit(store: CounterStore, limits: RateLimits, no
   // The day bucket
   const dayBucket = Math.floor(seconds / DAY);
   // Count the call in this minute
-  const inMinute = await store.increment(`feedback:minute:${minuteBucket}`, MINUTE);
+  const inMinute = await store.increment(`${limits.scope ?? "feedback"}:minute:${minuteBucket}`, MINUTE);
   // Refuse if the minute is used up; wait until the next minute
   if (inMinute > limits.perMinute) return { allowed: false, reason: "minute", retryAfterSec: (minuteBucket + 1) * MINUTE - seconds };
   // Count the call in this day (only calls that passed the minute check)
-  const inDay = await store.increment(`feedback:day:${dayBucket}`, DAY);
+  const inDay = await store.increment(`${limits.scope ?? "feedback"}:day:${dayBucket}`, DAY);
   // Refuse if the day is used up; wait until midnight UTC
   if (inDay > limits.perDay) return { allowed: false, reason: "day", retryAfterSec: (dayBucket + 1) * DAY - seconds };
   // Otherwise allow the call

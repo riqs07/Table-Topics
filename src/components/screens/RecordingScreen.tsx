@@ -395,10 +395,12 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // A rehearsal's own goal in seconds, if it has one (whole-talk runs only)
   const goalSeconds = talk?.goalMinutes && section === null ? talk.goalMinutes * 60 : undefined;
 
-  // For a small-talk answer, load the earlier answers
+  // For a small-talk answer, get the question's voice ready and load the earlier answers
   useEffect(() => {
     // Only for small talk
     if (mode !== "smalltalk") return;
+    // Fetch the question's audio ahead of the tap
+    services.prepareSpeech?.(promptId);
     // Ignore the result if the screen closes first
     let cancelled = false;
     // Read them
@@ -411,7 +413,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Stop the pending update
       cancelled = true;
     };
-  }, [mode, repo]);
+  }, [mode, promptId, repo, services]);
 
   // For a Q&A answer, load the question from the session it belongs to
   useEffect(() => {
@@ -676,11 +678,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Show that the question is being asked
       setStage("asking");
       // Say it, carrying on even if the voice fails
-      await services.speak?.(question).catch(() => undefined);
+      await services.speak?.(question, promptId).catch(() => undefined);
       // Then record
       await start();
     },
-    [services, start],
+    [promptId, services, start],
   );
 
   // Before a Table Topic or Record Response: count down, then start recording by itself
