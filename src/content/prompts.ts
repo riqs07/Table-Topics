@@ -4,6 +4,8 @@
 import { daysBetween } from "@/core/dates";
 // Load the lessons, so their titles can be found like prompts
 import { LESSONS } from "@/content/lessons";
+// Load the small-talk questions, so they can be found like prompts
+import { SMALL_TALK_PROMPTS } from "@/content/smallTalk";
 
 // One daily prompt
 export interface Prompt {
@@ -503,5 +505,5 @@ export function findPassage(id: string): Passage | undefined {
 // Find any prompt (Record Response, Table Topic, opening or close, warm-up, or the title of a passage, drill, word list, or lesson) by its saved id
 export function findPrompt(id: string): Prompt | undefined {
   // Look in every list
-  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...BOOKENDS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS].find((prompt) => prompt.id === id);
+  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...BOOKENDS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS, ...SMALL_TALK_PROMPTS].find((prompt) => prompt.id === id);
 }

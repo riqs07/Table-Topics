@@ -99,6 +99,8 @@ export const TOPIC_WINDOW: SpeakingWindow = { start: TOPIC_WINDOW_START, yellow:
 
 // A prepared speech: 2 to 4 minutes, 30 seconds of grace
 export const SPEECH_WINDOW: SpeakingWindow = { start: 120, yellow: 180, end: 240, limit: 270 };
+// Small talk: green at 0:20, yellow at 0:35, red at 0:45, no grace (it stops by itself at 1:00)
+export const SMALL_TALK_WINDOW: SpeakingWindow = { start: 20, yellow: 35, end: 45, limit: 45 };
 
 // The window for a kind of session, if it has one
 export function speakingWindow(mode: SessionMode): SpeakingWindow | null {

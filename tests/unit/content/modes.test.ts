@@ -13,13 +13,14 @@ describe("mode catalogue", () => {
     for (const mode of MODES) expect([mode.name.length > 0, mode.subtitle.length > 0 && mode.subtitle.length <= 40, mode.length.length > 0, /\.$/.test(mode.youDo), /\.$/.test(mode.youGet)]).toEqual([true, true, true, true, true]);
   });
 
-  // Three jobs, each with at least one mode, in a fixed order
-  it("groups the modes into the three jobs", () => {
+  // The jobs, each with at least one mode, in a fixed order
+  it("groups the modes into the jobs", () => {
     // Confirm the jobs and their modes
     expect(JOBS.map((job) => [job.id, MODES.filter((mode) => mode.job === job.id).map((mode) => mode.id)])).toEqual([
       ["talk", ["talks"]],
       ["spot", ["table-topic", "prepared", "openings", "qa"]],
       ["skill", ["lessons", "readings", "pause-drills", "tricky-words"]],
+      ["connect", ["small-talk"]],
     ]);
   });
 

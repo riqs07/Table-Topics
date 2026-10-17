@@ -1,6 +1,6 @@
 # Plan: small talk and storytelling
 
-Proposed 2026-10-17, for the user to read before anything is built. The user's own goal: answer everyday questions ("How was your weekend?", "How was your trip?") with a short, lively story instead of "Good, not much", and build a habit of expressing themselves. VoiceLab is a personal app, so this is shaped around that struggle rather than a general audience.
+Proposed 2026-10-17; building started the same day. The user's own goal: answer everyday questions ("How was your weekend?", "How was your trip?") with a short, lively story instead of "Good, not much", and build a habit of expressing themselves. VoiceLab is a personal app, so this is shaped around that struggle rather than a general audience.
 
 ## What the user decided
 
@@ -10,6 +10,7 @@ Proposed 2026-10-17, for the user to read before anything is built. The user's o
 | Summaries during the conversation | Never. The voice does not repeat or sum up what you said; reflection happens in the notes afterwards |
 | Teaching | Lessons as well as practice: what makes a good answer and what to listen for, shown on screen while practising until it sticks |
 | Voice | ElevenLabs (the user is happy to pay) |
+| Where it lives | **Separate from the speech practice for now** (2026-10-17): its own tab, "Small talk", between Skills and History. Small-talk answers stay out of today's plan, the weekly focus, the streak and strip on Today, History and the speech progress numbers; they are listed on the Small talk page. Ways to join the two up come later |
 | Defaults offered and not changed | Answers of 20 to 45 seconds; the recipe Moment · Hook · Feeling · Hand back; an optional "one moment a day" note; the recipe strip stays still while you talk (no live ticks) |
 
 ## What the research says (short version)
@@ -38,7 +39,7 @@ One line of "why it works" goes with each beat, shown in lessons and in the note
 - Feeling: "Saying why it mattered is what makes it sound like you."
 - Hand back: "A question back turns your answer into a conversation."
 
-## The lessons (a Small talk group on Skills)
+## The lessons (on the Small talk page)
 
 Each lesson: the idea in a few lines, a flat answer beside a good one (the good one can be played in the voice), then your turn with a prompt that uses the idea.
 
@@ -51,7 +52,7 @@ Each lesson: the idea in a few lines, a flat answer beside a good one (the good 
 | 5 | Hand it back | End with a real question, ideally about the same thing | "It was good. Anyway." | "…It was such a good trip. Have you been anywhere this year?" | How was your trip? |
 | 6 | All together | All four beats, about 30 seconds | — | The recipe example above | Rotating everyday questions |
 
-After the lessons, everyday questions become reps in the daily plan and on Practice.
+After the lessons, the everyday questions are reps on the Small talk page.
 
 ## The everyday questions, easiest first
 
@@ -104,7 +105,7 @@ The coach gets a dedicated small-talk prompt with that rubric. Without the coach
 
 ## One moment a day (optional)
 
-A 10-second voice note on Today: "What's one thing from today worth telling?" It is saved like a session but kept out of every number. On Mondays the weekend question can show your recent moments as a reminder before you answer. It is private, and never sent to the coach unless you choose to.
+A short voice note on the Small talk page: "What's one thing from today worth telling?" It is saved like a session but kept out of every number. The weekend questions show your recent moments as a reminder before you answer. It is private, and never sent to the coach.
 
 ## The voice (ElevenLabs)
 
@@ -128,13 +129,13 @@ A 10-second voice note on Today: "What's one thing from today worth telling?" It
 ## Stages
 
 1. **Content and checks.** The questions, the six lessons with their examples, the recipe text, and the phone's checks (`src/core/smallTalk.ts`), all with tests.
-2. **The mode.** A new session mode `smalltalk`: the recording page with the strip and its fading, the timing window, the four listen-back questions, and notes by beat (phone checks first).
+2. **The mode.** A new session mode `smalltalk` kept out of the speech numbers, the Small talk tab and page, the recording page with the strip and its fading, the timing window, the four listen-back questions, and notes by beat (phone checks first).
 3. **The voice.** The `/api/voice` route with a stand-in for tests, the "Hear it" button, auto-start after the voice, caching, and the phone-voice fallback.
 4. **The coach.** The small-talk prompt and schema (moment, hooks, feeling, hand-back, livelier version, one change), shown by beat.
-5. **Lessons and the plan.** The Small talk group on Skills, small-talk reps in the daily plan and on Practice, and the one-moment note.
+5. **Lessons and moments.** The lesson pages (idea, flat and good examples, your turn) and the one-moment note, all on the Small talk page.
 6. **Docs, decisions, screenshots,** and a browser journey through a whole answer.
 
 ## Open questions
 
 - **Which voice:** pick one in the ElevenLabs voice library.
-- **The daily plan:** should small talk replace the on-the-spot step two days a week, or be an extra fourth step?
+- **Joining it up with the speech practice:** later, once the small-talk part works on its own.

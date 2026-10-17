@@ -3,8 +3,8 @@
 // Load the session kind type
 import type { SessionMode } from "@/data/records";
 
-// The three jobs the app is organised around
-export type JobId = "talk" | "spot" | "skill";
+// The jobs the app is organised around (small talk is kept apart from the speech practice for now)
+export type JobId = "talk" | "spot" | "skill" | "connect";
 
 // One job, as shown on Today and in the menu
 export interface Job {
@@ -26,6 +26,8 @@ export const JOBS: ReadonlyArray<Job> = [
   { id: "spot", name: "Speak on the spot", blurb: "Surprise questions, prepared speeches, openings, Q&A.", href: "/practice" },
   // One skill at a time
   { id: "skill", name: "Build a skill", blurb: "Short lessons, speeches to read, pause and word drills.", href: "/skills" },
+  // Everyday conversation
+  { id: "connect", name: "Small talk", blurb: "Everyday questions, answered with a short story.", href: "/small-talk" },
 ];
 
 // One way to practise
@@ -66,6 +68,8 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   { id: "pause-drills", job: "skill", name: "Pause drills", subtitle: "pause where the text is marked", length: "1 min", youDo: "Read a passage and pause for a second at each mark.", youGet: "How many pauses you took against the marks." },
   // Tricky words
   { id: "tricky-words", job: "skill", name: "Tricky words", subtitle: "crisp consonants", length: "1 min", youDo: "Read a list of words that are easy to swallow.", youGet: "Which words came through clearly." },
+  // Small talk
+  { id: "small-talk", job: "connect", name: "Small talk", subtitle: "everyday questions", length: "under a minute", youDo: "Hear an everyday question, like \u201cHow was your weekend?\u201d, and answer with one short story: a moment, a hook, how it felt, and a question back.", youGet: "Which of the four you heard yourself do, and one change." },
 ];
 
 // How each kind of session is explained before recording ("rehearse" is a run of your talk)
@@ -86,6 +90,8 @@ const SESSION_TO_MODE: Readonly<Partial<Record<SessionMode, string>>> = {
   pause: "pause-drills",
   // A lesson
   lesson: "lessons",
+  // A small-talk answer
+  smalltalk: "small-talk",
 };
 
 // The catalogue entry that explains a kind of session, if it has one
