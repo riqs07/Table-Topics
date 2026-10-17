@@ -21,6 +21,9 @@ const NOW = new Date(2026, 9, 13, 10);
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
+// A new user's first step: the first part of the first speech, inside the plan
+const FIRST_STEP = "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1";
+
 // Make an empty repository
 const emptyRepository = () => createRepository(new MemoryStore());
 
@@ -29,7 +32,7 @@ describe("HomeScreen", () => {
   // Each check starts with a fresh browser, as far as the welcome is concerned
   beforeEach(() => localStorage.clear());
 
-  // A brand-new user is asked one question, and each answer leads to its job
+  // A brand-new user is asked one question; a talk leads to rehearsing, the rest straight into today's first step (a one-minute reading)
   it("welcomes a new user with one question", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
@@ -39,17 +42,21 @@ describe("HomeScreen", () => {
     expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/stay on this device/), within(choices).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])]).toEqual([
       "Welcome to VoiceLab",
       true,
-      [["I have a talk coming up", "/rehearse"], ["I want to speak better on the spot", "/practice"], ["I want to work on one skill", "/skills"]],
+      [["I have a talk coming up", "/rehearse"], ["I want to speak better on the spot", FIRST_STEP], ["I want to work on one skill", FIRST_STEP]],
     ]);
   });
 
-  // Skipping shows Today as usual, and the welcome does not come back
+  // Skipping also starts today's first step, and the welcome does not come back
   it("skips the welcome for good", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
     // Skip
-    await userEvent.click(await screen.findByRole("button", { name: "Skip" }));
-    // Confirm today's practice shows
+    const skip = await screen.findByRole("link", { name: "Skip" });
+    // Confirm it leads into the first step
+    expect(skip.getAttribute("href")).toBe(FIRST_STEP);
+    // Follow it
+    await userEvent.click(skip);
+    // Confirm today's practice shows behind it
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Two short steps.");
     // Draw again, as on a later visit
     cleanup();
@@ -71,7 +78,7 @@ describe("HomeScreen", () => {
     expect((await screen.findByRole("heading", { level: 1 })).textContent).not.toBe("Welcome to VoiceLab");
   });
 
-  // A new user's practice: a one-minute warm-up reading, then a first prepared speech, with one button to start
+  // A new user's practice: a one-minute warm-up reading, then a light Table Topic, with one button to start
   it("plans two steps for a new user, starting with a warm-up reading", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
@@ -80,7 +87,7 @@ describe("HomeScreen", () => {
     // The steps
     const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
     // Confirm the two steps, and that the main action starts the first inside the plan
-    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Warm up", "Step 2: Prepared speech"], `/session?mode=response&prompt=${promptForDay(NOW).id}&plan=2`, "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1"]);
+    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Warm up", "Step 2: Table Topic"], `/session?mode=talk&prompt=${tableTopicForDay(NOW).id}&plan=2`, "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1"]);
   });
 
   // A talk with a date takes the last step, and a past date does not count

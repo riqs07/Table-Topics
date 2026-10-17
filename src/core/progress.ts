@@ -53,10 +53,10 @@ function fullSessions(sessions: ReadonlyArray<SessionRecord>): SessionRecord[] {
   return sessions.filter((session) => session.mode !== "warmup" && session.mode !== "read" && session.mode !== "pause" && session.mode !== "rehearse" && session.mode !== "lesson" && session.mode !== "bookend" && session.mode !== "qa");
 }
 
-// Whether a new session should become the starting point: the first Record Response (or old one-minute session), never a warm-up or Table Topic
+// Whether a new session should become the starting point: the first Table Topic or prepared speech (or old one-minute session), never a reading, drill or warm-up (changed 2026-10-17 so a short Table Topic can be the first recording)
 export function shouldBeBaseline(existing: ReadonlyArray<SessionRecord>, mode: SessionMode): boolean {
-  // Only a Record Response or an old one-minute session can be the baseline, and there is only ever one
-  return (mode === "standard" || mode === "response") && !existing.some((session) => session.isBaseline);
+  // Only speaking on the spot can be the baseline, and there is only ever one
+  return (mode === "standard" || mode === "response" || mode === "talk") && !existing.some((session) => session.isBaseline);
 }
 
 // Compare the first recording with the most recent full session, or null if there is nothing to compare

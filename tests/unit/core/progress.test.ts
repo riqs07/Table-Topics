@@ -108,9 +108,9 @@ describe("warm-ups and progress", () => {
   });
 
   // The first Record Response becomes the starting point; a Table Topic never does
-  it("makes the first Record Response the baseline, never a Table Topic", () => {
-    // Confirm both
-    expect([shouldBeBaseline([], "response"), shouldBeBaseline([], "talk")]).toEqual([true, false]);
+  it("makes the first Table Topic or prepared speech the baseline, never a reading", () => {
+    // Confirm all three
+    expect([shouldBeBaseline([], "response"), shouldBeBaseline([], "talk"), shouldBeBaseline([], "read")]).toEqual([true, true, false]);
   });
 
   // The trend leaves warm-ups out

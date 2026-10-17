@@ -15,7 +15,7 @@ import { makeSession, makeTalk } from "../support/fixtures";
 // Load the passphrase storage
 import { savePassphrase } from "@/data/passphrase";
 // Load the daily prompt picker and the pause drills
-import { PAUSE_DRILLS, promptForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the script splitter
 import { readingTokens, scriptWords } from "@/core/liveReading";
 
@@ -658,7 +658,7 @@ describe("SessionScreen", () => {
       // Wait for the move
       await waitFor(() => expect(navigate).toHaveBeenCalled());
       // Confirm it was open, went to step 2 inside the plan, and noted the step as reviewed (skipped, nothing written)
-      expect([open, navigate.mock.calls[0]?.[0], (await repository.getSession("s1"))?.selfReview?.skipped, !!screen.queryByText("Today’s practice · step 1 of 2")]).toEqual([true, `/session?mode=response&prompt=${promptForDay(NOW).id}&plan=2`, true, true]);
+      expect([open, navigate.mock.calls[0]?.[0], (await repository.getSession("s1"))?.selfReview?.skipped, !!screen.queryByText("Today’s practice · step 1 of 2")]).toEqual([true, `/session?mode=talk&prompt=${tableTopicForDay(NOW).id}&plan=2`, true, true]);
     });
 
     // The last step finishes the practice, and trying again stays inside the plan

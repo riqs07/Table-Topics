@@ -20,10 +20,12 @@ describe("dailyPlan", () => {
     expect(dailyPlan({ day: DAY, sessions: [], focusId: "pausing", nextTalk: null }).map((step) => step.kind)).toEqual(["warm-up", "spot"]);
   });
 
-  // Until there is a first recording (only a prepared speech can be one), speaking on the spot is a prepared speech
-  it("starts with a prepared speech until there is a first recording", () => {
-    // Confirm for a new user
-    expect(dailyPlan({ day: DAY, sessions: [], focusId: "pausing", nextTalk: null }).at(-1)?.mode).toBe("response");
+  // In the first days, speaking on the spot is always a light Table Topic, never a long prepared speech
+  it("speaks on the spot with a Table Topic in the first days, every day of the week", () => {
+    // The last step's kind over seven days for a new user
+    const modes = new Set(Array.from({ length: 7 }, (_, offset) => dailyPlan({ day: new Date(2026, 9, 16 + offset, 10), sessions: [], focusId: "pausing", nextTalk: null }).at(-1)?.mode));
+    // Confirm only Table Topics
+    expect([...modes]).toEqual(["talk"]);
   });
 
   // After three practice days, a skill step for the week's focus joins in the middle

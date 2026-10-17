@@ -1,12 +1,12 @@
 # UX improvements plan (proposed 2026-10-17)
 
-Design changes that follow from [research/ux-research-2026-10.md](../research/ux-research-2026-10.md). Nothing here is built yet; the user decides the order. Sizes: **S** an hour or two, **M** half a day, **L** a day or more.
+Design changes that follow from [research/ux-research-2026-10.md](../research/ux-research-2026-10.md). The user chose waves 1 and 2 (2026-10-17); wave 3 is not planned. Built items are marked. Sizes: **S** an hour or two, **M** half a day, **L** a day or more.
 
 The idea in one line: **the loop is right; smooth the edges.** The first minutes, the moments that can feel like failure, setup details showing through, and screen space on a phone.
 
 ## Wave 1: first impressions and tone
 
-**1. A first win in under a minute (M).**
+**1. A first win in under a minute (M).** Built (decision 37).
 - After the welcome question (or Skip), go straight into a 1-minute reading, not a section page. The welcome answer still sets what the plan leans towards.
 - In the first week, the plan's last step is a Table Topic instead of a 2 to 4 minute prepared speech. To keep progress tracking, let the first Table Topic or prepared speech become the first recording (today only a prepared speech can).
 - Evidence: reach the first moment of value fast; Speeko's whole routine is about 5 minutes.

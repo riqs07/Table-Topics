@@ -1,7 +1,7 @@
 // Whole journeys with the stand-in microphone: record, save, and read the result (rules T1, T3, T11)
 import { expect, test, useStandIns } from "./support/fixtures";
 
-// A Table Topic from the welcome question, through Practice, to the saved session
+// The welcome leads straight into a one-minute reading; then a Table Topic from Practice, to the saved session
 test("Table Topic: from the welcome through Practice, countdown, recording, saved session", async ({ page }) => {
   // Use the stand-in microphone and speech
   await useStandIns(page);
@@ -9,6 +9,10 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   await page.goto("/");
   // A first visit asks one question: choose speaking on the spot
   await page.getByRole("link", { name: "I want to speak better on the spot" }).click();
+  // It opens today's first step, a short reading, ready to start
+  await expect(page).toHaveURL(/mode=read&prompt=[a-z0-9-]+&plan=1/);
+  // Go to Practice instead
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Practice", exact: true }).click();
   // Start a Table Topic
   await page.getByRole("link", { name: "Start a Table Topic" }).click();
   // The topic page opens
@@ -266,12 +270,8 @@ test("Today's practice: start, move through both steps, finish", async ({ page }
   await useStandIns(page, "Fellow Countrymen At this second appearing to take the oath of the Presidential office there is less occasion for an extended address than there was at the first");
   // Start at Today
   await page.goto("/");
-  // Skip the welcome question
-  await page.getByRole("button", { name: "Skip" }).click();
-  // Today's practice has two steps for a new user
-  await expect(page.getByRole("list", { name: "Steps" }).getByRole("link")).toHaveCount(2);
-  // Start it
-  await page.getByRole("link", { name: /^Start today’s practice/ }).click();
+  // Skip the welcome question, which opens the first step straight away
+  await page.getByRole("link", { name: "Skip" }).click();
   // Step 1 of 2: the warm-up reading
   await expect(page.getByText("Today’s practice · step 1 of 2")).toBeVisible();
   // Start reading
@@ -284,12 +284,10 @@ test("Today's practice: start, move through both steps, finish", async ({ page }
   await page.getByRole("button", { name: /Stop/ }).click();
   // Move on without listening back
   await page.getByRole("button", { name: /^Next: step 2/ }).click({ timeout: 15_000 });
-  // Step 2: a prepared speech; start thinking, then skip the rest of the thinking time
-  await page.getByRole("button", { name: /Start thinking/ }).click();
-  // Ready
-  await page.getByRole("button", { name: /Ready/ }).click();
+  // Step 2: a Table Topic; show the topic, and recording starts after the countdown
+  await page.getByRole("button", { name: /Show my topic/ }).click();
   // Speak past the minimum
-  await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 15_000 });
   // Wait
   await page.waitForTimeout(11_500);
   // Stop

@@ -131,21 +131,21 @@ function skill(focusId: string, day: Date): PlanStep {
   return { kind: "skill", label: "Skill", title, mode: drill.mode, promptId: drill.promptId, minutes: drill.mode === "lesson" ? 2 : 1, href: `/session?mode=${drill.mode}&prompt=${drill.promptId}` };
 }
 
-// Speaking on the spot: a talk coming up, or a Table Topic, an opening or closing drill, or once a week a prepared speech (always, until there is a first recording to measure progress from)
-function spot(input: PlanInput, needsFirstRecording: boolean): PlanStep {
+// Speaking on the spot: a talk coming up; in the first days a Table Topic (short and light); later in turn a Table Topic, an opening or closing drill, or once a week a prepared speech
+function spot(input: PlanInput, firstDays: boolean): PlanStep {
   // A talk coming up comes first
   if (input.nextTalk) return { kind: "spot", label: "Your talk", title: input.nextTalk.headline, mode: "rehearse", promptId: input.nextTalk.id, minutes: 3, href: `/session?mode=rehearse&prompt=${input.nextTalk.id}` };
   // The day in the week's turn
   const turn = ((dayNumber(input.day) % 7) + 7) % 7;
-  // One day a week a prepared speech, and every day until the first one (only a prepared speech can be the first recording)
-  if (turn === 6 || needsFirstRecording) {
+  // One day a week a prepared speech, but not in the first days, when it would be a big first ask
+  if (turn === 6 && !firstDays) {
     // Today's task
     const prompt = promptForDay(input.day);
     // The step
     return { kind: "spot", label: "Prepared speech", title: prompt.text, mode: "response", promptId: prompt.id, minutes: 3, href: `/session?mode=response&prompt=${prompt.id}` };
   }
-  // Every other day, an opening or a closing drill (the week's focus decides which, if it is one of them)
-  if (turn % 2 === 1) {
+  // Every other day (after the first days), an opening or a closing drill (the week's focus decides which, if it is one of them)
+  if (turn % 2 === 1 && !firstDays) {
     // Opening or close
     const part = input.focusId === "strong-close" ? "close" : input.focusId === "strong-opening" ? "opening" : turn % 4 === 1 ? "opening" : "close";
     // Today's prompt for it
@@ -171,11 +171,8 @@ export function dailyPlan(input: PlanInput): PlanStep[] {
   const before = beforeToday(input.sessions, input.day);
   // Days practised before today
   const practiceDays = new Set(before.map((session) => dayKey(new Date(session.createdAt)))).size;
-  // New users get two steps
-  // Whether there is no first recording yet to measure progress from
-  const needsFirstRecording = !before.some((session) => session.isBaseline);
-  // New users get two steps
-  return practiceDays < 3 ? [warmUp(before), spot(input, needsFirstRecording)] : [warmUp(before), skill(input.focusId, input.day), spot(input, needsFirstRecording)];
+  // New users get two steps, the second always a Table Topic
+  return practiceDays < 3 ? [warmUp(before), spot(input, true)] : [warmUp(before), skill(input.focusId, input.day), spot(input, false)];
 }
 
 // Which steps were done today: a session today of the same kind and prompt

@@ -33,14 +33,14 @@ import { formatRate } from "@/core/copy";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 
-// The welcome question's answers and where each leads
-const WELCOME_CHOICES: ReadonlyArray<{ text: string; href: string }> = [
+// The welcome question's answers and where each leads (null: straight into the first step of today's practice, a one-minute reading)
+const WELCOME_CHOICES: ReadonlyArray<{ text: string; href: string | null }> = [
   // A talk coming up
   { text: "I have a talk coming up", href: "/rehearse" },
   // Speaking without a script
-  { text: "I want to speak better on the spot", href: "/practice" },
+  { text: "I want to speak better on the spot", href: null },
   // One skill
-  { text: "I want to work on one skill", href: "/skills" },
+  { text: "I want to work on one skill", href: null },
 ];
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -125,6 +125,8 @@ export function HomeScreen(props: ScreenProps) {
 
   // Today's practice, once the data is in
   const plan = data && !data.showWelcome ? data.plan : null;
+  // Where the welcome leads by default: the first step of today's practice, so the first win comes in about a minute
+  const firstStep = data?.plan.steps[0] ? planHref(data.plan.steps[0], 1) : "/practice";
   // The first step not yet done (-1 when all are)
   const nextIndex = plan ? plan.done.indexOf(false) : -1;
   // Steps done
@@ -176,14 +178,14 @@ export function HomeScreen(props: ScreenProps) {
                 {/* Each answer */}
                 {WELCOME_CHOICES.map((choice) => (
                   // One answer
-                  <li key={choice.href}>
-                    {/* It leads to its job */}
-                    <Link href={choice.href} onClick={finishWelcome} className="block py-3 font-display text-cue hover:text-accent">{choice.text}</Link>
+                  <li key={choice.text}>
+                    {/* It leads to its job, or into today's first step */}
+                    <Link href={choice.href ?? firstStep} onClick={finishWelcome} className="block py-3 font-display text-cue hover:text-accent">{choice.text}</Link>
                   </li>
                 ))}
               </ul>
-              {/* Skip */}
-              <button type="button" onClick={finishWelcome} className="inline-flex min-h-11 items-center mt-4 italic text-ink-muted underline underline-offset-4">Skip</button>
+              {/* Skip, which also starts today's first step */}
+              <Link href={firstStep} onClick={finishWelcome} className="inline-flex min-h-11 items-center mt-4 italic text-ink-muted underline underline-offset-4">Skip</Link>
             </section>
           )}
 
