@@ -340,3 +340,24 @@ test("works when another app left a database called voicelab", async ({ page }) 
   // It saves in VoiceLab's own database, untroubled by the other one
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
 });
+
+// The first ever recording, in a browser about to ask for the microphone: the explanation first, then recording
+test("explains the microphone before the browser asks", async ({ page }) => {
+  // Use the stand-in microphone and speech
+  await useStandIns(page);
+  // Make the browser say it is about to ask (this run has the microphone allowed already)
+  await page.addInitScript(() => {
+    // Answer every microphone check with "about to ask"
+    navigator.permissions.query = async () => ({ state: "prompt" }) as PermissionStatus;
+  });
+  // Open a reading
+  await page.goto("/session?mode=read&prompt=r001");
+  // Start reading
+  await page.getByRole("button", { name: /Start reading/ }).click();
+  // The explanation shows first
+  await expect(page.getByRole("heading", { name: "VoiceLab listens through your microphone." })).toBeVisible();
+  // Allow the microphone
+  await page.getByRole("button", { name: /Allow microphone/ }).click();
+  // Recording starts
+  await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 10_000 });
+});

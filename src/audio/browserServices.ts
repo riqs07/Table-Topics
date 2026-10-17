@@ -234,6 +234,17 @@ class MediaCapture implements AudioCapture {
 export const browserRecordingServices: RecordingServices = {
   // Check for speech recognition
   speechSupported: speechRecognitionSupported,
+  // Whether the microphone is already allowed (some browsers cannot say)
+  micPermission: async () => {
+    // Older browsers have no permission check, or do not know the microphone
+    try {
+      // Ask without prompting
+      return (await navigator.permissions.query({ name: "microphone" })).state;
+    } catch {
+      // It cannot say
+      return "unknown";
+    }
+  },
   // Ask for the microphone
   openMicrophone: () => navigator.mediaDevices.getUserMedia({ audio: true }),
   // Live transcription

@@ -35,6 +35,8 @@ import type { SessionMode, TalkRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the recording saver
 import { saveRecording } from "@/data/saveRecording";
+// Load the flag for explaining the microphone first
+import { markMicExplained, readMicExplained } from "@/data/micExplained";
 // Load today's practice, for its number of steps
 import { loadDailyPlan } from "@/data/dailyPlan";
 
@@ -83,15 +85,15 @@ const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
 ];
 
 // Where the screen is in the flow
-type Stage = "ready" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
+type Stage = "ready" | "mic-primer" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
 
 // The stage for a browser without speech recognition (one shared value, so it is the same between redraws)
 const UNSUPPORTED: Stage = { problem: "speech-unsupported" };
 
 // Plain explanations for each problem
 const PROBLEM_TEXT: Record<RecordingProblem, string> = {
-  // Microphone refused
-  "microphone-blocked": "The microphone is blocked. Allow it for this site in your browser’s address bar, then try again.",
+  // Microphone refused (the steps to allow it follow on screen)
+  "microphone-blocked": "The microphone is blocked for this site, so VoiceLab cannot hear you. To allow it:",
   // No microphone found
   "no-microphone": "No microphone was found. Plug one in or check your sound settings, then try again.",
   // Browser cannot transcribe
@@ -99,6 +101,16 @@ const PROBLEM_TEXT: Record<RecordingProblem, string> = {
   // Speech service unreachable
   "speech-offline": "The browser’s speech service could not be reached. Check your connection, then try again.",
 };
+
+// How to allow a blocked microphone, by device
+const ALLOW_STEPS: ReadonlyArray<string> = [
+  // iPhone and iPad
+  "iPhone or iPad (Safari): tap aA in the address bar, then Website Settings, and set Microphone to Allow.",
+  // Android
+  "Android (Chrome): tap the icon left of the address, then Permissions, and turn on Microphone.",
+  // A computer
+  "Computer: click the icon at the left of the address bar and allow the microphone.",
+];
 
 // Number of bars in the level meter
 const METER_BARS = 24;
@@ -292,6 +304,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const supported = useSyncExternalStore(subscribeToNothing, () => services.speechSupported(), () => true);
   // Where the screen is in the flow
   const [flowStage, setStage] = useState<Stage>("ready");
+  // Whether to explain the microphone before the browser's own question (worked out once the browser can say)
+  const [needsPrimer, setNeedsPrimer] = useState(false);
+  // What to do once the microphone is allowed from the explanation
+  const afterPrimer = useRef<(() => void) | null>(null);
   // An unsupported browser always shows that problem
   const stage: Stage = supported ? flowStage : UNSUPPORTED;
   // Words heard so far
@@ -653,6 +669,71 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     navigate("/");
   }, [endThinking, finishCapture, navigate]);
 
+  // Before the first ever recording, find out whether the browser will ask for the microphone
+  useEffect(() => {
+    // Nothing to check, or already explained in this browser
+    if (!services.micPermission || readMicExplained()) return;
+    // Ignore the answer if the screen closes first
+    let cancelled = false;
+    // Ask the browser without prompting
+    void services.micPermission().then((permission) => {
+      // Explain first only when the browser is about to ask (or cannot say)
+      if (!cancelled && (permission === "prompt" || permission === "unknown")) setNeedsPrimer(true);
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [services]);
+
+  // Start this kind of session: the countdown or thinking time if it has one, otherwise recording; the explanation first if needed
+  const begin = useCallback(() => {
+    // The start itself
+    const go = think > 0 ? beginThinking : () => void start();
+    // The first ever recording: explain the microphone, and start once it is allowed
+    if (needsPrimer) {
+      // Remember the start for afterwards
+      afterPrimer.current = go;
+      // Show the explanation
+      setStage("mic-primer");
+      // Stop here
+      return;
+    }
+    // Otherwise start now
+    go();
+  }, [beginThinking, needsPrimer, start, think]);
+
+  // From the explanation: let the browser ask now, then start
+  const allowMicrophone = useCallback(async () => {
+    // Explained: never again in this browser
+    markMicExplained();
+    // Not needed again on this screen
+    setNeedsPrimer(false);
+    // Show that the browser is asking
+    setStage("starting");
+    // Ask for the microphone now, so the browser's question follows the explanation straight away
+    try {
+      // Request access
+      const stream = await services.openMicrophone();
+      // Let it go again; recording opens it afresh
+      stream.getTracks().forEach((track) => track.stop());
+    } catch (error) {
+      // A missing microphone, or a refusal
+      setStage({ problem: (error as DOMException).name === "NotFoundError" ? "no-microphone" : "microphone-blocked" });
+      // Stop here
+      return;
+    }
+    // The start that was waiting
+    const go = afterPrimer.current;
+    // Forget it
+    afterPrimer.current = null;
+    // Back to the start
+    setStage("ready");
+    // Start
+    go?.();
+  }, [services]);
+
   // Space starts and stops; Escape discards (on a computer)
   useEffect(() => {
     // Handle a key press
@@ -664,7 +745,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         // Stop the page from scrolling
         event.preventDefault();
         // Start or stop
-        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") void (think > 0 ? beginThinking() : start());
+        if (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") begin();
         // While thinking about a Record Response, start early (a Table Topic's countdown cannot be skipped)
         else if (stage === "thinking" && mode === "response") void start();
         else if (stage === "recording") void stop();
@@ -676,7 +757,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     window.addEventListener("keydown", onKey);
     // Stop listening when the screen changes
     return () => window.removeEventListener("keydown", onKey);
-  }, [beginThinking, discard, mode, stage, start, stop, think]);
+  }, [begin, discard, mode, stage, start, stop]);
 
   // The latest stop-everything function, for the cleanup below
   const finishLatest = useRef(finishCapture);
@@ -710,6 +791,30 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const showBriefing = mode === "talk" && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed");
   // This prompt's angles, for a Record Response
   const angles = mode === "response" ? (prompt?.angles ?? []) : [];
+
+  // Before the first ever recording: what the microphone is for, before the browser asks
+  if (stage === "mic-primer") {
+    // Draw the explanation on its own
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+        {/* Navigation, title, no keyboard hint */}
+        <Masthead title={title}>{""}</Masthead>
+        {/* The explanation */}
+        <section aria-label="Your microphone" className="flex flex-1 flex-col md:max-w-2xl md:pt-8">
+          {/* What it is for */}
+          <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">VoiceLab listens through your microphone.</h1>
+          {/* Where recordings go */}
+          <p className="mt-4 max-w-[48ch] text-lede">Your recordings stay on this device. Your browser will ask next: choose Allow.</p>
+          {/* Back without asking (just under the words, so the action band never covers it) */}
+          <p className="mt-4">
+            <button type="button" onClick={() => setStage("ready")} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Not now</button>
+          </p>
+          {/* Let the browser ask */}
+          <ActionButton action="Allow microphone" aside="your browser asks next" onClick={() => void allowMicrophone()} />
+        </section>
+      </main>
+    );
+  }
 
   // Draw the page
   return (
@@ -757,6 +862,20 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
         {/* Main column */}
         <div className="flex flex-1 flex-col">
+          {/* A problem, explained plainly (first in the column, so a phone shows it above any text to read) */}
+          {problem && <p role="alert" className="mt-6 max-w-[48ch] text-lede md:mt-0">{PROBLEM_TEXT[problem]}</p>}
+          {/* A blocked microphone: how to allow it on each kind of device, then try again */}
+          {problem === "microphone-blocked" && (
+            <>
+              {/* The steps */}
+              <ul aria-label="How to allow the microphone" className="mt-3 max-w-[52ch] list-disc space-y-2 pl-5 text-lede">
+                {/* One per device */}
+                {ALLOW_STEPS.map((step) => <li key={step}>{step}</li>)}
+              </ul>
+              {/* Then */}
+              <p className="mt-3 max-w-[52ch] text-lede">Then press Try again.</p>
+            </>
+          )}
           {/* Before a Table Topic: the briefing instead of the question */}
           {showBriefing && (
             <>
@@ -834,8 +953,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             </>
           )}
 
-          {/* A problem, explained plainly */}
-          {problem && <p role="alert" className="mt-6 max-w-[48ch] text-lede">{PROBLEM_TEXT[problem]}</p>}
           {/* Nothing heard */}
           {stage === "nothing-heard" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">I did not catch any words. Check that the right microphone is selected, then try again.</p>}
           {/* Too short */}
@@ -873,11 +990,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The one action for this stage */}
           {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || (problem && problem !== "speech-unsupported")) && (
             mode === "talk" ? (
-              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Show my topic"} aside={`${think} seconds to start`} onClick={beginThinking} />
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Show my topic"} aside={`${think} seconds to start`} onClick={begin} />
             ) : mode === "response" ? (
-              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${think / 60} minutes to prepare`} onClick={beginThinking} />
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${think / 60} minutes to prepare`} onClick={begin} />
             ) : (
-              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} aside={lengthText} onClick={() => void start()} />
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} aside={lengthText} onClick={begin} />
             )
           )}
           {/* Thinking about a Record Response: start speaking early */}

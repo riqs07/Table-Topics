@@ -11,7 +11,7 @@ The idea in one line: **the loop is right; smooth the edges.** The first minutes
 - In the first week, the plan's last step is a Table Topic instead of a 2 to 4 minute prepared speech. To keep progress tracking, let the first Table Topic or prepared speech become the first recording (today only a prepared speech can).
 - Evidence: reach the first moment of value fast; Speeko's whole routine is about 5 minutes.
 
-**2. Explain the microphone before the browser asks (S).**
+**2. Explain the microphone before the browser asks (S).** Built (decision 38).
 - One screen before the first ever recording: "VoiceLab listens through your microphone. Recordings stay on this phone. Your browser will ask next." Then the browser prompt.
 - If the user says no, a screen with the two taps it takes to allow it in their browser, and "Try again". Never a dead end.
 - Evidence: Google Meet cut friction this way; Babbel asks at the first speaking exercise.

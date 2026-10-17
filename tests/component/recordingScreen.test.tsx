@@ -9,7 +9,7 @@ import { hydrateRoot } from "react-dom/client";
 // Load the screen being checked
 import { RecordingScreen } from "@/components/screens/RecordingScreen";
 // Load the recording contracts
-import type { LiveText, RecordingProblem, RecordingServices } from "@/audio/services";
+import type { LiveText, MicPermission, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
@@ -31,7 +31,9 @@ afterEach(() => {
 });
 
 // Fake recording services that a check can drive by hand
-function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string } = {}) {
+function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string; permission?: MicPermission } = {}) {
+  // How many times the microphone was asked for
+  let micAsks = 0;
   // Callbacks the screen gave the transcriber
   let onText: (text: LiveText) => void = () => {};
   // Callback for problems
@@ -42,11 +44,15 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
     speechSupported: () => options.supported ?? true,
     // The microphone, or a refusal
     openMicrophone: async () => {
+      // Count the ask
+      micAsks += 1;
       // Refuse the way the browser does, if asked to
       if (options.micError) throw new DOMException("refused", options.micError);
-      // Otherwise hand back a stand-in stream
-      return {} as MediaStream;
+      // Otherwise hand back a stand-in stream with no tracks
+      return { getTracks: () => [] } as unknown as MediaStream;
     },
+    // The permission check, only when the check gives one (like a browser that can say)
+    ...(options.permission ? { micPermission: async () => options.permission ?? "unknown" } : {}),
     // A transcriber the check can drive
     createTranscriber: () => ({
       // Remember the callbacks
@@ -63,7 +69,7 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
     createCapture: () => ({ level: () => 0.5, stop: async () => new Blob(["voice"]) }),
   };
   // Hand back the services and ways to drive them
-  return { services, say: (text: LiveText) => act(() => onText(text)), fail: (problem: RecordingProblem) => act(() => onProblem(problem)) };
+  return { services, say: (text: LiveText) => act(() => onText(text)), fail: (problem: RecordingProblem) => act(() => onProblem(problem)), micAsks: () => micAsks };
 }
 
 // A clock the check controls, in milliseconds
@@ -601,10 +607,54 @@ describe("RecordingScreen", () => {
     const { repository } = draw({}, { micError: "NotAllowedError" });
     // Try to start
     fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
-    // Confirm the explanation
-    expect(await screen.findByText(/microphone is blocked/)).toBeTruthy();
+    // Confirm the explanation, with the steps to allow it and a way to try again
+    expect([!!(await screen.findByText(/microphone is blocked/)), within(screen.getByRole("list", { name: "How to allow the microphone" })).getAllByRole("listitem").length, !!screen.getByRole("button", { name: /Try again/ })]).toEqual([true, 3, true]);
     // Confirm nothing was saved
     expect(await repository.listSessions()).toHaveLength(0);
+  });
+
+  // Before the first ever recording, when the browser is about to ask: what the microphone is for, then the browser's question, then the start
+  it("explains the microphone before the browser asks, once", async () => {
+    // Each check starts with a fresh browser
+    localStorage.clear();
+    // Draw with a browser that will ask
+    const { fake } = draw({}, { permission: "prompt" });
+    // Give the browser's answer time to arrive
+    await act(async () => {});
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Confirm the explanation shows instead of recording
+    expect(await screen.findByRole("heading", { name: "VoiceLab listens through your microphone." })).toBeTruthy();
+    // Confirm the microphone was not asked for yet
+    expect(fake.micAsks()).toBe(0);
+    // Allow it
+    fireEvent.click(screen.getByRole("button", { name: /Allow microphone/ }));
+    // Recording starts
+    expect(await screen.findByRole("button", { name: /Stop/ })).toBeTruthy();
+    // Draw again, as on a later visit
+    cleanup();
+    // The later visit
+    draw({}, { permission: "prompt" });
+    // Give the browser's answer time to arrive
+    await act(async () => {});
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Confirm recording starts with no explanation this time
+    expect([!!(await screen.findByRole("button", { name: /Stop/ })), screen.queryByRole("heading", { name: "VoiceLab listens through your microphone." })]).toEqual([true, null]);
+  });
+
+  // A browser that already allows the microphone needs no explanation
+  it("skips the explanation when the microphone is already allowed", async () => {
+    // A fresh browser
+    localStorage.clear();
+    // Draw with the microphone allowed
+    draw({}, { permission: "granted" });
+    // Give the browser's answer time to arrive
+    await act(async () => {});
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Confirm recording starts straight away
+    expect(await screen.findByRole("button", { name: /Stop/ })).toBeTruthy();
   });
 
   // A browser that cannot transcribe is named, and recording is not offered

@@ -35,10 +35,15 @@ export interface AudioCapture {
   stop(): Promise<Blob>;
 }
 
+// Whether the browser already lets this site use the microphone ("unknown" when it cannot say)
+export type MicPermission = "granted" | "denied" | "prompt" | "unknown";
+
 // Everything the recording screen needs from the browser
 export interface RecordingServices {
   // Whether this browser can turn speech into text
   speechSupported(): boolean;
+  // Whether the microphone is already allowed, without asking (optional: without it, no explanation is shown first)
+  micPermission?(): Promise<MicPermission>;
   // Ask for the microphone (throws if refused or missing)
   openMicrophone(): Promise<MediaStream>;
   // Make a live transcriber
