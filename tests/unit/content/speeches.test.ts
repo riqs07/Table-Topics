@@ -25,6 +25,14 @@ describe("full speeches", () => {
     expect(marked).toEqual([]);
   });
 
+  // Nothing left over from the copied pages: no end markers, source notes, or stray spaces at either end
+  it("contains no leftovers from the copied pages", () => {
+    // Parts with a leftover
+    const leftovers = FULL_SPEECHES.flatMap((speech) => speech.parts.map((part, index) => ({ id: `${speech.id}-${index + 1}`, part })).filter(({ part }) => /NEWLINE|source for this text/i.test(part) || part !== part.trim()).map(({ id }) => id));
+    // Confirm none
+    expect(leftovers).toEqual([]);
+  });
+
   // Ids are unique and do not clash with the short passages
   it("has unique ids that are not passage ids", () => {
     // All ids
