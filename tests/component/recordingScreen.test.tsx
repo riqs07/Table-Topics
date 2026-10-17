@@ -418,6 +418,18 @@ describe("RecordingScreen", () => {
     expect((await repository.listSessions())[0]?.fillersPerMinute).toBe(0);
   });
 
+  // On a retry, your own note comes first, with the coach's cue under it
+  it("shows your own note before the coach's cue on a retry", async () => {
+    // A repository with a first try that has notes and feedback
+    const repository = createRepository(new MemoryStore());
+    // The first try
+    await repository.saveSession(makeSession({ id: "first", promptId: PROMPTS[0]!.id, selfReview: { worked: "", change: "Start without the um", tags: [], skipped: false, savedAt: "2026-10-16T10:00:00.000Z" }, feedback: { keep: "k", change: "c", retryCue: "Breathe, then begin." }, feedbackStatus: "done" }));
+    // Draw the retry
+    draw({ retryOf: "first", repository });
+    // Confirm both, yours first
+    expect([!!(await screen.findByText("Start without the um")), !!screen.getByText("Coach: Breathe, then begin.")]).toEqual([true, true]);
+  });
+
   // A pause drill shows its pause marks as visible pause signs, not slashes
   it("shows the pause marks in a pause drill", async () => {
     // Draw a pause drill

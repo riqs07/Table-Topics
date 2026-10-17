@@ -535,6 +535,16 @@ describe("SessionScreen", () => {
       expect([!!(await screen.findByText(/not on this device, so there is nothing to play/)), (screen.getByRole("button", { name: /Save my notes/ }) as HTMLButtonElement).disabled]).toEqual([true, false]);
     });
 
+    // Your tags are checked against the numbers
+    it("shows where your notes matched the numbers", async () => {
+      // A reviewed session tagged "too fast" at 182 words a minute
+      const session = makeSession({ id: "s1", wordsPerMinute: 182, fillersPerMinute: 0, selfReview: { worked: "", change: "Slow down", tags: ["too-fast"], skipped: false, savedAt: "2026-10-16T10:00:00.000Z" }, feedback: FEEDBACK, feedbackStatus: "done" });
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+      // Confirm the comparison
+      expect(within(await screen.findByRole("list", { name: "Your notes against the numbers" })).getByText(/^You said too fast, and it was: 182 words a minute/)).toBeTruthy();
+    });
+
     // Older sessions skip the step
     it("does not ask on older sessions", async () => {
       // A session from before the step existed

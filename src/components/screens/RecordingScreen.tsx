@@ -291,6 +291,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [levels, setLevels] = useState<number[]>(() => Array(METER_BARS).fill(0));
   // On a retry, the cue from last time's feedback
   const [retryCue, setRetryCue] = useState<string | null>(null);
+  // On a retry, what the user wrote they would change last time
+  const [ownNote, setOwnNote] = useState<string | null>(null);
   // The live transcriber, audio capture, start time, and timer, kept between renders
   const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; spokenTimes: number[]; scriptTimes: (number | null)[] } | null>(null);
   // While reading, the number of the next word to read (every word before it is lit up)
@@ -398,8 +400,12 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     let cancelled = false;
     // Read the first try
     repo.getSession(retryOf).then((original) => {
-      // Keep its cue if the screen is still open
-      if (!cancelled) setRetryCue(original?.feedback?.retryCue ?? null);
+      // Stop if the screen closed
+      if (cancelled) return;
+      // Keep its cue
+      setRetryCue(original?.feedback?.retryCue ?? null);
+      // And the user's own note, if they wrote one
+      setOwnNote(original?.selfReview?.change || null);
     });
     // Mark as closed when leaving
     return () => {
@@ -774,12 +780,14 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* Thinking about a Record Response: the hints */}
           {thinking && angles.length > 0 && <Hints angles={angles} compact={false} />}
           {/* On a retry, the cue to carry in */}
-          {!recording && retryCue && (
+          {!recording && (retryCue || ownNote) && (
             <div className="mt-6 max-w-md border-y border-ink py-4">
               {/* Small heading */}
               <p className="text-footnote italic text-ink-muted">Before you start</p>
-              {/* The cue */}
-              <p className="mt-1 font-display text-cue">{retryCue}</p>
+              {/* The user's own note first, in their words */}
+              {ownNote && <p className="mt-1 font-display text-cue">{ownNote}</p>}
+              {/* The coach's cue, under it when both exist */}
+              {retryCue && <p className={ownNote ? "mt-2 text-lede text-ink-muted" : "mt-1 font-display text-cue"}>{ownNote ? `Coach: ${retryCue}` : retryCue}</p>}
             </div>
           )}
 

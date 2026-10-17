@@ -18,6 +18,8 @@ import { useAudioUrl } from "@/components/screens/useAudioUrl";
 import { ReviewStep } from "@/components/screens/ReviewStep";
 // Load the quick tags, for showing the user's notes
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
+// Load the comparison of notes with the numbers
+import { compareNotes } from "@/core/notesCheck";
 // Load the sentence helpers
 import { dayLabel, formatRate } from "@/core/copy";
 // Load the findings from word times
@@ -277,6 +279,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const review = session.selfReview && !session.selfReview.skipped ? session.selfReview : null;
   // The tag words
   const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
+  // The notes against the numbers
+  const checks = compareNotes(session);
   // A new first try asks the user to listen back and write notes before anything else
   if (session.selfReview === null) {
     // The listening step in place of the feedback
@@ -348,6 +352,16 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
               {review.change && <p className="mt-1"><em>Change.</em> {review.change}</p>}
               {/* The tags */}
               {tagWords.length > 0 && <p className="mt-1 text-footnote text-ink-muted">Tagged: {tagWords.join(", ")}.</p>}
+              {/* The notes against the numbers */}
+              {checks.length > 0 && (
+                <ul aria-label="Your notes against the numbers" className="mt-2 text-footnote">
+                  {/* Each comparison, marked by whether it matched */}
+                  {checks.map((check) => (
+                    // One comparison
+                    <li key={check.text} data-kind={check.kind} className={`mt-1 border-l-2 pl-2 ${check.kind === "matched" ? "border-accent" : "border-rule text-ink-muted"}`}>{check.text}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
