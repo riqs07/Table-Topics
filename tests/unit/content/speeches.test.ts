@@ -9,10 +9,10 @@ import { PASSAGES } from "@/content/prompts";
 
 // Group the checks about the full speeches
 describe("full speeches", () => {
-  // Every part fits the two-minute limit (280 words, with room for one long paragraph) and is not a fragment
-  it("keeps every part between about 30 seconds and 2 minutes", () => {
+  // Every part fits the one-minute limit (140 words, with room for one sentence that cannot be split) and is not a fragment
+  it("keeps every part between about 15 seconds and a minute", () => {
     // Parts outside the range
-    const outside = FULL_SPEECHES.flatMap((speech) => speech.parts.map((part, index) => ({ id: `${speech.id}-${index + 1}`, words: part.split(/\s+/).length })).filter((part) => part.words < 60 || part.words > 300));
+    const outside = FULL_SPEECHES.flatMap((speech) => speech.parts.map((part, index) => ({ id: `${speech.id}-${index + 1}`, words: part.split(/\s+/).length })).filter((part) => part.words < 35 || part.words > 165));
     // Confirm none
     expect(outside).toEqual([]);
   });

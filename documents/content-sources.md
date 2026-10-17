@@ -28,4 +28,4 @@ The short readings written earlier from memory were compared with these texts. T
 
 Still from memory, to check against a published source before relying on them: the Gettysburg Address, Susan B. Anthony's speech, Chief Joseph's surrender, "The Strenuous Life", Kennedy at Rice University, and the short readings with no full speech above.
 
-The generator that cleans and splits the texts lives outside the repository; the result is `src/content/speeches.ts`. Parts are split at paragraph breaks into at most about two minutes (280 words at 140 words a minute); a paragraph too long for one part is split between sentences.
+The generator that cleans and splits the texts lives outside the repository; the result is `src/content/speeches.ts`. Parts are split at paragraph breaks into about a minute or less (140 words at 140 words a minute), so reading, listening back and trying again fits in about three minutes. A paragraph too long for one part is split between sentences, and a sentence too long for one part after a semicolon or comma; a very short part is joined to a neighbour when the two stay near a minute.

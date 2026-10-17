@@ -240,8 +240,8 @@ test("Whole speech: open it from Skills, read part 1, then go on to part 2", asy
   await page.goto("/skills");
   // Open Lincoln's second inaugural
   await page.getByRole("list", { name: "Whole speeches, a part at a time" }).getByRole("link", { name: /Second Inaugural Address/ }).click();
-  // Its page lists three parts
-  await expect(page.getByRole("list", { name: "Parts" }).getByRole("link")).toHaveCount(3);
+  // Its page lists seven parts of about a minute
+  await expect(page.getByRole("list", { name: "Parts" }).getByRole("link")).toHaveCount(7);
   // Read the next part (part 1)
   await page.locator("[data-action-band]").click();
   // Start reading
@@ -257,7 +257,7 @@ test("Whole speech: open it from Skills, read part 1, then go on to part 2", asy
   // Go on to part 2
   await page.getByRole("link", { name: "Read part 2" }).click();
   // Part 2 opens
-  await expect(page.getByText("Second Inaugural Address, part 2 of 3")).toBeVisible();
+  await expect(page.getByText("Second Inaugural Address, part 2 of 7")).toBeVisible();
 });
 
 // Storage left by another project at the same address (bugs B2 and B4)

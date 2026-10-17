@@ -450,7 +450,7 @@ describe("SessionScreen", () => {
     // Part 1 and the last part of Lincoln's second inaugural, read
     const first = makeSession({ id: "a", mode: "read", promptId: "lincoln-second-inaugural-1", feedback: FEEDBACK, feedbackStatus: "done" });
     // The last part
-    const last = makeSession({ id: "b", mode: "read", promptId: "lincoln-second-inaugural-3", feedback: FEEDBACK, feedbackStatus: "done" });
+    const last = makeSession({ id: "b", mode: "read", promptId: "lincoln-second-inaugural-7", feedback: FEEDBACK, feedbackStatus: "done" });
     // A repository with both
     const repository = await repositoryWith(first, last);
     // Draw the first

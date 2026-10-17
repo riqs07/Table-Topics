@@ -1,5 +1,5 @@
 "use client";
-// One full speech: its parts in order, each about two minutes or less, marked done or next, with the next one to read
+// One full speech: its parts in order, each about a minute, marked done or next, with the next one to read
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
