@@ -2,7 +2,7 @@
 
 **Purpose:** One place for every decision about what VoiceLab is, how it is built, and the rules we build by.
 **Audience:** A human inspector. Each file is short and can be read on its own.
-**Last updated:** 2026-10-15
+**Last updated:** 2026-10-17
 
 ## What VoiceLab is (30 seconds)
 
@@ -24,6 +24,10 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 10 | [risks.md](risks.md) | What do we expect to go wrong, and what is the plan? | 3 min |
 | 11 | [ai-development-playbook.md](ai-development-playbook.md) | What have we learned about building with an AI agent, and which rules carry over to the next project? | 5 min |
 | 12 | [plan-public-speaking.md](plan-public-speaking.md) | What is being built next to make VoiceLab a public-speaking app, and in what order? | 6 min |
+| 13 | [plan-daily-practice.md](plan-daily-practice.md) | How does today's practice work, and what did the user decide? | 2 min |
+| 14 | [content-sources.md](content-sources.md) | Where do the speech texts come from, and how were they checked? | 2 min |
+| 15 | [research/ux-research-2026-10.md](research/ux-research-2026-10.md) | What did the UX review and research find, and how strong is the evidence? | 6 min |
+| 16 | [design/ux-improvements-plan.md](design/ux-improvements-plan.md) | Which design changes follow from the UX research, in what order? | 4 min |
 
 ## Inspector checklist
 

@@ -93,6 +93,21 @@ Things that would have prevented B2 to B4 if done on day one:
 - **Mark MVP compromises as temporary.** "Good enough for launch, revisit later" goes in the roadmap, so it doesn't harden into a permanent decision by accident.
 - **Keys and secrets never go in the chat.** They go in `.env.local` and the hosting dashboard only.
 
+## 6a. UX lessons that carry over (from the October 2026 research)
+
+What a UX review near the MVP turned up, written as rules for the next app. Evidence and sources are in [research/ux-research-2026-10.md](research/ux-research-2026-10.md).
+
+- **Walk the app as a brand-new user on a phone before calling it an MVP.** Screenshot every screen at phone size, as it first appears (not full-page captures, which hide what fixed bars cover). The agent found eleven problems in one pass that no test would catch.
+- **Get to the first real use within a minute.** Onboarding questions should lead into the core action, not to a menu.
+- **Explain a permission in your own words before the browser asks.** A declined browser prompt is hard to get back.
+- **Never end a session on a number that reads as failure.** Lead with what happened (time spoken, words read), then one task-focused suggestion. More feedback is not always better.
+- **Setup details are not user interface.** Passphrases, sync queues and server settings belong behind an "advanced" section, and the core loop must still give value when they are missing.
+- **Five bottom tabs at most, always labelled.** Hide them while the user is doing the main task.
+- **Show keyboard hints only on devices with a keyboard.**
+- **Measure gently and let people opt out.** Speech-recognition counts are rough for accents and stammered speech; offer an off switch and kind wording.
+- **Habits: small, daily, celebrated at once, and forgiving.** A broken streak drives people away; count days in a week instead.
+- **Mark research as strong or anecdotal.** Reviews of competitor apps are anecdote; build on studies and platform guidelines first.
+
 ## 7. Open improvements in this project
 
 Concrete steps that follow from the rules above, not yet done:
