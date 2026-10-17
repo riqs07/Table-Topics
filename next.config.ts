@@ -5,6 +5,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Turn on extra React checks that catch bugs during development
   reactStrictMode: true,
+  // Let the development server be opened through a Cloudflare quick tunnel, so the app can be tried on a phone over HTTPS (development only)
+  allowedDevOrigins: ["*.trycloudflare.com"],
   // Security headers (from the Next.js PWA guide)
   async headers() {
     // One rule for every page, one for the service worker
