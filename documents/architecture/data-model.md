@@ -35,7 +35,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | questions | On a rehearsal or a response: likely audience questions for Q&A practice, suggested by the coach or typed by the user. Usually missing |
 | question | On a Q&A answer (`mode` `qa`, whose `promptId` is the session the question came from): the question it answered |
 | sectionIndex | For a rehearsal of one section of a talk: which section (counted from 0). Missing or empty for a whole run and for every other mode |
-| audioKey | Link to the saved audio, or empty if pruned |
+| audioKey | Link to the saved audio, or empty if pruned. Also empty when the user did not keep the recording after listening back (decision 32) |
 
 ### Challenge (one per week)
 

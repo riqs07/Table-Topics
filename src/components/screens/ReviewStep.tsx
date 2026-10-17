@@ -87,6 +87,8 @@ export function ReviewStep({ repo, session, onSaved }: { repo: Repository; sessi
   const [tags, setTags] = useState<ReadonlySet<string>>(new Set());
   // A problem saving, if any
   const [problem, setProblem] = useState("");
+  // Whether to keep the recording to compare with later tries (the first recording is always kept)
+  const [keep, setKeep] = useState(false);
   // Whether enough has been heard (or there is nothing to hear)
   const listened = audio.missing || listenedEnough(heard, session.durationSec);
   // Whether this is a long recording
@@ -125,9 +127,15 @@ export function ReviewStep({ repo, session, onSaved }: { repo: Repository; sessi
       // The session as it is now (feedback may have arrived meanwhile)
       const latest = (await repo.getSession(session.id)) ?? session;
       // With the notes
-      const updated: SessionRecord = { ...latest, selfReview: { worked: skipped ? "" : worked.trim(), change: skipped ? "" : change.trim(), tags: skipped ? [] : [...tags], skipped, savedAt: new Date().toISOString() } };
-      // Save it
+      const reviewed: SessionRecord = { ...latest, selfReview: { worked: skipped ? "" : worked.trim(), change: skipped ? "" : change.trim(), tags: skipped ? [] : [...tags], skipped, savedAt: new Date().toISOString() } };
+      // The audio to discard: unless kept, or the first recording, which is always kept
+      const discard = !keep && !latest.isBaseline ? latest.audioKey : null;
+      // Without its audio, if discarded
+      const updated: SessionRecord = discard ? { ...reviewed, audioKey: null } : reviewed;
+      // Save it first, so the session never points at missing audio
       await repo.saveSession(updated);
+      // Then delete the recording
+      if (discard) await repo.deleteAudio(discard);
       // Open the feedback
       onSaved(updated);
       // From the top of the page
@@ -189,6 +197,23 @@ export function ReviewStep({ repo, session, onSaved }: { repo: Repository; sessi
       </div>
       {/* A saving problem */}
       {problem && <p role="alert" className="mt-4 text-lede">{problem}</p>}
+      {/* Keep the recording to compare later, or let it go once the notes are saved */}
+      {session.audioKey && (session.isBaseline ? (
+        // The first recording stays, as the one progress is measured against
+        <p className="mt-6 text-footnote italic text-ink-muted">This is your first recording, so it is kept to compare with later.</p>
+      ) : (
+        <label className="mt-6 flex min-h-11 items-start gap-3">
+          {/* The choice */}
+          <input type="checkbox" checked={keep} onChange={(event) => setKeep(event.target.checked)} className="mt-1 size-5 flex-none accent-accent" />
+          {/* What it does */}
+          <span>
+            {/* The choice in words */}
+            Keep this recording to compare with later tries.
+            {/* What happens otherwise */}
+            <span className="block text-footnote text-ink-muted">Otherwise it is deleted from this device when you save your notes. The transcript, numbers and notes stay.</span>
+          </span>
+        </label>
+      ))}
       {/* Skipping, kept small */}
       <p className="mt-6 mb-6">
         {/* Skip this time */}

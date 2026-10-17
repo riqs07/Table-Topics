@@ -26,6 +26,8 @@ export interface Repository {
   getAudio(key: string): Promise<Blob | undefined>;
   // Delete audio beyond the retention limit (never the baseline's); returns how many were removed
   pruneAudio(): Promise<number>;
+  // Delete one recording by key
+  deleteAudio(key: string): Promise<void>;
   // Load settings, or defaults based on "now" if none are saved
   getSettings(now: Date): Promise<SettingsRecord>;
   // Save settings
@@ -74,6 +76,8 @@ export function createRepository(store: Store): Repository {
     saveAudio: (key, audio) => store.put("audio", key, audio),
     // Load a recording by key
     getAudio: (key) => store.get("audio", key),
+    // Delete a recording by key
+    deleteAudio: (key) => store.delete("audio", key),
 
     // Delete audio for sessions past the retention limit
     async pruneAudio() {

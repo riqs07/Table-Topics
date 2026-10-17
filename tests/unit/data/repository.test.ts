@@ -28,6 +28,20 @@ const day = (n: number) => new Date(Date.UTC(2026, 9, n, 12)).toISOString();
 
 // Group the checks about sessions
 describe("sessions", () => {
+  // One recording can be deleted on its own
+  it("deletes one recording", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Two recordings
+    await repository.saveAudio("a", new Blob(["a"]));
+    // (and the second)
+    await repository.saveAudio("b", new Blob(["b"]));
+    // Delete the first
+    await repository.deleteAudio("a");
+    // Confirm only the first is gone
+    expect([await repository.getAudio("a"), !!(await repository.getAudio("b"))]).toEqual([undefined, true]);
+  });
+
   // A saved session can be loaded by id
   it("saves and loads a session", async () => {
     // Save a session

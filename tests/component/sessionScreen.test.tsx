@@ -571,6 +571,56 @@ describe("SessionScreen", () => {
       expect([before, body.notes?.change]).toEqual([0, "Slow down"]);
     });
 
+    // Unless kept, the recording is deleted once the notes are saved; the session stays
+    it("deletes the recording after your notes unless you keep it", async () => {
+      // The repository
+      const repository = await withAudio();
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+      // The keep box, off by default
+      const box = (await screen.findByLabelText(/Keep this recording/)) as HTMLInputElement;
+      // Was it off?
+      const before = box.checked;
+      // Skip (which saves too)
+      await userEvent.click(screen.getByRole("button", { name: "Skip this time" }));
+      // Wait for the feedback
+      await screen.findByText(FEEDBACK.change);
+      // Confirm it was off, the audio is gone, and the session no longer points at it
+      expect([before, await repository.getAudio("s1"), (await repository.getSession("s1"))?.audioKey]).toEqual([false, undefined, null]);
+    });
+
+    // Ticking the box keeps it
+    it("keeps the recording when you choose to", async () => {
+      // The repository
+      const repository = await withAudio();
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+      // Keep it
+      await userEvent.click(await screen.findByLabelText(/Keep this recording/));
+      // Skip
+      await userEvent.click(screen.getByRole("button", { name: "Skip this time" }));
+      // Wait for the feedback
+      await screen.findByText(FEEDBACK.change);
+      // Confirm the audio and its link are still there
+      expect([!!(await repository.getAudio("s1")), (await repository.getSession("s1"))?.audioKey]).toEqual([true, "s1"]);
+    });
+
+    // The first recording is always kept, and says so instead of asking
+    it("always keeps the first recording", async () => {
+      // The repository, holding a first recording
+      const repository = await withAudio({ ...fresh(), isBaseline: true });
+      // Draw the screen
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+      // Confirm the note, no box
+      expect([!!(await screen.findByText(/This is your first recording, so it is kept/)), screen.queryByLabelText(/Keep this recording/)]).toEqual([true, null]);
+      // Skip
+      await userEvent.click(screen.getByRole("button", { name: "Skip this time" }));
+      // Wait for the feedback
+      await screen.findByText(FEEDBACK.change);
+      // Confirm the audio is still there
+      expect(!!(await repository.getAudio("s1"))).toBe(true);
+    });
+
     // Older sessions skip the step
     it("does not ask on older sessions", async () => {
       // A session from before the step existed
