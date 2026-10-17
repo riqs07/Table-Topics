@@ -232,8 +232,8 @@ test("Read aloud: words light up as they are read, then the reading is saved", a
   await page.getByRole("button", { name: /Stop/ }).click();
   // Skip listening back this time
   await page.getByRole("button", { name: "Skip this time" }).click({ timeout: 15_000 });
-  // The saved reading says how much was read
-  await expect(page.getByTestId("reading-headline")).toHaveText(/^You read \d+% of the words\.$/, { timeout: 15_000 });
+  // The saved reading says how far it got (stopped early, so not a low percentage)
+  await expect(page.getByTestId("reading-headline")).toHaveText("You read the first 19 words.", { timeout: 15_000 });
 });
 
 // A whole speech in parts: from Skills to the speech, read part 1, and go on to part 2
@@ -294,8 +294,10 @@ test("Today's practice: start, move through both steps, finish", async ({ page }
   await page.getByRole("button", { name: /Stop/ }).click();
   // Finish
   await page.getByRole("button", { name: /^Finish today’s practice/ }).click({ timeout: 15_000 });
-  // Today says the practice is done
+  // Today says the practice is done, leading with the time spoken
   await expect(page.getByRole("heading", { name: "Done for today." })).toBeVisible();
+  // The summary line
+  await expect(page.getByText(/^You spoke for .+ today\. First day this week\.$/)).toBeVisible();
 });
 
 // Storage left by another project at the same address (bugs B2 and B4)

@@ -41,6 +41,29 @@
   --font-display: var(--vl-font-display);
 }
 
+/* The small moment when today's practice is done: each tick grows into place (used as motion-safe:animate-tick-in) */
+@theme {
+  /* Grow in over 0.4 seconds, holding the end state */
+  --animate-tick-in: vl-tick-in 400ms ease-out both;
+  /* From small and clear to full size */
+  @keyframes vl-tick-in {
+    /* Start */
+    from {
+      /* Invisible */
+      opacity: 0;
+      /* Smaller */
+      transform: scale(0.6);
+    }
+    /* End */
+    to {
+      /* Visible */
+      opacity: 1;
+      /* Full size */
+      transform: scale(1);
+    }
+  }
+}
+
 /* Named type sizes for the script-page direction (used as text-footnote, text-prompt, ...) */
 @theme {
   /* Footnotes and asides */

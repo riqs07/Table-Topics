@@ -20,7 +20,18 @@ export interface ReadingCheck {
   extra: number;
   // Extra words that repeat the word just before them
   repeated: number;
+  // How many words of the text there are up to the last one heard (where the reader stopped)
+  readTo: number;
+  // Whether the reading stopped well before the end (so the rest was not attempted, rather than missed)
+  stoppedEarly: boolean;
+  // Words not heard before the point where the reader stopped
+  missedWithin: number;
 }
+
+// A reading counts as stopped early when at least this many words were left after the last one heard
+const STOPPED_EARLY_WORDS = 8;
+// ...and they were at least this share of the text
+const STOPPED_EARLY_SHARE = 0.1;
 
 // Reduce a word to letters, digits and apostrophes in lower case, so punctuation and capitals do not matter
 export function normalize(word: string): string {
@@ -94,6 +105,10 @@ export function alignReading(text: string, spoken: string): ReadingCheck {
   const { read, matched } = matchWords(expected, heard);
   // Count the text words heard
   const readCount = read.filter(Boolean).length;
+  // Words up to the last one heard
+  const readTo = read.lastIndexOf(true) + 1;
+  // Words left after it
+  const left = expected.length - readTo;
   // Extra words heard
   const extraIndexes = heard.map((_, index) => index).filter((index) => !matched[index]);
   // Hand back the words and counts
@@ -108,5 +123,11 @@ export function alignReading(text: string, spoken: string): ReadingCheck {
     extra: extraIndexes.length,
     // Extra words that repeat the one before
     repeated: extraIndexes.filter((index) => index > 0 && heard[index] === heard[index - 1]).length,
+    // Where the reader stopped
+    readTo,
+    // Well before the end
+    stoppedEarly: left >= STOPPED_EARLY_WORDS && left >= expected.length * STOPPED_EARLY_SHARE,
+    // Words not heard up to that point
+    missedWithin: readTo - readCount,
   };
 }

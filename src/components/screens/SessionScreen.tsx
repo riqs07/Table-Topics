@@ -216,8 +216,8 @@ function MarkedPassage({ check }: { check: ReadingCheck }) {
       {check.words.map((word, index) => (
         // A single word
         <span key={index}>
-          {/* The word, marked */}
-          <span data-read={word.read ? "true" : "false"} className={word.read ? "" : "text-filler line-through decoration-1"}>{word.text}</span>
+          {/* The word, marked: struck through if not heard, only dimmed after where a reading stopped early */}
+          {check.stoppedEarly && index >= check.readTo ? <span data-read="not-reached" className="text-ink-muted">{word.text}</span> : <span data-read={word.read ? "true" : "false"} className={word.read ? "" : "text-filler line-through decoration-1"}>{word.text}</span>}
           {/* The space after it */}
           {" "}
         </span>
@@ -323,7 +323,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* The words: the passage marked for a reading, otherwise the transcript */}
           <div className="mt-3 max-w-[46ch]">{reading ? <MarkedPassage check={reading} /> : <Transcript text={session.transcript} />}</div>
           {/* For a reading, what the marks mean */}
-          {reading && <p className="mt-3 max-w-[46ch] text-footnote italic text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.</p>}
+          {reading && <p className="mt-3 max-w-[46ch] text-footnote italic text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.{reading.stoppedEarly ? " Dimmed words come after where you stopped." : ""}</p>}
         </div>
         {/* The notes (first on a phone, margin on a computer) */}
         <aside className="order-first flex flex-1 flex-col md:order-2">
@@ -340,9 +340,9 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {reading ? (
             <>
               {/* How much of the passage was read */}
-              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? `You covered ${reading.percentRead}% of your script.` : `You read ${reading.percentRead}% of the words.`}</p>
+              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</p>
               {/* The detail */}
-              <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? `You read ${reading.percentRead}% of the words; ` : ""}{reading.missed} not heard, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
+              <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
               {/* A lesson's tip, as a reminder */}
               {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
             </>

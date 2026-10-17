@@ -336,15 +336,15 @@ describe("SessionScreen", () => {
   });
 
   // A read-aloud session shows how much of the text was read, with skipped words marked on the passage
-  it("shows how much of the passage was read", async () => {
+  it("shows how far a reading stopped early got, without counting the rest as missed", async () => {
     // A reading of the start of the Gettysburg Address that skipped "seven"
     const session = makeSession({ id: "r", mode: "read", promptId: "r001", transcript: "four score and years ago", feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="r" repository={await repositoryWith(session)} now={NOW} />);
-    // Confirm the title and that the headline gives a percentage
-    expect([!!(await screen.findByText("Read aloud")), /^You read \d+% of the words\.$/.test(screen.getByTestId("reading-headline").textContent ?? "")]).toEqual([true, true]);
-    // Confirm "seven" is marked as not heard
-    expect(screen.getByText("seven").getAttribute("data-read")).toBe("false");
+    // Confirm the title, the headline, and the misses counted only in the stretch read
+    expect([!!(await screen.findByText("Read aloud")), screen.getByTestId("reading-headline").textContent, !!screen.getByText(/^1 not heard in that stretch/)]).toEqual([true, "You read the first 6 words.", true]);
+    // Confirm "seven" is marked as not heard, and the words after the stop only as not reached
+    expect([screen.getByText("seven").getAttribute("data-read"), screen.getByText("fathers").getAttribute("data-read")]).toEqual(["false", "not-reached"]);
   });
 
   // Sessions with loudness readings say how the pauses went
@@ -382,7 +382,7 @@ describe("SessionScreen", () => {
     // Draw the screen
     render(<SessionScreen sessionId="h" repository={repository} now={NOW} />);
     // Confirm the title and the headline
-    expect([!!(await screen.findByText("Rehearsal")), /^You covered \d+% of your script\.$/.test((await screen.findByTestId("reading-headline")).textContent ?? "")]).toEqual([true, true]);
+    expect([!!(await screen.findByText("Rehearsal")), (await screen.findByTestId("reading-headline")).textContent]).toEqual([true, "You covered the first 3 words of your script."]);
   });
 
   // A lesson shows its own check and a reminder of the tip

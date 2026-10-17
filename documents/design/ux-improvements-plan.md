@@ -16,7 +16,7 @@ The idea in one line: **the loop is right; smooth the edges.** The first minutes
 - If the user says no, a screen with the two taps it takes to allow it in their browser, and "Try again". Never a dead end.
 - Evidence: Google Meet cut friction this way; Babbel asks at the first speaking exercise.
 
-**3. Never end on a number that reads as failure (M).**
+**3. Never end on a number that reads as failure (M).** Built (decision 39).
 - A reading stopped early: "You read the first 26 words", and "not heard" counts only within the stretch read.
 - "Done for today": lead with time spoken ("You spoke for 3 minutes 20 today"), then each step's own note, or a neutral fact. No filler counts on Today.
 - A small moment when the day is done: the ticks fill in one by one, with a single line ("Fourth day this week"). Still under reduced motion.

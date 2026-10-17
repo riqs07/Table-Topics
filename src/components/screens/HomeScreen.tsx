@@ -28,8 +28,12 @@ import { loadDailyPlan, type LoadedPlan } from "@/data/dailyPlan";
 import { planHref, planMinutes } from "@/core/dailyPlan";
 // Load the done and next marks on a path
 import { PathMark } from "@/components/script/PathMark";
-// Load the rate formatter, for the summary
-import { formatRate } from "@/core/copy";
+// Load the day's summary wording
+import { spokenSentence, stepNote, weekSentence } from "@/core/daySummary";
+// Load the calendar-day key
+import { dayKey } from "@/core/dates";
+// Load the once-a-day completion flag, kept in this browser
+import { firstFinishToday } from "@/data/dayCelebrated";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 
@@ -59,6 +63,10 @@ interface HomeData {
   showWelcome: boolean;
   // Today's practice
   plan: LoadedPlan;
+  // Which day of the week's practice today is, such as "Fourth day this week."
+  weekLine: string;
+  // Whether to play the small completion moment (the first time Today shows the day done)
+  celebrate: boolean;
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
@@ -73,6 +81,8 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
   await repository.saveSettings({ ...settings, focusIndex: active.focusIndex, focusStartedOn: active.focusStartedOn.toISOString() });
   // The saved talks
   const talks = await repository.listTalks();
+  // Today's practice (after the focus is saved, so both agree)
+  const plan = await loadDailyPlan(repository, now);
   // Put everything together
   return {
     // How many sessions there are
@@ -85,8 +95,12 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     focus: active.focus,
     // A first visit: nothing saved, and the welcome not yet answered in this browser
     showWelcome: sessions.length === 0 && talks.length === 0 && !readWelcomeSeen(),
-    // Today's practice (after the focus is saved, so both agree)
-    plan: await loadDailyPlan(repository, now),
+    // Today's practice
+    plan,
+    // The days practised this week
+    weekLine: weekSentence(sessions, now),
+    // The moment, once a day, when every step is done
+    celebrate: plan.done.length > 0 && plan.done.every(Boolean) && firstFinishToday(dayKey(now)),
   };
 }
 
@@ -196,16 +210,18 @@ export function HomeScreen(props: ScreenProps) {
               <p className="text-footnote italic text-ink-muted">Today’s practice · about {planMinutes(plan.steps)} minutes with listening back</p>
               {/* Where things stand, set like a headline */}
               <h1 className="mt-2 font-display text-prompt tracking-tight md:text-prompt-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? (plan.steps.length === 2 ? "Two short steps." : "Three short steps.") : "Pick up where you left off."}</h1>
+              {/* Once done: the time spoken today, and which day of the week this is */}
+              {nextIndex === -1 && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)} {data.weekLine}</p>}
               {/* The steps */}
               <ol aria-label="Steps" className="mt-4">
                 {/* Each step */}
                 {plan.steps.map((step, index) => {
                   // Done, next, or still to come
                   const mark = plan.done[index] ? "done" : index === nextIndex ? "next" : "open";
-                  // When done, a line from today's session: the user's note, or the filler count
+                  // When done, a line from today's session: the user's note, or how long they spoke (never a filler count)
                   const session = plan.done[index] ? plan.today.find((item) => item.mode === step.mode && item.promptId === step.promptId) : undefined;
                   // That line
-                  const result = session ? (session.selfReview?.change || `${formatRate(session.fillersPerMinute)} fillers a minute`) : null;
+                  const result = session ? stepNote(session) : null;
                   // One step
                   return (
                     <li key={step.kind} className="relative">
@@ -213,8 +229,8 @@ export function HomeScreen(props: ScreenProps) {
                       {index < plan.steps.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
                       {/* The whole row starts the step */}
                       <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
-                        {/* Its mark */}
-                        <PathMark mark={mark} number={index + 1} />
+                        {/* Its mark (when the day is first done, the ticks grow in one by one, unless motion is unwelcome) */}
+                        <span className={data?.celebrate ? "motion-safe:animate-tick-in" : undefined} style={data?.celebrate ? { animationDelay: `${index * 300}ms` } : undefined}><PathMark mark={mark} number={index + 1} /></span>
                         {/* What it is */}
                         <span className="min-w-0 flex-1">
                           {/* Its name and time */}

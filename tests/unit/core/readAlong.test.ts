@@ -50,6 +50,22 @@ describe("alignReading", () => {
     expect(result.words.filter((word) => word.read).length).toBe(4);
   });
 
+  // Stopping well before the end: where the reader stopped, and only the misses before it
+  it("notes where an early stop was, counting misses only before it", () => {
+    // The first five words, with "score" missed (eight of thirteen left)
+    const result = alignReading(TEXT, "four and seven years");
+    // Confirm the stop, the misses within the stretch, and all misses
+    expect([result.stoppedEarly, result.readTo, result.missedWithin, result.missed]).toEqual([true, 5, 1, 9]);
+  });
+
+  // Missing only the last few words is not an early stop
+  it("does not call missing the last few words an early stop", () => {
+    // All but "a new nation"
+    const result = alignReading(TEXT, "four score and seven years ago our fathers brought forth");
+    // Confirm it is not an early stop
+    expect([result.stoppedEarly, result.readTo, result.missedWithin]).toEqual([false, 10, 0]);
+  });
+
   // Pause marks are not words: they are counted, and ignored when lining up the reading
   it("counts pause marks and ignores them when checking the reading", () => {
     // A marked text

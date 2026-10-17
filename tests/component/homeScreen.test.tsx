@@ -120,6 +120,28 @@ describe("HomeScreen", () => {
     expect(/Lesson (1|11):/.test(skill.textContent ?? "")).toBe(true);
   });
 
+  // A finished day leads with the time spoken and the user's own notes, never a filler count, and the ticks grow in only the first time
+  it("sums up a finished day kindly, with the moment once", async () => {
+    // A repository where both of a new user's steps were done today
+    const repository = emptyRepository();
+    // The warm-up, with a note
+    await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", durationSec: 70, fillersPerMinute: 5, createdAt: new Date(2026, 9, 13, 8).toISOString(), selfReview: { worked: "", change: "Look up more", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
+    // The Table Topic, without notes
+    await repository.saveSession(makeSession({ id: "t", mode: "talk", promptId: tableTopicForDay(NOW).id, durationSec: 90, fillersPerMinute: 6, createdAt: new Date(2026, 9, 13, 9).toISOString(), selfReview: null }));
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The steps
+    const steps = await screen.findByRole("list", { name: "Steps" });
+    // Confirm the headline, the summary, each step's line, no filler counts, and the moment playing
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 2 minutes 40 today. First day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/fillers a minute/), steps.querySelectorAll(".motion-safe\\:animate-tick-in").length]).toEqual(["Done for today.", true, true, true, null, 2]);
+    // Draw again, as on a later visit the same day
+    cleanup();
+    // The later visit
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // Confirm no moment this time
+    expect((await screen.findByRole("list", { name: "Steps" })).querySelectorAll(".motion-safe\\:animate-tick-in").length).toBe(0);
+  });
+
   // A step done today is ticked, and the main action carries on from the next
   it("carries on from the next step", async () => {
     // A repository where today's warm-up was read
