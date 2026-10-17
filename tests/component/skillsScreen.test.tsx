@@ -54,14 +54,32 @@ describe("SkillsScreen", () => {
   });
 
   // The famous speeches are cards in a named list, each showing who gave it
-  it("shows the famous speeches as a named list of cards", async () => {
+  it("shows the short readings as a named list of cards", async () => {
     // Draw the screen
     render(<SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // The list
-    const list = within(await screen.findByRole("list", { name: "Famous speeches" }));
+    const list = within(await screen.findByRole("list", { name: "Short readings" }));
     // Every speech, each with its speaker in the card
     const speeches = PASSAGES.filter((passage) => passage.kind === "speech");
     // Confirm one card per speech, and the first names its speaker
     expect([list.getAllByRole("listitem").length, list.getAllByRole("link")[0]?.textContent?.includes(speeches[0]?.source ?? "?")]).toEqual([speeches.length, true]);
+  });
+
+  // The full speeches and commencement speeches are listed, each opening its own page, with progress
+  it("lists whole speeches and commencement speeches, with progress", async () => {
+    // A repository where the first part of Kennedy's inaugural has been read
+    const repository = createRepository(new MemoryStore());
+    // Part 1, once
+    await repository.saveSession(makeSession({ id: "a", mode: "read", promptId: "jfk-inaugural-1" }));
+    // Draw the screen
+    render(<SkillsScreen repository={repository} now={NOW} />);
+    // The two lists
+    const whole = within(await screen.findByRole("list", { name: "Whole speeches, a part at a time" }));
+    // (and the commencement speeches)
+    const commencement = within(screen.getByRole("list", { name: "Commencement speeches" }));
+    // Kennedy's inaugural card
+    const inaugural = whole.getByRole("link", { name: /Inaugural Address.*John F\. Kennedy/ });
+    // Confirm the link, the progress, and a commencement address
+    expect([inaugural.getAttribute("href"), inaugural.textContent?.includes("1 read"), !!commencement.getByRole("link", { name: /A Strategy of Peace/ })]).toEqual(["/speech?id=jfk-inaugural", true, true]);
   });
 });

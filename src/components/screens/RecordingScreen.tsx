@@ -14,7 +14,9 @@ import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
-import { BOOKENDS, STRUCTURE_HINT, findPassage, findPrompt } from "@/content/prompts";
+import { BOOKENDS, STRUCTURE_HINT, findPrompt } from "@/content/prompts";
+// Load the lookup for every text to read, full speeches included
+import { findReading } from "@/content/readings";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the plain descriptions of each mode
@@ -313,7 +315,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The prompt to speak to (for reading aloud, its title; for a Q&A answer, the question)
   const prompt = mode === "qa" ? (qaQuestion ? { id: promptId, text: qaQuestion } : undefined) : findPrompt(promptId);
   // The passage, when reading aloud or doing a pause drill
-  const passage = mode === "read" || mode === "pause" ? findPassage(promptId) : undefined;
+  const passage = mode === "read" || mode === "pause" ? findReading(promptId) : undefined;
   // The user's own talk, when rehearsing (loaded from storage below)
   const [talk, setTalk] = useState<TalkRecord | null>(null);
   // How much of the rehearsal text shows: all of it, cue words, or nothing

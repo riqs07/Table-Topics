@@ -232,6 +232,34 @@ test("Read aloud: words light up as they are read, then the reading is saved", a
   await expect(page.getByTestId("reading-headline")).toHaveText(/^You read \d+% of the words\.$/, { timeout: 15_000 });
 });
 
+// A whole speech in parts: from Skills to the speech, read part 1, and go on to part 2
+test("Whole speech: open it from Skills, read part 1, then go on to part 2", async ({ page }) => {
+  // The stand-in speech reads the opening of Lincoln's second inaugural
+  await useStandIns(page, "Fellow Countrymen At this second appearing to take the oath of the Presidential office there is less occasion for an extended address than there was at the first");
+  // Start at Skills
+  await page.goto("/skills");
+  // Open Lincoln's second inaugural
+  await page.getByRole("list", { name: "Whole speeches, a part at a time" }).getByRole("link", { name: /Second Inaugural Address/ }).click();
+  // Its page lists three parts
+  await expect(page.getByRole("list", { name: "Parts" }).getByRole("link")).toHaveCount(3);
+  // Read the next part (part 1)
+  await page.locator("[data-action-band]").click();
+  // Start reading
+  await page.getByRole("button", { name: /Start reading/ }).click();
+  // The words light up as they are read
+  await expect(page.locator('[data-read="read"]').first()).toBeVisible({ timeout: 10_000 });
+  // Read past the minimum
+  await page.waitForTimeout(11_500);
+  // Stop
+  await page.getByRole("button", { name: /Stop/ }).click();
+  // Skip listening back this time
+  await page.getByRole("button", { name: "Skip this time" }).click({ timeout: 15_000 });
+  // Go on to part 2
+  await page.getByRole("link", { name: "Read part 2" }).click();
+  // Part 2 opens
+  await expect(page.getByText("Second Inaugural Address, part 2 of 3")).toBeVisible();
+});
+
 // Storage left by another project at the same address (bugs B2 and B4)
 test("works when another app left a database called voicelab", async ({ page }) => {
   // Use the stand-in microphone and speech

@@ -43,7 +43,9 @@ import { LOUDNESS_TICK_MS, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
 import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
-import { BOOKENDS, findPassage, promptForDay } from "@/content/prompts";
+import { BOOKENDS, promptForDay } from "@/content/prompts";
+// Load the lookup for every text to read, full speeches included
+import { findReading, partId, partOf } from "@/content/readings";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the lesson checks
@@ -248,7 +250,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // The lesson, on the skill path
   const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
   // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
-  const passage = session.mode === "read" || session.mode === "pause" ? findPassage(session.promptId) : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, body: lesson.body.replace(/\*/g, "") } : rehearsed ? rehearsedText(rehearsed, session.sectionIndex ?? null) : undefined;
+  const passage = session.mode === "read" || session.mode === "pause" ? findReading(session.promptId) : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, body: lesson.body.replace(/\*/g, "") } : rehearsed ? rehearsedText(rehearsed, session.sectionIndex ?? null) : undefined;
   // A lesson's own result
   const lessonOutcome = lesson ? lessonResult(lesson, session) : null;
   // The pauses, when loudness was recorded
@@ -283,6 +285,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
   // The notes against the numbers
   const checks = compareNotes(session);
+  // For one part of a full speech: the speech, and the part read
+  const speechPart = session.mode === "read" ? partOf(session.promptId) : undefined;
   // A new first try asks the user to listen back and write notes before anything else
   if (session.selfReview === null) {
     // The listening step in place of the feedback
@@ -412,6 +416,14 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {(session.mode === "rehearse" || session.mode === "response") && <Link href={`/qa?from=${session.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Practise Q&amp;A</Link>}
             {/* Separator */}
             {(session.mode === "rehearse" || session.mode === "response") && <span>·</span>}
+            {/* After a part of a full speech, the next part, or the speech's page after the last */}
+            {speechPart && (speechPart.part < speechPart.speech.parts.length ? (
+              <Link href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Read part {speechPart.part + 1}</Link>
+            ) : (
+              <Link href={`/speech?id=${speechPart.speech.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">That was the last part</Link>
+            ))}
+            {/* Separator */}
+            {speechPart && <span>·</span>}
             {/* After a Q&A answer, back to the questions */}
             {qa && <Link href={`/qa?from=${session.promptId}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Back to the questions</Link>}
             {/* Separator */}

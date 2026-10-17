@@ -18,9 +18,15 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 // Load the lessons
 import { LESSONS } from "@/content/lessons";
 // Load the done and next marks
-import { lessonPath, type LessonMark } from "@/core/lessonPath";
-// Load the tick for a done lesson
-import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
+import { lessonPath } from "@/core/lessonPath";
+// Load the full speeches
+import { FULL_SPEECHES, type FullSpeech } from "@/content/speeches";
+// Load the part id maker
+import { partId } from "@/content/readings";
+// Load the reading-length helpers
+import { lengthLabel, readingTime } from "@/core/readingLength";
+// Load the done and next marks on a path
+import { PathMark } from "@/components/script/PathMark";
 // Load the catalogue
 import { MODES, type ModeInfo } from "@/content/modes";
 // Load the texts
@@ -49,7 +55,7 @@ function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passag
           // One text
           <li key={item.id}>
             {/* The whole row starts it; speeches show who gave them */}
-            <RowLink href={`/session?mode=${sessionMode}&prompt=${item.id}`} meta={item.kind === "speech" ? item.source : undefined}>{item.title}</RowLink>
+            <RowLink href={`/session?mode=${sessionMode}&prompt=${item.id}`} meta={lengthLabel(readingTime(item.body))}>{item.title}</RowLink>
           </li>
         ))}
       </ul>
@@ -57,15 +63,48 @@ function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passag
   );
 }
 
-// The famous speeches as a grid of cards: title, then who gave it and when
+// The full speeches as cards: title, speaker and year, parts and length, and how far along
+function FullSpeechList({ heading, speeches, counts }: { heading: string; speeches: ReadonlyArray<FullSpeech>; counts: ReadonlyMap<string, number> }) {
+  // The cards
+  return (
+    <>
+      {/* Small heading */}
+      <h3 className="mt-6 text-footnote italic text-ink-muted">{heading}</h3>
+      {/* One card per speech, two across on a wider screen */}
+      <ul aria-label={heading} className="mt-2 grid gap-3 sm:grid-cols-2">
+        {/* Each speech */}
+        {speeches.map((speech) => {
+          // Parts read at least once
+          const done = speech.parts.filter((_, index) => (counts.get(partId(speech, index + 1)) ?? 0) > 0).length;
+          // One card
+          return (
+            <li key={speech.id}>
+              {/* The whole card opens the speech's page */}
+              <Link href={`/speech?id=${speech.id}`} className="flex h-full min-h-16 flex-col justify-between gap-1 border border-rule bg-paper px-4 py-3 hover:border-accent">
+                {/* The title */}
+                <span className="font-display text-lede leading-tight sm:text-cue">{speech.title}</span>
+                {/* Who gave it, and when */}
+                <span className="text-footnote italic text-ink-muted">{speech.speaker}, {speech.year}</span>
+                {/* How many parts, how long, and how far along */}
+                <span className="text-footnote text-ink-muted">{speech.parts.length === 1 ? "One part" : `${speech.parts.length} parts`}, {lengthLabel(readingTime(speech.parts.join(" ")))}{done > 0 ? ` · ${done === speech.parts.length ? "all read" : `${done} read`}` : ""}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  );
+}
+
+// The short highlights from famous speeches as a grid of cards: title, who gave it and when, and how long
 function SpeechCards({ items }: { items: ReadonlyArray<Passage> }) {
   // The cards
   return (
     <>
       {/* Small heading */}
-      <h3 className="mt-4 text-footnote italic text-ink-muted">Famous speeches</h3>
+      <h3 className="mt-6 text-footnote italic text-ink-muted">Short readings</h3>
       {/* One card per speech, two across on a wider screen */}
-      <ul aria-label="Famous speeches" className="mt-2 grid gap-3 sm:grid-cols-2">
+      <ul aria-label="Short readings" className="mt-2 grid gap-3 sm:grid-cols-2">
         {/* Each speech */}
         {items.map((item) => (
           // One card
@@ -74,8 +113,8 @@ function SpeechCards({ items }: { items: ReadonlyArray<Passage> }) {
             <Link href={`/session?mode=read&prompt=${item.id}`} className="flex h-full min-h-16 flex-col justify-between gap-1 border border-rule bg-paper px-4 py-3 hover:border-accent">
               {/* The title */}
               <span className="font-display text-lede leading-tight sm:text-cue">{item.title}</span>
-              {/* Who gave it, and when */}
-              <span className="text-footnote italic text-ink-muted">{item.source}</span>
+              {/* Who gave it, when, and how long */}
+              <span className="text-footnote italic text-ink-muted">{item.source} · {lengthLabel(readingTime(item.body))}</span>
             </Link>
           </li>
         ))}
@@ -84,26 +123,11 @@ function SpeechCards({ items }: { items: ReadonlyArray<Passage> }) {
   );
 }
 
-// A lesson's place on the path: a filled tick when done, an accent ring marked "Next", a quiet ring otherwise
-function PathMark({ mark, number }: { mark: LessonMark; number: number }) {
-  // Done: a filled square with a tick
-  if (mark === "done") return (
-    <span className="flex size-9 flex-none items-center justify-center bg-accent text-accent-ink">
-      {/* The tick */}
-      <CheckIcon aria-hidden="true" weight="bold" className="size-5" />
-      {/* Said aloud */}
-      <span className="sr-only">Done</span>
-    </span>
-  );
-  // Next or still open: the lesson's number in a square outline
-  return <span className={`flex size-9 flex-none items-center justify-center border-2 font-display tabular-nums ${mark === "next" ? "border-accent text-accent" : "border-rule text-ink-muted"}`}>{number}</span>;
-}
-
 // The page
 export function SkillsScreen(props: ScreenProps) {
   // The repository
   const { repo } = useScreenBasics(props);
-  // How many times each lesson has been practised, by id
+  // How many times each lesson has been practised and each text read, by id
   const [counts, setCounts] = useState<ReadonlyMap<string, number>>(new Map());
 
   // Count lesson sessions once in the browser
@@ -116,8 +140,8 @@ export function SkillsScreen(props: ScreenProps) {
       if (cancelled) return;
       // Count sessions per lesson
       const next = new Map<string, number>();
-      // Each lesson session adds one
-      for (const session of sessions) if (session.mode === "lesson") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
+      // Each lesson or reading adds one
+      for (const session of sessions) if (session.mode === "lesson" || session.mode === "read") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
       // Show the counts
       setCounts(next);
     });
@@ -186,6 +210,10 @@ export function SkillsScreen(props: ScreenProps) {
         {/* What they are */}
         <ModeHeader mode={mode("readings")} />
         {/* Speeches */}
+        <FullSpeechList heading="Whole speeches, a part at a time" speeches={FULL_SPEECHES.filter((speech) => !speech.commencement)} counts={counts} />
+        {/* Graduation speeches */}
+        <FullSpeechList heading="Commencement speeches" speeches={FULL_SPEECHES.filter((speech) => speech.commencement)} counts={counts} />
+        {/* Short readings */}
         <SpeechCards items={PASSAGES.filter((passage) => passage.kind === "speech")} />
         {/* Practice passages */}
         <TextList items={PASSAGES.filter((passage) => passage.kind === "practice")} sessionMode="read" heading="Practice passages" />

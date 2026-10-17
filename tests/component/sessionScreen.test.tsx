@@ -445,6 +445,26 @@ describe("SessionScreen", () => {
     expect(await screen.findByText(/^You paused at 0 of the \d+ marks\. No pause after /)).toBeTruthy();
   });
 
+  // After a part of a full speech, the next part is offered, and the last part leads back to the speech
+  it("offers the next part of a speech", async () => {
+    // Part 1 and the last part of Lincoln's second inaugural, read
+    const first = makeSession({ id: "a", mode: "read", promptId: "lincoln-second-inaugural-1", feedback: FEEDBACK, feedbackStatus: "done" });
+    // The last part
+    const last = makeSession({ id: "b", mode: "read", promptId: "lincoln-second-inaugural-3", feedback: FEEDBACK, feedbackStatus: "done" });
+    // A repository with both
+    const repository = await repositoryWith(first, last);
+    // Draw the first
+    const { unmount } = render(<SessionScreen sessionId="a" repository={repository} now={NOW} />);
+    // Where "Read part 2" leads
+    const next = (await screen.findByRole("link", { name: "Read part 2" })).getAttribute("href");
+    // Close it
+    unmount();
+    // Draw the last
+    render(<SessionScreen sessionId="b" repository={repository} now={NOW} />);
+    // Confirm both
+    expect([next, (await screen.findByRole("link", { name: "That was the last part" })).getAttribute("href")]).toEqual(["/session?mode=read&prompt=lincoln-second-inaugural-2", "/speech?id=lincoln-second-inaugural"]);
+  });
+
   // A new first try asks you to listen back before the feedback opens
   describe("listening back first", () => {
     // A new first try with audio and word times

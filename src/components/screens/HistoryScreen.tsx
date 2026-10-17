@@ -13,6 +13,8 @@ import { PrimaryLink } from "@/components/script/Buttons";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the prompt library
 import { BOOKENDS, findPrompt } from "@/content/prompts";
+// Load the lookup for every text to read, full speeches included
+import { findReading } from "@/content/readings";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the sentence builders
@@ -70,8 +72,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.mode === "warmup") return `Warm-up: ${text}`;
   // Mark Table Topics the same way
   if (session.mode === "talk") return `Table Topic: ${text}`;
-  // And readings
-  if (session.mode === "read") return `Read aloud: ${text}`;
+  // And readings, by their title (a part of a full speech says which part)
+  if (session.mode === "read") return `Read aloud: ${findReading(session.promptId)?.title ?? text}`;
   // And pause drills
   if (session.mode === "pause") return `Pause drill: ${text}`;
   // And Q&A answers, by their question

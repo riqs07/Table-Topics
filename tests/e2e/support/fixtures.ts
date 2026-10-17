@@ -43,6 +43,12 @@ export const ROUTES: ReadonlyArray<string> = [
   "/qa?from=missing",
   // An opening drill
   "/session?mode=bookend&prompt=b001",
+  // A full speech's page
+  "/speech?id=jfk-inaugural",
+  // A speech that does not exist
+  "/speech?id=missing",
+  // A part of a full speech, to read
+  "/session?mode=read&prompt=jfk-inaugural-2",
   // The design style tile
   "/style",
   // The wireframes
@@ -71,6 +77,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/talk?id=missing", current: "Talks" },
   // Openings and closings belong to Practice
   { path: "/bookends", current: "Practice" },
+  // A full speech belongs to Skills
+  { path: "/speech?id=jfk-inaugural", current: "Skills" },
 ];
 
 // Where each main navigation link should lead

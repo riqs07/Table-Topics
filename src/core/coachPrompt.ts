@@ -8,7 +8,9 @@ import { findFocus } from "@/core/focus";
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
 // Load the passage lookup, for reading aloud and pause drills
-import { BOOKENDS, findPassage } from "@/content/prompts";
+import { BOOKENDS } from "@/content/prompts";
+// Load the lookup for every text to read, full speeches included
+import { findReading } from "@/content/readings";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the pause mark counter
@@ -80,7 +82,7 @@ export function buildCoachMessage(input: CoachInput): string {
   // On a lesson, find it from the app's own copy
   const lesson = input.mode === "lesson" && input.promptId ? findLesson(input.promptId) : undefined;
   // On a reading, find the passage from the app's own copy
-  const passage = (input.mode === "read" || input.mode === "pause") && input.promptId ? findPassage(input.promptId) : undefined;
+  const passage = (input.mode === "read" || input.mode === "pause") && input.promptId ? findReading(input.promptId) : undefined;
   // For an openings and closings drill, which end of a talk it was
   const bookend = input.mode === "bookend" ? BOOKENDS.find((item) => item.id === input.promptId) : undefined;
   // Put the message together line by line

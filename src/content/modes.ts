@@ -61,7 +61,7 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   // Lessons
   { id: "lessons", job: "skill", name: "Lessons", subtitle: "one practical tip each", length: "2 to 3 min", youDo: "Read a short tip, then practise it on a text written for it.", youGet: "A check made for that one skill." },
   // Readings
-  { id: "readings", job: "skill", name: "Readings", subtitle: "famous speeches and passages", length: "1 to 3 min", youDo: "Read a speech or passage aloud, at your own pace.", youGet: "Which words were missed, your pace, and your pauses." },
+  { id: "readings", job: "skill", name: "Readings", subtitle: "famous speeches and passages", length: "30 seconds to 2 min", youDo: "Read a speech or passage aloud, at your own pace. Whole speeches come in parts of two minutes or less.", youGet: "Which words were missed, your pace, and your pauses." },
   // Pause drills
   { id: "pause-drills", job: "skill", name: "Pause drills", subtitle: "pause where the text is marked", length: "1 min", youDo: "Read a passage and pause for a second at each mark.", youGet: "How many pauses you took against the marks." },
   // Tricky words
