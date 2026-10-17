@@ -53,6 +53,18 @@ describe("createClaudeCoach", () => {
     expect(sent.max_tokens).toBeGreaterThanOrEqual(16000);
   });
 
+  // A small-talk answer goes to the small-talk coach and comes back with its beats
+  it("sends a small-talk answer to the small-talk coach and keeps its beats", async () => {
+    // Make a fake network that remembers the request
+    const network = fakeNetwork(recorded("smalltalk-response"));
+    // Ask for feedback on an answer to "How was your weekend?"
+    const result = await createClaudeCoach("sk-test", network).getFeedback({ ...INPUT, mode: "smalltalk", promptId: "st01", transcript: "I built an app it coaches me on public speaking on my phone did you do anything" });
+    // Read the request body that was sent
+    const sent = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    // Confirm the small-talk instructions, the question, and the beats coming back
+    expect([JSON.stringify(sent.system).includes("VoiceLab's small-talk coach"), JSON.stringify(sent.messages).includes("Question: How was your weekend?"), result.status === "ok" ? result.feedback.smallTalk?.hooks : null]).toEqual([true, true, ["it coaches me on public speaking", "on my phone"]]);
+  });
+
   // A safety decline is reported as such, not as a crash
   it("reports a decline when the model refuses", async () => {
     // Make a coach whose network returns a refusal

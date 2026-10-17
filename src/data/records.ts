@@ -9,6 +9,22 @@ export interface Feedback {
   change: string;
   // One sentence to read before retrying
   retryCue: string;
+  // For a small-talk answer: what the coach found for each beat, and a livelier version
+  smallTalk?: SmallTalkFeedback;
+}
+
+// The coach's notes on a small-talk answer, beat by beat (an empty quote means the beat was missing)
+export interface SmallTalkFeedback {
+  // The speaker's words that give the moment
+  moment: string;
+  // Up to three details a listener could ask about, in the speaker's words
+  hooks: string[];
+  // The speaker's words that say how it felt
+  feeling: string;
+  // The question they handed back with
+  handBack: string;
+  // The answer as it could sound, using only facts the speaker said (gaps in square brackets)
+  livelier: string;
 }
 
 // Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice)

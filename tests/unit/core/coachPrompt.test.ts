@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt builder and feedback checker being checked
-import { COACH_SYSTEM_PROMPT, buildCoachMessage, checkFeedback } from "@/core/coachPrompt";
+import { COACH_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildSmallTalkMessage, checkFeedback, checkSmallTalkFeedback } from "@/core/coachPrompt";
 
 // A typical session for these checks
 const SESSION = { transcript: "Um, so I think, uh, the best part of my week was the dog.", durationSec: 30, focusId: "cut-fillers", previousChange: null, mode: "standard" as const };
@@ -202,5 +202,29 @@ describe("checkFeedback", () => {
     const message = buildCoachMessage({ ...SESSION, durationSec: 132, mode: "talk" });
     // Confirm the note
     expect(message).toContain("This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under 1:00 or over 2:30 would not qualify in a contest. It came after a 10-second countdown on a light question and ran 132 seconds. Judge it as a quick, unprepared speech.");
+  });
+
+  // A small-talk answer gets its own coach: the question, the lesson's beat, and the notes as beat names
+  it("tells the small-talk coach the question, the lesson and the beats heard", () => {
+    // A lesson's turn with notes
+    const message = buildSmallTalkMessage({ transcript: "I watched Dune", durationSec: 22, focusId: "pausing", previousChange: null, mode: "smalltalk", promptId: "stl3", notes: { worked: "", change: "", tags: ["moment", "hook"] } });
+    // Confirm the question, the beat to watch, the notes and the fenced transcript
+    expect([message.includes("Question: Seen anything good lately?"), message.includes("Pay most attention to the hook beat."), message.includes("Tags: moment, hook"), message.includes("<transcript>\nI watched Dune\n</transcript>")]).toEqual([true, true, true, true]);
+  });
+
+  // The small-talk coach must never invent facts in the livelier version
+  it("forbids the small-talk coach from inventing facts", () => {
+    // Confirm the rule is there
+    expect(SMALL_TALK_SYSTEM_PROMPT).toContain("Use only facts they said: never invent");
+  });
+
+  // Its reply keeps the beats, trimmed, and needs a livelier version
+  it("checks the small-talk reply", () => {
+    // A reply with spaces and four hooks
+    const reply = { moment: " I built an app ", hooks: ["a", " ", "b", "c", "d"], feeling: "", handBack: "did you", keep: "k", change: "c", retryCue: "r", livelier: "L" };
+    // Confirm the tidied beats
+    expect(checkSmallTalkFeedback(reply).smallTalk).toEqual({ moment: "I built an app", hooks: ["a", "b", "c"], feeling: "", handBack: "did you", livelier: "L" });
+    // Confirm an empty livelier version is refused
+    expect(() => checkSmallTalkFeedback({ ...reply, livelier: " " })).toThrow("incomplete");
   });
 });

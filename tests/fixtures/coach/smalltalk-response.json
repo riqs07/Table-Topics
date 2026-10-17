@@ -1,0 +1,26 @@
+{
+  "id": "msg_test_smalltalk",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-5-5",
+  "content": [
+    {
+      "type": "thinking",
+      "thinking": "",
+      "signature": "sig"
+    },
+    {
+      "type": "text",
+      "text": "{\"moment\": \"I built an app\", \"hooks\": [\"it coaches me on public speaking\", \"on my phone\"], \"feeling\": \"\", \"handBack\": \"did you do anything\", \"keep\": \"You led with one clear moment: \\\"I built an app.\\\"\", \"change\": \"Say how it felt. After \\\"on my phone\\\", add one line like \\\"it was way more fun than I expected\\\".\", \"retryCue\": \"After your moment, say how it felt.\", \"livelier\": \"Kind of a nerdy weekend: I built an app that coaches me on public speaking, and got it running on my phone. [how it felt] Did you do anything fun?\"}"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "stop_details": null,
+  "usage": {
+    "input_tokens": 900,
+    "output_tokens": 400,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0
+  }
+}
