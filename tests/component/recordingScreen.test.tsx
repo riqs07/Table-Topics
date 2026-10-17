@@ -317,7 +317,7 @@ describe("RecordingScreen", () => {
     expect(screen.getByText(PROMPTS[0]!.angles![0]!)).toBeTruthy();
   });
 
-  // The Record Response light: yellow from 2:15, red past 3:00
+  // The prepared speech light: green at 2:00, yellow at 3:00, red at 4:00
   it("shows the timing light during a Record Response", async () => {
     // Use fake timers that still let promises run
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -340,8 +340,8 @@ describe("RecordingScreen", () => {
       // Read it
       return light();
     };
-    // Confirm 2:20 and 3:05
-    expect([await after(140_000), await after(45_000)]).toEqual([["yellow", "Yellow: 45 seconds to the goal"], ["red", "Red: past the goal"]]);
+    // Confirm 2:20, 3:05 and 4:10
+    expect([await after(140_000), await after(45_000), await after(65_000)]).toEqual([["green", "Green: the minimum is met"], ["yellow", "Yellow: start wrapping up"], ["red", "Red: finish now"]]);
   });
 
   // Reading aloud shows the passage with its source, and keeps it in view while recording
@@ -797,12 +797,12 @@ describe("RecordingScreen", () => {
 
   // Before starting, every mode says how it works and what comes afterwards; while recording, that note steps aside
   it("explains how the mode works before starting, then hides it", async () => {
-    // Draw a prepared answer
+    // Draw a prepared speech
     draw({ mode: "response" });
     // The note
     const note = await screen.findByRole("note", { name: "How this works" });
     // Confirm its words and the plain title
-    expect([note.textContent?.includes(modeForSession("response")!.youDo), note.textContent?.includes("Afterwards:"), !!screen.getByText("Prepared answer")]).toEqual([true, true, true]);
+    expect([note.textContent?.includes(modeForSession("response")!.youDo), note.textContent?.includes("Afterwards:"), !!screen.getByText("Prepared speech")]).toEqual([true, true, true]);
     // Start thinking, then start speaking
     fireEvent.click(screen.getByRole("button", { name: /Start thinking/ }));
     // Start
@@ -831,7 +831,7 @@ describe("RecordingScreen", () => {
 
   // The prompt comes before the how-it-works note, so a phone shows the task first
   it("puts the prompt before the how-it-works note", async () => {
-    // Draw a prepared answer
+    // Draw a prepared speech
     draw({ mode: "response" });
     // The note and the prompt
     const note = await screen.findByRole("note", { name: "How this works" });

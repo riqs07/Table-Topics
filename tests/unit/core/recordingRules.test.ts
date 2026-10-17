@@ -79,9 +79,9 @@ describe("Table Topic", () => {
 // Group the checks about a Record Response
 describe("Record Response", () => {
   // Two minutes to think, a three-minute goal, and it stops itself at four
-  it("gives 2 minutes to think, aims for 3:00, and stops at 4:00", () => {
-    // Confirm the think time, goal, and limit
-    expect([thinkSeconds("response"), targetSeconds("response"), maxSeconds("response")]).toEqual([120, 180, 240]);
+  it("gives 2 minutes to plan, aims for 2 to 4 minutes, and stops at 5:00", () => {
+    // Confirm the think time, the top of the window, and the limit
+    expect([thinkSeconds("response"), targetSeconds("response"), maxSeconds("response")]).toEqual([120, 240, 300]);
   });
 
   // No thinking time for the older kinds of session
@@ -91,15 +91,15 @@ describe("Record Response", () => {
   });
 
   // Off, then yellow 45 seconds before the goal, then red past it
-  it("turns the light yellow from 2:15 and red past 3:00", () => {
+  it("turns the light green at 2:00, yellow at 3:00, red at 4:00, and over past 4:30", () => {
     // Confirm the light at each boundary
-    expect([0, 134.9, 135, 180, 180.1].map((seconds) => timeSignal("response", seconds))).toEqual(["none", "none", "yellow", "yellow", "red"]);
+    expect([119, 120, 180, 240, 270, 271].map((seconds) => timeSignal("response", seconds))).toEqual(["none", "green", "yellow", "red", "red", "overtime"]);
   });
 
   // One plain sentence on the timing
-  it("says how the length compared with the goal", () => {
-    // Confirm under, on, and over
-    expect([timingSentence("response", 170), timingSentence("response", 180), timingSentence("response", 192)]).toEqual(["2:50 against a 3:00 goal, 10 seconds to spare.", "3:00 against a 3:00 goal, right on time.", "3:12 against a 3:00 goal, 12 seconds over."]);
+  it("says how the length compared with the 2 to 4 minute window", () => {
+    // Confirm under, inside, in the grace, and over (no contest wording outside Table Topics)
+    expect([timingSentence("response", 100), timingSentence("response", 192), timingSentence("response", 255), timingSentence("response", 280)]).toEqual(["1:40, under the 2:00 minimum.", "3:12, inside the 2:00 to 4:00 window.", "4:15, past 4:00 but inside the 30-second grace.", "4:40, over 4:30."]);
   });
 
 // Group the checks about reading aloud

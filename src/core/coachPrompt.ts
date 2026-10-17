@@ -16,7 +16,7 @@ import { findLesson } from "@/content/lessons";
 // Load the pause mark counter
 import { countPauseMarks } from "@/core/readAlong";
 // Load the Table Topics timing rules
-import { TOPIC_LIMIT, TOPIC_WINDOW_START, formatClock, targetSeconds, thinkSeconds } from "@/core/recordingRules";
+import { SPEECH_WINDOW, TOPIC_LIMIT, TOPIC_WINDOW_START, formatClock, thinkSeconds } from "@/core/recordingRules";
 import type { Feedback, SessionMode } from "@/data/records";
 // Load the quick tags, to put the speaker's tags into words
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
@@ -98,9 +98,9 @@ export function buildCoachMessage(input: CoachInput): string {
     // On a warm-up, keep it brief and light
     ...(input.mode === "warmup" ? ["This is a 30-second warm-up. Keep every part to one short sentence, and keep it light."] : []),
     // On a Table Topic, its rules and how long it ran, so the coach looks at the whole answer
-    ...(input.mode === "talk" ? [`This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under ${formatClock(TOPIC_WINDOW_START)} or over ${formatClock(TOPIC_LIMIT)} would not qualify in a contest. It came after a ${thinkSeconds("talk")}-second countdown on a light question and ran ${Math.round(input.durationSec)} seconds. Judge it as a quick, unprepared answer.`] : []),
+    ...(input.mode === "talk" ? [`This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under ${formatClock(TOPIC_WINDOW_START)} or over ${formatClock(TOPIC_LIMIT)} would not qualify in a contest. It came after a ${thinkSeconds("talk")}-second countdown on a light question and ran ${Math.round(input.durationSec)} seconds. Judge it as a quick, unprepared speech.`] : []),
     // On a Record Response, its preparation and goal, so the coach looks at the whole answer
-    ...(input.mode === "response" ? [`This is a prepared response: up to ${thinkSeconds("response")} seconds to think with hints, then a ${targetSeconds("response")}-second goal. It ran ${Math.round(input.durationSec)} seconds. Comment on how the answer was organised across the whole time.`] : []),
+    ...(input.mode === "response" ? [`This is a prepared speech: up to ${thinkSeconds("response")} seconds to plan with hints, then 2 to 4 minutes of speaking (green light at ${formatClock(SPEECH_WINDOW.start)}, red at ${formatClock(SPEECH_WINDOW.end)}). It ran ${Math.round(input.durationSec)} seconds. Comment on how the speech was organised across the whole time.`] : []),
     // On a reading, ask about delivery only
     ...(input.mode === "read" ? ["This was read aloud from a known text. Comment only on delivery (pace, pauses, skipped or repeated words, fillers), not on the content, which the speaker did not write."] : []),
     // On a lesson, the skill and its tip

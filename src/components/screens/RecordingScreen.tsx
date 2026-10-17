@@ -27,7 +27,7 @@ import { markFillers } from "@/core/fillers";
 import { followReading, readingTokens, scriptWords, stampFirstRead, stampSpoken, type ReadingToken } from "@/core/liveReading";
 import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 // Load the recording length rules
-import { LOUDNESS_TICK_MS, MIN_SECONDS, TOPIC_WINDOW_START, formatClock, maxSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, type TimeSignal } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, MIN_SECONDS, formatClock, maxSeconds, readingSeconds, speakingWindow, targetSeconds, thinkSeconds, timeSignal, type SpeakingWindow, type TimeSignal } from "@/core/recordingRules";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -119,19 +119,22 @@ function LiveWords({ text }: { text: LiveText }) {
   );
 }
 
-// Words for the Table Topic light, read out to screen readers and shown beside the lamp (Toastmasters meanings)
-const TOPIC_SIGNAL_TEXT: Record<TimeSignal, string> = {
-  // Before 1:00
-  none: "",
-  // From 1:00
-  green: "Green: the minimum is met",
-  // From 1:30
-  yellow: "Yellow: start wrapping up",
-  // From 2:00
-  red: "Red: finish now",
-  // Past 2:30
-  overtime: "Over 2:30: past the limit",
-};
+// Words for the light of a Table Topic or prepared speech, read out to screen readers and shown beside the lamp (Toastmasters meanings)
+function windowSignalText(window: SpeakingWindow): Record<TimeSignal, string> {
+  // One phrase per state
+  return {
+    // Before the minimum
+    none: "",
+    // From the minimum
+    green: "Green: the minimum is met",
+    // From the middle
+    yellow: "Yellow: start wrapping up",
+    // From the top of the window
+    red: "Red: finish now",
+    // Past the limit
+    overtime: `Over ${formatClock(window.limit)}: past the limit`,
+  };
+}
 
 // Words for the Record Response light, which only turns yellow and red
 const RESPONSE_SIGNAL_TEXT: Record<TimeSignal, string> = {
@@ -163,8 +166,10 @@ const SIGNAL_LAMP: Record<TimeSignal, string> = {
 
 // The timing light: a lamp that changes color as the time goes on (green, yellow, red for a Table Topic; yellow, red for a Record Response)
 function TimingLight({ signal, mode }: { signal: TimeSignal; mode: SessionMode }) {
+  // The window, for a Table Topic or a prepared speech
+  const window = speakingWindow(mode);
   // The words for this kind of session
-  const words = mode === "talk" ? TOPIC_SIGNAL_TEXT : RESPONSE_SIGNAL_TEXT;
+  const words = window ? windowSignalText(window) : RESPONSE_SIGNAL_TEXT;
   // Lamp plus words, announced politely when they change
   return (
     <p role="status" aria-label="Timing light" data-signal={signal} className="mt-3 flex items-center gap-3">
@@ -690,13 +695,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : mode === "talk" ? `${formatClock(TOPIC_WINDOW_START)} to ${formatClock(target)}` : mode === "response" || mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : "about a minute";
+  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode) ? `${formatClock(speakingWindow(mode)!.start)} to ${formatClock(speakingWindow(mode)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // How this kind of session works, from the catalogue
   const howItWorks = modeForSession(mode);
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared answer" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : "Recording";
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)

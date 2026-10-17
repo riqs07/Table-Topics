@@ -27,24 +27,24 @@ describe("PracticeScreen", () => {
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Each mode's section, by its heading
     const section = async (name: string) => (await screen.findByRole("heading", { name })).closest("section") as HTMLElement;
-    // Confirm the Table Topic and prepared answer start on today's prompts, and openings lead to their page
+    // Confirm the Table Topic and prepared speech start on today's prompts, and openings lead to their page
     expect([
       within(await section("Table Topic")).getByRole("link", { name: /Start/ }).getAttribute("href"),
-      within(await section("Prepared answer")).getByRole("link", { name: /Start/ }).getAttribute("href"),
+      within(await section("Prepared speech")).getByRole("link", { name: /Start/ }).getAttribute("href"),
       within(await section("Openings and closings")).getByRole("link", { name: /Choose/ }).getAttribute("href"),
       !!within(await section("Table Topic")).getByText(/A light question appears/),
     ]).toEqual([`/session?mode=talk&prompt=${tableTopicForDay(NOW).id}`, `/session?mode=response&prompt=${promptForDay(NOW).id}`, "/bookends", true]);
   });
 
   // Q&A needs something to ask about
-  it("explains Q&A until there is a rehearsal or prepared answer, then links to it", async () => {
+  it("explains Q&A until there is a rehearsal or prepared speech, then links to it", async () => {
     // Draw with nothing recorded
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the explanation
-    expect(await screen.findByText(/after a rehearsal or a prepared answer/)).toBeTruthy();
+    expect(await screen.findByText(/after a rehearsal or a prepared speech/)).toBeTruthy();
     // Clear the page
     cleanup();
-    // A repository with a prepared answer
+    // A repository with a prepared speech
     const repository = createRepository(new MemoryStore());
     // Save it
     await repository.saveSession(makeSession({ id: "r1", mode: "response" }));
@@ -61,7 +61,7 @@ describe("PracticeScreen", () => {
     // Ask for another
     fireEvent.click(await screen.findByRole("button", { name: /choose another/ }));
     // Confirm the task and the link follow
-    expect([!!screen.getByText(`“${promptForDay(NOW, 1).text}”`), screen.getByRole("link", { name: "Start a prepared answer" }).getAttribute("href")]).toEqual([true, `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`]);
+    expect([!!screen.getByText(`“${promptForDay(NOW, 1).text}”`), screen.getByRole("link", { name: "Start a prepared speech" }).getAttribute("href")]).toEqual([true, `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`]);
   });
 
   // Each mode is its own card, named by its heading, so the page reads as four choices

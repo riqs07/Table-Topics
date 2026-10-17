@@ -71,7 +71,7 @@ describe("HomeScreen", () => {
     expect((await screen.findByRole("heading", { level: 1 })).textContent).not.toBe("Welcome to VoiceLab");
   });
 
-  // A new user's practice: a one-minute warm-up reading, then a first prepared answer, with one button to start
+  // A new user's practice: a one-minute warm-up reading, then a first prepared speech, with one button to start
   it("plans two steps for a new user, starting with a warm-up reading", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
@@ -80,7 +80,7 @@ describe("HomeScreen", () => {
     // The steps
     const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
     // Confirm the two steps, and that the main action starts the first inside the plan
-    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Warm up", "Step 2: Prepared answer"], `/session?mode=response&prompt=${promptForDay(NOW).id}&plan=2`, "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1"]);
+    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Warm up", "Step 2: Prepared speech"], `/session?mode=response&prompt=${promptForDay(NOW).id}&plan=2`, "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1"]);
   });
 
   // A talk with a date takes the last step, and a past date does not count
@@ -101,7 +101,7 @@ describe("HomeScreen", () => {
 
   // After three practice days, a skill step for this week's focus joins in the middle
   it("adds a skill step for this week's focus", async () => {
-    // A repository with three earlier practice days, the first a prepared answer, in the first focus week (strong opening)
+    // A repository with three earlier practice days, the first a prepared speech, in the first focus week (strong opening)
     const repository = emptyRepository();
     // Each day
     for (const [index, day] of [10, 11, 12].entries()) await repository.saveSession(makeSession({ id: `s${index}`, mode: index === 0 ? "response" : "standard", isBaseline: index === 0, createdAt: new Date(2026, 9, day, 9).toISOString() }));

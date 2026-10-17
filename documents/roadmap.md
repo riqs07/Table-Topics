@@ -30,7 +30,7 @@ Decision 18 in decisions.md has the details. In build order:
 
 1. Split the prompts: a new list of light, short-answer prompts for Table Topic; the current deeper prompts go to Record Response, each with two or three written angles (both lists go to C13 for approval).
 2. Table Topic: briefing screen, 10-second countdown that starts recording by itself, Toastmasters lights and the qualify sentence (already built).
-3. Record Response: 2-minute thinking screen with the structure hint and angles, hints kept in the margin while speaking, 3:00 goal light.
+3. Record Response: 2-minute thinking screen with the structure hint and angles, hints kept in the margin while speaking, 3:00 goal light (since 2026-10-17 a 2 to 4 minute window with green, yellow and red lights; decision 35).
 4. Home screen offers just the two modes; the one-minute session and warm-up are retired (old sessions stay in history). Baseline moves to the first Record Response.
 
 ## Done: then and now, read aloud, reading checks (2026-10-15)

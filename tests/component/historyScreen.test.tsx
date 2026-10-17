@@ -112,7 +112,7 @@ describe("HistoryScreen", () => {
     // Draw the screen
     render(<HistoryScreen repository={repository} now={NOW} />);
     // Confirm all three labels, plus a pause drill
-    expect([!!(await screen.findByText(/^Table Topic: /)), !!screen.getByText(/^Prepared answer: /), !!screen.getByText("Read aloud: The Gettysburg Address"), !!screen.getByText(/^Pause drill: /), !!(await screen.findByText("Rehearsal: Team update")), !!screen.getByText("Lesson 2: Crisp consonants")]).toEqual([true, true, true, true, true, true]);
+    expect([!!(await screen.findByText(/^Table Topic: /)), !!screen.getByText(/^Prepared speech: /), !!screen.getByText("Read aloud: The Gettysburg Address"), !!screen.getByText(/^Pause drill: /), !!(await screen.findByText("Rehearsal: Team update")), !!screen.getByText("Lesson 2: Crisp consonants")]).toEqual([true, true, true, true, true, true]);
   });
 
   // The first recording is labeled as such

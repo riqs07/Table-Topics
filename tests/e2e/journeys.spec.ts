@@ -284,7 +284,7 @@ test("Today's practice: start, move through both steps, finish", async ({ page }
   await page.getByRole("button", { name: /Stop/ }).click();
   // Move on without listening back
   await page.getByRole("button", { name: /^Next: step 2/ }).click({ timeout: 15_000 });
-  // Step 2: a prepared answer; start thinking, then skip the rest of the thinking time
+  // Step 2: a prepared speech; start thinking, then skip the rest of the thinking time
   await page.getByRole("button", { name: /Start thinking/ }).click();
   // Ready
   await page.getByRole("button", { name: /Ready/ }).click();

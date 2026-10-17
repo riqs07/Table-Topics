@@ -7,8 +7,8 @@ import type { SessionMode } from "@/data/records";
 export function targetSeconds(mode: SessionMode): number {
   // A Table Topic aims for one to two minutes (Toastmasters contest rules)
   if (mode === "talk") return TOPIC_WINDOW_END;
-  // A Record Response aims for three minutes
-  if (mode === "response") return 180;
+  // A prepared speech aims for two to four minutes (the top of its window)
+  if (mode === "response") return SPEECH_WINDOW.end;
   // An openings and closings drill aims for 45 seconds
   if (mode === "bookend") return 45;
   // A Q&A answer aims for a minute
@@ -21,8 +21,8 @@ export function targetSeconds(mode: SessionMode): number {
 export function maxSeconds(mode: SessionMode): number {
   // A Table Topic runs to 3:00 so going over the 2:30 limit can be seen
   if (mode === "talk") return 180;
-  // A Record Response may run a minute past its goal
-  if (mode === "response") return 240;
+  // A prepared speech runs to 5:00 so going over the 4:30 limit can be seen
+  if (mode === "response") return 300;
   // Reading aloud, the pause drill, and lessons: enough for any passage at a slow pace
   if (mode === "read" || mode === "pause" || mode === "lesson") return 600;
   // A rehearsal: long enough for most real talks
@@ -82,6 +82,30 @@ export const TOPIC_WINDOW_END = 120;
 // The longest answer that still qualifies (30 seconds of grace after red), in seconds
 export const TOPIC_LIMIT = 150;
 
+// A speaking window with Toastmasters-style lights: green when the minimum is met, yellow, red at the top, and a grace before the limit (seconds)
+export interface SpeakingWindow {
+  // Green: the shortest that counts
+  start: number;
+  // Yellow: start wrapping up
+  yellow: number;
+  // Red: the top of the window
+  end: number;
+  // The longest that still counts
+  limit: number;
+}
+
+// A Table Topic: 1 to 2 minutes, 30 seconds of grace
+export const TOPIC_WINDOW: SpeakingWindow = { start: TOPIC_WINDOW_START, yellow: TOPIC_YELLOW, end: TOPIC_WINDOW_END, limit: TOPIC_LIMIT };
+
+// A prepared speech: 2 to 4 minutes, 30 seconds of grace
+export const SPEECH_WINDOW: SpeakingWindow = { start: 120, yellow: 180, end: 240, limit: 270 };
+
+// The window for a kind of session, if it has one
+export function speakingWindow(mode: SessionMode): SpeakingWindow | null {
+  // Table Topics and prepared speeches
+  return mode === "talk" ? TOPIC_WINDOW : mode === "response" ? SPEECH_WINDOW : null;
+}
+
 // The timing light: off, green, yellow, red, or past the limit (still red)
 export type TimeSignal = "none" | "green" | "yellow" | "red" | "overtime";
 
@@ -91,9 +115,9 @@ export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: num
   if (mode === "rehearse" && !goalSeconds) return "none";
   // An openings and closings drill or a Q&A answer: yellow for the last 15 seconds before the goal, red past it
   if (mode === "bookend" || mode === "qa") return seconds > targetSeconds(mode) ? "red" : seconds >= targetSeconds(mode) - BOOKEND_YELLOW_LEAD ? "yellow" : "none";
-  // A Record Response or a rehearsal: yellow in the last stretch before the goal, red past it
-  if (mode === "response" || mode === "rehearse") {
-    // The goal: the rehearsal's own, or the Record Response's
+  // A rehearsal with a goal: yellow in the last stretch before it, red past it
+  if (mode === "rehearse") {
+    // The rehearsal's own goal
     const goal = goalSeconds ?? targetSeconds(mode);
     // Past the goal
     if (seconds > goal) return "red";
@@ -102,16 +126,18 @@ export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: num
     // Otherwise off
     return "none";
   }
-  // Only a Table Topic has the full set of lights
-  if (mode !== "talk") return "none";
-  // Past the 2:30 limit
-  if (seconds > TOPIC_LIMIT) return "overtime";
-  // Red from 2:00
-  if (seconds >= TOPIC_WINDOW_END) return "red";
-  // Yellow from 1:30
-  if (seconds >= TOPIC_YELLOW) return "yellow";
-  // Green from 1:00
-  if (seconds >= TOPIC_WINDOW_START) return "green";
+  // Only a Table Topic and a prepared speech have the full set of lights
+  const window = speakingWindow(mode);
+  // No window, no light
+  if (!window) return "none";
+  // Past the limit
+  if (seconds > window.limit) return "overtime";
+  // Red from the top of the window
+  if (seconds >= window.end) return "red";
+  // Yellow from the middle
+  if (seconds >= window.yellow) return "yellow";
+  // Green once the minimum is met
+  if (seconds >= window.start) return "green";
   // Otherwise off
   return "none";
 }
@@ -122,8 +148,10 @@ export function timingSentence(mode: SessionMode, durationSec: number, goalSecon
   const seconds = Math.round(durationSec);
   // The length as a clock
   const clock = formatClock(seconds);
-  // Anything but a Table Topic compares with its goal
-  if (mode !== "talk") {
+  // The window, for a Table Topic or a prepared speech
+  const window = speakingWindow(mode);
+  // Anything else compares with its goal
+  if (!window) {
     // The goal: a rehearsal's own, or this kind's
     const goal = goalSeconds ?? targetSeconds(mode);
     // How far over (negative means under)
@@ -135,12 +163,14 @@ export function timingSentence(mode: SessionMode, durationSec: number, goalSecon
     // Over, or under
     return difference > 0 ? `${opening}, ${difference} seconds over.` : `${opening}, ${-difference} seconds to spare.`;
   }
+  // What a contest would say, for a Table Topic only
+  const contest = mode === "talk" ? " In a contest this would not qualify." : "";
   // Under the minimum
-  if (seconds < TOPIC_WINDOW_START) return `${clock}, under the ${formatClock(TOPIC_WINDOW_START)} minimum. In a contest this would not qualify.`;
+  if (seconds < window.start) return `${clock}, under the ${formatClock(window.start)} minimum.${contest}`;
   // Inside the window
-  if (seconds <= TOPIC_WINDOW_END) return `${clock}, inside the ${formatClock(TOPIC_WINDOW_START)} to ${formatClock(TOPIC_WINDOW_END)} window.`;
+  if (seconds <= window.end) return `${clock}, inside the ${formatClock(window.start)} to ${formatClock(window.end)} window.`;
   // In the grace after red
-  if (seconds <= TOPIC_LIMIT) return `${clock}, past ${formatClock(TOPIC_WINDOW_END)} but inside the ${TOPIC_LIMIT - TOPIC_WINDOW_END}-second grace.`;
+  if (seconds <= window.limit) return `${clock}, past ${formatClock(window.end)} but inside the ${window.limit - window.end}-second grace.`;
   // Over the limit
-  return `${clock}, over ${formatClock(TOPIC_LIMIT)}. In a contest this would not qualify.`;
+  return `${clock}, over ${formatClock(window.limit)}.${contest}`;
 }

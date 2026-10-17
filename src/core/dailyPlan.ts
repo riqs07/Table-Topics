@@ -131,18 +131,18 @@ function skill(focusId: string, day: Date): PlanStep {
   return { kind: "skill", label: "Skill", title, mode: drill.mode, promptId: drill.promptId, minutes: drill.mode === "lesson" ? 2 : 1, href: `/session?mode=${drill.mode}&prompt=${drill.promptId}` };
 }
 
-// Speaking on the spot: a talk coming up, or a Table Topic, an opening or closing drill, or once a week a prepared answer (always, until there is a first recording to measure progress from)
+// Speaking on the spot: a talk coming up, or a Table Topic, an opening or closing drill, or once a week a prepared speech (always, until there is a first recording to measure progress from)
 function spot(input: PlanInput, needsFirstRecording: boolean): PlanStep {
   // A talk coming up comes first
   if (input.nextTalk) return { kind: "spot", label: "Your talk", title: input.nextTalk.headline, mode: "rehearse", promptId: input.nextTalk.id, minutes: 3, href: `/session?mode=rehearse&prompt=${input.nextTalk.id}` };
   // The day in the week's turn
   const turn = ((dayNumber(input.day) % 7) + 7) % 7;
-  // One day a week a prepared answer, and every day until the first one (only a prepared answer can be the first recording)
+  // One day a week a prepared speech, and every day until the first one (only a prepared speech can be the first recording)
   if (turn === 6 || needsFirstRecording) {
     // Today's task
     const prompt = promptForDay(input.day);
     // The step
-    return { kind: "spot", label: "Prepared answer", title: prompt.text, mode: "response", promptId: prompt.id, minutes: 3, href: `/session?mode=response&prompt=${prompt.id}` };
+    return { kind: "spot", label: "Prepared speech", title: prompt.text, mode: "response", promptId: prompt.id, minutes: 3, href: `/session?mode=response&prompt=${prompt.id}` };
   }
   // Every other day, an opening or a closing drill (the week's focus decides which, if it is one of them)
   if (turn % 2 === 1) {

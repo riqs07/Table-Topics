@@ -189,11 +189,11 @@ describe("checkFeedback", () => {
   });
 
   // A Record Response is flagged with its goal and thinking time
-  it("tells the coach when a session is a Record Response", () => {
-    // Build a response message that ran 12 seconds over
+  it("tells the coach when a session is a prepared speech", () => {
+    // Build a speech message that ran 3:12
     const message = buildCoachMessage({ ...SESSION, durationSec: 192, mode: "response" });
     // Confirm the note
-    expect(message).toContain("This is a prepared response: up to 120 seconds to think with hints, then a 180-second goal. It ran 192 seconds. Comment on how the answer was organised across the whole time.");
+    expect(message).toContain("This is a prepared speech: up to 120 seconds to plan with hints, then 2 to 4 minutes of speaking (green light at 2:00, red at 4:00). It ran 192 seconds. Comment on how the speech was organised across the whole time.");
   });
 
   // A Table Topic is flagged with its rules, so the coach looks at the whole answer and the timing
@@ -201,6 +201,6 @@ describe("checkFeedback", () => {
     // Build a Table Topic message in the grace period
     const message = buildCoachMessage({ ...SESSION, durationSec: 132, mode: "talk" });
     // Confirm the note
-    expect(message).toContain("This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under 1:00 or over 2:30 would not qualify in a contest. It came after a 10-second countdown on a light question and ran 132 seconds. Judge it as a quick, unprepared answer.");
+    expect(message).toContain("This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under 1:00 or over 2:30 would not qualify in a contest. It came after a 10-second countdown on a light question and ran 132 seconds. Judge it as a quick, unprepared speech.");
   });
 });

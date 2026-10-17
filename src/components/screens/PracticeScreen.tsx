@@ -31,10 +31,10 @@ export function PracticeScreen(props: ScreenProps) {
   const { repo, today } = useScreenBasics(props);
   // How many prompts along from today's ("choose another" adds one)
   const [offset, setOffset] = useState(0);
-  // The newest rehearsal or prepared answer, for Q&A (undefined while loading)
+  // The newest rehearsal or prepared speech, for Q&A (undefined while loading)
   const [qaFrom, setQaFrom] = useState<string | null | undefined>(undefined);
 
-  // Find the newest rehearsal or prepared answer
+  // Find the newest rehearsal or prepared speech
   useEffect(() => {
     // Ignore the result if the page closes first
     let cancelled = false;
@@ -73,7 +73,7 @@ export function PracticeScreen(props: ScreenProps) {
           {topic && <p className="mt-auto pt-3"><PrimaryLink href={`/session?mode=talk&prompt=${topic.id}`}>Start a Table Topic</PrimaryLink></p>}
         </Card>
 
-        {/* A prepared answer */}
+        {/* A prepared speech */}
         <Card labelledBy="prepared" icon={NotePencilIcon}>
           {/* What it is */}
           <ModeHeader mode={mode("prepared")} />
@@ -82,7 +82,7 @@ export function PracticeScreen(props: ScreenProps) {
           {/* Start it, or swap the task */}
           <p className="mt-auto flex flex-wrap items-baseline gap-x-4 gap-y-2 pt-3">
             {/* Start */}
-            {prompt && <PrimaryLink href={`/session?mode=response&prompt=${prompt.id}`}>Start a prepared answer</PrimaryLink>}
+            {prompt && <PrimaryLink href={`/session?mode=response&prompt=${prompt.id}`}>Start a prepared speech</PrimaryLink>}
             {/* Another task */}
             <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">or choose another</button>
           </p>
@@ -102,11 +102,11 @@ export function PracticeScreen(props: ScreenProps) {
           <ModeHeader mode={mode("qa")} />
           {/* Its page, once there is something to ask about */}
           {qaFrom ? (
-            // The newest rehearsal or prepared answer
+            // The newest rehearsal or prepared speech
             <p className="mt-auto pt-3"><SecondaryLink href={`/qa?from=${qaFrom}`}>Practise Q&amp;A on your latest run</SecondaryLink></p>
           ) : (
             // Nothing yet
-            qaFrom === null && <p className="mt-3 text-footnote italic text-ink-muted">Opens after a rehearsal or a prepared answer: the questions come from what you said.</p>
+            qaFrom === null && <p className="mt-3 text-footnote italic text-ink-muted">Opens after a rehearsal or a prepared speech: the questions come from what you said.</p>
           )}
         </Card>
       </div>
