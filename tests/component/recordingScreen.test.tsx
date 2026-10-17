@@ -430,6 +430,26 @@ describe("RecordingScreen", () => {
     expect([!!(await screen.findByText("Start without the um")), !!screen.getByText("Coach: Breathe, then begin.")]).toEqual([true, true]);
   });
 
+  // Inside today's practice, the saved session opens with the plan step, and the page says which step it is
+  it("keeps today's practice step through to the saved session", async () => {
+    // Draw step 1 of the plan
+    const { clock, navigate } = draw({ planStep: 1 });
+    // The step line
+    const line = await screen.findByText(/^Today’s practice · step 1/);
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Speak past the minimum
+    clock.advance(12_000);
+    // Stop
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm the line and the plan marker on the next page
+    expect([!!line, /^\/sessions\?id=.+&plan=1$/.test(String(navigate.mock.calls[0]?.[0]))]).toEqual([true, true]);
+  });
+
   // A pause drill shows its pause marks as visible pause signs, not slashes
   it("shows the pause marks in a pause drill", async () => {
     // Draw a pause drill

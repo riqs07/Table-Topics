@@ -35,6 +35,8 @@ import type { SessionMode, TalkRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the recording saver
 import { saveRecording } from "@/data/saveRecording";
+// Load today's practice, for its number of steps
+import { loadDailyPlan } from "@/data/dailyPlan";
 
 // What the screen is given
 interface RecordingScreenProps {
@@ -58,6 +60,8 @@ interface RecordingScreenProps {
   ladder?: Ladder;
   // For a Q&A answer: which of the session's questions (counted from 0)
   questionIndex?: number;
+  // Inside today's practice: which step this is (counted from 1), or null
+  planStep?: number | null;
 }
 
 // One tip for each end of a talk, shown before an openings and closings drill
@@ -274,7 +278,7 @@ function Meter({ levels }: { levels: number[] }) {
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0 }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null }: RecordingScreenProps) {
   // Use the given repository, or the browser's
   const [repo] = useState(() => repository ?? browserRepository());
   // Use the given clock, or the real one, kept the same between redraws (a new one each time would restart the effects below)
@@ -297,6 +301,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [ownNote, setOwnNote] = useState<string | null>(null);
   // The live transcriber, audio capture, start time, and timer, kept between renders
   const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; spokenTimes: number[]; scriptTimes: (number | null)[] } | null>(null);
+  // Inside today's practice, how many steps it has (loaded below)
+  const [planTotal, setPlanTotal] = useState<number | null>(null);
   // While reading, the number of the next word to read (every word before it is lit up)
   const [place, setPlace] = useState(0);
   // Guards against stopping twice (a click and the auto-stop at once)
@@ -416,6 +422,24 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     };
   }, [repo, retryOf]);
 
+  // Inside today's practice, load the plan to say how many steps it has
+  useEffect(() => {
+    // Only inside the plan
+    if (!planStep) return;
+    // Ignore the result if the screen closes first
+    let cancelled = false;
+    // Load it
+    loadDailyPlan(repo, clock()).then((plan) => {
+      // Keep the count if still open
+      if (!cancelled) setPlanTotal(plan.steps.length);
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [repo, clock, planStep]);
+
   // Stop the timer and every recording piece, handing back the transcript, audio, and length
   const finishCapture = useCallback(async () => {
     // Nothing to stop if not recording
@@ -478,7 +502,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Save the session with its audio
       const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
       // Open the new session's page (feedback is requested there)
-      navigate(`/sessions?id=${session.id}`);
+      navigate(`/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`);
     } catch (error) {
       // Keep the details in the browser console for debugging
       console.error("Saving the recording failed", error);
@@ -489,7 +513,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [clock, finishCapture, mode, navigate, promptId, qaQuestion, repo, retryOf, section]);
+  }, [clock, finishCapture, mode, navigate, planStep, promptId, qaQuestion, repo, retryOf, section]);
 
   // Stop because of a problem, saving nothing
   const fail = useCallback(
@@ -688,6 +712,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Navigation (hidden while recording), title and keyboard hint */}
       <Masthead title={title} nav={!(recording || thinking || stage === "starting" || stage === "saving")}>{hint}</Masthead>
+      {/* Inside today's practice, which step this is */}
+      {planStep && <p className="mt-3 text-footnote italic text-accent">Today’s practice · step {planStep}{planTotal ? ` of ${planTotal}` : ""}</p>}
 
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">

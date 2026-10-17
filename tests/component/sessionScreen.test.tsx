@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 // Load the tool for acting like a user
 import userEvent from "@testing-library/user-event";
 // Load the screen being checked
@@ -639,6 +639,42 @@ describe("SessionScreen", () => {
       await screen.findByText(FEEDBACK.change);
       // Confirm the audio is still there
       expect(!!(await repository.getAudio("s1"))).toBe(true);
+    });
+
+    // Inside today's practice, the next step is open before listening, and moving on saves the step
+    it("moves on to the next step of today's practice without listening first", async () => {
+      // The repository
+      const repository = await withAudio();
+      // Where the app goes
+      const navigate = vi.fn();
+      // Draw step 1 of the plan
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} planStep={1} navigate={navigate} />);
+      // The next-step button, open at once
+      const next = (await screen.findByRole("button", { name: /^Next: step 2/ })) as HTMLButtonElement;
+      // Whether it was open
+      const open = !next.disabled;
+      // Move on
+      await userEvent.click(next);
+      // Wait for the move
+      await waitFor(() => expect(navigate).toHaveBeenCalled());
+      // Confirm it was open, went to step 2 inside the plan, and noted the step as reviewed (skipped, nothing written)
+      expect([open, navigate.mock.calls[0]?.[0], (await repository.getSession("s1"))?.selfReview?.skipped, !!screen.queryByText("Today’s practice · step 1 of 2")]).toEqual([true, `/session?mode=response&prompt=${promptForDay(NOW).id}&plan=2`, true, true]);
+    });
+
+    // The last step finishes the practice, and trying again stays inside the plan
+    it("finishes today's practice after the last step, with a retry on offer", async () => {
+      // Where the app goes
+      const navigate = vi.fn();
+      // Draw step 2 of 2
+      render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} planStep={2} navigate={navigate} />);
+      // Where trying again leads
+      const retry = (await screen.findByRole("link", { name: "Try it again" })).getAttribute("href");
+      // Finish
+      await userEvent.click(await screen.findByRole("button", { name: /^Finish today’s practice/ }));
+      // Wait for the move
+      await waitFor(() => expect(navigate).toHaveBeenCalled());
+      // Confirm back to Today, and the retry keeps the plan step
+      expect([navigate.mock.calls[0]?.[0], retry?.endsWith("&retryOf=s1&plan=2")]).toEqual(["/", true]);
     });
 
     // Older sessions skip the step

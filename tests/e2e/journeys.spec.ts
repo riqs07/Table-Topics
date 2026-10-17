@@ -260,6 +260,46 @@ test("Whole speech: open it from Skills, read part 1, then go on to part 2", asy
   await expect(page.getByText("Second Inaugural Address, part 2 of 7")).toBeVisible();
 });
 
+// Today's practice: start from Today, do both steps without waiting to listen back, and finish
+test("Today's practice: start, move through both steps, finish", async ({ page }) => {
+  // The stand-in speech reads the opening of the warm-up speech
+  await useStandIns(page, "Fellow Countrymen At this second appearing to take the oath of the Presidential office there is less occasion for an extended address than there was at the first");
+  // Start at Today
+  await page.goto("/");
+  // Skip the welcome question
+  await page.getByRole("button", { name: "Skip" }).click();
+  // Today's practice has two steps for a new user
+  await expect(page.getByRole("list", { name: "Steps" }).getByRole("link")).toHaveCount(2);
+  // Start it
+  await page.getByRole("link", { name: /^Start today’s practice/ }).click();
+  // Step 1 of 2: the warm-up reading
+  await expect(page.getByText("Today’s practice · step 1 of 2")).toBeVisible();
+  // Start reading
+  await page.getByRole("button", { name: /Start reading/ }).click();
+  // Read past the minimum
+  await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 10_000 });
+  // Wait
+  await page.waitForTimeout(11_500);
+  // Stop
+  await page.getByRole("button", { name: /Stop/ }).click();
+  // Move on without listening back
+  await page.getByRole("button", { name: /^Next: step 2/ }).click({ timeout: 15_000 });
+  // Step 2: a prepared answer; start thinking, then skip the rest of the thinking time
+  await page.getByRole("button", { name: /Start thinking/ }).click();
+  // Ready
+  await page.getByRole("button", { name: /Ready/ }).click();
+  // Speak past the minimum
+  await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 10_000 });
+  // Wait
+  await page.waitForTimeout(11_500);
+  // Stop
+  await page.getByRole("button", { name: /Stop/ }).click();
+  // Finish
+  await page.getByRole("button", { name: /^Finish today’s practice/ }).click({ timeout: 15_000 });
+  // Today says the practice is done
+  await expect(page.getByRole("heading", { name: "Done for today." })).toBeVisible();
+});
+
 // Storage left by another project at the same address (bugs B2 and B4)
 test("works when another app left a database called voicelab", async ({ page }) => {
   // Use the stand-in microphone and speech

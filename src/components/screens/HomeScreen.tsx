@@ -27,12 +27,14 @@ import { currentStreak } from "@/core/streak";
 import { weekStrip, type StripDay } from "@/core/weekStrip";
 // Load the repository type
 import type { Repository } from "@/data/repository";
-// Load the talk record type
-import type { TalkRecord } from "@/data/records";
-// Load the event-prep rules, for the next talk's countdown
-import { daysUntil, eventPlan, prepHeadline } from "@/core/eventPrep";
-// Load the one-next-step recommender
-import { nextStep } from "@/core/nextStep";
+// Load today's practice and the next talk with a date
+import { loadDailyPlan, type LoadedPlan } from "@/data/dailyPlan";
+// Load the plan's time and addresses
+import { planHref, planMinutes } from "@/core/dailyPlan";
+// Load the done and next marks on a path
+import { PathMark } from "@/components/script/PathMark";
+// Load the rate formatter, for the summary
+import { formatRate } from "@/core/copy";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 
@@ -66,26 +68,10 @@ interface HomeData {
   weekStart: string;
   // Whether the challenge is done
   challengeDone: boolean;
-  // The soonest talk with a date still to come, with days left and today's step, or null
-  nextTalk: { talk: TalkRecord; daysLeft: number; headline: string } | null;
   // Whether to ask the welcome question: a first visit with nothing saved yet
   showWelcome: boolean;
-}
-
-// The soonest talk whose date is today or later, with its days left and today's step
-function nextTalkFrom(talks: ReadonlyArray<TalkRecord>, now: Date): HomeData["nextTalk"] {
-  // Dated talks still to come, soonest first
-  const coming = talks
-    .filter((talk) => talk.eventDate)
-    .map((talk) => ({ talk, daysLeft: daysUntil(talk.eventDate ?? "", now) }))
-    .filter((entry) => entry.daysLeft >= 0)
-    .sort((a, b) => a.daysLeft - b.daysLeft);
-  // The soonest
-  const soonest = coming[0];
-  // Today's step for it
-  const step = soonest ? eventPlan(soonest.daysLeft)?.[0] : undefined;
-  // Hand it back with its sentence, or nothing
-  return soonest && step ? { ...soonest, headline: prepHeadline(soonest.daysLeft, step) } : null;
+  // Today's practice
+  plan: LoadedPlan;
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
@@ -126,10 +112,10 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     weekStart: week.weekStart.toISOString(),
     // Whether it is done
     challengeDone: Boolean(record?.completedAt),
-    // The next talk with a date
-    nextTalk: nextTalkFrom(talks, now),
     // A first visit: nothing saved, and the welcome not yet answered in this browser
     showWelcome: sessions.length === 0 && talks.length === 0 && !readWelcomeSeen(),
+    // Today's practice (after the focus is saved, so both agree)
+    plan: await loadDailyPlan(repository, now),
   };
 }
 
@@ -176,8 +162,12 @@ export function HomeScreen(props: ScreenProps) {
     if (data) setData({ ...data, showWelcome: false });
   }
 
-  // The one recommended next step, once the data is in
-  const step = data && today ? nextStep({ day: today, sessionCount: data.sessionCount, focusId: data.focus.id, nextTalk: data.nextTalk ? { id: data.nextTalk.talk.id, title: data.nextTalk.talk.title, headline: data.nextTalk.headline } : null }) : null;
+  // Today's practice, once the data is in
+  const plan = data && !data.showWelcome ? data.plan : null;
+  // The first step not yet done (-1 when all are)
+  const nextIndex = plan ? plan.done.indexOf(false) : -1;
+  // Steps done
+  const doneCount = plan ? plan.done.filter(Boolean).length : 0;
 
   // Draw the page
   return (
@@ -240,15 +230,48 @@ export function HomeScreen(props: ScreenProps) {
             </section>
           )}
 
-          {/* The one next step */}
-          {step && !data?.showWelcome && (
-            <section aria-label="Next for you" className="mt-8 md:mt-0">
-              {/* What it is */}
-              <p className="text-footnote italic text-ink-muted">Next for you · {step.label}</p>
-              {/* The task, or today's step for a talk, set like a headline */}
-              <h1 className="mt-2 font-display text-prompt tracking-tight md:max-w-[18ch] md:text-prompt-xl">{step.detail}</h1>
-              {/* Why this one */}
-              <p className="mt-3 max-w-[52ch] italic text-ink-muted">{step.why}</p>
+          {/* Today's practice: the steps, with done and next marks */}
+          {plan && (
+            <section aria-label="Today's practice" className="mt-8 md:mt-0">
+              {/* What it is and how long */}
+              <p className="text-footnote italic text-ink-muted">Today’s practice · about {planMinutes(plan.steps)} minutes with listening back</p>
+              {/* Where things stand, set like a headline */}
+              <h1 className="mt-2 font-display text-prompt tracking-tight md:text-prompt-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? (plan.steps.length === 2 ? "Two short steps." : "Three short steps.") : "Pick up where you left off."}</h1>
+              {/* The steps */}
+              <ol aria-label="Steps" className="mt-4">
+                {/* Each step */}
+                {plan.steps.map((step, index) => {
+                  // Done, next, or still to come
+                  const mark = plan.done[index] ? "done" : index === nextIndex ? "next" : "open";
+                  // When done, a line from today's session: the user's note, or the filler count
+                  const session = plan.done[index] ? plan.today.find((item) => item.mode === step.mode && item.promptId === step.promptId) : undefined;
+                  // That line
+                  const result = session ? (session.selfReview?.change || `${formatRate(session.fillersPerMinute)} fillers a minute`) : null;
+                  // One step
+                  return (
+                    <li key={step.kind} className="relative">
+                      {/* The line to the next step (not after the last) */}
+                      {index < plan.steps.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
+                      {/* The whole row starts the step */}
+                      <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
+                        {/* Its mark */}
+                        <PathMark mark={mark} number={index + 1} />
+                        {/* What it is */}
+                        <span className="min-w-0 flex-1">
+                          {/* Its name and time */}
+                          <span className={`block text-footnote italic ${mark === "next" ? "text-accent" : "text-ink-muted"}`}>{step.label} · {step.minutes} min</span>
+                          {/* What it uses */}
+                          <span className="block text-lede">{step.title}</span>
+                          {/* How it went, once done */}
+                          {result && <span className="block text-footnote text-ink-muted">{result}</span>}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+              {/* Once done, a word on what is next */}
+              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] italic text-ink-muted">A new practice is ready tomorrow. Anything else you want to practise is below.</p>}
             </section>
           )}
 
@@ -288,8 +311,12 @@ export function HomeScreen(props: ScreenProps) {
               </label>
             </Footnote>
           )}
-          {/* The main action: start the next step */}
-          {step && !data?.showWelcome && <ActionBand action={step.action} aside={step.label} href={step.href} />}
+          {/* The main action: start or carry on with today's practice, or practise more once it is done */}
+          {plan && (nextIndex === -1 ? (
+            <ActionBand action="Practise more" aside="on your own" href="/practice" />
+          ) : (
+            <ActionBand action={doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={plan.steps[nextIndex]?.label ?? ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
+          ))}
         </div>
       </div>
     </main>

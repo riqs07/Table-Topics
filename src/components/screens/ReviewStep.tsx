@@ -3,6 +3,10 @@
 
 // Load React's state and reference tools
 import { useRef, useState } from "react";
+// Load Next.js's link component
+import Link from "next/link";
+// Load the plan navigation type
+import type { PlanNav } from "@/components/screens/planNav";
 // Load the shared action band button
 import { ActionButton } from "@/components/script/ActionBand";
 // Load the player
@@ -70,7 +74,7 @@ function FollowingTranscript({ session, position, onPick }: { session: SessionRe
 }
 
 // The review step: listen, write, then continue
-export function ReviewStep({ repo, session, onSaved }: { repo: Repository; session: SessionRecord; onSaved: (updated: SessionRecord) => void }) {
+export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = null, navigate }: { repo: Repository; session: SessionRecord; onSaved: (updated: SessionRecord) => void; plan?: PlanNav | null; retryHref?: string | null; navigate?: (path: string) => void }) {
   // The recording's address
   const audio = useAudioUrl(repo, session.audioKey);
   // The audio element, for jumping to a word
@@ -121,7 +125,7 @@ export function ReviewStep({ repo, session, onSaved }: { repo: Repository; sessi
   }
 
   // Save the notes (or a skip) on the session as it is now, then hand it back
-  async function save(skipped: boolean) {
+  async function save(skipped: boolean): Promise<boolean> {
     // Try to save
     try {
       // The session as it is now (feedback may have arrived meanwhile)
@@ -140,10 +144,22 @@ export function ReviewStep({ repo, session, onSaved }: { repo: Repository; sessi
       onSaved(updated);
       // From the top of the page
       window.scrollTo?.({ top: 0 });
+      // Saved
+      return true;
     } catch (error) {
       // Say what went wrong; the notes stay on screen
       setProblem(`Your notes could not be saved (${error instanceof Error ? error.message : String(error)}). Try again.`);
+      // Not saved
+      return false;
     }
+  }
+
+  // Inside today's practice: save any notes (or note a skip when there are none and nothing was heard), then go to the next step
+  async function moveOn(current: PlanNav) {
+    // Nothing written, tagged or heard counts as a skip
+    const nothing = !listened && worked.trim() === "" && change.trim() === "" && tags.size === 0;
+    // Save, and move on only if that worked
+    if (await save(nothing)) navigate?.(current.next ? current.next.href : "/");
   }
 
   // Draw the step
@@ -152,7 +168,7 @@ export function ReviewStep({ repo, session, onSaved }: { repo: Repository; sessi
       {/* The ask */}
       <h1 className="mt-6 font-display text-statement tracking-tight md:mt-0">Listen back first.</h1>
       {/* Why */}
-      <p className="mt-3 max-w-[52ch] text-lede">Hear it the way your audience did. Then write one thing that worked and one thing you would change. The numbers and the coach’s notes open after.</p>
+      <p className="mt-3 max-w-[52ch] text-lede">{plan ? "Hear it the way your audience did, and note one thing that worked and one thing you would change. Move on whenever you are ready." : "Hear it the way your audience did. Then write one thing that worked and one thing you would change. The numbers and the coach’s notes open after."}</p>
       {/* The player, or why there is none */}
       {audio.url ? (
         <div className="mt-6">
@@ -160,7 +176,7 @@ export function ReviewStep({ repo, session, onSaved }: { repo: Repository; sessi
           <Player src={audio.url} label="Your recording" name="your recording" durationSec={session.durationSec} speeds={session.durationSec > OFFER_SPEED_AFTER} onAudio={(found) => { element.current = found; }} onTime={follow} />
           {/* How much is left to hear */}
           <p role="status" className="mt-2 text-footnote italic text-ink-muted">
-            {listened ? "Heard. Now your notes." : `Heard ${formatClock(heard.filter(Boolean).length)} of ${formatClock(session.durationSec)}. ${long ? "Listen to all of it, or to its first and last 45 seconds." : "Listen to all of it to open the feedback."}`}
+            {listened ? "Heard. Now your notes." : `Heard ${formatClock(heard.filter(Boolean).length)} of ${formatClock(session.durationSec)}.${plan ? "" : ` ${long ? "Listen to all of it, or to its first and last 45 seconds." : "Listen to all of it to open the feedback."}`}`}
           </p>
         </div>
       ) : (
@@ -214,15 +230,29 @@ export function ReviewStep({ repo, session, onSaved }: { repo: Repository; sessi
           </span>
         </label>
       ))}
-      {/* Skipping, kept small */}
-      <p className="mt-6 mb-6">
-        {/* Skip this time */}
-        <button type="button" onClick={() => void save(true)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Skip this time</button>
-      </p>
+      {/* Inside today's practice: try again, or see the feedback, both optional */}
+      {plan ? (
+        <p className="mt-6 mb-6 flex flex-wrap gap-x-4">
+          {/* Try again, staying in the plan */}
+          {retryHref && <Link href={retryHref} className="inline-flex min-h-11 items-center underline underline-offset-4">Try it again</Link>}
+          {/* Save the notes and see this step's feedback */}
+          <button type="button" onClick={() => void save(false)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Save and see the feedback</button>
+        </p>
+      ) : (
+        // Skipping, kept small
+        <p className="mt-6 mb-6">
+          {/* Skip this time */}
+          <button type="button" onClick={() => void save(true)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Skip this time</button>
+        </p>
+      )}
       {/* Push the action down */}
       <div className="flex-1" />
-      {/* Save and open the feedback, once listened */}
-      <ActionButton action="Save my notes" aside={listened ? "then see the feedback" : "listen first"} disabled={!listened} onClick={() => void save(false)} />
+      {/* Inside today's practice the next step is always open, saving any notes; otherwise saving opens once listened */}
+      {plan ? (
+        <ActionButton action={plan.next ? `Next: step ${plan.step + 1}` : "Finish today’s practice"} aside={plan.next ? plan.next.label : "back to Today"} onClick={() => void moveOn(plan)} />
+      ) : (
+        <ActionButton action="Save my notes" aside={listened ? "then see the feedback" : "listen first"} disabled={!listened} onClick={() => void save(false)} />
+      )}
     </section>
   );
 }

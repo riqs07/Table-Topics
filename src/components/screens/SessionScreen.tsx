@@ -14,6 +14,12 @@ import { Player } from "@/components/script/Player";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the saved-audio loader
 import { useAudioUrl } from "@/components/screens/useAudioUrl";
+// Load today's practice, to find the next step
+import { loadDailyPlan } from "@/data/dailyPlan";
+// Load the plan's addresses
+import { planHref } from "@/core/dailyPlan";
+// Load the plan navigation type
+import type { PlanNav } from "@/components/screens/planNav";
 // Load the listen-back step
 import { ReviewStep } from "@/components/screens/ReviewStep";
 // Load the quick tags, for showing the user's notes
@@ -67,6 +73,10 @@ interface SessionScreenProps extends ScreenProps {
   sessionId: string;
   // Network function for asking the coach (replaced in tests)
   fetchFn?: typeof fetch;
+  // Inside today's practice: which step this is (counted from 1), or null
+  planStep?: number | null;
+  // Where to go next (the router in the app)
+  navigate?: (path: string) => void;
 }
 
 // What to say while feedback is being asked for, or why it has not come
@@ -246,7 +256,7 @@ function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: 
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void }) {
+function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed, plan, navigate }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void; plan: PlanNav | null; navigate?: (path: string) => void }) {
   // The lesson, on the skill path
   const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
   // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
@@ -270,7 +280,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // Whether this is an answer to an audience question
   const qa = session.mode === "qa";
   // Where "try it again" leads: the same question for a Q&A answer (or its list, if the question was replaced), otherwise the same prompt
-  const retryHref = qa && qaIndex === null ? `/qa?from=${session.promptId}` : `/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}`;
+  const retryHref = qa && qaIndex === null ? `/qa?from=${session.promptId}` : `/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}${plan ? `&plan=${plan.step}` : ""}`;
   // An openings and closings drill's prompt, and what it measured
   const bookend = session.mode === "bookend" ? BOOKENDS.find((item) => item.id === session.promptId) : undefined;
   // The drill's two findings
@@ -293,9 +303,9 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
     return (
       <>
         {/* Title and day */}
-        <Masthead title={title}>{dayLabel(new Date(session.createdAt), now)}</Masthead>
+        <Masthead title={title}>{plan ? `Today’s practice · step ${plan.step} of ${plan.total}` : dayLabel(new Date(session.createdAt), now)}</Masthead>
         {/* Listen, write, continue */}
-        <ReviewStep repo={repo} session={session} onSaved={onReviewed} />
+        <ReviewStep repo={repo} session={session} onSaved={onReviewed} plan={plan} retryHref={retryHref} navigate={navigate} />
       </>
     );
   }
@@ -303,7 +313,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   return (
     <>
       {/* Title and the secondary number */}
-      <Masthead title={title}>{dayLabel(new Date(session.createdAt), now)}</Masthead>
+      <Masthead title={title}>{plan ? `Today’s practice · step ${plan.step} of ${plan.total}` : dayLabel(new Date(session.createdAt), now)}</Masthead>
       {/* Notes column and transcript column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
@@ -432,11 +442,17 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {rehearsed && <Link href={`/talk?id=${rehearsed.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Back to your talk</Link>}
             {/* Separator */}
             {rehearsed && <span>·</span>}
+            {/* Inside today's practice, trying again is offered here (the main action moves on) */}
+            {plan && <Link href={retryHref} className="inline-flex min-h-11 items-center underline underline-offset-4">Try it again</Link>}
+            {/* Separator */}
+            {plan && <span>·</span>}
             {/* Finish */}
             <Link href="/" className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">or finish for today</Link>
           </Footnote>
-          {/* After an old warm-up, a Record Response; otherwise the retry */}
-          {warmup ? (
+          {/* Inside today's practice, the next step; after an old warm-up, a Record Response; otherwise the retry */}
+          {plan ? (
+            <PlanBand plan={plan} />
+          ) : warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (
             <ActionBand action="Try it again" aside={rehearsed ? "same part of the talk" : qa ? "same question" : "same prompt"} href={retryHref} />
@@ -447,8 +463,14 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   );
 }
 
+// Inside today's practice: the band that moves to the next step, or finishes the practice after the last
+function PlanBand({ plan }: { plan: PlanNav }) {
+  // The next step, or back to Today
+  return plan.next ? <ActionBand action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <ActionBand action="Finish today’s practice" aside="back to Today" href="/" />;
+}
+
 // The Retry result screen
-function RetryView({ repo, retry, original, now }: { repo: Repository; retry: SessionRecord; original: SessionRecord; now: Date }) {
+function RetryView({ repo, retry, original, now, plan }: { repo: Repository; retry: SessionRecord; original: SessionRecord; now: Date; plan: PlanNav | null }) {
   // The number for the focus, or the filler rate when the focus has none
   const measure = measureFor(original.focus) ?? measureFor("cut-fillers");
   // Write one try's number with its unit
@@ -462,7 +484,7 @@ function RetryView({ repo, retry, original, now }: { repo: Repository; retry: Se
   return (
     <>
       {/* Title and day */}
-      <Masthead title="Second try">{dayLabel(new Date(retry.createdAt), now)}</Masthead>
+      <Masthead title="Second try">{plan ? `Today’s practice · step ${plan.step} of ${plan.total}` : dayLabel(new Date(retry.createdAt), now)}</Masthead>
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Both tries, in the margin on a computer (the headline already says both numbers on a phone) */}
@@ -483,7 +505,7 @@ function RetryView({ repo, retry, original, now }: { repo: Repository; retry: Se
           {/* Push the action down */}
           <div className="flex-1" />
           {/* Finish */}
-          <div className="mt-8"><ActionBand action="Finish" aside="saved" href="/" /></div>
+          <div className="mt-8">{plan ? <PlanBand plan={plan} /> : <ActionBand action="Finish" aside="saved" href="/" />}</div>
         </div>
       </div>
     </>
@@ -491,13 +513,15 @@ function RetryView({ repo, retry, original, now }: { repo: Repository; retry: Se
 }
 
 // Draw the session page
-export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenProps) {
+export function SessionScreen({ sessionId, fetchFn, planStep = null, navigate, ...props }: SessionScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
   // What was loaded
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   // A note about feedback being asked for, or why it has not come
   const [note, setNote] = useState("");
+  // Inside today's practice: this step, how many there are, and the next one (loaded below)
+  const [plan, setPlan] = useState<PlanNav | null>(null);
   // Bumped to ask the coach again, once notes it was waiting for are saved
   const [askAgain, setAskAgain] = useState(0);
 
@@ -556,6 +580,28 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
     };
   }, [repo, today, sessionId, fetchFn, askAgain]);
 
+  // Inside today's practice, load the plan to find the next step
+  useEffect(() => {
+    // Only inside the plan, once the date is known
+    if (!planStep || !today) return;
+    // Ignore the result if the screen closes first
+    let cancelled = false;
+    // Load it
+    loadDailyPlan(repo, today).then((loadedPlan) => {
+      // Stop if closed
+      if (cancelled) return;
+      // The next step, if there is one
+      const next = loadedPlan.steps[planStep];
+      // Keep where this step sits
+      setPlan({ step: planStep, total: loadedPlan.steps.length, next: next ? { href: planHref(next, planStep + 1), label: next.label } : null });
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [repo, today, planStep]);
+
   // Draw the page
   return (
     // One column on a phone, two on a computer
@@ -570,9 +616,9 @@ export function SessionScreen({ sessionId, fetchFn, ...props }: SessionScreenPro
         </>
       )}
       {/* A retry with its first try */}
-      {loaded?.session && loaded.original && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} />}
+      {loaded?.session && loaded.original && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} onReviewed={(updated) => {
+      {loaded?.session && !loaded.original && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} navigate={navigate} onReviewed={(updated) => {
         // Show the notes and the feedback
         setLoaded((previous) => (previous ? { ...previous, session: updated } : previous));
         // If the coach was waiting for the notes, ask it now
