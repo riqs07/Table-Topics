@@ -1,9 +1,9 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the checks being tested
-import { answerLength, deadEndOpening, feelingWords, handBack, smallTalkChange, stripLevel } from "@/core/smallTalk";
+import { answerLength, beatCount, deadEndOpening, feelingWords, handBack, smallTalkChange, stripLevel } from "@/core/smallTalk";
 // Load the content, to check it hangs together
-import { BEATS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, findSmallTalk } from "@/content/smallTalk";
+import { BEATS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, findSmallTalk, smallTalkForDay } from "@/content/smallTalk";
 // Load the app's prompt lookup
 import { findPrompt } from "@/content/prompts";
 // Load a sample session builder
@@ -67,5 +67,21 @@ describe("small talk", () => {
     const ids = [...SMALL_TALK_QUESTIONS.map((item) => item.id), ...SMALL_TALK_LESSONS.map((item) => item.id)];
     // Confirm unique, found by both lookups, and four beats
     expect([new Set(ids).size === ids.length, ids.every((id) => findSmallTalk(id) && findPrompt(id)), BEATS.length, findSmallTalk("stl3")?.question]).toEqual([true, true, 4, "Seen anything good lately?"]);
+  });
+
+  // The coach's reading wins over the user's ticks and the phone's checks
+  it("counts beats from the coach when its notes are there", () => {
+    // The full answer, ticked for everything, but the coach found no feeling and no hand-back
+    const session = { ...answer(FULL, ["moment", "hook", "feeling", "hand-back"]), feedback: { keep: "k", change: "c", retryCue: "r", smallTalk: { moment: "I built an app", hooks: ["coaches me"], feeling: "", handBack: "", livelier: "L" } } };
+    // Confirm two from the coach, and four without it
+    expect([beatCount(session), beatCount(answer(FULL, ["moment", "hook"]))]).toEqual([2, 4]);
+  });
+
+  // A question a day, in turn
+  it("takes the everyday questions in turn by day", () => {
+    // Two days in a row, and the same day moved along
+    const day = new Date(2026, 9, 17);
+    // Confirm they differ, and the offset matches the next day
+    expect([smallTalkForDay(day).id === smallTalkForDay(new Date(2026, 9, 18)).id, smallTalkForDay(day, 1).id === smallTalkForDay(new Date(2026, 9, 18)).id]).toEqual([false, true]);
   });
 });

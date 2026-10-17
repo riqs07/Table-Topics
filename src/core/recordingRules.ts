@@ -13,6 +13,8 @@ export function targetSeconds(mode: SessionMode): number {
   if (mode === "bookend") return 45;
   // A Q&A answer aims for a minute
   if (mode === "qa") return 60;
+  // A small-talk answer aims for the top of its window
+  if (mode === "smalltalk") return SMALL_TALK_WINDOW.end;
   // Warm-ups are 30 seconds; full sessions about a minute
   return mode === "warmup" ? 30 : 60;
 }
@@ -31,6 +33,8 @@ export function maxSeconds(mode: SessionMode): number {
   if (mode === "bookend") return 60;
   // A Q&A answer stops at two minutes
   if (mode === "qa") return 120;
+  // A small-talk answer stops by itself at one minute
+  if (mode === "smalltalk") return 60;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
   return mode === "warmup" ? 30 : 180;
 }
@@ -104,8 +108,8 @@ export const SMALL_TALK_WINDOW: SpeakingWindow = { start: 20, yellow: 35, end: 4
 
 // The window for a kind of session, if it has one
 export function speakingWindow(mode: SessionMode): SpeakingWindow | null {
-  // Table Topics and prepared speeches
-  return mode === "talk" ? TOPIC_WINDOW : mode === "response" ? SPEECH_WINDOW : null;
+  // Table Topics, prepared speeches and small-talk answers
+  return mode === "talk" ? TOPIC_WINDOW : mode === "response" ? SPEECH_WINDOW : mode === "smalltalk" ? SMALL_TALK_WINDOW : null;
 }
 
 // The timing light: off, green, yellow, red, or past the limit (still red)

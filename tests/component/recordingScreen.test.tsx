@@ -31,7 +31,9 @@ afterEach(() => {
 });
 
 // Fake recording services that a check can drive by hand
-function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string; permission?: MicPermission } = {}) {
+function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string; permission?: MicPermission; voice?: boolean } = {}) {
+  // What the voice was asked to say
+  const said: string[] = [];
   // How many times the microphone was asked for
   let micAsks = 0;
   // Callbacks the screen gave the transcriber
@@ -51,6 +53,8 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
       // Otherwise hand back a stand-in stream with no tracks
       return { getTracks: () => [] } as unknown as MediaStream;
     },
+    // A voice that notes what it said, only when the check asks for one
+    ...(options.voice ? { speak: async (text: string) => void said.push(text) } : {}),
     // The permission check, only when the check gives one (like a browser that can say)
     ...(options.permission ? { micPermission: async () => options.permission ?? "unknown" } : {}),
     // A transcriber the check can drive
@@ -69,7 +73,7 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
     createCapture: () => ({ level: () => 0.5, stop: async () => new Blob(["voice"]) }),
   };
   // Hand back the services and ways to drive them
-  return { services, say: (text: LiveText) => act(() => onText(text)), fail: (problem: RecordingProblem) => act(() => onProblem(problem)), micAsks: () => micAsks };
+  return { services, say: (text: LiveText) => act(() => onText(text)), fail: (problem: RecordingProblem) => act(() => onProblem(problem)), micAsks: () => micAsks, said };
 }
 
 // A clock the check controls, in milliseconds
@@ -446,6 +450,34 @@ describe("RecordingScreen", () => {
     draw({ retryOf: "first", repository });
     // Confirm both, yours first
     expect([!!(await screen.findByText("Start without the um")), !!screen.getByText("From your numbers: Take a breath at every full stop.")]).toEqual([true, true]);
+  });
+
+  // A small-talk lesson teaches before you answer: the idea, a flat answer beside a better one, the question, and the recipe with its beat marked
+  it("teaches a small-talk lesson before the question", async () => {
+    // Draw lesson 3, "Give a hook"
+    draw({ mode: "smalltalk", promptId: "stl3" });
+    // The lesson
+    const lesson = await screen.findByRole("region", { name: "The lesson" });
+    // Confirm the title, the flat and better answers, the question, and the hook marked on the strip
+    expect([within(lesson).getByRole("heading").textContent, !!within(lesson).getByText(/I watched a movie/), !!within(lesson).getByText(/I finally watched Dune/), screen.getByRole("heading", { level: 1 }).textContent, within(screen.getByRole("list", { name: "The recipe" })).getAllByRole("listitem")[1]?.className.includes("border-accent")]).toEqual(["Lesson 3: Give a hook", true, true, "Seen anything good lately?", true]);
+  });
+
+  // The question is said aloud first, then recording starts by itself, and the answer is saved as small talk
+  it("says the question aloud, then records the answer", async () => {
+    // Draw an everyday question with a voice
+    const { fake, clock, repository } = draw({ mode: "smalltalk", promptId: "st01" }, { voice: true, finalText: "I built an app it was fun did you do anything good" });
+    // Hear the question
+    fireEvent.click(await screen.findByRole("button", { name: /Hear the question/ }));
+    // Recording starts once it has been said
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Confirm the voice said the question, and the timing light shows the small-talk window
+    expect([fake.said, screen.getByText("of 0:20 to 0:45")?.tagName]).toEqual([["How was your weekend?"], "P"]);
+    // Speak past the minimum
+    clock.advance(25_000);
+    // Stop
+    fireEvent.click(stop);
+    // Confirm it was saved as small talk, for this question
+    await waitFor(async () => expect((await repository.listSessions()).map((session) => [session.mode, session.promptId])).toEqual([["smalltalk", "st01"]]));
   });
 
   // Inside today's practice, the saved session opens with the plan step, and the page says which step it is

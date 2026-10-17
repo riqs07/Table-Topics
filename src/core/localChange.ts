@@ -10,6 +10,8 @@ import { formatRate } from "@/core/copy";
 import { findFocus } from "@/core/focus";
 // Load the timing rules
 import { LOUDNESS_TICK_MS, formatClock, speakingWindow } from "@/core/recordingRules";
+// Load the small-talk change, for answers to everyday questions
+import { smallTalkChange } from "@/core/smallTalk";
 // Load the record type
 import type { SessionRecord } from "@/data/records";
 
@@ -26,6 +28,8 @@ const PAUSES_EXPECTED_AFTER = 30;
 
 // Pick the biggest gap in the numbers, in order: timing, fillers, pace, trailing off, pauses; otherwise the week's focus
 export function localChange(session: SessionRecord): LocalChange {
+  // A small-talk answer has its own order: dead end, length, feeling, hand-back
+  if (session.mode === "smalltalk") return smallTalkChange(session);
   // The timing window, for a Table Topic or a prepared speech
   const timing = speakingWindow(session.mode);
   // Too short for the window

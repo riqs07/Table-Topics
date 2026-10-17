@@ -17,10 +17,15 @@ export const ROUTES: ReadonlyArray<string> = [
   "/skills",
   // Talks
   "/rehearse",
+  // Small talk
+  "/small-talk",
   // History
   "/history",
   // Settings
   "/settings",
+  // A small-talk question, and a small-talk lesson
+  "/session?mode=smalltalk&prompt=st01",
+  "/session?mode=smalltalk&prompt=stl3",
   // A Table Topic
   "/session?mode=talk&prompt=t001",
   // A prepared response
@@ -65,6 +70,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/skills", current: "Skills" },
   // Your talks belong to Practice
   { path: "/rehearse", current: "Practice" },
+  // Small talk marks Small talk
+  { path: "/small-talk", current: "Small talk" },
   // History marks History
   { path: "/history", current: "History" },
   // Settings marks nothing in the tab bar (its gear is marked instead)
@@ -87,6 +94,8 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Practice", path: "/practice" },
   // Skills
   { name: "Skills", path: "/skills" },
+  // Small talk
+  { name: "Small talk", path: "/small-talk" },
   // History
   { name: "History", path: "/history" },
   // Settings

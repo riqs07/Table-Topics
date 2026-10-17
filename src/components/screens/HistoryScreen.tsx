@@ -3,6 +3,8 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
+// Load the filter that keeps small talk apart
+import { speechSessions } from "@/core/sessionHome";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
@@ -131,8 +133,8 @@ export function HistoryScreen(props: ScreenProps) {
     let cancelled = false;
     // Load and keep the sessions
     repo.listSessions().then((loaded) => {
-      // Keep them only if the screen is still open
-      if (!cancelled) setSessions(loaded);
+      // Keep the speech practice only, if the screen is still open (small-talk answers are listed on their own page)
+      if (!cancelled) setSessions(speechSessions(loaded));
     });
     // Load the talk titles too
     repo.listTalks().then((talks) => {

@@ -1,5 +1,8 @@
 // Small talk: the everyday questions, the four-beat recipe, and the six lessons (see documents/plan-small-talk.md)
 
+// Load the calendar-day helper, for taking questions in turn
+import { daysBetween } from "@/core/dates";
+
 // One beat of a good answer
 export interface Beat {
   // Stable id, also used as the listen-back tag
@@ -167,3 +170,11 @@ export const SMALL_TALK_PROMPTS: ReadonlyArray<{ id: string; text: string }> = [
   // The lessons' questions
   ...SMALL_TALK_LESSONS.map((item) => ({ id: item.id, text: item.question })),
 ];
+
+// The everyday question for a day, taken in turn ("another question" moves it along)
+export function smallTalkForDay(day: Date, offset = 0): SmallTalkQuestion {
+  // Days since a fixed start, plus the offset
+  const turn = daysBetween(new Date(2026, 0, 1), day) + offset;
+  // Wrap around, keeping the index positive
+  return SMALL_TALK_QUESTIONS[((turn % SMALL_TALK_QUESTIONS.length) + SMALL_TALK_QUESTIONS.length) % SMALL_TALK_QUESTIONS.length] as SmallTalkQuestion;
+}

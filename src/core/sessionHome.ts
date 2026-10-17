@@ -1,10 +1,10 @@
 // Where each kind of session belongs: the tab it marks, and where its close button leads while practising (decision 41)
 
-// Load the record type
-import type { SessionMode } from "@/data/records";
+// Load the record types
+import type { SessionMode, SessionRecord } from "@/data/records";
 
 // A main section a session can belong to
-export type SessionSection = "today" | "practice" | "skills";
+export type SessionSection = "today" | "practice" | "skills" | "smalltalk";
 
 // The section, and the way back to it
 export interface SessionHome {
@@ -18,6 +18,8 @@ export interface SessionHome {
 
 // The home of a session: Today inside today's practice, else Skills for texts to read, else Practice (a rehearsal goes back to its talk)
 export function sessionHome(mode: SessionMode, promptId: string, inPlan: boolean): SessionHome {
+  // A small-talk answer lives on its own page, apart from the speech practice
+  if (mode === "smalltalk") return { section: "smalltalk", href: "/small-talk", label: "Close, back to Small talk" };
   // Inside today's practice
   if (inPlan) return { section: "today", href: "/", label: "Close, back to Today" };
   // Readings, pause drills and lessons
@@ -26,4 +28,10 @@ export function sessionHome(mode: SessionMode, promptId: string, inPlan: boolean
   if (mode === "rehearse") return { section: "practice", href: `/talk?id=${encodeURIComponent(promptId)}`, label: "Close, back to your talk" };
   // Everything else is speaking on the spot
   return { section: "practice", href: "/practice", label: "Close, back to Practice" };
+}
+
+// The speech practice only: small-talk answers are kept apart from today's plan, the streak, History and the progress numbers
+export function speechSessions(sessions: ReadonlyArray<SessionRecord>): SessionRecord[] {
+  // Everything but small talk
+  return sessions.filter((session) => session.mode !== "smalltalk");
 }

@@ -34,6 +34,8 @@ import { spokenSentence, stepNote, weekSentence } from "@/core/daySummary";
 import { dayKey } from "@/core/dates";
 // Load the once-a-day completion flag, kept in this browser
 import { firstFinishToday } from "@/data/dayCelebrated";
+// Load the filter that keeps small talk apart
+import { speechSessions } from "@/core/sessionHome";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 
@@ -71,8 +73,8 @@ interface HomeData {
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
 async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
-  // Read every session
-  const sessions = await repository.listSessions();
+  // Read every session of the speech practice (small talk is kept apart)
+  const sessions = speechSessions(await repository.listSessions());
   // Read the settings (defaults for a new user)
   const settings = await repository.getSettings(now);
   // Work out the focus, advancing one step per full week

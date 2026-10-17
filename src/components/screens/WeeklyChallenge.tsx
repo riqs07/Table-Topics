@@ -3,6 +3,8 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
+// Load the filter that keeps small talk apart
+import { speechSessions } from "@/core/sessionHome";
 // Load the footnote style
 import { Footnote } from "@/components/script/Footnote";
 // Load the weekly challenge picker
@@ -38,7 +40,7 @@ export function WeeklyChallenge({ repo, today }: { repo: Repository; today: Date
     // Load it
     (async () => {
       // Every session (newest first), for the first one's date
-      const first = (await repo.listSessions()).at(-1);
+      const first = speechSessions(await repo.listSessions()).at(-1);
       // Which practice week it is
       const week = practiceWeek(first ? new Date(first.createdAt) : null, today);
       // Its record's id

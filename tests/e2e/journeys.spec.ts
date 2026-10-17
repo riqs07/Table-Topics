@@ -365,3 +365,39 @@ test("explains the microphone before the browser asks", async ({ page }) => {
   // Recording starts
   await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 10_000 });
 });
+
+// Small talk: from its tab, the first lesson, the question said aloud, an answer, listening back, and the beats
+test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
+  // The stand-in speech answers the question
+  await useStandIns(page, "Pretty quiet but I finally fixed my bike it was really fun did you get outside at all");
+  // Start at the Small talk page
+  await page.goto("/small-talk");
+  // Start the first lesson from the main action
+  await page.locator("[data-action-band]").click();
+  // The lesson teaches before the question
+  await expect(page.getByRole("region", { name: "The lesson" })).toContainText("The dead end");
+  // Hear the question; recording starts once it has been said
+  await page.getByRole("button", { name: /Hear the question/ }).click();
+  // Recording is under way
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // The phone's voice may take a few seconds
+  await expect(stop).toBeVisible({ timeout: 15_000 });
+  // Speak past the minimum
+  await page.waitForTimeout(11_500);
+  // Stop
+  await stop.click();
+  // The answer opens on listening back
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+  // Listen to it
+  await page.getByRole("button", { name: "Play your recording" }).click();
+  // Tick the moment
+  await page.getByRole("list", { name: "Listen for" }).getByRole("button", { name: /^Moment/ }).click();
+  // Save once it has been heard
+  await page.getByRole("button", { name: /Save my notes/ }).click({ timeout: 20_000 });
+  // The beats show, with the phone's evidence
+  await expect(page.getByRole("list", { name: "The beats" })).toContainText("“fun”");
+  // Back on the Small talk page, the lesson is done and the answer listed
+  await page.getByRole("link", { name: /Another question/ }).click();
+  // The answer is listed
+  await expect(page.getByRole("region", { name: "Your answers" })).toContainText("How was your weekend?");
+});

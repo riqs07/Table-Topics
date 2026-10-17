@@ -15,6 +15,10 @@ import { Player } from "@/components/script/Player";
 import { useAudioUrl } from "@/components/screens/useAudioUrl";
 // Load the listening tools and the quick tags
 import { CHANGE_TAGS, LONG_RECORDING, WORKED_TAGS, listenWords, listenedEnough, markHeard, nothingHeard, playFrom, wordsSaidBy, type ReviewTag } from "@/core/selfReview";
+// Load the tick
+import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the small-talk beats, the listen-for questions for an everyday answer
+import { BEATS } from "@/content/smallTalk";
 // Load the clock formatter
 import { formatClock } from "@/core/recordingRules";
 // Load the record types
@@ -97,6 +101,8 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
   const listened = audio.missing || listenedEnough(heard, session.durationSec);
   // Whether this is a long recording
   const long = session.durationSec > LONG_RECORDING;
+  // Whether this is a small-talk answer (the four beats replace the usual tags)
+  const smallTalk = session.mode === "smalltalk";
 
   // Note the position, and mark it heard while playing
   function follow(seconds: number, playing: boolean) {
@@ -168,7 +174,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
       {/* The ask */}
       <h1 className="mt-6 font-display text-statement tracking-tight md:mt-0">Listen back first.</h1>
       {/* Why */}
-      <p className="mt-3 max-w-[52ch] text-lede">{plan ? "Hear it the way your audience did, and note one thing that worked and one thing you would change. Move on whenever you are ready." : "Hear it the way your audience did. Then write one thing that worked and one thing you would change. The numbers and the coach’s notes open after."}</p>
+      <p className="mt-3 max-w-[52ch] text-lede">{smallTalk ? "Hear it the way they would. Listen for the four beats, and tick the ones you heard yourself do. Then the notes open." : plan ? "Hear it the way your audience did, and note one thing that worked and one thing you would change. Move on whenever you are ready." : "Hear it the way your audience did. Then write one thing that worked and one thing you would change. The numbers and the coach’s notes open after."}</p>
       {/* The player, or why there is none */}
       {audio.url ? (
         <div className="mt-6">
@@ -190,8 +196,35 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
         {/* The words */}
         <div className="mt-2"><FollowingTranscript session={session} position={position} onPick={jump} /></div>
       </div>
+      {/* For small talk: the four things to listen for, ticked by the user, and one box */}
+      {smallTalk && (
+        <div className="mt-8 max-w-[52ch]">
+          {/* Heading */}
+          <p className="font-display text-cue">What did you hear yourself do?</p>
+          {/* The beats, each a switch */}
+          <ul aria-label="Listen for" className="mt-2 divide-y divide-rule border-y border-rule">
+            {/* Each beat */}
+            {BEATS.map((beat) => (
+              // One beat, ticked when heard
+              <li key={beat.id}>
+                {/* The switch */}
+                <button type="button" aria-pressed={tags.has(beat.id)} onClick={() => toggle(beat.id)} className="flex min-h-14 w-full items-center gap-3 py-2 text-left">
+                  {/* The box */}
+                  <span aria-hidden="true" className={`flex size-6 flex-none items-center justify-center border-2 ${tags.has(beat.id) ? "border-accent bg-accent text-accent-ink" : "border-rule"}`}>{tags.has(beat.id) && <CheckIcon weight="bold" className="size-4" />}</span>
+                  {/* The beat and its question */}
+                  <span><strong className="font-display font-normal">{beat.name}.</strong> <span className="text-ink-muted">{beat.question}</span></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {/* One box for anything else */}
+          <label htmlFor="review-change" className="mt-6 block font-display text-cue">Anything you would say differently?</label>
+          {/* The box */}
+          <textarea id="review-change" value={change} onChange={(event) => setChange(event.target.value)} rows={3} className="mt-2 w-full border border-rule bg-paper p-3 text-lede" />
+        </div>
+      )}
       {/* The notes */}
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
+      {!smallTalk && <div className="mt-8 grid gap-6 md:grid-cols-2">
         {/* What worked */}
         <div>
           {/* Label and box */}
@@ -210,7 +243,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
           {/* Quick tags */}
           <TagRow tags={CHANGE_TAGS} chosen={tags} onToggle={toggle} label="What to change, quick tags" />
         </div>
-      </div>
+      </div>}
       {/* A saving problem */}
       {problem && <p role="alert" className="mt-4 text-lede">{problem}</p>}
       {/* Keep the recording to compare later, or let it go once the notes are saved */}

@@ -46,6 +46,8 @@ export interface RecordingServices {
   micPermission?(): Promise<MicPermission>;
   // Ask for the microphone (throws if refused or missing)
   openMicrophone(): Promise<MediaStream>;
+  // Say a question aloud, finishing when it has been said (optional: without it, recording starts straight away)
+  speak?(text: string): Promise<void>;
   // Make a live transcriber
   createTranscriber(): LiveTranscriber;
   // Start recording audio from the microphone

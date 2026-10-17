@@ -230,6 +230,36 @@ class MediaCapture implements AudioCapture {
   }
 }
 
+// Say a text with the phone's own voice, finishing when it ends (or after a fair time, since some browsers never report the end)
+export function speakWithPhone(text: string): Promise<void> {
+  // Finish once, whichever comes first
+  return new Promise((resolve) => {
+    // No voice in this browser: nothing to wait for
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return resolve();
+    // The words to say
+    const utterance = new SpeechSynthesisUtterance(text);
+    // In English
+    utterance.lang = "en-US";
+    // A fair time for the words, with room to start
+    const guard = setTimeout(() => resolve(), Math.max(3000, text.split(/\s+/).length * 450 + 1500));
+    // Finish when it ends or fails
+    const done = () => {
+      // Stop the guard
+      clearTimeout(guard);
+      // Finish
+      resolve();
+    };
+    // When it ends
+    utterance.onend = done;
+    // When it fails
+    utterance.onerror = done;
+    // Drop anything still queued
+    window.speechSynthesis.cancel();
+    // Say it
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
 // The real recording services for the browser
 export const browserRecordingServices: RecordingServices = {
   // Check for speech recognition
@@ -247,6 +277,8 @@ export const browserRecordingServices: RecordingServices = {
   },
   // Ask for the microphone
   openMicrophone: () => navigator.mediaDevices.getUserMedia({ audio: true }),
+  // Say a question with the phone's own voice
+  speak: speakWithPhone,
   // Live transcription
   createTranscriber: () => new WebSpeechTranscriber(),
   // Audio recording and level

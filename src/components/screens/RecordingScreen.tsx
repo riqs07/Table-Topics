@@ -31,12 +31,16 @@ import { LOUDNESS_TICK_MS, MIN_SECONDS, formatClock, maxSeconds, readingSeconds,
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
-import type { SessionMode, TalkRecord } from "@/data/records";
+import type { SessionMode, SessionRecord, TalkRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the recording saver
 import { saveRecording } from "@/data/saveRecording";
 // Load where each kind of session belongs
 import { sessionHome } from "@/core/sessionHome";
+// Load the small-talk content, the strip's level, and the strip
+import { findSmallTalk } from "@/content/smallTalk";
+import { stripLevel } from "@/core/smallTalk";
+import { RecipeStrip } from "@/components/script/RecipeStrip";
 // Load the change picked from the numbers, for a retry cue without the coach
 import { localChange } from "@/core/localChange";
 // Load the flag for explaining the microphone first
@@ -89,7 +93,7 @@ const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
 ];
 
 // Where the screen is in the flow
-type Stage = "ready" | "mic-primer" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
+type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
 
 // The stage for a browser without speech recognition (one shared value, so it is the same between redraws)
 const UNSUPPORTED: Stage = { problem: "speech-unsupported" };
@@ -363,6 +367,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const talkText = talk ? memoryLadder(section !== null ? (sections[section] ?? "") : talk.body, ladder) : "";
   // The lesson, on the skill path
   const lesson = mode === "lesson" ? findLesson(promptId) : undefined;
+  // A small-talk answer: its question, and its lesson when it is a lesson's turn
+  const smallTalk = mode === "smalltalk" ? findSmallTalk(promptId) : undefined;
+  // The user's earlier small-talk answers, for how much of the strip to show (newest first)
+  const [earlierAnswers, setEarlierAnswers] = useState<SessionRecord[]>([]);
   // The openings and closings drill prompt, with which end of a talk it practises
   const bookend = mode === "bookend" ? BOOKENDS.find((item) => item.id === promptId) : undefined;
   // The text on screen: a passage, a lesson's practice text, or the talk being rehearsed
@@ -386,6 +394,24 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   }, [scriptBody, fullText]);
   // A rehearsal's own goal in seconds, if it has one (whole-talk runs only)
   const goalSeconds = talk?.goalMinutes && section === null ? talk.goalMinutes * 60 : undefined;
+
+  // For a small-talk answer, load the earlier answers
+  useEffect(() => {
+    // Only for small talk
+    if (mode !== "smalltalk") return;
+    // Ignore the result if the screen closes first
+    let cancelled = false;
+    // Read them
+    repo.listSessions().then((sessions) => {
+      // Keep the small-talk ones if still open
+      if (!cancelled) setEarlierAnswers(sessions.filter((session) => session.mode === "smalltalk"));
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [mode, repo]);
 
   // For a Q&A answer, load the question from the session it belongs to
   useEffect(() => {
@@ -644,6 +670,19 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     setStage("recording");
   }, [clock, endThinking, fail, limit, services, stop]);
 
+  // Small talk: say the question aloud, then start recording once it has been said (so the recording never hears the voice)
+  const ask = useCallback(
+    async (question: string) => {
+      // Show that the question is being asked
+      setStage("asking");
+      // Say it, carrying on even if the voice fails
+      await services.speak?.(question).catch(() => undefined);
+      // Then record
+      await start();
+    },
+    [services, start],
+  );
+
   // Before a Table Topic or Record Response: count down, then start recording by itself
   const beginThinking = useCallback(() => {
     // Clear any earlier countdown
@@ -697,8 +736,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
   // Start this kind of session: the countdown or thinking time if it has one, otherwise recording; the explanation first if needed
   const begin = useCallback(() => {
-    // The start itself
-    const go = think > 0 ? beginThinking : () => void start();
+    // The start itself: a small-talk question is asked aloud first, a Table Topic or prepared speech counts down, anything else records
+    const go = smallTalk ? () => void ask(smallTalk.question) : think > 0 ? beginThinking : () => void start();
     // The first ever recording: explain the microphone, and start once it is allowed
     if (needsPrimer) {
       // Remember the start for afterwards
@@ -710,7 +749,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     }
     // Otherwise start now
     go();
-  }, [beginThinking, needsPrimer, start, think]);
+  }, [ask, beginThinking, needsPrimer, smallTalk, start, think]);
 
   // From the explanation: let the browser ask now, then start
   const allowMicrophone = useCallback(async () => {
@@ -788,17 +827,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
-  const busy = recording || thinking || stage === "starting" || stage === "saving";
+  const busy = recording || thinking || stage === "asking" || stage === "starting" || stage === "saving";
   // Where this kind of session belongs, for the close button (practising hides the tab bar)
   const home = sessionHome(mode, promptId, planStep !== null);
   // How this kind of session works, from the catalogue
   const howItWorks = modeForSession(mode);
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : "Recording";
   // The keyboard hint for this stage
-  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
+  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "smalltalk" ? "space to hear the question" : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
-  const showPrompt = !recording && !!prompt && !script && (mode !== "talk" || thinking);
+  const showPrompt = !recording && !!prompt && !script && !smallTalk && (mode !== "talk" || thinking);
   // A Table Topic's briefing, shown before the question
   const showBriefing = mode === "talk" && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed");
   // This prompt's angles, for a Record Response
@@ -837,7 +876,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         {/* The keyboard hint, on computers only */}
         <span className="hidden pointer-fine:inline">{hint}</span>
         {/* Before reading on a phone: the length, small, in place of the big clock */}
-        {script && !busy && <span className="pointer-fine:hidden md:hidden">{lengthText}</span>}
+        {(script || smallTalk) && !busy && <span className="pointer-fine:hidden md:hidden">{lengthText}</span>}
       </Masthead>
       {/* Inside today's practice, which step this is */}
       {planStep && <p className="mt-3 text-footnote italic text-accent">Today’s practice · step {planStep}{planTotal ? ` of ${planTotal}` : ""}</p>}
@@ -845,7 +884,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Margin: time, length, prompt reminder, discard */}
-        <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${script && !busy ? "hidden" : "flex"}`}>
+        <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${(script || smallTalk) && !busy ? "hidden" : "flex"}`}>
           {/* The clock, large */}
           <p className={`font-display text-ink tabular-nums ${recording || thinking ? "text-prompt-xl" : "text-statement"}`}>{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>
           {/* While recording: a plain, pulsing marker that says so */}
@@ -860,9 +899,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The length to aim for, or what the countdown is for */}
           <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
           {/* During a Table Topic or Record Response, the timing light */}
-          {recording && (mode === "talk" || mode === "response" || mode === "bookend" || mode === "qa" || (mode === "rehearse" && goalSeconds)) && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds)} mode={mode} />}
+          {recording && (mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "bookend" || mode === "qa" || (mode === "rehearse" && goalSeconds)) && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds)} mode={mode} />}
           {/* Prompt reminder while recording */}
-          {recording && prompt && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
+          {recording && prompt && !smallTalk && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
           {/* A lesson keeps its tip in view while speaking */}
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
@@ -938,6 +977,36 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               )}
             </>
           )}
+          {/* Small talk: a lesson's idea and examples before answering, then the question and the recipe throughout */}
+          {smallTalk && (
+            <>
+              {/* In a lesson, before answering: the idea, then a flat answer beside a better one */}
+              {smallTalk.lesson && !busy && (
+                <section aria-label="The lesson" className="mt-8 md:mt-0">
+                  {/* Its title */}
+                  <h2 className="font-display text-statement tracking-tight">Lesson {smallTalk.lesson.number}: {smallTalk.lesson.title}</h2>
+                  {/* The idea */}
+                  <p className="mt-3 max-w-[52ch] text-lede">{smallTalk.lesson.idea}</p>
+                  {/* The flat answer */}
+                  {smallTalk.lesson.flat && (
+                    <p className="mt-4 max-w-[52ch] border-l-2 border-rule pl-4 text-lede text-ink-muted"><span className="block text-footnote italic">Flat</span>&ldquo;{smallTalk.lesson.flat}&rdquo;</p>
+                  )}
+                  {/* The better answer */}
+                  <p className="mt-3 max-w-[52ch] border-l-2 border-accent pl-4 text-lede"><span className="block text-footnote italic text-ink-muted">{smallTalk.lesson.flat ? "Better" : "For example"}</span>&ldquo;{smallTalk.lesson.good}&rdquo;</p>
+                  {/* Then */}
+                  <p className="mt-6 text-footnote italic text-ink-muted">Your turn</p>
+                </section>
+              )}
+              {/* The question, set like a headline */}
+              <h1 className={`relative font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[18ch] ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>
+                {smallTalk.question}
+              </h1>
+              {/* While the question is said aloud */}
+              {stage === "asking" && <p role="status" className="mt-3 italic text-ink-muted">Listen to the question. Recording starts when it ends.</p>}
+              {/* The recipe */}
+              <RecipeStrip level={stripLevel(earlierAnswers)} focus={smallTalk.lesson?.beat ?? null} />
+            </>
+          )}
           {/* Before recording: the prompt and, on a retry, last time's cue */}
           {showPrompt && prompt && (
             <h1 className="relative mt-8 font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:mt-0 md:max-w-[16ch] md:text-prompt-xl">
@@ -978,7 +1047,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* Saving failed */}
           {stage === "save-failed" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
           {/* Before starting: how this kind of session works and what comes afterwards (after the task, so a phone shows the task first) */}
-          {howItWorks && !(recording || thinking || stage === "starting" || stage === "saving") && (
+          {howItWorks && !busy && !smallTalk?.lesson && (
             <div role="note" aria-label="How this works" className="mt-8 max-w-[52ch] border-t border-rule pt-3 text-footnote text-ink-muted">
               {/* Small heading */}
               <p className="italic">How this works</p>
@@ -1008,6 +1077,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || (problem && problem !== "speech-unsupported")) && (
             mode === "talk" ? (
               <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Show my topic"} aside={`${think} seconds to start`} onClick={begin} />
+            ) : smallTalk ? (
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Hear the question"} aside="then answer" onClick={begin} />
             ) : mode === "response" ? (
               <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${think / 60} minutes to prepare`} onClick={begin} />
             ) : (
@@ -1018,6 +1089,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {thinking && mode === "response" && <ActionButton action="Ready" aside="start speaking" onClick={() => void start()} />}
           {/* A Table Topic's countdown: no early start, just the time left */}
           {thinking && mode === "talk" && <ActionButton action="Get ready" aside={`starting in ${Math.ceil(thinkLeft)}`} onClick={() => {}} disabled />}
+          {/* While a small-talk question is said aloud */}
+          {stage === "asking" && <ActionButton action="Listening…" aside="then answer" onClick={() => {}} disabled />}
           {/* Waiting for the microphone */}
           {stage === "starting" && <ActionButton action="Starting…" aside="allow the microphone" onClick={() => {}} disabled />}
           {/* Recording */}

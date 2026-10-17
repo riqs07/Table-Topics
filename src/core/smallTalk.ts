@@ -62,8 +62,12 @@ export function answerLength(durationSec: number): "short" | "ok" | "long" {
   return durationSec < SMALL_TALK_WINDOW.start ? "short" : durationSec > SMALL_TALK_WINDOW.end ? "long" : "ok";
 }
 
-// Whether an answer showed a beat: the user's own tick when they listened back, or (for feeling and the hand-back) the phone's check
+// Whether an answer showed a beat: the coach's reading when there is one; otherwise the user's own tick when they listened back, or (for feeling and the hand-back) the phone's check
 export function beatFound(session: SessionRecord, beat: BeatId): boolean {
+  // The coach's notes by beat, if they have arrived
+  const coach = session.feedback?.smallTalk;
+  // The coach decides when it has answered
+  if (coach) return beat === "moment" ? coach.moment !== "" : beat === "hook" ? coach.hooks.length > 0 : beat === "feeling" ? coach.feeling !== "" : coach.handBack !== "";
   // Ticked by the user
   const ticked = !!session.selfReview && !session.selfReview.skipped && session.selfReview.tags.includes(beat);
   // Found by the phone
@@ -95,7 +99,7 @@ export function stripLevel(answers: ReadonlyArray<SessionRecord>): StripLevel {
   return { beats, hidden: BEATS.every((beat) => beats[beat.id] === "word") };
 }
 
-// One change for a small-talk answer, from the phone's checks, in order: a dead end, too short, no feeling, no hand-back, too long; otherwise one more hook
+// One change for a small-talk answer, from the phone's checks, in order: a dead end, too short, no feeling, no hand-back, too long; otherwise a look at the moment and hook, which only the user or the coach can judge
 export function smallTalkChange(session: SessionRecord): LocalChange {
   // A dead end
   if (deadEndOpening(session.transcript)) return { change: "Do not stop at “good”: that leaves them nothing to ask about. Even a quiet day has one thing worth telling.", retryCue: "Pick one thing that happened, however small, and say it first." };
@@ -109,6 +113,12 @@ export function smallTalkChange(session: SessionRecord): LocalChange {
   if (handBack(session.transcript) === null) return { change: "Hand it back. End with a question so it becomes a conversation, not a report.", retryCue: "Finish with a real question, like “Did you get up to anything good?”" };
   // Too long
   if (length === "long") return { change: `Shorter is friendlier: you spoke for ${formatClock(session.durationSec)}. Small talk is a quick back-and-forth.`, retryCue: "Tell one moment, then hand it back within about thirty seconds." };
-  // All there: one more hook
-  return { change: "That had the shape of a good answer. Next time, make the detail more specific: names, places and numbers are the easiest hooks to grab.", retryCue: "Swap one general word for a specific one." };
+  // Feeling and hand-back were heard; the moment and the hook are for the user (or the coach) to judge
+  return { change: "There was a feeling and a question back. Now check the start: was there one thing that happened, with a detail they could ask about, like a name, a place or a number?", retryCue: "Open with one specific thing that happened." };
+}
+
+// How many of the four beats an answer showed
+export function beatCount(session: SessionRecord): number {
+  // Count the beats found
+  return BEATS.filter((beat) => beatFound(session, beat.id)).length;
 }

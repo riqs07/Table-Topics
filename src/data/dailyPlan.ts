@@ -1,5 +1,7 @@
 // Loads today's practice: the steps, which are done, and today's sessions (used by Today, the recording page and the session page)
 
+// Load the filter that keeps small talk apart
+import { speechSessions } from "@/core/sessionHome";
 // Load the plan rules
 import { dailyPlan, planProgress, type PlanStep } from "@/core/dailyPlan";
 // Load the weekly focus rules
@@ -41,8 +43,8 @@ export interface LoadedPlan {
 
 // Load today's practice (reads only; the weekly focus is worked out without saving it)
 export async function loadDailyPlan(repository: Repository, now: Date): Promise<LoadedPlan> {
-  // Every session
-  const sessions = await repository.listSessions();
+  // Every session of the speech practice (small talk is kept apart)
+  const sessions = speechSessions(await repository.listSessions());
   // The settings, for the weekly focus
   const settings = await repository.getSettings(now);
   // This week's focus
