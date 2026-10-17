@@ -42,6 +42,8 @@ import { earlierTake, practiceDay } from "@/core/compare";
 import { findPauses, pauseDrillSentence, pauseSentence } from "@/core/pauses";
 // Load the reading check
 import { alignReading, countPauseMarks, type ReadingCheck } from "@/core/readAlong";
+// Load the change picked from the numbers, for when the coach has not answered
+import { localChange } from "@/core/localChange";
 // Load the section splitter, for rehearsals of one section
 import { talkSections } from "@/core/eventPrep";
 // Load the Table Topics timing sentence
@@ -85,10 +87,10 @@ const FEEDBACK_NOTES: Record<FeedbackOutcome | "asking", string> = {
   asking: "Asking the coach…",
   // Arrived (not shown; the feedback replaces the note)
   done: "",
-  // No passphrase saved, or a wrong one
-  "needs-passphrase": "Add your passphrase in Settings to get feedback. Your session is saved.",
-  // Server missing a setting
-  "not-set-up": "The server is missing a setting, so feedback is paused. Your session is saved.",
+  // No passphrase saved, or a wrong one (nothing said: the change from the numbers stands in, and the coach is set up in Settings)
+  "needs-passphrase": "",
+  // Server missing a setting (likewise)
+  "not-set-up": "",
   // Offline or busy
   "retry-later": "The coach could not be reached. Feedback will arrive when you are back online; your session is saved.",
   // Declined
@@ -295,6 +297,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
   // The notes against the numbers
   const checks = compareNotes(session);
+  // One change picked from the numbers, shown until the coach's arrives
+  const ownChange = localChange(session);
   // For one part of a full speech: the speech, and the part read
   const speechPart = session.mode === "read" ? partOf(session.promptId) : undefined;
   // A new first try asks the user to listen back and write notes before anything else
@@ -381,19 +385,18 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             </div>
           )}
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
-          {session.feedback ? (
-            <div className="mt-5 border-l-4 border-accent bg-paper px-4 py-4">
-              {/* One change */}
-              <p className="text-lede"><em>One change.</em> <span>{session.feedback.change}</span></p>
-              {/* Small heading for the cue */}
-              <p className="mt-4 text-footnote italic text-ink-muted">{warmup ? "Before your response" : "Before you try again"}</p>
-              {/* The cue */}
-              <p className="mt-1 font-display text-cue">{session.feedback.retryCue}</p>
-            </div>
-          ) : (
-            // Feedback has not come back yet
-            <p className="mt-5 text-lede text-ink-muted">{note || (session.feedbackStatus === "failed" ? "The coach could not review this session." : "Feedback is on its way. It appears here once it arrives; your session is saved.")}</p>
-          )}
+          <div className="mt-5 border-l-4 border-accent bg-paper px-4 py-4">
+            {/* Where it comes from, until the coach's note arrives */}
+            {!session.feedback && <p className="mb-2 text-footnote italic text-ink-muted">From your numbers</p>}
+            {/* One change */}
+            <p className="text-lede"><em>One change.</em> <span>{(session.feedback ?? ownChange).change}</span></p>
+            {/* Small heading for the cue */}
+            <p className="mt-4 text-footnote italic text-ink-muted">{warmup ? "Before your response" : "Before you try again"}</p>
+            {/* The cue */}
+            <p className="mt-1 font-display text-cue">{(session.feedback ?? ownChange).retryCue}</p>
+          </div>
+          {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
+          {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote italic text-ink-muted">{note || "The coach could not review this session."}</p>}
           {/* The numbers together */}
           <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} />
           {/* When there is no number, say why */}

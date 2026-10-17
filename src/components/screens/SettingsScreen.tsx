@@ -248,38 +248,45 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       </Section>
 
       {/* Coach feedback (drawn in the browser only, where the saved passphrase can be read) */}
-      {today && <Section title="Coach feedback">
-        {/* What the passphrase is for */}
-        <p className="text-ink-muted">Feedback needs the passphrase you set on the server. It is kept on this device only and is not in exports.</p>
-        {/* Passphrase field and save */}
-        <p className="mt-3 flex flex-wrap items-baseline gap-3">
-          {/* The field */}
-          <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 border-b border-ink bg-transparent py-1" />
-          {/* Save */}
-          <button type="button" onClick={storePassphrase} className="inline-flex min-h-11 items-center underline underline-offset-4">Save passphrase</button>
-        </p>
-        {/* The saved passphrase's fingerprint, to compare with the one pnpm live-check prints for APP_ACCESS_SECRET */}
-        {fingerprint && <p className="mt-2 text-footnote italic text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
-        {/* Waiting sessions, with a way to send them now */}
-        {pendingCount > 0 && (
-          <p className="mt-3">
-            {pendingCount} {pendingCount === 1 ? "session is" : "sessions are"} waiting for feedback.{" "}
-            {/* Send now */}
-            <button type="button" onClick={sendNow} className="inline-flex min-h-11 items-center underline underline-offset-4">Send now</button>
+      {today && <Section title="Coach (advanced)">
+        {/* What works without it */}
+        <p className="text-ink-muted">Without the coach, each session picks one change from your numbers. The coach adds a written note, and needs a passphrase set up on the server.</p>
+        {/* The setup, folded away until wanted */}
+        <details className="mt-3">
+          {/* Open it */}
+          <summary className="inline-flex min-h-11 cursor-pointer items-center underline underline-offset-4">Set up the coach</summary>
+          {/* What the passphrase is for */}
+          <p className="mt-2 text-ink-muted">Feedback needs the passphrase you set on the server. It is kept on this device only and is not in exports.</p>
+          {/* Passphrase field and save */}
+          <p className="mt-3 flex flex-wrap items-baseline gap-3">
+            {/* The field */}
+            <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 border-b border-ink bg-transparent py-1" />
+            {/* Save */}
+            <button type="button" onClick={storePassphrase} className="inline-flex min-h-11 items-center underline underline-offset-4">Save passphrase</button>
           </p>
-        )}
-        {/* Whether the coach may read the user's own notes */}
-        <label className="mt-4 flex min-h-11 items-start gap-3">
-          {/* The switch */}
-          <input type="checkbox" checked={settings?.shareNotes === true} onChange={changeShareNotes} className="mt-1 size-5 flex-none accent-accent" />
-          {/* What it does */}
-          <span>
-            {/* The choice */}
-            Let the coach read my notes after I listen back.
-            {/* What that means */}
-            <span className="block text-footnote text-ink-muted">Your notes are sent with the transcript, and the coach answers them. Feedback then waits until you have saved your notes. Off by default.</span>
-          </span>
-        </label>
+          {/* The saved passphrase's fingerprint, to compare with the one pnpm live-check prints for APP_ACCESS_SECRET */}
+          {fingerprint && <p className="mt-2 text-footnote italic text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
+          {/* Waiting sessions, with a way to send them now */}
+          {pendingCount > 0 && (
+            <p className="mt-3">
+              {pendingCount} {pendingCount === 1 ? "session is" : "sessions are"} waiting for feedback.{" "}
+              {/* Send now */}
+              <button type="button" onClick={sendNow} className="inline-flex min-h-11 items-center underline underline-offset-4">Send now</button>
+            </p>
+          )}
+          {/* Whether the coach may read the user's own notes */}
+          <label className="mt-4 flex min-h-11 items-start gap-3">
+            {/* The switch */}
+            <input type="checkbox" checked={settings?.shareNotes === true} onChange={changeShareNotes} className="mt-1 size-5 flex-none accent-accent" />
+            {/* What it does */}
+            <span>
+              {/* The choice */}
+              Let the coach read my notes after I listen back.
+              {/* What that means */}
+              <span className="block text-footnote text-ink-muted">Your notes are sent with the transcript, and the coach answers them. Feedback then waits until you have saved your notes. Off by default.</span>
+            </span>
+          </label>
+        </details>
       </Section>}
 
       {/* Export and import */}

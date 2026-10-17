@@ -18,17 +18,17 @@ export interface NoteCheck {
 }
 
 // Words a minute above which a talk sounds fast, and below which it sounds slow
-const FAST = 170;
+export const FAST = 170;
 // (slow)
-const SLOW = 110;
+export const SLOW = 110;
 // Fillers a minute from which they are noticeable, and below which they are few
-const MANY_FILLERS = 3;
+export const MANY_FILLERS = 3;
 // (few)
 const FEW_FILLERS = 1;
 // Share of phrase endings that fade before trailing off counts
-const FADING = 0.4;
+export const FADING = 0.4;
 // Fewest phrase endings to judge fading
-const MIN_ENDINGS = 3;
+export const MIN_ENDINGS = 3;
 
 // The comfortable pace, said the same way everywhere
 const COMFORTABLE = "a comfortable pace is about 120 to 160";

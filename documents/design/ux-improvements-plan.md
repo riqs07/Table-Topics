@@ -22,7 +22,7 @@ The idea in one line: **the loop is right; smooth the edges.** The first minutes
 - A small moment when the day is done: the ticks fill in one by one, with a single line ("Fourth day this week"). Still under reduced motion.
 - Evidence: feedback that points at the person tends to hurt; celebrate straight away (Tiny Habits).
 
-**4. Always a next step, coach or not (M).**
+**4. Always a next step, coach or not (M).** Built (decision 40).
 - When the coach is not set up or cannot be reached, the app picks one change itself from the numbers: the biggest gap (pace, pause words, pauses, trailing off, timing), with a short tip and a cue for the retry, marked "From your numbers". The coach's note replaces it when it arrives.
 - Results never mention the passphrase. Settings moves the passphrase, sending waiting feedback, and the coach-reads-notes switch into a collapsed "Coach (advanced)" section.
 

@@ -436,6 +436,18 @@ describe("RecordingScreen", () => {
     expect([!!(await screen.findByText("Start without the um")), !!screen.getByText("Coach: Breathe, then begin.")]).toEqual([true, true]);
   });
 
+  // Without the coach's feedback, the retry carries the cue picked from the first try's numbers, labelled as such
+  it("falls back to the cue from the numbers on a retry", async () => {
+    // A repository with a fast first try that has a note but no feedback
+    const repository = createRepository(new MemoryStore());
+    // The first try
+    await repository.saveSession(makeSession({ id: "first", promptId: PROMPTS[0]!.id, fillersPerMinute: 1, wordsPerMinute: 190, selfReview: { worked: "", change: "Start without the um", tags: [], skipped: false, savedAt: "2026-10-16T10:00:00.000Z" }, feedback: null, feedbackStatus: "pending" }));
+    // Draw the retry
+    draw({ retryOf: "first", repository });
+    // Confirm both, yours first
+    expect([!!(await screen.findByText("Start without the um")), !!screen.getByText("From your numbers: Take a breath at every full stop.")]).toEqual([true, true]);
+  });
+
   // Inside today's practice, the saved session opens with the plan step, and the page says which step it is
   it("keeps today's practice step through to the saved session", async () => {
     // Draw step 1 of the plan

@@ -35,6 +35,8 @@ import type { SessionMode, TalkRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the recording saver
 import { saveRecording } from "@/data/saveRecording";
+// Load the change picked from the numbers, for a retry cue without the coach
+import { localChange } from "@/core/localChange";
 // Load the flag for explaining the microphone first
 import { markMicExplained, readMicExplained } from "@/data/micExplained";
 // Load today's practice, for its number of steps
@@ -320,6 +322,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [retryCue, setRetryCue] = useState<string | null>(null);
   // On a retry, what the user wrote they would change last time
   const [ownNote, setOwnNote] = useState<string | null>(null);
+  // Whether the retry cue is the coach's (otherwise it was picked from the numbers)
+  const [cueFromCoach, setCueFromCoach] = useState(true);
   // The live transcriber, audio capture, start time, and timer, kept between renders
   const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; spokenTimes: number[]; scriptTimes: (number | null)[] } | null>(null);
   // Inside today's practice, how many steps it has (loaded below)
@@ -431,8 +435,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     repo.getSession(retryOf).then((original) => {
       // Stop if the screen closed
       if (cancelled) return;
-      // Keep its cue
-      setRetryCue(original?.feedback?.retryCue ?? null);
+      // Keep its cue: the coach's, or else the one picked from its numbers
+      setRetryCue(original ? (original.feedback ?? localChange(original)).retryCue : null);
+      // Where the cue came from
+      setCueFromCoach(!!original?.feedback);
       // And the user's own note, if they wrote one
       setOwnNote(original?.selfReview?.change || null);
     });
@@ -939,7 +945,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {/* The user's own note first, in their words */}
               {ownNote && <p className="mt-1 font-display text-cue">{ownNote}</p>}
               {/* The coach's cue, under it when both exist */}
-              {retryCue && <p className={ownNote ? "mt-2 text-lede text-ink-muted" : "mt-1 font-display text-cue"}>{ownNote ? `Coach: ${retryCue}` : retryCue}</p>}
+              {retryCue && <p className={ownNote ? "mt-2 text-lede text-ink-muted" : "mt-1 font-display text-cue"}>{ownNote ? `${cueFromCoach ? "Coach" : "From your numbers"}: ${retryCue}` : retryCue}</p>}
             </div>
           )}
 

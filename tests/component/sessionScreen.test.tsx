@@ -260,15 +260,17 @@ describe("SessionScreen", () => {
   });
 
   // Without a passphrase, the page says where to add it
-  it("points to Settings when no passphrase is saved", async () => {
+  it("picks one change from the numbers when no passphrase is saved, without mentioning it", async () => {
     // Make sure no passphrase is saved
     localStorage.clear();
-    // A session waiting for feedback
-    const session = makeSession({ id: "s1", feedback: null, feedbackStatus: "pending" });
+    // A fast session waiting for feedback
+    const session = makeSession({ id: "s1", mode: "talk", durationSec: 80, fillersPerMinute: 1, wordsPerMinute: 190, feedback: null, feedbackStatus: "pending" });
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} fetchFn={vi.fn()} />);
-    // Confirm the pointer to Settings
-    expect(await screen.findByText(/Add your passphrase in Settings/)).toBeTruthy();
+    // Confirm the change from the numbers, labelled, with its cue
+    expect([!!(await screen.findByText(/^Slow down a little: 190 words a minute/)), !!screen.getByText("From your numbers"), !!screen.getByText("Take a breath at every full stop.")]).toEqual([true, true, true]);
+    // Confirm the passphrase is never mentioned
+    await waitFor(() => expect(document.body.textContent).not.toMatch(/passphrase/i));
   });
 
   // An unknown id is explained plainly
