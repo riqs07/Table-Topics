@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 // Load the screens being checked
 import { SmallTalkScreen } from "@/components/screens/SmallTalkScreen";
+import { ConnectScreen } from "@/components/screens/ConnectScreen";
 import { SessionScreen } from "@/components/screens/SessionScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
 // Load the in-memory store and repository
@@ -38,8 +39,8 @@ const answer = (overrides: Partial<ReturnType<typeof makeSession>> = {}) => make
 describe("small talk", () => {
   // The page teaches the recipe, starts the lessons in order, and offers today's question
   it("teaches the recipe and leads with the first lesson", async () => {
-    // Draw the page with no answers yet
-    render(<SmallTalkScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Draw the Answering page with no answers yet
+    render(<SmallTalkScreen unitId="answering" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The recipe
     const recipe = await screen.findByRole("region", { name: "A good answer, in four beats" });
     // Confirm the four beats, today's question, and the first lesson as the main action
@@ -50,8 +51,8 @@ describe("small talk", () => {
   it("lists answers on its own page and in History", async () => {
     // A small-talk answer and nothing else
     const repository = await repositoryWith(answer({ selfReview: { worked: "", change: "", tags: ["moment"], skipped: false, savedAt: NOW.toISOString() } }));
-    // Draw the Small talk page
-    render(<SmallTalkScreen repository={repository} now={NOW} />);
+    // Draw the Answering page
+    render(<SmallTalkScreen unitId="answering" repository={repository} now={NOW} />);
     // The answers
     const answers = await screen.findByRole("region", { name: "Your answers" });
     // Confirm the question and its beats (moment ticked, feeling and hand-back heard by the phone)
@@ -83,7 +84,7 @@ describe("small talk", () => {
     // Confirm the headline and which beats were found, with the phone's evidence for feeling and the hand-back
     expect([screen.getByText("3 of 4 beats.").tagName, within(beats).getAllByRole("listitem").map((item) => item.getAttribute("data-found")), within(beats).getByText("“fun”").tagName]).toEqual(["P", ["true", "false", "true", "true"], "SPAN"]);
     // Confirm one change from the phone, and a way to another question
-    expect([!!screen.getByText("From your numbers"), screen.getByRole("link", { name: /Another question/ }).getAttribute("href")]).toEqual([true, "/small-talk"]);
+    expect([!!screen.getByText("From your numbers"), screen.getByRole("link", { name: /Another question/ }).getAttribute("href")]).toEqual([true, "/small-talk/unit?id=answering"]);
   });
 
   // The coach's notes quote each beat and show the livelier version with its gaps marked
@@ -102,28 +103,36 @@ describe("small talk", () => {
   it("lists your moments and says when today's is saved", async () => {
     // A moment from this morning
     const repository = await repositoryWith(makeSession({ id: "m1", mode: "moment", promptId: "moment", transcript: "I fixed the bike chain myself", createdAt: new Date(2026, 9, 17, 8).toISOString(), feedbackStatus: "done" }));
-    // Draw the page
-    render(<SmallTalkScreen repository={repository} now={NOW} />);
+    // Draw the Answering page
+    render(<SmallTalkScreen unitId="answering" repository={repository} now={NOW} />);
     // The moments
     const moments = await screen.findByRole("list", { name: "Your moments" });
     // Confirm the words, today's state, and the way to add another
     expect([!!within(moments).getByText("I fixed the bike chain myself"), !!screen.getByText(/Today\u2019s moment is saved/), screen.getByRole("link", { name: "Add another moment" }).getAttribute("href")]).toEqual([true, true, "/session?mode=moment&prompt=moment"]);
   });
 
-  // The units: asking and listening each have their own recipe and lessons, and a story is not shown on the page
-  it("switches between the units", async () => {
-    // Draw the page
-    render(<SmallTalkScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Pick Asking
-    fireEvent.click(await screen.findByRole("button", { name: "Asking" }));
+  // Connect lists the units as cards; each unit's page has its own recipe, lessons and practice, and a story is not shown
+  it("lists the units as cards, each with its own page", async () => {
+    // Draw Connect
+    render(<ConnectScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The unit cards
+    const units = within(await screen.findByRole("list", { name: "Units" })).getAllByRole("link");
+    // Their names and addresses, and the first marked next
+    const cards = [units.map((link) => [link.getAttribute("aria-label"), link.getAttribute("href")]), units[0]?.textContent?.includes("Next up")];
+    // Draw Asking
+    cleanup();
+    // The page
+    render(<SmallTalkScreen unitId="asking" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The asking recipe, its lessons, and the main action leading to its first lesson
-    const asking = [!!screen.getByRole("region", { name: "A good follow-up, in four beats" }), screen.getByRole("link", { name: "Asking lesson 1: Ask about what they said" }).getAttribute("href"), screen.getByRole("link", { name: /^Asking lesson 1Ask about/ }).getAttribute("href"), !!screen.getByRole("region", { name: "Ask a follow-up" })];
-    // Pick Listening
-    fireEvent.click(screen.getByRole("button", { name: "Listening" }));
+    const asking = [!!(await screen.findByRole("region", { name: "A good follow-up, in four beats" })), screen.getByRole("link", { name: "Asking lesson 1: Ask about what they said" }).getAttribute("href"), screen.getByRole("link", { name: /^Asking lesson 1Ask about/ }).getAttribute("href"), !!screen.getByRole("region", { name: "Ask a follow-up" })];
+    // Draw Listening
+    cleanup();
+    // The page
+    render(<SmallTalkScreen unitId="listening" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The practice box
-    const practice = screen.getByRole("region", { name: "Listen to a story" });
-    // Confirm asking, then listening's recipe and a practice box that hides the story
-    expect([...asking, !!screen.getByRole("region", { name: "A good response, in four beats" }), within(practice).getByRole("heading", { level: 1 }).textContent, within(practice).getByRole("link", { name: "Listen and respond" }).getAttribute("href")?.startsWith("/session?mode=smalltalk&prompt=sls")]).toEqual([true, "/session?mode=smalltalk&prompt=sal1", "/session?mode=smalltalk&prompt=sal1", true, true, "Someone tells you about their day.", true]);
+    const practice = await screen.findByRole("region", { name: "Listen to a story" });
+    // Confirm the cards, asking, then listening's recipe and a practice box that hides the story
+    expect([...cards, ...asking, !!screen.getByRole("region", { name: "A good response, in four beats" }), within(practice).getByRole("heading", { level: 1 }).textContent, within(practice).getByRole("link", { name: "Listen and respond" }).getAttribute("href")?.startsWith("/session?mode=smalltalk&prompt=sls")]).toEqual([[["Answering, 0 of 6", "/small-talk/unit?id=answering"], ["Asking, 0 of 3", "/small-talk/unit?id=asking"], ["Listening, 0 of 3", "/small-talk/unit?id=listening"], ["News, 0 of 3", "/small-talk/unit?id=news"]], true, true, "/session?mode=smalltalk&prompt=sal1", "/session?mode=smalltalk&prompt=sal1", true, true, "Someone tells you about their day.", true]);
   });
 
   // After a reply to a story: the story itself, the listening beats the phone heard, and a label in History
@@ -148,12 +157,10 @@ describe("small talk", () => {
 
   // Responding to news: its own unit on the page, with its recipe and a result labelled as news
   it("offers responding to news as a unit, and labels its results", async () => {
-    // Draw the page
-    render(<SmallTalkScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Pick News
-    fireEvent.click(await screen.findByRole("button", { name: "News" }));
+    // Draw the News page
+    render(<SmallTalkScreen unitId="news" repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the recipe, the first lesson and the practice box
-    expect([!!screen.getByRole("region", { name: "A good response to news, in four beats" }), screen.getByRole("link", { name: "News lesson 1: Good news needs a real reaction" }).getAttribute("href"), !!within(screen.getByRole("region", { name: "Respond to news" })).getByRole("link", { name: "Respond to it" })]).toEqual([true, "/session?mode=smalltalk&prompt=snl1", true]);
+    expect([!!(await screen.findByRole("region", { name: "A good response to news, in four beats" })), screen.getByRole("link", { name: "News lesson 1: Good news needs a real reaction" }).getAttribute("href"), !!within(screen.getByRole("region", { name: "Respond to news" })).getByRole("link", { name: "Respond to it" })]).toEqual([true, "/session?mode=smalltalk&prompt=snl1", true]);
     // A response to "I got the job!"
     const repository = await repositoryWith(answer({ promptId: "sn01", durationSec: 6, transcript: "no way you got it how did it feel when they called", selfReview: { worked: "", change: "", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
     // Its page

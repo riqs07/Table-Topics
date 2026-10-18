@@ -1,12 +1,12 @@
 "use client";
-// The Small talk page: three units (answering, asking, listening), each with its recipe, lessons and practice, plus moments and your recent answers (kept apart from the speech practice)
+// One Connect unit's page: today's practice, the recipe, the lessons as a path, the unit's own extras (moments, things people say), and your recent answers in it (decision 57)
 
 // Load React's state, effect and external-store tools
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the chevron for lesson rows
-import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { RowLink } from "@/components/script/Buttons";
@@ -15,7 +15,9 @@ import { PathMark } from "@/components/script/PathMark";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the small-talk content
-import { ASKING_DRILLS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, findUnit, lessonsFor, type UnitId } from "@/content/smallTalk";
+import { ASKING_DRILLS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, findUnit, lessonsFor, unitOf, type UnitId } from "@/content/smallTalk";
+// Load the units' icons
+import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the beat counter
 import { beatCount } from "@/core/smallTalk";
 // Load the done and next marks for a path of lessons
@@ -25,47 +27,26 @@ import { dayLabel } from "@/core/copy";
 // Load the calendar-day key
 import { dayKey } from "@/core/dates";
 // Load the record types
-import type { MissionRecord, SessionRecord } from "@/data/records";
-// Load the mission card, missions and rules
-import { MissionCard } from "@/components/script/MissionCard";
-import { findMission } from "@/content/missions";
-import { betterThanFeared, missionToday, triedMissions } from "@/core/missions";
+import type { SessionRecord } from "@/data/records";
 
 // How many recent answers to list
 const RECENT_ANSWERS = 10;
-// How many recent missions to list
-const RECENT_MISSIONS = 5;
 // How many recent moments to list
 const RECENT_MOMENTS = 5;
 
 // The address that starts an answer to a prompt (an everyday question or a lesson's turn)
 const answerHref = (promptId: string) => `/session?mode=smalltalk&prompt=${promptId}`;
 
-// Listen for the address's # changing
-function subscribeToHash(changed: () => void): () => void {
-  // Listen
-  window.addEventListener("hashchange", changed);
-  // Stop listening
-  return () => window.removeEventListener("hashchange", changed);
-}
-
-// Draw the Small talk page
-export function SmallTalkScreen(props: ScreenProps) {
+// Draw one Connect unit's page (decision 57)
+export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: UnitId }) {
   // The repository and today (null until in the browser)
   const { repo, today } = useScreenBasics(props);
   // The user's small-talk answers, newest first (null while loading)
   const [answers, setAnswers] = useState<SessionRecord[] | null>(null);
   // The user's moment notes, newest first
   const [moments, setMoments] = useState<SessionRecord[]>([]);
-  // The mission tries, oldest first (null while loading)
-  const [missions, setMissions] = useState<MissionRecord[] | null>(null);
   // How many drills along from today's ("another" adds one)
   const [offset, setOffset] = useState(0);
-  // The unit chosen (null until the user picks one: then the one in the address, or the unit of the next lesson)
-  const [picked, setPicked] = useState<UnitId | null>(null);
-
-  // A unit named in the address (such as /small-talk#asking), read in the browser
-  const named = useSyncExternalStore(subscribeToHash, () => window.location.hash.slice(1), () => "");
 
   // Load the answers once in the browser
   useEffect(() => {
@@ -76,30 +57,23 @@ export function SmallTalkScreen(props: ScreenProps) {
       // Stop if closed
       if (cancelled) return;
       // The answers
-      setAnswers(sessions.filter((session) => session.mode === "smalltalk"));
+      setAnswers(sessions.filter((session) => session.mode === "smalltalk" && unitOf(session.promptId) === unitId));
       // The moments
       setMoments(sessions.filter((session) => session.mode === "moment"));
-    });
-    // Read the mission tries
-    repo.getSettings(new Date()).then((settings) => {
-      // Keep them if still open
-      if (!cancelled) setMissions(settings.missions ?? []);
     });
     // Mark as closed when leaving
     return () => {
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo]);
+  }, [repo, unitId]);
 
   // How often each lesson has been answered
   const counts = new Map<string, number>();
   // Count each answer to a lesson
   for (const answer of answers ?? []) counts.set(answer.promptId, (counts.get(answer.promptId) ?? 0) + 1);
-  // The first lesson not yet done, across the units in order (none once all are)
-  const firstOpen = SMALL_TALK_LESSONS.find((lesson) => !counts.has(lesson.id));
-  // The unit showing: the one picked, or the one in the address, or the first open lesson's
-  const unit = UNITS.find((item) => item.id === picked) ?? UNITS.find((item) => item.id === named) ?? UNITS.find((item) => item.id === (firstOpen?.unit ?? "answering")) ?? UNITS[0]!;
+  // The unit
+  const unit = findUnit(unitId);
   // The showing unit's next lesson (none once its lessons are done)
   const nextLesson = lessonsFor(unit.id).find((lesson) => !counts.has(lesson.id));
   // Its lessons
@@ -114,18 +88,20 @@ export function SmallTalkScreen(props: ScreenProps) {
     <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
       <Masthead title="Connect" section="smalltalk" />
-      {/* The units, one showing at a time (first, so the practice is in view straight away) */}
-      <div role="group" aria-label="Units" className="mt-5 grid grid-cols-2 border-y border-ink sm:grid-cols-4">
-        {/* Each unit */}
-        {UNITS.map((item) => (
-          // One unit's switch
-          <button key={item.id} type="button" aria-pressed={item.id === unit.id} onClick={() => { setPicked(item.id); setOffset(0); }} className={`min-h-12 px-1 py-2 font-display text-lede md:text-cue ${item.id === unit.id ? "bg-ink text-paper" : "hover:text-accent"}`}>
-            {item.name}
-          </button>
-        ))}
+      {/* Back to Connect */}
+      <p className="mt-2"><Link href="/small-talk" className="-ml-1 inline-flex min-h-11 items-center gap-1 text-footnote underline underline-offset-4"><CaretLeftIcon aria-hidden="true" className="size-4" />Connect</Link></p>
+      {/* Icon, name, and when it is for */}
+      <div className="mt-2 flex items-center gap-4">
+        {/* The icon on an accent tile */}
+        <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center bg-accent text-accent-ink">{(() => { const IconShape = UNIT_ICONS[unit.id]; return <IconShape className="size-9" />; })()}</span>
+        {/* Name and when */}
+        <div className="min-w-0 flex-1">
+          {/* Name */}
+          <p className="font-display text-statement tracking-tight">{unit.name}</p>
+          {/* When it is for */}
+          <p className="text-footnote text-ink-muted">{unit.when} A voice speaks, you reply out loud.</p>
+        </div>
       </div>
-      {/* When this unit is for, and how it works, in one line */}
-      <p className="mt-3 max-w-[52ch] text-footnote italic text-ink-muted">{unit.when} A voice speaks, you reply out loud.</p>
 
       {/* Today's question, with a way to get another */}
       {question && (
@@ -141,48 +117,6 @@ export function SmallTalkScreen(props: ScreenProps) {
             {/* Another */}
             <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">{unit.words.another}</button>
           </p>
-        </section>
-      )}
-
-      {/* Today's mission, and how missions have gone against what you expected */}
-      {today && missions && (
-        <section id="missions" aria-labelledby="missions-heading" className="mt-10 scroll-mt-6">
-          {/* Run-in heading */}
-          <h2 id="missions-heading" className="italic">Try it for real</h2>
-          {/* What missions are for */}
-          <p className="mt-2 max-w-[52ch] text-footnote text-ink-muted">Practice here is the warm-up; real conversations do the work. Say how you think it will go, try it, then compare.</p>
-          {/* The card */}
-          <div className="mt-3"><MissionCard key={missions.length} repo={repo} now={today} state={missionToday(missions, today)} onChange={setMissions} /></div>
-          {/* Expected against actual, for the latest tries */}
-          {triedMissions(missions).length > 0 && (
-            <>
-              {/* The headline */}
-              <p className="mt-4 text-lede">{betterThanFeared(missions).better} of {betterThanFeared(missions).total} went better than you expected.</p>
-              {/* The latest */}
-              <ul aria-label="Your missions" className="mt-2 divide-y divide-rule border-y border-rule">
-                {/* Each try */}
-                {triedMissions(missions).slice(0, RECENT_MISSIONS).map((record) => (
-                  // One try: the move, then expected against actual as two short bars
-                  <li key={record.id} className="flex items-center gap-4 py-3">
-                    {/* The move and day */}
-                    <span className="min-w-0 flex-1">
-                      {/* The move */}
-                      <span className="block">{findMission(record.missionId)?.move ?? "Mission"}</span>
-                      {/* The day */}
-                      <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)}</span>
-                    </span>
-                    {/* Expected against actual */}
-                    <span aria-label={`Expected ${record.predicted} of 5, went ${record.outcome} of 5`} className="flex w-32 flex-none flex-col gap-1">
-                      {/* Expected */}
-                      <span aria-hidden="true" className="flex items-center gap-2 text-footnote text-ink-muted"><span className="w-10">said</span><span className="h-1.5 bg-rule" style={{ width: `${(record.predicted ?? 0) * 12}px` }} /></span>
-                      {/* Actual */}
-                      <span aria-hidden="true" className="flex items-center gap-2 text-footnote"><span className="w-10">went</span><span className="h-1.5 bg-accent" style={{ width: `${(record.outcome ?? 0) * 12}px` }} /></span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
         </section>
       )}
 

@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { MissionScreen } from "@/components/screens/MissionScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
-import { SmallTalkScreen } from "@/components/screens/SmallTalkScreen";
+import { ConnectScreen } from "@/components/screens/ConnectScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
@@ -110,7 +110,7 @@ describe("missions", () => {
     // Debrief
     await debriefMission(repository, accepted!, { tried: true, outcome: 4, note: "", tooMuch: false }, yesterday);
     // Draw Connect
-    render(<SmallTalkScreen repository={repository} now={NOW} />);
+    render(<ConnectScreen repository={repository} now={NOW} />);
     // Confirm the record and today's next mission
     expect([!!(await screen.findByText("1 of 1 went better than you expected.")), !!within(screen.getByRole("list", { name: "Your missions" })).getByLabelText("Expected 2 of 5, went 4 of 5"), !!within(screen.getByRole("region", { name: "Today’s mission" })).getByText(/react to it before you say anything else/)]).toEqual([true, true, true]);
     // Draw History

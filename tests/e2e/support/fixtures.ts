@@ -36,6 +36,10 @@ export const ROUTES: ReadonlyArray<string> = [
   "/learn/review",
   // Quick scenarios, and a card with a scenario
   "/learn/scenarios",
+  // A Learn set
+  "/learn/set?id=warmth",
+  // A Connect unit
+  "/small-talk/unit?id=news",
   "/learn/card?id=warm-good-news",
   // A mission debrief that does not exist (the page explains)
   "/mission?id=missing",

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 // Load the screens being checked
 import { LearnScreen } from "@/components/screens/LearnScreen";
+import { LearnSetScreen } from "@/components/screens/LearnSetScreen";
 import { ScenariosScreen } from "@/components/screens/ScenariosScreen";
 import { CardScreen } from "@/components/screens/CardScreen";
 import { ReviewScreen } from "@/components/screens/ReviewScreen";
@@ -48,14 +49,30 @@ const next = (times: number) => {
 
 // Group the checks about Learn
 describe("Learn", () => {
-  // The page lists the sets as paths, starting with the first card, and leads with it
-  it("lists the sets and leads with the first card", async () => {
+  // The page lists the sets as cards with progress, marks the next one, and leads with the first card
+  it("lists the sets as cards and leads with the first card", async () => {
     // Draw it with no progress
     render(<LearnScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // The first set
-    const first = await screen.findByRole("region", { name: /Nerves and presence/ });
-    // Confirm the first card is next, and the main action opens it
-    expect([within(first).getAllByRole("link")[0]?.textContent?.includes("Next"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([true, `/learn/card?id=${LEARN_CARDS[0]?.id}`]);
+    // The set cards
+    const sets = within(await screen.findByRole("list", { name: "Sets" })).getAllByRole("link");
+    // Confirm the first card's name, address and note, and the main action
+    expect([sets[0]?.getAttribute("aria-label"), sets[0]?.getAttribute("href"), sets[0]?.textContent?.includes("Next up"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([`Nerves and presence, 0 of ${LEARN_CARDS.filter((card) => card.set === "nerves").length}`, "/learn/set?id=nerves", true, `/learn/card?id=${LEARN_CARDS[0]?.id}`]);
+  });
+
+  // A set's page lists its cards as a path, with the next one marked
+  it("opens a set's cards as a path", async () => {
+    // A repository with the first card read
+    const repository = createRepository(new MemoryStore());
+    // The settings
+    const settings = await repository.getSettings(NOW);
+    // Save the read card
+    await repository.saveSettings({ ...settings, learn: { [LEARN_CARDS[0]!.id]: firstRead(NOW) } });
+    // Draw the set
+    render(<LearnSetScreen setId="nerves" repository={repository} now={NOW} />);
+    // The cards
+    const cards = within(await screen.findByRole("list", { name: "Cards" })).getAllByRole("link");
+    // Confirm the first done, the second next, and the main action
+    expect([screen.getByRole("heading", { level: 1 }).textContent, cards[1]?.textContent?.startsWith("2Next"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual(["Nerves and presence", true, `/learn/card?id=${LEARN_CARDS[1]?.id}`]);
   });
 
   // A myth-or-fact card: guess, read on, answer the recall question, and it is saved to come back in a week

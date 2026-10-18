@@ -527,7 +527,7 @@ describe("RecordingScreen", () => {
     // Stop
     fireEvent.click(stop);
     // Wait for the way back
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/small-talk#moments"));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/small-talk/unit?id=answering#moments"));
     // The saved note
     const [saved] = await repository.listSessions();
     // Confirm it needs no feedback and no listening step

@@ -306,7 +306,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
         {/* The next card */}
         {next && <Link href={`/learn/card?id=${next.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Next card</Link>}
         {/* Back */}
-        <Link href="/learn" className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Back to Learn</Link>
+        <Link href={`/learn/set?id=${card.set}`} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Back to {set?.name ?? "Learn"}</Link>
       </p>}
     </div>,
   ];
@@ -315,7 +315,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* The set's name, with a way out instead of the tab bar */}
-      <Masthead title={set?.name ?? "Learn"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/learn", label: "Close, back to Learn" }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
+      <Masthead title={set?.name ?? "Learn"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: `/learn/set?id=${card.set}`, label: `Close, back to ${set?.name ?? "Learn"}` }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
       {/* The screens */}
       <SwipeDeck screens={screens} index={index} onIndex={setIndex} label={card.title} />
     </main>

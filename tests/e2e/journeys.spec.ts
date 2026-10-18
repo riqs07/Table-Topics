@@ -396,7 +396,7 @@ test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
   await page.getByRole("button", { name: /Save my notes/ }).click({ timeout: 20_000 });
   // The beats show, with the phone's evidence
   await expect(page.getByRole("list", { name: "The beats" })).toContainText("“fun”");
-  // Back on the Small talk page, the lesson is done and the answer listed
+  // Back on the Answering page, the answer is listed
   await page.getByRole("link", { name: /Another question/ }).click();
   // The answer is listed
   await expect(page.getByRole("region", { name: "Your answers" })).toContainText("How was your weekend?");
@@ -407,7 +407,9 @@ test("Small talk: listen to a story and see it afterwards", async ({ page }) => 
   // The stand-in speech responds to the story
   await useStandIns(page, "no way you missed your stop and your boss was waiting that must have been so awkward");
   // Start at the Listening unit
-  await page.goto("/small-talk#listening");
+  await page.goto("/small-talk");
+  // Open the Listening unit
+  await page.getByRole("link", { name: /^Listening, / }).click();
   // Its practice box
   await page.getByRole("region", { name: "Listen to a story" }).getByRole("link", { name: "Listen and respond" }).click();
   // The story is not shown
@@ -434,10 +436,10 @@ test("Small talk: listen to a story and see it afterwards", async ({ page }) => 
 test("One moment a day: record a note and see it on the Small talk page", async ({ page }) => {
   // The stand-in speech tells the moment
   await useStandIns(page, "I fixed the bike chain myself and rode to the river");
-  // Start at the Small talk page
+  // Start at Connect
   await page.goto("/small-talk");
-  // Record today's moment
-  await page.getByRole("link", { name: "Record today’s moment" }).click();
+  // Record today's moment from its card
+  await page.getByRole("link", { name: /^One moment a day/ }).click();
   // Start speaking
   await page.getByRole("button", { name: /Start speaking/ }).click();
   // Recording is under way
@@ -456,6 +458,8 @@ test("One moment a day: record a note and see it on the Small talk page", async 
 test("Learn: read a card one screen at a time and answer its question", async ({ page }) => {
   // Start at Learn
   await page.goto("/learn");
+  // Open the body-language set
+  await page.getByRole("link", { name: /^Body language: myth or fact, / }).click();
   // Open the "93%" card
   await page.getByRole("link", { name: /93% of communication/ }).click();
   // Guess
@@ -469,9 +473,11 @@ test("Learn: read a card one screen at a time and answer its question", async ({
   // It comes back in a week
   await expect(page.getByText("This question comes back in a week.")).toBeVisible();
   // Back on Learn, the card is done
-  await page.getByRole("link", { name: "Back to Learn", exact: true }).click();
+  await page.getByRole("link", { name: "Back to Body language: myth or fact", exact: true }).click();
   // The body-language set shows one read
-  await expect(page.getByRole("region", { name: /Body language/ })).toContainText("1 of");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Body language: myth or fact");
+  // The card is marked done on the set's path
+  await expect(page.getByRole("list", { name: "Cards" })).toContainText("Done");
 });
 
 // A mission: accept it on Today with a prediction, debrief it, and see the outcome against the prediction

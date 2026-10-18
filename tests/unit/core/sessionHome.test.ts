@@ -20,6 +20,6 @@ describe("sessionHome", () => {
     // One of each
     const sessions = [makeSession({ id: "a", mode: "talk" }), makeSession({ id: "b", mode: "smalltalk" }), makeSession({ id: "c", mode: "moment" })];
     // Confirm the moment is left out, small talk closes back to its page, and inside today's practice back to Today
-    expect([practiceSessions(sessions).map((session) => session.id), sessionHome("moment", "moment", false).href, sessionHome("smalltalk", "st01", true).href]).toEqual([["a", "b"], "/small-talk", "/"]);
+    expect([practiceSessions(sessions).map((session) => session.id), sessionHome("moment", "moment", false).href, sessionHome("smalltalk", "st01", true).href, sessionHome("smalltalk", "sa01", false).href]).toEqual([["a", "b"], "/small-talk/unit?id=answering", "/", "/small-talk/unit?id=asking"]);
   });
 });

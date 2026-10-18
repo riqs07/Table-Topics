@@ -572,7 +572,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Save the session with its audio
       const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
       // A moment note goes straight back to the Small talk page, where it is listed; anything else opens its page (feedback is requested there)
-      navigate(mode === "moment" ? "/small-talk#moments" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`);
+      navigate(mode === "moment" ? "/small-talk/unit?id=answering#moments" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`);
     } catch (error) {
       // Keep the details in the browser console for debugging
       console.error("Saving the recording failed", error);

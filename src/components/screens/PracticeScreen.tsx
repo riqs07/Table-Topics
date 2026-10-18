@@ -137,13 +137,13 @@ export function PracticeScreen(props: ScreenProps) {
         title="Everyday conversation"
         ways={[
           // Answering
-          { name: "Answering", detail: "“How was your weekend?” with a short story", href: "/small-talk#answering", icon: ChatTeardropTextIcon },
+          { name: "Answering", detail: "“How was your weekend?” with a short story", href: "/small-talk/unit?id=answering", icon: ChatTeardropTextIcon },
           // Asking
-          { name: "Asking", detail: "Hear something, ask one good follow-up", href: "/small-talk#asking", icon: QuestionIcon },
+          { name: "Asking", detail: "Hear something, ask one good follow-up", href: "/small-talk/unit?id=asking", icon: QuestionIcon },
           // Listening
-          { name: "Listening", detail: "Hear a short story, respond so they feel heard", href: "/small-talk#listening", icon: EarIcon },
+          { name: "Listening", detail: "Hear a short story, respond so they feel heard", href: "/small-talk/unit?id=listening", icon: EarIcon },
           // Responding to news
-          { name: "Responding to news", detail: "Good or bad news: react, ask, no buts", href: "/small-talk#news", icon: MegaphoneSimpleIcon },
+          { name: "Responding to news", detail: "Good or bad news: react, ask, no buts", href: "/small-talk/unit?id=news", icon: MegaphoneSimpleIcon },
           // One moment a day
           { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon },
         ]}

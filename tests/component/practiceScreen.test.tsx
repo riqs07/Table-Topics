@@ -29,7 +29,7 @@ describe("PracticeScreen", () => {
     const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
     // Confirm the groups and where each row leads
     expect([await rows("Everyday conversation"), await rows("Build a skill"), (await rows("Speak on the spot")).slice(0, 3)]).toEqual([
-      [["Answering", "/small-talk#answering"], ["Asking", "/small-talk#asking"], ["Listening", "/small-talk#listening"], ["Responding to news", "/small-talk#news"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
+      [["Answering", "/small-talk/unit?id=answering"], ["Asking", "/small-talk/unit?id=asking"], ["Listening", "/small-talk/unit?id=listening"], ["Responding to news", "/small-talk/unit?id=news"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
       [["Lessons", "/skills#lessons"], ["Read aloud", "/skills#readings"], ["Pause drills", "/skills#pause-drills"], ["Tricky words", "/skills#tricky-words"]],
       [["Table Topic", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Openings and closings", "/bookends"]],
     ]);

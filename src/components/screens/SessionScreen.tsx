@@ -468,7 +468,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {/* After small talk, another question, back on its own page */}
             {/* A follow-up or a reply: trying the same one again is a row, since the main action moves on */}
             {quick && !plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
-            {smallTalk && <li><RowLink href={quick ? `/small-talk#${findSmallTalk(session.promptId)?.unit}` : "/small-talk"}>{quick ? "Back to Connect" : "Another question"}</RowLink></li>}
+            {smallTalk && <li><RowLink href={`/small-talk/unit?id=${findSmallTalk(session.promptId)?.unit ?? "answering"}`}>{quick ? "Back to Connect" : "Another question"}</RowLink></li>}
             {/* Finish (small talk has its own page, so it leads back there instead) */}
             {!smallTalk && <li><RowLink href="/">Finish for today</RowLink></li>}
           </ul>

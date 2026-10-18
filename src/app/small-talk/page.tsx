@@ -1,13 +1,13 @@
-// The Small talk page: everyday questions, the recipe and the lessons
+// Connect: today's mission and the four units as cards
 import type { Metadata } from "next";
 // Load the screen
-import { SmallTalkScreen } from "@/components/screens/SmallTalkScreen";
+import { ConnectScreen } from "@/components/screens/ConnectScreen";
 
 // The browser tab's title
-export const metadata: Metadata = { title: "Small talk · VoiceLab" };
+export const metadata: Metadata = { title: "Connect · VoiceLab" };
 
 // Draw the page
-export default function SmallTalkPage() {
+export default function ConnectPage() {
   // The screen
-  return <SmallTalkScreen />;
+  return <ConnectScreen />;
 }
