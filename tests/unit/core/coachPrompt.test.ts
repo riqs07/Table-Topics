@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt builder and feedback checker being checked
-import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildConnectionMessage, buildSmallTalkMessage, checkConnectionFeedback, checkFeedback, checkSmallTalkFeedback } from "@/core/coachPrompt";
+import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, FEEDBACK_RULES, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildConnectionMessage, buildSmallTalkMessage, checkConnectionFeedback, checkFeedback, checkSmallTalkFeedback } from "@/core/coachPrompt";
 
 // A typical session for these checks
 const SESSION = { transcript: "Um, so I think, uh, the best part of my week was the dog.", durationSec: 30, focusId: "cut-fillers", previousChange: null, mode: "standard" as const };
@@ -250,5 +250,11 @@ describe("checkFeedback", () => {
     expect(checkConnectionFeedback(reply, "sls01").connection).toEqual({ found: [{ beat: "react", quote: "no way" }], better: "B" });
     // Confirm an empty better version is refused
     expect(() => checkConnectionFeedback({ ...reply, better: "" }, "sls01")).toThrow("incomplete");
+  });
+
+  // Every coach talks about the task, never the person, and names the move behind its examples; the conversation coach uses the responsiveness frame
+  it("gives every coach the feedback rules", () => {
+    // Confirm the rules in all three, and the frame in the conversation coach
+    expect([COACH_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT].map((prompt) => prompt.includes(FEEDBACK_RULES)).concat([FEEDBACK_RULES.includes("never about the person"), CONNECTION_SYSTEM_PROMPT.includes("that they were understood")])).toEqual([true, true, true, true, true]);
   });
 });
