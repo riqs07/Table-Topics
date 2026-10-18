@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the rule being checked
-import { sessionHome, speechSessions } from "@/core/sessionHome";
+import { sessionHome, practiceSessions } from "@/core/sessionHome";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -16,10 +16,10 @@ describe("sessionHome", () => {
   });
 
   // Small talk and moment notes are kept apart from the speech practice
-  it("keeps small talk and moments out of the speech practice", () => {
+  it("leaves out only private moment notes, and closes small talk back to its page", () => {
     // One of each
     const sessions = [makeSession({ id: "a", mode: "talk" }), makeSession({ id: "b", mode: "smalltalk" }), makeSession({ id: "c", mode: "moment" })];
-    // Confirm only the Table Topic stays, and the others close back to Small talk
-    expect([speechSessions(sessions).map((session) => session.id), sessionHome("moment", "moment", false).href]).toEqual([["a"], "/small-talk"]);
+    // Confirm the moment is left out, small talk closes back to its page, and inside today's practice back to Today
+    expect([practiceSessions(sessions).map((session) => session.id), sessionHome("moment", "moment", false).href, sessionHome("smalltalk", "st01", true).href]).toEqual([["a", "b"], "/small-talk", "/"]);
   });
 });

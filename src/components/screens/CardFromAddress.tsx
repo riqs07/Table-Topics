@@ -11,5 +11,5 @@ export function CardFromAddress() {
   // The address's query
   const params = useSearchParams();
   // The card
-  return <CardScreen key={params.get("id") ?? ""} cardId={params.get("id") ?? ""} />;
+  return <CardScreen key={params.get("id") ?? ""} cardId={params.get("id") ?? ""} planStep={/^\d+$/.test(params.get("plan") ?? "") ? Number(params.get("plan")) : null} />;
 }

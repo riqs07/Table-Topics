@@ -3,7 +3,7 @@
 // Load the session kind type
 import type { SessionMode } from "@/data/records";
 
-// The jobs the app is organised around (small talk is kept apart from the speech practice for now)
+// The jobs the app is organised around
 export type JobId = "talk" | "spot" | "skill" | "connect";
 
 // One job, as shown on Today and in the menu

@@ -15,6 +15,8 @@ import { LEARN_CARDS, findCard } from "@/content/learn";
 import { firstRead, shuffledRecall } from "@/core/learn";
 // Load the recording contracts
 import type { LiveText, RecordingServices } from "@/audio/services";
+// Load a sample session builder
+import { makeSession } from "../support/fixtures";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 18, 9);
@@ -119,5 +121,19 @@ describe("Learn", () => {
     fireEvent.click(screen.getByRole("button", { name: /Finish/ }));
     // Confirm the result and that it comes back tomorrow
     expect([screen.getByRole("heading", { level: 1 }).textContent, (await repository.getSettings(NOW)).learn?.["body-lies"]?.box]).toEqual(["0 of 1 right.", 0]);
+  });
+
+  // Inside today's practice, a card says which step it is and ends with the way on
+  it("shows its step inside today's practice and finishes it", async () => {
+    // A user with three earlier practice days, so the plan has three steps
+    const repository = createRepository(new MemoryStore());
+    // The days
+    for (const day of [14, 15, 16]) await repository.saveSession(makeSession({ id: `s${day}`, createdAt: new Date(2026, 9, day, 9).toISOString() }));
+    // Draw a card as step 3
+    render(<CardScreen cardId="body-93" repository={repository} now={NOW} services={fakeServices("")} planStep={3} />);
+    // To the last screen
+    next(4);
+    // Confirm the step and the finish
+    expect([!!(await screen.findByText("Step 3 of 3")), (await screen.findByRole("link", { name: /Finish today/ })).getAttribute("href")]).toEqual([true, "/"]);
   });
 });

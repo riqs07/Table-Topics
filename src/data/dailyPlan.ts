@@ -1,7 +1,7 @@
 // Loads today's practice: the steps, which are done, and today's sessions (used by Today, the recording page and the session page)
 
-// Load the filter that keeps small talk apart
-import { speechSessions } from "@/core/sessionHome";
+// Load the filter that leaves out private moment notes
+import { practiceSessions } from "@/core/sessionHome";
 // Load the plan rules
 import { dailyPlan, planProgress, type PlanStep } from "@/core/dailyPlan";
 // Load the weekly focus rules
@@ -43,8 +43,8 @@ export interface LoadedPlan {
 
 // Load today's practice (reads only; the weekly focus is worked out without saving it)
 export async function loadDailyPlan(repository: Repository, now: Date): Promise<LoadedPlan> {
-  // Every session of the speech practice (small talk is kept apart)
-  const sessions = speechSessions(await repository.listSessions());
+  // Every session that counts (private moment notes are left out)
+  const sessions = practiceSessions(await repository.listSessions());
   // The settings, for the weekly focus
   const settings = await repository.getSettings(now);
   // This week's focus
@@ -52,7 +52,7 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   // A talk coming up
   const talk = nextTalkFrom(await repository.listTalks(), now);
   // The steps
-  const steps = dailyPlan({ day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null });
+  const steps = dailyPlan({ day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {} });
   // Hand back the steps, what is done, and today's sessions
-  return { steps, done: planProgress(steps, sessions, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)) };
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)) };
 }

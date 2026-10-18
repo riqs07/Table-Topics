@@ -19,6 +19,10 @@ import type { RecordingServices } from "@/audio/services";
 import { EVIDENCE_LABELS, LEARN_CARDS, LEARN_SETS, findCard, type Verdict } from "@/content/learn";
 // Load the recall rules
 import { RECALL_DAYS, shuffledRecall, type LearnProgress } from "@/core/learn";
+// Load the plan navigation type, today's practice and step addresses
+import type { PlanNav } from "@/components/screens/planNav";
+import { loadDailyPlan } from "@/data/dailyPlan";
+import { planHref } from "@/core/dailyPlan";
 // Load progress saving
 import { loadLearnProgress, markCardRead, saveRecall } from "@/data/learnProgress";
 
@@ -55,7 +59,7 @@ function comesBack(days: number): string {
 }
 
 // Draw a card
-export function CardScreen({ cardId, services = browserRecordingServices, ...props }: ScreenProps & { cardId: string; services?: RecordingServices }) {
+export function CardScreen({ cardId, services = browserRecordingServices, planStep = null, ...props }: ScreenProps & { cardId: string; services?: RecordingServices; planStep?: number | null }) {
   // The repository and today
   const { repo, today } = useScreenBasics(props);
   // The card
@@ -72,6 +76,30 @@ export function CardScreen({ cardId, services = browserRecordingServices, ...pro
   const [recalled, setRecalled] = useState<boolean | null>(null);
   // Progress, for the "comes back" line
   const [progress, setProgress] = useState<LearnProgress>({});
+  // Inside today's practice: this step, how many there are, and the next one
+  const [plan, setPlan] = useState<PlanNav | null>(null);
+
+  // Inside today's practice, load the plan to find the next step
+  useEffect(() => {
+    // Only inside the plan, in the browser
+    if (!planStep || !today) return;
+    // Ignore the result if closed first
+    let cancelled = false;
+    // Load it
+    loadDailyPlan(repo, today).then((loaded) => {
+      // Stop if closed
+      if (cancelled) return;
+      // The next step, if any
+      const after = loaded.steps[planStep];
+      // Keep where this step sits
+      setPlan({ step: planStep, total: loaded.steps.length, next: after ? { href: planHref(after, planStep + 1), label: after.label } : null });
+    });
+    // Mark as closed
+    return () => {
+      // Stop the update
+      cancelled = true;
+    };
+  }, [planStep, repo, today]);
 
   // Load progress once in the browser
   useEffect(() => {
@@ -253,13 +281,15 @@ export function CardScreen({ cardId, services = browserRecordingServices, ...pro
         {/* The source */}
         {card.source.url ? <a href={card.source.url} data-inline target="_blank" rel="noreferrer" className="underline underline-offset-4">{card.source.text}</a> : card.source.text}
       </p>
+      {/* Inside today's practice: on to the next step, or finish */}
+      {plan && <p className="mt-6"><PrimaryLink href={plan.next ? plan.next.href : "/"}>{plan.next ? `Next: step ${plan.step + 1}` : "Finish today\u2019s practice"}</PrimaryLink></p>}
       {/* On to the next card, or back */}
-      <p className="mt-4 flex flex-wrap gap-x-4">
+      {!plan && <p className="mt-4 flex flex-wrap gap-x-4">
         {/* The next card */}
         {next && <Link href={`/learn/card?id=${next.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Next card</Link>}
         {/* Back */}
         <Link href="/learn" className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Back to Learn</Link>
-      </p>
+      </p>}
     </div>,
   ];
 
@@ -267,7 +297,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, ...pro
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* The set's name, with a way out instead of the tab bar */}
-      <Masthead title={set?.name ?? "Learn"} nav={false} close={{ href: "/learn", label: "Close, back to Learn" }} />
+      <Masthead title={set?.name ?? "Learn"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/learn", label: "Close, back to Learn" }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
       {/* The screens */}
       <SwipeDeck screens={screens} index={index} onIndex={setIndex} label={card.title} />
     </main>

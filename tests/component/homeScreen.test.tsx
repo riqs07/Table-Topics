@@ -107,17 +107,17 @@ describe("HomeScreen", () => {
   });
 
   // After three practice days, a skill step for this week's focus joins in the middle
-  it("adds a skill step for this week's focus", async () => {
+  it("takes one step from each lane after the first days", async () => {
     // A repository with three earlier practice days, the first a prepared speech, in the first focus week (strong opening)
     const repository = emptyRepository();
     // Each day
     for (const [index, day] of [10, 11, 12].entries()) await repository.saveSession(makeSession({ id: `s${index}`, mode: index === 0 ? "response" : "standard", isBaseline: index === 0, createdAt: new Date(2026, 9, day, 9).toISOString() }));
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // The middle step
-    const skill = within(await screen.findByRole("list", { name: "Steps" })).getByRole("link", { name: "Step 2: Skill" });
-    // Confirm an opening lesson
-    expect(/Lesson (1|11):/.test(skill.textContent ?? "")).toBe(true);
+    // The steps
+    const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
+    // Confirm three, the last a small-talk lesson or a Learn card
+    expect([steps.length, /^Step 3: (Small-talk lesson 1|Learn)$/.test(steps[2]?.getAttribute("aria-label") ?? "")]).toEqual([3, true]);
   });
 
   // A finished day leads with the time spoken and the user's own notes, never a filler count, and the ticks grow in only the first time

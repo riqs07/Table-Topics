@@ -454,7 +454,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
             {/* After small talk, another question, back on its own page */}
             {smallTalk && <li><RowLink href="/small-talk">Another question</RowLink></li>}
-            {/* Finish (small talk is kept apart, so it leads back to its page) */}
+            {/* Finish (small talk has its own page, so it leads back there instead) */}
             {!smallTalk && <li><RowLink href="/">Finish for today</RowLink></li>}
           </ul>
           {/* Inside today's practice, the next step; after an old warm-up, a Record Response; otherwise the retry */}

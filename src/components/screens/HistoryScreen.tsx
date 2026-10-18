@@ -3,8 +3,10 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
-// Load the filter that keeps small talk apart
-import { speechSessions } from "@/core/sessionHome";
+// Load the small-talk questions
+import { findSmallTalk } from "@/content/smallTalk";
+// Load the filter that leaves out private moment notes
+import { practiceSessions } from "@/core/sessionHome";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
@@ -91,6 +93,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   }
   // And rehearsals, named after the talk (or plainly, if the talk was deleted)
   if (session.mode === "rehearse") return talkTitles.has(session.promptId) ? `Rehearsal: ${talkTitles.get(session.promptId)}` : "Rehearsal";
+  // And small-talk answers, by their question
+  if (session.mode === "smalltalk") return `Small talk: ${findSmallTalk(session.promptId)?.question ?? text}`;
   // And prepared speeches
   return session.mode === "response" ? `Prepared speech: ${text}` : text;
 }
@@ -134,7 +138,7 @@ export function HistoryScreen(props: ScreenProps) {
     // Load and keep the sessions
     repo.listSessions().then((loaded) => {
       // Keep the speech practice only, if the screen is still open (small-talk answers are listed on their own page)
-      if (!cancelled) setSessions(speechSessions(loaded));
+      if (!cancelled) setSessions(practiceSessions(loaded));
     });
     // Load the talk titles too
     repo.listTalks().then((talks) => {

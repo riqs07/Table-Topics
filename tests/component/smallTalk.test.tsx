@@ -46,8 +46,8 @@ describe("small talk", () => {
     expect([within(recipe).getAllByRole("listitem").length, within(screen.getByRole("region", { name: "Answer a question" })).getByText(smallTalkForDay(NOW).text).tagName, screen.getByRole("link", { name: /^Lesson 1The dead end/ }).getAttribute("href")]).toEqual([4, "P", "/session?mode=smalltalk&prompt=stl1"]);
   });
 
-  // Answers are listed on the page with how many beats they showed, and never in History
-  it("lists answers on its own page, not in History", async () => {
+  // Answers are listed on the page with how many beats they showed, and in History too (since the daily mix)
+  it("lists answers on its own page and in History", async () => {
     // A small-talk answer and nothing else
     const repository = await repositoryWith(answer({ selfReview: { worked: "", change: "", tags: ["moment"], skipped: false, savedAt: NOW.toISOString() } }));
     // Draw the Small talk page
@@ -62,8 +62,8 @@ describe("small talk", () => {
     cleanup();
     // History
     render(<HistoryScreen repository={repository} now={NOW} />);
-    // Confirm History shows its empty state, as if nothing was recorded
-    expect(await screen.findByRole("link", { name: /Record your first session/ })).toBeTruthy();
+    // Confirm History lists it by its question
+    expect(await screen.findByText(/Small talk: How was your weekend\?/)).toBeTruthy();
   });
 
   // Listening back asks the four listen-for questions, and the notes then show the beats
