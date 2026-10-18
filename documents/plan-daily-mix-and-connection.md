@@ -66,6 +66,9 @@ Lessons are written from the research note, quoting the finding in one plain lin
 
 ## Learn (the educational part)
 
+The full design (card format, evidence labels, recall and review, and a catalogue of about 35 cards with sources) is in [plan-learn.md](plan-learn.md). In short:
+
+
 Short cards, three to five screens each, read in a minute, then one recall question (recalling beats rereading). Grouped into sets:
 
 - **Charisma:** presence and warmth (influence and affability); charisma is a set of behaviours you can practise; stories, contrasts and lists of three; your voice (pitch variety and pace).

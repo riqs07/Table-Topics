@@ -62,7 +62,16 @@ Asked for by the user before planning the daily mix, the conversation curriculum
 
 **Learning science behind it** (secondary summaries, consistent with the wider literature): recalling something beats rereading it; spacing beats cramming; mixing kinds of practice (interleaving) helps long-term retention even though it feels harder; feedback strengthens learning ([summary](https://www.sec-ed.co.uk/content/best-practice/a-teacher-s-guide-to-retrieval-practice-interleaving); [interleaving study](https://par.nsf.gov/servlets/purl/10250915)). The three-lane daily mix is interleaving; short recall questions in the educational cards are retrieval practice.
 
-## 5. What this means for the plan
+## 5. Speaking, nerves and memory (added for the Learn cards)
+
+- **The spotlight effect:** people wearing an embarrassing T-shirt guessed about twice as many others noticed it as actually did ([Gilovich, Medvec & Savitsky 2000, summarised by Psychology Today](https://www.psychologytoday.com/us/blog/between-you-and-me/201311/have-you-fallen-prey-to-the-spotlight-effect)). *Strong, classic.*
+- **The illusion of transparency:** speakers think their nerves show far more than they do; speakers told about this felt calmer and were rated as giving better speeches ([Savitsky & Gilovich 2003, Wikipedia](https://en.wikipedia.org/wiki/Illusion_of_transparency)). *Moderate; a single study, but useful and harmless.*
+- **"I'm excited" instead of "I'm calm":** saying it raised reported excitement; a 2025 direct replication confirmed the feeling but found no difference in how the speeches were rated ([Poynter & Pasqualini 2025](https://reference-global.com/download/article/10.58734/plc-2025-0011.pdf); original described by the [APA](https://www.apa.org/news/press/releases/2013/12/performance-anxiety)). *Mixed: it may help how you feel, not how you come across.*
+- **"Uh" and "um" are words:** they signal a delay is coming, and listeners recognised the next word faster after "uh" ([Clark & Fox Tree 2002, and Fox Tree's listener studies, summarised](https://sciencenotes.ucsc.edu/0701/talk); [later work](https://www.cstr.ed.ac.uk/downloads/publications/2014/Dall_Wester_Corley_IS14.pdf)). *Moderate; a few fillers are normal, many are distracting.*
+- **Names:** linking a name to meaning works better than just repeating it, and recalling it later (self-testing) beats hearing it again ([Psychology in Action](https://www.psychologyinaction.org/2022-10-24-how-can-we-improve-our-memory-of-names)). *Moderate.*
+- **Stories:** being absorbed in a story ("transportation") goes with being persuaded by it ([Wikipedia](https://en.wikipedia.org/wiki/Transportation_theory_(psychology))), but a large experiment found stories no more persuasive than a list of facts for a policy question ([Schreiner et al.](https://www.mcm.uni-wuerzburg.de/fileadmin/06110300/user_upload/Publikationen/Schreiner_Appel_Isberner_Richter_PrePrint.pdf) and the climate study cited in [this review](https://pmc.ncbi.nlm.nih.gov/articles/PMC5954649/)). *Mixed: stories help people stay with you; they are not magic.*
+
+## 6. What this means for the plan
 
 1. Teach charisma as **behaviours you can practise with feedback**: presence and warmth, stories, voice variety. Not a personality.
 2. Teach body language as **noticing and showing**, not decoding, and say plainly which popular claims are myths. That honesty is itself good educational content.
