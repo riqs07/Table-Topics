@@ -87,8 +87,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/small-talk", current: "Connect" },
   // Learn marks Learn
   { path: "/learn", current: "Learn" },
-  // History marks History
-  { path: "/history", current: "History" },
+  // History lives in Settings, so no tab is marked
+  { path: "/history", current: null },
   // Settings marks nothing in the tab bar (its gear is marked instead)
   { path: "/settings", current: null },
   // A saved-session page that does not exist still offers the way out
@@ -111,8 +111,6 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Connect", path: "/small-talk" },
   // Learn
   { name: "Learn", path: "/learn" },
-  // History
-  { name: "History", path: "/history" },
   // Settings
   { name: "Settings", path: "/settings" },
 ];

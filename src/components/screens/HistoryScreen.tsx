@@ -16,6 +16,8 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 // Load the filled button link
 import { PrimaryLink } from "@/components/script/Buttons";
+// Load the repository type
+import type { Repository } from "@/data/repository";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the prompt library
@@ -128,10 +130,24 @@ function Row({ row, now, talkTitles }: { row: HistoryRow; now: Date; talkTitles:
   );
 }
 
-// Draw the History screen
+// The History page on its own (reached from links; its home is a folded section of Settings, decision 56)
 export function HistoryScreen(props: ScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
+  // Draw the page
+  return (
+    // One column on a phone, margin plus main column on a computer
+    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
+      {/* Title, with the settings gear marked */}
+      <Masthead title="History" section="settings" />
+      {/* The history itself */}
+      <HistoryContent repo={repo} today={today} />
+    </main>
+  );
+}
+
+// History's content: progress, every first try, and real conversations (drawn on the History page and inside Settings)
+export function HistoryContent({ repo, today }: { repo: Repository; today: Date | null }) {
   // Saved sessions, once loaded
   const [sessions, setSessions] = useState<SessionRecord[] | null>(null);
   // Titles of the user's saved talks, by id, for naming rehearsals
@@ -176,13 +192,9 @@ export function HistoryScreen(props: ScreenProps) {
   // The first recording, for the listen link
   const baseline = sessions?.find((session) => session.isBaseline);
 
-  // Draw the page
+  // Draw it
   return (
-    // One column on a phone, margin plus main column on a computer
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
-      {/* Title and a link home */}
-      <Masthead title="History" section="history" />
-
+    <div>
       {/* Empty state */}
       {sessions && sessions.length === 0 && (
         <div className="mt-6">
@@ -241,7 +253,7 @@ export function HistoryScreen(props: ScreenProps) {
           </ul>
         </section>
       )}
-    </main>
+    </div>
   );
 }
 

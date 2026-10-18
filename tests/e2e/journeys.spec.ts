@@ -81,8 +81,10 @@ test("Rehearse my talk: save, rehearse, saved session, history", async ({ page }
   await page.getByRole("button", { name: "Skip this time" }).click();
   // It names the talk that was rehearsed
   await expect(page.getByText(/Team update/).first()).toBeVisible();
-  // History lists it
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "History", exact: true }).click();
+  // History, folded inside Settings, lists it
+  await page.locator("header").getByRole("link", { name: "Settings" }).click();
+  // Open the fold
+  await page.getByText("Show your practice history").click();
   // At least one session row
   await expect(page.getByRole("link", { name: /Team update|Rehearsal/ }).first()).toBeVisible();
 });

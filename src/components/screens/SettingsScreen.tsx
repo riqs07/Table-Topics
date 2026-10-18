@@ -1,5 +1,5 @@
 "use client";
-// The Settings screen: how long recordings are kept, export and import, and deleting everything
+// The Settings screen: your history (folded), how long recordings are kept, the coach, export and import, and deleting everything
 
 // Load React's state and effect tools
 import { useEffect, useState, type ChangeEvent } from "react";
@@ -7,6 +7,8 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
+// Load the history's content, shown folded inside Settings
+import { HistoryContent } from "@/components/screens/HistoryScreen";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the day label helper for the export file name
@@ -62,6 +64,8 @@ interface SettingsScreenProps extends ScreenProps {
 export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
+  // Whether the folded history is open (it loads only once opened)
+  const [historyOpen, setHistoryOpen] = useState(false);
   // The passphrase being typed (starts with the saved one)
   const [passphrase, setPassphrase] = useState(() => (typeof window === "undefined" ? "" : readPassphrase()));
   // How many sessions are waiting for feedback
@@ -221,7 +225,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     // Save each sample session
     for (const session of sampleSessions(today)) await repo.saveSession(session);
     // Say what happened
-    setMessage("Sample sessions added. Open History to see them.");
+    setMessage("Sample sessions added. Open “Show your practice history” above to see them.");
   }
 
   // Draw the page
@@ -233,6 +237,16 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
 
       {/* Result of the last action, read out to screen readers */}
       <p role="status" className="mt-4 min-h-6 italic text-accent">{message}</p>
+
+      {/* History, folded away until wanted (drawn only once opened) */}
+      <Section title="History">
+        <details onToggle={(event) => setHistoryOpen(event.currentTarget.open)}>
+          {/* Open it */}
+          <summary className="inline-flex min-h-11 cursor-pointer items-center underline underline-offset-4">Show your practice history</summary>
+          {/* The history itself */}
+          {historyOpen && <HistoryContent repo={repo} today={today} />}
+        </details>
+      </Section>
 
       {/* How long recordings are kept */}
       <Section title="Your recordings">

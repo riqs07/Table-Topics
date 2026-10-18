@@ -130,4 +130,22 @@ describe("SettingsScreen", () => {
     // Confirm it was off, and is now saved on
     await waitFor(async () => expect([before, (await repository.getSettings(NOW)).shareNotes]).toEqual([false, true]));
   });
+
+  // History lives here, folded away until opened
+  it("shows the history folded, and draws it when opened", async () => {
+    // A user with one session
+    const repository = createRepository(new MemoryStore());
+    // The session
+    await repository.saveSession(makeSession({ id: "s1", createdAt: new Date(2026, 9, 12, 9).toISOString(), isBaseline: true }));
+    // Draw Settings
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // The fold
+    const summary = await screen.findByText("Show your practice history");
+    // Closed: nothing drawn yet
+    const before = screen.queryByText(/Your first recording is in/);
+    // Open it
+    await userEvent.click(summary);
+    // Confirm it drew once opened
+    expect([before, !!(await screen.findByText(/Your first recording is in/))]).toEqual([null, true]);
+  });
 });
