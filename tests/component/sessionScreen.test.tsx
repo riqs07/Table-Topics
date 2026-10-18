@@ -10,14 +10,14 @@ import { SessionScreen } from "@/components/screens/SessionScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
-// Load the Learn cards, for the day's card step
-import { LEARN_CARDS } from "@/content/learn";
+// Load the plan loader, for where the next step leads
+import { loadDailyPlan } from "@/data/dailyPlan";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 // Load the passphrase storage
 import { savePassphrase } from "@/data/passphrase";
 // Load the daily prompt picker and the pause drills
-import { PAUSE_DRILLS, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, promptForDay } from "@/content/prompts";
 // Load the script splitter
 import { readingTokens, scriptWords } from "@/core/liveReading";
 
@@ -649,36 +649,38 @@ describe("SessionScreen", () => {
     it("moves on to the next step of today's practice without listening first", async () => {
       // The repository
       const repository = await withAudio();
+      // Today's plan, for where step 3 is
+      const plan = await loadDailyPlan(repository, NOW);
       // Where the app goes
       const navigate = vi.fn();
-      // Draw step 1 of the plan
-      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} planStep={1} navigate={navigate} />);
+      // Draw step 2 of the plan (the warm-up)
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} planStep={2} navigate={navigate} />);
       // The next-step button, open at once
-      const next = (await screen.findByRole("button", { name: /^Next: step 2/ })) as HTMLButtonElement;
+      const next = (await screen.findByRole("button", { name: /^Next: step 3/ })) as HTMLButtonElement;
       // Whether it was open
       const open = !next.disabled;
       // Move on
       await userEvent.click(next);
       // Wait for the move
       await waitFor(() => expect(navigate).toHaveBeenCalled());
-      // Confirm it was open, went to step 2 inside the plan, and noted the step as reviewed (skipped, nothing written)
-      expect([open, navigate.mock.calls[0]?.[0], (await repository.getSession("s1"))?.selfReview?.skipped, !!screen.queryByText("Today’s practice · step 1 of 3")]).toEqual([true, `/session?mode=talk&prompt=${tableTopicForDay(NOW).id}&plan=2`, true, true]);
+      // Confirm it was open, went to step 3 inside the plan, and noted the step as reviewed (skipped, nothing written)
+      expect([open, navigate.mock.calls[0]?.[0], (await repository.getSession("s1"))?.selfReview?.skipped, !!screen.queryByText("Today’s practice · step 2 of 4")]).toEqual([true, `${plan.steps[2]?.href}&plan=3`, true, true]);
     });
 
-    // The last speaking step leads on to the day's Learn card, and trying again stays inside the plan
-    it("leads from the last speaking step to the Learn card, with a retry on offer", async () => {
+    // The last step finishes the practice, and trying again stays inside the plan
+    it("finishes today's practice after the last step, with a retry on offer", async () => {
       // Where the app goes
       const navigate = vi.fn();
-      // Draw step 2 of 3
-      render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} planStep={2} navigate={navigate} />);
+      // Draw step 4 of 4
+      render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} planStep={4} navigate={navigate} />);
       // Where trying again leads
       const retry = (await screen.findByRole("link", { name: "Try it again" })).getAttribute("href");
-      // Move on
-      await userEvent.click(await screen.findByRole("button", { name: /^Next: step 3/ }));
+      // Finish
+      await userEvent.click(await screen.findByRole("button", { name: /^Finish today’s practice/ }));
       // Wait for the move
       await waitFor(() => expect(navigate).toHaveBeenCalled());
-      // Confirm the card inside the plan, and the retry keeps the plan step
-      expect([navigate.mock.calls[0]?.[0], retry?.endsWith("&retryOf=s1&plan=2")]).toEqual([`/learn/card?id=${LEARN_CARDS[0]?.id}&plan=3`, true]);
+      // Confirm back to Today, and the retry keeps the plan step
+      expect([navigate.mock.calls[0]?.[0], retry?.endsWith("&retryOf=s1&plan=4")]).toEqual(["/", true]);
     });
 
     // Older sessions skip the step

@@ -1,4 +1,4 @@
-// Today's practice: one step from each of three lanes, taken in turn by day, then a Learn card (see documents/plan-daily-mix-and-connection.md)
+// Today's practice: four steps, a Learn card, the warm-up reading, then two kinds of practice picked from the bank, taken in turn by day (decision 51; see documents/plan-daily-mix-and-connection.md)
 
 // Load the day pickers and lookups for the spoken prompts and texts
 import { PAUSE_DRILLS, PASSAGES, bookendForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
@@ -18,8 +18,8 @@ import { LEARN_CARDS } from "@/content/learn";
 // Load the record types
 import type { SessionMode, SessionRecord } from "@/data/records";
 
-// Which lane of the day's practice a step comes from
-export type PlanLane = "delivery" | "thinking" | "connection" | "learn";
+// Where a step of the day's practice comes from: the Learn card, the warm-up, or one of the bank's three groups (speaking on the spot, delivery skills, conversation)
+export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection";
 
 // One step of today's practice
 export interface PlanStep {
@@ -128,7 +128,7 @@ function warmUp(before: ReadonlyArray<SessionRecord>): PlanStep {
   // The part's id
   const id = partId(speech, part);
   // The step
-  return { lane: "delivery", kind: "session", label: "Warm up", title: findReading(id)?.title ?? speech.title, mode: "read", promptId: id, minutes: 1, href: `/session?mode=read&prompt=${id}` };
+  return { lane: "warmup", kind: "session", label: "Warm up", title: findReading(id)?.title ?? speech.title, mode: "read", promptId: id, minutes: 1, href: `/session?mode=read&prompt=${id}` };
 }
 
 // The skill drill for this week's focus
@@ -141,72 +141,102 @@ function skill(focusId: string, day: Date): PlanStep {
   return { lane: "delivery", kind: "session", label: "Skill", title, mode: drill.mode, promptId: drill.promptId, minutes: drill.mode === "lesson" ? 2 : 1, href: `/session?mode=${drill.mode}&prompt=${drill.promptId}` };
 }
 
-// The Delivery lane's turns: the speech under way, the week's focus drill, the speech again, a pause drill, the focus drill again
-const DELIVERY_TURNS = ["speech", "skill", "speech", "pause", "skill"] as const;
-// The On-the-spot lane's turns: a Table Topic, an everyday question, an opening or closing drill, again, then a prepared speech once a week
-const THINKING_TURNS = ["talk", "smalltalk", "bookend", "talk", "smalltalk", "bookend", "response"] as const;
+// One kind of practice the day can pick
+type PickKind = "talk" | "response" | "bookend" | "skill" | "pause" | "connect" | "smalltalk";
 
-// Take a lane's turn for a day
-function turnOf<T>(turns: ReadonlyArray<T>, day: Date): T {
-  // In turn by day, wrapping around
-  return inTurn(turns, day);
+// The bank in three groups, each with its lane: speaking on the spot, delivery skills, and conversation
+const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> = [
+  // On the spot: a Table Topic, an opening or closing, a prepared speech
+  { lane: "spot", kinds: ["talk", "bookend", "response"] },
+  // Delivery: the week's focus drill, a pause drill
+  { lane: "delivery", kinds: ["skill", "pause"] },
+  // Conversation: the next Connect lesson or drill, an everyday question
+  { lane: "connection", kinds: ["connect", "smalltalk"] },
+];
+
+// The two groups the day picks from, taken in turn by day, so each group comes up two days in three
+const GROUP_PAIRS: ReadonlyArray<readonly [number, number]> = [[0, 2], [1, 0], [2, 1]];
+
+// Kinds kept out of the first days (a prepared speech is long)
+const NOT_FIRST_DAYS: ReadonlyArray<PickKind> = ["response"];
+
+// The kind a group offers on a day: the group's kinds taken in turn by how often the group has come up, so it never repeats on consecutive appearances (plus an offset for "keep going" suggestions)
+function kindFor(group: number, day: Date, firstDays: boolean, offset = 0): PickKind {
+  // The group's kinds (a gentler list in the first days)
+  const kinds = GROUPS[group]!.kinds.filter((kind) => !firstDays || !NOT_FIRST_DAYS.includes(kind));
+  // The day's number
+  const number = dayNumber(day);
+  // Which three-day cycle, and where in it
+  const cycle = Math.floor(number / GROUP_PAIRS.length);
+  // The place in the cycle, kept positive
+  const place = ((number % GROUP_PAIRS.length) + GROUP_PAIRS.length) % GROUP_PAIRS.length;
+  // How many times the group has come up before today in this cycle
+  const earlier = GROUP_PAIRS.slice(0, place).filter((pair) => pair.includes(group)).length;
+  // Its appearance count, from which the kind follows
+  const appearance = cycle * 2 + earlier + offset;
+  // The kind, wrapping round
+  return kinds[((appearance % kinds.length) + kinds.length) % kinds.length]!;
 }
 
-// Delivery: how you sound. The first days always continue the speech, a one-minute first win
-function delivery(input: PlanInput, before: ReadonlyArray<SessionRecord>, firstDays: boolean): PlanStep {
-  // Today's turn (the speech in the first days)
-  const turn = firstDays ? "speech" : turnOf(DELIVERY_TURNS, input.day);
-  // A practice passage instead, in pausing week, when the focus drill is already a pause drill
-  if (turn === "pause" && input.focusId === "pausing") {
-    // The passage
-    const passage = inTurn(PRACTICE, input.day);
-    // The step
-    return { lane: "delivery", kind: "session", label: "Read aloud", title: findReading(passage.promptId)?.title ?? "A practice passage", mode: "read", promptId: passage.promptId, minutes: 1, href: `/session?mode=read&prompt=${passage.promptId}` };
-  }
-  // A pause drill, taken in turn by day
-  if (turn === "pause") {
-    // The drill
-    const drill = inTurn(PAUSE, input.day);
-    // The step
-    return { lane: "delivery", kind: "session", label: "Pause drill", title: findReading(drill.promptId)?.title ?? "A pause drill", mode: "pause", promptId: drill.promptId, minutes: 1, href: `/session?mode=pause&prompt=${drill.promptId}` };
-  }
-  // The week's focus drill, or the speech under way
-  return turn === "skill" ? skill(input.focusId, input.day) : warmUp(before);
-}
-
-// On the spot: speaking without a script. A talk coming up comes first; the first days are always a light Table Topic
-function thinking(input: PlanInput, firstDays: boolean): PlanStep {
-  // A talk coming up comes first
-  if (input.nextTalk) return { lane: "thinking", kind: "session", label: "Your talk", title: input.nextTalk.headline, mode: "rehearse", promptId: input.nextTalk.id, minutes: 3, href: `/session?mode=rehearse&prompt=${input.nextTalk.id}` };
-  // Today's turn (a Table Topic in the first days)
-  const turn = firstDays ? "talk" : turnOf(THINKING_TURNS, input.day);
-  // A prepared speech, once a week
-  if (turn === "response") {
+// The step for a kind of practice on a day
+function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: ReadonlyArray<SessionRecord>): PlanStep {
+  // A prepared speech
+  if (kind === "response") {
     // Today's task
     const prompt = promptForDay(input.day);
     // The step
-    return { lane: "thinking", kind: "session", label: "Prepared speech", title: prompt.text, mode: "response", promptId: prompt.id, minutes: 3, href: `/session?mode=response&prompt=${prompt.id}` };
-  }
-  // An everyday small-talk question
-  if (turn === "smalltalk") {
-    // Today's question
-    const question = smallTalkForDay(input.day);
-    // The step
-    return { lane: "thinking", kind: "session", label: "Small talk", title: question.text, mode: "smalltalk", promptId: question.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${question.id}` };
+    return { lane, kind: "session", label: "Prepared speech", title: prompt.text, mode: "response", promptId: prompt.id, minutes: 3, href: `/session?mode=response&prompt=${prompt.id}` };
   }
   // An opening or a closing drill (the week's focus decides which, if it is one of them)
-  if (turn === "bookend") {
+  if (kind === "bookend") {
     // Opening or close, alternating by week otherwise
     const part = input.focusId === "strong-close" ? "close" : input.focusId === "strong-opening" ? "opening" : Math.floor(dayNumber(input.day) / 7) % 2 === 0 ? "opening" : "close";
     // Today's prompt for it
     const item = bookendForDay(input.day, part);
     // The step
-    return { lane: "thinking", kind: "session", label: part === "opening" ? "Opening drill" : "Closing drill", title: item.text, mode: "bookend", promptId: item.id, minutes: 1, href: `/session?mode=bookend&prompt=${item.id}` };
+    return { lane, kind: "session", label: part === "opening" ? "Opening drill" : "Closing drill", title: item.text, mode: "bookend", promptId: item.id, minutes: 1, href: `/session?mode=bookend&prompt=${item.id}` };
+  }
+  // The week's focus drill
+  if (kind === "skill") return { ...skill(input.focusId, input.day), lane };
+  // A pause drill (a practice passage in pausing week, when the focus drill may already be one)
+  if (kind === "pause") {
+    // In pausing week, a practice passage
+    if (input.focusId === "pausing") {
+      // The passage
+      const passage = inTurn(PRACTICE, input.day);
+      // The step
+      return { lane, kind: "session", label: "Read aloud", title: findReading(passage.promptId)?.title ?? "A practice passage", mode: "read", promptId: passage.promptId, minutes: 1, href: `/session?mode=read&prompt=${passage.promptId}` };
+    }
+    // The drill
+    const drill = inTurn(PAUSE, input.day);
+    // The step
+    return { lane, kind: "session", label: "Pause drill", title: findReading(drill.promptId)?.title ?? "A pause drill", mode: "pause", promptId: drill.promptId, minutes: 1, href: `/session?mode=pause&prompt=${drill.promptId}` };
+  }
+  // The next Connect lesson or drill
+  if (kind === "connect") return { ...connection(input, before), lane };
+  // An everyday small-talk question
+  if (kind === "smalltalk") {
+    // Today's question
+    const question = smallTalkForDay(input.day);
+    // The step
+    return { lane, kind: "session", label: "Small talk", title: question.text, mode: "smalltalk", promptId: question.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${question.id}` };
   }
   // A Table Topic
   const topic = tableTopicForDay(input.day);
   // The step (the question stays hidden until the countdown, as in a real Table Topic)
-  return { lane: "thinking", kind: "session", label: "Table Topic", title: "A surprise question, answered on the spot", mode: "talk", promptId: topic.id, minutes: 2, href: `/session?mode=talk&prompt=${topic.id}` };
+  return { lane, kind: "session", label: "Table Topic", title: "A surprise question, answered on the spot", mode: "talk", promptId: topic.id, minutes: 2, href: `/session?mode=talk&prompt=${topic.id}` };
+}
+
+// The day's two picks from the bank (a talk coming up takes the first)
+function picks(input: PlanInput, before: ReadonlyArray<SessionRecord>, firstDays: boolean): PlanStep[] {
+  // Today's two groups
+  const pair = inTurn(GROUP_PAIRS, input.day);
+  // One step from each
+  const steps = pair.map((group) => pickStep(kindFor(group, input.day, firstDays), GROUPS[group]!.lane, input, before));
+  // A talk coming up comes first
+  if (input.nextTalk) steps[0] = { lane: steps[0]!.lane, kind: "session", label: "Your talk", title: input.nextTalk.headline, mode: "rehearse", promptId: input.nextTalk.id, minutes: 3, href: `/session?mode=rehearse&prompt=${input.nextTalk.id}` };
+  // The two
+  return steps;
 }
 
 // The lesson labels by unit
@@ -259,20 +289,38 @@ function beforeToday(sessions: ReadonlyArray<SessionRecord>, day: Date): Session
   return sessions.filter((session) => new Date(session.createdAt) < startOfDay(day));
 }
 
-// Today's steps: one from each lane, then a Learn card; new users (fewer than three practice days) get Delivery, On the spot and the card
+// Whether these are the first days (fewer than three days practised before today)
+function inFirstDays(before: ReadonlyArray<SessionRecord>): boolean {
+  // Days practised before today
+  return new Set(before.map((session) => dayKey(new Date(session.createdAt)))).size < 3;
+}
+
+// Today's steps: the Learn card (when there is one), the warm-up reading, then two picks from the bank
 export function dailyPlan(input: PlanInput): PlanStep[] {
   // Sessions before today, so the plan stays the same all day
   const before = beforeToday(input.sessions, input.day);
-  // Days practised before today
-  const practiceDays = new Set(before.map((session) => dayKey(new Date(session.createdAt)))).size;
-  // Whether these are the first days
-  const firstDays = practiceDays < 3;
-  // Two gentle speaking steps at first, then all three lanes
-  const speaking = firstDays ? [delivery(input, before, true), thinking(input, true)] : [delivery(input, before, false), thinking(input, false), connection(input, before)];
   // The day's Learn card, when there is one
   const card = learnStep(input);
-  // Speaking first, then the card
-  return card ? [...speaking, card] : speaking;
+  // The card, the warm-up, then the two picks
+  return [...(card ? [card] : []), warmUp(before), ...picks(input, before, inFirstDays(before))];
+}
+
+// More to do once today's practice is done: from each group, the next kind after today's (or its first, if it was not picked), skipping anything already in the plan, then another Learn card; at most four
+export function moreToDo(input: PlanInput, plan: ReadonlyArray<PlanStep>): PlanStep[] {
+  // Sessions before today
+  const before = beforeToday(input.sessions, input.day);
+  // Whether these are the first days
+  const firstDays = inFirstDays(before);
+  // Whether a step is already in the plan
+  const inPlan = (step: PlanStep) => plan.some((item) => item.mode === step.mode && item.promptId === step.promptId);
+  // One suggestion from each group, one along from today's kind
+  const practice = GROUPS.map((group, index) => pickStep(kindFor(index, input.day, firstDays, 1), group.lane, input, before)).filter((step) => !inPlan(step));
+  // The next card not yet read, counting today's reading
+  const card = nextCard(input.learn ?? {});
+  // Another card, when there is one not in the plan
+  const learn: PlanStep[] = card && !plan.some((item) => item.promptId === card.id) ? [{ lane: "learn", kind: "card", label: "Learn", title: card.title, mode: null, promptId: card.id, minutes: 1, href: `/learn/card?id=${card.id}` }] : [];
+  // At most four
+  return [...practice, ...learn].slice(0, 4);
 }
 
 // Which steps were done today: a session today of the same kind and prompt, or a card read or reviewed today

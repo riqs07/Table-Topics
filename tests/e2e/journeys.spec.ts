@@ -1,7 +1,7 @@
 // Whole journeys with the stand-in microphone: record, save, and read the result (rules T1, T3, T11)
 import { expect, test, useStandIns } from "./support/fixtures";
 
-// The welcome leads straight into a one-minute reading; then a Table Topic from Practice, to the saved session
+// The welcome leads straight into today's first step, a Learn card; then a Table Topic from Practice, to the saved session
 test("Table Topic: from the welcome through Practice, countdown, recording, saved session", async ({ page }) => {
   // Use the stand-in microphone and speech
   await useStandIns(page);
@@ -9,8 +9,8 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   await page.goto("/");
   // A first visit asks one question: choose speaking on the spot
   await page.getByRole("link", { name: "I want to speak better on the spot" }).click();
-  // It opens today's first step, a short reading, ready to start
-  await expect(page).toHaveURL(/mode=read&prompt=[a-z0-9-]+&plan=1/);
+  // It opens today's first step, a Learn card
+  await expect(page).toHaveURL(/\/learn\/card\?id=[a-z0-9-]+&plan=1/);
   // Close it (practising hides the tab bar), back to Today
   await page.getByRole("link", { name: "Close, back to Today" }).click();
   // Go to Practice instead
@@ -266,16 +266,22 @@ test("Whole speech: open it from Skills, read part 1, then go on to part 2", asy
   await expect(page.getByText("Second Inaugural Address, part 2 of 7")).toBeVisible();
 });
 
-// Today's practice: start from Today, do both speaking steps without waiting to listen back, read the Learn card, and finish
-test("Today's practice: start, move through every step, finish", async ({ page }) => {
+// Today's practice: start from Today with the Learn card, read the warm-up without waiting to listen back, and go on to the first pick
+test("Today's practice: the card, the warm-up, then on to the picks", async ({ page }) => {
   // The stand-in speech reads the opening of the warm-up speech
   await useStandIns(page, "Fellow Countrymen At this second appearing to take the oath of the Presidential office there is less occasion for an extended address than there was at the first");
   // Start at Today
   await page.goto("/");
   // Skip the welcome question, which opens the first step straight away
   await page.getByRole("link", { name: "Skip" }).click();
-  // Step 1 of 3: the warm-up reading
-  await expect(page.getByText("Today’s practice · step 1 of 3")).toBeVisible();
+  // Step 1 of 4: the Learn card
+  await expect(page.getByText("Step 1 of 4")).toBeVisible();
+  // Read it one screen at a time, to the last
+  for (let screen = 0; screen < 4; screen++) await page.getByRole("button", { name: "Next", exact: true }).click();
+  // On to the warm-up
+  await page.getByRole("link", { name: /^Next: step 2/ }).click();
+  // Step 2 of 4: the warm-up reading
+  await expect(page.getByText("Today’s practice · step 2 of 4")).toBeVisible();
   // Start reading
   await page.getByRole("button", { name: /Start reading/ }).click();
   // Read past the minimum
@@ -285,27 +291,13 @@ test("Today's practice: start, move through every step, finish", async ({ page }
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
   // Move on without listening back
-  await page.getByRole("button", { name: /^Next: step 2/ }).click({ timeout: 15_000 });
-  // Step 2: a Table Topic; show the topic, and recording starts after the countdown
-  await page.getByRole("button", { name: /Show my topic/ }).click();
-  // Speak past the minimum
-  await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 15_000 });
-  // Wait
-  await page.waitForTimeout(11_500);
-  // Stop
-  await page.getByRole("button", { name: /Stop/ }).click();
-  // On to the Learn card
   await page.getByRole("button", { name: /^Next: step 3/ }).click({ timeout: 15_000 });
-  // The card says which step it is
-  await expect(page.getByText("Step 3 of 3")).toBeVisible();
-  // Read it one screen at a time, to the last
-  for (let screen = 0; screen < 4; screen++) await page.getByRole("button", { name: "Next", exact: true }).click();
-  // Finish
-  await page.getByRole("link", { name: /^Finish today’s practice/ }).click();
-  // Today says the practice is done, leading with the time spoken
-  await expect(page.getByRole("heading", { name: "Done for today." })).toBeVisible();
-  // The summary line
-  await expect(page.getByText(/^You spoke for .+ today\. First day this week\.$/)).toBeVisible();
+  // The first pick opens inside the plan
+  await expect(page).toHaveURL(/plan=3/);
+  // Back on Today, two steps are done and the next is the first pick
+  await page.goto("/");
+  // The action carries on from step 3
+  await expect(page.locator("[data-action-band]")).toContainText("Continue: step 3");
 });
 
 // Storage left by another project at the same address (bugs B2 and B4)

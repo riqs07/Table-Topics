@@ -92,7 +92,7 @@ Five tabs is the most Apple and Google suggest. One option: **Today · Practice 
 
 ## Stages
 
-1. **The daily mix:** three lanes, the rules above, small talk counting for the streak and History (moments stay private). Built (decision 46); since decision 50 a Learn card (or, once all are read, a due review) ends every day. Spaced review of earlier lessons in the lanes is still to come.
+1. **The daily mix:** three lanes, the rules above, small talk counting for the streak and History (moments stay private). Built (decision 46); since decision 51 the day is a Learn card, the warm-up, then two picks from the bank's three groups, with "Keep going" suggestions afterwards. Spaced review of earlier lessons in the lanes is still to come.
 2. **Connection units 2 and 3:** asking and listening lessons, and their voice drills. Built (decision 47).
 3. **Missions and debriefs.**
 4. **Learn:** the card format, recall questions, and the first sets (body language myths, charisma, conversation).

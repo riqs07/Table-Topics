@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
+import { RowLink } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
@@ -247,7 +248,30 @@ export function HomeScreen(props: ScreenProps) {
                 })}
               </ol>
               {/* Once done, a word on what is next */}
-              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] italic text-ink-muted">A new practice is ready tomorrow. Anything else is in Practice.</p>}
+              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] italic text-ink-muted">A new practice is ready tomorrow.</p>}
+            </section>
+          )}
+
+          {/* Once done: more to do, for anyone who wants to keep going */}
+          {plan && nextIndex === -1 && plan.more.length > 0 && (
+            <section aria-labelledby="keep-going" className="mt-8">
+              {/* Run-in heading */}
+              <h2 id="keep-going" className="italic">Keep going</h2>
+              {/* The suggestions */}
+              <ul className="mt-2 divide-y divide-rule border-y border-rule">
+                {/* Each one */}
+                {plan.more.map((step) => (
+                  // One suggestion: what kind, then what it uses
+                  <li key={`${step.lane}-${step.promptId}`}>
+                    <RowLink href={step.href} meta={`${step.minutes} min`}>
+                      {/* Its kind */}
+                      <span className="block text-footnote italic text-ink-muted">{step.label}</span>
+                      {/* What it uses */}
+                      <span className="block">{step.title}</span>
+                    </RowLink>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
@@ -255,7 +279,7 @@ export function HomeScreen(props: ScreenProps) {
           <div className="flex-1" />
           {/* The main action: start or carry on with today's practice, or practise more once it is done */}
           {plan && (nextIndex === -1 ? (
-            <ActionBand action="Practise more" aside="pick anything" href="/practice" />
+            <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />
           ) : (
             <ActionBand action={doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={plan.steps[nextIndex]?.label ?? ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
           ))}

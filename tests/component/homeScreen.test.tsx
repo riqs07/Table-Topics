@@ -10,11 +10,11 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
-// Load the day's pickers
-import { tableTopicForDay } from "@/content/prompts";
 // Load the Learn cards and the reading rule
 import { LEARN_CARDS } from "@/content/learn";
 import { firstRead } from "@/core/learn";
+// Load the plan loader, to know today's picks
+import { loadDailyPlan } from "@/data/dailyPlan";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -24,8 +24,8 @@ const NOW = new Date(2026, 9, 13, 10);
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
-// A new user's first step: the first part of the first speech, inside the plan
-const FIRST_STEP = "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1";
+// A new user's first step: the first Learn card, inside the plan
+const FIRST_STEP = `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=1`;
 
 // Make an empty repository
 const emptyRepository = () => createRepository(new MemoryStore());
@@ -60,13 +60,13 @@ describe("HomeScreen", () => {
     // Follow it
     await userEvent.click(skip);
     // Confirm today's practice shows behind it
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Three short steps.");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Four short steps.");
     // Draw again, as on a later visit
     cleanup();
     // The later visit
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
     // Confirm no welcome
-    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Three short steps.");
+    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Four short steps.");
   });
 
   // Someone who already has sessions never sees the welcome
@@ -81,20 +81,22 @@ describe("HomeScreen", () => {
     expect((await screen.findByRole("heading", { level: 1 })).textContent).not.toBe("Welcome to VoiceLab");
   });
 
-  // A new user's practice: a one-minute warm-up reading, a light Table Topic, then a Learn card, with one button to start
-  it("plans three steps for a new user, starting with a warm-up reading and ending with a card", async () => {
+  // A new user's practice: a Learn card, the warm-up reading, then two picks, with one button to start
+  it("plans four steps for a new user: a card, the warm-up, then two picks", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
+    // The plan as loaded
+    const plan = await loadDailyPlan(emptyRepository(), NOW);
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
     // The steps
     const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
-    // Confirm the three steps, and that the main action starts the first inside the plan
-    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Warm up", "Step 2: Table Topic", "Step 3: Learn"], `/session?mode=talk&prompt=${tableTopicForDay(NOW).id}&plan=2`, "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1"]);
+    // Confirm the four steps, the warm-up's address, and that the main action starts the card inside the plan
+    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Learn", "Step 2: Warm up", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=2", FIRST_STEP]);
   });
 
-  // A talk with a date takes the On-the-spot step, and a past date does not count
-  it("puts the next talk with a date in the On-the-spot step", async () => {
+  // A talk with a date takes the first pick, and a past date does not count
+  it("puts the next talk with a date in the first pick", async () => {
     // A repository with a talk a week away and one whose date has passed
     const repository = emptyRepository();
     // A week away
@@ -103,42 +105,34 @@ describe("HomeScreen", () => {
     await repository.saveTalk(makeTalk({ id: "past", title: "Old toast", eventDate: "2026-10-01" }));
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // The second step (the Learn card comes last)
-    const last = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link").at(1);
+    // The third step
+    const step = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link").at(2);
     // Confirm it rehearses the talk, with today's step for it
-    expect([last?.getAttribute("href"), last?.textContent?.includes("Your talk is in 7 days."), screen.queryByText(/Old toast/)]).toEqual(["/session?mode=rehearse&prompt=soon&plan=2", true, null]);
+    expect([step?.getAttribute("href"), step?.textContent?.includes("Your talk is in 7 days."), screen.queryByText(/Old toast/)]).toEqual(["/session?mode=rehearse&prompt=soon&plan=3", true, null]);
   });
 
-  // After three practice days, a skill step for this week's focus joins in the middle
-  it("takes one step from each lane after the first days", async () => {
-    // A repository with three earlier practice days, the first a prepared speech, in the first focus week (strong opening)
-    const repository = emptyRepository();
-    // Each day
-    for (const [index, day] of [10, 11, 12].entries()) await repository.saveSession(makeSession({ id: `s${index}`, mode: index === 0 ? "response" : "standard", isBaseline: index === 0, createdAt: new Date(2026, 9, day, 9).toISOString() }));
-    // Draw the screen
-    render(<HomeScreen repository={repository} now={NOW} />);
-    // The steps
-    const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
-    // Confirm four: the third the first small-talk lesson, the last a Learn card
-    expect(steps.slice(2).map((step) => step.getAttribute("aria-label"))).toEqual(["Step 3: Small-talk lesson 1", "Step 4: Learn"]);
-  });
-
-  // A finished day leads with the time spoken and the user's own notes, never a filler count, and the ticks grow in only the first time
-  it("sums up a finished day kindly, with the moment once", async () => {
+  // A finished day leads with the time spoken and the user's own notes, never a filler count, the ticks grow in only the first time, and there is more to do
+  it("sums up a finished day kindly, with the moment once and more to do", async () => {
     // A repository where all of a new user's steps were done today
     const repository = emptyRepository();
-    // The warm-up, with a note
-    await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", durationSec: 70, fillersPerMinute: 5, createdAt: new Date(2026, 9, 13, 8).toISOString(), selfReview: { worked: "", change: "Look up more", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
-    // The Table Topic, without notes
-    await repository.saveSession(makeSession({ id: "t", mode: "talk", promptId: tableTopicForDay(NOW).id, durationSec: 90, fillersPerMinute: 6, createdAt: new Date(2026, 9, 13, 9).toISOString(), selfReview: null }));
+    // The plan as it stands this morning
+    const plan = await loadDailyPlan(repository, NOW);
     // The first Learn card, read today
     await repository.saveSettings({ ...(await repository.getSettings(NOW)), learn: { [LEARN_CARDS[0]!.id]: firstRead(NOW) } });
+    // The warm-up, with a note
+    await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", durationSec: 70, fillersPerMinute: 5, createdAt: new Date(2026, 9, 13, 8).toISOString(), selfReview: { worked: "", change: "Look up more", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
+    // The two picks, without notes
+    for (const [index, step] of plan.steps.slice(2).entries()) await repository.saveSession(makeSession({ id: `p${index}`, mode: step.mode!, promptId: step.promptId, durationSec: index === 0 ? 90 : 30, fillersPerMinute: 6, createdAt: new Date(2026, 9, 13, 9, index).toISOString(), selfReview: null }));
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
     // The steps
     const steps = await screen.findByRole("list", { name: "Steps" });
     // Confirm the headline, the summary, each step's line, no filler counts, and the moment playing
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 2 minutes 40 today. First day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/fillers a minute/), steps.querySelectorAll(".motion-safe\\:animate-tick-in").length]).toEqual(["Done for today.", true, true, true, null, 3]);
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 3 minutes 10 today. First day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/fillers a minute/), steps.querySelectorAll(".motion-safe\\:animate-tick-in").length]).toEqual(["Done for today.", true, true, true, null, 4]);
+    // The suggestions to keep going
+    const more = within(screen.getByRole("region", { name: "Keep going" })).getAllByRole("link");
+    // Confirm three or four, none of them today's steps, the last another card
+    expect([more.length >= 3, more.some((link) => plan.steps.some((step) => link.getAttribute("href") === step.href)), more.at(-1)?.getAttribute("href")]).toEqual([true, false, `/learn/card?id=${LEARN_CARDS[1]!.id}`]);
     // Draw again, as on a later visit the same day
     cleanup();
     // The later visit
@@ -147,7 +141,7 @@ describe("HomeScreen", () => {
     expect((await screen.findByRole("list", { name: "Steps" })).querySelectorAll(".motion-safe\\:animate-tick-in").length).toBe(0);
   });
 
-  // A step done today is ticked, and the main action carries on from the next
+  // A step done today is ticked, and the main action carries on from the first step not done
   it("carries on from the next step", async () => {
     // A repository where today's warm-up was read
     const repository = emptyRepository();
@@ -155,8 +149,8 @@ describe("HomeScreen", () => {
     await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", createdAt: new Date(2026, 9, 13, 8).toISOString() }));
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // Confirm the heading, the done mark and the action
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 1: Warm up" })).getByText("Done"), !!screen.getByRole("link", { name: /^Continue: step 2/ })]).toEqual(["Pick up where you left off.", true, true]);
+    // Confirm the heading, the done mark, the action back to the card, and no suggestions yet
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), !!screen.getByRole("link", { name: /^Continue: step 1/ }), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, true, null]);
   });
 
   // Today shows only today's steps; everything else is in Practice

@@ -1,9 +1,9 @@
-// Loads today's practice: the steps, which are done, and today's sessions (used by Today, the recording page and the session page)
+// Loads today's practice: the steps, which are done, today's sessions, and more to do afterwards (used by Today, the recording page and the session page)
 
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
 // Load the plan rules
-import { dailyPlan, planProgress, type PlanStep } from "@/core/dailyPlan";
+import { dailyPlan, moreToDo, planProgress, type PlanStep } from "@/core/dailyPlan";
 // Load the weekly focus rules
 import { currentFocus } from "@/core/focus";
 // Load the event-prep rules, for a talk coming up
@@ -39,6 +39,8 @@ export interface LoadedPlan {
   done: boolean[];
   // Today's sessions, newest first
   today: SessionRecord[];
+  // More to do once the steps are done
+  more: PlanStep[];
 }
 
 // Load today's practice (reads only; the weekly focus is worked out without saving it)
@@ -52,7 +54,9 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   // A talk coming up
   const talk = nextTalkFrom(await repository.listTalks(), now);
   // The steps
-  const steps = dailyPlan({ day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {} });
-  // Hand back the steps, what is done, and today's sessions
-  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)) };
+  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {} };
+  // The steps
+  const steps = dailyPlan(input);
+  // Hand back the steps, what is done, today's sessions, and more to do afterwards
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps) };
 }
