@@ -37,12 +37,12 @@ import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 
 // The welcome question's answers and where each leads (null: straight into the first step of today's practice, a one-minute reading)
 const WELCOME_CHOICES: ReadonlyArray<{ text: string; href: string | null }> = [
-  // A talk coming up
-  { text: "I have a talk coming up", href: "/rehearse" },
   // Speaking without a script
   { text: "I want to speak better on the spot", href: null },
   // One skill
   { text: "I want to work on one skill", href: null },
+  // Everyday conversation (in place of "I have a talk coming up" while your talks are hidden, decision 49)
+  { text: "I want to be better in conversation", href: "/small-talk" },
 ];
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";

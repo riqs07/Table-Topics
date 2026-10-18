@@ -1,5 +1,5 @@
 "use client";
-// Practice: every kind of practice in one place, grouped, each row leading to its own screen (today's steps live on Today; decision 48)
+// Practice: every kind of practice in one place, grouped, each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -7,12 +7,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
-// Load the shared row link
-import { RowLink } from "@/components/script/Buttons";
-// Load the days-left counter, for a talk's date
-import { daysUntil } from "@/core/eventPrep";
-// Load the talk record type
-import type { TalkRecord } from "@/data/records";
 // Load an icon for each kind of practice
 import { BookOpenTextIcon, CaretRightIcon, ChatTeardropTextIcon, ChatsCircleIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, SunHorizonIcon, TextAaIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
@@ -25,14 +19,6 @@ import { WeeklyChallenge } from "@/components/screens/WeeklyChallenge";
 import { promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the moment note's prompt
 import { MOMENT_PROMPT } from "@/content/smallTalk";
-
-// When a talk is, in a few words ("today", "in 3 days"), or nothing once it has passed
-function talkWhen(days: number): string | undefined {
-  // Past: say nothing
-  if (days < 0) return undefined;
-  // Today, tomorrow, or later
-  return days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
-}
 
 // One kind of practice on the page
 interface Way {
@@ -97,10 +83,8 @@ export function PracticeScreen(props: ScreenProps) {
   const { repo, today } = useScreenBasics(props);
   // The newest rehearsal or prepared speech, for Q&A (undefined while loading)
   const [qaFrom, setQaFrom] = useState<string | null | undefined>(undefined);
-  // The user's saved talks (null while loading)
-  const [talks, setTalks] = useState<TalkRecord[] | null>(null);
 
-  // Find the newest rehearsal or prepared speech, and the talks
+  // Find the newest rehearsal or prepared speech
   useEffect(() => {
     // Ignore the result if the page closes first
     let cancelled = false;
@@ -108,11 +92,6 @@ export function PracticeScreen(props: ScreenProps) {
     repo.listSessions().then((sessions) => {
       // Keep the newest that Q&A can follow
       if (!cancelled) setQaFrom(sessions.find((session) => session.mode === "rehearse" || session.mode === "response")?.id ?? null);
-    });
-    // Read the saved talks
-    repo.listTalks().then((saved) => {
-      // Keep them if the page is still open
-      if (!cancelled) setTalks(saved);
     });
     // Mark as closed when leaving
     return () => {
@@ -148,7 +127,7 @@ export function PracticeScreen(props: ScreenProps) {
           // Openings and closings
           { name: "Openings and closings", detail: "The first or last 45 seconds, 1 min", href: "/bookends", icon: QuotesIcon },
           // Q&A, once there is something to ask about
-          { name: "Q&A practice", detail: qaFrom === null ? "Opens after a rehearsal or a prepared speech" : "Answer the questions your latest run would get", href: qaFrom ? `/qa?from=${qaFrom}` : null, icon: ChatsCircleIcon },
+          { name: "Q&A practice", detail: qaFrom === null ? "Opens after a prepared speech" : "Answer the questions your latest run would get", href: qaFrom ? `/qa?from=${qaFrom}` : null, icon: ChatsCircleIcon },
         ]}
       />
 
@@ -183,24 +162,6 @@ export function PracticeScreen(props: ScreenProps) {
           { name: "Tricky words", detail: "Crisp consonants, 1 min", href: "/skills#tricky-words", icon: TextAaIcon },
         ]}
       />
-
-      {/* Your own talks */}
-      <section aria-labelledby="your-talks" className="mt-8">
-        {/* Run-in heading */}
-        <h2 id="your-talks" className="italic">Your talks</h2>
-        {/* Each saved talk, then a way to add one */}
-        {talks && (
-          <ul className="mt-2 divide-y divide-rule border-y border-rule">
-            {/* Each talk */}
-            {talks.map((talk) => (
-              // One talk, with its date if it has one
-              <li key={talk.id}><RowLink href={`/talk?id=${talk.id}`} meta={talk.eventDate && today ? talkWhen(daysUntil(talk.eventDate, today)) : undefined}>{talk.title}</RowLink></li>
-            ))}
-            {/* Add or rehearse */}
-            <li><RowLink href="/rehearse">{talks.length > 0 ? "Add a talk, or rehearse one" : "Preparing a talk? Save it and rehearse it here"}</RowLink></li>
-          </ul>
-        )}
-      </section>
 
       {/* This week's challenge off the page */}
       {today && <WeeklyChallenge repo={repo} today={today} />}

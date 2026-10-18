@@ -40,7 +40,7 @@ describe("PracticeScreen", () => {
     // Draw with nothing recorded
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the explanation, on a row that is not a link
-    expect((await screen.findByText(/Opens after a rehearsal or a prepared speech/)).closest("a")).toBeNull();
+    expect((await screen.findByText(/Opens after a prepared speech/)).closest("a")).toBeNull();
     // Clear the page
     cleanup();
     // A repository with a prepared speech
@@ -53,18 +53,18 @@ describe("PracticeScreen", () => {
     expect((await screen.findByRole("link", { name: /Q&A practice/ })).getAttribute("href")).toBe("/qa?from=r1");
   });
 
-  // Your talks: each saved talk with its date, and a way to add one (what used to be the Talks tab)
-  it("lists your talks, with a way to add one", async () => {
-    // A repository with a talk in two days
+  // Your talks are hidden for now: no section and no way in from here
+  it("does not list your talks", async () => {
+    // A repository with a saved talk
     const repository = createRepository(new MemoryStore());
     // The talk
     await repository.saveTalk(makeTalk({ id: "pitch", title: "Pitch", eventDate: "2026-10-17" }));
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
-    // The rows
-    const rows = within(await screen.findByRole("region", { name: "Your talks" })).findAllByRole("link");
-    // Confirm the talk, its date, and the way to add one
-    expect((await rows).map((row) => [row.textContent, row.getAttribute("href")])).toEqual([["Pitchin 2 days", "/talk?id=pitch"], ["Add a talk, or rehearse one", "/rehearse"]]);
+    // Wait for the page
+    await screen.findByRole("heading", { name: "Speak on the spot" });
+    // Confirm no talks section and no link to rehearse
+    expect([screen.queryByRole("region", { name: "Your talks" }), screen.queryByText("Pitch"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/rehearse")]).toEqual([null, null, false]);
   });
 
   // This week's challenge off the page lives here, and ticking it saves it as done
