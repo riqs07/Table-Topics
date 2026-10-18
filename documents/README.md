@@ -29,6 +29,8 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 15 | [research/ux-research-2026-10.md](research/ux-research-2026-10.md) | What did the UX review and research find, and how strong is the evidence? | 6 min |
 | 16 | [design/ux-improvements-plan.md](design/ux-improvements-plan.md) | Which design changes follow from the UX research, in what order? | 4 min |
 | 17 | [plan-small-talk.md](plan-small-talk.md) | How will VoiceLab train small talk and storytelling, and what did the user decide? | 6 min |
+| 18 | [research/charisma-conversation-duolingo-2026-10.md](research/charisma-conversation-duolingo-2026-10.md) | What does research say about charisma, body language, conversation, and how Duolingo works? | 8 min |
+| 19 | [plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md) | How will the daily mix, the conversation curriculum, missions and learning cards work? | 7 min |
 
 ## Inspector checklist
 
