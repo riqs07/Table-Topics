@@ -124,3 +124,18 @@ export function stampSpoken(times: ReadonlyArray<number>, count: number, seconds
   // New positions take the current time
   return count <= times.length ? [...times] : [...times, ...new Array<number>(count - times.length).fill(seconds)];
 }
+
+// A steady reading pace, in words a second (about 140 words a minute)
+const PACE_WORDS_PER_SECOND = 2.3;
+// How far the pace may run ahead of the last word recognition matched
+const PACE_AHEAD_LIMIT = 30;
+
+// The word to keep in view while reading: the matched place, moved on at a reading pace for the time the reader has been speaking since recognition last matched a word, so the text still scrolls when recognition lags or misses words (it never runs more than a few lines ahead, and stops when the reader stops)
+export function scrollGuide(place: number, voicedSeconds: number, total: number): number {
+  // Nothing to keep in view
+  if (total === 0) return 0;
+  // Words the pace adds, capped
+  const ahead = Math.min(PACE_AHEAD_LIMIT, Math.floor(Math.max(0, voicedSeconds) * PACE_WORDS_PER_SECOND));
+  // The matched place moved on, within the text
+  return Math.min(total - 1, place + ahead);
+}

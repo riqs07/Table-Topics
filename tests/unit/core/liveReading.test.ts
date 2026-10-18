@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the live reading tools being checked
-import { followReading, readingTokens, scriptWords, stampFirstRead, stampSpoken, type ReadingToken } from "@/core/liveReading";
+import { followReading, readingTokens, scriptWords, scrollGuide, stampFirstRead, stampSpoken, type ReadingToken } from "@/core/liveReading";
 
 // The words of a token list, with their word numbers, for short checks
 const wordsOf = (tokens: ReadingToken[]) => tokens.flatMap((token) => (token.kind === "text" && token.word !== null ? [`${token.word}:${token.text}`] : []));
@@ -91,5 +91,11 @@ describe("word times", () => {
   it("keeps the time each spoken word first appeared", () => {
     // Two words at 0.5 seconds, then four at 1.2
     expect(stampSpoken(stampSpoken([], 2, 0.5), 4, 1.2)).toEqual([0.5, 0.5, 1.2, 1.2]);
+  });
+
+  // The scroll guide moves on at about 2.3 words a second of speaking, never more than 30 words ahead, and stays within the text
+  it("moves the scroll guide on at a reading pace, within limits", () => {
+    // Two seconds, a long time, the end of the text, and an empty text
+    expect([scrollGuide(10, 2, 200), scrollGuide(10, 60, 200), scrollGuide(195, 10, 200), scrollGuide(0, 5, 0)]).toEqual([14, 40, 199, 0]);
   });
 });

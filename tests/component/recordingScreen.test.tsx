@@ -384,6 +384,26 @@ describe("RecordingScreen", () => {
     expect(marks).toEqual(["read", "read", "read", "current", "ahead"]);
   });
 
+  // While the reader is speaking but recognition has matched nothing, the text still moves on at a reading pace (so it scrolls without hands); recognised words take over when they arrive
+  it("keeps the text moving at a reading pace when recognition lags", async () => {
+    // Draw a read-aloud session (the fake microphone hears steady speech)
+    const { fake } = draw({ mode: "read", promptId: PASSAGES[0]!.id });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start reading/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // The passage
+    const passage = screen.getByTestId("passage");
+    // About a second of speaking with nothing recognised moves the guide on by a word or two, while no word is lit as read
+    await waitFor(() => expect(Number(passage.getAttribute("data-guide"))).toBeGreaterThanOrEqual(2), { timeout: 3000 });
+    // Nothing marked read yet
+    const readBefore = passage.querySelectorAll('[data-read="read"]').length;
+    // Recognition catches up well past the guide
+    await fake.say({ final: "Four score and seven years ago our fathers brought forth", interim: "" });
+    // Confirm no words were lit by the pace alone, and the guide is at least the recognised place
+    expect([readBefore, Number(passage.getAttribute("data-guide")) >= 10]).toEqual([0, true]);
+  });
+
   // The times words were first heard are saved with the session
   it("saves when each word was first heard", async () => {
     // Draw a read-aloud session on the Gettysburg Address

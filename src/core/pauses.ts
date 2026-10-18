@@ -25,14 +25,20 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-// Which readings are speech, judged against the speaker's own typical loudness
-function speechMask(levels: ReadonlyArray<number>): boolean[] {
-  // The speaker's typical loudness: the 80th percentile reading
+// The loudness below which a reading is silence, judged against the speaker's own typical loudness (the 80th percentile reading)
+export function speechThreshold(levels: ReadonlyArray<number>): number {
+  // The readings in order
   const sorted = [...levels].sort((a, b) => a - b);
-  // (the reading at that position)
+  // The reading at the 80th percentile
   const typical = sorted[Math.floor(0.8 * Math.max(0, sorted.length - 1))] ?? 0;
   // Below this is silence
-  const threshold = Math.max(FLOOR, typical * SHARE_OF_SPEECH);
+  return Math.max(FLOOR, typical * SHARE_OF_SPEECH);
+}
+
+// Which readings are speech, judged against the speaker's own typical loudness
+function speechMask(levels: ReadonlyArray<number>): boolean[] {
+  // Below this is silence
+  const threshold = speechThreshold(levels);
   // Mark each reading
   return levels.map((level) => level >= threshold);
 }

@@ -24,7 +24,9 @@ import { modeForSession } from "@/content/modes";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the live reading tools
-import { followReading, readingTokens, scriptWords, stampFirstRead, stampSpoken, type ReadingToken } from "@/core/liveReading";
+import { followReading, readingTokens, scriptWords, scrollGuide, stampFirstRead, stampSpoken, type ReadingToken } from "@/core/liveReading";
+// Load the speech-or-silence threshold, for scrolling at the reader's pace
+import { speechThreshold } from "@/core/pauses";
 import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 // Load the recording length rules
 import { LOUDNESS_TICK_MS, formatClock, maxSeconds, minSeconds, readingSeconds, speakingWindow, targetSeconds, thinkSeconds, timeSignal, type SpeakingWindow, type TimeSignal } from "@/core/recordingRules";
@@ -248,28 +250,35 @@ function Hints({ angles, compact }: { angles: ReadonlyArray<string>; compact: bo
   );
 }
 
+// Scroll once the reader's line passes this share of the screen's height
+const SCROLL_WHEN_PAST = 0.55;
+// And bring it back up to this share, so the next lines are in view
+const KEEP_LINE_AT = 0.3;
+// Readings between updates of the silence level (once a second)
+const PACE_REFRESH_TICKS = 10;
+
 // The text to read, with pause marks as pause signs, *stressed* words in bold and [directions] in quiet italics; while recording, words already read are lit, the next word is marked, and the rest is dimmed
-function ScriptText({ tokens, place, className }: { tokens: ReadonlyArray<ReadingToken>; place: number | null; className: string }) {
+function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray<ReadingToken>; place: number | null; guide: number | null; className: string }) {
   // The text's element, for keeping the reader's line in view
   const box = useRef<HTMLParagraphElement>(null);
 
-  // Keep the next word in view as the reader moves down the page
+  // Keep the reader's line in view as they move down the page (the guide moves on at a reading pace when recognition lags, so hands never need to scroll)
   useEffect(() => {
     // Only while recording
-    if (place === null) return;
-    // The next word
-    const word = box.current?.querySelector(`[data-word="${place}"]`);
+    if (guide === null) return;
+    // The word to keep in view
+    const word = box.current?.querySelector(`[data-word="${guide}"]`);
     // Nothing to do if it is missing
     if (!word) return;
     // Where it is on screen
     const where = word.getBoundingClientRect();
-    // Scroll only when it nears the bottom (where the action bar sits) or has gone above the top
-    if (where.bottom > window.innerHeight * 0.6 || where.top < 0) word.scrollIntoView?.({ block: "center", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-  }, [place]);
+    // Scroll only when it passes the middle (the action bar sits at the bottom) or has gone above the top
+    if (where.bottom > window.innerHeight * SCROLL_WHEN_PAST || where.top < 0) window.scrollTo?.({ top: window.scrollY + where.top - window.innerHeight * KEEP_LINE_AT, behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [guide]);
 
   // Draw each piece
   return (
-    <p ref={box} data-testid="passage" className={className}>
+    <p ref={box} data-testid="passage" data-guide={guide ?? undefined} className={className}>
       {/* One element per piece */}
       {tokens.map((token, index) => {
         // A pause mark, as a pause sign in the accent color
@@ -339,6 +348,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [planTotal, setPlanTotal] = useState<number | null>(null);
   // While reading, the number of the next word to read (every word before it is lit up)
   const [place, setPlace] = useState(0);
+  // The word to keep in view: the place, moved on at a reading pace while the reader is speaking and recognition lags
+  const [guide, setGuide] = useState(0);
   // Guards against stopping twice (a click and the auto-stop at once)
   const stopping = useRef(false);
   // Seconds between seeing the prompt and recording for this kind of session
@@ -614,6 +625,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     setText({ final: "", interim: "" });
     // Back to the first word
     setPlace(0);
+    // And keep it in view
+    setGuide(0);
     // Reset the timer display
     setElapsed(0);
     // Reset the stop guard
@@ -639,6 +652,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // Update the timer and meter, and stop at the limit
     // Loudness readings for the whole recording, kept for finding pauses afterwards
     const readings: number[] = [];
+    // For scrolling at the reader's pace: the matched place, seconds spoken since it last moved, and the loudness below which it is silence
+    const pace = { place: 0, voiced: 0, threshold: speechThreshold([]) };
     // Tick
     const timer = setInterval(() => {
       // Seconds since starting
@@ -651,6 +666,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       readings.push(level);
       // Add it to the meter, dropping the oldest
       setLevels((previous) => [...previous.slice(1), level]);
+      // With text on screen: update the silence level once a second, count speaking time, and keep the text moving at a reading pace
+      if (wordsToHear.current.length > 0) {
+        // Once a second
+        if (readings.length % PACE_REFRESH_TICKS === 0) pace.threshold = speechThreshold(readings);
+        // Speaking now
+        if (level >= pace.threshold) pace.voiced += LOUDNESS_TICK_MS / 1000;
+        // The word to keep in view
+        setGuide(scrollGuide(pace.place, pace.voiced, wordsToHear.current.length));
+      }
       // Stop by itself at the limit
       if (seconds >= limit) void stop();
     }, LOUDNESS_TICK_MS);
@@ -676,6 +700,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       const follow = followReading(expected, heard);
       // Note when each word was first read
       pieces.scriptTimes = stampFirstRead(pieces.scriptTimes, follow.read, seconds);
+      // Recognition caught up: the pace starts again from here
+      if (follow.next > pace.place) {
+        // The new place
+        pace.place = follow.next;
+        // Nothing spoken past it yet
+        pace.voiced = 0;
+      }
       // Move the place forward, never back
       setPlace((previous) => Math.max(previous, follow.next));
     };
@@ -992,7 +1023,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Read the passage aloud and pause for about a second at each ‖. Take your time.</p>}
               {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
               {!textHidden && (
-<ScriptText tokens={tokens} place={recording ? place : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
+<ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
               )}
             </>
           )}
