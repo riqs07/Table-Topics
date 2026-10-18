@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "fresh": "node scripts/fresh.mjs",
+    "phone": "node scripts/phone.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
