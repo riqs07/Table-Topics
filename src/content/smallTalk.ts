@@ -379,3 +379,31 @@ export function drillForDay(unit: UnitId, day: Date, offset = 0): SmallTalkDrill
   // Wrap around, keeping the index positive
   return bank[((turn % bank.length) + bank.length) % bank.length] as SmallTalkDrill;
 }
+
+// The one after a prompt in its unit, for "Next one": the next lesson (then the unit's first drill after the last), or the next drill in the bank (wrapping round)
+export function nextInUnit(promptId: string): { id: string; label: string } {
+  // A lesson
+  const lesson = SMALL_TALK_LESSONS.find((item) => item.id === promptId);
+  // Its unit's lessons
+  if (lesson) {
+    // The next lesson in the unit
+    const next = lessonsFor(lesson.unit).find((item) => item.number === lesson.number + 1);
+    // That lesson, or the unit's first drill
+    return next ? { id: next.id, label: `Lesson ${next.number}: ${next.title}` } : { id: drillBank(lesson.unit)[0]!.id, label: "now practise it" };
+  }
+  // The bank this prompt is in
+  const bank = drillBank(unitOf(promptId));
+  // Its place there
+  const index = bank.findIndex((item) => item.id === promptId);
+  // The next, wrapping round
+  return { id: bank[(index + 1) % bank.length]!.id, label: NEXT_LABELS[unitOf(promptId)] };
+}
+
+// What the next drill is, by unit
+const NEXT_LABELS: Record<UnitId, string> = { answering: "another question", asking: "something else they say", listening: "another story" };
+
+// A unit's drills: everyday questions, remarks, or stories
+function drillBank(unit: UnitId): ReadonlyArray<SmallTalkDrill> {
+  // The unit's bank
+  return unit === "answering" ? SMALL_TALK_QUESTIONS : unit === "asking" ? ASKING_DRILLS : LISTENING_STORIES;
+}

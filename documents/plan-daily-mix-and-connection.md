@@ -101,7 +101,7 @@ Five tabs is the most Apple and Google suggest. One option: **Today · Practice 
 
 ## Open questions
 
-- **Tabs:** Today · Practice · Connect · Learn · History, or keep the current five and put Learn inside Skills?
+- **Tabs:** decided 2026-10-18: Today · Practice · Connect · Learn · History (decision 48).
 - **Debrief:** voice, taps, or both?
 - **Missions:** every day, or a few days a week (with in-app drills on the others)?
 - **Streak:** forgiving (a rest day a week keeps it going), as the UX research suggested?

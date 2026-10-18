@@ -1,5 +1,5 @@
 "use client";
-// The Home screen: today's practice, the three main ways to practise on your own, and a short line on the streak and the week's focus
+// The Home screen: today's practice only, with a short line on the streak and the week's focus (everything else is in Practice)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -8,10 +8,6 @@ import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { Masthead } from "@/components/script/Masthead";
-// Load the day's prompts for practising on your own
-import { promptForDay, tableTopicForDay } from "@/content/prompts";
-// Load the icons for the three ways to practise
-import { BookOpenTextIcon, LightningIcon, PresentationIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
 // Load the weekly focus rules
@@ -248,43 +244,7 @@ export function HomeScreen(props: ScreenProps) {
                 })}
               </ol>
               {/* Once done, a word on what is next */}
-              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] italic text-ink-muted">A new practice is ready tomorrow. Anything else you want to practise is below.</p>}
-            </section>
-          )}
-
-          {/* The three main ways to practise on your own (held back during the welcome) */}
-          {data && !data.showWelcome && today && (
-            <section aria-labelledby="on-your-own" className="mt-10 mb-8">
-              {/* Small heading */}
-              <h2 id="on-your-own" className="text-footnote italic text-ink-muted">Or practise on your own</h2>
-              {/* Three tiles, one row on a wider screen */}
-              <ul className="mt-2 grid gap-3 sm:grid-cols-3">
-                {/* Each way */}
-                {[
-                  // Reading a speech aloud
-                  { href: "/skills#readings", icon: BookOpenTextIcon, name: "Read aloud", detail: "A famous speech, a minute at a time" },
-                  // A Table Topic
-                  { href: `/session?mode=talk&prompt=${tableTopicForDay(today, 1).id}`, icon: LightningIcon, name: "Table Topic", detail: "A surprise question, 1 to 2 minutes" },
-                  // A prepared speech
-                  { href: `/session?mode=response&prompt=${promptForDay(today, 1).id}`, icon: PresentationIcon, name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4" },
-                ].map((way) => (
-                  // One tile
-                  <li key={way.name}>
-                    {/* The whole tile starts it */}
-                    <Link href={way.href} className="flex h-full min-h-20 items-center gap-3 border border-rule bg-paper px-4 py-3 hover:border-accent sm:flex-col sm:items-start">
-                      {/* Its icon */}
-                      <way.icon aria-hidden="true" className="size-7 flex-none text-accent" />
-                      {/* Its name and what it is */}
-                      <span>
-                        {/* The name */}
-                        <span className="block font-display text-cue leading-tight">{way.name}</span>
-                        {/* What it is */}
-                        <span className="block text-footnote text-ink-muted">{way.detail}</span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] italic text-ink-muted">A new practice is ready tomorrow. Anything else is in Practice.</p>}
             </section>
           )}
 
@@ -292,7 +252,7 @@ export function HomeScreen(props: ScreenProps) {
           <div className="flex-1" />
           {/* The main action: start or carry on with today's practice, or practise more once it is done */}
           {plan && (nextIndex === -1 ? (
-            <ActionBand action="Practise more" aside="on your own" href="/practice" />
+            <ActionBand action="Practise more" aside="pick anything" href="/practice" />
           ) : (
             <ActionBand action={doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={plan.steps[nextIndex]?.label ?? ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
           ))}

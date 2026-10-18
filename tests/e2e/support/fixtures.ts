@@ -73,11 +73,11 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   // Practice marks Practice
   { path: "/practice", current: "Practice" },
   // Skills marks Skills
-  { path: "/skills", current: "Skills" },
+  { path: "/skills", current: "Practice" },
   // Your talks belong to Practice
   { path: "/rehearse", current: "Practice" },
   // Small talk marks Small talk
-  { path: "/small-talk", current: "Small talk" },
+  { path: "/small-talk", current: "Connect" },
   // Learn marks Learn
   { path: "/learn", current: "Learn" },
   // History marks History
@@ -90,8 +90,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/talk?id=missing", current: "Practice" },
   // Openings and closings belong to Practice
   { path: "/bookends", current: "Practice" },
-  // A full speech belongs to Skills
-  { path: "/speech?id=jfk-inaugural", current: "Skills" },
+  // A full speech belongs to Skills, a page inside Practice
+  { path: "/speech?id=jfk-inaugural", current: "Practice" },
 ];
 
 // Where each main navigation link should lead
@@ -100,10 +100,8 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Today", path: "/" },
   // Practice
   { name: "Practice", path: "/practice" },
-  // Skills
-  { name: "Skills", path: "/skills" },
-  // Small talk
-  { name: "Small talk", path: "/small-talk" },
+  // Everyday conversation
+  { name: "Connect", path: "/small-talk" },
   // Learn
   { name: "Learn", path: "/learn" },
   // History

@@ -15,8 +15,8 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   await page.getByRole("link", { name: "Close, back to Today" }).click();
   // Go to Practice instead
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Practice", exact: true }).click();
-  // Start a Table Topic
-  await page.getByRole("link", { name: "Start a Table Topic" }).click();
+  // Start a Table Topic from its row
+  await page.getByRole("link", { name: /^Table Topic/ }).click();
   // The topic page opens
   await expect(page).toHaveURL(/mode=talk/);
   // Reveal the topic and start the countdown
@@ -144,8 +144,8 @@ test("Openings and closings: an opening drill from home to its findings", async 
   await page.goto("/");
   // Open the drills from Practice
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Practice", exact: true }).click();
-  // Its page
-  await page.getByRole("link", { name: "Choose an opening or a close" }).click();
+  // Its page, from its row
+  await page.getByRole("link", { name: /^Openings and closings/ }).click();
   // Pick today's opening (the first prompt link under "Today")
   await page.locator("section", { hasText: "Today" }).getByRole("link").first().click();
   // The drill opens with its tip
@@ -422,10 +422,12 @@ test("Small talk: listen to a story and see it afterwards", async ({ page }) => 
   await page.waitForTimeout(3_000);
   // Stop
   await stop.click();
-  // The reply opens on listening back
+  // The reply opens on its result (too short to need listening back first)
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
-  // The listening beats to listen for
-  await expect(page.getByRole("list", { name: "Listen for" })).toContainText("React.");
+  // Straight to the result: the story and the listening beats, then the next story
+  await expect(page.getByRole("list", { name: "The beats" })).toContainText("React.");
+  // The main action moves on
+  await expect(page.locator("[data-action-band]")).toContainText("Next one");
 });
 
 // One moment a day: record a short private note from the Small talk page, and find it listed there

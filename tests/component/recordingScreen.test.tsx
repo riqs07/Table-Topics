@@ -494,8 +494,8 @@ describe("RecordingScreen", () => {
     clock.advance(3_000);
     // Stop
     fireEvent.click(stop);
-    // Confirm the voice said it, and the follow-up was kept
-    await waitFor(async () => expect([fake.said, (await repository.listSessions()).map((session) => session.promptId)]).toEqual([["We got a kitten last week."], ["sa08"]]));
+    // Confirm the voice said it, and the follow-up was kept with no listen-back step waiting
+    await waitFor(async () => expect([fake.said, (await repository.listSessions()).map((session) => [session.promptId, session.selfReview])]).toEqual([["We got a kitten last week."], [["sa08", undefined]]]));
   });
 
   // Listening: the story is said aloud but not shown, so you listen the way you would in person

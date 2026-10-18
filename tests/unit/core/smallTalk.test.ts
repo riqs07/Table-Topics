@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 // Load the checks being tested
 import { answerLength, beatCount, beatFound, deadEndOpening, feelingWords, handBack, namesTheirFeeling, questionKind, reaction, sharedWords, shiftPhrase, smallTalkChange, staysOnStory, staysOnThem, stripLevel } from "@/core/smallTalk";
 // Load the content, to check it hangs together
-import { ASKING_DRILLS, BEATS, LISTENING_STORIES, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, lessonsFor, smallTalkForDay, unitOf } from "@/content/smallTalk";
+import { ASKING_DRILLS, BEATS, LISTENING_STORIES, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, lessonsFor, nextInUnit, smallTalkForDay, unitOf } from "@/content/smallTalk";
 // Load the app's prompt lookup
 import { findPrompt } from "@/content/prompts";
 // Load a sample session builder
@@ -186,5 +186,11 @@ describe("asking and listening", () => {
     const day = new Date(2026, 9, 17);
     // Confirm the banks and that they move along
     expect([drillForDay("asking", day).id.startsWith("sa"), drillForDay("listening", day).id.startsWith("sls"), drillForDay("asking", day).id === drillForDay("asking", day, 1).id, drillForDay("answering", day).id]).toEqual([true, true, false, smallTalkForDay(day).id]);
+  });
+
+  // "Next one": the next lesson in the unit, then its first drill, and drills wrap round
+  it("finds the next one in a unit", () => {
+    // A middle lesson, the last asking lesson, a drill, and the last story
+    expect([nextInUnit("sal1").id, nextInUnit("sal3").id, nextInUnit("sa01").id, nextInUnit("sls08").id]).toEqual(["sal2", "sa01", "sa02", "sls01"]);
   });
 });

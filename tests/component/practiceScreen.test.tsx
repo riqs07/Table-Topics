@@ -21,27 +21,26 @@ afterEach(cleanup);
 
 // Group the checks about the Practice page
 describe("PracticeScreen", () => {
-  // Every on-the-spot mode is listed with what it is, how long, and where to start
-  it("lists every on-the-spot mode with a description and a start", async () => {
+  // Every kind of practice is a row in a group, leading to its own screen
+  it("lists every kind of practice in groups, each leading to its own screen", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Each mode's section, by its heading
-    const section = async (name: string) => (await screen.findByRole("heading", { name })).closest("section") as HTMLElement;
-    // Confirm the Table Topic and prepared speech start on today's prompts, and openings lead to their page
-    expect([
-      within(await section("Table Topic")).getByRole("link", { name: /Start/ }).getAttribute("href"),
-      within(await section("Prepared speech")).getByRole("link", { name: /Start/ }).getAttribute("href"),
-      within(await section("Openings and closings")).getByRole("link", { name: /Choose/ }).getAttribute("href"),
-      !!within(await section("Table Topic")).getByText(/A light question appears/),
-    ]).toEqual([`/session?mode=talk&prompt=${tableTopicForDay(NOW).id}`, `/session?mode=response&prompt=${promptForDay(NOW).id}`, "/bookends", true]);
+    // A group's rows as [name, address]
+    const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
+    // Confirm the groups and where each row leads
+    expect([await rows("Everyday conversation"), await rows("Build a skill"), (await rows("Speak on the spot")).slice(0, 3)]).toEqual([
+      [["Answering", "/small-talk#answering"], ["Asking", "/small-talk#asking"], ["Listening", "/small-talk#listening"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
+      [["Lessons", "/skills#lessons"], ["Read aloud", "/skills#readings"], ["Pause drills", "/skills#pause-drills"], ["Tricky words", "/skills#tricky-words"]],
+      [["Table Topic", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Openings and closings", "/bookends"]],
+    ]);
   });
 
   // Q&A needs something to ask about
   it("explains Q&A until there is a rehearsal or prepared speech, then links to it", async () => {
     // Draw with nothing recorded
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the explanation
-    expect(await screen.findByText(/after a rehearsal or a prepared speech/)).toBeTruthy();
+    // Confirm the explanation, on a row that is not a link
+    expect((await screen.findByText(/Opens after a rehearsal or a prepared speech/)).closest("a")).toBeNull();
     // Clear the page
     cleanup();
     // A repository with a prepared speech
@@ -51,31 +50,11 @@ describe("PracticeScreen", () => {
     // Draw again
     render(<PracticeScreen repository={repository} now={NOW} />);
     // Confirm the link
-    expect((await screen.findByRole("link", { name: /Practise Q&A/ })).getAttribute("href")).toBe("/qa?from=r1");
+    expect((await screen.findByRole("link", { name: /Q&A practice/ })).getAttribute("href")).toBe("/qa?from=r1");
   });
 
-  // "Or choose another" swaps the prepared-answer task, and the start link follows
-  it("swaps to another prepared-answer task", async () => {
-    // Draw the page
-    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Ask for another
-    fireEvent.click(await screen.findByRole("button", { name: /choose another/ }));
-    // Confirm the task and the link follow
-    expect([!!screen.getByText(`“${promptForDay(NOW, 1).text}”`), screen.getByRole("link", { name: "Start a prepared speech" }).getAttribute("href")]).toEqual([true, `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`]);
-  });
-
-  // Each mode is its own card, named by its heading, so the page reads as four choices
-  it("shows each mode as a card named by its heading", async () => {
-    // Draw the page
-    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Wait for the page
-    await screen.findByRole("heading", { name: "Table Topic" });
-    // Confirm your talks first, then the four cards, in order
-    expect(screen.getAllByRole("region").map((card) => card.getAttribute("aria-labelledby"))).toEqual(["your-talks", "table-topic", "prepared", "openings", "qa"]);
-  });
-
-  // Your talks come first: each saved talk with its date, and a way to add one (what used to be the Talks tab)
-  it("lists your talks first, with a way to add one", async () => {
+  // Your talks: each saved talk with its date, and a way to add one (what used to be the Talks tab)
+  it("lists your talks, with a way to add one", async () => {
     // A repository with a talk in two days
     const repository = createRepository(new MemoryStore());
     // The talk

@@ -25,7 +25,7 @@ import { ReviewStep } from "@/components/screens/ReviewStep";
 // Load the quick tags, for showing the user's notes
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
 // Load the small-talk beats and checks
-import { ASKING_BEATS, BEATS, LISTENING_BEATS, beatsFor, findSmallTalk, type BeatId } from "@/content/smallTalk";
+import { ASKING_BEATS, BEATS, LISTENING_BEATS, beatsFor, findSmallTalk, nextInUnit, type BeatId } from "@/content/smallTalk";
 import { beatCount, beatFound, deadEndOpening, feelingWords, handBack, questionKind, reaction, sharedWords, theirFeelingWords } from "@/core/smallTalk";
 // Load the tick
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
@@ -288,6 +288,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const timed = talk || session.mode === "response" || session.mode === "bookend" || session.mode === "qa" || session.mode === "smalltalk";
   // Whether this is a small-talk answer (notes by beat, kept apart from the speech practice)
   const smallTalk = session.mode === "smalltalk";
+  // Whether it is a follow-up question or a reply to a story: a few seconds long, so a lighter result that moves on to the next one
+  const quick = smallTalk && findSmallTalk(session.promptId)?.unit !== "answering";
+  // The next one in its unit
+  const next = quick ? nextInUnit(session.promptId) : null;
   // Whether this is an answer to an audience question
   const qa = session.mode === "qa";
   // Where "try it again" leads: the same question for a Q&A answer (or its list, if the question was replaced), otherwise the same prompt
@@ -430,15 +434,15 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
           {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote italic text-ink-muted">{note || "The coach could not review this session."}</p>}
           {/* The numbers together */}
-          <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} />
+          {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} />}
           {/* When there is no number, say why */}
           {!reading && !bookendOutcome && !smallTalk && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
           {/* How the pauses went, when loudness was recorded */}
-          {pauses && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(pauses)}</p>}
+          {pauses && !quick && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(pauses)}</p>}
           {/* Which pause marks had a pause */}
           {marks && <p className="mt-2 text-footnote italic text-ink-muted">{marks}</p>}
           {/* How the pace changed */}
-          {pace && <p className="mt-2 text-footnote italic text-ink-muted">{pace.sentence}</p>}
+          {pace && !quick && <p className="mt-2 text-footnote italic text-ink-muted">{pace.sentence}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
           {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec, undefined, session.promptId)}</p>}
           {/* After a rehearsal with a goal, how the timing went */}
@@ -462,13 +466,17 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {/* Inside today's practice, trying again is offered here (the main action moves on) */}
             {plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
             {/* After small talk, another question, back on its own page */}
-            {smallTalk && <li><RowLink href="/small-talk">{findSmallTalk(session.promptId)?.unit === "answering" ? "Another question" : "Another one"}</RowLink></li>}
+            {/* A follow-up or a reply: trying the same one again is a row, since the main action moves on */}
+            {quick && !plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
+            {smallTalk && <li><RowLink href={quick ? `/small-talk#${findSmallTalk(session.promptId)?.unit}` : "/small-talk"}>{quick ? "Back to Connect" : "Another question"}</RowLink></li>}
             {/* Finish (small talk has its own page, so it leads back there instead) */}
             {!smallTalk && <li><RowLink href="/">Finish for today</RowLink></li>}
           </ul>
           {/* Inside today's practice, the next step; after an old warm-up, a Record Response; otherwise the retry */}
           {plan ? (
             <PlanBand plan={plan} />
+          ) : next ? (
+            <ActionBand action="Next one" aside={next.label} href={`/session?mode=smalltalk&prompt=${next.id}`} />
           ) : warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (

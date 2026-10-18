@@ -100,14 +100,9 @@ export function SmallTalkScreen(props: ScreenProps) {
   return (
     <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title="Small talk" section="smalltalk" />
-      {/* What this is for */}
-      <h1 className="mt-8 font-display text-prompt tracking-tight md:text-prompt-xl">Say more than &ldquo;good.&rdquo;</h1>
-      {/* How it works */}
-      <p className="mt-3 max-w-[52ch] text-lede">Practise everyday conversation out loud: answering with one short story, asking a good follow-up, and listening so people feel heard. A voice speaks, you reply, then you hear yourself back.</p>
-
-      {/* The units, one showing at a time */}
-      <div role="group" aria-label="Units" className="mt-6 grid grid-cols-3 border-y border-ink">
+      <Masthead title="Connect" section="smalltalk" />
+      {/* The units, one showing at a time (first, so the practice is in view straight away) */}
+      <div role="group" aria-label="Units" className="mt-5 grid grid-cols-3 border-y border-ink">
         {/* Each unit */}
         {UNITS.map((item) => (
           // One unit's switch
@@ -116,16 +111,16 @@ export function SmallTalkScreen(props: ScreenProps) {
           </button>
         ))}
       </div>
-      {/* When this unit is for */}
-      <p className="mt-3 italic text-ink-muted">{unit.when}</p>
+      {/* When this unit is for, and how it works, in one line */}
+      <p className="mt-3 max-w-[52ch] text-footnote italic text-ink-muted">{unit.when} A voice speaks, you reply out loud.</p>
 
       {/* Today's question, with a way to get another */}
       {question && (
-        <section aria-label={unit.id === "answering" ? "Answer a question" : unit.id === "asking" ? "Ask a follow-up" : "Listen to a story"} className="mt-4 border-y border-ink py-4">
+        <section aria-label={unit.id === "answering" ? "Answer a question" : unit.id === "asking" ? "Ask a follow-up" : "Listen to a story"} className="mt-4">
           {/* Small heading */}
           <p className="text-footnote italic text-ink-muted">{unit.id === "answering" ? "A question for you" : unit.id === "asking" ? "Someone says" : "A short story, heard and not read"}</p>
           {/* What is said (a story stays hidden until afterwards) */}
-          <p className="mt-1 font-display text-cue">{unit.id === "listening" ? "Someone tells you about their day." : question.text}</p>
+          <h1 className="mt-1 font-display text-statement tracking-tight">{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
           {/* Reply, or move along */}
           <p className="mt-2 flex flex-wrap gap-x-4">
             {/* Reply */}

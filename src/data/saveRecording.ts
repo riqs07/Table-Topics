@@ -8,6 +8,8 @@ import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 import { shouldBeBaseline } from "@/core/progress";
 // Load the record types
 import type { SessionMode, SessionRecord } from "@/data/records";
+// Load the small-talk unit lookup (a follow-up question or a reply to a story is too short to listen back to first)
+import { unitOf } from "@/content/smallTalk";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -79,8 +81,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.spokenTimes ? { spokenTimes: recording.spokenTimes.map(tenth) } : {}),
     // Script word times, rounded the same way, keeping the words never read as null
     ...(recording.scriptTimes ? { scriptTimes: recording.scriptTimes.map((time) => (time === null ? null : tenth(time))) } : {}),
-    // A first try waits for the user to listen back and write notes before the feedback shows (a moment note has no listening step)
-    ...(recording.retryOf === null && recording.mode !== "moment" ? { selfReview: null } : {}),
+    // A first try waits for the user to listen back and write notes before the feedback shows (a moment note, a follow-up question and a reply to a story have no listening step)
+    ...(recording.retryOf === null && recording.mode !== "moment" && !(recording.mode === "smalltalk" && unitOf(recording.promptId) !== "answering") ? { selfReview: null } : {}),
     // Keep the question a Q&A answer answered
     ...(recording.question ? { question: recording.question } : {}),
     // Keep the section of a section rehearsal

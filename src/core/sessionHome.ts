@@ -21,7 +21,7 @@ export function sessionHome(mode: SessionMode, promptId: string, inPlan: boolean
   // Inside today's practice
   if (inPlan) return { section: "today", href: "/", label: "Close, back to Today" };
   // A small-talk answer or a moment note lives on its own page
-  if (mode === "smalltalk" || mode === "moment") return { section: "smalltalk", href: "/small-talk", label: "Close, back to Small talk" };
+  if (mode === "smalltalk" || mode === "moment") return { section: "smalltalk", href: "/small-talk", label: "Close, back to Connect" };
   // Readings, pause drills and lessons
   if (mode === "read" || mode === "pause" || mode === "lesson") return { section: "skills", href: "/skills", label: "Close, back to Skills" };
   // A rehearsal of one of the user's talks

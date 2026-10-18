@@ -43,7 +43,7 @@ describe("small talk", () => {
     // The recipe
     const recipe = await screen.findByRole("region", { name: "A good answer, in four beats" });
     // Confirm the four beats, today's question, and the first lesson as the main action
-    expect([within(recipe).getAllByRole("listitem").length, within(screen.getByRole("region", { name: "Answer a question" })).getByText(smallTalkForDay(NOW).text).tagName, screen.getByRole("link", { name: /^Answering lesson 1The dead end/ }).getAttribute("href")]).toEqual([4, "P", "/session?mode=smalltalk&prompt=stl1"]);
+    expect([within(recipe).getAllByRole("listitem").length, within(screen.getByRole("region", { name: "Answer a question" })).getByText(smallTalkForDay(NOW).text).tagName, screen.getByRole("link", { name: /^Answering lesson 1The dead end/ }).getAttribute("href")]).toEqual([4, "H1", "/session?mode=smalltalk&prompt=stl1"]);
   });
 
   // Answers are listed on the page with how many beats they showed, and in History too (since the daily mix)
@@ -123,7 +123,7 @@ describe("small talk", () => {
     // The practice box
     const practice = screen.getByRole("region", { name: "Listen to a story" });
     // Confirm asking, then listening's recipe and a practice box that hides the story
-    expect([...asking, !!screen.getByRole("region", { name: "A good response, in four beats" }), within(practice).getByText("Someone tells you about their day.").tagName, within(practice).getByRole("link", { name: "Listen and respond" }).getAttribute("href")?.startsWith("/session?mode=smalltalk&prompt=sls")]).toEqual([true, "/session?mode=smalltalk&prompt=sal1", "/session?mode=smalltalk&prompt=sal1", true, true, "P", true]);
+    expect([...asking, !!screen.getByRole("region", { name: "A good response, in four beats" }), within(practice).getByRole("heading", { level: 1 }).textContent, within(practice).getByRole("link", { name: "Listen and respond" }).getAttribute("href")?.startsWith("/session?mode=smalltalk&prompt=sls")]).toEqual([true, "/session?mode=smalltalk&prompt=sal1", "/session?mode=smalltalk&prompt=sal1", true, true, "Someone tells you about their day.", true]);
   });
 
   // After a reply to a story: the story itself, the listening beats the phone heard, and a label in History
@@ -136,6 +136,8 @@ describe("small talk", () => {
     const beats = await screen.findByRole("list", { name: "The beats" });
     // Confirm the story, all four beats with the reaction quoted, and the timing against its window
     expect([!!screen.getByText(/fell asleep on my shoulder/), screen.getByText("All four beats.").tagName, within(beats).getAllByRole("listitem").map((item) => item.querySelector("strong")?.textContent), !!within(beats).getByText("“no way”"), !!screen.getByText("0:08, inside the 0:05 to 0:30 window.")]).toEqual([true, "P", ["React.", "Their words.", "Their feeling.", "Stay."], true, true]);
+    // Confirm the lighter result: no numbers row, the next story as the main action, and trying again as a row
+    expect([screen.queryByRole("region", { name: "Your numbers" }), screen.getByRole("link", { name: /^Next one/ }).getAttribute("href"), screen.getByRole("link", { name: "Try it again" }).getAttribute("href")?.includes("prompt=sls01")]).toEqual([null, "/session?mode=smalltalk&prompt=sls02", true]);
     // Draw History instead
     cleanup();
     // History

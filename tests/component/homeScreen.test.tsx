@@ -11,7 +11,7 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the day's pickers
-import { promptForDay, tableTopicForDay } from "@/content/prompts";
+import { tableTopicForDay } from "@/content/prompts";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -154,16 +154,16 @@ describe("HomeScreen", () => {
     expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 1: Warm up" })).getByText("Done"), !!screen.getByRole("link", { name: /^Continue: step 2/ })]).toEqual(["Pick up where you left off.", true, true]);
   });
 
-  // Beyond today's practice, the three main ways to practise are one tap away
-  it("offers reading aloud, a Table Topic and a prepared speech", async () => {
+  // Today shows only today's steps; everything else is in Practice
+  it("keeps to today's steps and leaves other practice to Practice", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // The tiles
-    const tiles = within((await screen.findByRole("heading", { name: "Or practise on your own" })).closest("section") as HTMLElement).getAllByRole("link");
-    // Confirm where each leads
-    expect(tiles.map((tile) => tile.getAttribute("href"))).toEqual(["/skills#readings", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`, `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`]);
+    // Wait for the steps
+    await screen.findByRole("list", { name: "Steps" });
+    // Confirm there is no list of other ways to practise
+    expect(screen.queryByRole("heading", { name: "Or practise on your own" })).toBeNull();
   });
 
   // A returning user sees the streak as a sentence

@@ -32,7 +32,7 @@ const NOW = new Date(2026, 9, 15, 10);
 afterEach(cleanup);
 
 // Where the five tabs must lead, in order (Settings is the gear in the title row)
-const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Skills", "/skills"], ["Small talk", "/small-talk"], ["Learn", "/learn"], ["History", "/history"]];
+const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Connect", "/small-talk"], ["Learn", "/learn"], ["History", "/history"]];
 
 // Read the main navigation's links as [name, address] pairs, and which one is marked as the current page
 async function readNavigation() {
@@ -54,8 +54,8 @@ describe("main navigation", () => {
     ["Today", "Today", async () => <HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Practice
     ["Practice", "Practice", async () => <PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
-    // Skills
-    ["Skills", "Skills", async () => <SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Skills is a page inside Practice
+    ["Skills", "Practice", async () => <SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // History
     ["History", "History", async () => <HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Your talks belong to Practice
