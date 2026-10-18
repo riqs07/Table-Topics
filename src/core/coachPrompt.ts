@@ -19,7 +19,7 @@ import { countPauseMarks } from "@/core/readAlong";
 import { SPEECH_WINDOW, TOPIC_LIMIT, TOPIC_WINDOW_START, formatClock, thinkSeconds } from "@/core/recordingRules";
 import type { ConnectionFeedback, Feedback, SessionMode, SmallTalkFeedback } from "@/data/records";
 // Load the small-talk questions, lessons, units and beats
-import { ASKING_BEATS, BEATS, LISTENING_BEATS, beatsFor, findSmallTalk } from "@/content/smallTalk";
+import { ASKING_BEATS, BEATS, LISTENING_BEATS, NEWS_BEATS, beatsFor, findSmallTalk } from "@/content/smallTalk";
 // Load the quick tags, to put the speaker's tags into words
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
 
@@ -71,7 +71,7 @@ export interface CoachInput {
 // The speaker's notes as plain lines, with tags turned into their words (unknown tags are dropped)
 function notesText(notes: { worked: string; change: string; tags: string[] }): string {
   // Known tag words (a small-talk answer's tags are the beats the speaker heard themselves do)
-  const tags = [...WORKED_TAGS, ...CHANGE_TAGS, ...[...BEATS, ...ASKING_BEATS, ...LISTENING_BEATS].map((beat) => ({ id: beat.id, label: beat.name }))].filter((tag) => notes.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase());
+  const tags = [...WORKED_TAGS, ...CHANGE_TAGS, ...[...BEATS, ...ASKING_BEATS, ...LISTENING_BEATS, ...NEWS_BEATS].map((beat) => ({ id: beat.id, label: beat.name }))].filter((tag) => notes.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase());
   // One line each, leaving out empty ones
   return [notes.worked && `What worked: ${notes.worked}`, notes.change && `What I would change: ${notes.change}`, tags.length > 0 && `Tags: ${tags.join(", ")}`].filter(Boolean).join("\n");
 }
@@ -249,7 +249,7 @@ export function checkSmallTalkFeedback(reply: z.infer<typeof SmallTalkFeedbackSc
 }
 
 // The asking and listening coach's standing instructions (the same small-talk coach, for following up and listening)
-export const CONNECTION_SYSTEM_PROMPT = `You are VoiceLab's conversation coach. The person is practising two everyday skills on their own, out loud: asking a good follow-up question when someone tells them something, and responding well when someone tells them a short story. They hear what the other person says, reply out loud, and read your notes afterwards.
+export const CONNECTION_SYSTEM_PROMPT = `You are VoiceLab's conversation coach. The person is practising three everyday skills on their own, out loud: asking a good follow-up question when someone tells them something, responding well when someone tells them a short story, and responding to someone's good or bad news. They hear what the other person says, reply out loud, and read your notes afterwards.
 
 A good follow-up question (asking) has four beats:
 - open: it starts with what, how or why, not did, is or do, so it invites more than a yes.
@@ -262,6 +262,12 @@ A good response to a story (listening) has four beats:
 - their-words: it mentions something specific from their story.
 - their-feeling: it names how it must have felt for them.
 - stay: it stays on their story, with no story of the listener's own yet; asking what happened next is ideal.
+
+A good response to news (news) has four beats:
+- react: a real reaction first, such as "No way!" or "Oh no".
+- ask-moment: a question about their news: the moment, what happens next, or how they are.
+- stay: it stays on their news; no news of the listener's own.
+- no-buts: no downside, no quick cheering up ("at least…"), and no advice they did not ask for.
 
 Behind every beat is one question, from research on responsiveness: did the reply show the other person that they were understood (a specific detail they said), that their reaction makes sense, and that you care what happens next for them? Use these words when you explain the change.
 
@@ -288,18 +294,20 @@ export function buildConnectionMessage(input: CoachInput): string {
   const found = input.promptId ? findSmallTalk(input.promptId) : undefined;
   // Which skill
   const asking = found?.unit === "asking";
+  // Whether it is a response to news
+  const news = found?.unit === "news";
   // The lesson's beat, by name
   const beat = found?.lesson?.beat ? beatsFor(found.unit).find((item) => item.id === found.lesson?.beat) : undefined;
   // Put the message together line by line
   return [
     // The skill
-    `Skill: ${asking ? "asking a follow-up question" : "responding to a story"}`,
+    `Skill: ${asking ? "asking a follow-up question" : news ? "responding to news" : "responding to a story"}`,
     // What the other person said, fenced as data
-    `${asking ? "They said" : "Their story"}: <said>${fenceSafe(found?.question ?? "").replace(/<\/?said>/gi, "")}</said>`,
+    `${asking ? "They said" : news ? "Their news" : "Their story"}: <said>${fenceSafe(found?.question ?? "").replace(/<\/?said>/gi, "")}</said>`,
     // How long they spoke
     `Length: ${Math.round(input.durationSec)} seconds`,
     // In a lesson, what it teaches
-    ...(found?.lesson ? [`This was ${asking ? "asking" : "listening"} lesson ${found.lesson.number}, "${found.lesson.title}": ${found.lesson.idea}${beat ? ` Pay most attention to the ${beat.id} beat.` : ""}`] : []),
+    ...(found?.lesson ? [`This was ${found.unit} lesson ${found.lesson.number}, "${found.lesson.title}": ${found.lesson.idea}${beat ? ` Pay most attention to the ${beat.id} beat.` : ""}`] : []),
     // On a retry, the change to check for
     ...(input.previousChange ? [`This is a retry. The change you gave last time was: ${input.previousChange}`] : []),
     // When the speaker shared their own notes, how to use them

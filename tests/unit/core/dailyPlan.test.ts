@@ -76,8 +76,8 @@ describe("dailyPlan", () => {
     expect([regularPlan(DAY, { learn: read })[0]?.label, morning[0]?.label, morning[0]?.promptId, regularPlan(DAY, { learn: after })[0]?.promptId, planProgress(morning, [], DAY, after)[0]]).toEqual(["Warm up", "Learn · review", LEARN_CARDS[2]?.id, LEARN_CARDS[2]?.id, true]);
   });
 
-  // After the answering lessons come the asking and listening ones; once every lesson is done, a follow-up and a story on alternate days
-  it("moves on to asking and listening, then alternates their drills", () => {
+  // After the answering lessons come the asking, listening and news ones; once every lesson is done, a follow-up, a story and some news in turn
+  it("moves on to asking, listening and news, then takes their drills in turn", () => {
     // Every answering lesson answered earlier
     const answered = SMALL_TALK_LESSONS.filter((lesson) => lesson.unit === "answering").map((lesson, index) => daysAgo(4 + index, { mode: "smalltalk", promptId: lesson.id }));
     // Every lesson answered earlier
@@ -86,10 +86,12 @@ describe("dailyPlan", () => {
     const connect = (day: Date, sessions: ReturnType<typeof daysAgo>[]) => regularPlan(day, { sessions: [...regular, ...sessions] }).find((step) => step.lane === "connection" && step.label !== "Small talk");
     // The lesson after the answering ones, on the first day that picks it
     const lesson = Array.from({ length: 9 }, (_, offset) => connect(dayAfter(offset), answered)).find(Boolean);
-    // The drills over two weeks with nothing left
-    const drills = Array.from({ length: 14 }, (_, offset) => connect(dayAfter(offset), allLessons)).filter(Boolean);
+    // A day whose picks include the Connect step
+    const day = Array.from({ length: 9 }, (_, offset) => dayAfter(offset)).find((candidate) => connect(candidate, allLessons))!;
+    // The drill after none, one and two earlier drills (they take turns by practice, not by date)
+    const drills = [0, 1, 2].map((done) => connect(day, [...allLessons, ...["sa01", "sls01"].slice(0, done).map((promptId, index) => daysAgo(20 + index, { mode: "smalltalk", promptId }))]));
     // Confirm the first asking lesson, then follow-ups and stories (a story's text hidden)
-    expect([lesson?.label, lesson?.promptId, new Set(drills.map((step) => step?.label)), drills.find((step) => step?.label === "Listening")?.title]).toEqual(["Asking lesson 1", "sal1", new Set(["Follow-up", "Listening"]), "A short story to respond to"]);
+    expect([lesson?.label, lesson?.promptId, new Set(drills.map((step) => step?.label)), drills.find((step) => step?.label === "Listening")?.title]).toEqual(["Asking lesson 1", "sal1", new Set(["Follow-up", "Listening", "News"]), "A short story to respond to"]);
   });
 
   // What counts as read comes from before today, so reading a card today does not change today's plan

@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the checks being tested
-import { answerLength, beatCount, beatFound, deadEndOpening, feelingWords, handBack, namesTheirFeeling, questionKind, reaction, sharedWords, shiftPhrase, smallTalkChange, staysOnStory, staysOnThem, stripLevel } from "@/core/smallTalk";
+import { answerLength, beatCount, butPhrase, beatFound, deadEndOpening, feelingWords, handBack, namesTheirFeeling, questionKind, reaction, sharedWords, shiftPhrase, smallTalkChange, staysOnStory, staysOnThem, stripLevel } from "@/core/smallTalk";
 // Load the content, to check it hangs together
 import { ASKING_DRILLS, BEATS, LISTENING_STORIES, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, lessonsFor, nextInUnit, smallTalkForDay, unitOf } from "@/content/smallTalk";
 // Load the app's prompt lookup
@@ -94,7 +94,7 @@ describe("asking and listening", () => {
   // Every unit has four beats, its lessons, and each lesson's beat is one of its own
   it("gives each unit four beats and lessons that teach its own beats", () => {
     // Confirm per unit: four beats, lessons, beats in the unit
-    expect(UNITS.map((unit) => [unit.beats.length, lessonsFor(unit.id).length, lessonsFor(unit.id).every((lesson) => lesson.beat === null || unit.beats.some((beat) => beat.id === lesson.beat))])).toEqual([[4, 6, true], [4, 3, true], [4, 3, true]]);
+    expect(UNITS.map((unit) => [unit.beats.length, lessonsFor(unit.id).length, lessonsFor(unit.id).every((lesson) => lesson.beat === null || unit.beats.some((beat) => beat.id === lesson.beat))])).toEqual([[4, 6, true], [4, 3, true], [4, 3, true], [4, 3, true]]);
   });
 
   // The unit comes from the prompt id
@@ -192,5 +192,17 @@ describe("asking and listening", () => {
   it("finds the next one in a unit", () => {
     // A middle lesson, the last asking lesson, a drill, and the last story
     expect([nextInUnit("sal1").id, nextInUnit("sal3").id, nextInUnit("sa01").id, nextInUnit("sls08").id]).toEqual(["sal2", "sa01", "sa02", "sls01"]);
+  });
+
+  // Responding to news: a reaction, a question, staying on them, and no buts, in that order of changes
+  it("checks a response to news and picks one change", () => {
+    // Said to "I got the job!"
+    const good = reply("sn01", "no way you got it how did it feel when they called");
+    // With a downside
+    const but = reply("sn01", "wow congrats you should check the contract carefully though");
+    // About you
+    const shifted = reply("sn01", "nice me too I got a new job last month");
+    // Confirm all four beats, the "but" found, and the changes for each
+    expect([beatCount(good), butPhrase(but.transcript), smallTalkChange(but).change.split(".")[0], smallTalkChange(shifted).change.split(".")[0], smallTalkChange(reply("sn01", "wow that is great")).change.split(".")[0], smallTalkChange(good).change.split(":")[0]]).toEqual([4, "you should", "Hold the “you should” for now", "Stay with their news", "Ask about it", "A real reaction, a question, and it stayed on them"]);
   });
 });

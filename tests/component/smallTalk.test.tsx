@@ -145,4 +145,22 @@ describe("small talk", () => {
     // Confirm it is labelled as listening
     expect(await screen.findByText(/Listening: So I was on the train this morning/)).toBeTruthy();
   });
+
+  // Responding to news: its own unit on the page, with its recipe and a result labelled as news
+  it("offers responding to news as a unit, and labels its results", async () => {
+    // Draw the page
+    render(<SmallTalkScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Pick News
+    fireEvent.click(await screen.findByRole("button", { name: "News" }));
+    // Confirm the recipe, the first lesson and the practice box
+    expect([!!screen.getByRole("region", { name: "A good response to news, in four beats" }), screen.getByRole("link", { name: "News lesson 1: Good news needs a real reaction" }).getAttribute("href"), !!within(screen.getByRole("region", { name: "Respond to news" })).getByRole("link", { name: "Respond to it" })]).toEqual([true, "/session?mode=smalltalk&prompt=snl1", true]);
+    // A response to "I got the job!"
+    const repository = await repositoryWith(answer({ promptId: "sn01", durationSec: 6, transcript: "no way you got it how did it feel when they called", selfReview: { worked: "", change: "", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
+    // Its page
+    cleanup();
+    // Draw it
+    render(<SessionScreen sessionId="a1" repository={repository} now={NOW} />);
+    // Confirm what they said, all four beats, and the next one
+    expect([!!(await screen.findByText("Their news")), screen.getByText("All four beats.").tagName, screen.getByRole("link", { name: /^Next one/ }).getAttribute("href")]).toEqual([true, "P", "/session?mode=smalltalk&prompt=sn02"]);
+  });
 });

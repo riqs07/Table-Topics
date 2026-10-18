@@ -1019,13 +1019,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 </section>
               )}
               {/* Asking: who is speaking */}
-              {smallTalk.unit === "asking" && <p className={`text-footnote italic text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>They say</p>}
+              {(smallTalk.unit === "asking" || smallTalk.unit === "news") && <p className={`text-footnote italic text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>{smallTalk.unit === "news" ? "They tell you" : "They say"}</p>}
               {/* A story to listen to, not shown */}
               {storyHidden ? (
                 <h1 className="mt-8 font-display text-prompt tracking-tight md:mt-0 md:max-w-[18ch]">Listen to their story.</h1>
               ) : (
                 // The question, remark or story, set like a headline (a story a size smaller)
-                <h1 className={`relative font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${smallTalk.unit === "listening" ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"} ${smallTalk.lesson && !busy ? "mt-1" : smallTalk.unit === "asking" ? "mt-1" : "mt-8 md:mt-0"}`}>
+                <h1 className={`relative font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${smallTalk.unit === "listening" ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"} ${smallTalk.lesson && !busy ? "mt-1" : smallTalk.unit === "asking" || smallTalk.unit === "news" ? "mt-1" : "mt-8 md:mt-0"}`}>
                   {smallTalk.question}
                 </h1>
               )}
@@ -1120,7 +1120,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             mode === "talk" ? (
               <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Show my topic"} aside={`${think} seconds to start`} onClick={begin} />
             ) : smallTalk ? (
-              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : smallTalk.unit === "listening" ? "Hear the story" : smallTalk.unit === "asking" ? "Hear it" : "Hear the question"} aside={smallTalk.unit === "asking" ? "then ask" : smallTalk.unit === "listening" ? "then respond" : "then answer"} onClick={begin} />
+              <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : findUnit(smallTalk.unit).words.hear} aside={findUnit(smallTalk.unit).words.then} onClick={begin} />
             ) : mode === "response" ? (
               <ActionButton action={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : "Start thinking"} aside={`${think / 60} minutes to prepare`} onClick={begin} />
             ) : (
@@ -1132,7 +1132,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* A Table Topic's countdown: no early start, just the time left */}
           {thinking && mode === "talk" && <ActionButton action="Get ready" aside={`starting in ${Math.ceil(thinkLeft)}`} onClick={() => {}} disabled />}
           {/* While a small-talk question is said aloud */}
-          {stage === "asking" && <ActionButton action="Listening…" aside={smallTalk?.unit === "asking" ? "then ask" : smallTalk?.unit === "listening" ? "then respond" : "then answer"} onClick={() => {}} disabled />}
+          {stage === "asking" && <ActionButton action="Listening…" aside={findUnit(smallTalk?.unit ?? "answering").words.then} onClick={() => {}} disabled />}
           {/* Waiting for the microphone */}
           {stage === "starting" && <ActionButton action="Starting…" aside="allow the microphone" onClick={() => {}} disabled />}
           {/* Recording */}

@@ -257,4 +257,12 @@ describe("checkFeedback", () => {
     // Confirm the rules in all three, and the frame in the conversation coach
     expect([COACH_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT].map((prompt) => prompt.includes(FEEDBACK_RULES)).concat([FEEDBACK_RULES.includes("never about the person"), CONNECTION_SYSTEM_PROMPT.includes("that they were understood")])).toEqual([true, true, true, true, true]);
   });
+
+  // A response to news tells the coach the skill and the news, and the coach knows the news beats
+  it("tells the conversation coach about responding to news", () => {
+    // A news drill
+    const message = buildConnectionMessage({ transcript: "no way", durationSec: 4, focusId: "pausing", previousChange: null, mode: "smalltalk", promptId: "sn01" });
+    // Confirm the skill, the news and the beats
+    expect([message.includes("Skill: responding to news"), message.includes("Their news: <said>I got the job!"), CONNECTION_SYSTEM_PROMPT.includes("no-buts")]).toEqual([true, true, true]);
+  });
 });

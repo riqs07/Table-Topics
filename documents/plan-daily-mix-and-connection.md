@@ -96,7 +96,7 @@ Five tabs is the most Apple and Google suggest. One option: **Today · Practice 
 2. **Connection units 2 and 3:** asking and listening lessons, and their voice drills. Built (decision 47).
 3. **Missions and debriefs.** Built (decision 52): predict, try, debrief by taps or voice, compare.
 4. **Learn:** the card format, recall questions, and the first sets (body language myths, charisma, conversation).
-5. **Units 4 to 6** and their missions.
+5. **Units 4 to 6** and their missions. A "Responding to news" unit came first (decision 55), from the 2026-10 research; the missions ladder (decision 52) covers their real-world tries.
 6. **The live conversation partner.**
 
 ## Open questions

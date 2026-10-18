@@ -15,7 +15,7 @@ import { PathMark } from "@/components/script/PathMark";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the small-talk content
-import { ASKING_DRILLS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, lessonsFor, type UnitId } from "@/content/smallTalk";
+import { ASKING_DRILLS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, findUnit, lessonsFor, type UnitId } from "@/content/smallTalk";
 // Load the beat counter
 import { beatCount } from "@/core/smallTalk";
 // Load the done and next marks for a path of lessons
@@ -115,7 +115,7 @@ export function SmallTalkScreen(props: ScreenProps) {
       {/* Heading and navigation */}
       <Masthead title="Connect" section="smalltalk" />
       {/* The units, one showing at a time (first, so the practice is in view straight away) */}
-      <div role="group" aria-label="Units" className="mt-5 grid grid-cols-3 border-y border-ink">
+      <div role="group" aria-label="Units" className="mt-5 grid grid-cols-2 border-y border-ink sm:grid-cols-4">
         {/* Each unit */}
         {UNITS.map((item) => (
           // One unit's switch
@@ -129,17 +129,17 @@ export function SmallTalkScreen(props: ScreenProps) {
 
       {/* Today's question, with a way to get another */}
       {question && (
-        <section aria-label={unit.id === "answering" ? "Answer a question" : unit.id === "asking" ? "Ask a follow-up" : "Listen to a story"} className="mt-4">
+        <section aria-label={unit.words.practice} className="mt-4">
           {/* Small heading */}
-          <p className="text-footnote italic text-ink-muted">{unit.id === "answering" ? "A question for you" : unit.id === "asking" ? "Someone says" : "A short story, heard and not read"}</p>
+          <p className="text-footnote italic text-ink-muted">{unit.words.kicker}</p>
           {/* What is said (a story stays hidden until afterwards) */}
           <h1 className="mt-1 font-display text-statement tracking-tight">{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
           {/* Reply, or move along */}
           <p className="mt-2 flex flex-wrap gap-x-4">
             {/* Reply */}
-            <Link href={answerHref(question.id)} className="inline-flex min-h-11 items-center underline underline-offset-4">{unit.id === "answering" ? "Answer it" : unit.id === "asking" ? "Ask a follow-up" : "Listen and respond"}</Link>
+            <Link href={answerHref(question.id)} className="inline-flex min-h-11 items-center underline underline-offset-4">{unit.words.start}</Link>
             {/* Another */}
-            <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">{unit.id === "answering" ? "or another question" : unit.id === "asking" ? "or something else" : "or another story"}</button>
+            <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">{unit.words.another}</button>
           </p>
         </section>
       )}
@@ -216,7 +216,7 @@ export function SmallTalkScreen(props: ScreenProps) {
       {/* The recipe, taught on the page itself */}
       <section aria-labelledby="recipe" className="mt-10">
         {/* Run-in heading */}
-        <h2 id="recipe" className="italic">{unit.id === "answering" ? "A good answer" : unit.id === "asking" ? "A good follow-up" : "A good response"}, in four beats</h2>
+        <h2 id="recipe" className="italic">{unit.words.recipe}, in four beats</h2>
         {/* The beats */}
         <ol className="mt-3 divide-y divide-rule border-y border-rule">
           {/* Each beat */}
@@ -331,7 +331,7 @@ export function SmallTalkScreen(props: ScreenProps) {
       {nextLesson ? (
         <ActionBand action={`${UNITS.find((item) => item.id === nextLesson.unit)?.name} lesson ${nextLesson.number}`} aside={nextLesson.title} href={answerHref(nextLesson.id)} />
       ) : (
-        question && <ActionBand action={unit.id === "answering" ? "Answer a question" : unit.id === "asking" ? "Ask a follow-up" : "Hear a story"} aside={unit.id === "listening" ? "then respond" : question.text} href={answerHref(question.id)} />
+        question && <ActionBand action={unit.words.band} aside={unit.id === "listening" ? unit.words.then : question.text} href={answerHref(question.id)} />
       )}
     </main>
   );
@@ -345,8 +345,6 @@ function answerLabel(promptId: string): string {
   if (!found) return "A question";
   // A story, cut short
   if (found.unit === "listening") return `Story: ${found.question.split(/\s+/).slice(0, 8).join(" ")}…`;
-  // A remark
-  if (found.unit === "asking") return `Follow-up: ${found.question}`;
-  // A question
-  return found.question;
+  // A question as it is; anything else with its unit's word
+  return found.unit === "answering" ? found.question : `${findUnit(found.unit).words.history}: ${found.question}`;
 }

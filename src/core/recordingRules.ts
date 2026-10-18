@@ -126,13 +126,15 @@ export const SMALL_TALK_WINDOW: SpeakingWindow = { start: 20, yellow: 35, end: 4
 export const ASKING_WINDOW: SpeakingWindow = { start: 2, yellow: 8, end: 12, limit: 12 };
 // A reply to a story: green at 0:05, red at 0:30
 export const LISTENING_WINDOW: SpeakingWindow = { start: 5, yellow: 20, end: 30, limit: 30 };
+// A response to news: green at 0:03, red at 0:20
+export const NEWS_WINDOW: SpeakingWindow = { start: 3, yellow: 15, end: 20, limit: 20 };
 
 // The window for a small-talk prompt, by its unit
 export function smallTalkWindow(promptId: string): SpeakingWindow {
   // The prompt's unit
   const unit = unitOf(promptId);
   // Its window
-  return unit === "asking" ? ASKING_WINDOW : unit === "listening" ? LISTENING_WINDOW : SMALL_TALK_WINDOW;
+  return unit === "asking" ? ASKING_WINDOW : unit === "listening" ? LISTENING_WINDOW : unit === "news" ? NEWS_WINDOW : SMALL_TALK_WINDOW;
 }
 
 // The window for a kind of session (and, for small talk, its prompt), if it has one

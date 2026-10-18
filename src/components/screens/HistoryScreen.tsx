@@ -4,7 +4,7 @@
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
 // Load the small-talk questions
-import { findSmallTalk } from "@/content/smallTalk";
+import { findSmallTalk, findUnit } from "@/content/smallTalk";
 // Load the missions and their rules
 import { findMission } from "@/content/missions";
 import { betterThanFeared, triedMissions } from "@/core/missions";
@@ -101,7 +101,7 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
     // What was said, and its unit
     const found = findSmallTalk(session.promptId);
     // Asking and listening say which, with a story cut short
-    return found?.unit === "asking" ? `Follow-up: ${found.question}` : found?.unit === "listening" ? `Listening: ${shorten(found.question)}` : `Small talk: ${found?.question ?? text}`;
+    return found ? `${findUnit(found.unit).words.history}: ${found.unit === "listening" ? shorten(found.question) : found.question}` : `Small talk: ${text}`;
   }
   // And prepared speeches
   return session.mode === "response" ? `Prepared speech: ${text}` : text;

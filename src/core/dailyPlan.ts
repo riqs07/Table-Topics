@@ -10,7 +10,7 @@ import { findReading, findSpeech, partId } from "@/content/readings";
 // Load the calendar-day helpers
 import { dayKey, daysBetween, startOfDay } from "@/core/dates";
 // Load the small-talk questions and lessons
-import { SMALL_TALK_LESSONS, drillForDay, smallTalkForDay } from "@/content/smallTalk";
+import { SMALL_TALK_LESSONS, drillForDay, smallTalkForDay, unitOf } from "@/content/smallTalk";
 // Load the next Learn card
 import { nextCard, type LearnProgress } from "@/core/learn";
 // Load the cards, for a review once every card is read
@@ -240,9 +240,9 @@ function picks(input: PlanInput, before: ReadonlyArray<SessionRecord>, firstDays
 }
 
 // The lesson labels by unit
-const LESSON_LABELS = { answering: "Small-talk lesson", asking: "Asking lesson", listening: "Listening lesson" } as const;
+const LESSON_LABELS = { answering: "Small-talk lesson", asking: "Asking lesson", listening: "Listening lesson", news: "News lesson" } as const;
 
-// Connection: real conversations. The next small-talk lesson (answering, then asking, then listening); once they are done, a follow-up drill and a listening drill on alternate days
+// Connection: real conversations. The next small-talk lesson (answering, then asking, then listening, then news); once they are done, a follow-up, a story and some news in turn
 function connection(input: PlanInput, before: ReadonlyArray<SessionRecord>): PlanStep {
   // Lessons answered before today
   const answered = new Set(before.filter((session) => session.mode === "smalltalk").map((session) => session.promptId));
@@ -250,12 +250,14 @@ function connection(input: PlanInput, before: ReadonlyArray<SessionRecord>): Pla
   const lesson = SMALL_TALK_LESSONS.find((item) => !answered.has(item.id));
   // A lesson
   if (lesson) return { lane: "connection", kind: "session", label: `${LESSON_LABELS[lesson.unit]} ${lesson.number}`, title: lesson.title, mode: "smalltalk", promptId: lesson.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${lesson.id}` };
-  // Lessons finished: asking one day, listening the next
-  const asking = dayNumber(input.day) % 2 === 0;
+  // Drills already done before today (not lessons), so the units take turns by practice rather than by date (the conversation pick comes up every few days, which would always land on the same unit)
+  const drillsDone = before.filter((session) => session.mode === "smalltalk" && unitOf(session.promptId) !== "answering" && !SMALL_TALK_LESSONS.some((item) => item.id === session.promptId)).length;
+  // Lessons finished: asking, listening and news in turn
+  const unit = (["asking", "listening", "news"] as const)[drillsDone % 3]!;
   // Today's drill
-  const drill = drillForDay(asking ? "asking" : "listening", input.day);
+  const drill = drillForDay(unit, input.day);
   // The step (a story stays hidden until it is heard)
-  return { lane: "connection", kind: "session", label: asking ? "Follow-up" : "Listening", title: asking ? drill.text : "A short story to respond to", mode: "smalltalk", promptId: drill.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${drill.id}` };
+  return { lane: "connection", kind: "session", label: unit === "asking" ? "Follow-up" : unit === "news" ? "News" : "Listening", title: unit === "listening" ? "A short story to respond to" : drill.text, mode: "smalltalk", promptId: drill.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${drill.id}` };
 }
 
 // Learn: one card every day. The next card not read before today; once every card is read, the first card due for review today (or reviewed today, so the step stays put after it is done); none when nothing is due

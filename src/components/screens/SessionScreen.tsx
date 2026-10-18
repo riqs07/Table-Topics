@@ -25,7 +25,7 @@ import { ReviewStep } from "@/components/screens/ReviewStep";
 // Load the quick tags, for showing the user's notes
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
 // Load the small-talk beats and checks
-import { ASKING_BEATS, BEATS, LISTENING_BEATS, beatsFor, findSmallTalk, nextInUnit, type BeatId } from "@/content/smallTalk";
+import { ASKING_BEATS, BEATS, LISTENING_BEATS, NEWS_BEATS, beatsFor, findSmallTalk, findUnit, nextInUnit, type BeatId } from "@/content/smallTalk";
 import { beatCount, beatFound, deadEndOpening, feelingWords, handBack, questionKind, reaction, sharedWords, theirFeelingWords } from "@/core/smallTalk";
 // Load the tick
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
@@ -307,7 +307,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // The user's notes, with their tags as words
   const review = session.selfReview && !session.selfReview.skipped ? session.selfReview : null;
   // The tag words
-  const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS, ...[...BEATS, ...ASKING_BEATS, ...LISTENING_BEATS].map((beat) => ({ id: beat.id, label: beat.name }))].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
+  const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS, ...[...BEATS, ...ASKING_BEATS, ...LISTENING_BEATS, ...NEWS_BEATS].map((beat) => ({ id: beat.id, label: beat.name }))].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
   // The notes against the numbers
   const checks = smallTalk ? [] : compareNotes(session);
   // One change picked from the numbers, shown until the coach's arrives
@@ -480,7 +480,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           ) : warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (
-            <ActionBand action="Try it again" aside={rehearsed ? "same part of the talk" : qa || (smallTalk && findSmallTalk(session.promptId)?.unit !== "listening") ? "same question" : smallTalk ? "same story" : "same prompt"} href={retryHref} />
+            <ActionBand action="Try it again" aside={rehearsed ? "same part of the talk" : qa || (smallTalk && findSmallTalk(session.promptId)?.unit === "answering") ? "same question" : smallTalk ? "same one" : "same prompt"} href={retryHref} />
           )}
         </aside>
       </div>
@@ -538,7 +538,7 @@ function SmallTalkBeats({ session }: { session: SessionRecord }) {
       {unit !== "answering" && found && (
         <div className="mt-5 md:mt-0">
           {/* Small heading */}
-          <p className="text-footnote italic text-ink-muted">{unit === "asking" ? "They said" : "Their story"}</p>
+          <p className="text-footnote italic text-ink-muted">{findUnit(unit).words.said}</p>
           {/* Their words */}
           <p className="mt-1 max-w-[52ch] text-lede">&ldquo;{found.question}&rdquo;</p>
         </div>

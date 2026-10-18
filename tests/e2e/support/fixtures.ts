@@ -26,6 +26,8 @@ export const ROUTES: ReadonlyArray<string> = [
   // A small-talk question, and a small-talk lesson
   "/session?mode=smalltalk&prompt=st01",
   "/session?mode=smalltalk&prompt=stl3",
+  // Responding to news
+  "/session?mode=smalltalk&prompt=sn01",
   // A moment note
   "/session?mode=moment&prompt=moment",
   // Learn, a card, and the review

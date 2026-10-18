@@ -69,12 +69,23 @@ const OPEN_STARTERS = ["what", "what's", "whats", "how", "how's", "hows", "why",
 // Words that start a yes-or-no question
 const CLOSED_STARTERS = ["did", "do", "does", "is", "are", "was", "were", "have", "has", "can", "could", "will", "would", "isn't", "didn't", "don't"];
 
-// Whether the question asked is open or yes-or-no, from the first question word heard (none if there is no question word)
+// Words that follow a yes-or-no starter when it really starts a question ("did you", "is it"), so "that is great" is not taken for one
+const QUESTION_SUBJECTS = ["you", "it", "they", "he", "she", "we", "there", "that", "this", "your", "the", "anyone", "everyone"];
+
+// Where the first question starts in a list of words: an open question word, or a yes-or-no word followed by its subject (-1 if none)
+function questionStart(said: ReadonlyArray<string>): number {
+  // The first place that starts a question
+  return said.findIndex((word, index) => OPEN_STARTERS.includes(word) || (CLOSED_STARTERS.includes(word) && QUESTION_SUBJECTS.includes(said[index + 1] ?? "")));
+}
+
+// Whether the question asked is open or yes-or-no, from the first question heard (none if there is no question)
 export function questionKind(transcript: string): "open" | "closed" | null {
-  // The first question word
-  const first = words(transcript).find((word) => OPEN_STARTERS.includes(word) || CLOSED_STARTERS.includes(word));
+  // The words
+  const said = words(transcript);
+  // Where the first question starts
+  const start = questionStart(said);
   // Its kind
-  return first === undefined ? null : OPEN_STARTERS.includes(first) ? "open" : "closed";
+  return start === -1 ? null : OPEN_STARTERS.includes(said[start]!) ? "open" : "closed";
 }
 
 // Short and common words, never counted as picking up what someone said
@@ -104,8 +115,8 @@ const FIRST_PERSON = ["i", "i'm", "im", "i've", "ive", "i'd", "id", "i'll", "me"
 export function staysOnThem(transcript: string): boolean {
   // The words
   const said = words(transcript);
-  // Where the question starts (the whole reply if no question word is heard)
-  const start = Math.max(0, said.findIndex((word) => OPEN_STARTERS.includes(word) || CLOSED_STARTERS.includes(word)));
+  // Where the question starts (the whole reply if no question is heard)
+  const start = Math.max(0, questionStart(said));
   // Nothing about yourself from there on
   return !said.slice(start).some((word) => FIRST_PERSON.includes(word));
 }
@@ -175,6 +186,17 @@ export function staysOnStory(transcript: string): boolean {
   return shiftPhrase(transcript) === null && words(transcript).filter((word) => FIRST_PERSON.includes(word)).length <= FIRST_PERSON_LIMIT;
 }
 
+// Phrases that bring in a downside, cheer them up too quickly, or give advice before it is asked for
+const BUTS = ["you should", "you could", "have you thought", "have you tried", "why don't you", "why dont you", "maybe you should", "at least", "look on the bright side", "it could be worse", "don't worry", "dont worry", "everything happens", "the downside", "be careful", "make sure you"];
+
+// The "but" phrase in a reply to news, if any
+export function butPhrase(transcript: string): string | null {
+  // The reply as one phrase
+  const said = ` ${words(transcript).join(" ")} `;
+  // The first one found
+  return BUTS.find((phrase) => said.includes(` ${phrase} `)) ?? null;
+}
+
 // A reply to a story should pick up at least this many of its words
 const STORY_WORDS = 2;
 
@@ -210,6 +232,11 @@ function phoneFinds(session: SessionRecord, beat: BeatId): boolean {
       return namesTheirFeeling(session.transcript);
     case "stay":
       return staysOnStory(session.transcript);
+    // News (React and Stay are checked as for listening)
+    case "ask-moment":
+      return questionKind(session.transcript) !== null;
+    case "no-buts":
+      return butPhrase(session.transcript) === null;
   }
 }
 
@@ -290,6 +317,20 @@ function listeningChange(session: SessionRecord): LocalChange {
   return { change: "A reaction, their details, the feeling, and it stayed on them: that is how a good listener sounds. Next, ask what happened after.", retryCue: "End with “And then what?”" };
 }
 
+// One change for a response to news, in order: turned to you, no reaction, a downside or advice, no question
+function newsChange(session: SessionRecord): LocalChange {
+  // Moved to you
+  if (!staysOnStory(session.transcript)) return { change: `Stay with their news. ${shiftPhrase(session.transcript) ? `“${shiftPhrase(session.transcript)}”` : "Talking about yourself"} takes the spotlight just as they step into it.`, retryCue: "Ask about their news before saying anything about yours." };
+  // No reaction
+  if (reaction(session.transcript) === null) return { change: "React first. A real “No way!” or “Oh no” shows it landed before anything else.", retryCue: "Open with a real reaction to their news." };
+  // A downside or advice
+  if (butPhrase(session.transcript)) return { change: `Hold the “${butPhrase(session.transcript)}” for now. A downside reads as doubt, and advice before understanding makes people feel less heard.`, retryCue: "React and ask; save any advice until they ask for it." };
+  // No question
+  if (questionKind(session.transcript) === null) return { change: "Ask about it. A question about the moment, or how they are, shows you want to hear more.", retryCue: "End with “How did it feel?” or “How are you doing with it?”" };
+  // All there
+  return { change: "A real reaction, a question, and it stayed on them: that is how good news gets shared and bad news gets heard. Next, ask one more question about it.", retryCue: "Ask one more thing about the moment." };
+}
+
 // One change for a small-talk response: for an answer, from the phone's checks, in order: a dead end, too short, no feeling, no hand-back, too long; otherwise a look at the moment and hook, which only the user or the coach can judge
 export function smallTalkChange(session: SessionRecord): LocalChange {
   // The prompt's unit
@@ -298,6 +339,8 @@ export function smallTalkChange(session: SessionRecord): LocalChange {
   if (unit === "asking") return askingChange(session);
   // A reply to a story
   if (unit === "listening") return listeningChange(session);
+  // A response to news
+  if (unit === "news") return newsChange(session);
   // A dead end
   if (deadEndOpening(session.transcript)) return { change: "Do not stop at “good”: that leaves them nothing to ask about. Even a quiet day has one thing worth telling.", retryCue: "Pick one thing that happened, however small, and say it first." };
   // The length

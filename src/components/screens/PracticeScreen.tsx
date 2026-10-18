@@ -8,7 +8,7 @@ import Link from "next/link";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
 // Load an icon for each kind of practice
-import { BookOpenTextIcon, CaretRightIcon, ChatTeardropTextIcon, ChatsCircleIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, SunHorizonIcon, TextAaIcon } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenTextIcon, MegaphoneSimpleIcon, CaretRightIcon, ChatTeardropTextIcon, ChatsCircleIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, SunHorizonIcon, TextAaIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
@@ -142,6 +142,8 @@ export function PracticeScreen(props: ScreenProps) {
           { name: "Asking", detail: "Hear something, ask one good follow-up", href: "/small-talk#asking", icon: QuestionIcon },
           // Listening
           { name: "Listening", detail: "Hear a short story, respond so they feel heard", href: "/small-talk#listening", icon: EarIcon },
+          // Responding to news
+          { name: "Responding to news", detail: "Good or bad news: react, ask, no buts", href: "/small-talk#news", icon: MegaphoneSimpleIcon },
           // One moment a day
           { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon },
         ]}

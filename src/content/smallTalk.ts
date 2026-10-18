@@ -17,8 +17,8 @@ export interface Beat {
   question: string;
 }
 
-// The three units: answering a question, asking a follow-up, and listening to a story
-export type UnitId = "answering" | "asking" | "listening";
+// The four units: answering a question, asking a follow-up, listening to a story, and responding to news
+export type UnitId = "answering" | "asking" | "listening" | "news";
 
 // The four beats of an answer
 export type AnsweringBeat = "moment" | "hook" | "feeling" | "hand-back";
@@ -26,8 +26,10 @@ export type AnsweringBeat = "moment" | "hook" | "feeling" | "hand-back";
 export type AskingBeat = "open" | "their-detail" | "about-them" | "one-question";
 // The four beats of a listening response
 export type ListeningBeat = "react" | "their-words" | "their-feeling" | "stay";
+// The four beats of a response to news (React and Stay are the listening beats, checked the same way)
+export type NewsBeat = "react" | "ask-moment" | "stay" | "no-buts";
 // Any beat
-export type BeatId = AnsweringBeat | AskingBeat | ListeningBeat;
+export type BeatId = AnsweringBeat | AskingBeat | ListeningBeat | NewsBeat;
 
 // The answering recipe, in order
 export const BEATS: ReadonlyArray<Beat> = [
@@ -65,6 +67,42 @@ export const LISTENING_BEATS: ReadonlyArray<Beat> = [
   { id: "stay", name: "Stay", reminder: "No story of your own yet. Ask what happened next.", why: "“That happened to me too” moves the talk to you. Staying keeps their story going.", question: "Did it stay on their story?" },
 ];
 
+// The responding-to-news recipe, in order (decision 55)
+export const NEWS_BEATS: ReadonlyArray<Beat> = [
+  // React to it
+  { id: "react", name: "React", reminder: "A real reaction first: “No way!” or “Oh no.”", why: "Enthusiastic replies to good news go with more trust and closeness; quiet ones do not.", question: "Did you react before anything else?" },
+  // Ask about it
+  { id: "ask-moment", name: "Ask about it", reminder: "Ask about the moment or how they are.", why: "A question about their news shows you want to hear more of it.", question: "Did you ask about their news?" },
+  // Stay with them
+  { id: "stay", name: "Stay", reminder: "Their news, not yours.", why: "Bringing up your own news takes the spotlight as they step into it.", question: "Did it stay on their news?" },
+  // No buts
+  { id: "no-buts", name: "No buts", reminder: "No downside, no advice yet.", why: "A downside reads as doubt, and advice before understanding makes people feel less heard.", question: "Did you leave out downsides and advice?" },
+];
+
+// The words a unit uses on screen
+export interface UnitWords {
+  // The practice box's name
+  practice: string;
+  // What is said, in small italic above it
+  kicker: string;
+  // Starting it
+  start: string;
+  // Another one
+  another: string;
+  // The recipe's heading
+  recipe: string;
+  // The main action when its lessons are done
+  band: string;
+  // The button that plays it
+  hear: string;
+  // After it plays
+  then: string;
+  // On the results, above what was said
+  said: string;
+  // In History
+  history: string;
+}
+
 // One unit: its name, what it is for, and its beats
 export interface Unit {
   // Stable id
@@ -77,16 +115,20 @@ export interface Unit {
   youDo: string;
   // Its recipe
   beats: ReadonlyArray<Beat>;
+  // Its words on screen
+  words: UnitWords;
 }
 
 // The units, in order
 export const UNITS: ReadonlyArray<Unit> = [
   // Answering
-  { id: "answering", name: "Answering", when: "When someone asks how your weekend was.", youDo: "Hear an everyday question, then answer it out loud.", beats: BEATS },
+  { id: "answering", name: "Answering", when: "When someone asks how your weekend was.", youDo: "Hear an everyday question, then answer it out loud.", beats: BEATS, words: { practice: "Answer a question", kicker: "A question for you", start: "Answer it", another: "or another question", recipe: "A good answer", band: "Answer a question", hear: "Hear the question", then: "then answer", said: "The question", history: "Small talk" } },
   // Asking
-  { id: "asking", name: "Asking", when: "When someone tells you something: ask the follow-up.", youDo: "Hear something someone says, then ask one follow-up question.", beats: ASKING_BEATS },
+  { id: "asking", name: "Asking", when: "When someone tells you something: ask the follow-up.", youDo: "Hear something someone says, then ask one follow-up question.", beats: ASKING_BEATS, words: { practice: "Ask a follow-up", kicker: "Someone says", start: "Ask a follow-up", another: "or something else", recipe: "A good follow-up", band: "Ask a follow-up", hear: "Hear it", then: "then ask", said: "They said", history: "Follow-up" } },
   // Listening
-  { id: "listening", name: "Listening", when: "When someone tells you a story: show you heard it.", youDo: "Hear a short story (it is not shown), then respond to it out loud.", beats: LISTENING_BEATS },
+  { id: "listening", name: "Listening", when: "When someone tells you a story: show you heard it.", youDo: "Hear a short story (it is not shown), then respond to it out loud.", beats: LISTENING_BEATS, words: { practice: "Listen to a story", kicker: "A short story, heard and not read", start: "Listen and respond", another: "or another story", recipe: "A good response", band: "Hear a story", hear: "Hear the story", then: "then respond", said: "Their story", history: "Listening" } },
+  // Responding to news
+  { id: "news", name: "News", when: "When someone shares good or bad news: react, ask, no buts.", youDo: "Hear someone's news, then respond out loud.", beats: NEWS_BEATS, words: { practice: "Respond to news", kicker: "Someone tells you", start: "Respond to it", another: "or other news", recipe: "A good response to news", band: "Respond to news", hear: "Hear their news", then: "then respond", said: "Their news", history: "News" } },
 ];
 
 // A unit by id
@@ -222,6 +264,12 @@ export const SMALL_TALK_LESSONS: ReadonlyArray<SmallTalkLesson> = [
   { id: "sal2", unit: "asking", number: 2, title: "Open, not yes-or-no", beat: "open", example: "We finally finished painting the house.", idea: "Questions that start with did, is or do get a yes or a no. Questions that start with what, how or why invite a story.", flat: "Did it take long?", good: "How did you pick the colour?", question: "I went to my first climbing class on Saturday." },
   // Asking, lesson 3
   { id: "sal3", unit: "asking", number: 3, title: "Don't boomerask", beat: "about-them", example: "I started running in the mornings.", idea: "Asking a question just so you can answer it yourself (“How far do you go? I do ten kilometres”) makes you seem less sincere. Ask because you want their answer, then let them talk.", flat: "Nice, how far do you go? I've been doing ten k most days.", good: "What got you started?", question: "We adopted a dog last week." },
+  // News, lesson 1
+  { id: "snl1", unit: "news", number: 1, title: "Good news needs a real reaction", beat: "react", example: "I passed my driving test this morning!", idea: "How you meet someone's good news matters more than how you meet their bad news. A real reaction and a question about the moment build trust; a quick “nice” ends it.", flat: "Nice, well done.", good: "No way, you passed! How did it feel when they told you?", question: "We just found out we're having a baby." },
+  // News, lesson 2
+  { id: "snl2", unit: "news", number: 2, title: "Bad news: understood before advice", beat: "no-buts", example: "My flat fell through. We were meant to move on Friday.", idea: "Before any advice, show you understood, that the feeling makes sense, and that you care. Advice can wait until it is asked for.", flat: "Have you tried other agents? There are loads of flats around.", good: "Two days before the move? That's awful. How are you holding up?", question: "I didn't get into the course I applied for." },
+  // News, lesson 3
+  { id: "snl3", unit: "news", number: 3, title: "Their news, not yours", beat: "stay", example: "I got promoted to team lead!", idea: "“Same, I just got a raise” takes the spotlight just as they step into it. Stay with their news for a few turns before you share any of yours.", flat: "Congrats! I'm actually up for promotion too.", good: "Team lead! What does that mean for your week?", question: "I finally finished my first marathon." },
   // Listening, lesson 1
   { id: "sll1", unit: "listening", number: 1, title: "React to the story", beat: "react", example: "My flight got cancelled, so I slept in the airport. At three in the morning a cleaner gave me her own blanket.", idea: "When listeners react to the specific moment, storytellers tell their stories better. “Mm-hmm” is fine; “No way, she gave you her blanket?” is better.", flat: "Oh, okay.", good: "No way. She gave you her own blanket? That's so kind.", question: "I lost my phone at a concert on Saturday. Two days later a woman emailed me. She'd found it in the grass and posted it back with a little note." },
   // Listening, lesson 2
@@ -264,6 +312,30 @@ export const ASKING_DRILLS: ReadonlyArray<SmallTalkDrill> = [
   { id: "sa11", text: "We drove up the coast for the weekend." },
   // Cooking
   { id: "sa12", text: "I've been trying to cook something new every week." },
+];
+
+// News people share, good and bad, to respond to
+export const NEWS_DRILLS: ReadonlyArray<SmallTalkDrill> = [
+  // Good
+  { id: "sn01", text: "I got the job! The one I interviewed for last month." },
+  // Bad
+  { id: "sn02", text: "My dog's been really sick this week. We're at the vet again tomorrow." },
+  // Good
+  { id: "sn03", text: "We just bought our first house." },
+  // Bad
+  { id: "sn04", text: "My project got cancelled. Six months of work, gone." },
+  // Good
+  { id: "sn05", text: "My sister had her baby last night. I'm an aunt!" },
+  // Bad
+  { id: "sn06", text: "I failed my driving test again." },
+  // Good
+  { id: "sn07", text: "I got into the masters programme I applied for." },
+  // Bad
+  { id: "sn08", text: "We broke up last week. It's been a lot." },
+  // Good
+  { id: "sn09", text: "My book club picked the novel I wrote. They actually liked it." },
+  // Bad
+  { id: "sn10", text: "I hurt my knee, so I have to pull out of the race I trained for." },
 ];
 
 // Short stories people tell, to respond to
@@ -310,6 +382,10 @@ export function findSmallTalk(id: string): FoundSmallTalk | undefined {
   const remark = ASKING_DRILLS.find((item) => item.id === id);
   // Its text
   if (remark) return { question: remark.text, lesson: null, unit: "asking" };
+  // News to respond to
+  const news = NEWS_DRILLS.find((item) => item.id === id);
+  // Its text
+  if (news) return { question: news.text, lesson: null, unit: "news" };
   // A story to respond to
   const story = LISTENING_STORIES.find((item) => item.id === id);
   // Its text, or nothing
@@ -358,6 +434,8 @@ export const SMALL_TALK_PROMPTS: ReadonlyArray<{ id: string; text: string }> = [
   ...ASKING_DRILLS,
   // The stories to respond to
   ...LISTENING_STORIES,
+  // The news to respond to
+  ...NEWS_DRILLS,
 ];
 
 // The everyday question for a day, taken in turn ("another question" moves it along)
@@ -373,7 +451,7 @@ export function drillForDay(unit: UnitId, day: Date, offset = 0): SmallTalkDrill
   // Answering uses the everyday questions
   if (unit === "answering") return smallTalkForDay(day, offset);
   // The bank
-  const bank = unit === "asking" ? ASKING_DRILLS : LISTENING_STORIES;
+  const bank = drillBank(unit);
   // Days since a fixed start, plus the offset
   const turn = daysBetween(new Date(2026, 0, 1), day) + offset;
   // Wrap around, keeping the index positive
@@ -400,10 +478,10 @@ export function nextInUnit(promptId: string): { id: string; label: string } {
 }
 
 // What the next drill is, by unit
-const NEXT_LABELS: Record<UnitId, string> = { answering: "another question", asking: "something else they say", listening: "another story" };
+const NEXT_LABELS: Record<UnitId, string> = { answering: "another question", asking: "something else they say", listening: "another story", news: "other news" };
 
 // A unit's drills: everyday questions, remarks, or stories
 function drillBank(unit: UnitId): ReadonlyArray<SmallTalkDrill> {
   // The unit's bank
-  return unit === "answering" ? SMALL_TALK_QUESTIONS : unit === "asking" ? ASKING_DRILLS : LISTENING_STORIES;
+  return unit === "answering" ? SMALL_TALK_QUESTIONS : unit === "asking" ? ASKING_DRILLS : unit === "news" ? NEWS_DRILLS : LISTENING_STORIES;
 }
