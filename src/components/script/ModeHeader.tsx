@@ -1,24 +1,19 @@
-// A mode's name and plain description: what it is, how long, what you do, what you get afterwards
+// A mode's name with what it is and how long, in one quiet line (the longer "what you do" sentences were cut, decision 63)
 
 // Load the catalogue entry type
 import type { ModeInfo } from "@/content/modes";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
-// Draw the heading and its description
+// Draw the heading and its line
 export function ModeHeader({ mode }: { mode: ModeInfo }) {
-  // Name, subtitle and length, then the two sentences
+  // Name, then subtitle and length
   return (
     <>
-      {/* The name, with its subtitle and length beside it */}
-      <h2 id={mode.id} className="font-display text-cue">{mode.name}</h2>
+      {/* The name */}
+      <h2 id={mode.id} className={SECTION_HEADING}>{mode.name}</h2>
       {/* What it is and how long */}
       <p className="text-footnote text-ink-muted">{mode.subtitle} · {mode.length}</p>
-      {/* What you do and what you get */}
-      <p className="mt-2 max-w-[56ch] text-footnote">
-        {/* What you do */}
-        {mode.youDo}{" "}
-        {/* What you get, quieter */}
-        <span className="text-ink-muted">Afterwards: {mode.youGet.charAt(0).toLowerCase() + mode.youGet.slice(1)}</span>
-      </p>
     </>
   );
 }

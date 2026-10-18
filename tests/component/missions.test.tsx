@@ -66,7 +66,7 @@ describe("missions", () => {
     // Accept
     fireEvent.click(within(card).getByRole("button", { name: "I’ll try it" }));
     // Confirm it was closed, the habit to drop was shown, the debrief is offered, and the try saved
-    expect([closed, !!within(card).getByText(/Don't plan your next line/), (await screen.findByRole("link", { name: "How did it go?" })).getAttribute("href")?.startsWith("/mission?id="), (await repository.getSettings(NOW)).missions?.map((item) => [item.missionId, item.status, item.predicted])]).toEqual([true, true, true, [["m01", "accepted", 2]]]);
+    expect([closed, !!within(card).getByText(/Don't plan your next line/, { ignore: "summary" }), (await screen.findByRole("link", { name: "How did it go?" })).getAttribute("href")?.startsWith("/mission?id="), (await repository.getSettings(NOW)).missions?.map((item) => [item.missionId, item.status, item.predicted])]).toEqual([true, true, true, [["m01", "accepted", 2]]]);
   });
 
   // The debrief: tried, how it went, a note said aloud, then the comparison

@@ -19,8 +19,6 @@ import { PASSAGES, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@
 import { findLesson } from "@/content/lessons";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
-// Load the mode catalogue, for the how-it-works note
-import { modeForSession } from "@/content/modes";
 
 // Remove drawn screens and fake timers after each check
 afterEach(() => {
@@ -102,14 +100,14 @@ function draw(props: Partial<Parameters<typeof RecordingScreen>[0]> = {}, fakeOp
 
 // Group the checks about the recording screen
 describe("RecordingScreen", () => {
-  // Before starting: the prompt, a plain privacy note, and the start action
-  it("shows the prompt, the privacy note, and a way to start", async () => {
+  // Before starting: the prompt and the start action, with no notes around them (the privacy line lives on the microphone screen and in Settings, decision 63)
+  it("shows the prompt and a way to start, without extra notes", async () => {
     // Draw the screen
     draw();
     // Confirm the prompt
     expect(await screen.findByText(PROMPTS[0]!.text)).toBeTruthy();
-    // Confirm the privacy note
-    expect(screen.getByText(/turned into text by your browser’s speech service/)).toBeTruthy();
+    // Confirm no privacy footnote or how-this-works note
+    expect([screen.queryByText(/turned into text/), screen.queryByRole("note", { name: "How this works" })]).toEqual([null, null]);
     // Confirm the start action
     expect(screen.getByRole("button", { name: /Start speaking/ })).toBeTruthy();
   });
@@ -983,24 +981,6 @@ describe("RecordingScreen", () => {
     expect([instruction.tagName, screen.getByTestId("passage").textContent?.includes("[")]).toEqual(["EM", false]);
   });
 
-  // Before starting, every mode says how it works and what comes afterwards; while recording, that note steps aside
-  it("explains how the mode works before starting, then hides it", async () => {
-    // Draw a prepared speech
-    draw({ mode: "response" });
-    // The note
-    const note = await screen.findByRole("note", { name: "How this works" });
-    // Confirm its words and the plain title
-    expect([note.textContent?.includes(modeForSession("response")!.youDo), note.textContent?.includes("Afterwards:"), !!screen.getByText("Prepared speech")]).toEqual([true, true, true]);
-    // Start thinking, then start speaking
-    fireEvent.click(screen.getByRole("button", { name: /Start thinking/ }));
-    // Start
-    fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
-    // Wait for recording
-    await screen.findByRole("button", { name: /Stop/ });
-    // Confirm the note is gone
-    expect(screen.queryByRole("note", { name: "How this works" })).toBeNull();
-  });
-
   // While recording, the page says so plainly and the stop band looks different from the start band
   it("marks the recording state and sets the stop band apart", async () => {
     // Draw the screen
@@ -1015,17 +995,5 @@ describe("RecordingScreen", () => {
     const stop = await screen.findByRole("button", { name: /Stop/ });
     // Confirm the recording marker and the different look
     expect([!!screen.getByRole("status", { name: "Recording" }), startVariant, stop.getAttribute("data-variant")]).toEqual([true, "start", "stop"]);
-  });
-
-  // The prompt comes before the how-it-works note, so a phone shows the task first
-  it("puts the prompt before the how-it-works note", async () => {
-    // Draw a prepared speech
-    draw({ mode: "response" });
-    // The note and the prompt
-    const note = await screen.findByRole("note", { name: "How this works" });
-    // The prompt heading
-    const prompt = screen.getByRole("heading", { level: 1 });
-    // Confirm the order in the page
-    expect(prompt.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

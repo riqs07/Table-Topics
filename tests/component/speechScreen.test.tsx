@@ -40,7 +40,7 @@ describe("SpeechScreen", () => {
     // Draw the page
     render(<SpeechScreen speechId="jfk-inaugural" repository={repository} now={NOW} />);
     // Confirm the progress line, the done mark, and the action
-    expect([!!(await screen.findByText(/You have read 1 of \d+\./)), !!within(screen.getByRole("link", { name: "Read part 1" })).getByText("Done"), screen.getAllByRole("link", { name: /^Read part 2/ }).find((link) => link.hasAttribute("data-action-band"))?.getAttribute("href")]).toEqual([true, true, "/session?mode=read&prompt=jfk-inaugural-2"]);
+    expect([!!(await screen.findByText(/ · 1 read$/)), !!within(screen.getByRole("link", { name: "Read part 1" })).getByText("Done"), screen.getAllByRole("link", { name: /^Read part 2/ }).find((link) => link.hasAttribute("data-action-band"))?.getAttribute("href")]).toEqual([true, true, "/session?mode=read&prompt=jfk-inaugural-2"]);
   });
 
   // An unknown speech says so

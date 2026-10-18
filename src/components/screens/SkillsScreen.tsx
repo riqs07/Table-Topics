@@ -37,10 +37,10 @@ import { PASSAGES, PAUSE_DRILLS, TRICKY_WORDS, type Passage } from "@/content/pr
 // The catalogue entry for an id (always present for the ids used here)
 const mode = (id: string) => MODES.find((item) => item.id === id) as ModeInfo;
 
-// How often a lesson has been practised, in words
+// How often a lesson has been practised, in words (only shown once it has been)
 function practisedText(count: number): string {
-  // Never, once, or several times
-  return count === 0 ? "Not practised yet" : count === 1 ? "Practised once" : `Practised ${count} times`;
+  // Once, or several times
+  return count === 1 ? "Practised once" : `Practised ${count} times`;
 }
 
 // A list of texts to read, each a link that starts it
@@ -162,7 +162,7 @@ export function SkillsScreen(props: ScreenProps) {
       {/* Heading and navigation */}
       <Masthead title="Practice" section="skills" />
       {/* The page's name */}
-      <PageTitle title="Build a skill">One skill at a time: lessons, readings and drills.</PageTitle>
+      <PageTitle title="Build a skill" />
       {/* Jump to a part */}
       <nav aria-label="On this page" className="mt-4 flex flex-wrap gap-x-5 text-footnote">
         {/* One link per part */}
@@ -193,11 +193,9 @@ export function SkillsScreen(props: ScreenProps) {
                   {/* "Next" above the title of the lesson to try next */}
                   {marks[index] === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
                   {/* Title */}
-                  <span className="block font-display text-cue">{lesson.title}</span>
-                  {/* The tip's first sentence */}
-                  <span className="block text-footnote text-ink-muted">{lesson.tip.split(". ")[0]}.</span>
-                  {/* How often practised */}
-                  <span className="block text-footnote text-ink-muted">{practisedText(counts.get(lesson.id) ?? 0)}</span>
+                  <span className="block font-display text-xl leading-tight">{lesson.title}</span>
+                  {/* How often practised, once it has been (the path mark already shows what is new) */}
+                  {(counts.get(lesson.id) ?? 0) > 0 && <span className="block text-footnote text-ink-muted">{practisedText(counts.get(lesson.id) ?? 0)}</span>}
                 </span>
                 {/* The chevron */}
                 <CaretRightIcon aria-hidden="true" className="size-5 flex-none self-center text-ink-muted" />

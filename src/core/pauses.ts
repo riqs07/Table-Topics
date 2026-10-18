@@ -155,14 +155,3 @@ export function pauseDrillSentence(taken: number, marks: number): string {
   return `You paused ${taken} times; ${ending}`;
 }
 
-// One plain sentence about the pauses
-export function pauseSentence(summary: PauseSummary): string {
-  // The speaking share, said the same way every time
-  const speaking = `speaking ${summary.speakingPercent}% of the time.`;
-  // No pauses
-  if (summary.count === 0) return `No pauses longer than ${PAUSE_MIN_SECONDS} seconds; ${speaking}`;
-  // One pause
-  if (summary.count === 1) return `1 pause, ${summary.averageSeconds.toFixed(1)} seconds long; ${speaking}`;
-  // Several
-  return `${summary.count} pauses, ${summary.averageSeconds.toFixed(1)} seconds on average; ${speaking}`;
-}

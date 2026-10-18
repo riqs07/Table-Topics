@@ -96,13 +96,8 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       <div className="mt-2 flex items-center gap-4">
         {/* The icon on an accent tile */}
         <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center bg-accent/10 text-accent">{(() => { const IconShape = UNIT_ICONS[unit.id]; return <IconShape className="size-9" />; })()}</span>
-        {/* Name and when */}
-        <div className="min-w-0 flex-1">
-          {/* Name */}
-          <p className="font-display text-statement tracking-tight">{unit.name}</p>
-          {/* When it is for */}
-          <p className="text-footnote text-ink-muted">{unit.when} A voice speaks, you reply out loud.</p>
-        </div>
+        {/* Name (when it is for is on its card on Connect, decision 63) */}
+        <p className="min-w-0 flex-1 font-display text-statement tracking-tight">{unit.name}</p>
       </div>
 
       {/* Today's question, with a way to get another */}
@@ -127,8 +122,8 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         <section id="moments" aria-labelledby="moments-heading" className="mt-10 scroll-mt-6">
           {/* Run-in heading */}
           <h2 id="moments-heading" className={SECTION_HEADING}>One moment a day</h2>
-          {/* What it is for */}
-          <p className="mt-2 max-w-[52ch] text-lede">{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Today\u2019s moment is saved. When someone asks what you have been up to, it will be there." : "What\u2019s one thing from today worth telling? Saying it now means you will have it when someone asks. It stays on this phone."}</p>
+          {/* Today's state, in a few words */}
+          <p className="mt-2 text-ink-muted">{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Today\u2019s moment is saved." : "One thing from today worth telling."}</p>
           {/* Record one */}
           <p className="mt-2"><Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className={TEXT_LINK}>{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Add another moment" : "Record today\u2019s moment"}</Link></p>
           {/* The latest few, in the words they were said */}
@@ -157,16 +152,14 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         <ol className="mt-3 divide-y divide-rule border-y border-rule">
           {/* Each beat */}
           {unit.beats.map((beat, index) => (
-            // One beat: its name, what it means, and why it works
+            // One beat: its name and what it means (why it works is in the lessons, decision 63)
             <li key={beat.id} className="flex gap-4 py-3">
               {/* Its number */}
               <span aria-hidden="true" className="w-5 flex-none font-display text-cue text-accent">{index + 1}</span>
               {/* Its words */}
               <span>
                 {/* Name and reminder */}
-                <span className="block"><strong className="font-display text-cue font-normal">{beat.name}.</strong> {beat.reminder}</span>
-                {/* Why it works */}
-                <span className="mt-1 block text-footnote text-ink-muted">{beat.why}</span>
+                <span className="block"><strong className="font-display text-xl font-normal">{beat.name}.</strong> {beat.reminder}</span>
               </span>
             </li>
           ))}
@@ -189,14 +182,12 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
               <Link href={answerHref(lesson.id)} aria-label={`${unit.name} lesson ${lesson.number}: ${lesson.title}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
                 {/* Its mark on the path */}
                 <PathMark mark={marks[index] ?? "open"} number={lesson.number} />
-                {/* Title and idea */}
+                {/* Title (the idea is in the lesson itself, decision 63) */}
                 <span className="min-w-0 flex-1">
                   {/* "Next" above the lesson to do next */}
                   {marks[index] === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
                   {/* Title */}
-                  <span className="block font-display text-cue">{lesson.title}</span>
-                  {/* The idea's first sentence */}
-                  <span className="block text-footnote text-ink-muted">{lesson.idea.split(". ")[0]?.replace(/\.$/, "")}.</span>
+                  <span className="block font-display text-xl leading-tight">{lesson.title}</span>
                 </span>
                 {/* The chevron */}
                 <CaretRightIcon aria-hidden="true" className="size-5 flex-none self-center text-ink-muted" />

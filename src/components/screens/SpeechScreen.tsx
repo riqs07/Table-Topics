@@ -93,7 +93,7 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
       {/* Who, where and when */}
       <p className="mt-6 text-lede">{speech.speaker}. {speech.occasion}.</p>
       {/* How long, in how many parts, and how far along */}
-      <p className="mt-2 text-footnote text-ink-muted">{speech.parts.length === 1 ? `One part, ${total}.` : `${speech.parts.length} parts, ${total} in all.`} {done === 0 ? "Read a part at a time, in order." : done === speech.parts.length ? "You have read the whole speech." : `You have read ${done} of ${speech.parts.length}.`}</p>
+      <p className="mt-2 text-footnote text-ink-muted">{speech.parts.length === 1 ? `One part, ${total}` : `${speech.parts.length} parts, ${total}`}{done === 0 ? "" : done === speech.parts.length ? " · all read" : ` · ${done} read`}</p>
       {/* The parts */}
       <ol aria-label="Parts" className="mt-6">
         {/* Each part */}

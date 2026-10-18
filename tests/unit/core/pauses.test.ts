@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the pause finder being checked
-import { fadingEnds, findPauses, leadingSilenceSeconds, pauseDrillSentence, pauseSentence } from "@/core/pauses";
+import { fadingEnds, findPauses, leadingSilenceSeconds, pauseDrillSentence } from "@/core/pauses";
 
 // A run of the same loudness reading, one per tenth of a second
 const run = (level: number, ticks: number) => Array<number>(ticks).fill(level);
@@ -33,14 +33,6 @@ describe("findPauses", () => {
   });
 });
 
-// Group the checks about the pause sentence
-describe("pauseSentence", () => {
-  // Plain wording, singular and plural
-  it("says the pauses plainly", () => {
-    // Confirm both forms
-    expect([pauseSentence({ count: 1, averageSeconds: 1, longestSeconds: 1, speakingPercent: 81 }), pauseSentence({ count: 6, averageSeconds: 1.25, longestSeconds: 3, speakingPercent: 74 })]).toEqual(["1 pause, 1.0 seconds long; speaking 81% of the time.", "6 pauses, 1.3 seconds on average; speaking 74% of the time."]);
-  });
-
 // Group the checks about the pause drill sentence
 describe("pauseDrillSentence", () => {
   // The pauses taken against the marks in the passage
@@ -65,5 +57,4 @@ describe("opening silence and fading endings", () => {
     // Confirm two judged, one faded
     expect(fadingEnds(levels, 100)).toEqual({ stretches: 2, faded: 1 });
   });
-});
 });

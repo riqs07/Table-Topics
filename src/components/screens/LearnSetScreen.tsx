@@ -15,7 +15,7 @@ import { LEARN_SET_ICONS } from "@/components/script/learnSetIcons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the cards
-import { EVIDENCE_LABELS, LEARN_CARDS, LEARN_SETS } from "@/content/learn";
+import { LEARN_CARDS, LEARN_SETS } from "@/content/learn";
 // Load the rules
 import { setProgress, type LearnProgress } from "@/core/learn";
 // Load progress
@@ -82,8 +82,8 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
             <div className="min-w-0 flex-1">
               {/* Name */}
               <h1 className="font-display text-statement tracking-tight">{set.name}</h1>
-              {/* What it covers */}
-              <p className="text-footnote text-ink-muted">{set.blurb} {progress && `${setProgress(set.id, progress).read} of ${cards.length} read.`}</p>
+              {/* How far through, or how many cards (the blurb is on the set's card on Learn) */}
+              <p className="text-footnote text-ink-muted">{progress && setProgress(set.id, progress).read > 0 ? `${setProgress(set.id, progress).read} of ${cards.length} read` : `${cards.length} cards`}</p>
             </div>
           </div>
           {/* The cards, as a path */}
@@ -101,14 +101,12 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
                   <Link href={`/learn/card?id=${card.id}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
                     {/* Its mark */}
                     <PathMark mark={mark} number={index + 1} />
-                    {/* Its title, kind and evidence */}
+                    {/* Its title (the kind and evidence show on the card itself, decision 63) */}
                     <span className="min-w-0 flex-1">
                       {/* Next */}
                       {mark === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
                       {/* Title */}
                       <span className="block text-lede">{card.title}</span>
-                      {/* Kind and evidence */}
-                      <span className="block text-footnote text-ink-muted">{card.kind === "myth-or-fact" ? "Myth or fact" : card.kind === "try-it" ? "Try it" : "Explainer"} · {EVIDENCE_LABELS[card.evidence]}{card.scenario ? " · with a scenario" : ""}</span>
                     </span>
                     {/* The chevron */}
                     <CaretRightIcon aria-hidden="true" className="size-5 flex-none self-center text-ink-muted" />

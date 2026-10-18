@@ -351,16 +351,16 @@ describe("SessionScreen", () => {
     expect([screen.getByText("seven").getAttribute("data-read"), screen.getByText("fathers").getAttribute("data-read")]).toEqual(["false", "not-reached"]);
   });
 
-  // Sessions with loudness readings say how the pauses went
-  it("describes the pauses when loudness was recorded", async () => {
+  // Sessions with loudness readings count the pauses in the numbers row (no longer a sentence, decision 63)
+  it("counts the pauses when loudness was recorded", async () => {
     // Speech, a one-second pause, speech
     const loudness = [...Array<number>(20).fill(0.3), ...Array<number>(10).fill(0.01), ...Array<number>(20).fill(0.3)];
     // A session with those readings
     const session = makeSession({ id: "p", loudness, feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="p" repository={await repositoryWith(session)} now={NOW} />);
-    // Confirm the pause sentence
-    expect(await screen.findByText("1 pause, 1.0 seconds long; speaking 80% of the time.")).toBeTruthy();
+    // Confirm the count, and no sentence
+    expect([(await screen.findByText(/^pauses?$/)).previousElementSibling?.textContent, screen.queryByText(/of the time/)]).toEqual(["1", null]);
   });
 
   // A pause drill compares the pauses taken with the marks in the passage
@@ -636,7 +636,7 @@ describe("SessionScreen", () => {
       // Draw the screen
       render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
       // Confirm the note, no box
-      expect([!!(await screen.findByText(/This is your first recording, so it is kept/)), screen.queryByLabelText(/Keep this recording/)]).toEqual([true, null]);
+      expect([!!(await screen.findByText(/Your first recording is kept/)), screen.queryByLabelText(/Keep this recording/)]).toEqual([true, null]);
       // Skip
       await userEvent.click(screen.getByRole("button", { name: "Skip this time" }));
       // Wait for the feedback

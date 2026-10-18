@@ -59,7 +59,7 @@ export function BookendsScreen(props: ScreenProps) {
       <Masthead title="Openings and closings" section="practice" />
 
       {/* Why this exists */}
-      <p className="mt-6 max-w-[52ch] text-lede">An audience decides in the first seconds whether to listen, and remembers the last thing you say. Practise just those parts: 45 seconds, then stop.</p>
+      <p className="mt-6 max-w-[52ch] text-lede">The first and last 45 seconds of a talk, on their own.</p>
 
       {/* Today's pair */}
       {pair && (

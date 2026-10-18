@@ -297,14 +297,14 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             {/* One option per choice */}
             {RETENTION_CHOICES.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
           </select>{" "}
-          sessions. Your first recording is always kept. Transcripts and feedback are never removed.
+          sessions. Your first recording, and every transcript and note, are always kept.
         </p>
       </Section>
 
       {/* Coach feedback (drawn in the browser only, where the saved passphrase can be read) */}
       {today && <Section title="Coach (advanced)">
         {/* What works without it */}
-        <p className="text-ink-muted">Without the coach, each session picks one change from your numbers. The coach adds a written note, and needs a passphrase set up on the server.</p>
+        <p className="text-ink-muted">Adds a written note to each session. Needs a passphrase set up on the server.</p>
         {/* The setup, folded away until wanted */}
         <details className="mt-3">
           {/* Open it */}
@@ -346,7 +346,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Export and import */}
       <Section title="Your data">
         {/* Why to export */}
-        <p className="text-ink-muted">Everything lives on this device. Browsers can clear saved data, so keep a copy now and then.</p>
+        <p className="text-ink-muted">Everything stays on this device; your browser’s speech service (Google in Chrome, Apple in Safari) turns speech into text. Keep a copy now and then.</p>
         {/* Export */}
         <button type="button" onClick={exportData} className={`${TEXT_LINK} mt-3`}>Export my data</button>
         {/* Import */}

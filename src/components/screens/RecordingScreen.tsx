@@ -19,8 +19,6 @@ import { BOOKENDS, STRUCTURE_HINT, findPrompt } from "@/content/prompts";
 import { findReading } from "@/content/readings";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
-// Load the plain descriptions of each mode
-import { modeForSession } from "@/content/modes";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the live reading tools
@@ -882,8 +880,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const unit = smallTalk && smallTalk.unit !== "answering" ? findUnit(smallTalk.unit) : null;
   // A story to listen to is not shown before answering, except in a lesson (you listen the way you would in person)
   const storyHidden = smallTalk?.unit === "listening" && !smallTalk.lesson;
-  // How this kind of session works, from the catalogue (asking and listening say what you do in them)
-  const howItWorks = unit ? { youDo: unit.youDo, youGet: "Which of the four you did, and one change." } : modeForSession(mode);
   // The page title for this kind of session
   const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : "Recording";
   // The keyboard hint for this stage
@@ -907,7 +903,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* What it is for */}
           <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">VoiceLab listens through your microphone.</h1>
           {/* Where recordings go */}
-          <p className="mt-4 max-w-[48ch] text-lede">Your recordings stay on this device. Your browser will ask next: choose Allow.</p>
+          <p className="mt-4 max-w-[48ch] text-lede">Recordings stay on this device. Your browser turns speech into text (Google in Chrome, Apple in Safari). Choose Allow next.</p>
           {/* Back without asking (just under the words, so the action band never covers it) */}
           <p className="mt-4">
             <button type="button" onClick={() => setStage("ready")} className={QUIET}>Not now</button>
@@ -1022,7 +1018,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 </div>
               )}
               {/* For a pause drill, how it works */}
-              {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Read the passage aloud and pause for about a second at each ‖. Take your time.</p>}
+              {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Pause for a second at each ‖.</p>}
               {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
               {!textHidden && (
 <ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
@@ -1121,26 +1117,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
           {/* Saving failed */}
           {stage === "save-failed" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
-          {/* Before starting: how this kind of session works and what comes afterwards (after the task, so a phone shows the task first) */}
-          {howItWorks && !busy && !smallTalk?.lesson && !showBriefing && (
-            <div role="note" aria-label="How this works" className="mt-8 max-w-[52ch] border-t border-rule pt-3 text-footnote text-ink-muted">
-              {/* Small heading */}
-              <p className="font-medium text-ink">How this works</p>
-              {/* What you do */}
-              <p className="mt-1 text-ink">{howItWorks.youDo}</p>
-              {/* What you get */}
-              <p className="mt-1">Afterwards: {howItWorks.youGet.charAt(0).toLowerCase() + howItWorks.youGet.slice(1)}</p>
-            </div>
-          )}
           {/* Push the footer down */}
           <div className="flex-1" />
 
-          {/* Before starting: where the words go */}
-          {(stage === "ready" || stage === "nothing-heard" || stage === "too-short") && (
-            <Footnote>
-              <span>Your words are turned into text by your browser’s speech service (Google in Chrome, Apple in Safari). The recording itself stays on this device.</span>
-            </Footnote>
-          )}
           {/* A way home when stuck on a problem */}
           {problem && (
             <Footnote>

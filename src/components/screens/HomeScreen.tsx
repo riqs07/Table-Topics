@@ -170,8 +170,8 @@ export function HomeScreen(props: ScreenProps) {
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Context: streak and focus (above the step on a phone, in the margin on a computer) */}
         <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
-          {/* Streak, or a first-time line */}
-          {data && !data.showWelcome && <p>{data.sessionCount === 0 && data.streak === 0 ? "First time here? Start with the step below." : streakSentence(data.streak)}</p>}
+          {/* The streak, once there is one (nothing on a first day: the steps speak for themselves) */}
+          {data && !data.showWelcome && !(data.sessionCount === 0 && data.streak === 0) && <p>{streakSentence(data.streak)}</p>}
           {/* The last seven days as squares, filled where there was practice */}
           {data && !data.showWelcome && (data.sessionCount > 0 || data.strip.some((day) => day.practised)) && (
             <ul aria-label="The last seven days" className="mt-3 mb-4 flex gap-1.5">
@@ -220,7 +220,7 @@ export function HomeScreen(props: ScreenProps) {
           {plan && (
             <section aria-label="Today's practice" className="mt-8 md:mt-0">
               {/* What it is and how long */}
-              <p className="text-footnote text-ink-muted">Today’s practice · about {planMinutes(plan.steps)} minutes with listening back</p>
+              <p className="text-footnote text-ink-muted">Today · about {planMinutes(plan.steps)} min</p>
               {/* Where things stand, set like a headline */}
               <h1 className="mt-2 font-display text-prompt tracking-tight md:text-prompt-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
               {/* Once done: the time spoken today, and which day of the week this is */}

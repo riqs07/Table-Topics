@@ -44,7 +44,7 @@ import { markFillers } from "@/core/fillers";
 // Load the then-and-now helpers
 import { earlierTake, practiceDay } from "@/core/compare";
 // Load the pause finder
-import { findPauses, pauseDrillSentence, pauseSentence } from "@/core/pauses";
+import { findPauses, pauseDrillSentence } from "@/core/pauses";
 // Load the reading check
 import { alignReading, countPauseMarks, type ReadingCheck } from "@/core/readAlong";
 // Load where each kind of session belongs
@@ -435,10 +435,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this session."}</p>}
           {/* The numbers together */}
           {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} />}
-          {/* When there is no number, say why */}
-          {!reading && !bookendOutcome && !smallTalk && !measureFor(session.focus) && <p className="mt-2 text-footnote text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
-          {/* How the pauses went, when loudness was recorded */}
-          {pauses && !quick && <p className="mt-2 text-footnote text-ink-muted">{pauseSentence(pauses)}</p>}
+          {/* (The pause count is in the numbers row; the longer pause sentence and the "no number measures this" line were cut, decision 63) */}
           {/* Which pause marks had a pause */}
           {marks && <p className="mt-2 text-footnote text-ink-muted">{marks}</p>}
           {/* How the pace changed */}

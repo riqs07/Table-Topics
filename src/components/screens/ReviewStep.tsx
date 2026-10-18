@@ -176,7 +176,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
       {/* The ask */}
       <h1 className="mt-6 font-display text-statement tracking-tight md:mt-0">Listen back first.</h1>
       {/* Why */}
-      <p className="mt-3 max-w-[52ch] text-lede">{smallTalk ? "Hear it the way they would. Listen for the four beats, and tick the ones you heard yourself do. Then the notes open." : plan ? "Hear it the way your audience did, and note one thing that worked and one thing you would change. Move on whenever you are ready." : "Hear it the way your audience did. Then write one thing that worked and one thing you would change. The numbers and the coach’s notes open after."}</p>
+      <p className="mt-3 max-w-[52ch] text-lede">{smallTalk ? "Tick the beats you heard yourself do." : "Note one thing that worked and one to change."}</p>
       {/* The player, or why there is none */}
       {audio.url ? (
         <div className="mt-6">
@@ -184,7 +184,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
           <Player src={audio.url} label="Your recording" name="your recording" durationSec={session.durationSec} speeds={session.durationSec > OFFER_SPEED_AFTER} onAudio={(found) => { element.current = found; }} onTime={follow} />
           {/* How much is left to hear */}
           <p role="status" className="mt-2 text-footnote text-ink-muted">
-            {listened ? "Heard. Now your notes." : `Heard ${formatClock(heard.filter(Boolean).length)} of ${formatClock(session.durationSec)}.${plan ? "" : ` ${long ? "Listen to all of it, or to its first and last 45 seconds." : "Listen to all of it to open the feedback."}`}`}
+            {listened ? "Heard. Now your notes." : `Heard ${formatClock(heard.filter(Boolean).length)} of ${formatClock(session.durationSec)}.${plan ? "" : ` ${long ? "Hear it all, or its first and last 45 seconds." : "Hear it all to go on."}`}`}
           </p>
         </div>
       ) : (
@@ -251,7 +251,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
       {/* Keep the recording to compare later, or let it go once the notes are saved */}
       {session.audioKey && (session.isBaseline ? (
         // The first recording stays, as the one progress is measured against
-        <p className="mt-6 text-footnote text-ink-muted">This is your first recording, so it is kept to compare with later.</p>
+        <p className="mt-6 text-footnote text-ink-muted">Your first recording is kept to compare with later.</p>
       ) : (
         <label className="mt-6 flex min-h-11 items-start gap-3">
           {/* The choice */}
@@ -261,7 +261,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
             {/* The choice in words */}
             Keep this recording to compare with later tries.
             {/* What happens otherwise */}
-            <span className="block text-footnote text-ink-muted">Otherwise it is deleted from this device when you save your notes. The transcript, numbers and notes stay.</span>
+            <span className="block text-footnote text-ink-muted">Otherwise only the words and your notes are kept.</span>
           </span>
         </label>
       ))}
