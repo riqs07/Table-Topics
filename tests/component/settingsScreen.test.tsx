@@ -35,6 +35,22 @@ async function repositoryWithOneSession() {
 
 // Group the checks about the Settings screen
 describe("SettingsScreen", () => {
+  // Exporting saves a file and remembers the day, which Settings shows (decision 64)
+  it("says when the last copy was saved", async () => {
+    // Start from nothing saved
+    localStorage.clear();
+    // Stand in for the browser's file pieces
+    Object.assign(URL, { createObjectURL: () => "blob:copy", revokeObjectURL: () => undefined });
+    // Draw the screen
+    render(<SettingsScreen repository={await repositoryWithOneSession()} now={NOW} />);
+    // Before: no copy yet
+    const before = !!(await screen.findByText(/No copy saved yet/));
+    // Export
+    await userEvent.click(screen.getByRole("button", { name: "Export my data" }));
+    // Confirm the words change and the day is remembered
+    expect([before, !!(await screen.findByText(/Last copy saved today/)), localStorage.getItem("voicelab-last-export")]).toEqual([true, true, "2026-10-13"]);
+  });
+
   // Light or dark: applied straight away, remembered, and back to the device's choice
   it("switches between light, dark and the device's choice", async () => {
     // Start from nothing saved

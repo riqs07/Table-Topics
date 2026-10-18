@@ -57,6 +57,12 @@ import { missionDays, missionToday } from "@/core/missions";
 import type { MissionRecord } from "@/data/records";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
+// Load the reminder to keep practice safe
+import { SafetyNote } from "@/components/script/SafetyNote";
+// Load the rule for which reminder to show
+import { safetyNudge, type SafetyNudge } from "@/core/storageSafety";
+// Load the browser facts behind it, and the way to put it aside
+import { markNudgeDismissed, readSafetyFacts } from "@/data/storageSafety";
 
 // Everything Home shows that comes from saved data
 interface HomeData {
@@ -78,6 +84,8 @@ interface HomeData {
   celebrate: boolean;
   // Every mission try, oldest first
   missions: MissionRecord[];
+  // The one reminder to keep practice safe, if any (decision 64)
+  nudge: SafetyNudge;
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
@@ -114,6 +122,8 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     missions: settings.missions ?? [],
     // The moment, once a day, when every step is done
     celebrate: plan.done.length > 0 && plan.done.every(Boolean) && firstFinishToday(dayKey(now)),
+    // The one reminder to keep practice safe, if any
+    nudge: safetyNudge(await readSafetyFacts(sessions.length, now)),
   };
 }
 
@@ -261,6 +271,13 @@ export function HomeScreen(props: ScreenProps) {
               {/* Once done, a word on what is next */}
               {nextIndex === -1 && <p className="mt-3 max-w-[52ch] text-ink-muted">A new practice is ready tomorrow.</p>}
             </section>
+          )}
+
+          {/* A reminder to keep practice safe, when one is due (decision 64) */}
+          {data?.nudge && today && (
+            <div className="mt-8">
+              <SafetyNote nudge={data.nudge} onDismiss={() => { markNudgeDismissed(today); setData({ ...data, nudge: null }); }} />
+            </div>
           )}
 
           {/* Today's mission: a small real-world try, under the steps (the task and a link; the prediction lives on Connect, decision 62) */}

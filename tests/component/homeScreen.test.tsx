@@ -206,4 +206,24 @@ describe("HomeScreen", () => {
     // Confirm seven days, yesterday practised, today not yet
     expect([strip.getAllByRole("listitem").length, !!strip.getByLabelText("Monday: practised"), !!strip.getByLabelText("Tuesday, today: not yet")]).toEqual([7, true, true]);
   });
+
+  // With plenty of practice and no copy saved, Today asks for one; "Not now" puts it aside and remembers (decision 64)
+  it("reminds to save a copy, and can put the reminder aside", async () => {
+    // The welcome was already skipped
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // A repository with ten sessions over ten days
+    const repository = createRepository(new MemoryStore());
+    // Save them
+    for (let day = 1; day <= 10; day += 1) await repository.saveSession(makeSession({ id: `s${day}`, createdAt: new Date(2026, 8, day, 9).toISOString() }));
+    // Draw Today
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The reminder
+    const note = await screen.findByRole("region", { name: "Keep your practice safe" });
+    // Where its link goes
+    const link = within(note).getByRole("link", { name: "Save a copy" }).getAttribute("href");
+    // Put it aside
+    await userEvent.click(within(note).getByRole("button", { name: "Not now" }));
+    // Confirm the link, that it is gone, and that the day was remembered
+    expect([link, screen.queryByRole("region", { name: "Keep your practice safe" }), localStorage.getItem("voicelab-safety-dismissed")]).toEqual(["/settings#your-data", null, "2026-10-13"]);
+  });
 });

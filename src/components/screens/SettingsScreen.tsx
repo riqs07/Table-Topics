@@ -31,6 +31,10 @@ import { MIN_PASSPHRASE_LENGTH } from "@/config/headers";
 import { passphraseFingerprint } from "@/core/passphraseCheck";
 // Load the sentence for send results
 import { sendResultMessage } from "@/core/feedbackMessages";
+// Load what is known about keeping the data safe
+import { markExported, readSafetyFacts } from "@/data/storageSafety";
+// Load the words for the last copy
+import { lastCopyText, type SafetyFacts } from "@/core/storageSafety";
 // Load the light and dark choice
 import { COLOR_MODES, readColorMode, saveColorMode, type ColorMode } from "@/data/colorMode";
 // Load the shared button looks
@@ -75,10 +79,10 @@ function ColorModeChoice() {
 }
 
 // A section of the settings page: a section heading and its content
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   // Ruled block with a run-in heading
   return (
-    <section className="mt-8 border-t border-rule pt-4 text-lede">
+    <section id={id} className="mt-8 scroll-mt-6 border-t border-rule pt-4 text-lede">
       {/* Heading */}
       <h2 className={SECTION_HEADING}>{title}</h2>
       {/* Content */}
@@ -121,6 +125,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   }, []);
   // Whether the delete confirmation is showing
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // How safe the data is from the browser clearing it, and when a copy was last saved (null until read)
+  const [safety, setSafety] = useState<SafetyFacts | null>(null);
 
   // Load the settings once the date is known
   useEffect(() => {
@@ -132,6 +138,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     repo.getSettings(today).then((loaded) => {
       // Keep them only if the screen is still open
       if (!cancelled) setSettings(loaded);
+    });
+    // Read how safe the data is from the browser clearing it
+    void readSafetyFacts(0, today).then((facts) => {
+      // Keep them only if the screen is still open
+      if (!cancelled) setSafety(facts);
     });
     // Count sessions waiting for feedback
     repo.listSessions().then((sessions) => {
@@ -193,6 +204,10 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     link.click();
     // Free the file's memory
     URL.revokeObjectURL(url);
+    // Remember when the copy was saved, for the reminder on Today
+    markExported(today);
+    // Show the new date here too
+    setSafety(await readSafetyFacts(0, today));
     // Say what happened
     setMessage(`Exported ${count(file.sessions.length, "session")}. Recordings are not included.`);
   }
@@ -344,9 +359,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       </Section>}
 
       {/* Export and import */}
-      <Section title="Your data">
-        {/* Why to export */}
-        <p className="text-ink-muted">Everything stays on this device; your browser’s speech service (Google in Chrome, Apple in Safari) turns speech into text. Keep a copy now and then.</p>
+      <Section title="Your data" id="your-data">
+        {/* Where it lives */}
+        <p className="text-ink-muted">Everything stays on this device; your browser’s speech service (Google in Chrome, Apple in Safari) turns speech into text.</p>
+        {/* How safe it is from the browser clearing it, and when a copy was last saved (drawn in the browser only) */}
+        {today && safety && <p className="mt-2 text-footnote text-ink-muted">{safety.persisted ? "Protected from being cleared by the browser." : safety.iosSafari && !safety.installed ? "Safari may clear this if VoiceLab is not used for a while. Add it to your Home Screen to keep it." : "The browser may clear this if space runs low."} {lastCopyText(safety.daysSinceExport)}.</p>}
         {/* Export */}
         <button type="button" onClick={exportData} className={`${TEXT_LINK} mt-3`}>Export my data</button>
         {/* Import */}

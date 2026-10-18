@@ -49,6 +49,8 @@ import { markMicExplained, readMicExplained } from "@/data/micExplained";
 import { loadDailyPlan } from "@/data/dailyPlan";
 // Load the shared button looks
 import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
+// Load the request that keeps saved practice from being cleared
+import { requestPersistentStorage } from "@/data/storageSafety";
 
 // What the screen is given
 interface RecordingScreenProps {
@@ -582,6 +584,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       }
       // Save the session with its audio
       const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
+      // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
+      void requestPersistentStorage();
       // A moment note goes straight back to the Small talk page, where it is listed; anything else opens its page (feedback is requested there)
       navigate(mode === "moment" ? "/small-talk/unit?id=answering#moments" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`);
     } catch (error) {
