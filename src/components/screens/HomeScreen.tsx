@@ -50,6 +50,11 @@ const WELCOME_CHOICES: ReadonlyArray<{ text: string; href: string | null }> = [
 ];
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
+// Load the mission card and rules
+import { MissionCard } from "@/components/script/MissionCard";
+import { missionDays, missionToday } from "@/core/missions";
+// Load the record type for mission tries
+import type { MissionRecord } from "@/data/records";
 
 // Everything Home shows that comes from saved data
 interface HomeData {
@@ -69,6 +74,8 @@ interface HomeData {
   weekLine: string;
   // Whether to play the small completion moment (the first time Today shows the day done)
   celebrate: boolean;
+  // Every mission try, oldest first
+  missions: MissionRecord[];
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
@@ -90,9 +97,9 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     // How many sessions there are
     sessionCount: sessions.length,
     // Consecutive days with a session
-    streak: currentStreak(sessions.map((session) => new Date(session.createdAt)), now),
+    streak: currentStreak([...sessions.map((session) => new Date(session.createdAt)), ...missionDays(settings.missions ?? [])], now),
     // The last seven days
-    strip: weekStrip(sessions.map((session) => new Date(session.createdAt)), now),
+    strip: weekStrip([...sessions.map((session) => new Date(session.createdAt)), ...missionDays(settings.missions ?? [])], now),
     // This week's focus
     focus: active.focus,
     // A first visit: nothing saved, and the welcome not yet answered in this browser
@@ -101,6 +108,8 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     plan,
     // The days practised this week
     weekLine: weekSentence(sessions, now),
+    // Mission tries
+    missions: settings.missions ?? [],
     // The moment, once a day, when every step is done
     celebrate: plan.done.length > 0 && plan.done.every(Boolean) && firstFinishToday(dayKey(now)),
   };
@@ -160,9 +169,9 @@ export function HomeScreen(props: ScreenProps) {
         {/* Context: streak and focus (above the step on a phone, in the margin on a computer) */}
         <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
           {/* Streak, or a first-time line */}
-          {data && !data.showWelcome && <p>{data.sessionCount === 0 ? "First time here? Start with the step below." : streakSentence(data.streak)}</p>}
+          {data && !data.showWelcome && <p>{data.sessionCount === 0 && data.streak === 0 ? "First time here? Start with the step below." : streakSentence(data.streak)}</p>}
           {/* The last seven days as squares, filled where there was practice */}
-          {data && !data.showWelcome && data.sessionCount > 0 && (
+          {data && !data.showWelcome && (data.sessionCount > 0 || data.strip.some((day) => day.practised)) && (
             <ul aria-label="The last seven days" className="mt-3 mb-4 flex gap-1.5">
               {/* Each day */}
               {data.strip.map((day) => (
@@ -250,6 +259,13 @@ export function HomeScreen(props: ScreenProps) {
               {/* Once done, a word on what is next */}
               {nextIndex === -1 && <p className="mt-3 max-w-[52ch] italic text-ink-muted">A new practice is ready tomorrow.</p>}
             </section>
+          )}
+
+          {/* Today's mission: a small real-world try, under the steps */}
+          {plan && data && today && (
+            <div className="mt-8">
+              <MissionCard key={data.missions.length} repo={repo} now={today} state={missionToday(data.missions, today)} onChange={(missions) => setData({ ...data, missions })} />
+            </div>
           )}
 
           {/* Once done: more to do, for anyone who wants to keep going */}

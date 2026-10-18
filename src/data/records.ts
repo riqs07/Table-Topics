@@ -154,6 +154,30 @@ export interface LearnCardProgress {
   recalledAt?: string;
 }
 
+// One try at a mission: accepted (with a prediction) or skipped for a day, then debriefed
+export interface MissionRecord {
+  // Unique id for this try
+  id: string;
+  // The mission (ids from src/content/missions.ts)
+  missionId: string;
+  // The calendar day it was offered and answered ("2026-10-18")
+  day: string;
+  // Accepted and waiting for a debrief, skipped for the day, or debriefed
+  status: "accepted" | "skipped" | "done";
+  // How the user expected it to go, 1 (badly) to 5 (really well); null when skipped
+  predicted: number | null;
+  // Whether they tried it (null until debriefed)
+  tried: boolean | null;
+  // How it went, 1 to 5 (null until debriefed, or when not tried)
+  outcome: number | null;
+  // What they noticed, in their own words (typed or said; kept on the device)
+  note: string;
+  // Whether it felt like too much, so the next one steps back
+  tooMuch: boolean;
+  // When it was debriefed (ISO text)
+  debriefedAt: string | null;
+}
+
 // The user's settings (one record)
 export interface SettingsRecord {
   // Position in the v1 weekly focus list
@@ -166,6 +190,8 @@ export interface SettingsRecord {
   shareNotes?: boolean;
   // Learn: each card's reading and recall progress, by card id (missing until the first card is read)
   learn?: Record<string, LearnCardProgress>;
+  // Missions: every try, oldest first (missing until the first mission is answered)
+  missions?: MissionRecord[];
 }
 
 // What each stored collection holds

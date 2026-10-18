@@ -471,3 +471,35 @@ test("Learn: read a card one screen at a time and answer its question", async ({
   // The body-language set shows one read
   await expect(page.getByRole("region", { name: /Body language/ })).toContainText("1 of");
 });
+
+// A mission: accept it on Today with a prediction, debrief it, and see the outcome against the prediction
+test("Mission: predict, try, debrief, compare", async ({ page }) => {
+  // Start at Today
+  await page.goto("/");
+  // Skip the welcome question
+  await page.getByRole("link", { name: "Skip" }).click();
+  // Back to Today from the first step
+  await page.getByRole("link", { name: "Close, back to Today" }).click();
+  // Today's mission
+  const card = page.getByRole("region", { name: "Today’s mission" });
+  // Predict "Awkward"
+  await card.getByRole("button", { name: /^2/ }).click();
+  // Accept
+  await card.getByRole("button", { name: "I’ll try it" }).click();
+  // Debrief
+  await page.getByRole("link", { name: "How did it go?" }).click();
+  // Tried
+  await page.getByRole("button", { name: "Yes" }).click();
+  // It went well
+  await page.getByRole("group", { name: "How did it go?" }).getByRole("button", { name: /^4/ }).click();
+  // A note
+  await page.getByLabel(/What did you notice/).fill("She lit up talking about her garden");
+  // Save
+  await page.getByRole("button", { name: "Save and compare" }).click();
+  // The comparison
+  await expect(page.getByRole("status")).toContainText("You expected 2 of 5. It went 4 of 5.");
+  // Back to Today
+  await page.locator("[data-action-band]").click();
+  // The card says how it went
+  await expect(page.getByRole("region", { name: "Today’s mission" })).toContainText("Better than you feared");
+});

@@ -32,6 +32,8 @@ export const ROUTES: ReadonlyArray<string> = [
   "/learn",
   "/learn/card?id=body-93",
   "/learn/review",
+  // A mission debrief that does not exist (the page explains)
+  "/mission?id=missing",
   // A Table Topic
   "/session?mode=talk&prompt=t001",
   // A prepared response

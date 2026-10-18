@@ -5,6 +5,9 @@
 import { useEffect, useState } from "react";
 // Load the small-talk questions
 import { findSmallTalk } from "@/content/smallTalk";
+// Load the missions and their rules
+import { findMission } from "@/content/missions";
+import { betterThanFeared, triedMissions } from "@/core/missions";
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
 // Load Next.js's link component
@@ -26,7 +29,7 @@ import { dayLabel, formatRate, progressSentence } from "@/core/copy";
 // Load the progress calculations
 import { baselineProgress, historyRows, trendSeries, type HistoryRow } from "@/core/progress";
 // Load the session record type
-import type { SessionRecord } from "@/data/records";
+import type { MissionRecord, SessionRecord } from "@/data/records";
 
 // Size of the trend drawing (it stretches to fit its column)
 const CHART = { width: 300, height: 80 };
@@ -133,6 +136,8 @@ export function HistoryScreen(props: ScreenProps) {
   const [sessions, setSessions] = useState<SessionRecord[] | null>(null);
   // Titles of the user's saved talks, by id, for naming rehearsals
   const [talkTitles, setTalkTitles] = useState<ReadonlyMap<string, string>>(new Map());
+  // Mission tries, oldest first
+  const [missions, setMissions] = useState<MissionRecord[]>([]);
 
   // Load the sessions once the date is known
   useEffect(() => {
@@ -144,6 +149,11 @@ export function HistoryScreen(props: ScreenProps) {
     repo.listSessions().then((loaded) => {
       // Keep the speech practice only, if the screen is still open (small-talk answers are listed on their own page)
       if (!cancelled) setSessions(practiceSessions(loaded));
+    });
+    // Load the mission tries
+    repo.getSettings(today).then((settings) => {
+      // Keep them if the screen is still open
+      if (!cancelled) setMissions(settings.missions ?? []);
     });
     // Load the talk titles too
     repo.listTalks().then((talks) => {
@@ -205,6 +215,31 @@ export function HistoryScreen(props: ScreenProps) {
             {rows.map((row) => <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} />)}
           </ul>
         </div>
+      )}
+
+      {/* Real conversations: missions tried, against what was expected */}
+      {today && triedMissions(missions).length > 0 && (
+        <section aria-labelledby="real-conversations" className="mt-10 md:max-w-2xl">
+          {/* Run-in heading */}
+          <h2 id="real-conversations" className="italic">Real conversations</h2>
+          {/* The headline */}
+          <p className="mt-2 text-lede">{triedMissions(missions).length} {triedMissions(missions).length === 1 ? "mission" : "missions"} tried; {betterThanFeared(missions).better} went better than you expected.</p>
+          {/* Each try */}
+          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+            {/* One try */}
+            {triedMissions(missions).map((record) => (
+              // The task, the day, and expected against actual
+              <li key={record.id} className="py-3">
+                {/* The day and the numbers */}
+                <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)} · expected {record.predicted} of 5, went {record.outcome} of 5</span>
+                {/* The task */}
+                <span className="block">{findMission(record.missionId)?.task ?? "A mission"}</span>
+                {/* What they noticed */}
+                {record.note && <span className="block text-footnote text-ink-muted">“{record.note}”</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </main>
   );

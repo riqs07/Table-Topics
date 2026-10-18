@@ -70,6 +70,7 @@ Talks are stored in their own collection (added to existing databases by raising
 | audioRetention | Number of recent sessions whose audio is kept (default 30) |
 | shareNotes | Whether the coach may read the user's notes after listening back (decision 31). Off unless chosen; missing on older settings |
 | learn | Learn progress by card id (decision 45): when the card was first read, how many recall answers in a row were right (`box`), when its recall question is next due, how the last one went, and when it was last answered (`recalledAt`, added for the daily review step, decision 50). Missing until the first card is read. Kept with the settings so it travels in exports |
+| missions | Every mission try, oldest first (decision 52): the mission id, the day, the status (accepted, skipped or done), the prediction (1 to 5), whether it was tried, how it went (1 to 5), what the user noticed (text only, never sent anywhere), whether it felt like too much, and when it was debriefed. Missing until the first mission is answered |
 
 ### Prompts
 

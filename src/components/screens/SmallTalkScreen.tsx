@@ -24,11 +24,17 @@ import { lessonPath } from "@/core/lessonPath";
 import { dayLabel } from "@/core/copy";
 // Load the calendar-day key
 import { dayKey } from "@/core/dates";
-// Load the record type
-import type { SessionRecord } from "@/data/records";
+// Load the record types
+import type { MissionRecord, SessionRecord } from "@/data/records";
+// Load the mission card, missions and rules
+import { MissionCard } from "@/components/script/MissionCard";
+import { findMission } from "@/content/missions";
+import { betterThanFeared, missionToday, triedMissions } from "@/core/missions";
 
 // How many recent answers to list
 const RECENT_ANSWERS = 10;
+// How many recent missions to list
+const RECENT_MISSIONS = 5;
 // How many recent moments to list
 const RECENT_MOMENTS = 5;
 
@@ -51,6 +57,8 @@ export function SmallTalkScreen(props: ScreenProps) {
   const [answers, setAnswers] = useState<SessionRecord[] | null>(null);
   // The user's moment notes, newest first
   const [moments, setMoments] = useState<SessionRecord[]>([]);
+  // The mission tries, oldest first (null while loading)
+  const [missions, setMissions] = useState<MissionRecord[] | null>(null);
   // How many drills along from today's ("another" adds one)
   const [offset, setOffset] = useState(0);
   // The unit chosen (null until the user picks one: then the one in the address, or the unit of the next lesson)
@@ -71,6 +79,11 @@ export function SmallTalkScreen(props: ScreenProps) {
       setAnswers(sessions.filter((session) => session.mode === "smalltalk"));
       // The moments
       setMoments(sessions.filter((session) => session.mode === "moment"));
+    });
+    // Read the mission tries
+    repo.getSettings(new Date()).then((settings) => {
+      // Keep them if still open
+      if (!cancelled) setMissions(settings.missions ?? []);
     });
     // Mark as closed when leaving
     return () => {
@@ -128,6 +141,48 @@ export function SmallTalkScreen(props: ScreenProps) {
             {/* Another */}
             <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">{unit.id === "answering" ? "or another question" : unit.id === "asking" ? "or something else" : "or another story"}</button>
           </p>
+        </section>
+      )}
+
+      {/* Today's mission, and how missions have gone against what you expected */}
+      {today && missions && (
+        <section id="missions" aria-labelledby="missions-heading" className="mt-10 scroll-mt-6">
+          {/* Run-in heading */}
+          <h2 id="missions-heading" className="italic">Try it for real</h2>
+          {/* What missions are for */}
+          <p className="mt-2 max-w-[52ch] text-footnote text-ink-muted">Practice here is the warm-up; real conversations do the work. Say how you think it will go, try it, then compare.</p>
+          {/* The card */}
+          <div className="mt-3"><MissionCard key={missions.length} repo={repo} now={today} state={missionToday(missions, today)} onChange={setMissions} /></div>
+          {/* Expected against actual, for the latest tries */}
+          {triedMissions(missions).length > 0 && (
+            <>
+              {/* The headline */}
+              <p className="mt-4 text-lede">{betterThanFeared(missions).better} of {betterThanFeared(missions).total} went better than you expected.</p>
+              {/* The latest */}
+              <ul aria-label="Your missions" className="mt-2 divide-y divide-rule border-y border-rule">
+                {/* Each try */}
+                {triedMissions(missions).slice(0, RECENT_MISSIONS).map((record) => (
+                  // One try: the move, then expected against actual as two short bars
+                  <li key={record.id} className="flex items-center gap-4 py-3">
+                    {/* The move and day */}
+                    <span className="min-w-0 flex-1">
+                      {/* The move */}
+                      <span className="block">{findMission(record.missionId)?.move ?? "Mission"}</span>
+                      {/* The day */}
+                      <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)}</span>
+                    </span>
+                    {/* Expected against actual */}
+                    <span aria-label={`Expected ${record.predicted} of 5, went ${record.outcome} of 5`} className="flex w-32 flex-none flex-col gap-1">
+                      {/* Expected */}
+                      <span aria-hidden="true" className="flex items-center gap-2 text-footnote text-ink-muted"><span className="w-10">said</span><span className="h-1.5 bg-rule" style={{ width: `${(record.predicted ?? 0) * 12}px` }} /></span>
+                      {/* Actual */}
+                      <span aria-hidden="true" className="flex items-center gap-2 text-footnote"><span className="w-10">went</span><span className="h-1.5 bg-accent" style={{ width: `${(record.outcome ?? 0) * 12}px` }} /></span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 
