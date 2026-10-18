@@ -60,7 +60,7 @@ The biggest research-backed gap. In the week-long talk-to-strangers study, peopl
 |-------|--------|
 | 1. Missions | Built (decision 52) |
 | 2. Feedback rules | Built (decision 53) |
-| 3. Learn set and scenarios | In progress |
-| 4. Responding to news | Planned |
+| 3. Learn set and scenarios | Built (decision 54) |
+| 4. Responding to news | In progress |
 | 5. Live partner | Later |
 | 6. Measuring transfer | Later (part comes with stage 1) |

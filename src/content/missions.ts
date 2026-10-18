@@ -27,21 +27,21 @@ export const MISSIONS: ReadonlyArray<Mission> = [
   // Level 1
   { id: "m03", level: 1, move: "Give a detail", task: "When someone asks how you are, give one real detail instead of “good”.", why: "A detail gives them something to ask about, and follow-ups are where liking grows.", drop: "Don't stop at “fine”. Say one small thing that happened.", cardId: "story-hook" },
   // Level 1
-  { id: "m04", level: 1, move: "Thank", task: "Thank someone today for something specific they did.", why: "Thanks with a reason made people see the thanker as warmer (moderate evidence).", drop: "Don't shrink it with “no big deal”. Say what it meant.", cardId: null },
+  { id: "m04", level: 1, move: "Thank", task: "Thank someone today for something specific they did.", why: "Thanks with a reason made people see the thanker as warmer (moderate evidence).", drop: "Don't shrink it with “no big deal”. Say what it meant.", cardId: "warm-thanks" },
   // Level 2
-  { id: "m05", level: 2, move: "Compliment", task: "Give one specific compliment you would normally keep to yourself.", why: "People underestimate how good a compliment makes others feel, and overestimate the awkwardness (moderate evidence).", drop: "Don't soften it with a joke or a “but”.", cardId: null },
+  { id: "m05", level: 2, move: "Compliment", task: "Give one specific compliment you would normally keep to yourself.", why: "People underestimate how good a compliment makes others feel, and overestimate the awkwardness (moderate evidence).", drop: "Don't soften it with a joke or a “but”.", cardId: "warm-compliment" },
   // Level 2
   { id: "m06", level: 2, move: "Stay with them", task: "Ask two follow-up questions before you share anything about yourself.", why: "Turning the talk to yourself too soon makes questions feel insincere (strong evidence).", drop: "Don't wait to tell your own version of their story.", cardId: "talk-boomerask" },
   // Level 2
-  { id: "m07", level: 2, move: "Good news", task: "When someone shares good news, react and ask about the moment: “When did you hear?”", why: "Enthusiastic, curious replies to good news go with more trust and closeness (moderate evidence).", drop: "Don't point out a downside or bring up your own news.", cardId: null },
+  { id: "m07", level: 2, move: "Good news", task: "When someone shares good news, react and ask about the moment: “When did you hear?”", why: "Enthusiastic, curious replies to good news go with more trust and closeness (moderate evidence).", drop: "Don't point out a downside or bring up your own news.", cardId: "warm-good-news" },
   // Level 2
-  { id: "m08", level: 2, move: "Listen first", task: "When someone shares a problem, ask one question before giving any advice.", why: "Listening made people feel more understood than advice did (moderate evidence).", drop: "Don't fix it straight away.", cardId: "talk-support" },
+  { id: "m08", level: 2, move: "Listen first", task: "When someone shares a problem, ask one question before giving any advice.", why: "Listening made people feel more understood than advice did (moderate evidence).", drop: "Don't fix it straight away.", cardId: "warm-advice" },
   // Level 2
   { id: "m09", level: 2, move: "End well", task: "End one conversation on a high point, while it is still good.", why: "Conversations almost never end when both people want them to (moderate evidence).", drop: "Don't wait for the awkward pause.", cardId: "talk-endings" },
   // Level 3
   { id: "m10", level: 3, move: "Go deeper", task: "Ask one deeper question, like “What's the best part of it?” or “What got you into that?”", why: "Deeper talk with strangers goes better than people expect (moderate to strong evidence).", drop: "Don't retreat to safe topics when it goes quiet.", cardId: "talk-deeper" },
   // Level 3
-  { id: "m11", level: 3, move: "Share", task: "Share one honest opinion about something, then ask for theirs.", why: "We like people who open up to us, and back-and-forth sharing builds closeness (strong evidence).", drop: "Don't hedge it until it says nothing.", cardId: null },
+  { id: "m11", level: 3, move: "Share", task: "Share one honest opinion about something, then ask for theirs.", why: "We like people who open up to us, and back-and-forth sharing builds closeness (strong evidence).", drop: "Don't hedge it until it says nothing.", cardId: "warm-share" },
   // Level 3
   { id: "m12", level: 3, move: "Admit it", task: "Admit one small mistake, or ask someone for help with something.", why: "Others judge our small admissions more kindly than we do (moderate evidence).", drop: "Don't over-explain or apologise twice.", cardId: null },
   // Level 3

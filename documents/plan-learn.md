@@ -134,6 +134,10 @@ Each label is shown in words, never as a colour alone.
   3. Sets 1, 2, 5 and 6.
   4. "Why?" links inside practice and feedback (next).
 
+## Since built
+
+- **Warmth and connection** (decision 54): nine cards from the 2026-10 deep dive, plus scenario questions on ten cards and a quick-scenarios practice.
+
 ## Open questions
 
 - **Where Learn lives:** its own tab (Today · Practice · Connect · Learn · History), or inside Skills?

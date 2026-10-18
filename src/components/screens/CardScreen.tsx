@@ -12,6 +12,10 @@ import { QuickRecorder } from "@/components/script/QuickRecorder";
 import { PrimaryLink } from "@/components/script/Buttons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
+// Load the scenarios, their item and progress saving
+import { findScenario } from "@/content/scenarios";
+import { ScenarioItem } from "@/components/script/ScenarioItem";
+import { saveScenarioAnswer } from "@/data/scenarioProgress";
 // Load the browser's recording services, and their type
 import { browserRecordingServices } from "@/audio/browserServices";
 import type { RecordingServices } from "@/audio/services";
@@ -119,13 +123,18 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
     };
   }, [repo, today]);
 
+  // The card's scenario, if it has one (an extra screen before the recall question)
+  const scenario = card?.scenario ? findScenario(card.scenario) : undefined;
+  // The last screen's place
+  const lastScreen = scenario ? 5 : 4;
+
   // Reaching the last screen counts as reading the card
   useEffect(() => {
     // Only on the last screen, in the browser, for a real card
-    if (!today || !card || index < 4) return;
+    if (!today || !card || index < lastScreen) return;
     // Note it (keeps earlier progress)
     void markCardRead(repo, card.id, today).then(setProgress);
-  }, [card, index, repo, today]);
+  }, [card, index, lastScreen, repo, today]);
 
   // An unknown card
   if (!card) {
@@ -222,7 +231,16 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {/* Practise it elsewhere */}
       {card.tryIt && <p className="mt-6"><PrimaryLink href={card.tryIt.href}>{card.tryIt.label}</PrimaryLink></p>}
     </div>,
-    // 5. Remember it
+    // A scenario: choose the best reply, then say it (only on cards that have one)
+    ...(scenario ? [
+      <div key="scenario">
+        {/* Heading */}
+        <Kicker>{`Try it: ${scenario.title}`}</Kicker>
+        {/* The item */}
+        <div className="mt-2"><ScenarioItem scenario={scenario} services={services} onAnswer={(tier) => { if (today) void saveScenarioAnswer(repo, scenario.id, tier, today); }} /></div>
+      </div>,
+    ] : []),
+    // Remember it
     <div key="remember">
       {/* Heading */}
       <Kicker>Remember it</Kicker>

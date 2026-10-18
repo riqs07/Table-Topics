@@ -19,6 +19,11 @@ import { EVIDENCE_LABELS, LEARN_CARDS, LEARN_SETS } from "@/content/learn";
 import { dueCards, nextCard, setProgress, type LearnProgress } from "@/core/learn";
 // Load progress
 import { loadLearnProgress } from "@/data/learnProgress";
+import { loadScenarioProgress } from "@/data/scenarioProgress";
+// Load the first-tries count
+import { firstTries } from "@/core/scenarios";
+// Load the scenario progress type
+import type { ScenarioProgress } from "@/data/records";
 
 // Draw the Learn page
 export function LearnScreen(props: ScreenProps) {
@@ -26,6 +31,8 @@ export function LearnScreen(props: ScreenProps) {
   const { repo, today } = useScreenBasics(props);
   // Progress, once loaded
   const [progress, setLoaded] = useState<LearnProgress | null>(null);
+  // Scenario progress, once loaded
+  const [scenarios, setScenarios] = useState<Record<string, ScenarioProgress> | null>(null);
 
   // Load progress once in the browser
   useEffect(() => {
@@ -37,6 +44,11 @@ export function LearnScreen(props: ScreenProps) {
     loadLearnProgress(repo, today).then((loaded) => {
       // Keep it if still open
       if (!cancelled) setLoaded(loaded);
+    });
+    // And the scenarios'
+    loadScenarioProgress(repo, today).then((loaded) => {
+      // Keep it if still open
+      if (!cancelled) setScenarios(loaded);
     });
     // Mark as closed
     return () => {
@@ -58,7 +70,7 @@ export function LearnScreen(props: ScreenProps) {
       {/* What this is */}
       <h1 className="mt-8 font-display text-prompt tracking-tight md:text-prompt-xl">What the research says.</h1>
       {/* How it works */}
-      <p className="mt-3 max-w-[52ch] text-lede">Short cards on speaking, charisma, body language and conversation, each about a minute, with how strong the evidence is. A question at the end of each comes back later, so it sticks.</p>
+      <p className="mt-3 max-w-[52ch] text-lede">Short cards on speaking, charisma, body language and connecting with people, each about a minute, with how strong the evidence is. A question at the end of each comes back later, so it sticks.</p>
 
       {/* Questions due */}
       {due.length > 0 && (
@@ -69,6 +81,16 @@ export function LearnScreen(props: ScreenProps) {
           <Link href="/learn/review" className="mt-1 inline-flex min-h-11 items-center underline underline-offset-4">Review now</Link>
         </section>
       )}
+
+      {/* Quick scenarios: choose the best reply, then say it */}
+      <section aria-labelledby="scenarios-heading" className="mt-6 border-b border-rule pb-4">
+        {/* Heading */}
+        <h2 id="scenarios-heading" className="font-display text-cue">Quick scenarios</h2>
+        {/* What it is */}
+        <p className="mt-1 max-w-[52ch] text-footnote text-ink-muted">Three everyday situations: choose the best reply, see why, then say it in your own words.{scenarios && firstTries(scenarios).total > 0 ? ` First tries so far: ${firstTries(scenarios).best} of ${firstTries(scenarios).total} best.` : ""}</p>
+        {/* Go */}
+        <Link href="/learn/scenarios" className="mt-1 inline-flex min-h-11 items-center underline underline-offset-4">Start three</Link>
+      </section>
 
       {/* Each set */}
       {LEARN_SETS.map((set) => {

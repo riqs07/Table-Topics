@@ -178,6 +178,18 @@ export interface MissionRecord {
   debriefedAt: string | null;
 }
 
+// How a scenario question went (decision 54)
+export interface ScenarioProgress {
+  // The tier of the reply chosen the first time ("best", "good", "flat" or "misstep")
+  firstTier: string;
+  // The tier chosen most recently
+  lastTier: string;
+  // When it was first answered (ISO text)
+  firstAt: string;
+  // When it was last answered (ISO text)
+  lastAt: string;
+}
+
 // The user's settings (one record)
 export interface SettingsRecord {
   // Position in the v1 weekly focus list
@@ -192,6 +204,8 @@ export interface SettingsRecord {
   learn?: Record<string, LearnCardProgress>;
   // Missions: every try, oldest first (missing until the first mission is answered)
   missions?: MissionRecord[];
+  // Scenario questions: how each went, by scenario id (missing until the first is answered)
+  scenarios?: Record<string, ScenarioProgress>;
 }
 
 // What each stored collection holds

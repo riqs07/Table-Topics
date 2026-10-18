@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 // Load the screens being checked
 import { LearnScreen } from "@/components/screens/LearnScreen";
+import { ScenariosScreen } from "@/components/screens/ScenariosScreen";
 import { CardScreen } from "@/components/screens/CardScreen";
 import { ReviewScreen } from "@/components/screens/ReviewScreen";
 // Load the in-memory store and repository
@@ -135,5 +136,42 @@ describe("Learn", () => {
     next(4);
     // Confirm the step and the finish
     expect([!!(await screen.findByText("Step 4 of 4")), (await screen.findByRole("link", { name: /Finish today/ })).getAttribute("href")]).toEqual([true, "/"]);
+  });
+
+  // A card with a scenario: choose a reply, see every reply's tier and why, the move, then a spoken step; the answer is saved
+  it("teaches with a scenario before the recall question", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Draw the boomerasking card (myth or fact, with the Monday coffee scenario)
+    render(<CardScreen cardId="talk-boomerask" repository={repository} now={NOW} services={fakeServices("")} />);
+    // Guess, then on to the scenario
+    fireEvent.click(await screen.findByRole("button", { name: "Myth" }));
+    // Through the screens
+    next(4);
+    // Choose the boomerask
+    fireEvent.click(within(screen.getByRole("group", { name: "Replies" })).getByRole("button", { name: /^“How was your weekend\? Mine was amazing/ }));
+    // The reveal
+    const reveal = screen.getAllByRole("status").at(-1)!;
+    // Confirm the verdict, the best reply's reason, the move and the spoken step, and that it was saved
+    expect([within(reveal).getByText("A common move. Here’s what it does.").tagName, !!within(reveal).getByText(/The best one:/), !!within(reveal).getByText("Share honestly, then hand it back. Don't ask just to tell your own."), !!within(reveal).getByRole("button", { name: "Say it" })]).toEqual(["P", true, true, true]);
+    // Confirm the saved first try
+    await waitFor(async () => expect((await repository.getSettings(NOW)).scenarios?.["sc-monday-coffee"]?.firstTier).toBe("misstep"));
+  });
+
+  // Quick scenarios: three in a row, then the result
+  it("runs three quick scenarios and shows how many were best", async () => {
+    // Draw the page
+    render(<ScenariosScreen repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} />);
+    // Each of three
+    for (let round = 0; round < 3; round++) {
+      // The replies
+      const replies = within(await screen.findByRole("group", { name: "Replies" })).getAllByRole("button");
+      // Choose the first
+      fireEvent.click(replies[0]!);
+      // Move on
+      fireEvent.click(screen.getByRole("button", { name: round < 2 ? "Next scenario" : "Finish" }));
+    }
+    // Confirm the result: the first three scenarios' first replies are a best, a misstep and a misstep
+    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("1 of 3 best.");
   });
 });
