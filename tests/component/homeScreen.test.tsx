@@ -45,7 +45,7 @@ describe("HomeScreen", () => {
     expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/stay on this device/), within(choices).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])]).toEqual([
       "Welcome to VoiceLab",
       true,
-      [["I want to speak better on the spot", FIRST_STEP], ["I want to work on one skill", FIRST_STEP], ["I want to be better in conversation", "/small-talk"]],
+      [["I want to speak better on the spot", FIRST_STEP], ["I want to work on one skill", FIRST_STEP], ["I want to be better in conversation", "/small-talk/unit?id=answering"]],
     ]);
   });
 

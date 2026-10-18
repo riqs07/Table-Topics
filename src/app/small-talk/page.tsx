@@ -1,13 +1,8 @@
-// Connect: today's mission and the four units as cards
-import type { Metadata } from "next";
-// Load the screen
-import { ConnectScreen } from "@/components/screens/ConnectScreen";
+// The old Connect page: its mission moved to Learn and its units live under Practice (decision 66), so old links land on Learn
+import { redirect } from "next/navigation";
 
-// The browser tab's title
-export const metadata: Metadata = { title: "Connect · VoiceLab" };
-
-// Draw the page
+// Send old links on
 export default function ConnectPage() {
-  // The screen
-  return <ConnectScreen />;
+  // To Learn, where today's mission now lives
+  redirect("/learn");
 }

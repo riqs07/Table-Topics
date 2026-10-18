@@ -17,7 +17,7 @@ export const ROUTES: ReadonlyArray<string> = [
   "/skills",
   // Talks
   "/rehearse",
-  // Small talk
+  // The old Connect address, which now leads to Learn (decision 66)
   "/small-talk",
   // History
   "/history",
@@ -38,7 +38,7 @@ export const ROUTES: ReadonlyArray<string> = [
   "/learn/scenarios",
   // A Learn set
   "/learn/set?id=warmth",
-  // A Connect unit
+  // A small-talk unit
   "/small-talk/unit?id=news",
   "/learn/card?id=warm-good-news",
   // A mission debrief that does not exist (the page explains)
@@ -85,8 +85,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/skills", current: "Practice" },
   // Your talks belong to Practice
   { path: "/rehearse", current: "Practice" },
-  // Small talk marks Small talk
-  { path: "/small-talk", current: "Connect" },
+  // A small-talk unit belongs to Practice (Connect folded into Learn and Practice, decision 66)
+  { path: "/small-talk/unit?id=answering", current: "Practice" },
   // Learn marks Learn
   { path: "/learn", current: "Learn" },
   // History lives in Settings, so no tab is marked
@@ -109,8 +109,6 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Today", path: "/" },
   // Practice
   { name: "Practice", path: "/practice" },
-  // Everyday conversation
-  { name: "Connect", path: "/small-talk" },
   // Learn
   { name: "Learn", path: "/learn" },
   // Settings

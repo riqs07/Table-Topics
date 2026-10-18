@@ -85,7 +85,7 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
       {/* The task */}
       <p className="mt-1 font-display text-cue">{mission.task}</p>
       {/* Offered, on Today: a way to take it on in Connect */}
-      {state.kind === "offer" && compact && <p className="mt-2"><Link href="/small-talk#missions" className={TEXT_LINK}>Take it on in Connect</Link></p>}
+      {state.kind === "offer" && compact && <p className="mt-2"><Link href="/learn#missions" className={TEXT_LINK}>Take it on in Learn</Link></p>}
       {/* Offered: the habit to drop, why, the prediction, and the choice */}
       {state.kind === "offer" && !compact && (
         <>

@@ -33,6 +33,8 @@ import { TEXT_LINK } from "@/components/script/Buttons";
 import { SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
+// Load today's mission and past tries
+import { MissionSection } from "@/components/script/MissionSection";
 
 // Draw the Learn page
 export function LearnScreen(props: ScreenProps) {
@@ -80,7 +82,10 @@ export function LearnScreen(props: ScreenProps) {
       {/* Heading and navigation */}
       <Masthead title="VoiceLab" section="learn" />
       {/* The page's name, and what is here */}
-      <PageTitle title="Learn">One-minute cards on what the research says, and how sure it is.</PageTitle>
+      <PageTitle title="Learn">What the research says, and one move to try for real each day.</PageTitle>
+
+      {/* Today's mission, and how tries have gone (decision 66) */}
+      {today && <MissionSection repo={repo} today={today} />}
 
       {/* Questions due, as one line */}
       {due.length > 0 && (

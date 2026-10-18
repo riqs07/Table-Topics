@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { MissionScreen } from "@/components/screens/MissionScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
-import { ConnectScreen } from "@/components/screens/ConnectScreen";
+import { LearnScreen } from "@/components/screens/LearnScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
@@ -48,15 +48,15 @@ describe("missions", () => {
     // The card
     const card = await screen.findByRole("region", { name: "Today’s mission" });
     // Confirm the task and the link, and no scale or accept button
-    expect([!!within(card).getByText(/Ask one follow-up question/), within(card).getByRole("link", { name: "Take it on in Connect" }).getAttribute("href"), within(card).queryByRole("group"), within(card).queryByRole("button", { name: "I’ll try it" })]).toEqual([true, "/small-talk#missions", null, null]);
+    expect([!!within(card).getByText(/Ask one follow-up question/), within(card).getByRole("link", { name: "Take it on in Learn" }).getAttribute("href"), within(card).queryByRole("group"), within(card).queryByRole("button", { name: "I’ll try it" })]).toEqual([true, "/learn#missions", null, null]);
   });
 
-  // Connect offers the first mission with a habit to drop; accepting needs a prediction, then it waits for its debrief
-  it("offers a mission on Connect and accepts it with a prediction", async () => {
+  // Learn offers the first mission with a habit to drop; accepting needs a prediction, then it waits for its debrief
+  it("offers a mission on Learn and accepts it with a prediction", async () => {
     // A repository
     const repository = createRepository(new MemoryStore());
-    // Draw Connect
-    render(<ConnectScreen repository={repository} now={NOW} />);
+    // Draw Learn
+    render(<LearnScreen repository={repository} now={NOW} />);
     // The card
     const card = await screen.findByRole("region", { name: "Today’s mission" });
     // Accepting is closed until a prediction is chosen
@@ -119,8 +119,8 @@ describe("missions", () => {
     const [accepted] = await acceptMission(repository, "m01", 2, yesterday);
     // Debrief
     await debriefMission(repository, accepted!, { tried: true, outcome: 4, note: "", tooMuch: false }, yesterday);
-    // Draw Connect
-    render(<ConnectScreen repository={repository} now={NOW} />);
+    // Draw Learn
+    render(<LearnScreen repository={repository} now={NOW} />);
     // Confirm the record and today's next mission
     expect([!!(await screen.findByText("1 of 1 went better than you expected.")), !!within(screen.getByRole("list", { name: "Your missions" })).getByLabelText("Expected 2 of 5, went 4 of 5"), !!within(screen.getByRole("region", { name: "Today’s mission" })).getByText(/react to it before you say anything else/)]).toEqual([true, true, true]);
     // Draw History

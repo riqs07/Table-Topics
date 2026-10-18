@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 // Load the screens being checked
 import { SmallTalkScreen } from "@/components/screens/SmallTalkScreen";
-import { ConnectScreen } from "@/components/screens/ConnectScreen";
 import { SessionScreen } from "@/components/screens/SessionScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
 // Load the in-memory store and repository
@@ -111,17 +110,9 @@ describe("small talk", () => {
     expect([!!within(moments).getByText("I fixed the bike chain myself"), !!screen.getByText(/Today\u2019s moment is saved/), screen.getByRole("link", { name: "Add another moment" }).getAttribute("href")]).toEqual([true, true, "/session?mode=moment&prompt=moment"]);
   });
 
-  // Connect lists the units as cards; each unit's page has its own recipe, lessons and practice, and a story is not shown
-  it("lists the units as cards, each with its own page", async () => {
-    // Draw Connect
-    render(<ConnectScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // The unit cards
-    const units = within(await screen.findByRole("list", { name: "Units" })).getAllByRole("link");
-    // Their names and addresses, and the first marked next
-    const cards = [units.map((link) => [link.getAttribute("aria-label"), link.getAttribute("href")]), units[0]?.textContent?.includes("Next up")];
+  // Each unit's page (reached from Practice, decision 66) has its own recipe, lessons and practice, and a story is not shown
+  it("gives each unit its own page", async () => {
     // Draw Asking
-    cleanup();
-    // The page
     render(<SmallTalkScreen unitId="asking" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The asking recipe, its lessons, and the main action leading to its first lesson
     const asking = [!!(await screen.findByRole("region", { name: "A good follow-up, in four beats" })), screen.getByRole("link", { name: "Asking lesson 1: Ask about what they said" }).getAttribute("href"), screen.getByRole("link", { name: /^Asking lesson 1Ask about/ }).getAttribute("href"), !!screen.getByRole("region", { name: "Ask a follow-up" })];
@@ -132,7 +123,7 @@ describe("small talk", () => {
     // The practice box
     const practice = await screen.findByRole("region", { name: "Listen to a story" });
     // Confirm the cards, asking, then listening's recipe and a practice box that hides the story
-    expect([...cards, ...asking, !!screen.getByRole("region", { name: "A good response, in four beats" }), within(practice).getByRole("heading", { level: 1 }).textContent, within(practice).getByRole("link", { name: "Listen and respond" }).getAttribute("href")?.startsWith("/session?mode=smalltalk&prompt=sls")]).toEqual([[["Answering, 0 of 6", "/small-talk/unit?id=answering"], ["Asking, 0 of 3", "/small-talk/unit?id=asking"], ["Listening, 0 of 3", "/small-talk/unit?id=listening"], ["News, 0 of 3", "/small-talk/unit?id=news"]], true, true, "/session?mode=smalltalk&prompt=sal1", "/session?mode=smalltalk&prompt=sal1", true, true, "Someone tells you about their day.", true]);
+    expect([...asking, !!screen.getByRole("region", { name: "A good response, in four beats" }), within(practice).getByRole("heading", { level: 1 }).textContent, within(practice).getByRole("link", { name: "Listen and respond" }).getAttribute("href")?.startsWith("/session?mode=smalltalk&prompt=sls")]).toEqual([true, "/session?mode=smalltalk&prompt=sal1", "/session?mode=smalltalk&prompt=sal1", true, true, "Someone tells you about their day.", true]);
   });
 
   // After a reply to a story: the story itself, the listening beats the phone heard, and a label in History

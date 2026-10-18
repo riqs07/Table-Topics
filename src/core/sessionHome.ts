@@ -1,12 +1,12 @@
 // Where each kind of session belongs: the tab it marks, and where its close button leads while practising (decision 41)
 
 // Load the small-talk unit lookup, for which unit page a session closes back to
-import { unitOf } from "@/content/smallTalk";
+import { UNITS, unitOf } from "@/content/smallTalk";
 // Load the record types
 import type { SessionMode, SessionRecord } from "@/data/records";
 
 // A main section a session can belong to
-export type SessionSection = "today" | "practice" | "skills" | "smalltalk";
+export type SessionSection = "today" | "practice" | "skills";
 
 // The section, and the way back to it
 export interface SessionHome {
@@ -23,7 +23,7 @@ export function sessionHome(mode: SessionMode, promptId: string, inPlan: boolean
   // Inside today's practice
   if (inPlan) return { section: "today", href: "/", label: "Close, back to Today" };
   // A small-talk answer or a moment note lives on its own page
-  if (mode === "smalltalk" || mode === "moment") return { section: "smalltalk", href: `/small-talk/unit?id=${mode === "moment" ? "answering" : unitOf(promptId)}`, label: "Close, back to Connect" };
+  if (mode === "smalltalk" || mode === "moment") return { section: "practice", href: `/small-talk/unit?id=${mode === "moment" ? "answering" : unitOf(promptId)}`, label: `Close, back to ${UNITS.find((unit) => unit.id === (mode === "moment" ? "answering" : unitOf(promptId)))?.name ?? "Practice"}` };
   // Readings, pause drills and lessons
   if (mode === "read" || mode === "pause" || mode === "lesson") return { section: "skills", href: "/skills", label: "Close, back to Skills" };
   // A rehearsal of one of the user's talks

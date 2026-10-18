@@ -46,7 +46,7 @@ const WELCOME_CHOICES: ReadonlyArray<{ text: string; href: string | null }> = [
   // One skill
   { text: "I want to work on one skill", href: null },
   // Everyday conversation (in place of "I have a talk coming up" while your talks are hidden, decision 49)
-  { text: "I want to be better in conversation", href: "/small-talk" },
+  { text: "I want to be better in conversation", href: "/small-talk/unit?id=answering" },
 ];
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -280,7 +280,7 @@ export function HomeScreen(props: ScreenProps) {
             </div>
           )}
 
-          {/* Today's mission: a small real-world try, under the steps (the task and a link; the prediction lives on Connect, decision 62) */}
+          {/* Today's mission: a small real-world try, under the steps (the task and a link; the prediction lives on Learn, decisions 62 and 66) */}
           {plan && data && today && (
             <div className="mt-8">
               <MissionCard key={data.missions.length} repo={repo} now={today} state={missionToday(data.missions, today)} onChange={(missions) => setData({ ...data, missions })} compact />

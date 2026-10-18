@@ -27,7 +27,7 @@ export const JOBS: ReadonlyArray<Job> = [
   // One skill at a time
   { id: "skill", name: "Build a skill", blurb: "Short lessons, speeches to read, pause and word drills.", href: "/skills" },
   // Everyday conversation
-  { id: "connect", name: "Small talk", blurb: "Everyday questions, answered with a short story.", href: "/small-talk" },
+  { id: "connect", name: "Small talk", blurb: "Everyday questions, answered with a short story.", href: "/small-talk/unit?id=answering" },
 ];
 
 // One way to practise

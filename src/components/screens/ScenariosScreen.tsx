@@ -89,7 +89,7 @@ export function ScenariosScreen({ services = browserRecordingServices, ...props 
           {/* What happens next */}
           <p className="mt-3 max-w-[52ch] text-lede">A move you missed comes back in a new situation next time. Choosing is the warm-up; saying it aloud and trying it for real are what change things.</p>
           {/* A real try */}
-          <p className="mt-4"><Link href="/small-talk#missions" className={TEXT_LINK}>Today’s mission</Link></p>
+          <p className="mt-4"><Link href="/learn#missions" className={TEXT_LINK}>Today’s mission</Link></p>
           {/* Push the band down */}
           <div className="flex-1" />
           {/* Back to Learn */}

@@ -320,8 +320,8 @@ test("explains the microphone before the browser asks", async ({ page }) => {
 test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
   // The stand-in speech answers the question
   await useStandIns(page, "Pretty quiet but I finally fixed my bike it was really fun did you get outside at all");
-  // Start at the Small talk page
-  await page.goto("/small-talk");
+  // Start at the Answering unit
+  await page.goto("/small-talk/unit?id=answering");
   // Start the first lesson from the main action
   await page.locator("[data-action-band]").click();
   // The lesson teaches before the question
@@ -356,10 +356,10 @@ test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
 test("Small talk: listen to a story and see it afterwards", async ({ page }) => {
   // The stand-in speech responds to the story
   await useStandIns(page, "no way you missed your stop and your boss was waiting that must have been so awkward");
-  // Start at the Listening unit
-  await page.goto("/small-talk");
+  // Start at Practice
+  await page.goto("/practice");
   // Open the Listening unit
-  await page.getByRole("link", { name: /^Listening, / }).click();
+  await page.getByRole("link", { name: /^Listening/ }).click();
   // Its practice box
   await page.getByRole("region", { name: "Listen to a story" }).getByRole("link", { name: "Listen and respond" }).click();
   // The story is not shown
@@ -386,9 +386,9 @@ test("Small talk: listen to a story and see it afterwards", async ({ page }) => 
 test("One moment a day: record a note and see it on the Small talk page", async ({ page }) => {
   // The stand-in speech tells the moment
   await useStandIns(page, "I fixed the bike chain myself and rode to the river");
-  // Start at Connect
-  await page.goto("/small-talk");
-  // Record today's moment from its card
+  // Start at Practice
+  await page.goto("/practice");
+  // Record today's moment from its row
   await page.getByRole("link", { name: /^One moment a day/ }).click();
   // Start speaking
   await page.getByRole("button", { name: /Start speaking/ }).click();
@@ -438,9 +438,9 @@ test("Mission: predict, try, debrief, compare", async ({ page }) => {
   await page.getByRole("link", { name: "Skip" }).click();
   // Back to Today from the first step
   await page.getByRole("link", { name: "Close, back to Today" }).click();
-  // Today's mission leads to Connect, where the prediction is made
-  await page.getByRole("region", { name: "Today’s mission" }).getByRole("link", { name: "Take it on in Connect" }).click();
-  // Connect's mission card
+  // Today's mission leads to Learn, where the prediction is made
+  await page.getByRole("region", { name: "Today’s mission" }).getByRole("link", { name: "Take it on in Learn" }).click();
+  // Learn's mission card
   const card = page.getByRole("region", { name: "Today’s mission" });
   // Predict "Awkward"
   await card.getByRole("button", { name: /^2/ }).click();

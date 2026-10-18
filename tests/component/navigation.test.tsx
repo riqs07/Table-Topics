@@ -30,7 +30,7 @@ const NOW = new Date(2026, 9, 15, 10);
 afterEach(cleanup);
 
 // Where the four tabs must lead, in order (Settings is the gear in the title row)
-const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Connect", "/small-talk"], ["Learn", "/learn"]];
+const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Learn", "/learn"]];
 
 // Read the main navigation's links as [name, address] pairs, and which one is marked as the current page
 async function readNavigation() {

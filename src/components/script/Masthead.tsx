@@ -3,14 +3,14 @@
 // Load Next.js's link component
 import Link from "next/link";
 // Load the tab icons
-import { ChatsCircleIcon, GearIcon, LightbulbIcon, MicrophoneIcon, SunIcon, XIcon } from "@phosphor-icons/react/dist/ssr";
+import { GearIcon, LightbulbIcon, MicrophoneIcon, SunIcon, XIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the type for content passed in
 import type { ReactNode } from "react";
 
 // The sections a page can belong to (Settings is the gear in the title row, not a tab; Skills is a page inside Practice)
-export type Section = "today" | "practice" | "skills" | "smalltalk" | "learn" | "settings";
+export type Section = "today" | "practice" | "skills" | "learn" | "settings";
 
 // Each tab's name and address, in order: four, always labelled (decision 48; History moved into Settings, decision 56)
 const SECTIONS: ReadonlyArray<{ id: Section; name: string; href: string; icon: Icon }> = [
@@ -18,8 +18,6 @@ const SECTIONS: ReadonlyArray<{ id: Section; name: string; href: string; icon: I
   { id: "today", name: "Today", href: "/", icon: SunIcon },
   // Every kind of practice, picked freely (Skills' lessons and readings are a page inside it)
   { id: "practice", name: "Practice", href: "/practice", icon: MicrophoneIcon },
-  // Everyday conversation: answering, asking and listening
-  { id: "smalltalk", name: "Connect", href: "/small-talk", icon: ChatsCircleIcon },
   // What research says, in short cards
   { id: "learn", name: "Learn", href: "/learn", icon: LightbulbIcon },
 ];
@@ -45,7 +43,7 @@ export function Masthead({ title, children, section, nav = true, close = null }:
     <>
       {/* The main navigation: a tab bar fixed to the bottom of a phone, a row of tabs above the title on a computer, the current one underlined in the accent */}
       {nav && (
-        <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:mb-6 md:flex md:gap-x-6 md:border-0 md:bg-transparent md:p-0">
+        <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:mb-6 md:flex md:gap-x-6 md:border-0 md:bg-transparent md:p-0">
           {/* One link per section */}
           {SECTIONS.map((item) => {
             // Whether this is the current section

@@ -91,9 +91,9 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
   return (
     <main className={PAGE}>
       {/* Heading and navigation */}
-      <Masthead title="Connect" section="smalltalk" />
+      <Masthead title="Practice" section="practice" />
       {/* Back to Connect */}
-      <p className="mt-2"><Link href="/small-talk" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Connect</Link></p>
+      <p className="mt-2"><Link href="/practice" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Practice</Link></p>
       {/* Icon, name, and when it is for */}
       <div className="mt-2 flex items-center gap-4">
         {/* The icon on an accent tile */}
