@@ -1,6 +1,6 @@
 # Plan: Learn, the educational part of VoiceLab
 
-Proposed 2026-10-18 for the user to review; nothing is built yet. Learn teaches what research actually says about speaking, charisma, body language and conversation, in cards you can read in about a minute, and links each idea to practice. The research is in [research/charisma-conversation-duolingo-2026-10.md](research/charisma-conversation-duolingo-2026-10.md); the wider plan is [plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md).
+Proposed 2026-10-18; the user chose its own tab, one screen at a time with swipes, and recall by tapping and by voice. Stages 1 to 3 built the same day (decision 45). Learn teaches what research actually says about speaking, charisma, body language and conversation, in cards you can read in about a minute, and links each idea to practice. The research is in [research/charisma-conversation-duolingo-2026-10.md](research/charisma-conversation-duolingo-2026-10.md); the wider plan is [plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md).
 
 ## Principles
 
@@ -132,7 +132,7 @@ Each label is shown in words, never as a colour alone.
   1. The card format and Sets 3 (body language) and 4 (conversation).
   2. Recall and review in the daily mix.
   3. Sets 1, 2, 5 and 6.
-  4. "Why?" links inside practice and feedback.
+  4. "Why?" links inside practice and feedback (next).
 
 ## Open questions
 

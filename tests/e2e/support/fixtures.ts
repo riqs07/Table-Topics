@@ -28,6 +28,10 @@ export const ROUTES: ReadonlyArray<string> = [
   "/session?mode=smalltalk&prompt=stl3",
   // A moment note
   "/session?mode=moment&prompt=moment",
+  // Learn, a card, and the review
+  "/learn",
+  "/learn/card?id=body-93",
+  "/learn/review",
   // A Table Topic
   "/session?mode=talk&prompt=t001",
   // A prepared response
@@ -74,6 +78,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/rehearse", current: "Practice" },
   // Small talk marks Small talk
   { path: "/small-talk", current: "Small talk" },
+  // Learn marks Learn
+  { path: "/learn", current: "Learn" },
   // History marks History
   { path: "/history", current: "History" },
   // Settings marks nothing in the tab bar (its gear is marked instead)
@@ -98,6 +104,8 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Skills", path: "/skills" },
   // Small talk
   { name: "Small talk", path: "/small-talk" },
+  // Learn
+  { name: "Learn", path: "/learn" },
   // History
   { name: "History", path: "/history" },
   // Settings

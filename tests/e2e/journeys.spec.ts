@@ -423,3 +423,25 @@ test("One moment a day: record a note and see it on the Small talk page", async 
   // Straight back to the page, with the note listed
   await expect(page.getByRole("list", { name: "Your moments" })).toContainText("I fixed the bike chain myself", { timeout: 15_000 });
 });
+
+// Learn: from its tab, a myth-or-fact card screen by screen, then its recall question
+test("Learn: read a card one screen at a time and answer its question", async ({ page }) => {
+  // Start at Learn
+  await page.goto("/learn");
+  // Open the "93%" card
+  await page.getByRole("link", { name: /93% of communication/ }).click();
+  // Guess
+  await page.getByRole("button", { name: "Myth" }).click();
+  // The verdict
+  await expect(page.getByRole("status")).toContainText("It's a myth.");
+  // Through the screens
+  for (let screenNumber = 0; screenNumber < 4; screenNumber++) await page.getByRole("button", { name: "Next" }).click();
+  // Answer the question correctly
+  await page.getByRole("group", { name: "Answers" }).getByRole("button", { name: "Small lab studies about single words and liking" }).click();
+  // It comes back in a week
+  await expect(page.getByText("This question comes back in a week.")).toBeVisible();
+  // Back on Learn, the card is done
+  await page.getByRole("link", { name: "Back to Learn", exact: true }).click();
+  // The body-language set shows one read
+  await expect(page.getByRole("region", { name: /Body language/ })).toContainText("1 of");
+});

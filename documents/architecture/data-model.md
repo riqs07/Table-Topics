@@ -69,6 +69,7 @@ Talks are stored in their own collection (added to existing databases by raising
 | focusStartedOn | Date the current focus began |
 | audioRetention | Number of recent sessions whose audio is kept (default 30) |
 | shareNotes | Whether the coach may read the user's notes after listening back (decision 31). Off unless chosen; missing on older settings |
+| learn | Learn progress by card id (decision 45): when the card was first read, how many recall answers in a row were right (`box`), when its recall question is next due, and how the last one went. Missing until the first card is read. Kept with the settings so it travels in exports |
 
 ### Prompts
 

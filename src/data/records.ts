@@ -130,6 +130,18 @@ export interface ChallengeRecord {
   completedAt: string | null;
 }
 
+// One Learn card's progress (the same shape as CardProgress in src/core/learn.ts)
+export interface LearnCardProgress {
+  // When it was first read (ISO text)
+  readAt: string;
+  // Right answers in a row (0 after a miss)
+  box: number;
+  // When its recall question is next due (ISO text)
+  dueAt: string;
+  // How the last recall went
+  lastResult: "right" | "wrong" | null;
+}
+
 // The user's settings (one record)
 export interface SettingsRecord {
   // Position in the v1 weekly focus list
@@ -140,6 +152,8 @@ export interface SettingsRecord {
   audioRetention: number;
   // Whether the coach may read the user's own notes after listening back (off unless chosen; missing on older settings)
   shareNotes?: boolean;
+  // Learn: each card's reading and recall progress, by card id (missing until the first card is read)
+  learn?: Record<string, LearnCardProgress>;
 }
 
 // What each stored collection holds
