@@ -263,10 +263,10 @@ export function HomeScreen(props: ScreenProps) {
             </section>
           )}
 
-          {/* Today's mission: a small real-world try, under the steps */}
+          {/* Today's mission: a small real-world try, under the steps (the task and a link; the prediction lives on Connect, decision 62) */}
           {plan && data && today && (
             <div className="mt-8">
-              <MissionCard key={data.missions.length} repo={repo} now={today} state={missionToday(data.missions, today)} onChange={(missions) => setData({ ...data, missions })} />
+              <MissionCard key={data.missions.length} repo={repo} now={today} state={missionToday(data.missions, today)} onChange={(missions) => setData({ ...data, missions })} compact />
             </div>
           )}
 

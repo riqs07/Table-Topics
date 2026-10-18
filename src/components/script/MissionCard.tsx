@@ -27,6 +27,8 @@ interface MissionCardProps {
   state: MissionState;
   // Called with every try after one is saved, so the page can update
   onChange: (records: MissionRecord[]) => void;
+  // On Today: the task and a link to Connect only, without the habit, the reason or the 1 to 5 prediction (decision 62)
+  compact?: boolean;
 }
 
 // A 1 to 5 choice, as a row of buttons
@@ -49,7 +51,7 @@ export function ScaleChoice({ label, value, onChoose }: { label: string; value: 
 }
 
 // Draw the card
-export function MissionCard({ repo, now, state, onChange }: MissionCardProps) {
+export function MissionCard({ repo, now, state, onChange, compact = false }: MissionCardProps) {
   // The prediction chosen so far
   const [predicted, setPredicted] = useState<number | null>(null);
   // Whether a save is under way
@@ -82,8 +84,10 @@ export function MissionCard({ repo, now, state, onChange }: MissionCardProps) {
       <p className="text-footnote text-ink-muted"><span id="mission-heading">Today’s mission</span> · {mission.move}</p>
       {/* The task */}
       <p className="mt-1 font-display text-cue">{mission.task}</p>
+      {/* Offered, on Today: a way to take it on in Connect */}
+      {state.kind === "offer" && compact && <p className="mt-2"><Link href="/small-talk#missions" className={TEXT_LINK}>Take it on in Connect</Link></p>}
       {/* Offered: the habit to drop, why, the prediction, and the choice */}
-      {state.kind === "offer" && (
+      {state.kind === "offer" && !compact && (
         <>
           {/* The habit to drop */}
           <p className="mt-3 border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote text-ink-muted">Drop one habit</span>{mission.drop}</p>

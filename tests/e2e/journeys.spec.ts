@@ -438,7 +438,9 @@ test("Mission: predict, try, debrief, compare", async ({ page }) => {
   await page.getByRole("link", { name: "Skip" }).click();
   // Back to Today from the first step
   await page.getByRole("link", { name: "Close, back to Today" }).click();
-  // Today's mission
+  // Today's mission leads to Connect, where the prediction is made
+  await page.getByRole("region", { name: "Today’s mission" }).getByRole("link", { name: "Take it on in Connect" }).click();
+  // Connect's mission card
   const card = page.getByRole("region", { name: "Today’s mission" });
   // Predict "Awkward"
   await card.getByRole("button", { name: /^2/ }).click();

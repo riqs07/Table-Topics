@@ -39,14 +39,24 @@ function fakeServices(words: string): RecordingServices {
 
 // Group the checks about missions on screen
 describe("missions", () => {
-  // Today offers the first mission with a habit to drop; accepting needs a prediction, then it waits for its debrief
-  it("offers a mission on Today and accepts it with a prediction", async () => {
+  // Today shows the mission's task and a link to Connect, without the 1 to 5 prediction (decision 62)
+  it("shows a short mission on Today that leads to Connect", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
+    // Draw Today
+    render(<HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The card
+    const card = await screen.findByRole("region", { name: "Today’s mission" });
+    // Confirm the task and the link, and no scale or accept button
+    expect([!!within(card).getByText(/Ask one follow-up question/), within(card).getByRole("link", { name: "Take it on in Connect" }).getAttribute("href"), within(card).queryByRole("group"), within(card).queryByRole("button", { name: "I’ll try it" })]).toEqual([true, "/small-talk#missions", null, null]);
+  });
+
+  // Connect offers the first mission with a habit to drop; accepting needs a prediction, then it waits for its debrief
+  it("offers a mission on Connect and accepts it with a prediction", async () => {
     // A repository
     const repository = createRepository(new MemoryStore());
-    // Draw Today
-    render(<HomeScreen repository={repository} now={NOW} />);
+    // Draw Connect
+    render(<ConnectScreen repository={repository} now={NOW} />);
     // The card
     const card = await screen.findByRole("region", { name: "Today’s mission" });
     // Accepting is closed until a prediction is chosen
