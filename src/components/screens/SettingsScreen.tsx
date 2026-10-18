@@ -1,5 +1,5 @@
 "use client";
-// The Settings screen: your history (folded), how long recordings are kept, the coach, export and import, and deleting everything
+// The Settings screen: your history (folded), light or dark, how long recordings are kept, the coach, export and import, and deleting everything
 
 // Load React's state and effect tools
 import { useEffect, useState, type ChangeEvent } from "react";
@@ -31,6 +31,8 @@ import { MIN_PASSPHRASE_LENGTH } from "@/config/headers";
 import { passphraseFingerprint } from "@/core/passphraseCheck";
 // Load the sentence for send results
 import { sendResultMessage } from "@/core/feedbackMessages";
+// Load the light and dark choice
+import { COLOR_MODES, readColorMode, saveColorMode, type ColorMode } from "@/data/colorMode";
 // Load the shared button looks
 import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared heading look
@@ -47,7 +49,32 @@ function count(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
 
-// A section of the settings page: an italic run-in heading and its content
+// The light and dark choice: three buttons side by side, the chosen one filled
+function ColorModeChoice() {
+  // The saved choice, read once when drawn
+  const [mode, setMode] = useState<ColorMode>(readColorMode);
+
+  // Save and show a new choice
+  function choose(next: ColorMode) {
+    // Store and apply it
+    saveColorMode(next);
+    // Mark it chosen
+    setMode(next);
+  }
+
+  // The three buttons
+  return (
+    <div role="group" aria-label="Appearance" className="grid max-w-md grid-cols-3">
+      {/* One button per choice */}
+      {COLOR_MODES.map((choice) => (
+        // One choice, filled when chosen
+        <button key={choice.id} type="button" aria-pressed={mode === choice.id} onClick={() => choose(choice.id)} className={`-ml-px min-h-11 border px-3 first:ml-0 ${mode === choice.id ? "relative border-fill bg-fill text-fill-ink" : "border-rule text-ink-muted hover:text-ink"}`}>{choice.name}</button>
+      ))}
+    </div>
+  );
+}
+
+// A section of the settings page: a section heading and its content
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   // Ruled block with a run-in heading
   return (
@@ -255,6 +282,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           {historyOpen && <HistoryContent repo={repo} today={today} />}
         </details>
       </Section>
+
+      {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}
+      {today && <Section title="Appearance">
+        <ColorModeChoice />
+      </Section>}
 
       {/* How long recordings are kept */}
       <Section title="Your recordings">

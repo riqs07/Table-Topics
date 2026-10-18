@@ -511,3 +511,19 @@ test("Mission: predict, try, debrief, compare", async ({ page }) => {
   // The card says how it went
   await expect(page.getByRole("region", { name: "Today’s mission" })).toContainText("Better than you feared");
 });
+
+// Light or dark: chosen in Settings, kept after a reload, with no flash of the other mode and a clean console
+test("Appearance: choose dark in Settings and it stays dark after a reload", async ({ page }) => {
+  // Open Settings
+  await page.goto("/settings");
+  // Choose dark
+  await page.getByRole("button", { name: "Dark" }).click();
+  // The page turns dark at once
+  await expect(page.locator("html")).toHaveAttribute("data-mode", "dark");
+  // Open another page from scratch
+  await page.goto("/practice");
+  // It is still dark
+  await expect(page.locator("html")).toHaveAttribute("data-mode", "dark");
+  // Its background is the dark paper, not the light one
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#161917");
+});

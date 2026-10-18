@@ -16,6 +16,8 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { DEFAULT_THEME, THEMES } from "@/theme/themes";
 // Load Tailwind and the role colors
 import "./globals.css";
+// Load the early script that applies a saved light or dark choice
+import { COLOR_MODE_SCRIPT } from "@/data/colorMode";
 
 // Title and description shown in the browser tab and search results
 export const metadata: Metadata = {
@@ -45,8 +47,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // Wrap every page in the basic HTML document structure
   return (
     // Declare the language, switch on the current theme, and make every font available
-    <html lang="en" data-theme={DEFAULT_THEME} className={fontVariables}>
+    <html lang="en" data-theme={DEFAULT_THEME} className={fontVariables} suppressHydrationWarning>
       <head>
+        {/* Apply a saved light or dark choice before the page is drawn (it changes data-mode above, hence the hydration note) */}
+        <script dangerouslySetInnerHTML={{ __html: COLOR_MODE_SCRIPT }} />
         {/* Add the theme variables (built from theme/themes.ts) to the page */}
         <style dangerouslySetInnerHTML={{ __html: themeCss() }} />
       </head>

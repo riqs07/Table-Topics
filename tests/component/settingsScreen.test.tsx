@@ -35,6 +35,22 @@ async function repositoryWithOneSession() {
 
 // Group the checks about the Settings screen
 describe("SettingsScreen", () => {
+  // Light or dark: applied straight away, remembered, and back to the device's choice
+  it("switches between light, dark and the device's choice", async () => {
+    // Start from nothing saved
+    localStorage.clear();
+    // Draw the screen
+    render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Choose dark
+    await userEvent.click(await screen.findByRole("button", { name: "Dark" }));
+    // What the page and storage say after dark
+    const dark = [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode"), screen.getByRole("button", { name: "Dark" }).getAttribute("aria-pressed")];
+    // Go back to the device's choice
+    await userEvent.click(screen.getByRole("button", { name: "Auto" }));
+    // Confirm dark was applied and saved, then cleared
+    expect([dark, [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual([["dark", "dark", "true"], [null, null]]);
+  });
+
   // Deleting everything takes two deliberate taps
   it("deletes all data only after confirming", async () => {
     // Make a repository with data
