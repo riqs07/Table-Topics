@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 // Load the plan rules being checked
 import { dailyPlan, planHref, planMinutes, planProgress } from "@/core/dailyPlan";
 // Load the Learn rules, for a card read
-import { firstRead } from "@/core/learn";
+import { afterRecall, firstRead } from "@/core/learn";
 // Load the cards
 import { LEARN_CARDS } from "@/content/learn";
 // Load the small-talk lessons
@@ -24,18 +24,18 @@ const regularPlan = (day: Date, extra: Partial<Parameters<typeof dailyPlan>[0]> 
 
 // Group the checks about today's practice
 describe("dailyPlan", () => {
-  // A new user gets two gentle steps: the next part of a speech, then a Table Topic, every day of their first days
-  it("gives a new user a reading and a Table Topic", () => {
+  // A new user gets two gentle speaking steps, the next part of a speech then a Table Topic, and a Learn card, every day of their first days
+  it("gives a new user a reading, a Table Topic and a Learn card", () => {
     // The plans over a week for a new user
     const plans = Array.from({ length: 7 }, (_, offset) => dailyPlan({ day: dayAfter(offset), sessions: [], focusId: "pausing", nextTalk: null }));
-    // Confirm two lanes, always a reading then a Table Topic
-    expect(new Set(plans.map((plan) => plan.map((step) => `${step.lane}:${step.mode}`).join(" ")))).toEqual(new Set(["delivery:read thinking:talk"]));
+    // Confirm always a reading, a Table Topic, then a card
+    expect(new Set(plans.map((plan) => plan.map((step) => `${step.lane}:${step.mode ?? step.kind}`).join(" ")))).toEqual(new Set(["delivery:read thinking:talk learn:card"]));
   });
 
-  // After three practice days, one step from each of the three lanes
-  it("takes one step from each lane", () => {
+  // After three practice days, one step from each of the three lanes, then the Learn card
+  it("takes one step from each lane, then a Learn card", () => {
     // Confirm the lanes
-    expect(regularPlan(DAY).map((step) => step.lane)).toEqual(["delivery", "thinking", "connection"]);
+    expect(regularPlan(DAY).map((step) => step.lane)).toEqual(["delivery", "thinking", "connection", "learn"]);
   });
 
   // Each lane takes turns across a week, never the same kind two days running
@@ -52,38 +52,48 @@ describe("dailyPlan", () => {
     expect([repeats(lane(0)), repeats(lane(1)), [...thinking].sort()]).toEqual([false, false, ["bookend", "response", "smalltalk", "talk"]]);
   });
 
-  // Connection alternates the next small-talk lesson and the next Learn card
-  it("offers the next small-talk lesson or the next Learn card", () => {
+  // Connection is the next small-talk lesson every day; the Learn step is the next unread card
+  it("offers the next small-talk lesson and the next Learn card every day", () => {
     // Two days in a row
-    const steps = [regularPlan(DAY)[2], regularPlan(dayAfter(1))[2]];
-    // Confirm one lesson (the first) and one card (the first)
-    expect(new Set(steps.map((step) => step?.promptId))).toEqual(new Set(["stl1", LEARN_CARDS[0]?.id]));
+    const plans = [regularPlan(DAY), regularPlan(dayAfter(1))];
+    // Confirm the first lesson and the first card both days
+    expect(plans.map((plan) => [plan[2]?.promptId, plan[3]?.promptId, plan[3]?.href])).toEqual([0, 1].map(() => ["stl1", LEARN_CARDS[0]?.id, `/learn/card?id=${LEARN_CARDS[0]?.id}`]));
   });
 
-  // After the answering lessons come the asking and listening ones; once every lesson and card is done, a follow-up and a story on alternate days
+  // Once every card is read, the Learn step is a card due for review, and it stays put after the review; none when nothing is due
+  it("reviews a due card once every card is read", () => {
+    // Every card read a while ago, due again in a month
+    const read = Object.fromEntries(LEARN_CARDS.map((card) => [card.id, { ...firstRead(new Date(2026, 8, 1)), dueAt: new Date(2026, 10, 20).toISOString() }]));
+    // The same with the third card due today
+    const due = { ...read, [LEARN_CARDS[2]!.id]: { ...read[LEARN_CARDS[2]!.id]!, dueAt: new Date(2026, 9, 16, 8).toISOString() } };
+    // The morning's plan
+    const morning = regularPlan(DAY, { learn: due });
+    // After answering it right today (due again in a week)
+    const after = { ...due, [LEARN_CARDS[2]!.id]: afterRecall(due[LEARN_CARDS[2]!.id], true, DAY) };
+    // Confirm nothing due means no card, a due card is reviewed, and the step stays and is done after the review
+    expect([regularPlan(DAY, { learn: read }).length, morning[3]?.label, morning[3]?.promptId, regularPlan(DAY, { learn: after })[3]?.promptId, planProgress(morning, [], DAY, after)[3]]).toEqual([3, "Learn · review", LEARN_CARDS[2]?.id, LEARN_CARDS[2]?.id, true]);
+  });
+
+  // After the answering lessons come the asking and listening ones; once every lesson is done, a follow-up and a story on alternate days
   it("moves on to asking and listening, then alternates their drills", () => {
     // Every answering lesson answered earlier
     const answered = SMALL_TALK_LESSONS.filter((lesson) => lesson.unit === "answering").map((lesson, index) => daysAgo(4 + index, { mode: "smalltalk", promptId: lesson.id }));
     // Every lesson answered earlier
     const allLessons = SMALL_TALK_LESSONS.map((lesson, index) => daysAgo(4 + index, { mode: "smalltalk", promptId: lesson.id }));
-    // Every card read earlier
-    const learn = Object.fromEntries(LEARN_CARDS.map((card) => [card.id, firstRead(new Date(2026, 9, 1))]));
     // The lesson step after the answering lessons, whichever day it falls on
-    const lesson = [DAY, dayAfter(1)].map((day) => regularPlan(day, { sessions: [...regular, ...answered] })[2]).find((step) => step?.kind === "session");
+    const lesson = regularPlan(DAY, { sessions: [...regular, ...answered] })[2];
     // Two days in a row with nothing left
-    const drills = [DAY, dayAfter(1)].map((day) => regularPlan(day, { sessions: [...regular, ...allLessons], learn })[2]);
+    const drills = [DAY, dayAfter(1)].map((day) => regularPlan(day, { sessions: [...regular, ...allLessons] })[2]);
     // Confirm the first asking lesson, then one follow-up and one story (its text hidden)
     expect([lesson?.label, lesson?.promptId, new Set(drills.map((step) => step?.label)), drills.find((step) => step?.label === "Listening")?.title]).toEqual(["Asking lesson 1", "sal1", new Set(["Follow-up", "Listening"]), "A short story to respond to"]);
   });
 
-  // What counts as done for Connection comes from before today, so reading a card today does not change today's plan
+  // What counts as read comes from before today, so reading a card today does not change today's plan
   it("uses only progress from before today", () => {
-    // A day whose Connection step is a card
-    const day = [DAY, dayAfter(1)].find((candidate) => regularPlan(candidate)[2]?.kind === "card")!;
     // The plan in the morning
-    const morning = regularPlan(day);
+    const morning = regularPlan(DAY);
     // After reading that card today
-    const later = regularPlan(day, { learn: { [morning[2]!.promptId]: firstRead(day) } });
+    const later = regularPlan(DAY, { learn: { [morning[3]!.promptId]: firstRead(DAY) } });
     // Confirm the same plan
     expect(later).toEqual(morning);
   });
@@ -119,21 +129,21 @@ describe("dailyPlan", () => {
 describe("planProgress", () => {
   // A session step is done by a session today; a card step by reading the card today
   it("marks steps done by today's sessions and cards", () => {
-    // A day whose Connection step is a card
-    const day = [DAY, dayAfter(1)].find((candidate) => regularPlan(candidate)[2]?.kind === "card")!;
+    // The day
+    const day = DAY;
     // Its plan
     const plan = regularPlan(day);
     // The Delivery step done today, the On-the-spot step done yesterday, the card read today
     const sessions = [makeSession({ id: "a", mode: plan[0]!.mode!, promptId: plan[0]!.promptId, createdAt: new Date(day.getTime() - 3_600_000).toISOString() }), makeSession({ id: "b", mode: plan[1]!.mode!, promptId: plan[1]!.promptId, createdAt: new Date(day.getTime() - 86_400_000).toISOString() })];
     // Confirm the first and the card
-    expect(planProgress(plan, sessions, day, { [plan[2]!.promptId]: firstRead(day) })).toEqual([true, false, true]);
+    expect(planProgress(plan, sessions, day, { [plan[3]!.promptId]: firstRead(day) })).toEqual([true, false, false, true]);
   });
 
   // A step's address carries its number in the plan, cards included
   it("marks a step's address with its number", () => {
     // The first step for a new user, and a card step
-    const card = [DAY, dayAfter(1)].map((day) => regularPlan(day)[2]).find((step) => step?.kind === "card")!;
+    const card = regularPlan(DAY)[3]!;
     // Confirm both markers
-    expect([planHref(dailyPlan({ day: DAY, sessions: [], focusId: "pausing", nextTalk: null })[0]!, 1), planHref(card, 3)]).toEqual(["/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1", `/learn/card?id=${card.promptId}&plan=3`]);
+    expect([planHref(dailyPlan({ day: DAY, sessions: [], focusId: "pausing", nextTalk: null })[0]!, 1), planHref(card, 4)]).toEqual(["/session?mode=read&prompt=lincoln-second-inaugural-1&plan=1", `/learn/card?id=${card.promptId}&plan=4`]);
   });
 });

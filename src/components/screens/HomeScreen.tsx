@@ -35,6 +35,9 @@ import { practiceSessions } from "@/core/sessionHome";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 
+// The number of steps as a word, for the headline ("Four short steps.")
+const STEP_COUNTS: Readonly<Record<number, string>> = { 1: "One", 2: "Two", 3: "Three", 4: "Four" };
+
 // The welcome question's answers and where each leads (null: straight into the first step of today's practice, a one-minute reading)
 const WELCOME_CHOICES: ReadonlyArray<{ text: string; href: string | null }> = [
   // Speaking without a script
@@ -207,7 +210,7 @@ export function HomeScreen(props: ScreenProps) {
               {/* What it is and how long */}
               <p className="text-footnote italic text-ink-muted">Today’s practice · about {planMinutes(plan.steps)} minutes with listening back</p>
               {/* Where things stand, set like a headline */}
-              <h1 className="mt-2 font-display text-prompt tracking-tight md:text-prompt-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? (plan.steps.length === 2 ? "Two short steps." : "Three short steps.") : "Pick up where you left off."}</h1>
+              <h1 className="mt-2 font-display text-prompt tracking-tight md:text-prompt-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
               {/* Once done: the time spoken today, and which day of the week this is */}
               {nextIndex === -1 && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)} {data.weekLine}</p>}
               {/* The steps */}

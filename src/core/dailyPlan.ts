@@ -1,4 +1,4 @@
-// Today's practice: one step from each of three lanes, taken in turn by day (see documents/plan-daily-mix-and-connection.md)
+// Today's practice: one step from each of three lanes, taken in turn by day, then a Learn card (see documents/plan-daily-mix-and-connection.md)
 
 // Load the day pickers and lookups for the spoken prompts and texts
 import { PAUSE_DRILLS, PASSAGES, bookendForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
@@ -13,11 +13,13 @@ import { dayKey, daysBetween, startOfDay } from "@/core/dates";
 import { SMALL_TALK_LESSONS, drillForDay, smallTalkForDay } from "@/content/smallTalk";
 // Load the next Learn card
 import { nextCard, type LearnProgress } from "@/core/learn";
+// Load the cards, for a review once every card is read
+import { LEARN_CARDS } from "@/content/learn";
 // Load the record types
 import type { SessionMode, SessionRecord } from "@/data/records";
 
 // Which lane of the day's practice a step comes from
-export type PlanLane = "delivery" | "thinking" | "connection";
+export type PlanLane = "delivery" | "thinking" | "connection" | "learn";
 
 // One step of today's practice
 export interface PlanStep {
@@ -143,8 +145,6 @@ function skill(focusId: string, day: Date): PlanStep {
 const DELIVERY_TURNS = ["speech", "skill", "speech", "pause", "skill"] as const;
 // The On-the-spot lane's turns: a Table Topic, an everyday question, an opening or closing drill, again, then a prepared speech once a week
 const THINKING_TURNS = ["talk", "smalltalk", "bookend", "talk", "smalltalk", "bookend", "response"] as const;
-// The Connection lane's turns: the next small-talk lesson, then the next Learn card
-const CONNECTION_TURNS = ["lesson", "card"] as const;
 
 // Take a lane's turn for a day
 function turnOf<T>(turns: ReadonlyArray<T>, day: Date): T {
@@ -212,28 +212,45 @@ function thinking(input: PlanInput, firstDays: boolean): PlanStep {
 // The lesson labels by unit
 const LESSON_LABELS = { answering: "Small-talk lesson", asking: "Asking lesson", listening: "Listening lesson" } as const;
 
-// Connection: real conversations. The next small-talk lesson (answering, then asking, then listening) or the next Learn card, in turn; whichever is left when the other is finished; once both are, a follow-up drill and a listening drill on alternate days
+// Connection: real conversations. The next small-talk lesson (answering, then asking, then listening); once they are done, a follow-up drill and a listening drill on alternate days
 function connection(input: PlanInput, before: ReadonlyArray<SessionRecord>): PlanStep {
   // Lessons answered before today
   const answered = new Set(before.filter((session) => session.mode === "smalltalk").map((session) => session.promptId));
   // The next lesson not yet answered
   const lesson = SMALL_TALK_LESSONS.find((item) => !answered.has(item.id));
-  // Learn progress from before today only
-  const learned = Object.fromEntries(Object.entries(input.learn ?? {}).filter(([, progress]) => new Date(progress.readAt) < startOfDay(input.day)));
-  // The next card not yet read
-  const card = nextCard(learned);
-  // Today's turn
-  const turn = turnOf(CONNECTION_TURNS, input.day);
-  // A card: its turn, or no lesson left
-  if (card && (turn === "card" || !lesson)) return { lane: "connection", kind: "card", label: "Learn", title: card.title, mode: null, promptId: card.id, minutes: 1, href: `/learn/card?id=${card.id}` };
   // A lesson
   if (lesson) return { lane: "connection", kind: "session", label: `${LESSON_LABELS[lesson.unit]} ${lesson.number}`, title: lesson.title, mode: "smalltalk", promptId: lesson.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${lesson.id}` };
-  // Both finished: asking one day, listening the next
+  // Lessons finished: asking one day, listening the next
   const asking = dayNumber(input.day) % 2 === 0;
   // Today's drill
   const drill = drillForDay(asking ? "asking" : "listening", input.day);
   // The step (a story stays hidden until it is heard)
   return { lane: "connection", kind: "session", label: asking ? "Follow-up" : "Listening", title: asking ? drill.text : "A short story to respond to", mode: "smalltalk", promptId: drill.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${drill.id}` };
+}
+
+// Learn: one card every day. The next card not read before today; once every card is read, the first card due for review today (or reviewed today, so the step stays put after it is done); none when nothing is due
+function learnStep(input: PlanInput): PlanStep | null {
+  // Today's start and end
+  const start = startOfDay(input.day);
+  // The end of today
+  const end = new Date(start.getTime() + 86_400_000);
+  // Progress
+  const progress = input.learn ?? {};
+  // Cards read before today
+  const learned = Object.fromEntries(Object.entries(progress).filter(([, item]) => new Date(item.readAt) < start));
+  // The next card not yet read
+  const card = nextCard(learned);
+  // A new card
+  if (card) return { lane: "learn", kind: "card", label: "Learn", title: card.title, mode: null, promptId: card.id, minutes: 1, href: `/learn/card?id=${card.id}` };
+  // Every card read: the first one due today, or already reviewed today
+  const review = LEARN_CARDS.find((item) => {
+    // Its progress
+    const own = progress[item.id];
+    // Due by the end of today, or answered today
+    return !!own && (new Date(own.dueAt) < end || (!!own.recalledAt && new Date(own.recalledAt) >= start));
+  });
+  // A review, or nothing
+  return review ? { lane: "learn", kind: "card", label: "Learn · review", title: review.title, mode: null, promptId: review.id, minutes: 1, href: `/learn/card?id=${review.id}` } : null;
 }
 
 // Sessions recorded before today
@@ -242,7 +259,7 @@ function beforeToday(sessions: ReadonlyArray<SessionRecord>, day: Date): Session
   return sessions.filter((session) => new Date(session.createdAt) < startOfDay(day));
 }
 
-// Today's steps: one from each lane; new users (fewer than three practice days) get Delivery and On the spot only
+// Today's steps: one from each lane, then a Learn card; new users (fewer than three practice days) get Delivery, On the spot and the card
 export function dailyPlan(input: PlanInput): PlanStep[] {
   // Sessions before today, so the plan stays the same all day
   const before = beforeToday(input.sessions, input.day);
@@ -250,16 +267,27 @@ export function dailyPlan(input: PlanInput): PlanStep[] {
   const practiceDays = new Set(before.map((session) => dayKey(new Date(session.createdAt)))).size;
   // Whether these are the first days
   const firstDays = practiceDays < 3;
-  // Two gentle steps at first, then all three lanes
-  return firstDays ? [delivery(input, before, true), thinking(input, true)] : [delivery(input, before, false), thinking(input, false), connection(input, before)];
+  // Two gentle speaking steps at first, then all three lanes
+  const speaking = firstDays ? [delivery(input, before, true), thinking(input, true)] : [delivery(input, before, false), thinking(input, false), connection(input, before)];
+  // The day's Learn card, when there is one
+  const card = learnStep(input);
+  // Speaking first, then the card
+  return card ? [...speaking, card] : speaking;
 }
 
-// Which steps were done today: a session today of the same kind and prompt, or a card read today
+// Which steps were done today: a session today of the same kind and prompt, or a card read or reviewed today
 export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}): boolean[] {
   // Today's sessions
   const today = sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(day));
   // Each step
-  return plan.map((step) => (step.kind === "card" ? !!learn[step.promptId] && dayKey(new Date(learn[step.promptId]!.readAt)) === dayKey(day) : today.some((session) => session.mode === step.mode && session.promptId === step.promptId)));
+  return plan.map((step) => {
+    // A card's progress
+    const card = learn[step.promptId];
+    // A card: read today, or its recall answered today
+    if (step.kind === "card") return !!card && (dayKey(new Date(card.readAt)) === dayKey(day) || (!!card.recalledAt && dayKey(new Date(card.recalledAt)) === dayKey(day)));
+    // A session of the same kind and prompt today
+    return today.some((session) => session.mode === step.mode && session.promptId === step.promptId);
+  });
 }
 
 // Speaking minutes plus listening back (about the same again; a card has nothing to hear back): the time the plan takes

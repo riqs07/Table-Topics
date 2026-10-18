@@ -266,16 +266,16 @@ test("Whole speech: open it from Skills, read part 1, then go on to part 2", asy
   await expect(page.getByText("Second Inaugural Address, part 2 of 7")).toBeVisible();
 });
 
-// Today's practice: start from Today, do both steps without waiting to listen back, and finish
-test("Today's practice: start, move through both steps, finish", async ({ page }) => {
+// Today's practice: start from Today, do both speaking steps without waiting to listen back, read the Learn card, and finish
+test("Today's practice: start, move through every step, finish", async ({ page }) => {
   // The stand-in speech reads the opening of the warm-up speech
   await useStandIns(page, "Fellow Countrymen At this second appearing to take the oath of the Presidential office there is less occasion for an extended address than there was at the first");
   // Start at Today
   await page.goto("/");
   // Skip the welcome question, which opens the first step straight away
   await page.getByRole("link", { name: "Skip" }).click();
-  // Step 1 of 2: the warm-up reading
-  await expect(page.getByText("Today’s practice · step 1 of 2")).toBeVisible();
+  // Step 1 of 3: the warm-up reading
+  await expect(page.getByText("Today’s practice · step 1 of 3")).toBeVisible();
   // Start reading
   await page.getByRole("button", { name: /Start reading/ }).click();
   // Read past the minimum
@@ -294,8 +294,14 @@ test("Today's practice: start, move through both steps, finish", async ({ page }
   await page.waitForTimeout(11_500);
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
+  // On to the Learn card
+  await page.getByRole("button", { name: /^Next: step 3/ }).click({ timeout: 15_000 });
+  // The card says which step it is
+  await expect(page.getByText("Step 3 of 3")).toBeVisible();
+  // Read it one screen at a time, to the last
+  for (let screen = 0; screen < 4; screen++) await page.getByRole("button", { name: "Next", exact: true }).click();
   // Finish
-  await page.getByRole("button", { name: /^Finish today’s practice/ }).click({ timeout: 15_000 });
+  await page.getByRole("link", { name: /^Finish today’s practice/ }).click();
   // Today says the practice is done, leading with the time spoken
   await expect(page.getByRole("heading", { name: "Done for today." })).toBeVisible();
   // The summary line

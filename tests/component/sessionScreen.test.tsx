@@ -10,6 +10,8 @@ import { SessionScreen } from "@/components/screens/SessionScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
+// Load the Learn cards, for the day's card step
+import { LEARN_CARDS } from "@/content/learn";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 // Load the passphrase storage
@@ -660,23 +662,23 @@ describe("SessionScreen", () => {
       // Wait for the move
       await waitFor(() => expect(navigate).toHaveBeenCalled());
       // Confirm it was open, went to step 2 inside the plan, and noted the step as reviewed (skipped, nothing written)
-      expect([open, navigate.mock.calls[0]?.[0], (await repository.getSession("s1"))?.selfReview?.skipped, !!screen.queryByText("Today’s practice · step 1 of 2")]).toEqual([true, `/session?mode=talk&prompt=${tableTopicForDay(NOW).id}&plan=2`, true, true]);
+      expect([open, navigate.mock.calls[0]?.[0], (await repository.getSession("s1"))?.selfReview?.skipped, !!screen.queryByText("Today’s practice · step 1 of 3")]).toEqual([true, `/session?mode=talk&prompt=${tableTopicForDay(NOW).id}&plan=2`, true, true]);
     });
 
-    // The last step finishes the practice, and trying again stays inside the plan
-    it("finishes today's practice after the last step, with a retry on offer", async () => {
+    // The last speaking step leads on to the day's Learn card, and trying again stays inside the plan
+    it("leads from the last speaking step to the Learn card, with a retry on offer", async () => {
       // Where the app goes
       const navigate = vi.fn();
-      // Draw step 2 of 2
+      // Draw step 2 of 3
       render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} planStep={2} navigate={navigate} />);
       // Where trying again leads
       const retry = (await screen.findByRole("link", { name: "Try it again" })).getAttribute("href");
-      // Finish
-      await userEvent.click(await screen.findByRole("button", { name: /^Finish today’s practice/ }));
+      // Move on
+      await userEvent.click(await screen.findByRole("button", { name: /^Next: step 3/ }));
       // Wait for the move
       await waitFor(() => expect(navigate).toHaveBeenCalled());
-      // Confirm back to Today, and the retry keeps the plan step
-      expect([navigate.mock.calls[0]?.[0], retry?.endsWith("&retryOf=s1&plan=2")]).toEqual(["/", true]);
+      // Confirm the card inside the plan, and the retry keeps the plan step
+      expect([navigate.mock.calls[0]?.[0], retry?.endsWith("&retryOf=s1&plan=2")]).toEqual([`/learn/card?id=${LEARN_CARDS[0]?.id}&plan=3`, true]);
     });
 
     // Older sessions skip the step

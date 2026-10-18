@@ -35,7 +35,7 @@ export function afterRecall(previous: CardProgress | undefined, right: boolean, 
   // The wait for this box (the longest once past the end)
   const days = RECALL_DAYS[Math.min(box, RECALL_DAYS.length - 1)] ?? 1;
   // The new progress
-  return { readAt: start.readAt, box, dueAt: daysAfter(now, days), lastResult: right ? "right" : "wrong" };
+  return { readAt: start.readAt, box, dueAt: daysAfter(now, days), lastResult: right ? "right" : "wrong", recalledAt: now.toISOString() };
 }
 
 // The cards whose recall question is due now, the longest overdue first

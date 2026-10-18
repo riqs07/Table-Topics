@@ -150,6 +150,8 @@ export interface LearnCardProgress {
   dueAt: string;
   // How the last recall went
   lastResult: "right" | "wrong" | null;
+  // When its recall question was last answered (ISO text; missing before 2026-10-18 or until answered)
+  recalledAt?: string;
 }
 
 // The user's settings (one record)
