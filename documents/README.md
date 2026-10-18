@@ -32,6 +32,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 18 | [research/charisma-conversation-duolingo-2026-10.md](research/charisma-conversation-duolingo-2026-10.md) | What does research say about charisma, body language, conversation, and how Duolingo works? | 8 min |
 | 19 | [plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md) | How will the daily mix, the conversation curriculum, missions and learning cards work? | 7 min |
 | 20 | [plan-learn.md](plan-learn.md) | What will the Learn cards teach, how are they built, and how do they come back for review? | 8 min |
+| 21 | [research/charisma-connection-deep-dive-2026-10.md](research/charisma-connection-deep-dive-2026-10.md) | What builds warmth and connection in conversation, how are these skills trained, and how should text scenario questions work in VoiceLab? | 15 min |
 
 ## Inspector checklist
 
