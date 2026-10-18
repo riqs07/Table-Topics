@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 import { SwipeDeck } from "@/components/script/SwipeDeck";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-import { PrimaryLink } from "@/components/script/Buttons";
+import { PrimaryLink, QUIET, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the scenarios, their item and progress saving
@@ -53,7 +53,7 @@ const GUESSES: ReadonlyArray<{ verdict: Verdict; label: string }> = [
 // A small italic heading over a screen
 function Kicker({ children }: { children: string }) {
   // The heading
-  return <p className="mt-6 text-footnote italic text-ink-muted md:mt-0">{children}</p>;
+  return <p className="mt-6 text-footnote text-ink-muted md:mt-0">{children}</p>;
 }
 
 // When a recall question comes back, in words
@@ -181,21 +181,19 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {card.verdict && (
         <div className="mt-6">
           {/* The ask */}
-          <p className="italic text-ink-muted">Guess first.</p>
+          <p className="text-ink-muted">Guess first.</p>
           {/* The guesses */}
           <div role="group" aria-label="Your guess" className="mt-2 flex flex-wrap gap-2">
             {/* Each guess */}
             {GUESSES.map((option) => (
               // One guess, filled once chosen
-              <button key={option.verdict} type="button" aria-pressed={guess === option.verdict} disabled={guess !== null} onClick={() => setGuess(option.verdict)} className={`min-h-11 border px-4 ${guess === option.verdict ? "border-accent bg-accent text-accent-ink" : "border-ink disabled:opacity-60"}`}>{option.label}</button>
+              <button key={option.verdict} type="button" aria-pressed={guess === option.verdict} disabled={guess !== null} onClick={() => setGuess(option.verdict)} className={`min-h-11 border px-4 ${guess === option.verdict ? "border-fill bg-fill text-fill-ink" : "border-ink disabled:opacity-60"}`}>{option.label}</button>
             ))}
           </div>
           {/* The answer, once guessed */}
           {guess && <p role="status" className="mt-4 font-display text-cue">{VERDICT_WORDS[card.verdict]} {guess === card.verdict ? "You got it." : ""}</p>}
         </div>
       )}
-      {/* How to move on */}
-      {!card.verdict && <p className="mt-6 italic text-ink-muted">Swipe, or press Next, to see what research found.</p>}
     </div>,
     // 2. What the research found
     <div key="finding">
@@ -221,7 +219,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {card.exercise && (
         <div className="mt-6 border-l-2 border-accent pl-4">
           {/* Heading */}
-          <p className="text-footnote italic text-ink-muted">Try it now</p>
+          <p className="text-footnote text-ink-muted">Try it now</p>
           {/* The exercise */}
           <p className="mt-1 text-lede">{card.exercise}</p>
           {/* Record it and hear it back */}
@@ -254,7 +252,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
           const shown = picked !== null && (position === recall.answer || position === picked);
           // One answer
           return (
-            <button key={option} type="button" disabled={picked !== null || said !== null} onClick={() => { setPicked(position); remember(position === recall.answer); }} data-result={shown ? (position === recall.answer ? "right" : "wrong") : undefined} className={`min-h-11 border px-4 py-2 text-left ${shown && position === recall.answer ? "border-accent bg-accent text-accent-ink" : shown ? "border-ink line-through" : "border-rule"}`}>
+            <button key={option} type="button" disabled={picked !== null || said !== null} onClick={() => { setPicked(position); remember(position === recall.answer); }} data-result={shown ? (position === recall.answer ? "right" : "wrong") : undefined} className={`min-h-11 border px-4 py-2 text-left ${shown && position === recall.answer ? "border-fill bg-fill text-fill-ink" : shown ? "border-ink line-through" : "border-rule"}`}>
               {option}
             </button>
           );
@@ -266,7 +264,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {picked === null && (
         <div className="mt-6 border-t border-rule pt-3">
           {/* The offer */}
-          <p className="text-footnote italic text-ink-muted">Or say the main point in your own words</p>
+          <p className="text-footnote text-ink-muted">Or say the main point in your own words</p>
           {/* Record it */}
           <QuickRecorder services={services} action="Say it" maxSec={30} onDone={setSaid} />
           {/* Then compare, and say how it went */}
@@ -284,14 +282,14 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
                 </p>
               ) : (
                 // Noted
-                <p role="status" className="mt-2 italic text-ink-muted">Noted.</p>
+                <p role="status" className="mt-2 text-ink-muted">Noted.</p>
               )}
             </div>
           )}
         </div>
       )}
       {/* When it comes back */}
-      {back && <p className="mt-3 text-footnote italic text-ink-muted">This question comes back {back}.</p>}
+      {back && <p className="mt-3 text-footnote text-ink-muted">This question comes back {back}.</p>}
       {/* The evidence and source */}
       <p className="mt-6 border-t border-rule pt-3 text-footnote text-ink-muted">
         {/* The label in words */}
@@ -304,9 +302,9 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {/* On to the next card, or back */}
       {!plan && <p className="mt-4 flex flex-wrap gap-x-4">
         {/* The next card */}
-        {next && <Link href={`/learn/card?id=${next.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Next card</Link>}
+        {next && <Link href={`/learn/card?id=${next.id}`} className={TEXT_LINK}>Next card</Link>}
         {/* Back */}
-        <Link href={`/learn/set?id=${card.set}`} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Back to {set?.name ?? "Learn"}</Link>
+        <Link href={`/learn/set?id=${card.set}`} className={QUIET}>Back to {set?.name ?? "Learn"}</Link>
       </p>}
     </div>,
   ];

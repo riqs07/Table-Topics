@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { RowLink } from "@/components/script/Buttons";
+import { QUIET, RowLink } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
@@ -55,6 +55,8 @@ import { MissionCard } from "@/components/script/MissionCard";
 import { missionDays, missionToday } from "@/core/missions";
 // Load the record type for mission tries
 import type { MissionRecord } from "@/data/records";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // Everything Home shows that comes from saved data
 interface HomeData {
@@ -160,7 +162,7 @@ export function HomeScreen(props: ScreenProps) {
   // Draw the page
   return (
     // Full-height page: one column on a phone, margin plus main column on a computer
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Name and links */}
       <Masthead title="VoiceLab" section="today" />
 
@@ -176,7 +178,7 @@ export function HomeScreen(props: ScreenProps) {
               {/* Each day */}
               {data.strip.map((day) => (
                 // One square with the day's letter; today has a darker edge
-                <li key={day.key} aria-label={`${day.name}${day.isToday ? ", today" : ""}: ${day.practised ? "practised" : "not yet"}`} className={`flex size-8 items-center justify-center border text-tab ${day.practised ? "border-accent bg-accent text-accent-ink" : "border-rule text-ink-muted"} ${day.isToday ? "outline-2 outline-offset-2 outline-ink" : ""}`}>
+                <li key={day.key} aria-label={`${day.name}${day.isToday ? ", today" : ""}: ${day.practised ? "practised" : "not yet"}`} className={`flex size-8 items-center justify-center border text-tab ${day.practised ? "border-fill bg-fill text-fill-ink" : "border-rule text-ink-muted"} ${day.isToday ? "outline-2 outline-offset-2 outline-ink" : ""}`}>
                   {/* The letter, which the label already says */}
                   <span aria-hidden="true">{day.letter}</span>
                 </li>
@@ -197,7 +199,7 @@ export function HomeScreen(props: ScreenProps) {
               {/* What it is, and the privacy promise */}
               <p className="mt-3 max-w-[52ch] text-lede">Practise speaking, privately. Your recordings stay on this device.</p>
               {/* The question */}
-              <p className="mt-6 italic text-ink-muted">What brings you here?</p>
+              <p className="mt-6 text-ink-muted">What brings you here?</p>
               {/* The three answers */}
               <ul aria-label="What brings you here?" className="mt-2 divide-y divide-rule border-y border-ink">
                 {/* Each answer */}
@@ -210,7 +212,7 @@ export function HomeScreen(props: ScreenProps) {
                 ))}
               </ul>
               {/* Skip, which also starts today's first step */}
-              <Link href={firstStep} onClick={finishWelcome} className="inline-flex min-h-11 items-center mt-4 italic text-ink-muted underline underline-offset-4">Skip</Link>
+              <Link href={firstStep} onClick={finishWelcome} className={`${QUIET} mt-4`}>Skip</Link>
             </section>
           )}
 
@@ -218,7 +220,7 @@ export function HomeScreen(props: ScreenProps) {
           {plan && (
             <section aria-label="Today's practice" className="mt-8 md:mt-0">
               {/* What it is and how long */}
-              <p className="text-footnote italic text-ink-muted">Today’s practice · about {planMinutes(plan.steps)} minutes with listening back</p>
+              <p className="text-footnote text-ink-muted">Today’s practice · about {planMinutes(plan.steps)} minutes with listening back</p>
               {/* Where things stand, set like a headline */}
               <h1 className="mt-2 font-display text-prompt tracking-tight md:text-prompt-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
               {/* Once done: the time spoken today, and which day of the week this is */}
@@ -245,7 +247,7 @@ export function HomeScreen(props: ScreenProps) {
                         {/* What it is */}
                         <span className="min-w-0 flex-1">
                           {/* Its name and time */}
-                          <span className={`block text-footnote italic ${mark === "next" ? "text-accent" : "text-ink-muted"}`}>{step.label} · {step.minutes} min</span>
+                          <span className={`block text-footnote ${mark === "next" ? "font-medium text-accent" : "text-ink-muted"}`}>{step.label} · {step.minutes} min</span>
                           {/* What it uses */}
                           <span className="block text-lede">{step.title}</span>
                           {/* How it went, once done */}
@@ -257,7 +259,7 @@ export function HomeScreen(props: ScreenProps) {
                 })}
               </ol>
               {/* Once done, a word on what is next */}
-              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] italic text-ink-muted">A new practice is ready tomorrow.</p>}
+              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] text-ink-muted">A new practice is ready tomorrow.</p>}
             </section>
           )}
 
@@ -272,7 +274,7 @@ export function HomeScreen(props: ScreenProps) {
           {plan && nextIndex === -1 && plan.more.length > 0 && (
             <section aria-labelledby="keep-going" className="mt-8">
               {/* Run-in heading */}
-              <h2 id="keep-going" className="italic">Keep going</h2>
+              <h2 id="keep-going" className={SECTION_HEADING}>Keep going</h2>
               {/* The suggestions */}
               <ul className="mt-2 divide-y divide-rule border-y border-rule">
                 {/* Each one */}
@@ -281,7 +283,7 @@ export function HomeScreen(props: ScreenProps) {
                   <li key={`${step.lane}-${step.promptId}`}>
                     <RowLink href={step.href} meta={`${step.minutes} min`}>
                       {/* Its kind */}
-                      <span className="block text-footnote italic text-ink-muted">{step.label}</span>
+                      <span className="block text-footnote text-ink-muted">{step.label}</span>
                       {/* What it uses */}
                       <span className="block">{step.title}</span>
                     </RowLink>

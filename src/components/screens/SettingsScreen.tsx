@@ -7,6 +7,8 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
+// Load the shared page title
+import { PageTitle } from "@/components/script/PageTitle";
 // Load the history's content, shown folded inside Settings
 import { HistoryContent } from "@/components/screens/HistoryScreen";
 // Load the shared screen starting points
@@ -29,6 +31,10 @@ import { MIN_PASSPHRASE_LENGTH } from "@/config/headers";
 import { passphraseFingerprint } from "@/core/passphraseCheck";
 // Load the sentence for send results
 import { sendResultMessage } from "@/core/feedbackMessages";
+// Load the shared button looks
+import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // Choices for how many recent sessions keep their audio
 const RETENTION_CHOICES = [10, 30, 60, 100];
@@ -47,7 +53,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section className="mt-8 border-t border-rule pt-4 text-lede">
       {/* Heading */}
-      <h2 className="italic">{title}</h2>
+      <h2 className={SECTION_HEADING}>{title}</h2>
       {/* Content */}
       <div className="mt-2">{children}</div>
     </section>
@@ -231,18 +237,20 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   // Draw the page
   return (
     // A single readable column
-    <main className="mx-auto min-h-dvh max-w-2xl bg-paper-raised px-6 pt-6 pb-16 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title and a link home */}
-      <Masthead title="Settings" section="settings" />
+      <Masthead title="VoiceLab" section="settings" />
+      {/* The page's name */}
+      <PageTitle title="Settings" />
 
-      {/* Result of the last action, read out to screen readers */}
-      <p role="status" className="mt-4 min-h-6 italic text-accent">{message}</p>
+      {/* Result of the last action, read out to screen readers (takes no room until there is one) */}
+      <p role="status" className={message ? "mt-4 text-accent" : "sr-only"}>{message}</p>
 
       {/* History, folded away until wanted (drawn only once opened) */}
       <Section title="History">
         <details onToggle={(event) => setHistoryOpen(event.currentTarget.open)}>
           {/* Open it */}
-          <summary className="inline-flex min-h-11 cursor-pointer items-center underline underline-offset-4">Show your practice history</summary>
+          <summary className={`${TEXT_LINK} cursor-pointer`}>Show your practice history</summary>
           {/* The history itself */}
           {historyOpen && <HistoryContent repo={repo} today={today} />}
         </details>
@@ -268,7 +276,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {/* The setup, folded away until wanted */}
         <details className="mt-3">
           {/* Open it */}
-          <summary className="inline-flex min-h-11 cursor-pointer items-center underline underline-offset-4">Set up the coach</summary>
+          <summary className={`${TEXT_LINK} cursor-pointer`}>Set up the coach</summary>
           {/* What the passphrase is for */}
           <p className="mt-2 text-ink-muted">Feedback needs the passphrase you set on the server. It is kept on this device only and is not in exports.</p>
           {/* Passphrase field and save */}
@@ -276,16 +284,16 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             {/* The field */}
             <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 border-b border-ink bg-transparent py-1" />
             {/* Save */}
-            <button type="button" onClick={storePassphrase} className="inline-flex min-h-11 items-center underline underline-offset-4">Save passphrase</button>
+            <button type="button" onClick={storePassphrase} className={TEXT_LINK}>Save passphrase</button>
           </p>
           {/* The saved passphrase's fingerprint, to compare with the one pnpm live-check prints for APP_ACCESS_SECRET */}
-          {fingerprint && <p className="mt-2 text-footnote italic text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
+          {fingerprint && <p className="mt-2 text-footnote text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
           {/* Waiting sessions, with a way to send them now */}
           {pendingCount > 0 && (
             <p className="mt-3">
               {pendingCount} {pendingCount === 1 ? "session is" : "sessions are"} waiting for feedback.{" "}
               {/* Send now */}
-              <button type="button" onClick={sendNow} className="inline-flex min-h-11 items-center underline underline-offset-4">Send now</button>
+              <button type="button" onClick={sendNow} className={TEXT_LINK}>Send now</button>
             </p>
           )}
           {/* Whether the coach may read the user's own notes */}
@@ -308,7 +316,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {/* Why to export */}
         <p className="text-ink-muted">Everything lives on this device. Browsers can clear saved data, so keep a copy now and then.</p>
         {/* Export */}
-        <button type="button" onClick={exportData} className="inline-flex min-h-11 items-center mt-3 underline underline-offset-4">Export my data</button>
+        <button type="button" onClick={exportData} className={`${TEXT_LINK} mt-3`}>Export my data</button>
         {/* Import */}
         <p className="mt-3">
           <label className="cursor-pointer underline underline-offset-4">
@@ -323,7 +331,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       <Section title="Start over">
         {/* First step */}
         {!confirmingDelete && (
-          <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-11 items-center underline underline-offset-4">Delete all my data</button>
+          <button type="button" onClick={() => setConfirmingDelete(true)} className={TEXT_LINK}>Delete all my data</button>
         )}
         {/* Confirmation step */}
         {confirmingDelete && (
@@ -333,7 +341,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             {/* Confirm */}
             <button type="button" onClick={deleteEverything} className="mt-3 min-h-11 bg-ink px-4 text-paper-raised">Yes, delete everything</button>
             {/* Back out */}
-            <button type="button" onClick={() => setConfirmingDelete(false)} className="ml-4 inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Keep my data</button>
+            <button type="button" onClick={() => setConfirmingDelete(false)} className={`${QUIET} ml-4`}>Keep my data</button>
           </div>
         )}
       </Section>
@@ -342,12 +350,12 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {DEVELOPMENT && (
         <Section title="While building (not in the released app)">
           {/* Fill with sample sessions */}
-          <button type="button" onClick={loadSamples} className="inline-flex min-h-11 items-center underline underline-offset-4">Fill with sample sessions</button>
+          <button type="button" onClick={loadSamples} className={TEXT_LINK}>Fill with sample sessions</button>
           {/* Links to design pages */}
           <p className="mt-3 text-ink-muted">
-            <Link href="/style" className="inline-flex min-h-11 items-center underline underline-offset-4">Style page</Link>
+            <Link href="/style" className={TEXT_LINK}>Style page</Link>
             {" · "}
-            <Link href="/wireframes" className="inline-flex min-h-11 items-center underline underline-offset-4">Wireframes</Link>
+            <Link href="/wireframes" className={TEXT_LINK}>Wireframes</Link>
           </p>
         </Section>
       )}

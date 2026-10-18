@@ -63,7 +63,7 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
   if (!speech) {
     // Say so, with a way back
     return (
-      <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Heading and navigation */}
         <Masthead title="Speech" section="skills" />
         {/* The explanation */}
@@ -87,13 +87,13 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
 
   // Draw the page
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Heading and navigation */}
       <Masthead title={speech.title} section="skills" />
       {/* Who, where and when */}
       <p className="mt-6 text-lede">{speech.speaker}. {speech.occasion}.</p>
       {/* How long, in how many parts, and how far along */}
-      <p className="mt-2 text-footnote italic text-ink-muted">{speech.parts.length === 1 ? `One part, ${total}.` : `${speech.parts.length} parts, ${total} in all.`} {done === 0 ? "Read a part at a time, in order." : done === speech.parts.length ? "You have read the whole speech." : `You have read ${done} of ${speech.parts.length}.`}</p>
+      <p className="mt-2 text-footnote text-ink-muted">{speech.parts.length === 1 ? `One part, ${total}.` : `${speech.parts.length} parts, ${total} in all.`} {done === 0 ? "Read a part at a time, in order." : done === speech.parts.length ? "You have read the whole speech." : `You have read ${done} of ${speech.parts.length}.`}</p>
       {/* The parts */}
       <ol aria-label="Parts" className="mt-6">
         {/* Each part */}
@@ -109,11 +109,11 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
               {/* Its opening words and length */}
               <span className="min-w-0 flex-1">
                 {/* "Next" above the part to read next */}
-                {marks[index] === "next" && <span className="block text-footnote italic text-accent">Next</span>}
+                {marks[index] === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
                 {/* The opening words */}
                 <span className="block text-lede">{opening(part)}</span>
                 {/* How long */}
-                <span className="block text-footnote italic text-ink-muted">{lengthLabel(readingTime(part))}</span>
+                <span className="block text-footnote text-ink-muted">{lengthLabel(readingTime(part))}</span>
               </span>
             </Link>
           </li>

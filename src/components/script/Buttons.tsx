@@ -1,4 +1,4 @@
-// Shared action styles (UX round, option B): one primary and one secondary look, and whole-row links, all at least 44 pixels tall
+// Shared action styles: primary, secondary, quiet and text-link looks, and whole-row links, all at least 44 pixels tall; every button and action link uses one of these (design pass, decision 59)
 
 // Load Next.js's link component
 import Link from "next/link";
@@ -6,6 +6,15 @@ import Link from "next/link";
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the type for content passed in
 import type { ReactNode } from "react";
+
+// The main action inside a page: filled, square, at least 44 pixels tall; when it cannot be used yet it turns a solid quiet gray (never see-through)
+export const PRIMARY = "inline-flex min-h-11 items-center justify-center bg-fill px-5 text-fill-ink hover:opacity-90 disabled:cursor-not-allowed disabled:bg-rule disabled:text-ink-muted disabled:hover:opacity-100";
+// A second choice beside it: outlined in ink
+export const SECONDARY = "inline-flex min-h-11 items-center justify-center border border-ink px-4 text-ink hover:bg-paper disabled:cursor-not-allowed disabled:border-rule disabled:text-ink-muted";
+// A way out or a "not now": a quiet outlined button, so it reads as a choice and not as a footnote
+export const QUIET = "inline-flex min-h-11 items-center justify-center border border-rule px-4 text-ink-muted hover:border-ink hover:text-ink disabled:cursor-not-allowed";
+// A link to another page or section, in plain words
+export const TEXT_LINK = "inline-flex min-h-11 items-center underline decoration-ink-muted underline-offset-4 hover:decoration-ink";
 
 // What a button-styled link needs
 interface ButtonLinkProps {
@@ -21,7 +30,7 @@ interface ButtonLinkProps {
 export function PrimaryLink({ href, children, label }: ButtonLinkProps) {
   // A filled, square-cornered button
   return (
-    <Link href={href} aria-label={label} className="inline-flex min-h-11 items-center bg-accent px-5 text-accent-ink hover:opacity-90">
+    <Link href={href} aria-label={label} className={PRIMARY}>
       {children}
     </Link>
   );
@@ -31,7 +40,7 @@ export function PrimaryLink({ href, children, label }: ButtonLinkProps) {
 export function SecondaryLink({ href, children, label }: ButtonLinkProps) {
   // An outlined, square-cornered button
   return (
-    <Link href={href} aria-label={label} className="inline-flex min-h-11 items-center border border-ink px-4 text-ink hover:bg-paper">
+    <Link href={href} aria-label={label} className={SECONDARY}>
       {children}
     </Link>
   );
@@ -45,7 +54,7 @@ export function RowLink({ href, children, label, meta }: ButtonLinkProps & { met
       {/* The main words */}
       <span className="min-w-0 flex-1">{children}</span>
       {/* Anything quieter on the right */}
-      {meta && <span className="text-footnote italic text-ink-muted">{meta}</span>}
+      {meta && <span className="text-footnote text-ink-muted">{meta}</span>}
       {/* The chevron */}
       <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
     </Link>
@@ -60,7 +69,7 @@ export function RowButton({ onClick, children, meta }: { onClick: () => void; ch
       {/* The main words */}
       <span className="min-w-0 flex-1">{children}</span>
       {/* Anything quieter on the right */}
-      {meta && <span className="text-footnote italic text-ink-muted">{meta}</span>}
+      {meta && <span className="text-footnote text-ink-muted">{meta}</span>}
       {/* The chevron */}
       <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
     </button>

@@ -7,7 +7,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 // Load the shared button style
-import { SecondaryLink } from "@/components/script/Buttons";
+import { PRIMARY, QUIET, SecondaryLink, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -17,6 +17,8 @@ import { readingSeconds } from "@/core/recordingRules";
 import { daysAway, daysUntil } from "@/core/eventPrep";
 // Load the talk record type
 import type { TalkRecord } from "@/data/records";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // The longest talk that can be saved, in characters (about an hour of speech)
 const MAX_LENGTH = 50_000;
@@ -108,7 +110,7 @@ export function RehearseScreen(props: ScreenProps) {
   // Draw the page
   return (
     // One column, like settings
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title and a way back */}
       <Masthead title="Your talks" section="practice" />
 
@@ -118,7 +120,7 @@ export function RehearseScreen(props: ScreenProps) {
       {/* Saved talks */}
       <section className="mt-8">
         {/* Small heading */}
-        <h2 className="text-footnote italic text-ink-muted">Saved talks</h2>
+        <h2 className={SECTION_HEADING}>Saved talks</h2>
         {/* Nothing yet */}
         {talks && talks.length === 0 && <p className="mt-2 text-ink-muted">None saved yet.</p>}
         {/* One row per talk */}
@@ -132,7 +134,7 @@ export function RehearseScreen(props: ScreenProps) {
                 {/* Title, leading to the talk's page and plan */}
                 <Link href={`/talk?id=${talk.id}`} className="inline-flex min-h-11 items-center font-display text-cue underline-offset-4 hover:underline">{talk.title}</Link>
                 {/* Length */}
-                <span className="ml-2 text-footnote italic text-ink-muted">about {Math.round(readingSeconds(talk.body) / 60)} min{talk.goalMinutes ? ` · goal ${talk.goalMinutes} min` : ""}{today && talk.eventDate ? ` · ${daysAway(daysUntil(talk.eventDate, today))}` : ""}</span>
+                <span className="ml-2 text-footnote text-ink-muted">about {Math.round(readingSeconds(talk.body) / 60)} min{talk.goalMinutes ? ` · goal ${talk.goalMinutes} min` : ""}{today && talk.eventDate ? ` · ${daysAway(daysUntil(talk.eventDate, today))}` : ""}</span>
               </span>
               {/* Rehearse it */}
               <SecondaryLink href={`/session?mode=rehearse&prompt=${talk.id}`} label={`Rehearse “${talk.title}”`}>Rehearse</SecondaryLink>
@@ -142,10 +144,10 @@ export function RehearseScreen(props: ScreenProps) {
                   {/* Confirm */}
                   <button type="button" onClick={() => void remove(talk.id)} className="min-h-11 bg-ink px-3 text-paper-raised">Yes, delete it</button>
                   {/* Keep */}
-                  <button type="button" onClick={() => setConfirming(null)} className="inline-flex min-h-11 items-center underline underline-offset-4">Keep it</button>
+                  <button type="button" onClick={() => setConfirming(null)} className={TEXT_LINK}>Keep it</button>
                 </span>
               ) : (
-                <button type="button" onClick={() => setConfirming(talk.id)} aria-label={`Delete “${talk.title}”`} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Delete</button>
+                <button type="button" onClick={() => setConfirming(talk.id)} aria-label={`Delete “${talk.title}”`} className={QUIET}>Delete</button>
               )}
             </li>
           ))}
@@ -155,7 +157,7 @@ export function RehearseScreen(props: ScreenProps) {
       {/* Add a talk */}
       <form onSubmit={(event) => void save(event)} className="mt-10 flex flex-col gap-4">
         {/* Small heading */}
-        <h2 className="text-footnote italic text-ink-muted">Add a talk</h2>
+        <h2 className={SECTION_HEADING}>Add a talk</h2>
         {/* Title */}
         <label className="flex flex-col gap-1">
           {/* Label text */}
@@ -185,7 +187,7 @@ export function RehearseScreen(props: ScreenProps) {
           {/* The field */}
           <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="min-h-11 border-b border-ink bg-transparent py-1" />
         </label>
-        <button type="submit" className="min-h-11 self-start bg-accent px-5 text-accent-ink">Save talk</button>
+        <button type="submit" className={`${PRIMARY} self-start`}>Save talk</button>
         {/* Message */}
         {message && <p role="status" className="text-ink-muted">{message}</p>}
       </form>

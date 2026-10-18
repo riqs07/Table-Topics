@@ -4,7 +4,7 @@
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
 // Load the shared button style
-import { SecondaryLink } from "@/components/script/Buttons";
+import { PRIMARY, SecondaryLink, TEXT_LINK } from "@/components/script/Buttons";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen set-up
@@ -114,13 +114,13 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
   }
 
   // Still loading
-  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Q&A practice" section="practice" /></main>;
+  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Q&A practice" section="practice" /></main>;
 
   // The session is not here
   if (!loaded.source) {
     // Say so
     return (
-      <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Heading and navigation */}
         <Masthead title="Q&A practice" section="practice" />
         {/* The note */}
@@ -134,7 +134,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
       <Masthead title="Q&A practice" section="practice" />
 
@@ -151,7 +151,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
               {/* The question */}
               <span className="min-w-0 basis-full font-display text-cue md:basis-0 md:flex-1">{question}</span>
               {/* How often it was answered */}
-              <span className="text-footnote italic text-ink-muted">{answeredText(loaded.answers.filter((answer) => answer.question === question).length)}</span>
+              <span className="text-footnote text-ink-muted">{answeredText(loaded.answers.filter((answer) => answer.question === question).length)}</span>
               {/* Answer it */}
               <SecondaryLink href={`/session?mode=qa&prompt=${fromId}&question=${index}`} label={`Answer “${question}”`}>Answer</SecondaryLink>
             </li>
@@ -162,9 +162,9 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
       {/* Ask the coach */}
       <section className="mt-8">
         {/* The button */}
-        <button type="button" disabled={asking} onClick={() => void suggest()} className="min-h-11 bg-accent px-5 text-accent-ink disabled:opacity-60">{asking ? "Asking…" : questions.length ? "Suggest three new questions" : "Suggest three questions"}</button>
+        <button type="button" disabled={asking} onClick={() => void suggest()} className={PRIMARY}>{asking ? "Asking…" : questions.length ? "Suggest three new questions" : "Suggest three questions"}</button>
         {/* What is sent */}
-        <p className="mt-2 max-w-[52ch] text-footnote italic text-ink-muted">Sends what you said in this run to the coach. A rehearsal’s script never leaves this device.</p>
+        <p className="mt-2 max-w-[52ch] text-footnote text-ink-muted">Sends what you said in this run to the coach. A rehearsal’s script never leaves this device.</p>
         {/* Why it did not work */}
         {note && <p role="status" className="mt-3 max-w-[52ch]">{note}</p>}
       </section>
@@ -179,7 +179,7 @@ export function QaScreen({ fromId, passphrase, fetchFn, ...props }: ScreenProps 
           <textarea value={ownText} onChange={(event) => setOwnText(event.target.value)} rows={4} maxLength={1500} className="border border-rule bg-paper p-3" />
         </label>
         {/* Use them */}
-        <button type="button" onClick={() => void applyOwn()} className="self-start inline-flex min-h-11 items-center underline underline-offset-4">Use these</button>
+        <button type="button" onClick={() => void applyOwn()} className={`${TEXT_LINK} self-start`}>Use these</button>
       </section>
     </main>
   );

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { RowButton, RowLink } from "@/components/script/Buttons";
+import { RowButton, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 import { Player } from "@/components/script/Player";
 // Load the shared screen starting points
@@ -146,7 +146,7 @@ function Playback({ repo, session }: { repo: Repository; session: SessionRecord 
   return (
     <div className="mt-5">
       {/* Small heading */}
-      <p className="text-footnote italic text-ink-muted">{session.isBaseline ? "Your first recording, the one progress is measured against" : "Listen back"}</p>
+      <p className="text-footnote text-ink-muted">{session.isBaseline ? "Your first recording, the one progress is measured against" : "Listen back"}</p>
       {/* The player */}
       <div className="mt-2"><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} /></div>
     </div>
@@ -197,7 +197,7 @@ function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; th
   return (
     <div className="mt-5 border-y border-rule py-4">
       {/* Small heading */}
-      <p className="text-footnote italic text-ink-muted">Then and now, same prompt</p>
+      <p className="text-footnote text-ink-muted">Then and now, same prompt</p>
       {/* The earlier take */}
       <p className="mt-3 text-footnote">{takeNumbers(thenDay, then)}</p>
       {/* Its player, if the audio is still on this device */}
@@ -208,7 +208,7 @@ function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; th
       {nowUrl && <div className="mt-1"><Player src={nowUrl} label={`Your recording from day ${nowDay}`} name={`day ${nowDay}`} durationSec={now.durationSec} onAudio={(element) => { nowPlayer.current = element; }} /></div>}
       {/* Hear both in turn */}
       {thenUrl && nowUrl && (
-        <button type="button" onClick={playBoth} className="inline-flex min-h-11 items-center mt-3 italic underline underline-offset-4">
+        <button type="button" onClick={playBoth} className={`${SECONDARY} mt-3`}>
           Play both, then and now
         </button>
       )}
@@ -338,11 +338,11 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
         {/* The transcript (main column on a computer, opened on demand on a phone) */}
         <div className={`${showTranscript ? "mt-6" : "hidden"} md:order-1 md:mt-0 md:block`}>
           {/* Small heading */}
-          <p className="italic text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}</p>
+          <p className="text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}</p>
           {/* The words: the passage marked for a reading, otherwise the transcript */}
           <div className="mt-3 max-w-[46ch]">{reading ? <MarkedPassage check={reading} /> : <Transcript text={session.transcript} />}</div>
           {/* For a reading, what the marks mean */}
-          {reading && <p className="mt-3 max-w-[46ch] text-footnote italic text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.{reading.stoppedEarly ? " Dimmed words come after where you stopped." : ""}</p>}
+          {reading && <p className="mt-3 max-w-[46ch] text-footnote text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.{reading.stoppedEarly ? " Dimmed words come after where you stopped." : ""}</p>}
         </div>
         {/* The notes (first on a phone, margin on a computer) */}
         <aside className="order-first flex flex-1 flex-col md:order-2">
@@ -350,7 +350,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {qa && session.question && (
             <div className="mt-5 md:mt-0 md:mb-5">
               {/* Small heading */}
-              <p className="text-footnote italic text-ink-muted">The question</p>
+              <p className="text-footnote text-ink-muted">The question</p>
               {/* The question itself */}
               <p className="mt-1 font-display text-cue">{session.question}</p>
             </div>
@@ -361,7 +361,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
               {/* How much of the passage was read */}
               <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</p>
               {/* The detail */}
-              <p className="mt-2 text-footnote italic text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
+              <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
               {/* A lesson's tip, as a reminder */}
               {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
             </>
@@ -370,7 +370,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
               {/* The drill's main finding */}
               <p className="mt-5 font-display text-3xl md:mt-0">{bookendOutcome.headline}</p>
               {/* Its second finding */}
-              <p className="mt-2 text-footnote italic text-ink-muted">{bookendOutcome.detail}</p>
+              <p className="mt-2 text-footnote text-ink-muted">{bookendOutcome.detail}</p>
             </>
           ) : smallTalk ? (
             // The beats: how many, then each with the words that showed it
@@ -383,7 +383,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {review && (review.worked || review.change || tagWords.length > 0) && (
             <div className="mt-5 border-y border-rule py-3 text-lede">
               {/* Small heading */}
-              <p className="text-footnote italic text-ink-muted">Your notes</p>
+              <p className="text-footnote text-ink-muted">Your notes</p>
               {/* What worked */}
               {review.worked && <p className="mt-1"><em>Worked.</em> {review.worked}</p>}
               {/* What to change */}
@@ -405,18 +405,18 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
           <div className="mt-5 border-l-4 border-accent bg-paper px-4 py-4">
             {/* Where it comes from, until the coach's note arrives */}
-            {!session.feedback && <p className="mb-2 text-footnote italic text-ink-muted">From your numbers</p>}
+            {!session.feedback && <p className="mb-2 text-footnote text-ink-muted">From your numbers</p>}
             {/* One change */}
             <p className="text-lede"><em>One change.</em> <span>{(session.feedback ?? ownChange).change}</span></p>
             {/* Small heading for the cue */}
-            <p className="mt-4 text-footnote italic text-ink-muted">{warmup ? "Before your response" : "Before you try again"}</p>
+            <p className="mt-4 text-footnote text-ink-muted">{warmup ? "Before your response" : "Before you try again"}</p>
             {/* The cue */}
             <p className="mt-1 font-display text-cue">{(session.feedback ?? ownChange).retryCue}</p>
             {/* For a follow-up question or a reply to a story, a better one */}
             {session.feedback?.connection && (
               <>
                 {/* Small heading */}
-                <p className="mt-4 text-footnote italic text-ink-muted">{findSmallTalk(session.promptId)?.unit === "asking" ? "A better follow-up" : "A better response"}</p>
+                <p className="mt-4 text-footnote text-ink-muted">{findSmallTalk(session.promptId)?.unit === "asking" ? "A better follow-up" : "A better response"}</p>
                 {/* The better version */}
                 <p className="mt-1 text-lede">{session.feedback.connection.better}</p>
               </>
@@ -425,28 +425,28 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {session.feedback?.smallTalk && (
               <>
                 {/* Small heading */}
-                <p className="mt-4 text-footnote italic text-ink-muted">As it could sound (only what you said)</p>
+                <p className="mt-4 text-footnote text-ink-muted">As it could sound (only what you said)</p>
                 {/* The livelier version, gaps in brackets set apart */}
                 <p className="mt-1 text-lede">{session.feedback.smallTalk.livelier.split(/(\[[^\]]+\])/).map((part, index) => (part.startsWith("[") ? <em key={index} className="text-accent">{part}</em> : <span key={index}>{part}</span>))}</p>
               </>
             )}
           </div>
           {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
-          {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote italic text-ink-muted">{note || "The coach could not review this session."}</p>}
+          {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this session."}</p>}
           {/* The numbers together */}
           {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} />}
           {/* When there is no number, say why */}
-          {!reading && !bookendOutcome && !smallTalk && !measureFor(session.focus) && <p className="mt-2 text-footnote italic text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
+          {!reading && !bookendOutcome && !smallTalk && !measureFor(session.focus) && <p className="mt-2 text-footnote text-ink-muted">No number measures this from a transcript; the notes are what count.</p>}
           {/* How the pauses went, when loudness was recorded */}
-          {pauses && !quick && <p className="mt-2 text-footnote italic text-ink-muted">{pauseSentence(pauses)}</p>}
+          {pauses && !quick && <p className="mt-2 text-footnote text-ink-muted">{pauseSentence(pauses)}</p>}
           {/* Which pause marks had a pause */}
-          {marks && <p className="mt-2 text-footnote italic text-ink-muted">{marks}</p>}
+          {marks && <p className="mt-2 text-footnote text-ink-muted">{marks}</p>}
           {/* How the pace changed */}
-          {pace && !quick && <p className="mt-2 text-footnote italic text-ink-muted">{pace.sentence}</p>}
+          {pace && !quick && <p className="mt-2 text-footnote text-ink-muted">{pace.sentence}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
-          {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec, undefined, session.promptId)}</p>}
+          {timed && <p className="mt-2 text-footnote text-ink-muted">{timingSentence(session.mode, session.durationSec, undefined, session.promptId)}</p>}
           {/* After a rehearsal with a goal, how the timing went */}
-          {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
+          {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
           {/* Listen back */}
           {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
           {/* What the coach said to keep, after the next step and the numbers */}
@@ -538,7 +538,7 @@ function SmallTalkBeats({ session }: { session: SessionRecord }) {
       {unit !== "answering" && found && (
         <div className="mt-5 md:mt-0">
           {/* Small heading */}
-          <p className="text-footnote italic text-ink-muted">{findUnit(unit).words.said}</p>
+          <p className="text-footnote text-ink-muted">{findUnit(unit).words.said}</p>
           {/* Their words */}
           <p className="mt-1 max-w-[52ch] text-lede">&ldquo;{found.question}&rdquo;</p>
         </div>
@@ -559,7 +559,7 @@ function SmallTalkBeats({ session }: { session: SessionRecord }) {
           return (
             <li key={beat.id} data-found={heard} className="flex gap-3 py-2">
               {/* Its mark: filled when found */}
-              <span aria-hidden="true" className={`mt-1 flex size-5 flex-none items-center justify-center border-2 ${heard ? "border-accent bg-accent text-accent-ink" : "border-rule"}`}>{heard && <CheckIcon weight="bold" className="size-3.5" />}</span>
+              <span aria-hidden="true" className={`mt-1 flex size-5 flex-none items-center justify-center border-2 ${heard ? "border-fill bg-fill text-fill-ink" : "border-rule"}`}>{heard && <CheckIcon weight="bold" className="size-3.5" />}</span>
               {/* Its name and what showed it, or a reminder */}
               <span className="text-lede">
                 {/* Name */}
@@ -737,7 +737,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, navigate, .
           {/* Title */}
           <Masthead title="Session" />
           {/* Explanation and a way back */}
-          <p data-inline className="mt-6 text-lede text-ink-muted">This session is not on this device. <Link href="/history" className="inline-flex min-h-11 items-center underline underline-offset-4">Back to history</Link></p>
+          <p data-inline className="mt-6 text-lede text-ink-muted">This session is not on this device. <Link href="/history" className={TEXT_LINK}>Back to history</Link></p>
         </>
       )}
       {/* A retry with its first try */}

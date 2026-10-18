@@ -10,6 +10,8 @@ import { CardsIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { Masthead } from "@/components/script/Masthead";
+// Load the shared page title
+import { PageTitle } from "@/components/script/PageTitle";
 import { CourseCard } from "@/components/script/CourseCard";
 import { LEARN_SET_ICONS } from "@/components/script/learnSetIcons";
 // Load the shared screen starting points
@@ -25,6 +27,10 @@ import { loadLearnProgress } from "@/data/learnProgress";
 import { loadScenarioProgress } from "@/data/scenarioProgress";
 // Load the scenario progress type
 import type { ScenarioProgress } from "@/data/records";
+// Load the shared button looks
+import { TEXT_LINK } from "@/components/script/Buttons";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // Draw the Learn page
 export function LearnScreen(props: ScreenProps) {
@@ -68,13 +74,11 @@ export function LearnScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title="Learn" section="learn" />
-      {/* What this is, in one line */}
-      <h1 className="mt-6 font-display text-statement tracking-tight">What the research says.</h1>
-      {/* How it works */}
-      <p className="mt-1 max-w-[52ch] text-footnote text-ink-muted">One-minute cards, with how strong the evidence is. Each ends with a question that comes back later.</p>
+      <Masthead title="VoiceLab" section="learn" />
+      {/* The page's name, and what is here */}
+      <PageTitle title="Learn">One-minute cards on what the research says, and how sure it is.</PageTitle>
 
       {/* Questions due, as one line */}
       {due.length > 0 && (
@@ -82,19 +86,19 @@ export function LearnScreen(props: ScreenProps) {
           {/* How many */}
           <span className="font-display text-cue">{due.length === 1 ? "One question to review" : `${due.length} questions to review`}</span>
           {/* Go */}
-          <Link href="/learn/review" className="inline-flex min-h-11 items-center underline underline-offset-4">Review now</Link>
+          <Link href="/learn/review" className={TEXT_LINK}>Review now</Link>
         </p>
       )}
 
       {/* Practice: quick scenarios */}
-      <h2 className="mt-6 text-footnote italic text-ink-muted">Practise</h2>
+      <h2 className={`${SECTION_HEADING} mt-6`}>Practise</h2>
       {/* The scenarios card */}
       <div className="mt-2">
-        <CourseCard href="/learn/scenarios" name="Quick scenarios" blurb="Choose the best reply, then say it aloud." icon={CardsIcon} done={scenarios ? Object.keys(scenarios).length : 0} total={SCENARIOS.length} />
+        <CourseCard href="/learn/scenarios" name="Quick scenarios" blurb="Choose the best reply, then say it aloud." icon={CardsIcon} done={scenarios ? Object.keys(scenarios).length : 0} total={SCENARIOS.length} count={`${SCENARIOS.length} scenarios`} />
       </div>
 
       {/* The sets, as cards; each opens its own page */}
-      <h2 className="mt-8 text-footnote italic text-ink-muted">Sets</h2>
+      <h2 className={`${SECTION_HEADING} mt-8`}>Sets</h2>
       {/* The cards */}
       <ul aria-label="Sets" className="mt-2 grid gap-3 md:grid-cols-2">
         {/* Each set */}
@@ -104,7 +108,7 @@ export function LearnScreen(props: ScreenProps) {
           // One set's card
           return (
             <li key={set.id}>
-              <CourseCard href={`/learn/set?id=${set.id}`} name={set.name} blurb={set.blurb} icon={LEARN_SET_ICONS[set.id]} done={done.read} total={done.total} note={set.id === nextSet?.id ? "Next up" : undefined} />
+              <CourseCard href={`/learn/set?id=${set.id}`} name={set.name} blurb={set.blurb} icon={LEARN_SET_ICONS[set.id]} done={done.read} total={done.total} note={set.id === nextSet?.id ? "Next up" : undefined} count={done.total === 1 ? "1 card" : `${done.total} cards`} />
             </li>
           );
         })}

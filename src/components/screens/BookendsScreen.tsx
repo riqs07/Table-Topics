@@ -15,6 +15,8 @@ import { BOOKENDS, bookendForDay, type Bookend } from "@/content/prompts";
 import { talkSections } from "@/core/eventPrep";
 // Load the talk record type
 import type { TalkRecord } from "@/data/records";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // The address of a drill on one prompt
 const drillHref = (item: Bookend) => `/session?mode=bookend&prompt=${item.id}`;
@@ -52,7 +54,7 @@ export function BookendsScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
       <Masthead title="Openings and closings" section="practice" />
 
@@ -63,7 +65,7 @@ export function BookendsScreen(props: ScreenProps) {
       {pair && (
         <section className="mt-8">
           {/* Small heading */}
-          <h2 className="text-footnote italic text-ink-muted">Today</h2>
+          <h2 className={SECTION_HEADING}>Today</h2>
           {/* The two prompts */}
           <ul className="mt-2 divide-y divide-rule border-y border-ink">
             {/* Each one */}
@@ -73,7 +75,7 @@ export function BookendsScreen(props: ScreenProps) {
                 {/* The whole row starts the drill */}
                 <RowLink href={drillHref(item)} label={item.text}>
                   {/* Its part */}
-                  <span className="block text-footnote italic text-ink-muted">{item.part === "opening" ? "Opening" : "Close"}</span>
+                  <span className="block text-footnote text-ink-muted">{item.part === "opening" ? "Opening" : "Close"}</span>
                   {/* The prompt */}
                   <span className="block font-display text-cue">{item.text}</span>
                 </RowLink>
@@ -87,7 +89,7 @@ export function BookendsScreen(props: ScreenProps) {
       {sectioned.length > 0 && (
         <section className="mt-10">
           {/* Small heading */}
-          <h2 className="text-footnote italic text-ink-muted">From your talks</h2>
+          <h2 className={SECTION_HEADING}>From your talks</h2>
           {/* One row per talk */}
           <ul className="mt-2 divide-y divide-rule border-y border-rule">
             {/* Each talk */}
@@ -113,7 +115,7 @@ export function BookendsScreen(props: ScreenProps) {
           // One list
           <div key={part}>
             {/* Small heading */}
-            <h2 className="text-footnote italic text-ink-muted">{part === "opening" ? "More openings" : "More closes"}</h2>
+            <h2 className={SECTION_HEADING}>{part === "opening" ? "More openings" : "More closes"}</h2>
             {/* The prompts */}
             <ul className="mt-2 divide-y divide-rule border-y border-rule">
               {/* Each prompt */}

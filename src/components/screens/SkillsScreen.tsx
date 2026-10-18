@@ -7,8 +7,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
+// Load the shared page title
+import { PageTitle } from "@/components/script/PageTitle";
 // Load the whole-row link
-import { RowLink } from "@/components/script/Buttons";
+import { RowLink, TEXT_LINK } from "@/components/script/Buttons";
 // Load the chevron that marks a row as tappable
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load a mode's heading and description
@@ -47,7 +49,7 @@ function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passag
   return (
     <>
       {/* An optional small heading */}
-      {heading && <h3 className="mt-4 text-footnote italic text-ink-muted">{heading}</h3>}
+      {heading && <h3 className="mt-4 text-footnote text-ink-muted">{heading}</h3>}
       {/* The texts */}
       <ul className="mt-2 divide-y divide-rule border-y border-rule">
         {/* One row per text */}
@@ -69,7 +71,7 @@ function FullSpeechList({ heading, speeches, counts }: { heading: string; speech
   return (
     <>
       {/* Small heading */}
-      <h3 className="mt-6 text-footnote italic text-ink-muted">{heading}</h3>
+      <h3 className="mt-6 text-footnote text-ink-muted">{heading}</h3>
       {/* One card per speech, two across on a wider screen */}
       <ul aria-label={heading} className="mt-2 grid gap-3 sm:grid-cols-2">
         {/* Each speech */}
@@ -84,7 +86,7 @@ function FullSpeechList({ heading, speeches, counts }: { heading: string; speech
                 {/* The title */}
                 <span className="font-display text-lede leading-tight sm:text-cue">{speech.title}</span>
                 {/* Who gave it, and when */}
-                <span className="text-footnote italic text-ink-muted">{speech.speaker}, {speech.year}</span>
+                <span className="text-footnote text-ink-muted">{speech.speaker}, {speech.year}</span>
                 {/* How many parts, how long, and how far along */}
                 <span className="text-footnote text-ink-muted">{speech.parts.length === 1 ? "One part" : `${speech.parts.length} parts`}, {lengthLabel(readingTime(speech.parts.join(" ")))}{done > 0 ? ` · ${done === speech.parts.length ? "all read" : `${done} read`}` : ""}</span>
               </Link>
@@ -102,7 +104,7 @@ function SpeechCards({ items }: { items: ReadonlyArray<Passage> }) {
   return (
     <>
       {/* Small heading */}
-      <h3 className="mt-6 text-footnote italic text-ink-muted">Short readings</h3>
+      <h3 className="mt-6 text-footnote text-ink-muted">Short readings</h3>
       {/* One card per speech, two across on a wider screen */}
       <ul aria-label="Short readings" className="mt-2 grid gap-3 sm:grid-cols-2">
         {/* Each speech */}
@@ -114,7 +116,7 @@ function SpeechCards({ items }: { items: ReadonlyArray<Passage> }) {
               {/* The title */}
               <span className="font-display text-lede leading-tight sm:text-cue">{item.title}</span>
               {/* Who gave it, when, and how long */}
-              <span className="text-footnote italic text-ink-muted">{item.source} · {lengthLabel(readingTime(item.body))}</span>
+              <span className="text-footnote text-ink-muted">{item.source} · {lengthLabel(readingTime(item.body))}</span>
             </Link>
           </li>
         ))}
@@ -156,17 +158,17 @@ export function SkillsScreen(props: ScreenProps) {
   const marks = lessonPath(LESSONS.map((lesson) => lesson.id), counts);
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title="Build a skill" section="skills" />
-      {/* What this is */}
-      <p className="mt-6 max-w-[52ch] text-lede">One skill at a time. Everything here is open, in any order, as often as you like.</p>
+      <Masthead title="Practice" section="skills" />
+      {/* The page's name */}
+      <PageTitle title="Build a skill">One skill at a time: lessons, readings and drills.</PageTitle>
       {/* Jump to a part */}
       <nav aria-label="On this page" className="mt-4 flex flex-wrap gap-x-5 text-footnote">
         {/* One link per part */}
         {["lessons", "readings", "pause-drills", "tricky-words"].map((id) => (
           // A jump link
-          <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">{mode(id).name}</a>
+          <a key={id} href={`#${id}`} className={TEXT_LINK}>{mode(id).name}</a>
         ))}
       </nav>
 
@@ -189,13 +191,13 @@ export function SkillsScreen(props: ScreenProps) {
                 {/* Title and tip */}
                 <span className="min-w-0 flex-1">
                   {/* "Next" above the title of the lesson to try next */}
-                  {marks[index] === "next" && <span className="block text-footnote italic text-accent">Next</span>}
+                  {marks[index] === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
                   {/* Title */}
                   <span className="block font-display text-cue">{lesson.title}</span>
                   {/* The tip's first sentence */}
                   <span className="block text-footnote text-ink-muted">{lesson.tip.split(". ")[0]}.</span>
                   {/* How often practised */}
-                  <span className="block text-footnote italic text-ink-muted">{practisedText(counts.get(lesson.id) ?? 0)}</span>
+                  <span className="block text-footnote text-ink-muted">{practisedText(counts.get(lesson.id) ?? 0)}</span>
                 </span>
                 {/* The chevron */}
                 <CaretRightIcon aria-hidden="true" className="size-5 flex-none self-center text-ink-muted" />

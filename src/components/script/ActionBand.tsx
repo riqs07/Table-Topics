@@ -22,9 +22,9 @@ interface ActionBandProps {
 export function ActionBand({ action, aside, href, quiet = false }: ActionBandProps) {
   // Filled accent band (or an outlined quiet one) that bleeds to the screen edges on a phone
   return (
-    <Link href={href} data-action-band={quiet ? undefined : true} className={quiet ? "-mx-6 flex min-h-11 items-baseline justify-between gap-4 border-t-2 border-ink px-6 pb-5 pt-5 text-ink md:mx-0 md:mb-3 md:max-w-md md:border-2" : `${STICKY_BAND} bg-accent text-accent-ink`}>
+    <Link href={href} data-action-band={quiet ? undefined : true} className={quiet ? "-mx-6 flex min-h-11 items-baseline justify-between gap-4 border-t-2 border-ink px-6 pb-5 pt-5 text-ink md:mx-0 md:mb-3 md:max-w-md md:border-2" : `${STICKY_BAND} bg-fill text-fill-ink`}>
       {/* The action, large italic */}
-      <span className="whitespace-nowrap text-band italic">{action}</span>
+      <span className="whitespace-nowrap font-display text-band">{action}</span>
       {/* The aside (wraps on a narrow phone rather than running off the edge) */}
       <span className="text-right text-sm">{aside}</span>
     </Link>
@@ -35,9 +35,9 @@ export function ActionBand({ action, aside, href, quiet = false }: ActionBandPro
 export function ActionButton({ action, aside, onClick, disabled = false, variant = "start" }: { action: string; aside: string; onClick: () => void; disabled?: boolean; variant?: "start" | "stop" }) {
   // Accent band that bleeds to the screen edges on a phone
   return (
-    <button type="button" onClick={onClick} disabled={disabled} data-action-band data-variant={variant} className={`${STICKY_BAND} w-full text-left disabled:opacity-60 ${variant === "stop" ? "bg-ink text-paper-raised" : "bg-accent text-accent-ink"}`}>
+    <button type="button" onClick={onClick} disabled={disabled} data-action-band data-variant={variant} className={`${STICKY_BAND} w-full text-left disabled:cursor-not-allowed disabled:bg-rule disabled:text-ink-muted ${variant === "stop" ? "bg-ink text-paper-raised" : "bg-fill text-fill-ink"}`}>
       {/* The action, large italic */}
-      <span className="whitespace-nowrap text-band italic">{action}</span>
+      <span className="whitespace-nowrap font-display text-band">{action}</span>
       {/* The aside (wraps on a narrow phone rather than running off the edge) */}
       <span className="text-right text-sm">{aside}</span>
     </button>

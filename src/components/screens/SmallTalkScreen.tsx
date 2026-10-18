@@ -9,7 +9,7 @@ import Link from "next/link";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { RowLink } from "@/components/script/Buttons";
+import { QUIET, RowLink, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 import { PathMark } from "@/components/script/PathMark";
 // Load the shared screen starting points
@@ -28,6 +28,8 @@ import { dayLabel } from "@/core/copy";
 import { dayKey } from "@/core/dates";
 // Load the record types
 import type { SessionRecord } from "@/data/records";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // How many recent answers to list
 const RECENT_ANSWERS = 10;
@@ -85,15 +87,15 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
       <Masthead title="Connect" section="smalltalk" />
       {/* Back to Connect */}
-      <p className="mt-2"><Link href="/small-talk" className="-ml-1 inline-flex min-h-11 items-center gap-1 text-footnote underline underline-offset-4"><CaretLeftIcon aria-hidden="true" className="size-4" />Connect</Link></p>
+      <p className="mt-2"><Link href="/small-talk" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Connect</Link></p>
       {/* Icon, name, and when it is for */}
       <div className="mt-2 flex items-center gap-4">
         {/* The icon on an accent tile */}
-        <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center bg-accent text-accent-ink">{(() => { const IconShape = UNIT_ICONS[unit.id]; return <IconShape className="size-9" />; })()}</span>
+        <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center bg-accent/10 text-accent">{(() => { const IconShape = UNIT_ICONS[unit.id]; return <IconShape className="size-9" />; })()}</span>
         {/* Name and when */}
         <div className="min-w-0 flex-1">
           {/* Name */}
@@ -107,15 +109,15 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {question && (
         <section aria-label={unit.words.practice} className="mt-4">
           {/* Small heading */}
-          <p className="text-footnote italic text-ink-muted">{unit.words.kicker}</p>
+          <p className="text-footnote text-ink-muted">{unit.words.kicker}</p>
           {/* What is said (a story stays hidden until afterwards) */}
           <h1 className="mt-1 font-display text-statement tracking-tight">{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
           {/* Reply, or move along */}
           <p className="mt-2 flex flex-wrap gap-x-4">
             {/* Reply */}
-            <Link href={answerHref(question.id)} className="inline-flex min-h-11 items-center underline underline-offset-4">{unit.words.start}</Link>
+            <Link href={answerHref(question.id)} className={TEXT_LINK}>{unit.words.start}</Link>
             {/* Another */}
-            <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">{unit.words.another}</button>
+            <button type="button" onClick={() => setOffset(offset + 1)} className={QUIET}>{unit.words.another}</button>
           </p>
         </section>
       )}
@@ -124,11 +126,11 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {today && unit.id === "answering" && (
         <section id="moments" aria-labelledby="moments-heading" className="mt-10 scroll-mt-6">
           {/* Run-in heading */}
-          <h2 id="moments-heading" className="italic">One moment a day</h2>
+          <h2 id="moments-heading" className={SECTION_HEADING}>One moment a day</h2>
           {/* What it is for */}
           <p className="mt-2 max-w-[52ch] text-lede">{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Today\u2019s moment is saved. When someone asks what you have been up to, it will be there." : "What\u2019s one thing from today worth telling? Saying it now means you will have it when someone asks. It stays on this phone."}</p>
           {/* Record one */}
-          <p className="mt-2"><Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Add another moment" : "Record today\u2019s moment"}</Link></p>
+          <p className="mt-2"><Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className={TEXT_LINK}>{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Add another moment" : "Record today\u2019s moment"}</Link></p>
           {/* The latest few, in the words they were said */}
           {moments.length > 0 && (
             <ul aria-label="Your moments" className="mt-2 divide-y divide-rule border-y border-rule">
@@ -137,7 +139,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
                 // One moment: the day, then what was said
                 <li key={moment.id} className="py-3">
                   {/* The day */}
-                  <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
+                  <span className="block text-footnote text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
                   {/* The words */}
                   <span className="block text-lede">{moment.transcript || "(no words were caught)"}</span>
                 </li>
@@ -150,7 +152,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {/* The recipe, taught on the page itself */}
       <section aria-labelledby="recipe" className="mt-10">
         {/* Run-in heading */}
-        <h2 id="recipe" className="italic">{unit.words.recipe}, in four beats</h2>
+        <h2 id="recipe" className={SECTION_HEADING}>{unit.words.recipe}, in four beats</h2>
         {/* The beats */}
         <ol className="mt-3 divide-y divide-rule border-y border-rule">
           {/* Each beat */}
@@ -164,7 +166,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
                 {/* Name and reminder */}
                 <span className="block"><strong className="font-display text-cue font-normal">{beat.name}.</strong> {beat.reminder}</span>
                 {/* Why it works */}
-                <span className="mt-1 block text-footnote italic text-ink-muted">{beat.why}</span>
+                <span className="mt-1 block text-footnote text-ink-muted">{beat.why}</span>
               </span>
             </li>
           ))}
@@ -174,7 +176,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {/* The lessons, as a path */}
       <section aria-labelledby="lessons" className="mt-10">
         {/* Run-in heading */}
-        <h2 id="lessons" className="italic">{unit.name} lessons</h2>
+        <h2 id="lessons" className={SECTION_HEADING}>{unit.name} lessons</h2>
         {/* The path */}
         <ol className="mt-2">
           {/* One row per lesson */}
@@ -190,7 +192,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
                 {/* Title and idea */}
                 <span className="min-w-0 flex-1">
                   {/* "Next" above the lesson to do next */}
-                  {marks[index] === "next" && <span className="block text-footnote italic text-accent">Next</span>}
+                  {marks[index] === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
                   {/* Title */}
                   <span className="block font-display text-cue">{lesson.title}</span>
                   {/* The idea's first sentence */}
@@ -208,7 +210,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {unit.id === "answering" && (
         <section aria-labelledby="questions" className="mt-10">
           {/* Run-in heading */}
-          <h2 id="questions" className="italic">Everyday questions</h2>
+          <h2 id="questions" className={SECTION_HEADING}>Everyday questions</h2>
           {/* Each group, folded */}
           {QUESTION_GROUPS.map((group) => (
             // One group
@@ -218,7 +220,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
                 {/* Name */}
                 {group.name}
                 {/* How many */}
-                <span className="font-body text-footnote italic text-ink-muted">{SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id).length} questions</span>
+                <span className="font-body text-footnote text-ink-muted">{SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id).length} questions</span>
               </summary>
               {/* Its questions */}
               <ul className="divide-y divide-rule border-t border-rule">
@@ -236,7 +238,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {unit.id === "asking" && (
         <section aria-labelledby="remarks" className="mt-10">
           {/* Run-in heading */}
-          <h2 id="remarks" className="italic">Things people say</h2>
+          <h2 id="remarks" className={SECTION_HEADING}>Things people say</h2>
           {/* Each one, followed up by tapping it */}
           <ul className="mt-2 divide-y divide-rule border-y border-rule">
             {/* One remark */}
@@ -249,13 +251,13 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {answers && answers.length > 0 && today && (
         <section aria-labelledby="your-answers" className="mt-10 mb-6">
           {/* Run-in heading */}
-          <h2 id="your-answers" className="italic">Your answers</h2>
+          <h2 id="your-answers" className={SECTION_HEADING}>Your answers</h2>
           {/* The most recent */}
           <ul className="mt-2 divide-y divide-rule border-y border-rule">
             {/* Each answer */}
             {answers.slice(0, RECENT_ANSWERS).map((answer) => (
               // One answer: its question, day, and beats
-              <li key={answer.id}><RowLink href={`/sessions?id=${answer.id}`} meta={`${beatCount(answer)} of 4`}>{answerLabel(answer.promptId)} <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(answer.createdAt), today)}</span></RowLink></li>
+              <li key={answer.id}><RowLink href={`/sessions?id=${answer.id}`} meta={`${beatCount(answer)} of 4`}>{answerLabel(answer.promptId)} <span className="block text-footnote text-ink-muted">{dayLabel(new Date(answer.createdAt), today)}</span></RowLink></li>
             ))}
           </ul>
         </section>

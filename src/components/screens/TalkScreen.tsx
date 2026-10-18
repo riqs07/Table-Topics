@@ -6,7 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 // Load the app's link
 import Link from "next/link";
 // Load the shared button style
-import { SecondaryLink } from "@/components/script/Buttons";
+import { SecondaryLink, TEXT_LINK } from "@/components/script/Buttons";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen set-up
@@ -19,6 +19,8 @@ import { daysUntil, eventPlan, prepHeadline, runTimes, stepTasks, stepText, talk
 import { formatClock } from "@/core/recordingRules";
 // Load the record types
 import type { SessionRecord, TalkRecord } from "@/data/records";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // What the page needs from storage
 interface Loaded {
@@ -86,19 +88,19 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   }
 
   // Still loading, or not yet in the browser
-  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Your talk" section="practice" /></main>;
+  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Your talk" section="practice" /></main>;
 
   // The talk is not here
   if (!loaded.talk) {
     // Say so, with a way back
     return (
-      <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Heading and navigation */}
         <Masthead title="Your talk" section="practice" />
         {/* The note */}
         <p className="mt-6 text-lede">This talk is not on this device. It may have been deleted, or saved in another browser.</p>
         {/* The way back */}
-        <Link href="/rehearse" className="mt-4 inline-flex min-h-11 items-center underline underline-offset-4">Back to your talks</Link>
+        <Link href="/rehearse" className={`${TEXT_LINK} mt-4`}>Back to your talks</Link>
       </main>
     );
   }
@@ -124,7 +126,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
       <Masthead title={talk.title} section="practice" />
 
@@ -138,9 +140,9 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
           <input type="date" value={dateInput} onChange={(event) => setDateInput(event.target.value)} className="min-h-11 border-b border-ink bg-transparent py-1" />
         </label>
         {/* Save it */}
-        <button type="submit" className="inline-flex min-h-11 items-center underline underline-offset-4">Save date</button>
+        <button type="submit" className={TEXT_LINK}>Save date</button>
         {/* The saved date, written out */}
-        {talk.eventDate && daysLeft !== null && daysLeft >= 0 && <span className="text-footnote italic text-ink-muted">{longDay(addDays(today, daysLeft))}</span>}
+        {talk.eventDate && daysLeft !== null && daysLeft >= 0 && <span className="text-footnote text-ink-muted">{longDay(addDays(today, daysLeft))}</span>}
       </form>
 
       {/* Today's step */}
@@ -157,7 +159,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
                 {/* What to rehearse */}
                 <span className="flex-1">{task.label}</span>
                 {/* How many runs so far */}
-                <span className={`text-footnote italic ${(done[index] ?? 0) >= task.times ? "text-ink" : "text-ink-muted"}`}>{done[index] ?? 0} of {task.times}</span>
+                <span className={`text-footnote ${(done[index] ?? 0) >= task.times ? "text-ink" : "text-ink-muted"}`}>{done[index] ?? 0} of {task.times}</span>
                 {/* Open the rehearsal */}
                 <SecondaryLink href={rehearseHref(talk.id, task.sectionIndex, task.ladder)}>Rehearse</SecondaryLink>
               </li>
@@ -176,7 +178,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
       {plan && plan.length > 1 && (
         <section className="mt-8">
           {/* Small heading */}
-          <h2 className="text-footnote italic text-ink-muted">The coming days</h2>
+          <h2 className={SECTION_HEADING}>The coming days</h2>
           {/* Up to a week ahead */}
           <ol className="mt-2 space-y-1">
             {/* One line per day */}
@@ -196,7 +198,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
       {/* Every part, any time */}
       <section className="mt-10">
         {/* Small heading */}
-        <h2 className="text-footnote italic text-ink-muted">Practise any part</h2>
+        <h2 className={SECTION_HEADING}>Practise any part</h2>
         {/* One row per section, then the whole talk */}
         <ul className="mt-2 divide-y divide-rule border-y border-rule">
           {/* Each section */}
@@ -206,7 +208,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
               {/* Its opening words */}
               <span className="min-w-0 flex-1 truncate">
                 {/* Its number */}
-                <span className="italic text-ink-muted">{index + 1}. </span>
+                <span className="text-ink-muted">{index + 1}. </span>
                 {/* The start of it */}
                 {section.split("\n")[0]}
               </span>
@@ -227,7 +229,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
           </li>
         </ul>
         {/* How sections are made */}
-        <p className="mt-2 text-footnote italic text-ink-muted">Sections are split at blank lines in your text.</p>
+        <p className="mt-2 text-footnote text-ink-muted">Sections are split at blank lines in your text.</p>
       </section>
 
       {/* How long each whole run took */}
@@ -246,7 +248,7 @@ function RunChart({ runs, goalSeconds }: { runs: ReadonlyArray<RunTime>; goalSec
   return (
     <section className="mt-10">
       {/* Small heading, with the goal when there is one */}
-      <h2 className="text-footnote italic text-ink-muted">
+      <h2 className={SECTION_HEADING}>
         {/* The name */}
         Whole run-throughs
         {/* The goal */}
@@ -273,7 +275,7 @@ function RunChart({ runs, goalSeconds }: { runs: ReadonlyArray<RunTime>; goalSec
             // One run
             <tr key={run.id} title={`${new Date(run.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}: ${formatClock(Math.round(run.seconds))}`}>
               {/* The date */}
-              <td className="w-20 py-1 pr-3 text-footnote italic text-ink-muted">{new Date(run.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</td>
+              <td className="w-20 py-1 pr-3 text-footnote text-ink-muted">{new Date(run.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</td>
               {/* The bar, with the goal line behind it */}
               <td className="relative py-1" aria-hidden="true">
                 {/* The goal line */}

@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
+// Load the shared page title
+import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
 import { BookOpenTextIcon, MegaphoneSimpleIcon, CaretRightIcon, ChatTeardropTextIcon, ChatsCircleIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, SunHorizonIcon, TextAaIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
@@ -19,6 +21,8 @@ import { WeeklyChallenge } from "@/components/screens/WeeklyChallenge";
 import { promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the moment note's prompt
 import { MOMENT_PROMPT } from "@/content/smallTalk";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // One kind of practice on the page
 interface Way {
@@ -37,12 +41,15 @@ function WayRow({ way }: { way: Way }) {
   // The words, shared by both forms
   const words = (
     <>
-      {/* The icon */}
-      <way.icon aria-hidden="true" className={`size-7 flex-none ${way.href ? "text-accent" : "text-ink-muted"}`} />
+      {/* The icon on a faint tile, as on the course cards */}
+      <span aria-hidden="true" className={`flex size-11 flex-none items-center justify-center ${way.href ? "bg-accent/10 text-accent" : "bg-rule/50 text-ink-muted"}`}>
+        {/* The icon */}
+        <way.icon className="size-6" />
+      </span>
       {/* Name and detail */}
       <span className="min-w-0 flex-1">
         {/* The name */}
-        <span className="block font-display text-cue leading-tight">{way.name}</span>
+        <span className="block font-display text-xl leading-tight">{way.name}</span>
         {/* What it is */}
         <span className="block text-footnote text-ink-muted">{way.detail}</span>
       </span>
@@ -67,7 +74,7 @@ function Group({ id, title, ways }: { id: string; title: string; ways: ReadonlyA
   return (
     <section aria-labelledby={id} className="mt-8">
       {/* Run-in heading */}
-      <h2 id={id} className="italic">{title}</h2>
+      <h2 id={id} className={SECTION_HEADING}>{title}</h2>
       {/* The rows */}
       <ul className="mt-2 divide-y divide-rule border-y border-rule">
         {/* Each kind of practice */}
@@ -107,13 +114,11 @@ export function PracticeScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title="Practice" section="practice" />
-      {/* What this page is */}
-      <h1 className="mt-6 font-display text-statement tracking-tight">Pick anything to practise.</h1>
-      {/* How it relates to Today */}
-      <p className="mt-2 max-w-[52ch] text-lede text-ink-muted">Today has your steps for the day. Everything here is open, in any order, as often as you like.</p>
+      <Masthead title="VoiceLab" section="practice" />
+      {/* The page's name, and how it relates to Today */}
+      <PageTitle title="Practice">Anything, in any order. Your steps for the day are on Today.</PageTitle>
 
       {/* Speaking on the spot */}
       <Group

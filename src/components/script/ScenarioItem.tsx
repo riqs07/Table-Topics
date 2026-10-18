@@ -21,7 +21,7 @@ interface ScenarioItemProps {
 }
 
 // The look of each tier once revealed: best filled, the others by their edge
-const TIER_LOOK: Readonly<Record<Tier, string>> = { best: "border-accent bg-accent text-accent-ink", good: "border-accent", flat: "border-rule", misstep: "border-ink" };
+const TIER_LOOK: Readonly<Record<Tier, string>> = { best: "border-fill bg-fill text-fill-ink", good: "border-accent", flat: "border-rule", misstep: "border-ink" };
 
 // Draw the item
 export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps) {
@@ -49,7 +49,7 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
       {/* The situation */}
       <p className="max-w-[52ch] text-lede">{scenario.situation}</p>
       {/* The question */}
-      <p className="mt-4 italic text-ink-muted">What’s the best thing to say?</p>
+      <p className="mt-4 text-ink-muted">What’s the best thing to say?</p>
       {/* The replies */}
       <div role="group" aria-label="Replies" className="mt-2 flex flex-col gap-2">
         {/* Each reply */}
@@ -59,7 +59,7 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
             {/* The words */}
             <span className="block">{option.text}</span>
             {/* Once chosen: its tier and the pattern behind it */}
-            {chosen !== null && <span className="mt-1 block text-footnote italic">{TIER_NAMES[option.tier]} · {option.pattern}{position === chosen ? " · your choice" : ""}</span>}
+            {chosen !== null && <span className="mt-1 block text-footnote">{TIER_NAMES[option.tier]} · {option.pattern}{position === chosen ? " · your choice" : ""}</span>}
           </button>
         ))}
       </div>
@@ -73,13 +73,13 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
           {/* Why the best one works, when another was chosen */}
           {picked.tier !== "best" && <p className="mt-2 max-w-[52ch] text-lede"><em>The best one:</em> {scenario.options[best]!.why}</p>}
           {/* The move */}
-          <p className="mt-3 border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote italic text-ink-muted">The move</span>{scenario.principle}</p>
+          <p className="mt-3 border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote text-ink-muted">The move</span>{scenario.principle}</p>
           {/* A note on context */}
-          {scenario.note && <p className="mt-2 text-footnote italic text-ink-muted">{scenario.note}</p>}
+          {scenario.note && <p className="mt-2 text-footnote text-ink-muted">{scenario.note}</p>}
           {/* Say it aloud */}
           <div className="mt-5 border-t border-rule pt-3">
             {/* The ask */}
-            <p className="text-footnote italic text-ink-muted">Now say it in your own words</p>
+            <p className="text-footnote text-ink-muted">Now say it in your own words</p>
             {/* What to say */}
             <p className="mt-1 text-lede">{scenario.sayIt}</p>
             {/* Record it and hear it back */}

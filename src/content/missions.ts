@@ -57,4 +57,4 @@ export function findMission(id: string): Mission | undefined {
 }
 
 // The 1 to 5 scale's words, for predictions and outcomes
-export const SCALE_WORDS: Readonly<Record<number, string>> = { 1: "Badly", 2: "Awkward", 3: "Okay", 4: "Well", 5: "Really well" };
+export const SCALE_WORDS: Readonly<Record<number, string>> = { 1: "Badly", 2: "Awkward", 3: "Okay", 4: "Well", 5: "Very well" };

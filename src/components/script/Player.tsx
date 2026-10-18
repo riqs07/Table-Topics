@@ -100,7 +100,7 @@ export function Player({ src, label, name, durationSec, onAudio, onTime, speeds 
         }}
       />
       {/* Play or pause, a large square button in the accent */}
-      <button type="button" onClick={toggle} aria-label={action} className="flex size-12 flex-none items-center justify-center bg-accent text-accent-ink">
+      <button type="button" onClick={toggle} aria-label={action} className="flex size-12 flex-none items-center justify-center bg-fill text-fill-ink">
         {/* The icon for what a press does */}
         {playing ? <PauseIcon size={24} weight="fill" aria-hidden /> : <PlayIcon size={24} weight="fill" aria-hidden />}
       </button>

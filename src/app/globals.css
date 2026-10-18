@@ -25,6 +25,10 @@
   --color-accent: var(--vl-accent);
   /* Text on the accent */
   --color-accent-ink: var(--vl-accent-ink);
+  /* Action band, main buttons and icon tiles */
+  --color-fill: var(--vl-fill);
+  /* Text on those filled areas */
+  --color-fill-ink: var(--vl-fill-ink);
   /* Filler words in a transcript */
   --color-filler: var(--vl-filler);
   /* Keyboard focus outline */

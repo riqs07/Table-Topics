@@ -49,6 +49,8 @@ import { localChange } from "@/core/localChange";
 import { markMicExplained, readMicExplained } from "@/data/micExplained";
 // Load today's practice, for its number of steps
 import { loadDailyPlan } from "@/data/dailyPlan";
+// Load the shared button looks
+import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
 
 // What the screen is given
 interface RecordingScreenProps {
@@ -148,8 +150,8 @@ function LiveWords({ text }: { text: LiveText }) {
 function windowSignalText(window: SpeakingWindow): Record<TimeSignal, string> {
   // One phrase per state
   return {
-    // Before the minimum
-    none: "",
+    // Before the minimum: say when it will light, so the empty lamp never looks broken
+    none: `Turns green at ${formatClock(window.start)}`,
     // From the minimum
     green: "Green: the minimum is met",
     // From the middle
@@ -163,8 +165,8 @@ function windowSignalText(window: SpeakingWindow): Record<TimeSignal, string> {
 
 // Words for the Record Response light, which only turns yellow and red
 const RESPONSE_SIGNAL_TEXT: Record<TimeSignal, string> = {
-  // Before 2:15
-  none: "",
+  // Before 2:15: say when it will light
+  none: "Turns yellow 45 seconds before the goal",
   // Not used by a Record Response
   green: "",
   // From 2:15
@@ -178,7 +180,7 @@ const RESPONSE_SIGNAL_TEXT: Record<TimeSignal, string> = {
 // Fill for the lamp at each state
 const SIGNAL_LAMP: Record<TimeSignal, string> = {
   // Off: an empty ring
-  none: "border-rule bg-transparent",
+  none: "border-dashed border-ink-muted bg-transparent",
   // Green
   green: "border-light-green bg-light-green",
   // Yellow
@@ -201,7 +203,7 @@ function TimingLight({ signal, mode, promptId }: { signal: TimeSignal; mode: Ses
       {/* The lamp itself (decorative; the words carry the meaning) */}
       <span aria-hidden="true" className={`inline-block size-10 flex-none rounded-full border-2 transition-colors ${SIGNAL_LAMP[signal]}`} />
       {/* What the lamp means */}
-      <span className="text-lede italic">{words[signal]}</span>
+      <span className="text-lede">{words[signal]}</span>
     </p>
   );
 }
@@ -229,7 +231,7 @@ function Hints({ angles, compact }: { angles: ReadonlyArray<string>; compact: bo
       {/* The structure */}
       <div>
         {/* Small heading */}
-        <p className="text-footnote italic text-ink-muted">A simple shape</p>
+        <p className="text-footnote text-ink-muted">A simple shape</p>
         {/* The steps in order */}
         <ol className="mt-2 space-y-1">
           {/* One step per line */}
@@ -239,7 +241,7 @@ function Hints({ angles, compact }: { angles: ReadonlyArray<string>; compact: bo
       {/* The angles */}
       <div>
         {/* Small heading */}
-        <p className="text-footnote italic text-ink-muted">Angles to try</p>
+        <p className="text-footnote text-ink-muted">Angles to try</p>
         {/* One per line */}
         <ul className="mt-2 list-disc space-y-1 pl-5">
           {/* One item per angle */}
@@ -302,13 +304,13 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
 
 // Draw the level meter from recent loudness readings
 function Meter({ levels }: { levels: number[] }) {
-  // A row of bars; recent loud bars in the accent
+  // A row of thin bars growing from a centre line, like a waveform; loud bars in the accent
   return (
-    <div className="flex h-24 items-end gap-1.5" role="img" aria-label="Microphone level">
+    <div className="flex h-16 items-center justify-between" role="img" aria-label="Microphone level">
       {/* One bar per reading, at least a sliver tall */}
       {levels.map((level, index) => (
         // A single bar
-        <span key={index} className={`flex-1 ${level > 0.04 ? "bg-accent" : "bg-rule"}`} style={{ height: `${Math.max(6, Math.min(100, level * 300))}%` }} />
+        <span key={index} className={`w-1 rounded-full ${level > 0.04 ? "bg-accent" : "bg-rule"}`} style={{ height: `${Math.max(6, Math.min(100, level * 300))}%` }} />
       ))}
     </div>
   );
@@ -908,7 +910,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           <p className="mt-4 max-w-[48ch] text-lede">Your recordings stay on this device. Your browser will ask next: choose Allow.</p>
           {/* Back without asking (just under the words, so the action band never covers it) */}
           <p className="mt-4">
-            <button type="button" onClick={() => setStage("ready")} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Not now</button>
+            <button type="button" onClick={() => setStage("ready")} className={QUIET}>Not now</button>
           </p>
           {/* Let the browser ask */}
           <ActionButton action="Allow microphone" aside="your browser asks next" onClick={() => void allowMicrophone()} />
@@ -929,7 +931,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         {(script || smallTalk) && !busy && <span className="pointer-fine:hidden md:hidden">{lengthText}</span>}
       </Masthead>
       {/* Inside today's practice, which step this is */}
-      {planStep && <p className="mt-3 text-footnote italic text-accent">Today’s practice · step {planStep}{planTotal ? ` of ${planTotal}` : ""}</p>}
+      {planStep && <p className="mt-3 text-footnote font-medium text-accent">Today’s practice · step {planStep}{planTotal ? ` of ${planTotal}` : ""}</p>}
 
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
@@ -960,8 +962,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           <div className="hidden flex-1 md:block" />
           {/* Discard while recording */}
           {(recording || thinking) && (
-            <button type="button" onClick={() => void discard()} className="mt-4 self-start inline-flex min-h-11 items-center italic underline underline-offset-4 md:mb-10">
-              {thinking ? "or leave without speaking" : "or discard this one without saving"}
+            <button type="button" onClick={() => void discard()} className={`${QUIET} mt-4 self-start md:mb-10`}>
+              {thinking ? "Leave without speaking" : "Discard this one"}
             </button>
           )}
         </aside>
@@ -986,9 +988,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {showBriefing && (
             <>
               {/* The headline */}
-              <h1 className="mt-8 font-display text-prompt tracking-tight md:mt-0 md:max-w-[18ch]">There is very little waiting time.</h1>
-              {/* How it works */}
-              <p className="mt-5 max-w-[48ch] text-lede">In Table Topics you hear the question and start almost straight away. Press the button to see yours: you get {think} seconds, then recording starts by itself. Speak for 1 to 2 minutes; the light turns green at 1:00, yellow at 1:30, and red at 2:00.</p>
+              <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0 md:max-w-[18ch]">Your topic is hidden until you start.</h1>
+              {/* How it works, once */}
+              <p className="mt-4 max-w-[48ch] text-lede">You get {think} seconds to think, then recording starts by itself. Aim for 1 to 2 minutes: the light turns green at 1:00, yellow at 1:30 and red at 2:00.</p>
             </>
           )}
           {/* Reading aloud, a lesson, or a rehearsal: the title (and source or tip) before starting, and the text throughout */}
@@ -997,12 +999,12 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {/* Title and source, before starting */}
               {!recording && <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">{script.title}</h1>}
               {/* Who said it, or that it is a practice passage */}
-              {!recording && script.source && <p className="mt-1 italic text-ink-muted">{script.source}</p>}
+              {!recording && script.source && <p className="mt-1 text-ink-muted">{script.source}</p>}
               {/* A lesson's tip, before starting */}
               {!recording && lesson && (
                 <div className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4">
                   {/* Small heading */}
-                  <p className="text-footnote italic text-ink-muted">The tip</p>
+                  <p className="text-footnote text-ink-muted">The tip</p>
                   {/* The tip itself */}
                   <p className="mt-1 text-lede">{lesson.tip}</p>
                 </div>
@@ -1013,7 +1015,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                   {/* One button per rung */}
                   {LADDER_RUNGS.map((rung) => (
                     // The current rung is plain; the others are links-style buttons
-                    <button key={rung.ladder} type="button" aria-pressed={ladder === rung.ladder} onClick={() => setLadder(rung.ladder)} className={ladder === rung.ladder ? "text-ink" : "italic text-ink-muted underline underline-offset-4"}>
+                    <button key={rung.ladder} type="button" aria-pressed={ladder === rung.ladder} onClick={() => setLadder(rung.ladder)} className={ladder === rung.ladder ? "text-ink" : "text-ink-muted underline underline-offset-4"}>
                       {rung.name}
                     </button>
                   ))}
@@ -1038,19 +1040,19 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                   {/* The idea */}
                   <p className="mt-3 max-w-[52ch] text-lede">{smallTalk.lesson.idea}</p>
                   {/* What they said, in an asking or listening example */}
-                  {smallTalk.lesson.example && <p className="mt-4 max-w-[52ch] text-lede"><span className="block text-footnote italic text-ink-muted">They say</span>&ldquo;{smallTalk.lesson.example}&rdquo;</p>}
+                  {smallTalk.lesson.example && <p className="mt-4 max-w-[52ch] text-lede"><span className="block text-footnote text-ink-muted">They say</span>&ldquo;{smallTalk.lesson.example}&rdquo;</p>}
                   {/* The flat answer */}
                   {smallTalk.lesson.flat && (
-                    <p className="mt-4 max-w-[52ch] border-l-2 border-rule pl-4 text-lede text-ink-muted"><span className="block text-footnote italic">Flat</span>&ldquo;{smallTalk.lesson.flat}&rdquo;</p>
+                    <p className="mt-4 max-w-[52ch] border-l-2 border-rule pl-4 text-lede text-ink-muted"><span className="block text-footnote">Flat</span>&ldquo;{smallTalk.lesson.flat}&rdquo;</p>
                   )}
                   {/* The better answer */}
-                  <p className="mt-3 max-w-[52ch] border-l-2 border-accent pl-4 text-lede"><span className="block text-footnote italic text-ink-muted">{smallTalk.lesson.flat ? "Better" : "For example"}</span>&ldquo;{smallTalk.lesson.good}&rdquo;</p>
+                  <p className="mt-3 max-w-[52ch] border-l-2 border-accent pl-4 text-lede"><span className="block text-footnote text-ink-muted">{smallTalk.lesson.flat ? "Better" : "For example"}</span>&ldquo;{smallTalk.lesson.good}&rdquo;</p>
                   {/* Then */}
-                  <p className="mt-6 text-footnote italic text-ink-muted">Your turn</p>
+                  <p className="mt-6 text-footnote text-ink-muted">Your turn</p>
                 </section>
               )}
               {/* Asking: who is speaking */}
-              {(smallTalk.unit === "asking" || smallTalk.unit === "news") && <p className={`text-footnote italic text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>{smallTalk.unit === "news" ? "They tell you" : "They say"}</p>}
+              {(smallTalk.unit === "asking" || smallTalk.unit === "news") && <p className={`text-footnote text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>{smallTalk.unit === "news" ? "They tell you" : "They say"}</p>}
               {/* A story to listen to, not shown */}
               {storyHidden ? (
                 <h1 className="mt-8 font-display text-prompt tracking-tight md:mt-0 md:max-w-[18ch]">Listen to their story.</h1>
@@ -1063,14 +1065,14 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {/* A hidden story: why, and that it comes back in the results */}
               {storyHidden && !busy && <p className="mt-3 max-w-[48ch] text-lede">It is not shown, so you listen the way you would in person. Then respond out loud. You will see it afterwards.</p>}
               {/* While it is said aloud */}
-              {stage === "asking" && <p role="status" className="mt-3 italic text-ink-muted">{unit ? "Listen. Recording starts when they finish." : "Listen to the question. Recording starts when it ends."}</p>}
+              {stage === "asking" && <p role="status" className="mt-3 text-ink-muted">{unit ? "Listen. Recording starts when they finish." : "Listen to the question. Recording starts when it ends."}</p>}
               {/* The recipe */}
               <RecipeStrip level={stripLevel(earlierAnswers, smallTalk.unit)} focus={smallTalk.lesson?.beat ?? null} />
               {/* For a question about what you have been up to: your own moments from this week, as material */}
               {recentMoments.length > 0 && (
                 <section aria-label="Your moments this week" className="mt-5 max-w-[52ch]">
                   {/* Small heading */}
-                  <p className="text-footnote italic text-ink-muted">From your moments this week</p>
+                  <p className="text-footnote text-ink-muted">From your moments this week</p>
                   {/* Each moment, in the words it was said */}
                   <ul className="mt-1 space-y-1 text-footnote">
                     {/* One moment */}
@@ -1094,7 +1096,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {!recording && (retryCue || ownNote) && (
             <div className="mt-6 max-w-md border-y border-ink py-4">
               {/* Small heading */}
-              <p className="text-footnote italic text-ink-muted">Before you start</p>
+              <p className="text-footnote text-ink-muted">Before you start</p>
               {/* The user's own note first, in their words */}
               {ownNote && <p className="mt-1 font-display text-cue">{ownNote}</p>}
               {/* The coach's cue, under it when both exist */}
@@ -1120,10 +1122,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* Saving failed */}
           {stage === "save-failed" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
           {/* Before starting: how this kind of session works and what comes afterwards (after the task, so a phone shows the task first) */}
-          {howItWorks && !busy && !smallTalk?.lesson && (
+          {howItWorks && !busy && !smallTalk?.lesson && !showBriefing && (
             <div role="note" aria-label="How this works" className="mt-8 max-w-[52ch] border-t border-rule pt-3 text-footnote text-ink-muted">
               {/* Small heading */}
-              <p className="italic">How this works</p>
+              <p className="font-medium text-ink">How this works</p>
               {/* What you do */}
               <p className="mt-1 text-ink">{howItWorks.youDo}</p>
               {/* What you get */}
@@ -1142,7 +1144,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* A way home when stuck on a problem */}
           {problem && (
             <Footnote>
-              <Link href="/" className="inline-flex min-h-11 items-center underline underline-offset-4">Back to Today</Link>
+              <Link href="/" className={TEXT_LINK}>Back to Today</Link>
             </Footnote>
           )}
 

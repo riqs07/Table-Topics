@@ -16,6 +16,10 @@ export const ROLES = [
   "accent",
   // Text placed on the accent color
   "accent-ink",
+  // Large filled areas: the action band, main buttons and icon tiles (quieter than the accent in dark mode)
+  "fill",
+  // Text placed on a large filled area
+  "fill-ink",
   // Filler words in a transcript: quiet, never alarming
   "filler",
   // Keyboard focus outline
@@ -62,6 +66,8 @@ export const CONTRAST_RULES: ReadonlyArray<ContrastRule> = [
   { foreground: "filler", background: "paper-raised", minimum: TEXT },
   // Text on the record button and fix highlight
   { foreground: "accent-ink", background: "accent", minimum: TEXT },
+  // Text on the action band, main buttons and icon tiles
+  { foreground: "fill-ink", background: "fill", minimum: TEXT },
   // The accent shape must stand out from both surfaces
   { foreground: "accent", background: "paper", minimum: NON_TEXT },
   // (same, on lifted surfaces)

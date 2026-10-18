@@ -25,6 +25,8 @@ import { formatClock } from "@/core/recordingRules";
 import type { SessionRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
+// Load the shared button looks
+import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
 
 // Recordings longer than this offer a faster playback button
 const OFFER_SPEED_AFTER = 60;
@@ -37,7 +39,7 @@ function TagRow({ tags, chosen, onToggle, label }: { tags: ReadonlyArray<ReviewT
       {/* Each tag */}
       {tags.map((tag) => (
         // One tag, filled in the accent when chosen
-        <button key={tag.id} type="button" aria-pressed={chosen.has(tag.id)} onClick={() => onToggle(tag.id)} className={`min-h-11 border px-3 text-footnote ${chosen.has(tag.id) ? "border-accent bg-accent text-accent-ink" : "border-rule"}`}>
+        <button key={tag.id} type="button" aria-pressed={chosen.has(tag.id)} onClick={() => onToggle(tag.id)} className={`min-h-11 border px-3 text-footnote ${chosen.has(tag.id) ? "border-fill bg-fill text-fill-ink" : "border-rule"}`}>
           {/* Its words */}
           {tag.label}
         </button>
@@ -181,7 +183,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
           {/* Play, move through it, and (for longer takes) play faster */}
           <Player src={audio.url} label="Your recording" name="your recording" durationSec={session.durationSec} speeds={session.durationSec > OFFER_SPEED_AFTER} onAudio={(found) => { element.current = found; }} onTime={follow} />
           {/* How much is left to hear */}
-          <p role="status" className="mt-2 text-footnote italic text-ink-muted">
+          <p role="status" className="mt-2 text-footnote text-ink-muted">
             {listened ? "Heard. Now your notes." : `Heard ${formatClock(heard.filter(Boolean).length)} of ${formatClock(session.durationSec)}.${plan ? "" : ` ${long ? "Listen to all of it, or to its first and last 45 seconds." : "Listen to all of it to open the feedback."}`}`}
           </p>
         </div>
@@ -192,7 +194,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
       {/* The transcript, following the playback */}
       <div className="mt-6 max-w-[52ch]">
         {/* Small heading */}
-        <p className="text-footnote italic text-ink-muted">What you said (tap a word to hear it)</p>
+        <p className="text-footnote text-ink-muted">What you said (tap a word to hear it)</p>
         {/* The words */}
         <div className="mt-2"><FollowingTranscript session={session} position={position} onPick={jump} /></div>
       </div>
@@ -210,7 +212,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
                 {/* The switch */}
                 <button type="button" aria-pressed={tags.has(beat.id)} onClick={() => toggle(beat.id)} className="flex min-h-14 w-full items-center gap-3 py-2 text-left">
                   {/* The box */}
-                  <span aria-hidden="true" className={`flex size-6 flex-none items-center justify-center border-2 ${tags.has(beat.id) ? "border-accent bg-accent text-accent-ink" : "border-rule"}`}>{tags.has(beat.id) && <CheckIcon weight="bold" className="size-4" />}</span>
+                  <span aria-hidden="true" className={`flex size-6 flex-none items-center justify-center border-2 ${tags.has(beat.id) ? "border-fill bg-fill text-fill-ink" : "border-rule"}`}>{tags.has(beat.id) && <CheckIcon weight="bold" className="size-4" />}</span>
                   {/* The beat and its question */}
                   <span><strong className="font-display font-normal">{beat.name}.</strong> <span className="text-ink-muted">{beat.question}</span></span>
                 </button>
@@ -249,7 +251,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
       {/* Keep the recording to compare later, or let it go once the notes are saved */}
       {session.audioKey && (session.isBaseline ? (
         // The first recording stays, as the one progress is measured against
-        <p className="mt-6 text-footnote italic text-ink-muted">This is your first recording, so it is kept to compare with later.</p>
+        <p className="mt-6 text-footnote text-ink-muted">This is your first recording, so it is kept to compare with later.</p>
       ) : (
         <label className="mt-6 flex min-h-11 items-start gap-3">
           {/* The choice */}
@@ -267,15 +269,15 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
       {plan ? (
         <p className="mt-6 mb-6 flex flex-wrap gap-x-4">
           {/* Try again, staying in the plan */}
-          {retryHref && <Link href={retryHref} className="inline-flex min-h-11 items-center underline underline-offset-4">Try it again</Link>}
+          {retryHref && <Link href={retryHref} className={TEXT_LINK}>Try it again</Link>}
           {/* Save the notes and see this step's feedback */}
-          <button type="button" onClick={() => void save(false)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Save and see the feedback</button>
+          <button type="button" onClick={() => void save(false)} className={QUIET}>Save and see the feedback</button>
         </p>
       ) : (
         // Skipping, kept small
         <p className="mt-6 mb-6">
           {/* Skip this time */}
-          <button type="button" onClick={() => void save(true)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">Skip this time</button>
+          <button type="button" onClick={() => void save(true)} className={QUIET}>Skip this time</button>
         </p>
       )}
       {/* Push the action down */}

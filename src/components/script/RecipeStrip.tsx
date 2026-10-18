@@ -7,6 +7,8 @@ import { useState } from "react";
 import { beatsFor, type BeatId } from "@/content/smallTalk";
 // Load the strip's level type
 import type { StripLevel } from "@/core/smallTalk";
+// Load the shared button looks
+import { QUIET } from "@/components/script/Buttons";
 
 // Draw the strip
 export function RecipeStrip({ level, focus = null }: { level: StripLevel; focus?: BeatId | null }) {
@@ -18,7 +20,7 @@ export function RecipeStrip({ level, focus = null }: { level: StripLevel; focus?
     return (
       <p className="mt-4">
         {/* Show it */}
-        <button type="button" onClick={() => setShown(true)} className="inline-flex min-h-11 items-center text-footnote italic text-ink-muted underline underline-offset-4">Show the recipe</button>
+        <button type="button" onClick={() => setShown(true)} className={QUIET}>Show the recipe</button>
       </p>
     );
   }

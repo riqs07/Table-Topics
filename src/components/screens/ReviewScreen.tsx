@@ -95,7 +95,7 @@ export function ReviewScreen(props: ScreenProps) {
       {card && recall && (
         <section aria-label="Question" className="mt-8">
           {/* The card it comes from */}
-          <p className="text-footnote italic text-ink-muted">From: {card.title}</p>
+          <p className="text-footnote text-ink-muted">From: {card.title}</p>
           {/* The question */}
           <h1 className="mt-2 font-display text-cue">{card.recall.question}</h1>
           {/* The answers */}
@@ -106,7 +106,7 @@ export function ReviewScreen(props: ScreenProps) {
               const shown = picked !== null && (index === recall.answer || index === picked);
               // One answer
               return (
-                <button key={option} type="button" disabled={picked !== null} onClick={() => answer(index)} data-result={shown ? (index === recall.answer ? "right" : "wrong") : undefined} className={`min-h-11 border px-4 py-2 text-left ${shown && index === recall.answer ? "border-accent bg-accent text-accent-ink" : shown ? "border-ink line-through" : "border-rule"}`}>
+                <button key={option} type="button" disabled={picked !== null} onClick={() => answer(index)} data-result={shown ? (index === recall.answer ? "right" : "wrong") : undefined} className={`min-h-11 border px-4 py-2 text-left ${shown && index === recall.answer ? "border-fill bg-fill text-fill-ink" : shown ? "border-ink line-through" : "border-rule"}`}>
                   {option}
                 </button>
               );

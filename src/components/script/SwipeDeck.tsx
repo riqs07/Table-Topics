@@ -3,6 +3,8 @@
 
 // Load React's tools
 import { useEffect, useRef, type ReactNode } from "react";
+// Load the shared button looks
+import { PRIMARY, QUIET } from "@/components/script/Buttons";
 
 // What the deck needs
 interface SwipeDeckProps {
@@ -85,28 +87,28 @@ export function SwipeDeck({ screens, index, onIndex, label }: SwipeDeckProps) {
   // Draw it
   return (
     <section aria-roledescription="carousel" aria-label={label} className="flex flex-1 flex-col">
+      {/* Where you are: one segment per screen across the top, those seen filled */}
+      <span aria-hidden="true" className="mt-4 flex gap-1">
+        {/* Each screen's segment */}
+        {screens.map((_, position) => <span key={position} className={`h-1 flex-1 ${position <= index ? "bg-accent" : "bg-rule"}`} />)}
+      </span>
       {/* The screens, side by side, one in view at a time */}
       <div ref={row} onScroll={onScroll} className="-mx-6 flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:mx-0">
         {/* Each screen */}
         {screens.map((screen, position) => (
           // One screen, the full width of the row
-          <div key={position} role="group" aria-roledescription="slide" aria-label={`${position + 1} of ${screens.length}`} aria-hidden={position !== index} inert={position !== index} className="w-full flex-none snap-start px-6 md:px-0">
+          <div key={position} role="group" aria-roledescription="slide" aria-label={`${position + 1} of ${screens.length}`} aria-hidden={position !== index} inert={position !== index} className="flex w-full flex-none snap-start flex-col justify-center-safe px-6 pb-[10vh] md:px-0">
             {/* Its content */}
             {screen}
           </div>
         ))}
       </div>
-      {/* Where you are, and Back and Next */}
-      <div className="mt-4 mb-6 flex items-center justify-between gap-4">
-        {/* Back */}
-        <button type="button" onClick={() => go(index - 1)} disabled={index === 0} className="inline-flex min-h-11 items-center italic underline underline-offset-4 disabled:invisible">Back</button>
-        {/* The marker: a short bar per screen, the current one filled */}
-        <span aria-hidden="true" className="flex gap-1.5">
-          {/* Each screen's bar */}
-          {screens.map((_, position) => <span key={position} className={`h-1 w-5 ${position === index ? "bg-accent" : "bg-rule"}`} />)}
-        </span>
-        {/* Next */}
-        <button type="button" onClick={() => go(index + 1)} disabled={index === last} className="inline-flex min-h-11 items-center italic underline underline-offset-4 disabled:invisible">Next</button>
+      {/* Back and Next at the foot, in reach of a thumb */}
+      <div className="mt-4 mb-6 flex items-center gap-3">
+        {/* Back (hidden on the first screen) */}
+        <button type="button" onClick={() => go(index - 1)} disabled={index === 0} className={`${QUIET} disabled:hidden`}>Back</button>
+        {/* Next, filling the rest of the row (hidden on the last screen) */}
+        <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${PRIMARY} flex-1 disabled:invisible`}>Next</button>
       </div>
     </section>
   );

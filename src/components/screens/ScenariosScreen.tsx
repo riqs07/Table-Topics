@@ -20,6 +20,8 @@ import type { Scenario, Tier } from "@/content/scenarios";
 import { nextScenarios } from "@/core/scenarios";
 // Load the progress helpers
 import { loadScenarioProgress, saveScenarioAnswer } from "@/data/scenarioProgress";
+// Load the shared button looks
+import { PRIMARY, TEXT_LINK } from "@/components/script/Buttons";
 
 // Draw the page
 export function ScenariosScreen({ services = browserRecordingServices, ...props }: ScreenProps & { services?: RecordingServices }) {
@@ -72,11 +74,11 @@ export function ScenariosScreen({ services = browserRecordingServices, ...props 
       {scenario && !finished && (
         <section key={scenario.id} aria-label={scenario.title} className="mt-6">
           {/* Its name */}
-          <p className="text-footnote italic text-ink-muted">{scenario.title}</p>
+          <p className="text-footnote text-ink-muted">{scenario.title}</p>
           {/* The item */}
           <div className="mt-2"><ScenarioItem scenario={scenario} services={services} onAnswer={answer} /></div>
           {/* On to the next, once answered */}
-          {tiers.length > index && <p className="mt-6"><button type="button" onClick={() => setIndex(index + 1)} className="inline-flex min-h-11 items-center bg-accent px-5 text-accent-ink hover:opacity-90">{index + 1 < (round?.length ?? 0) ? "Next scenario" : "Finish"}</button></p>}
+          {tiers.length > index && <p className="mt-6"><button type="button" onClick={() => setIndex(index + 1)} className={PRIMARY}>{index + 1 < (round?.length ?? 0) ? "Next scenario" : "Finish"}</button></p>}
         </section>
       )}
       {/* The round's result */}
@@ -87,7 +89,7 @@ export function ScenariosScreen({ services = browserRecordingServices, ...props 
           {/* What happens next */}
           <p className="mt-3 max-w-[52ch] text-lede">A move you missed comes back in a new situation next time. Choosing is the warm-up; saying it aloud and trying it for real are what change things.</p>
           {/* A real try */}
-          <p className="mt-4"><Link href="/small-talk#missions" className="inline-flex min-h-11 items-center underline underline-offset-4">Today’s mission</Link></p>
+          <p className="mt-4"><Link href="/small-talk#missions" className={TEXT_LINK}>Today’s mission</Link></p>
           {/* Push the band down */}
           <div className="flex-1" />
           {/* Back to Learn */}

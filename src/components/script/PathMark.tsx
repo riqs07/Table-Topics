@@ -9,7 +9,7 @@ import type { LessonMark } from "@/core/lessonPath";
 export function PathMark({ mark, number }: { mark: LessonMark; number: number }) {
   // Done: a filled square with a tick
   if (mark === "done") return (
-    <span className="flex size-9 flex-none items-center justify-center bg-accent text-accent-ink">
+    <span className="flex size-9 flex-none items-center justify-center bg-fill text-fill-ink">
       {/* The tick */}
       <CheckIcon aria-hidden="true" weight="bold" className="size-5" />
       {/* Said aloud */}

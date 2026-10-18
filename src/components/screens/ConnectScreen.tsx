@@ -9,6 +9,8 @@ import { SunHorizonIcon } from "@phosphor-icons/react/dist/ssr";
 import { ActionBand } from "@/components/script/ActionBand";
 import { CourseCard } from "@/components/script/CourseCard";
 import { Masthead } from "@/components/script/Masthead";
+// Load the shared page title
+import { PageTitle } from "@/components/script/PageTitle";
 import { MissionCard } from "@/components/script/MissionCard";
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the shared screen starting points
@@ -24,6 +26,8 @@ import { dayLabel } from "@/core/copy";
 import { dayKey } from "@/core/dates";
 // Load the record types
 import type { MissionRecord, SessionRecord } from "@/data/records";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // How many recent missions to list
 const RECENT_MISSIONS = 5;
@@ -73,13 +77,11 @@ export function ConnectScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
-      <Masthead title="Connect" section="smalltalk" />
-      {/* What this is, in one line */}
-      <h1 className="mt-6 font-display text-statement tracking-tight">Everyday conversation.</h1>
-      {/* How it works */}
-      <p className="mt-1 max-w-[52ch] text-footnote text-ink-muted">Four skills, practised out loud. Then try one for real.</p>
+      <Masthead title="VoiceLab" section="smalltalk" />
+      {/* The page's name, and what is here */}
+      <PageTitle title="Connect">Everyday conversation, practised out loud, then tried for real.</PageTitle>
 
       {/* Today's mission, and how missions have gone against what you expected */}
       {today && missions && (
@@ -104,7 +106,7 @@ export function ConnectScreen(props: ScreenProps) {
                       {/* The move */}
                       <span className="block">{findMission(record.missionId)?.move ?? "Mission"}</span>
                       {/* The day */}
-                      <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)}</span>
+                      <span className="block text-footnote text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)}</span>
                     </span>
                     {/* Expected against actual */}
                     <span aria-label={`Expected ${record.predicted} of 5, went ${record.outcome} of 5`} className="flex w-32 flex-none flex-col gap-1">
@@ -122,7 +124,7 @@ export function ConnectScreen(props: ScreenProps) {
       )}
 
       {/* The units, as cards; each opens its own page */}
-      <h2 className="mt-8 text-footnote italic text-ink-muted">Skills</h2>
+      <h2 className={`${SECTION_HEADING} mt-8`}>Skills</h2>
       {/* The cards */}
       <ul aria-label="Units" className="mt-2 grid gap-3 md:grid-cols-2">
         {/* Each unit */}
@@ -132,14 +134,14 @@ export function ConnectScreen(props: ScreenProps) {
           // One unit's card
           return (
             <li key={unit.id}>
-              <CourseCard href={`/small-talk/unit?id=${unit.id}`} name={unit.name} blurb={unit.when} icon={UNIT_ICONS[unit.id]} done={lessons.filter((lesson) => answered.has(lesson.id)).length} total={lessons.length} note={unit.id === nextLesson?.unit ? "Next up" : undefined} />
+              <CourseCard href={`/small-talk/unit?id=${unit.id}`} name={unit.name} blurb={unit.when} icon={UNIT_ICONS[unit.id]} done={lessons.filter((lesson) => answered.has(lesson.id)).length} total={lessons.length} note={unit.id === nextLesson?.unit ? "Next up" : undefined} count={lessons.length === 1 ? "1 lesson" : `${lessons.length} lessons`} />
             </li>
           );
         })}
       </ul>
 
       {/* One moment a day */}
-      <h2 className="mt-8 text-footnote italic text-ink-muted">Every day</h2>
+      <h2 className={`${SECTION_HEADING} mt-8`}>Every day</h2>
       {/* Its card */}
       <div className="mt-2">
         <CourseCard href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} name="One moment a day" blurb={momentsToday > 0 ? "Today’s moment is saved. Add another?" : "Note one thing from today worth telling."} icon={SunHorizonIcon} done={Math.min(momentsToday, 1)} total={1} />

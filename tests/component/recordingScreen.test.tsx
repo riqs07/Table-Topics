@@ -244,7 +244,7 @@ describe("RecordingScreen", () => {
     // Draw a Table Topic
     draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id });
     // Confirm the briefing
-    expect(await screen.findByText(/very little waiting time/)).toBeTruthy();
+    expect(await screen.findByText(/Your topic is hidden/)).toBeTruthy();
     // Confirm the question is hidden
     expect(screen.queryByText(TABLE_TOPICS[0]!.text)).toBeNull();
   });
@@ -844,7 +844,7 @@ describe("RecordingScreen", () => {
     // Start
     fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
     // Discard
-    fireEvent.click(await screen.findByRole("button", { name: /discard this one/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Discard this one/ }));
     // Confirm it went home
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/"));
     // Confirm nothing was saved

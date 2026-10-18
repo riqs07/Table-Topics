@@ -49,6 +49,10 @@ export const THEMES = {
         "accent": "#a94a28",
         // Text on the accent
         "accent-ink": "#fffcf6",
+        // Large filled areas: the action band, main buttons, icon tiles
+        "fill": "#a94a28",
+        // Text on large filled areas
+        "fill-ink": "#fffcf6",
         // Filler words in a transcript
         "filler": "#736a61",
         // Keyboard focus outline
@@ -76,6 +80,10 @@ export const THEMES = {
         "accent": "#e08a66",
         // Text on the accent
         "accent-ink": "#1d1a17",
+        // Large filled areas: the action band, main buttons, icon tiles
+        "fill": "#e08a66",
+        // Text on large filled areas
+        "fill-ink": "#1d1a17",
         // Filler words in a transcript
         "filler": "#a59a8b",
         // Keyboard focus outline
@@ -120,6 +128,10 @@ export const THEMES = {
         "accent": "#2d5a3d",
         // Text on the accent
         "accent-ink": "#fcfcfb",
+        // Large filled areas: the action band, main buttons, icon tiles
+        "fill": "#2d5a3d",
+        // Text on large filled areas
+        "fill-ink": "#fcfcfb",
         // Filler words in a transcript
         "filler": "#666e69",
         // Keyboard focus outline
@@ -147,6 +159,10 @@ export const THEMES = {
         "accent": "#6fae84",
         // Text on the accent
         "accent-ink": "#161917",
+        // Large filled areas: the action band, main buttons, icon tiles
+        "fill": "#3d6b4e",
+        // Text on large filled areas
+        "fill-ink": "#eef2ef",
         // Filler words in a transcript
         "filler": "#959d98",
         // Keyboard focus outline
@@ -191,6 +207,10 @@ export const THEMES = {
         "accent": "#333333",
         // Text on the accent
         "accent-ink": "#ffffff",
+        // Large filled areas: the action band, main buttons, icon tiles
+        "fill": "#333333",
+        // Text on large filled areas
+        "fill-ink": "#ffffff",
         // Filler words in a transcript
         "filler": "#6b6b6b",
         // Keyboard focus outline
@@ -218,6 +238,10 @@ export const THEMES = {
         "accent": "#d9d9d9",
         // Text on the accent
         "accent-ink": "#161616",
+        // Large filled areas: the action band, main buttons, icon tiles
+        "fill": "#d9d9d9",
+        // Text on large filled areas
+        "fill-ink": "#161616",
         // Filler words in a transcript
         "filler": "#949494",
         // Keyboard focus outline

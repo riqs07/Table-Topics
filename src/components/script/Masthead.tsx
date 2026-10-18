@@ -43,9 +43,9 @@ export function Masthead({ title, children, section, nav = true, close = null }:
   // Navigation row, then a baseline-aligned title row over a solid hairline
   return (
     <>
-      {/* The main navigation: a tab bar fixed to the bottom of a phone, a quiet row of links above the title on a computer */}
+      {/* The main navigation: a tab bar fixed to the bottom of a phone, a row of tabs above the title on a computer, the current one underlined in the accent */}
       {nav && (
-        <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:mb-4 md:flex md:gap-x-5 md:border-0 md:bg-transparent md:p-0">
+        <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:mb-6 md:flex md:gap-x-6 md:border-0 md:bg-transparent md:p-0">
           {/* One link per section */}
           {SECTIONS.map((item) => {
             // Whether this is the current section
@@ -54,7 +54,7 @@ export function Masthead({ title, children, section, nav = true, close = null }:
             const TabIcon = item.icon;
             // On a phone: icon over a small label, at least 44 pixels tall; on a computer: a text link
             return (
-              <Link key={item.id} href={item.href} aria-current={current ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-tab md:min-h-0 md:text-footnote ${current ? "text-accent md:text-ink" : "text-ink-muted hover:text-ink md:underline md:underline-offset-4"}`}>
+              <Link key={item.id} href={item.href} aria-current={current ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-tab md:min-h-11 md:border-b-2 md:text-footnote ${current ? "text-accent md:border-accent md:text-ink" : "text-ink-muted hover:text-ink md:border-transparent"}`}>
                 {/* The icon, phone only (filled for the current section) */}
                 <TabIcon aria-hidden="true" weight={current ? "fill" : "regular"} className="size-6 md:hidden" />
                 {/* The name */}
@@ -71,7 +71,7 @@ export function Masthead({ title, children, section, nav = true, close = null }:
         {/* Note or links in italic, then the settings gear or the way out */}
         <span className="flex items-center gap-3">
           {/* The note */}
-          <span className="italic text-ink-muted">{children}</span>
+          <span className="text-ink-muted">{children}</span>
           {/* Settings, wherever the navigation shows (filled on the settings page) */}
           {nav && (
             <Link href="/settings" aria-label="Settings" aria-current={section === "settings" ? "page" : undefined} className={`-my-2 inline-flex size-11 flex-none items-center justify-center ${section === "settings" ? "text-accent" : "text-ink-muted hover:text-ink"}`}>

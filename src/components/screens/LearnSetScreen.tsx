@@ -20,6 +20,8 @@ import { EVIDENCE_LABELS, LEARN_CARDS, LEARN_SETS } from "@/content/learn";
 import { setProgress, type LearnProgress } from "@/core/learn";
 // Load progress
 import { loadLearnProgress } from "@/data/learnProgress";
+// Load the shared button looks
+import { TEXT_LINK } from "@/components/script/Buttons";
 
 // Draw a set
 export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: string }) {
@@ -57,11 +59,11 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Heading and navigation */}
       <Masthead title="Learn" section="learn" />
       {/* Back to all sets */}
-      <p className="mt-2"><Link href="/learn" className="-ml-1 inline-flex min-h-11 items-center gap-1 text-footnote underline underline-offset-4"><CaretLeftIcon aria-hidden="true" className="size-4" />All sets</Link></p>
+      <p className="mt-2"><Link href="/learn" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />All sets</Link></p>
       {/* An unknown set */}
       {!set && <p className="mt-4 text-lede">There is no such set.</p>}
       {/* The set */}
@@ -74,7 +76,7 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
               // The set's icon
               const IconShape = LEARN_SET_ICONS[set.id];
               // The tile
-              return <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center bg-accent text-accent-ink"><IconShape className="size-9" /></span>;
+              return <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center bg-accent/10 text-accent"><IconShape className="size-9" /></span>;
             })()}
             {/* Name and blurb */}
             <div className="min-w-0 flex-1">
@@ -102,11 +104,11 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
                     {/* Its title, kind and evidence */}
                     <span className="min-w-0 flex-1">
                       {/* Next */}
-                      {mark === "next" && <span className="block text-footnote italic text-accent">Next</span>}
+                      {mark === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
                       {/* Title */}
                       <span className="block text-lede">{card.title}</span>
                       {/* Kind and evidence */}
-                      <span className="block text-footnote italic text-ink-muted">{card.kind === "myth-or-fact" ? "Myth or fact" : card.kind === "try-it" ? "Try it" : "Explainer"} · {EVIDENCE_LABELS[card.evidence]}{card.scenario ? " · with a scenario" : ""}</span>
+                      <span className="block text-footnote text-ink-muted">{card.kind === "myth-or-fact" ? "Myth or fact" : card.kind === "try-it" ? "Try it" : "Explainer"} · {EVIDENCE_LABELS[card.evidence]}{card.scenario ? " · with a scenario" : ""}</span>
                     </span>
                     {/* The chevron */}
                     <CaretRightIcon aria-hidden="true" className="size-5 flex-none self-center text-ink-muted" />

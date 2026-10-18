@@ -15,7 +15,7 @@ import Link from "next/link";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
 // Load the filled button link
-import { PrimaryLink } from "@/components/script/Buttons";
+import { PrimaryLink, TEXT_LINK } from "@/components/script/Buttons";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the shared screen starting points
@@ -32,6 +32,8 @@ import { dayLabel, formatRate, progressSentence } from "@/core/copy";
 import { baselineProgress, historyRows, trendSeries, type HistoryRow } from "@/core/progress";
 // Load the session record type
 import type { MissionRecord, SessionRecord } from "@/data/records";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 
 // Size of the trend drawing (it stretches to fit its column)
 const CHART = { width: 300, height: 80 };
@@ -52,7 +54,7 @@ function Trend({ values }: { values: number[] }) {
   return (
     <figure aria-label="Fillers a minute, first try of each session" className="mt-5">
       {/* What the line measures */}
-      <figcaption className="text-footnote italic text-ink-muted">Fillers a minute, first try of each session. Lower is better.</figcaption>
+      <figcaption className="text-footnote text-ink-muted">Fillers a minute, first try of each session. Lower is better.</figcaption>
       {/* The drawing, stretched to the column */}
       <svg viewBox={`0 0 ${CHART.width} ${CHART.height}`} preserveAspectRatio="none" className="mt-3 h-20 w-full text-accent" role="img" aria-label={`Fillers per minute, from ${formatRate(values[0] ?? 0)} to ${formatRate(values.at(-1) ?? 0)}`}>
         {/* Dotted guide at the first recording's value */}
@@ -118,13 +120,13 @@ function Row({ row, now, talkTitles }: { row: HistoryRow; now: Date; talkTitles:
     <li>
       <Link href={`/sessions?id=${row.session.id}`} className="flex min-h-11 items-baseline gap-3 py-3 hover:text-accent">
         {/* Day in italic, fixed width so prompts line up */}
-        <span className="w-20 flex-none italic text-ink-muted max-md:w-16">{dayLabel(new Date(row.session.createdAt), now)}</span>
+        <span className="w-20 flex-none text-ink-muted max-md:w-16">{dayLabel(new Date(row.session.createdAt), now)}</span>
         {/* The prompt: wraps on a phone, cut short on a computer where the leader takes the space */}
         <span className="min-w-0 flex-1 md:flex-none md:truncate">{promptText(row.session, talkTitles)}</span>
         {/* Dotted leader, on a computer only */}
         <span className="hidden min-w-6 flex-1 border-b border-dotted border-ink-muted md:block" />
         {/* The result */}
-        <span className="flex-none">{result}</span>
+        <span className="flex-none text-right">{result}<span className="block text-footnote text-ink-muted md:ml-1 md:inline">fillers a min</span></span>
       </Link>
     </li>
   );
@@ -137,7 +139,7 @@ export function HistoryScreen(props: ScreenProps) {
   // Draw the page
   return (
     // One column on a phone, margin plus main column on a computer
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
+    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
       {/* Title, with the settings gear marked */}
       <Masthead title="History" section="settings" />
       {/* The history itself */}
@@ -217,7 +219,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
             {/* Listen to the first recording, if its audio is kept */}
             {baseline?.audioKey && (
               <p className="mt-6 border-t border-rule pt-3 text-footnote">
-                <Link href={`/sessions?id=${baseline.id}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Listen to your first recording.</Link>
+                <Link href={`/sessions?id=${baseline.id}`} className={TEXT_LINK}>Listen to your first recording.</Link>
               </p>
             )}
           </aside>
@@ -233,7 +235,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
       {today && triedMissions(missions).length > 0 && (
         <section aria-labelledby="real-conversations" className="mt-10 md:max-w-2xl">
           {/* Run-in heading */}
-          <h2 id="real-conversations" className="italic">Real conversations</h2>
+          <h2 id="real-conversations" className={SECTION_HEADING}>Real conversations</h2>
           {/* The headline */}
           <p className="mt-2 text-lede">{triedMissions(missions).length} {triedMissions(missions).length === 1 ? "mission" : "missions"} tried; {betterThanFeared(missions).better} went better than you expected.</p>
           {/* Each try */}
@@ -243,7 +245,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
               // The task, the day, and expected against actual
               <li key={record.id} className="py-3">
                 {/* The day and the numbers */}
-                <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)} · expected {record.predicted} of 5, went {record.outcome} of 5</span>
+                <span className="block text-footnote text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)} · expected {record.predicted} of 5, went {record.outcome} of 5</span>
                 {/* The task */}
                 <span className="block">{findMission(record.missionId)?.task ?? "A mission"}</span>
                 {/* What they noticed */}
