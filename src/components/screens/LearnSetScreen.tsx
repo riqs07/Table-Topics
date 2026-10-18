@@ -22,6 +22,8 @@ import { setProgress, type LearnProgress } from "@/core/learn";
 import { loadLearnProgress } from "@/data/learnProgress";
 // Load the shared button looks
 import { TEXT_LINK } from "@/components/script/Buttons";
+// Load the shared page shell
+import { PAGE } from "@/components/script/layout";
 
 // Draw a set
 export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: string }) {
@@ -59,7 +61,7 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Learn" section="learn" />
       {/* Back to all sets */}

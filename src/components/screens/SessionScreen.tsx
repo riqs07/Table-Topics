@@ -333,10 +333,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
     <>
       {/* Title and the secondary number; the tab bar marks where the session belongs (Today inside the plan) */}
       <Masthead title={title} section={home.section}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(session.createdAt), now)}</Masthead>
-      {/* Notes column and transcript column on a computer */}
-      <div className="flex flex-1 flex-col md:grid md:grid-cols-[1fr_320px] md:gap-14 md:pt-8">
-        {/* The transcript (main column on a computer, opened on demand on a phone) */}
-        <div className={`${showTranscript ? "mt-6" : "hidden"} md:order-1 md:mt-0 md:block`}>
+      {/* Notes column and transcript column on a computer (the notes lead and take the wide column; the transcript sits beside them, decision 65) */}
+      <div className="flex flex-1 flex-col md:grid md:grid-cols-[minmax(0,1fr)_320px] md:gap-14 md:pt-8">
+        {/* The transcript (the narrow right column on a computer, opened on demand on a phone) */}
+        <div className={`${showTranscript ? "mt-6" : "hidden"} md:order-2 md:mt-0 md:block`}>
           {/* Small heading */}
           <p className="text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}</p>
           {/* The words: the passage marked for a reading, otherwise the transcript */}
@@ -344,8 +344,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* For a reading, what the marks mean */}
           {reading && <p className="mt-3 max-w-[46ch] text-footnote text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.{reading.stoppedEarly ? " Dimmed words come after where you stopped." : ""}</p>}
         </div>
-        {/* The notes (first on a phone, margin on a computer) */}
-        <aside className="order-first flex flex-1 flex-col md:order-2">
+        {/* The notes (first on a phone, the wide left column on a computer) */}
+        <aside className="order-first flex flex-1 flex-col md:order-1 md:max-w-xl">
           {/* For a Q&A answer, the question it answered */}
           {qa && session.question && (
             <div className="mt-5 md:mt-0 md:mb-5">

@@ -19,6 +19,8 @@ import { findPassage } from "@/content/prompts";
 import { lessonPath } from "@/core/lessonPath";
 // Load the reading-length helpers
 import { lengthLabel, readingTime } from "@/core/readingLength";
+// Load the shared page shell
+import { PAGE } from "@/components/script/layout";
 
 // The first few words of a part, so each row can be told apart
 function opening(part: string): string {
@@ -63,7 +65,7 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
   if (!speech) {
     // Say so, with a way back
     return (
-      <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Speech" section="skills" />
         {/* The explanation */}
@@ -87,7 +89,7 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
 
   // Draw the page
   return (
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 md:[&>:not(header,nav,[data-action-band])]:max-w-3xl">
       {/* Heading and navigation */}
       <Masthead title={speech.title} section="skills" />
       {/* Who, where and when */}

@@ -21,6 +21,8 @@ import { formatClock } from "@/core/recordingRules";
 import type { SessionRecord, TalkRecord } from "@/data/records";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared page shell
+import { PAGE } from "@/components/script/layout";
 
 // What the page needs from storage
 interface Loaded {
@@ -88,13 +90,13 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   }
 
   // Still loading, or not yet in the browser
-  if (!loaded || !today) return <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10"><Masthead title="Your talk" section="practice" /></main>;
+  if (!loaded || !today) return <main className={PAGE}><Masthead title="Your talk" section="practice" /></main>;
 
   // The talk is not here
   if (!loaded.talk) {
     // Say so, with a way back
     return (
-      <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Your talk" section="practice" />
         {/* The note */}
@@ -126,7 +128,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title={talk.title} section="practice" />
 

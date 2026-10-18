@@ -104,11 +104,11 @@ export function SwipeDeck({ screens, index, onIndex, label }: SwipeDeckProps) {
         ))}
       </div>
       {/* Back and Next at the foot, in reach of a thumb */}
-      <div className="mt-4 mb-6 flex items-center gap-3">
+      <div className="mt-4 mb-6 flex items-center gap-3 md:justify-end">
         {/* Back (hidden on the first screen) */}
         <button type="button" onClick={() => go(index - 1)} disabled={index === 0} className={`${QUIET} disabled:hidden`}>Back</button>
         {/* Next, filling the rest of the row (hidden on the last screen) */}
-        <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${PRIMARY} flex-1 disabled:invisible`}>Next</button>
+        <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${PRIMARY} flex-1 disabled:invisible md:min-w-40 md:flex-none`}>Next</button>
       </div>
     </section>
   );

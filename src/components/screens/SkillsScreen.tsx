@@ -33,6 +33,8 @@ import { PathMark } from "@/components/script/PathMark";
 import { MODES, type ModeInfo } from "@/content/modes";
 // Load the texts
 import { PASSAGES, PAUSE_DRILLS, TRICKY_WORDS, type Passage } from "@/content/prompts";
+// Load the shared page shell
+import { PAGE } from "@/components/script/layout";
 
 // The catalogue entry for an id (always present for the ids used here)
 const mode = (id: string) => MODES.find((item) => item.id === id) as ModeInfo;
@@ -158,7 +160,7 @@ export function SkillsScreen(props: ScreenProps) {
   const marks = lessonPath(LESSONS.map((lesson) => lesson.id), counts);
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Practice" section="skills" />
       {/* The page's name */}

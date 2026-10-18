@@ -41,6 +41,8 @@ import { COLOR_MODES, readColorMode, saveColorMode, type ColorMode } from "@/dat
 import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared page shell
+import { PAGE } from "@/components/script/layout";
 
 // Choices for how many recent sessions keep their audio
 const RETENTION_CHOICES = [10, 30, 60, 100];
@@ -279,7 +281,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   // Draw the page
   return (
     // A single readable column
-    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className={PAGE}>
       {/* Title and a link home */}
       <Masthead title="VoiceLab" section="settings" />
       {/* The page's name */}

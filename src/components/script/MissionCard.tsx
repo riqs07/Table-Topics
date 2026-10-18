@@ -35,7 +35,7 @@ interface MissionCardProps {
 export function ScaleChoice({ label, value, onChoose }: { label: string; value: number | null; onChoose: (value: number) => void }) {
   // The buttons, then the ends
   return (
-    <div className="mt-2">
+    <div className="mt-2 max-w-md">
       {/* The five buttons */}
       <div role="group" aria-label={label} className="grid grid-cols-5 gap-1.5">
         {/* Each point on the scale */}

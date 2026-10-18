@@ -21,6 +21,8 @@ import { promptForDay, tableTopicForDay } from "@/content/prompts";
 import { MOMENT_PROMPT } from "@/content/smallTalk";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared page shell
+import { PAGE } from "@/components/script/layout";
 
 // One kind of practice on the page
 interface Way {
@@ -94,7 +96,7 @@ export function PracticeScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="VoiceLab" section="practice" />
       {/* The page's name, and how it relates to Today */}

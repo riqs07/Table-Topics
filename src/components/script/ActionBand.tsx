@@ -4,7 +4,7 @@
 import Link from "next/link";
 
 // The main band: fixed to the bottom of a phone screen (above the tab bar, if any) so it is always in reach; in the page flow on a computer
-const STICKY_BAND = "fixed inset-x-0 bottom-[var(--vl-tabbar-h)] z-20 flex min-h-16 items-center justify-between gap-4 px-6 md:static md:mb-10 md:min-h-0 md:max-w-md md:items-baseline md:pb-5 md:pt-5";
+const STICKY_BAND = "fixed inset-x-0 bottom-[var(--vl-tabbar-h)] z-20 flex min-h-16 items-center justify-between gap-4 px-6 md:static md:mt-8 md:mb-10 md:min-h-0 md:max-w-md md:items-baseline md:pb-5 md:pt-5";
 
 // What the band shows and where it goes
 interface ActionBandProps {

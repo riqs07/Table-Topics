@@ -17,6 +17,8 @@ import { talkSections } from "@/core/eventPrep";
 import type { TalkRecord } from "@/data/records";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared page shell
+import { PAGE } from "@/components/script/layout";
 
 // The address of a drill on one prompt
 const drillHref = (item: Bookend) => `/session?mode=bookend&prompt=${item.id}`;
@@ -54,7 +56,7 @@ export function BookendsScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Openings and closings" section="practice" />
 

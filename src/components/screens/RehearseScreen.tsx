@@ -19,6 +19,8 @@ import { daysAway, daysUntil } from "@/core/eventPrep";
 import type { TalkRecord } from "@/data/records";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared page shell
+import { PAGE } from "@/components/script/layout";
 
 // The longest talk that can be saved, in characters (about an hour of speech)
 const MAX_LENGTH = 50_000;
@@ -110,7 +112,7 @@ export function RehearseScreen(props: ScreenProps) {
   // Draw the page
   return (
     // One column, like settings
-    <main className="mx-auto min-h-dvh max-w-5xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main className={PAGE}>
       {/* Title and a way back */}
       <Masthead title="Your talks" section="practice" />
 
