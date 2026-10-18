@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt builder and feedback checker being checked
-import { COACH_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildSmallTalkMessage, checkFeedback, checkSmallTalkFeedback } from "@/core/coachPrompt";
+import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildConnectionMessage, buildSmallTalkMessage, checkConnectionFeedback, checkFeedback, checkSmallTalkFeedback } from "@/core/coachPrompt";
 
 // A typical session for these checks
 const SESSION = { transcript: "Um, so I think, uh, the best part of my week was the dog.", durationSec: 30, focusId: "cut-fillers", previousChange: null, mode: "standard" as const };
@@ -226,5 +226,29 @@ describe("checkFeedback", () => {
     expect(checkSmallTalkFeedback(reply).smallTalk).toEqual({ moment: "I built an app", hooks: ["a", "b", "c"], feeling: "", handBack: "did you", livelier: "L" });
     // Confirm an empty livelier version is refused
     expect(() => checkSmallTalkFeedback({ ...reply, livelier: " " })).toThrow("incomplete");
+  });
+
+  // A reply to a story tells the conversation coach the skill, the story, the lesson's beat and the notes
+  it("tells the conversation coach the skill, what was said and the lesson", () => {
+    // A listening lesson's turn with notes
+    const message = buildConnectionMessage({ transcript: "oh no that must be hard", durationSec: 8, focusId: "pausing", previousChange: null, mode: "smalltalk", promptId: "sll2", notes: { worked: "", change: "", tags: ["react"] } });
+    // Confirm the skill, the story, the beat, the notes and the fenced transcript
+    expect([message.includes("Skill: responding to a story"), message.includes("Their story: <said>My best friend moved"), message.includes("Pay most attention to the their-feeling beat."), message.includes("Tags: react"), message.includes("<transcript>\noh no that must be hard\n</transcript>")]).toEqual([true, true, true, true, true]);
+  });
+
+  // The conversation coach knows boomerasking and never invents facts
+  it("teaches the conversation coach boomerasking and no invented facts", () => {
+    // Confirm both rules
+    expect([CONNECTION_SYSTEM_PROMPT.includes("boomerasking"), CONNECTION_SYSTEM_PROMPT.includes("Never invent facts")]).toEqual([true, true]);
+  });
+
+  // Its reply keeps only the unit's beats with a quote, once each, and needs a better version
+  it("checks the conversation reply", () => {
+    // A reply with an unknown beat, an empty quote and a repeat
+    const reply = { found: [{ beat: " react ", quote: " no way " }, { beat: "open", quote: "what" }, { beat: "stay", quote: " " }, { beat: "react", quote: "wow" }], keep: "k", change: "c", retryCue: "r", better: " B " };
+    // Confirm the tidied beats for a story
+    expect(checkConnectionFeedback(reply, "sls01").connection).toEqual({ found: [{ beat: "react", quote: "no way" }], better: "B" });
+    // Confirm an empty better version is refused
+    expect(() => checkConnectionFeedback({ ...reply, better: "" }, "sls01")).toThrow("incomplete");
   });
 });

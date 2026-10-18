@@ -480,6 +480,38 @@ describe("RecordingScreen", () => {
     await waitFor(async () => expect((await repository.listSessions()).map((session) => [session.mode, session.promptId])).toEqual([["smalltalk", "st01"]]));
   });
 
+  // Asking: what they say is shown, said aloud, and a follow-up of a few seconds is kept
+  it("says a remark aloud and keeps a short follow-up question", async () => {
+    // Draw "We got a kitten last week." with a voice
+    const { fake, clock, repository } = draw({ mode: "smalltalk", promptId: "sa08" }, { voice: true, finalText: "what is the kitten called" });
+    // Confirm who is speaking, the remark, and the asking recipe
+    expect([!!(await screen.findByText("They say")), screen.getByRole("heading", { level: 1 }).textContent, within(screen.getByRole("list", { name: "The recipe" })).getAllByRole("listitem")[0]?.textContent]).toEqual([true, "We got a kitten last week.", "1. OpenStart with what, how or why."]);
+    // Hear it
+    fireEvent.click(screen.getByRole("button", { name: /Hear it/ }));
+    // Recording starts once it has been said
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Ask for three seconds, under the usual ten-second minimum
+    clock.advance(3_000);
+    // Stop
+    fireEvent.click(stop);
+    // Confirm the voice said it, and the follow-up was kept
+    await waitFor(async () => expect([fake.said, (await repository.listSessions()).map((session) => session.promptId)]).toEqual([["We got a kitten last week."], ["sa08"]]));
+  });
+
+  // Listening: the story is said aloud but not shown, so you listen the way you would in person
+  it("keeps a story hidden and says it aloud", async () => {
+    // Draw the train story with a voice
+    const { fake } = draw({ mode: "smalltalk", promptId: "sls01" }, { voice: true, finalText: "no way" });
+    // Confirm the heading, and that the story's words are not on screen
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, screen.queryByText(/fell asleep on my shoulder/)]).toEqual(["Listen to their story.", null]);
+    // Hear it
+    fireEvent.click(screen.getByRole("button", { name: /Hear the story/ }));
+    // Recording starts once it has been said
+    await screen.findByRole("button", { name: /Stop/ });
+    // Confirm the voice told the story
+    expect(fake.said[0]).toContain("fell asleep on my shoulder");
+  });
+
   // A moment note is private: saved without feedback or a listening step, then back to the Small talk page
   it("saves a moment privately and goes back to Small talk", async () => {
     // Draw a moment note

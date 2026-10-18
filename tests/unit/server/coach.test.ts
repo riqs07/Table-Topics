@@ -65,6 +65,18 @@ describe("createClaudeCoach", () => {
     expect([JSON.stringify(sent.system).includes("VoiceLab's small-talk coach"), JSON.stringify(sent.messages).includes("Question: How was your weekend?"), result.status === "ok" ? result.feedback.smallTalk?.hooks : null]).toEqual([true, true, ["it coaches me on public speaking", "on my phone"]]);
   });
 
+  // A follow-up question goes to the conversation coach, and only its own unit's beats are kept
+  it("sends a follow-up question to the conversation coach and keeps its unit's beats", async () => {
+    // Make a fake network that remembers the request
+    const network = fakeNetwork(recorded("connection-response"));
+    // Ask for feedback on a follow-up to "I just got back from a week in Lisbon."
+    const result = await createClaudeCoach("sk-test", network).getFeedback({ ...INPUT, mode: "smalltalk", promptId: "sa01", transcript: "Lisbon what was the best thing you ate there" });
+    // Read the request body that was sent
+    const sent = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    // Confirm the conversation instructions, what they said, and the beats (a listening beat dropped) and the better version
+    expect([JSON.stringify(sent.system).includes("VoiceLab's conversation coach"), JSON.stringify(sent.messages).includes("I just got back from a week in Lisbon."), result.status === "ok" ? result.feedback.connection?.found.map((item) => item.beat) : null, result.status === "ok" ? result.feedback.connection?.better : null]).toEqual([true, true, ["open", "their-detail"], "Lisbon! What was the best thing you ate there?"]);
+  });
+
   // A safety decline is reported as such, not as a crash
   it("reports a decline when the model refuses", async () => {
     // Make a coach whose network returns a refusal

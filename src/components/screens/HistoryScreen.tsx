@@ -94,7 +94,12 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   // And rehearsals, named after the talk (or plainly, if the talk was deleted)
   if (session.mode === "rehearse") return talkTitles.has(session.promptId) ? `Rehearsal: ${talkTitles.get(session.promptId)}` : "Rehearsal";
   // And small-talk answers, by their question
-  if (session.mode === "smalltalk") return `Small talk: ${findSmallTalk(session.promptId)?.question ?? text}`;
+  if (session.mode === "smalltalk") {
+    // What was said, and its unit
+    const found = findSmallTalk(session.promptId);
+    // Asking and listening say which, with a story cut short
+    return found?.unit === "asking" ? `Follow-up: ${found.question}` : found?.unit === "listening" ? `Listening: ${shorten(found.question)}` : `Small talk: ${found?.question ?? text}`;
+  }
   // And prepared speeches
   return session.mode === "response" ? `Prepared speech: ${text}` : text;
 }
@@ -203,4 +208,12 @@ export function HistoryScreen(props: ScreenProps) {
       )}
     </main>
   );
+}
+
+// A story's first few words, for a one-line label
+function shorten(story: string): string {
+  // The words
+  const words = story.split(/\s+/);
+  // The first eight, with an ellipsis when cut
+  return words.length > 8 ? `${words.slice(0, 8).join(" ")}…` : story;
 }

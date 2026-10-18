@@ -25,8 +25,8 @@ import { ReviewStep } from "@/components/screens/ReviewStep";
 // Load the quick tags, for showing the user's notes
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
 // Load the small-talk beats and checks
-import { BEATS, type BeatId } from "@/content/smallTalk";
-import { beatCount, beatFound, deadEndOpening, feelingWords, handBack } from "@/core/smallTalk";
+import { ASKING_BEATS, BEATS, LISTENING_BEATS, beatsFor, findSmallTalk, type BeatId } from "@/content/smallTalk";
+import { beatCount, beatFound, deadEndOpening, feelingWords, handBack, questionKind, reaction, sharedWords, theirFeelingWords } from "@/core/smallTalk";
 // Load the tick
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the comparison of notes with the numbers
@@ -303,7 +303,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // The user's notes, with their tags as words
   const review = session.selfReview && !session.selfReview.skipped ? session.selfReview : null;
   // The tag words
-  const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS, ...BEATS.map((beat) => ({ id: beat.id, label: beat.name }))].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
+  const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS, ...[...BEATS, ...ASKING_BEATS, ...LISTENING_BEATS].map((beat) => ({ id: beat.id, label: beat.name }))].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
   // The notes against the numbers
   const checks = smallTalk ? [] : compareNotes(session);
   // One change picked from the numbers, shown until the coach's arrives
@@ -408,6 +408,15 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             <p className="mt-4 text-footnote italic text-ink-muted">{warmup ? "Before your response" : "Before you try again"}</p>
             {/* The cue */}
             <p className="mt-1 font-display text-cue">{(session.feedback ?? ownChange).retryCue}</p>
+            {/* For a follow-up question or a reply to a story, a better one */}
+            {session.feedback?.connection && (
+              <>
+                {/* Small heading */}
+                <p className="mt-4 text-footnote italic text-ink-muted">{findSmallTalk(session.promptId)?.unit === "asking" ? "A better follow-up" : "A better response"}</p>
+                {/* The better version */}
+                <p className="mt-1 text-lede">{session.feedback.connection.better}</p>
+              </>
+            )}
             {/* For small talk, the answer as it could sound, using only what was said */}
             {session.feedback?.smallTalk && (
               <>
@@ -431,7 +440,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* How the pace changed */}
           {pace && <p className="mt-2 text-footnote italic text-ink-muted">{pace.sentence}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
-          {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec)}</p>}
+          {timed && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence(session.mode, session.durationSec, undefined, session.promptId)}</p>}
           {/* After a rehearsal with a goal, how the timing went */}
           {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote italic text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
           {/* Listen back */}
@@ -453,7 +462,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {/* Inside today's practice, trying again is offered here (the main action moves on) */}
             {plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
             {/* After small talk, another question, back on its own page */}
-            {smallTalk && <li><RowLink href="/small-talk">Another question</RowLink></li>}
+            {smallTalk && <li><RowLink href="/small-talk">{findSmallTalk(session.promptId)?.unit === "answering" ? "Another question" : "Another one"}</RowLink></li>}
             {/* Finish (small talk has its own page, so it leads back there instead) */}
             {!smallTalk && <li><RowLink href="/">Finish for today</RowLink></li>}
           </ul>
@@ -463,7 +472,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           ) : warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (
-            <ActionBand action="Try it again" aside={rehearsed ? "same part of the talk" : qa || smallTalk ? "same question" : "same prompt"} href={retryHref} />
+            <ActionBand action="Try it again" aside={rehearsed ? "same part of the talk" : qa || (smallTalk && findSmallTalk(session.promptId)?.unit !== "listening") ? "same question" : smallTalk ? "same story" : "same prompt"} href={retryHref} />
           )}
         </aside>
       </div>
@@ -471,49 +480,84 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   );
 }
 
-// A small-talk answer's beats: how many were found, then each beat with the words that showed it (the coach's quotes, or the phone's checks and the user's own ticks)
+// What a found beat says when there are no words to quote
+const FOUND_WITHOUT_QUOTE: Partial<Record<BeatId, string>> = {
+  // A follow-up that stayed on them
+  "about-them": "It stayed on them.",
+  // One short question
+  "one-question": "One short question.",
+  // A reply with no story of your own
+  stay: "No story of your own.",
+};
+
+// A small-talk response's beats: what was said to them (for asking and listening), how many beats were found, then each beat with the words that showed it (the coach's quotes, or the phone's checks and the user's own ticks)
 function SmallTalkBeats({ session }: { session: SessionRecord }) {
-  // The coach's notes by beat, if they have arrived
+  // What was said to them, and the unit
+  const found = findSmallTalk(session.promptId);
+  // The unit
+  const unit = found?.unit ?? "answering";
+  // The coach's notes by beat on an answer, if they have arrived
   const coach = session.feedback?.smallTalk;
+  // The coach's notes on a follow-up or a reply
+  const connection = session.feedback?.connection;
   // How many beats were found
   const count = beatCount(session);
   // The speaker's words that showed each beat (quotes), or null when there are none to show
   const quotes = (beat: BeatId): string[] => {
+    // From the conversation coach: its quote
+    if (connection) return connection.found.filter((item) => item.beat === beat).map((item) => item.quote);
     // From the coach: its quotes
     if (coach) return (beat === "moment" ? [coach.moment] : beat === "hook" ? coach.hooks : beat === "feeling" ? [coach.feeling] : [coach.handBack]).filter(Boolean);
     // From the phone: the feeling words
     if (beat === "feeling") return feelingWords(session.transcript);
     // From the phone: the question back
     if (beat === "hand-back") return [handBack(session.transcript)].filter((phrase): phrase is string => phrase !== null);
+    // From the phone: the reaction
+    if (beat === "react") return [reaction(session.transcript)].filter((phrase): phrase is string => phrase !== null);
+    // From the phone: their words, picked up
+    if (beat === "their-detail" || beat === "their-words") return sharedWords(session.transcript, found?.question ?? "");
+    // From the phone: how it felt for them
+    if (beat === "their-feeling") return theirFeelingWords(session.transcript);
+    // From the phone: the open question's first word
+    if (beat === "open" && questionKind(session.transcript) === "open") return [session.transcript.split(/\s+/).find((word) => /^(what|how|why|where|when|which|who|tell)/i.test(word)) ?? ""].filter(Boolean);
     // The rest only the user can say
     return [];
   };
   // Draw them
   return (
     <>
+      {/* For asking and listening, what they said (a story was not shown before) */}
+      {unit !== "answering" && found && (
+        <div className="mt-5 md:mt-0">
+          {/* Small heading */}
+          <p className="text-footnote italic text-ink-muted">{unit === "asking" ? "They said" : "Their story"}</p>
+          {/* Their words */}
+          <p className="mt-1 max-w-[52ch] text-lede">&ldquo;{found.question}&rdquo;</p>
+        </div>
+      )}
       {/* How many, as a headline */}
-      <p className="mt-5 font-display text-3xl md:mt-0">{count === 4 ? "All four beats." : `${count} of 4 beats.`}</p>
+      <p className={`font-display text-3xl ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{count === 4 ? "All four beats." : `${count} of 4 beats.`}</p>
       {/* A dead-end opening, said plainly */}
-      {deadEndOpening(session.transcript) && <p className="mt-2 text-lede">It stopped at the opening. Even a quiet day has one thing worth telling.</p>}
+      {unit === "answering" && deadEndOpening(session.transcript) && <p className="mt-2 text-lede">It stopped at the opening. Even a quiet day has one thing worth telling.</p>}
       {/* Each beat */}
       <ul aria-label="The beats" className="mt-3 divide-y divide-rule border-y border-rule">
         {/* One row per beat */}
-        {BEATS.map((beat) => {
+        {beatsFor(unit).map((beat) => {
           // Whether it was found
-          const found = beatFound(session, beat.id);
+          const heard = beatFound(session, beat.id);
           // The words that showed it
-          const words = found ? quotes(beat.id) : [];
+          const words = heard ? quotes(beat.id) : [];
           // One beat
           return (
-            <li key={beat.id} data-found={found} className="flex gap-3 py-2">
+            <li key={beat.id} data-found={heard} className="flex gap-3 py-2">
               {/* Its mark: filled when found */}
-              <span aria-hidden="true" className={`mt-1 flex size-5 flex-none items-center justify-center border-2 ${found ? "border-accent bg-accent text-accent-ink" : "border-rule"}`}>{found && <CheckIcon weight="bold" className="size-3.5" />}</span>
+              <span aria-hidden="true" className={`mt-1 flex size-5 flex-none items-center justify-center border-2 ${heard ? "border-accent bg-accent text-accent-ink" : "border-rule"}`}>{heard && <CheckIcon weight="bold" className="size-3.5" />}</span>
               {/* Its name and what showed it, or a reminder */}
               <span className="text-lede">
                 {/* Name */}
                 <strong className="font-display font-normal">{beat.name}.</strong>{" "}
                 {/* The words, or the reminder when missing */}
-                <span className={found ? "" : "text-ink-muted"}>{!found ? beat.reminder : words.length > 0 ? words.map((quote) => `\u201c${quote}\u201d`).join(", ") : "You heard it."}</span>
+                <span className={heard ? "" : "text-ink-muted"}>{!heard ? beat.reminder : words.length > 0 ? words.map((quote) => `\u201c${quote}\u201d`).join(", ") : (FOUND_WITHOUT_QUOTE[beat.id] ?? "You heard it.")}</span>
               </span>
             </li>
           );

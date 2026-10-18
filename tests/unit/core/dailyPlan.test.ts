@@ -6,6 +6,8 @@ import { dailyPlan, planHref, planMinutes, planProgress } from "@/core/dailyPlan
 import { firstRead } from "@/core/learn";
 // Load the cards
 import { LEARN_CARDS } from "@/content/learn";
+// Load the small-talk lessons
+import { SMALL_TALK_LESSONS } from "@/content/smallTalk";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -56,6 +58,22 @@ describe("dailyPlan", () => {
     const steps = [regularPlan(DAY)[2], regularPlan(dayAfter(1))[2]];
     // Confirm one lesson (the first) and one card (the first)
     expect(new Set(steps.map((step) => step?.promptId))).toEqual(new Set(["stl1", LEARN_CARDS[0]?.id]));
+  });
+
+  // After the answering lessons come the asking and listening ones; once every lesson and card is done, a follow-up and a story on alternate days
+  it("moves on to asking and listening, then alternates their drills", () => {
+    // Every answering lesson answered earlier
+    const answered = SMALL_TALK_LESSONS.filter((lesson) => lesson.unit === "answering").map((lesson, index) => daysAgo(4 + index, { mode: "smalltalk", promptId: lesson.id }));
+    // Every lesson answered earlier
+    const allLessons = SMALL_TALK_LESSONS.map((lesson, index) => daysAgo(4 + index, { mode: "smalltalk", promptId: lesson.id }));
+    // Every card read earlier
+    const learn = Object.fromEntries(LEARN_CARDS.map((card) => [card.id, firstRead(new Date(2026, 9, 1))]));
+    // The lesson step after the answering lessons, whichever day it falls on
+    const lesson = [DAY, dayAfter(1)].map((day) => regularPlan(day, { sessions: [...regular, ...answered] })[2]).find((step) => step?.kind === "session");
+    // Two days in a row with nothing left
+    const drills = [DAY, dayAfter(1)].map((day) => regularPlan(day, { sessions: [...regular, ...allLessons], learn })[2]);
+    // Confirm the first asking lesson, then one follow-up and one story (its text hidden)
+    expect([lesson?.label, lesson?.promptId, new Set(drills.map((step) => step?.label)), drills.find((step) => step?.label === "Listening")?.title]).toEqual(["Asking lesson 1", "sal1", new Set(["Follow-up", "Listening"]), "A short story to respond to"]);
   });
 
   // What counts as done for Connection comes from before today, so reading a card today does not change today's plan

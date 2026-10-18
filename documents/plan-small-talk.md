@@ -128,7 +128,7 @@ A short voice note on the Small talk page: "What's one thing from today worth te
 
 ## Stages
 
-1. **Content and checks.** Built. The questions, the six lessons with their examples, the recipe text, and the phone's checks (`src/core/smallTalk.ts`), all with tests.
+1. **Content and checks.** Built (asking and listening followed as units 2 and 3, decision 47). The questions, the six lessons with their examples, the recipe text, and the phone's checks (`src/core/smallTalk.ts`), all with tests.
 2. **The mode.** Built (decision 42); the lessons' teaching lives on the recording page before the question, so there are no separate lesson pages. A new session mode `smalltalk` kept out of the speech numbers, the Small talk tab and page, the recording page with the strip and its fading, the timing window, the four listen-back questions, and notes by beat (phone checks first).
 3. **The voice.** Built (decision 43). The `/api/voice` route with a stand-in for tests, the "Hear it" button, auto-start after the voice, caching, and the phone-voice fallback.
 4. **The coach.** Built. The small-talk prompt and schema (moment, hooks, feeling, hand-back, livelier version, one change), shown by beat.

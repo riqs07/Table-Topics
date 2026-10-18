@@ -26,7 +26,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | wordsPerMinute | Computed from transcript and duration |
 | fillersPerMinute | Computed from transcript and duration |
 | focus | The weekly focus active at the time. Ids of focuses retired on 2026-10-15 (`start-and-finish`, `pace`, `structure`, `warmth-and-energy`) stay valid; `findFocus` in `core/focus.ts` still knows their names |
-| feedback | Keep / change / retry cue, or empty if not yet received. A small-talk answer's feedback also has `smallTalk`: the moment, up to three hooks, the feeling and the question back, quoted from the speaker (empty when missing), and a livelier version using only what they said |
+| feedback | Keep / change / retry cue, or empty if not yet received. A small-talk answer's feedback also has `smallTalk`: the moment, up to three hooks, the feeling and the question back, quoted from the speaker (empty when missing), and a livelier version using only what they said. A follow-up question or a reply to a story (asking and listening, decision 47) has `connection` instead: `found`, the beats the coach heard, each `{ beat, quote }`, and `better`, a better question or response |
 | feedbackStatus | pending, done, or failed |
 | loudness | Loudness readings every tenth of a second while recording (0 to 1, two decimals), used to find pauses; missing on older sessions |
 | spokenTimes | Seconds from the start when each word of the transcript was first heard (a tenth of a second, approximate; decision 28). Missing on older sessions |

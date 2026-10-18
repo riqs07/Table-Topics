@@ -1,10 +1,10 @@
 "use client";
-// The small-talk recipe under the question: four beats, each with its reminder until it becomes a habit, then just the word, then hidden
+// The small-talk recipe under the question (answering, asking or listening): four beats, each with its reminder until it becomes a habit, then just the word, then hidden
 
 // Load React's state tool
 import { useState } from "react";
-// Load the beats
-import { BEATS, type BeatId } from "@/content/smallTalk";
+// Load the units' beats
+import { beatsFor, type BeatId } from "@/content/smallTalk";
 // Load the strip's level type
 import type { StripLevel } from "@/core/smallTalk";
 
@@ -26,7 +26,7 @@ export function RecipeStrip({ level, focus = null }: { level: StripLevel; focus?
   return (
     <ol aria-label="The recipe" className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-rule py-3 sm:grid-cols-4">
       {/* Each beat */}
-      {BEATS.map((beat, index) => (
+      {beatsFor(level.unit).map((beat, index) => (
         // One beat: the lesson's own beat is marked in the accent
         <li key={beat.id} data-level={level.beats[beat.id]} className={beat.id === focus ? "border-l-2 border-accent pl-2" : "pl-2.5"}>
           {/* Its number and name */}

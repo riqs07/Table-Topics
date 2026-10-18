@@ -70,7 +70,7 @@ const isTextOrNull = (value: unknown) => value === null || isText(value);
 // Check that a value has the shape of coach feedback
 function isFeedback(value: unknown): boolean {
   // Feedback must be an object with three text parts
-  return isObject(value) && isText(value.keep) && isText(value.change) && isText(value.retryCue) && (value.smallTalk === undefined || isObject(value.smallTalk));
+  return isObject(value) && isText(value.keep) && isText(value.change) && isText(value.retryCue) && (value.smallTalk === undefined || isObject(value.smallTalk)) && (value.connection === undefined || isObject(value.connection));
 }
 
 // Check that a value has the shape of a session record

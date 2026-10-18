@@ -11,6 +11,16 @@ export interface Feedback {
   retryCue: string;
   // For a small-talk answer: what the coach found for each beat, and a livelier version
   smallTalk?: SmallTalkFeedback;
+  // For a follow-up question or a reply to a story: the beats the coach heard, and a better version
+  connection?: ConnectionFeedback;
+}
+
+// The coach's notes on a follow-up question or a reply to a story
+export interface ConnectionFeedback {
+  // Each beat it heard, with the words that showed it
+  found: Array<{ beat: string; quote: string }>;
+  // A better question or reply, in the user's voice
+  better: string;
 }
 
 // The coach's notes on a small-talk answer, beat by beat (an empty quote means the beat was missing)

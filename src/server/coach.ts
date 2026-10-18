@@ -7,7 +7,9 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 // Load the model settings
 import { COACH_EFFORT, COACH_MODEL } from "@/config/models";
 // Load the coach instructions, message builder, schema, and checker
-import { COACH_SYSTEM_PROMPT, FeedbackSchema, SMALL_TALK_SYSTEM_PROMPT, SmallTalkFeedbackSchema, buildCoachMessage, buildSmallTalkMessage, checkFeedback, checkSmallTalkFeedback, type CoachInput } from "@/core/coachPrompt";
+import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, ConnectionFeedbackSchema, FeedbackSchema, SMALL_TALK_SYSTEM_PROMPT, SmallTalkFeedbackSchema, buildCoachMessage, buildConnectionMessage, buildSmallTalkMessage, checkConnectionFeedback, checkFeedback, checkSmallTalkFeedback, type CoachInput } from "@/core/coachPrompt";
+// Load the small-talk unit lookup
+import { unitOf } from "@/content/smallTalk";
 // Load the feedback record type
 import type { Feedback } from "@/data/records";
 
@@ -35,6 +37,28 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
   return {
     // Get feedback for one session
     async getFeedback(input) {
+      // A follow-up question or a reply to a story goes to the conversation coach, with its own instructions and reply shape
+      if (input.mode === "smalltalk" && unitOf(input.promptId ?? "") !== "answering") {
+        // Ask Claude, requiring the reply to match the conversation schema
+        const response = await client.messages.parse({
+          // The configured coach model
+          model: COACH_MODEL,
+          // Room for thinking and the reply
+          max_tokens: MAX_TOKENS,
+          // The conversation instructions, cached between replies
+          system: [{ type: "text", text: CONNECTION_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+          // What was said, details and transcript
+          messages: [{ role: "user", content: buildConnectionMessage(input) }],
+          // Thinking depth and the required JSON shape
+          output_config: { effort: COACH_EFFORT, format: zodOutputFormat(ConnectionFeedbackSchema) },
+        });
+        // A safety decline is reported, not treated as a crash
+        if (response.stop_reason === "refusal") return { status: "declined" };
+        // A missing or unreadable reply is an error
+        if (!response.parsed_output) throw new Error(`The coach returned no usable feedback (stop reason: ${response.stop_reason}).`);
+        // Hand back the checked feedback, with its beats, and token counts
+        return { status: "ok", feedback: checkConnectionFeedback(response.parsed_output, input.promptId ?? ""), usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
+      }
       // A small-talk answer goes to the small-talk coach, with its own instructions and reply shape
       if (input.mode === "smalltalk") {
         // Ask Claude, requiring the reply to match the small-talk schema

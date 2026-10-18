@@ -10,7 +10,7 @@ import { findReading, findSpeech, partId } from "@/content/readings";
 // Load the calendar-day helpers
 import { dayKey, daysBetween, startOfDay } from "@/core/dates";
 // Load the small-talk questions and lessons
-import { SMALL_TALK_LESSONS, smallTalkForDay } from "@/content/smallTalk";
+import { SMALL_TALK_LESSONS, drillForDay, smallTalkForDay } from "@/content/smallTalk";
 // Load the next Learn card
 import { nextCard, type LearnProgress } from "@/core/learn";
 // Load the record types
@@ -209,7 +209,10 @@ function thinking(input: PlanInput, firstDays: boolean): PlanStep {
   return { lane: "thinking", kind: "session", label: "Table Topic", title: "A surprise question, answered on the spot", mode: "talk", promptId: topic.id, minutes: 2, href: `/session?mode=talk&prompt=${topic.id}` };
 }
 
-// Connection: real conversations. The next small-talk lesson or the next Learn card, in turn; whichever is left when the other is finished; an everyday question once both are
+// The lesson labels by unit
+const LESSON_LABELS = { answering: "Small-talk lesson", asking: "Asking lesson", listening: "Listening lesson" } as const;
+
+// Connection: real conversations. The next small-talk lesson (answering, then asking, then listening) or the next Learn card, in turn; whichever is left when the other is finished; once both are, a follow-up drill and a listening drill on alternate days
 function connection(input: PlanInput, before: ReadonlyArray<SessionRecord>): PlanStep {
   // Lessons answered before today
   const answered = new Set(before.filter((session) => session.mode === "smalltalk").map((session) => session.promptId));
@@ -224,11 +227,13 @@ function connection(input: PlanInput, before: ReadonlyArray<SessionRecord>): Pla
   // A card: its turn, or no lesson left
   if (card && (turn === "card" || !lesson)) return { lane: "connection", kind: "card", label: "Learn", title: card.title, mode: null, promptId: card.id, minutes: 1, href: `/learn/card?id=${card.id}` };
   // A lesson
-  if (lesson) return { lane: "connection", kind: "session", label: `Small-talk lesson ${lesson.number}`, title: lesson.title, mode: "smalltalk", promptId: lesson.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${lesson.id}` };
-  // Both finished: an everyday question (a different one from the On-the-spot lane's)
-  const question = smallTalkForDay(input.day, 3);
-  // The step
-  return { lane: "connection", kind: "session", label: "Small talk", title: question.text, mode: "smalltalk", promptId: question.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${question.id}` };
+  if (lesson) return { lane: "connection", kind: "session", label: `${LESSON_LABELS[lesson.unit]} ${lesson.number}`, title: lesson.title, mode: "smalltalk", promptId: lesson.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${lesson.id}` };
+  // Both finished: asking one day, listening the next
+  const asking = dayNumber(input.day) % 2 === 0;
+  // Today's drill
+  const drill = drillForDay(asking ? "asking" : "listening", input.day);
+  // The step (a story stays hidden until it is heard)
+  return { lane: "connection", kind: "session", label: asking ? "Follow-up" : "Listening", title: asking ? drill.text : "A short story to respond to", mode: "smalltalk", promptId: drill.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${drill.id}` };
 }
 
 // Sessions recorded before today

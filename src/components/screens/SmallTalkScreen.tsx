@@ -1,8 +1,8 @@
 "use client";
-// The Small talk page: the recipe, the lessons, the everyday questions, and your recent answers (kept apart from the speech practice)
+// The Small talk page: three units (answering, asking, listening), each with its recipe, lessons and practice, plus moments and your recent answers (kept apart from the speech practice)
 
-// Load React's state and effect tools
-import { useEffect, useState } from "react";
+// Load React's state, effect and external-store tools
+import { useEffect, useState, useSyncExternalStore } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the chevron for lesson rows
@@ -15,7 +15,7 @@ import { PathMark } from "@/components/script/PathMark";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the small-talk content
-import { BEATS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, findSmallTalk, smallTalkForDay } from "@/content/smallTalk";
+import { ASKING_DRILLS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, lessonsFor, type UnitId } from "@/content/smallTalk";
 // Load the beat counter
 import { beatCount } from "@/core/smallTalk";
 // Load the done and next marks for a path of lessons
@@ -35,6 +35,14 @@ const RECENT_MOMENTS = 5;
 // The address that starts an answer to a prompt (an everyday question or a lesson's turn)
 const answerHref = (promptId: string) => `/session?mode=smalltalk&prompt=${promptId}`;
 
+// Listen for the address's # changing
+function subscribeToHash(changed: () => void): () => void {
+  // Listen
+  window.addEventListener("hashchange", changed);
+  // Stop listening
+  return () => window.removeEventListener("hashchange", changed);
+}
+
 // Draw the Small talk page
 export function SmallTalkScreen(props: ScreenProps) {
   // The repository and today (null until in the browser)
@@ -43,8 +51,13 @@ export function SmallTalkScreen(props: ScreenProps) {
   const [answers, setAnswers] = useState<SessionRecord[] | null>(null);
   // The user's moment notes, newest first
   const [moments, setMoments] = useState<SessionRecord[]>([]);
-  // How many questions along from today's ("another question" adds one)
+  // How many drills along from today's ("another" adds one)
   const [offset, setOffset] = useState(0);
+  // The unit chosen (null until the user picks one: then the one in the address, or the unit of the next lesson)
+  const [picked, setPicked] = useState<UnitId | null>(null);
+
+  // A unit named in the address (such as /small-talk#asking), read in the browser
+  const named = useSyncExternalStore(subscribeToHash, () => window.location.hash.slice(1), () => "");
 
   // Load the answers once in the browser
   useEffect(() => {
@@ -70,12 +83,18 @@ export function SmallTalkScreen(props: ScreenProps) {
   const counts = new Map<string, number>();
   // Count each answer to a lesson
   for (const answer of answers ?? []) counts.set(answer.promptId, (counts.get(answer.promptId) ?? 0) + 1);
-  // The done and next marks, in lesson order
-  const marks = lessonPath(SMALL_TALK_LESSONS.map((lesson) => lesson.id), counts);
-  // The first lesson not yet done (none once all are)
-  const nextLesson = SMALL_TALK_LESSONS[marks.indexOf("next")];
-  // Today's everyday question
-  const question = today ? smallTalkForDay(today, offset) : null;
+  // The first lesson not yet done, across the units in order (none once all are)
+  const firstOpen = SMALL_TALK_LESSONS.find((lesson) => !counts.has(lesson.id));
+  // The unit showing: the one picked, or the one in the address, or the first open lesson's
+  const unit = UNITS.find((item) => item.id === picked) ?? UNITS.find((item) => item.id === named) ?? UNITS.find((item) => item.id === (firstOpen?.unit ?? "answering")) ?? UNITS[0]!;
+  // The showing unit's next lesson (none once its lessons are done)
+  const nextLesson = lessonsFor(unit.id).find((lesson) => !counts.has(lesson.id));
+  // Its lessons
+  const lessons = lessonsFor(unit.id);
+  // Their done and next marks, in order
+  const marks = lessonPath(lessons.map((lesson) => lesson.id), counts);
+  // Today's drill in this unit
+  const question = today ? drillForDay(unit.id, today, offset) : null;
 
   // Draw the page
   return (
@@ -85,27 +104,40 @@ export function SmallTalkScreen(props: ScreenProps) {
       {/* What this is for */}
       <h1 className="mt-8 font-display text-prompt tracking-tight md:text-prompt-xl">Say more than &ldquo;good.&rdquo;</h1>
       {/* How it works */}
-      <p className="mt-3 max-w-[52ch] text-lede">Practise answering everyday questions with one short story. A voice asks, you answer in 20 to 45 seconds, then you hear yourself back.</p>
+      <p className="mt-3 max-w-[52ch] text-lede">Practise everyday conversation out loud: answering with one short story, asking a good follow-up, and listening so people feel heard. A voice speaks, you reply, then you hear yourself back.</p>
+
+      {/* The units, one showing at a time */}
+      <div role="group" aria-label="Units" className="mt-6 grid grid-cols-3 border-y border-ink">
+        {/* Each unit */}
+        {UNITS.map((item) => (
+          // One unit's switch
+          <button key={item.id} type="button" aria-pressed={item.id === unit.id} onClick={() => { setPicked(item.id); setOffset(0); }} className={`min-h-12 px-1 py-2 font-display text-lede md:text-cue ${item.id === unit.id ? "bg-ink text-paper" : "hover:text-accent"}`}>
+            {item.name}
+          </button>
+        ))}
+      </div>
+      {/* When this unit is for */}
+      <p className="mt-3 italic text-ink-muted">{unit.when}</p>
 
       {/* Today's question, with a way to get another */}
       {question && (
-        <section aria-label="Answer a question" className="mt-6 border-y border-ink py-4">
+        <section aria-label={unit.id === "answering" ? "Answer a question" : unit.id === "asking" ? "Ask a follow-up" : "Listen to a story"} className="mt-4 border-y border-ink py-4">
           {/* Small heading */}
-          <p className="text-footnote italic text-ink-muted">A question for you</p>
-          {/* The question */}
-          <p className="mt-1 font-display text-cue">{question.text}</p>
-          {/* Answer it, or move along */}
+          <p className="text-footnote italic text-ink-muted">{unit.id === "answering" ? "A question for you" : unit.id === "asking" ? "Someone says" : "A short story, heard and not read"}</p>
+          {/* What is said (a story stays hidden until afterwards) */}
+          <p className="mt-1 font-display text-cue">{unit.id === "listening" ? "Someone tells you about their day." : question.text}</p>
+          {/* Reply, or move along */}
           <p className="mt-2 flex flex-wrap gap-x-4">
-            {/* Answer */}
-            <Link href={answerHref(question.id)} className="inline-flex min-h-11 items-center underline underline-offset-4">Answer it</Link>
+            {/* Reply */}
+            <Link href={answerHref(question.id)} className="inline-flex min-h-11 items-center underline underline-offset-4">{unit.id === "answering" ? "Answer it" : unit.id === "asking" ? "Ask a follow-up" : "Listen and respond"}</Link>
             {/* Another */}
-            <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">or another question</button>
+            <button type="button" onClick={() => setOffset(offset + 1)} className="inline-flex min-h-11 items-center italic text-ink-muted underline underline-offset-4">{unit.id === "answering" ? "or another question" : unit.id === "asking" ? "or something else" : "or another story"}</button>
           </p>
         </section>
       )}
 
       {/* One moment a day: material for the next time someone asks */}
-      {today && (
+      {today && unit.id === "answering" && (
         <section id="moments" aria-labelledby="moments-heading" className="mt-10 scroll-mt-6">
           {/* Run-in heading */}
           <h2 id="moments-heading" className="italic">One moment a day</h2>
@@ -134,11 +166,11 @@ export function SmallTalkScreen(props: ScreenProps) {
       {/* The recipe, taught on the page itself */}
       <section aria-labelledby="recipe" className="mt-10">
         {/* Run-in heading */}
-        <h2 id="recipe" className="italic">A good answer, in four beats</h2>
+        <h2 id="recipe" className="italic">{unit.id === "answering" ? "A good answer" : unit.id === "asking" ? "A good follow-up" : "A good response"}, in four beats</h2>
         {/* The beats */}
         <ol className="mt-3 divide-y divide-rule border-y border-rule">
           {/* Each beat */}
-          {BEATS.map((beat, index) => (
+          {unit.beats.map((beat, index) => (
             // One beat: its name, what it means, and why it works
             <li key={beat.id} className="flex gap-4 py-3">
               {/* Its number */}
@@ -158,17 +190,17 @@ export function SmallTalkScreen(props: ScreenProps) {
       {/* The lessons, as a path */}
       <section aria-labelledby="lessons" className="mt-10">
         {/* Run-in heading */}
-        <h2 id="lessons" className="italic">Lessons</h2>
+        <h2 id="lessons" className="italic">{unit.name} lessons</h2>
         {/* The path */}
         <ol className="mt-2">
           {/* One row per lesson */}
-          {SMALL_TALK_LESSONS.map((lesson, index) => (
+          {lessons.map((lesson, index) => (
             // One lesson, joined to the next by a line down the path
             <li key={lesson.id} className="relative">
               {/* The line to the next lesson (not after the last) */}
-              {index < SMALL_TALK_LESSONS.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
+              {index < lessons.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
               {/* The whole row starts the lesson */}
-              <Link href={answerHref(lesson.id)} aria-label={`Lesson ${lesson.number}: ${lesson.title}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
+              <Link href={answerHref(lesson.id)} aria-label={`${unit.name} lesson ${lesson.number}: ${lesson.title}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
                 {/* Its mark on the path */}
                 <PathMark mark={marks[index] ?? "open"} number={lesson.number} />
                 {/* Title and idea */}
@@ -189,31 +221,45 @@ export function SmallTalkScreen(props: ScreenProps) {
       </section>
 
       {/* Every everyday question, by group */}
-      <section aria-labelledby="questions" className="mt-10">
-        {/* Run-in heading */}
-        <h2 id="questions" className="italic">Everyday questions</h2>
-        {/* Each group, folded */}
-        {QUESTION_GROUPS.map((group) => (
-          // One group
-          <details key={group.id} className="border-b border-rule">
-            {/* Its name and size */}
-            <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 font-display text-cue">
-              {/* Name */}
-              {group.name}
-              {/* How many */}
-              <span className="font-body text-footnote italic text-ink-muted">{SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id).length} questions</span>
-            </summary>
-            {/* Its questions */}
-            <ul className="divide-y divide-rule border-t border-rule">
-              {/* Each question */}
-              {SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id).map((item) => (
-                // One question, answered by tapping it
-                <li key={item.id}><RowLink href={answerHref(item.id)}>{item.text}</RowLink></li>
-              ))}
-            </ul>
-          </details>
-        ))}
-      </section>
+      {unit.id === "answering" && (
+        <section aria-labelledby="questions" className="mt-10">
+          {/* Run-in heading */}
+          <h2 id="questions" className="italic">Everyday questions</h2>
+          {/* Each group, folded */}
+          {QUESTION_GROUPS.map((group) => (
+            // One group
+            <details key={group.id} className="border-b border-rule">
+              {/* Its name and size */}
+              <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 font-display text-cue">
+                {/* Name */}
+                {group.name}
+                {/* How many */}
+                <span className="font-body text-footnote italic text-ink-muted">{SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id).length} questions</span>
+              </summary>
+              {/* Its questions */}
+              <ul className="divide-y divide-rule border-t border-rule">
+                {/* Each question */}
+                {SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id).map((item) => (
+                  // One question, answered by tapping it
+                  <li key={item.id}><RowLink href={answerHref(item.id)}>{item.text}</RowLink></li>
+                ))}
+              </ul>
+            </details>
+          ))}
+        </section>
+      )}
+      {/* Everything people say in the asking drills */}
+      {unit.id === "asking" && (
+        <section aria-labelledby="remarks" className="mt-10">
+          {/* Run-in heading */}
+          <h2 id="remarks" className="italic">Things people say</h2>
+          {/* Each one, followed up by tapping it */}
+          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+            {/* One remark */}
+            {ASKING_DRILLS.map((item) => <li key={item.id}><RowLink href={answerHref(item.id)}>{item.text}</RowLink></li>)}
+          </ul>
+        </section>
+      )}
 
       {/* The user's recent answers */}
       {answers && answers.length > 0 && today && (
@@ -225,18 +271,32 @@ export function SmallTalkScreen(props: ScreenProps) {
             {/* Each answer */}
             {answers.slice(0, RECENT_ANSWERS).map((answer) => (
               // One answer: its question, day, and beats
-              <li key={answer.id}><RowLink href={`/sessions?id=${answer.id}`} meta={`${beatCount(answer)} of 4`}>{findSmallTalk(answer.promptId)?.question ?? "A question"} <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(answer.createdAt), today)}</span></RowLink></li>
+              <li key={answer.id}><RowLink href={`/sessions?id=${answer.id}`} meta={`${beatCount(answer)} of 4`}>{answerLabel(answer.promptId)} <span className="block text-footnote italic text-ink-muted">{dayLabel(new Date(answer.createdAt), today)}</span></RowLink></li>
             ))}
           </ul>
         </section>
       )}
 
-      {/* The main action: the next lesson, or today's question once the lessons are done */}
+      {/* The main action: this unit's next lesson, or its drill once the lessons are done */}
       {nextLesson ? (
-        <ActionBand action={`Lesson ${nextLesson.number}`} aside={nextLesson.title} href={answerHref(nextLesson.id)} />
+        <ActionBand action={`${UNITS.find((item) => item.id === nextLesson.unit)?.name} lesson ${nextLesson.number}`} aside={nextLesson.title} href={answerHref(nextLesson.id)} />
       ) : (
-        question && <ActionBand action="Answer a question" aside={question.text} href={answerHref(question.id)} />
+        question && <ActionBand action={unit.id === "answering" ? "Answer a question" : unit.id === "asking" ? "Ask a follow-up" : "Hear a story"} aside={unit.id === "listening" ? "then respond" : question.text} href={answerHref(question.id)} />
       )}
     </main>
   );
+}
+
+// One line for a recent response: the question or remark, or a story's first words
+function answerLabel(promptId: string): string {
+  // What was said
+  const found = findSmallTalk(promptId);
+  // Unknown
+  if (!found) return "A question";
+  // A story, cut short
+  if (found.unit === "listening") return `Story: ${found.question.split(/\s+/).slice(0, 8).join(" ")}…`;
+  // A remark
+  if (found.unit === "asking") return `Follow-up: ${found.question}`;
+  // A question
+  return found.question;
 }

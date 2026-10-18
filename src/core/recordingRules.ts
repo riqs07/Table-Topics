@@ -2,9 +2,11 @@
 
 // Load the session kind type
 import type { SessionMode } from "@/data/records";
+// Load the small-talk unit lookup (asking and listening are shorter than answering)
+import { unitOf } from "@/content/smallTalk";
 
 // The length to aim for, in seconds (for a Table Topic, the top of the 1:00 to 2:00 window)
-export function targetSeconds(mode: SessionMode): number {
+export function targetSeconds(mode: SessionMode, promptId = ""): number {
   // A Table Topic aims for one to two minutes (Toastmasters contest rules)
   if (mode === "talk") return TOPIC_WINDOW_END;
   // A prepared speech aims for two to four minutes (the top of its window)
@@ -14,7 +16,7 @@ export function targetSeconds(mode: SessionMode): number {
   // A Q&A answer aims for a minute
   if (mode === "qa") return 60;
   // A small-talk answer aims for the top of its window
-  if (mode === "smalltalk") return SMALL_TALK_WINDOW.end;
+  if (mode === "smalltalk") return smallTalkWindow(promptId).end;
   // A moment note is a few sentences
   if (mode === "moment") return 30;
   // Warm-ups are 30 seconds; full sessions about a minute
@@ -22,7 +24,7 @@ export function targetSeconds(mode: SessionMode): number {
 }
 
 // The point at which recording stops by itself, in seconds
-export function maxSeconds(mode: SessionMode): number {
+export function maxSeconds(mode: SessionMode, promptId = ""): number {
   // A Table Topic runs to 3:00 so going over the 2:30 limit can be seen
   if (mode === "talk") return 180;
   // A prepared speech runs to 5:00 so going over the 4:30 limit can be seen
@@ -35,6 +37,8 @@ export function maxSeconds(mode: SessionMode): number {
   if (mode === "bookend") return 60;
   // A Q&A answer stops at two minutes
   if (mode === "qa") return 120;
+  // A follow-up question stops by itself at half a minute
+  if (mode === "smalltalk" && unitOf(promptId) === "asking") return 30;
   // A small-talk answer or a moment note stops by itself at one minute
   if (mode === "smalltalk" || mode === "moment") return 60;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
@@ -62,6 +66,17 @@ export const LOUDNESS_TICK_MS = 100;
 
 // The shortest recording kept, in seconds (shorter clips give unreliable rates)
 export const MIN_SECONDS = 10;
+
+// The shortest follow-up question or reply kept, in seconds
+const MIN_REPLY_SECONDS = 2;
+
+// The shortest recording kept for a kind of session: a follow-up question or a reply to a story can be a few seconds
+export function minSeconds(mode: SessionMode, promptId = ""): number {
+  // Small talk's asking and listening are short by design
+  if (mode === "smalltalk" && unitOf(promptId) !== "answering") return MIN_REPLY_SECONDS;
+  // Everything else
+  return MIN_SECONDS;
+}
 
 // Seconds between seeing the prompt and recording: a short countdown for a Table Topic, time to prepare for a Record Response
 export function thinkSeconds(mode: SessionMode): number {
@@ -107,18 +122,30 @@ export const TOPIC_WINDOW: SpeakingWindow = { start: TOPIC_WINDOW_START, yellow:
 export const SPEECH_WINDOW: SpeakingWindow = { start: 120, yellow: 180, end: 240, limit: 270 };
 // Small talk: green at 0:20, yellow at 0:35, red at 0:45, no grace (it stops by itself at 1:00)
 export const SMALL_TALK_WINDOW: SpeakingWindow = { start: 20, yellow: 35, end: 45, limit: 45 };
+// A follow-up question: a few seconds, red at 0:12
+export const ASKING_WINDOW: SpeakingWindow = { start: 2, yellow: 8, end: 12, limit: 12 };
+// A reply to a story: green at 0:05, red at 0:30
+export const LISTENING_WINDOW: SpeakingWindow = { start: 5, yellow: 20, end: 30, limit: 30 };
 
-// The window for a kind of session, if it has one
-export function speakingWindow(mode: SessionMode): SpeakingWindow | null {
+// The window for a small-talk prompt, by its unit
+export function smallTalkWindow(promptId: string): SpeakingWindow {
+  // The prompt's unit
+  const unit = unitOf(promptId);
+  // Its window
+  return unit === "asking" ? ASKING_WINDOW : unit === "listening" ? LISTENING_WINDOW : SMALL_TALK_WINDOW;
+}
+
+// The window for a kind of session (and, for small talk, its prompt), if it has one
+export function speakingWindow(mode: SessionMode, promptId = ""): SpeakingWindow | null {
   // Table Topics, prepared speeches and small-talk answers
-  return mode === "talk" ? TOPIC_WINDOW : mode === "response" ? SPEECH_WINDOW : mode === "smalltalk" ? SMALL_TALK_WINDOW : null;
+  return mode === "talk" ? TOPIC_WINDOW : mode === "response" ? SPEECH_WINDOW : mode === "smalltalk" ? smallTalkWindow(promptId) : null;
 }
 
 // The timing light: off, green, yellow, red, or past the limit (still red)
 export type TimeSignal = "none" | "green" | "yellow" | "red" | "overtime";
 
 // The timing light for a moment in a session (Table Topics, Record Responses, and rehearsals with a goal have one)
-export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: number): TimeSignal {
+export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: number, promptId = ""): TimeSignal {
   // A rehearsal without a goal has no light
   if (mode === "rehearse" && !goalSeconds) return "none";
   // An openings and closings drill or a Q&A answer: yellow for the last 15 seconds before the goal, red past it
@@ -135,7 +162,7 @@ export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: num
     return "none";
   }
   // Only a Table Topic and a prepared speech have the full set of lights
-  const window = speakingWindow(mode);
+  const window = speakingWindow(mode, promptId);
   // No window, no light
   if (!window) return "none";
   // Past the limit
@@ -151,13 +178,13 @@ export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: num
 }
 
 // One plain sentence on the timing: for a Table Topic, whether it would qualify; otherwise, how it compared with the goal (a rehearsal passes its own goal)
-export function timingSentence(mode: SessionMode, durationSec: number, goalSeconds?: number): string {
+export function timingSentence(mode: SessionMode, durationSec: number, goalSeconds?: number, promptId = ""): string {
   // Whole seconds, as the timer would record them
   const seconds = Math.round(durationSec);
   // The length as a clock
   const clock = formatClock(seconds);
-  // The window, for a Table Topic or a prepared speech
-  const window = speakingWindow(mode);
+  // The window, for a Table Topic, a prepared speech or small talk
+  const window = speakingWindow(mode, promptId);
   // Anything else compares with its goal
   if (!window) {
     // The goal: a rehearsal's own, or this kind's

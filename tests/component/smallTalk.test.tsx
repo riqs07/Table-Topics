@@ -43,7 +43,7 @@ describe("small talk", () => {
     // The recipe
     const recipe = await screen.findByRole("region", { name: "A good answer, in four beats" });
     // Confirm the four beats, today's question, and the first lesson as the main action
-    expect([within(recipe).getAllByRole("listitem").length, within(screen.getByRole("region", { name: "Answer a question" })).getByText(smallTalkForDay(NOW).text).tagName, screen.getByRole("link", { name: /^Lesson 1The dead end/ }).getAttribute("href")]).toEqual([4, "P", "/session?mode=smalltalk&prompt=stl1"]);
+    expect([within(recipe).getAllByRole("listitem").length, within(screen.getByRole("region", { name: "Answer a question" })).getByText(smallTalkForDay(NOW).text).tagName, screen.getByRole("link", { name: /^Answering lesson 1The dead end/ }).getAttribute("href")]).toEqual([4, "P", "/session?mode=smalltalk&prompt=stl1"]);
   });
 
   // Answers are listed on the page with how many beats they showed, and in History too (since the daily mix)
@@ -108,5 +108,39 @@ describe("small talk", () => {
     const moments = await screen.findByRole("list", { name: "Your moments" });
     // Confirm the words, today's state, and the way to add another
     expect([!!within(moments).getByText("I fixed the bike chain myself"), !!screen.getByText(/Today\u2019s moment is saved/), screen.getByRole("link", { name: "Add another moment" }).getAttribute("href")]).toEqual([true, true, "/session?mode=moment&prompt=moment"]);
+  });
+
+  // The units: asking and listening each have their own recipe and lessons, and a story is not shown on the page
+  it("switches between the units", async () => {
+    // Draw the page
+    render(<SmallTalkScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Pick Asking
+    fireEvent.click(await screen.findByRole("button", { name: "Asking" }));
+    // The asking recipe, its lessons, and the main action leading to its first lesson
+    const asking = [!!screen.getByRole("region", { name: "A good follow-up, in four beats" }), screen.getByRole("link", { name: "Asking lesson 1: Ask about what they said" }).getAttribute("href"), screen.getByRole("link", { name: /^Asking lesson 1Ask about/ }).getAttribute("href"), !!screen.getByRole("region", { name: "Ask a follow-up" })];
+    // Pick Listening
+    fireEvent.click(screen.getByRole("button", { name: "Listening" }));
+    // The practice box
+    const practice = screen.getByRole("region", { name: "Listen to a story" });
+    // Confirm asking, then listening's recipe and a practice box that hides the story
+    expect([...asking, !!screen.getByRole("region", { name: "A good response, in four beats" }), within(practice).getByText("Someone tells you about their day.").tagName, within(practice).getByRole("link", { name: "Listen and respond" }).getAttribute("href")?.startsWith("/session?mode=smalltalk&prompt=sls")]).toEqual([true, "/session?mode=smalltalk&prompt=sal1", "/session?mode=smalltalk&prompt=sal1", true, true, "P", true]);
+  });
+
+  // After a reply to a story: the story itself, the listening beats the phone heard, and a label in History
+  it("shows the story and the listening beats afterwards", async () => {
+    // A reply to the train story
+    const repository = await repositoryWith(answer({ promptId: "sls01", durationSec: 8, transcript: "no way you missed your stop and your boss was waiting that must have been so awkward", selfReview: { worked: "", change: "", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
+    // Draw its page
+    render(<SessionScreen sessionId="a1" repository={repository} now={NOW} />);
+    // The beats
+    const beats = await screen.findByRole("list", { name: "The beats" });
+    // Confirm the story, all four beats with the reaction quoted, and the timing against its window
+    expect([!!screen.getByText(/fell asleep on my shoulder/), screen.getByText("All four beats.").tagName, within(beats).getAllByRole("listitem").map((item) => item.querySelector("strong")?.textContent), !!within(beats).getByText("“no way”"), !!screen.getByText("0:08, inside the 0:05 to 0:30 window.")]).toEqual([true, "P", ["React.", "Their words.", "Their feeling.", "Stay."], true, true]);
+    // Draw History instead
+    cleanup();
+    // History
+    render(<HistoryScreen repository={repository} now={NOW} />);
+    // Confirm it is labelled as listening
+    expect(await screen.findByText(/Listening: So I was on the train this morning/)).toBeTruthy();
   });
 });

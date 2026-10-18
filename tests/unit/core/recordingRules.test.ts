@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the recording rules being checked
-import { MIN_SECONDS, formatClock, maxSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, timingSentence } from "@/core/recordingRules";
+import { MIN_SECONDS, formatClock, maxSeconds, minSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, timingSentence } from "@/core/recordingRules";
 
 // Group the checks about how long recordings run
 describe("recording length", () => {
@@ -184,5 +184,17 @@ describe("Q&A answers", () => {
   it("turns yellow at 45 seconds and red past a minute", () => {
     // Confirm the light at each point
     expect([timeSignal("qa", 44), timeSignal("qa", 45), timeSignal("qa", 61)]).toEqual(["none", "yellow", "red"]);
+  });
+
+  // Small talk's units: a follow-up is a few seconds, a reply to a story under half a minute, an answer 20 to 45 seconds
+  it("times small talk by its unit", () => {
+    // Per unit: the shortest kept, the stop, the light at 10 seconds, and the timing sentence at 6 seconds
+    const unit = (promptId: string) => [minSeconds("smalltalk", promptId), maxSeconds("smalltalk", promptId), timeSignal("smalltalk", 10, undefined, promptId), timingSentence("smalltalk", 6, undefined, promptId)];
+    // Confirm an everyday question, a remark and a story
+    expect([unit("st01"), unit("sa01"), unit("sls01")]).toEqual([
+      [10, 60, "none", "0:06, under the 0:20 minimum."],
+      [2, 30, "yellow", "0:06, inside the 0:02 to 0:12 window."],
+      [2, 60, "green", "0:06, inside the 0:05 to 0:30 window."],
+    ]);
   });
 });

@@ -402,6 +402,32 @@ test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Your answers" })).toContainText("How was your weekend?");
 });
 
+// Listening: from the Listening unit, a story heard but not shown, a short reply, and the story with the beats afterwards
+test("Small talk: listen to a story and see it afterwards", async ({ page }) => {
+  // The stand-in speech responds to the story
+  await useStandIns(page, "no way you missed your stop and your boss was waiting that must have been so awkward");
+  // Start at the Listening unit
+  await page.goto("/small-talk#listening");
+  // Its practice box
+  await page.getByRole("region", { name: "Listen to a story" }).getByRole("link", { name: "Listen and respond" }).click();
+  // The story is not shown
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Listen to their story.");
+  // Hear it; recording starts once it has been told
+  await page.getByRole("button", { name: /Hear the story/ }).click();
+  // Recording is under way
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // The phone's voice may take a while for a story
+  await expect(stop).toBeVisible({ timeout: 30_000 });
+  // A short reply
+  await page.waitForTimeout(3_000);
+  // Stop
+  await stop.click();
+  // The reply opens on listening back
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+  // The listening beats to listen for
+  await expect(page.getByRole("list", { name: "Listen for" })).toContainText("React.");
+});
+
 // One moment a day: record a short private note from the Small talk page, and find it listed there
 test("One moment a day: record a note and see it on the Small talk page", async ({ page }) => {
   // The stand-in speech tells the moment

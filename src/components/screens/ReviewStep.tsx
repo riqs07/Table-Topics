@@ -18,7 +18,7 @@ import { CHANGE_TAGS, LONG_RECORDING, WORKED_TAGS, listenWords, listenedEnough, 
 // Load the tick
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the small-talk beats, the listen-for questions for an everyday answer
-import { BEATS } from "@/content/smallTalk";
+import { beatsFor, unitOf } from "@/content/smallTalk";
 // Load the clock formatter
 import { formatClock } from "@/core/recordingRules";
 // Load the record types
@@ -204,7 +204,7 @@ export function ReviewStep({ repo, session, onSaved, plan = null, retryHref = nu
           {/* The beats, each a switch */}
           <ul aria-label="Listen for" className="mt-2 divide-y divide-rule border-y border-rule">
             {/* Each beat */}
-            {BEATS.map((beat) => (
+            {beatsFor(unitOf(session.promptId)).map((beat) => (
               // One beat, ticked when heard
               <li key={beat.id}>
                 {/* The switch */}
