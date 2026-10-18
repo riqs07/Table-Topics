@@ -166,56 +166,6 @@ test("Openings and closings: an opening drill from home to its findings", async 
   await expect(page.getByText(/You opened with “Um so”/)).toBeVisible();
 });
 
-// Q&A practice: after a response, write your own questions, answer one, and see it with its question
-test("Q&A practice: write questions after a response and answer one", async ({ page }) => {
-  // Use the stand-in microphone and speech
-  await useStandIns(page);
-  // Record a prepared response
-  await page.goto("/session?mode=response&prompt=p040");
-  // Start thinking
-  await page.getByRole("button", { name: /Start thinking/ }).click();
-  // Skip the rest of the thinking time
-  await page.getByRole("button", { name: /Ready/ }).click();
-  // Speak past the minimum
-  await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 10_000 });
-  // Wait
-  await page.waitForTimeout(11_500);
-  // Stop
-  await page.getByRole("button", { name: /Stop/ }).click();
-  // Skip listening back this time
-  await page.getByRole("button", { name: "Skip this time" }).click({ timeout: 15_000 });
-  // Open Q&A practice from the saved session
-  await page.getByRole("link", { name: "Practise Q&A" }).click();
-  // Without a passphrase, asking the coach explains what to do and calls nothing
-  await page.getByRole("button", { name: "Suggest three questions" }).click();
-  // The explanation
-  await expect(page.getByText(/Add the passphrase in Settings/)).toBeVisible();
-  // Write two questions instead
-  await page.getByLabel(/Or write your own/).fill("Why now?\nWhat does it cost?");
-  // Use them
-  await page.getByRole("button", { name: "Use these" }).click();
-  // Answer the first
-  await page.getByRole("link", { name: "Answer “Why now?”" }).click();
-  // The question is on screen
-  await expect(page.getByText("Why now?")).toBeVisible();
-  // Start speaking
-  await page.getByRole("button", { name: /Start speaking/ }).click();
-  // A timing light while answering
-  await expect(page.getByRole("status", { name: "Timing light" })).toBeVisible({ timeout: 10_000 });
-  // Speak past the minimum
-  await page.waitForTimeout(11_500);
-  // Stop
-  await page.getByRole("button", { name: /Stop/ }).click();
-  // The answer's page shows the question
-  await expect(page.getByText("Q&A answer")).toBeVisible({ timeout: 15_000 });
-  // Skip listening back this time
-  await page.getByRole("button", { name: "Skip this time" }).click();
-  // Back to the questions, which now counts the answer
-  await page.getByRole("link", { name: "Back to the questions" }).click();
-  // The count
-  await expect(page.getByText("answered once")).toBeVisible();
-});
-
 // Reading aloud: the words light up as they are read, and the reading is saved
 test("Read aloud: words light up as they are read, then the reading is saved", async ({ page }) => {
   // The stand-in speech reads the opening of the Gettysburg Address

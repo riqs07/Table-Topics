@@ -35,22 +35,18 @@ describe("PracticeScreen", () => {
     ]);
   });
 
-  // Q&A needs something to ask about
-  it("explains Q&A until there is a rehearsal or prepared speech, then links to it", async () => {
-    // Draw with nothing recorded
-    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the explanation, on a row that is not a link
-    expect((await screen.findByText(/Opens after a prepared speech/)).closest("a")).toBeNull();
-    // Clear the page
-    cleanup();
+  // Q&A practice is removed (decision 61): no row, even after a prepared speech
+  it("does not offer Q&A practice", async () => {
     // A repository with a prepared speech
     const repository = createRepository(new MemoryStore());
     // Save it
     await repository.saveSession(makeSession({ id: "r1", mode: "response" }));
-    // Draw again
+    // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
-    // Confirm the link
-    expect((await screen.findByRole("link", { name: /Q&A practice/ })).getAttribute("href")).toBe("/qa?from=r1");
+    // Wait for the page to draw
+    await screen.findByRole("link", { name: /^Table Topic/ });
+    // Confirm there is no Q&A row
+    expect(screen.queryByText(/Q&A/)).toBeNull();
   });
 
   // Your talks are hidden for now: no section and no way in from here

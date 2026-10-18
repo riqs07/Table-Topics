@@ -65,7 +65,7 @@ Rule: logic goes in `core/` with no browser dependencies, so it can be tested qu
 
 `POST /api/feedback` with header `x-voicelab-passphrase` and body `{ transcript, durationSec, focusId, previousChange, mode?, promptId?, question? }`. Checks run in this order, so nothing costs money until the last step: settings present (500 naming the missing variable), passphrase (401), body shape and size (400), shared rate limit (429 with `Retry-After`; 503 if the counter store is down), then the coach (200 `{ feedback }`, 422 if declined, 502 on failure). Logic: `src/server/feedbackHandler.ts`; prompt: `src/core/coachPrompt.ts`.
 
-`POST /api/questions` takes the same header and `{ transcript, promptId?, mode? }`, runs the same checks against the same limits, and answers `{ questions: [three] }` (422 if declined, 502 on failure).
+`POST /api/questions` was removed with Q&A practice (decision 61).
 
 ## Recording (desktop first)
 

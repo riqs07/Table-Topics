@@ -23,7 +23,7 @@ export const JOBS: ReadonlyArray<Job> = [
   // A talk with a date or an audience
   { id: "talk", name: "Prepare a talk", blurb: "Your own talk: a plan to the day, section by section.", href: "/rehearse" },
   // Speaking without a script
-  { id: "spot", name: "Speak on the spot", blurb: "Surprise questions, prepared speeches, openings, Q&A.", href: "/practice" },
+  { id: "spot", name: "Speak on the spot", blurb: "Surprise questions, prepared speeches, openings and closings.", href: "/practice" },
   // One skill at a time
   { id: "skill", name: "Build a skill", blurb: "Short lessons, speeches to read, pause and word drills.", href: "/skills" },
   // Everyday conversation
@@ -58,7 +58,7 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   { id: "prepared", job: "spot", name: "Prepared speech", subtitle: "2 minutes to plan, then speak for 2 to 4", length: "about 6 min", youDo: "Read a speaking task, plan it for up to 2 minutes with a hint, then speak for 2 to 4 minutes, with green, yellow and red lights.", youGet: "Your time against the 2:00 to 4:00 window, this week's number, and one fix." },
   // Openings and closings
   { id: "openings", job: "spot", name: "Openings and closings", subtitle: "the first or last 45 seconds", length: "1 min", youDo: "Practise only how a talk starts or how it ends.", youGet: "The pause before your first word, or how cleanly you finished." },
-  // Q&A practice
+  // Q&A practice (removed from the app, decision 61; kept so old Q&A answers still find their name)
   { id: "qa", job: "spot", name: "Q&A practice", subtitle: "answer likely questions", length: "1 min a question", youDo: "Answer the questions an audience would ask after your talk or prepared speech.", youGet: "Your time against a 1:00 goal, and whether you answered directly." },
   // Lessons
   { id: "lessons", job: "skill", name: "Lessons", subtitle: "one practical tip each", length: "2 to 3 min", youDo: "Read a short tip, then practise it on a text written for it.", youGet: "A check made for that one skill." },

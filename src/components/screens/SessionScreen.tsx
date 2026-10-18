@@ -294,8 +294,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const next = quick ? nextInUnit(session.promptId) : null;
   // Whether this is an answer to an audience question
   const qa = session.mode === "qa";
-  // Where "try it again" leads: the same question for a Q&A answer (or its list, if the question was replaced), otherwise the same prompt
-  const retryHref = qa && qaIndex === null ? `/qa?from=${session.promptId}` : `/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}${plan ? `&plan=${plan.step}` : ""}`;
+  // Where "try it again" leads: the same question for an old Q&A answer (or the session it came from, if the question was replaced; Q&A practice is gone, decision 61), otherwise the same prompt
+  const retryHref = qa && qaIndex === null ? `/sessions?id=${session.promptId}` : `/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}${plan ? `&plan=${plan.step}` : ""}`;
   // An openings and closings drill's prompt, and what it measured
   const bookend = session.mode === "bookend" ? BOOKENDS.find((item) => item.id === session.promptId) : undefined;
   // The drill's two findings
@@ -455,12 +455,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           <ul aria-label="More options" className="mt-6 mb-6 divide-y divide-rule border-y border-rule">
             {/* Open the transcript on a phone */}
             <li className="md:hidden"><RowButton onClick={() => setShowTranscript(!showTranscript)}>{showTranscript ? "Hide what I said" : "Read what I said"}</RowButton></li>
-            {/* After a rehearsal or a response, practise the questions that would follow */}
-            {(session.mode === "rehearse" || session.mode === "response") && <li><RowLink href={`/qa?from=${session.id}`}>Practise Q&amp;A</RowLink></li>}
             {/* After a part of a full speech, the next part, or the speech's page after the last */}
             {speechPart && <li>{speechPart.part < speechPart.speech.parts.length ? <RowLink href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`}>Read part {speechPart.part + 1}</RowLink> : <RowLink href={`/speech?id=${speechPart.speech.id}`}>That was the last part</RowLink>}</li>}
-            {/* After a Q&A answer, back to the questions */}
-            {qa && <li><RowLink href={`/qa?from=${session.promptId}`}>Back to the questions</RowLink></li>}
             {/* After a rehearsal, back to the talk and its plan */}
             {rehearsed && <li><RowLink href={`/talk?id=${rehearsed.id}`}>Back to your talk</RowLink></li>}
             {/* Inside today's practice, trying again is offered here (the main action moves on) */}

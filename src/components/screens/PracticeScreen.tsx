@@ -1,8 +1,6 @@
 "use client";
-// Practice: every kind of practice in one place, grouped, each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49)
+// Practice: every kind of practice in one place, grouped, each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
 
-// Load React's state and effect tools
-import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the page heading with the main navigation
@@ -10,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { BookOpenTextIcon, MegaphoneSimpleIcon, CaretRightIcon, ChatTeardropTextIcon, ChatsCircleIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, SunHorizonIcon, TextAaIcon } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenTextIcon, MegaphoneSimpleIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, SunHorizonIcon, TextAaIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
@@ -88,24 +86,6 @@ function Group({ id, title, ways }: { id: string; title: string; ways: ReadonlyA
 export function PracticeScreen(props: ScreenProps) {
   // The repository and today (null until in the browser)
   const { repo, today } = useScreenBasics(props);
-  // The newest rehearsal or prepared speech, for Q&A (undefined while loading)
-  const [qaFrom, setQaFrom] = useState<string | null | undefined>(undefined);
-
-  // Find the newest rehearsal or prepared speech
-  useEffect(() => {
-    // Ignore the result if the page closes first
-    let cancelled = false;
-    // Read the sessions (newest first)
-    repo.listSessions().then((sessions) => {
-      // Keep the newest that Q&A can follow
-      if (!cancelled) setQaFrom(sessions.find((session) => session.mode === "rehearse" || session.mode === "response")?.id ?? null);
-    });
-    // Mark as closed when leaving
-    return () => {
-      // Stop the pending update
-      cancelled = true;
-    };
-  }, [repo]);
 
   // Today's Table Topic and prepared-speech task (one along from today's practice, so they differ from its steps)
   const topic = today ? tableTopicForDay(today, 1) : null;
@@ -131,8 +111,6 @@ export function PracticeScreen(props: ScreenProps) {
           { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
           // Openings and closings
           { name: "Openings and closings", detail: "The first or last 45 seconds, 1 min", href: "/bookends", icon: QuotesIcon },
-          // Q&A, once there is something to ask about
-          { name: "Q&A practice", detail: qaFrom === null ? "Opens after a prepared speech" : "Answer the questions your latest run would get", href: qaFrom ? `/qa?from=${qaFrom}` : null, icon: ChatsCircleIcon },
         ]}
       />
 
