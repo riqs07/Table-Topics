@@ -82,6 +82,8 @@ import type { Repository } from "@/data/repository";
 import { requestFeedbackDetail, type FeedbackOutcome } from "@/data/feedbackClient";
 // Load the saved passphrase
 import { readPassphrase } from "@/data/passphrase";
+// Load the tab title helper
+import { usePageTitle } from "@/components/screens/usePageTitle";
 
 // What the screen needs: which session, plus the shared props
 interface SessionScreenProps extends ScreenProps {
@@ -365,7 +367,9 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // Whether the transcript is open on a phone (it is always shown on a computer)
   const [showTranscript, setShowTranscript] = useState(false);
   // The page title for this kind of session
-  const title = warmup ? "Warm-up" : talk ? "Table Topic" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : smallTalk ? "Small talk" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared speech" : timed ? "Your answer" : "Your take";
+  const title = warmup ? "Warm-up" : talk ? "Table Topic" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : smallTalk ? "Small talk" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared speech" : session.mode === "free" ? "Free talk" : session.mode === "outline" ? "Short speech" : timed ? "Your answer" : "Your take";
+  // Name the tab after it
+  usePageTitle(`${title} results`);
   // The user's notes, with their tags as words
   const review = session.selfReview && !session.selfReview.skipped ? session.selfReview : null;
   // The tag words
@@ -409,7 +413,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {reading ? (
             <>
               {/* How much of the passage was read */}
-              <p data-testid="reading-headline" className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</p>
+              <h1 data-testid="reading-headline" className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</h1>
               {/* The detail */}
               <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
               {/* A lesson's tip, as a reminder */}
@@ -418,7 +422,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           ) : bookendOutcome ? (
             <>
               {/* The drill's main finding */}
-              <p className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{bookendOutcome.headline}</p>
+              <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{bookendOutcome.headline}</h1>
               {/* Its second finding */}
               <p className="mt-2 text-footnote text-ink-muted">{bookendOutcome.detail}</p>
             </>
@@ -427,7 +431,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             <SmallTalkBeats session={session} />
           ) : (
             // The focus number as a sentence, when one measures it (otherwise the one change leads)
-            headlineFor(session) && <p className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{headlineFor(session)}</p>
+            headlineFor(session) ? <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{headlineFor(session)}</h1> : <h1 className="sr-only">{title}</h1>
           )}
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
           <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
@@ -593,7 +597,7 @@ function SmallTalkBeats({ session }: { session: SessionRecord }) {
         </div>
       )}
       {/* How many, as a headline */}
-      <p className={`font-display text-3xl font-semibold tracking-tight ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{count === 4 ? "All four beats." : `${count} of 4 beats.`}</p>
+      <h1 className={`font-display text-3xl font-semibold tracking-tight ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{count === 4 ? "All four beats." : `${count} of 4 beats.`}</h1>
       {/* A dead-end opening, said plainly */}
       {unit === "answering" && deadEndOpening(session.transcript) && <p className="mt-2 text-lede">It stopped at the opening. Even a quiet day has one thing worth telling.</p>}
       {/* Each beat */}

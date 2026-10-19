@@ -50,6 +50,8 @@ import type { MissionRecord } from "@/data/records";
 import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the end-of-day moment
 import { DoneBurst } from "@/components/script/DoneBurst";
+// Load the loading placeholder
+import { Skeleton } from "@/components/script/Skeleton";
 // Load the reminder to keep practice safe
 import { SafetyNote } from "@/components/script/SafetyNote";
 // Load the rule for which reminder to show
@@ -169,8 +171,10 @@ export function HomeScreen(props: ScreenProps) {
       {/* Name and links */}
       <Masthead title="VoiceLab" section="today" />
 
+      {/* Until saved data is read, a quiet placeholder, so the page appears in one piece (decision 76) */}
+      {!data && <Skeleton blocks={["h-24", "h-96"]} />}
       {/* Two columns on a computer */}
-      <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
+      {data && <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Context: streak and focus (above the step on a phone, in the margin on a computer) */}
         <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
           {/* The streak, once there is one (nothing on a first day: the steps speak for themselves) */}
@@ -304,7 +308,7 @@ export function HomeScreen(props: ScreenProps) {
             <ActionBand action={doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={plan.steps[nextIndex]?.label ?? ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
           ))}
         </div>
-      </div>
+      </div>}
     </main>
   );
 }

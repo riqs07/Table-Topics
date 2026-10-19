@@ -21,12 +21,14 @@ import { CARD } from "./textStyles";
 const RECENT_MISSIONS = 5;
 
 // Draw the section
-export function MissionSection({ repo, today }: { repo: Repository; today: Date }) {
-  // The mission tries, oldest first (null while loading)
-  const [missions, setMissions] = useState<MissionRecord[] | null>(null);
+export function MissionSection({ repo, today, initial = null }: { repo: Repository; today: Date; initial?: MissionRecord[] | null }) {
+  // The mission tries, oldest first (null while loading; given by the page when it has already read them, so nothing jumps; decision 76)
+  const [missions, setMissions] = useState<MissionRecord[] | null>(initial);
 
-  // Read the tries once
+  // Read the tries once, unless the page already did
   useEffect(() => {
+    // Already given
+    if (initial) return;
     // Ignore the result if the page closes first
     let cancelled = false;
     // Read them from the settings
@@ -39,7 +41,7 @@ export function MissionSection({ repo, today }: { repo: Repository; today: Date 
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo, today]);
+  }, [initial, repo, today]);
 
   // Nothing until loaded
   if (!missions) return null;

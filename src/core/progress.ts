@@ -63,8 +63,8 @@ export function shouldBeBaseline(existing: ReadonlyArray<SessionRecord>, mode: S
 export function baselineProgress(sessions: ReadonlyArray<SessionRecord>): BaselineProgress | null {
   // Find the first recording
   const baseline = sessions.find((session) => session.isBaseline);
-  // Find the most recent full session
-  const latest = oldestFirst(fullSessions(sessions)).at(-1);
+  // Find the most recent full first try (retries are left out, so this matches the trend line's last point; decision 76)
+  const latest = oldestFirst(fullSessions(sessions)).filter((session) => session.retryOf === null).at(-1);
   // Nothing to compare without a baseline and a later session
   if (!baseline || !latest || latest.id === baseline.id) return null;
   // Work out the percent change, guarding against a baseline of zero

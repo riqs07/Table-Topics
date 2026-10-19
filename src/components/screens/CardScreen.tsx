@@ -30,6 +30,8 @@ import { loadDailyPlan } from "@/data/dailyPlan";
 import { planHref } from "@/core/dailyPlan";
 // Load progress saving
 import { markCardRead } from "@/data/learnProgress";
+// Load the tab title helper
+import { usePageTitle } from "@/components/screens/usePageTitle";
 
 // The words for each verdict
 const VERDICT_WORDS: Readonly<Record<Verdict, string>> = {
@@ -63,6 +65,8 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   const { repo, today } = useScreenBasics(props);
   // The card
   const card = findCard(cardId);
+  // Name the tab after the card
+  usePageTitle(card?.title.replace(/[“”"]/g, ""));
   // The screen showing
   const [index, setIndex] = useState(0);
   // A myth-or-fact guess

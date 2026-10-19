@@ -81,7 +81,7 @@ describe("small talk", () => {
     // The beats
     const beats = await screen.findByRole("list", { name: "The beats" });
     // Confirm the headline and which beats were found, with the phone's evidence for feeling and the hand-back
-    expect([screen.getByText("3 of 4 beats.").tagName, within(beats).getAllByRole("listitem").map((item) => item.getAttribute("data-found")), within(beats).getByText("“fun”").tagName]).toEqual(["P", ["true", "false", "true", "true"], "SPAN"]);
+    expect([screen.getByText("3 of 4 beats.").tagName, within(beats).getAllByRole("listitem").map((item) => item.getAttribute("data-found")), within(beats).getByText("“fun”").tagName]).toEqual(["H1", ["true", "false", "true", "true"], "SPAN"]);
     // Confirm one change from the phone, and a way to another question
     expect([!!screen.getByText("From your numbers"), screen.getByRole("link", { name: /Another question/ }).getAttribute("href")]).toEqual([true, "/small-talk/unit?id=answering"]);
   });
@@ -95,7 +95,7 @@ describe("small talk", () => {
     // The beats
     const beats = await screen.findByRole("list", { name: "The beats" });
     // Confirm the coach's count and quotes, and the gap marked in the livelier version
-    expect([screen.getByText("3 of 4 beats.").tagName, !!within(beats).getByText("“I built an app”"), screen.getByText("[how it felt]").tagName, screen.queryByText("From your numbers")]).toEqual(["P", true, "EM", null]);
+    expect([screen.getByText("3 of 4 beats.").tagName, !!within(beats).getByText("“I built an app”"), screen.getByText("[how it felt]").tagName, screen.queryByText("From your numbers")]).toEqual(["H1", true, "EM", null]);
   });
 
   // Today's moment: saved moments are listed with their words, and the page says today's is done
@@ -135,7 +135,7 @@ describe("small talk", () => {
     // The beats
     const beats = await screen.findByRole("list", { name: "The beats" });
     // Confirm the story, all four beats with the reaction quoted, and the timing against its window
-    expect([!!screen.getByText(/fell asleep on my shoulder/), screen.getByText("All four beats.").tagName, within(beats).getAllByRole("listitem").map((item) => item.querySelector("strong")?.textContent), !!within(beats).getByText("“no way”"), !!screen.getByText("0:08, inside the 0:05 to 0:30 window.")]).toEqual([true, "P", ["React.", "Their words.", "Their feeling.", "Stay."], true, true]);
+    expect([!!screen.getByText(/fell asleep on my shoulder/), screen.getByText("All four beats.").tagName, within(beats).getAllByRole("listitem").map((item) => item.querySelector("strong")?.textContent), !!within(beats).getByText("“no way”"), !!screen.getByText("0:08, inside the 0:05 to 0:30 window.")]).toEqual([true, "H1", ["React.", "Their words.", "Their feeling.", "Stay."], true, true]);
     // Confirm the lighter result: no numbers row, the next story as the main action, and trying again as a row
     expect([screen.queryByRole("region", { name: "Your numbers" }), screen.getByRole("link", { name: /^Next one/ }).getAttribute("href"), screen.getByRole("link", { name: "Try it again" }).getAttribute("href")?.includes("prompt=sls01")]).toEqual([null, "/session?mode=smalltalk&prompt=sls02", true]);
     // Draw History instead
@@ -159,6 +159,6 @@ describe("small talk", () => {
     // Draw it
     render(<SessionScreen sessionId="a1" repository={repository} now={NOW} />);
     // Confirm what they said, all four beats, and the next one
-    expect([!!(await screen.findByText("Their news")), screen.getByText("All four beats.").tagName, screen.getByRole("link", { name: /^Next one/ }).getAttribute("href")]).toEqual([true, "P", "/session?mode=smalltalk&prompt=sn02"]);
+    expect([!!(await screen.findByText("Their news")), screen.getByText("All four beats.").tagName, screen.getByRole("link", { name: /^Next one/ }).getAttribute("href")]).toEqual([true, "H1", "/session?mode=smalltalk&prompt=sn02"]);
   });
 });

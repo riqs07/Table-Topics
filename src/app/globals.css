@@ -250,6 +250,12 @@
     border-color: var(--vl-rule);
   }
 
+  /* A heading given focus after a page change shows no outline (it is not something to press) */
+  h1[tabindex="-1"]:focus {
+    /* No outline */
+    outline: none;
+  }
+
   /* Show a clear outline on whatever has keyboard focus */
   :focus-visible {
     /* Draw the outline in the focus role color */
@@ -286,5 +292,10 @@
   body {
     /* The space they take */
     padding-bottom: calc(var(--vl-tabbar-h) + var(--vl-band-h));
+  }
+  /* When moving through the page with a keyboard, scroll the focused control clear of the floating bars (WCAG 2.4.11; decision 76) */
+  html {
+    /* The tab bar, the floating band and a little air */
+    scroll-padding-bottom: 9.5rem;
   }
 }

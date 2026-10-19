@@ -9,7 +9,9 @@ import Link from "next/link";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { QUIET, RowLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRIMARY, QUIET, RowLink, TEXT_LINK } from "@/components/script/Buttons";
+// Load the loading placeholder
+import { Skeleton } from "@/components/script/Skeleton";
 import { Masthead } from "@/components/script/Masthead";
 import { PathMark } from "@/components/script/PathMark";
 // Load the shared screen starting points
@@ -102,6 +104,10 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         <p className="min-w-0 flex-1 font-display text-statement tracking-tight">{unit.name}</p>
       </div>
 
+      {/* Until today's date and the answers are read, a quiet placeholder, so the page appears in one piece (decision 76) */}
+      {!(today && answers) && <Skeleton blocks={["h-40", "h-28", "h-56"]} />}
+      {/* Everything that depends on them, at once */}
+      {today && answers && (<>
       {/* Today's question, with a way to get another */}
       {question && (
         <section aria-label={unit.words.practice} className="mt-4">
@@ -110,9 +116,9 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           {/* What is said (a story stays hidden until afterwards) */}
           <h1 className="mt-1 font-display text-statement tracking-tight">{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
           {/* Reply, or move along */}
-          <p className="mt-2 flex flex-wrap gap-x-4">
-            {/* Reply */}
-            <Link href={answerHref(question.id)} className={TEXT_LINK}>{unit.words.start}</Link>
+          <p className="mt-3 flex flex-wrap gap-3">
+            {/* Reply, the main choice */}
+            <Link href={answerHref(question.id)} className={PRIMARY}>{unit.words.start}</Link>
             {/* Another */}
             <button type="button" onClick={() => setOffset(offset + 1)} className={QUIET}>{unit.words.another}</button>
           </p>
@@ -255,6 +261,8 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           </ul>
         </section>
       )}
+
+      </>)}
 
       {/* The main action: this unit's next lesson, or its drill once the lessons are done */}
       {nextLesson ? (

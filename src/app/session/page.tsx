@@ -4,6 +4,8 @@
 import type { Metadata } from "next";
 // Load React's tool for waiting on the address to be read
 import { Suspense } from "react";
+// Load the frame shown while the address is read (decision 76)
+import { PageFallback } from "@/components/script/PageFallback";
 // Load the address-reading wrapper
 import { RecordingFromAddress } from "@/components/screens/RecordingFromAddress";
 
@@ -14,7 +16,7 @@ export const metadata: Metadata = { title: "Recording · VoiceLab" };
 export default function RecordingPage() {
   // The address is read in the browser, so wrap it for Next.js
   return (
-    <Suspense>
+    <Suspense fallback={<PageFallback title="VoiceLab" />}>
       <RecordingFromAddress />
     </Suspense>
   );

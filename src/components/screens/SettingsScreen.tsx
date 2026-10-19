@@ -365,7 +365,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {/* Where it lives */}
         <p className="text-ink-muted">Everything stays on this device; your browser’s speech service (Google in Chrome, Apple in Safari) turns speech into text.</p>
         {/* How safe it is from the browser clearing it, and when a copy was last saved (drawn in the browser only) */}
-        {today && safety && <p className="mt-2 text-footnote text-ink-muted">{safety.persisted ? "Protected from being cleared by the browser." : safety.iosSafari && !safety.installed ? "Safari may clear this if VoiceLab is not used for a while. Add it to your Home Screen to keep it." : "The browser may clear this if space runs low."} {lastCopyText(safety.daysSinceExport)}.</p>}
+        {/* Room is kept for this line while it loads, so the sections below do not jump (decision 76) */}
+        {!(today && safety) && <p aria-hidden="true" className="mt-2 min-h-12" />}
+        {today && safety && <p className="mt-2 min-h-12 text-footnote text-ink-muted">{safety.persisted ? "Protected from being cleared by the browser." : safety.iosSafari && !safety.installed ? "Safari may clear this if VoiceLab is not used for a while. Add it to your Home Screen to keep it." : "The browser may clear this if space runs low."} {lastCopyText(safety.daysSinceExport)}.</p>}
         {/* Export */}
         <button type="button" onClick={exportData} className={`${TEXT_LINK} mt-3`}>Export my data</button>
         {/* Import */}

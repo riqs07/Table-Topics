@@ -1,7 +1,7 @@
 // Load the type for page metadata such as the browser tab title
 import type { Metadata, Viewport } from "next";
 // Load the type for components that wrap other content
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 // Load the app's shared name so it is defined in one place
 import { APP_NAME } from "@/core/appInfo";
 // Load the font variables for every theme
@@ -10,6 +10,8 @@ import { fontVariables } from "@/theme/fonts";
 import { themeCss } from "@/theme/themeCss";
 // Load the background sender for waiting feedback
 import { FeedbackSync } from "@/components/FeedbackSync";
+// Load the focus mover for page changes
+import { RouteFocus } from "@/components/RouteFocus";
 // Load the offline worker registration
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 // Load the app theme
@@ -58,6 +60,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-dvh antialiased">
         {/* The current page */}
         {children}
+        {/* Move focus to each new page's main heading (decision 76) */}
+        <Suspense fallback={null}><RouteFocus /></Suspense>
         {/* Send waiting feedback when the app opens and when the connection returns */}
         <FeedbackSync />
         {/* Register the offline worker in the released app */}

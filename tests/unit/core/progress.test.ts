@@ -127,6 +127,14 @@ describe("warm-ups and progress", () => {
     expect(baselineProgress(latestIsWarmup)?.latest).toBe(3.1);
   });
 
+  // The headline and the trend line end on the same number: a retry never counts as "latest" (decision 76; the headline said 3.0 while the chart said 5.0)
+  it("ends the headline on the same first try as the trend line", () => {
+    // A retry after everything else, with a much lower rate
+    const withRetry = [...SESSIONS, makeSession({ id: "r9", createdAt: oct(12), fillersPerMinute: 0.5, retryOf: SESSIONS.at(-1)!.id })];
+    // Confirm the headline's latest is the trend's last point
+    expect([baselineProgress(withRetry)?.latest, trendSeries(withRetry).at(-1)]).toEqual([3.1, 3.1]);
+  });
+
   // History still lists warm-ups, so the record is complete
   it("keeps warm-ups in the history list", () => {
     // Confirm the warm-up has its own row

@@ -126,7 +126,7 @@ function Row({ row, now, talkTitles }: { row: HistoryRow; now: Date; talkTitles:
         {/* Day in italic, fixed width so prompts line up */}
         <span className="w-20 flex-none text-ink-muted max-md:w-16">{dayLabel(new Date(row.session.createdAt), now)}</span>
         {/* The prompt: wraps on a phone, cut short on a computer where the leader takes the space */}
-        <span className="min-w-0 flex-1 md:flex-none md:truncate">{promptText(row.session, talkTitles)}</span>
+        <span className="min-w-0 flex-1 md:flex-initial md:truncate">{promptText(row.session, talkTitles)}</span>
         {/* Dotted leader, on a computer only */}
         <span className="hidden min-w-6 flex-1 border-b border-dotted border-ink-muted md:block" />
         {/* The result */}
@@ -213,11 +213,11 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
 
       {/* Progress and sessions */}
       {sessions && sessions.length > 0 && today && (
-        <div className="md:grid md:grid-cols-[280px_1fr] md:gap-14 md:pt-8">
+        <div className="md:grid md:grid-cols-[280px_minmax(0,1fr)] md:gap-14 md:pt-8">
           {/* Progress (top on a phone, margin on a computer) */}
           <aside className="mt-5 md:mt-0">
             {/* Progress as one sentence, or a note that there is only one recording so far */}
-            <p className="font-display text-cue">{progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</p>
+            <h1 className="font-display text-cue font-semibold tracking-tight">{progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h1>
             {/* The trend, once there are two first tries */}
             {trend.length >= 2 && <Trend values={trend} />}
             {/* Listen to the first recording, if its audio is kept */}

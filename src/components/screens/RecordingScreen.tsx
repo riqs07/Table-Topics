@@ -51,10 +51,14 @@ import { markMicExplained, readMicExplained } from "@/data/micExplained";
 import { loadDailyPlan } from "@/data/dailyPlan";
 // Load the shared button looks
 import { PRESS, QUIET, TEXT_LINK } from "@/components/script/Buttons";
+// Load the screen hold
+import { holdScreenAwake } from "@/audio/wakeLock";
 // Load the microphone for the start button
 import { MicrophoneIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the request that keeps saved practice from being cleared
 import { requestPersistentStorage } from "@/data/storageSafety";
+// Load the tab title helper
+import { usePageTitle } from "@/components/screens/usePageTitle";
 
 // What the screen is given
 interface RecordingScreenProps {
@@ -749,6 +753,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     }
     // Start recording audio
     const capture = services.createCapture(stream);
+    // If the microphone stops by itself (the phone locked, another app took it), stop and keep what was said (decision 76)
+    stream.getAudioTracks?.().forEach((track) => track.addEventListener("ended", () => void stop(), { once: true }));
     // Start live transcription
     const transcriber = services.createTranscriber();
     // Note the start time
@@ -968,6 +974,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Stop the thinking countdown when the screen closes
   useEffect(() => endThinking, [endThinking]);
 
+  // Keep the screen on while thinking and speaking, so the phone does not lock mid-speech (decision 76)
+  const holdAwake = stage === "thinking" || stage === "recording";
+  // Hold it for as long as that lasts
+  useEffect(() => (holdAwake ? holdScreenAwake() : undefined), [holdAwake]);
+
   // Whether recording is under way
   const recording = stage === "recording";
   // The problem to explain, if any
@@ -988,6 +999,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const storyHidden = smallTalk?.unit === "listening" && !smallTalk.lesson;
   // The page title for this kind of session
   const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
+  // Name the tab after it
+  usePageTitle(title);
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "smalltalk" ? `space to hear ${unit ? "them" : "the question"}` : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)

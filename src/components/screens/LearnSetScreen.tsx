@@ -24,6 +24,8 @@ import { loadLearnProgress } from "@/data/learnProgress";
 import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
+// Load the tab title helper
+import { usePageTitle } from "@/components/screens/usePageTitle";
 
 // Draw a set
 export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: string }) {
@@ -52,6 +54,8 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
 
   // The set
   const set = LEARN_SETS.find((item) => item.id === setId);
+  // Name the tab after the set
+  usePageTitle(set?.name);
   // Its cards
   const cards = LEARN_CARDS.filter((card) => card.set === setId);
   // The first card not yet read in this set

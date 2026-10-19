@@ -31,6 +31,9 @@ import { SECTION_HEADING } from "@/components/script/textStyles";
 import { PAGE } from "@/components/script/layout";
 // Load today's mission and past tries
 import { MissionSection } from "@/components/script/MissionSection";
+// Load the loading placeholder and the mission record type
+import { Skeleton } from "@/components/script/Skeleton";
+import type { MissionRecord } from "@/data/records";
 
 // Draw the Learn page
 export function LearnScreen(props: ScreenProps) {
@@ -40,6 +43,8 @@ export function LearnScreen(props: ScreenProps) {
   const [progress, setLoaded] = useState<LearnProgress | null>(null);
   // Scenario progress, once loaded
   const [scenarios, setScenarios] = useState<Record<string, ScenarioProgress> | null>(null);
+  // Mission tries, once loaded (read here so the whole page appears at once; decision 76)
+  const [missions, setMissions] = useState<MissionRecord[] | null>(null);
 
   // Load progress once in the browser
   useEffect(() => {
@@ -56,6 +61,11 @@ export function LearnScreen(props: ScreenProps) {
     loadScenarioProgress(repo, today).then((loaded) => {
       // Keep it if still open
       if (!cancelled) setScenarios(loaded);
+    });
+    // And the mission tries
+    repo.getSettings(today).then((settings) => {
+      // Keep them if still open
+      if (!cancelled) setMissions(settings.missions ?? []);
     });
     // Mark as closed
     return () => {
@@ -78,8 +88,12 @@ export function LearnScreen(props: ScreenProps) {
       {/* The page's name, and what is here */}
       <PageTitle title="Learn">What the research says, and one move to try for real each day.</PageTitle>
 
+      {/* Until everything is read, a quiet placeholder, so nothing jumps (decision 76) */}
+      {!(today && progress && scenarios && missions) && <Skeleton blocks={["h-72", "h-24", "h-28", "h-28"]} />}
+      {/* Everything else, at once */}
+      {today && progress && scenarios && missions && (<>
       {/* Today's mission, and how tries have gone (decision 66) */}
-      {today && <MissionSection repo={repo} today={today} />}
+      <MissionSection repo={repo} today={today} initial={missions} />
 
 
       {/* Practice: quick scenarios */}
@@ -105,6 +119,8 @@ export function LearnScreen(props: ScreenProps) {
           );
         })}
       </ul>
+
+      </>)}
 
       {/* The main action: the next card */}
       {upNext && <ActionBand action="Next card" aside={nextSet?.name ?? "about a minute"} href={`/learn/card?id=${upNext.id}`} />}

@@ -5,10 +5,10 @@ import { Atkinson_Hyperlegible_Next, Fraunces, Newsreader, Young_Serif } from "n
 
 // Notebook body font: designed for readability
 const atkinson = Atkinson_Hyperlegible_Next({ subsets: ["latin"], display: "swap", variable: "--font-atkinson" });
-// Notebook display font: a soft serif for headings and prompts
-const youngSerif = Young_Serif({ weight: "400", subsets: ["latin"], display: "swap", variable: "--font-young-serif" });
-// Calm studio font (script-page direction): an editorial serif with italics and optical sizes
-const newsreader = Newsreader({ subsets: ["latin"], style: ["normal", "italic"], axes: ["opsz"], display: "swap", variable: "--font-newsreader" });
+// Notebook display font: a soft serif for headings and prompts (not preloaded: only the style page uses it; decision 76)
+const youngSerif = Young_Serif({ weight: "400", subsets: ["latin"], display: "swap", variable: "--font-young-serif", preload: false });
+// The earlier calm studio serif, with italics and optical sizes (not preloaded: only the style page uses it now; decision 76)
+const newsreader = Newsreader({ subsets: ["latin"], style: ["normal", "italic"], axes: ["opsz"], display: "swap", variable: "--font-newsreader", preload: false });
 
 // Class names that define every font variable; put on the page root so any theme can use them
 // Fraunces: the display face for headlines and numbers (decision 69)

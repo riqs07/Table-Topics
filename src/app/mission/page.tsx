@@ -2,6 +2,8 @@
 import type { Metadata } from "next";
 // Load React's boundary for reading the address
 import { Suspense } from "react";
+// Load the frame shown while the address is read (decision 76)
+import { PageFallback } from "@/components/script/PageFallback";
 // Load the screen that reads the address
 import { MissionFromAddress } from "@/components/screens/MissionFromAddress";
 
@@ -12,7 +14,7 @@ export const metadata: Metadata = { title: "Mission · VoiceLab" };
 export default function MissionPage() {
   // The debrief, once the address is read
   return (
-    <Suspense>
+    <Suspense fallback={<PageFallback title="Mission" />}>
       {/* The debrief */}
       <MissionFromAddress />
     </Suspense>

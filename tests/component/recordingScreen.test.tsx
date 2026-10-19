@@ -38,6 +38,8 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
   let onText: (text: LiveText) => void = () => {};
   // Callback for problems
   let onProblem: (problem: RecordingProblem) => void = () => {};
+  // The microphone's one track, which a check can end
+  const track = new EventTarget();
   // The services the screen uses
   const services: RecordingServices = {
     // Speech support, on unless switched off
@@ -48,8 +50,8 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
       micAsks += 1;
       // Refuse the way the browser does, if asked to
       if (options.micError) throw new DOMException("refused", options.micError);
-      // Otherwise hand back a stand-in stream with no tracks
-      return { getTracks: () => [] } as unknown as MediaStream;
+      // Otherwise hand back a stand-in stream with one audio track
+      return { getTracks: () => [], getAudioTracks: () => [track] } as unknown as MediaStream;
     },
     // A voice that notes what it said, only when the check asks for one
     ...(options.voice ? { speak: async (text: string) => void said.push(text) } : {}),
@@ -71,7 +73,7 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
     createCapture: () => ({ level: () => 0.5, stop: async () => new Blob(["voice"]) }),
   };
   // Hand back the services and ways to drive them
-  return { services, say: (text: LiveText) => act(() => onText(text)), fail: (problem: RecordingProblem) => act(() => onProblem(problem)), micAsks: () => micAsks, said };
+  return { services, say: (text: LiveText) => act(() => onText(text)), fail: (problem: RecordingProblem) => act(() => onProblem(problem)), micAsks: () => micAsks, said, endMic: () => act(() => void track.dispatchEvent(new Event("ended"))) };
 }
 
 // A clock the check controls, in milliseconds
@@ -990,6 +992,24 @@ describe("RecordingScreen", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // Confirm it was saved as free talk
     expect((await repository.listSessions())[0]).toMatchObject({ mode: "free", promptId: "free" });
+  });
+
+  // A microphone that stops by itself (the phone locked) saves what was said instead of hanging (decision 76)
+  it("saves what was said when the microphone stops by itself", async () => {
+    // Draw a one-minute session
+    const { repository, clock, navigate, fake } = draw();
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: "Stop" });
+    // Speak for 20 seconds
+    clock.advance(20_000);
+    // The phone takes the microphone away
+    await fake.endMic();
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm it was saved
+    expect((await repository.listSessions()).length).toBe(1);
   });
 
   // The voice shape is the start and stop button, and there is no band at the bottom (decisions 74 and 75)
