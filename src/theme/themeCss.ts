@@ -27,16 +27,16 @@ function themeBlocks(id: string, theme: Theme): string {
     `${base} {\n${paletteVariables(theme.colors.light)}\n--vl-font-body: ${theme.fonts.body};\n--vl-font-display: ${theme.fonts.display};\ncolor-scheme: light;\n}`,
     // Dark colors when dark mode is forced (used by the style page)
     `${base}[data-mode="dark"] {\n${paletteVariables(theme.colors.dark)}\ncolor-scheme: dark;\n}`,
-    // Dark colors when the phone prefers dark, unless light is forced
-    `@media (prefers-color-scheme: dark) {\n${base}:not([data-mode="light"]) {\n${paletteVariables(theme.colors.dark)}\ncolor-scheme: dark;\n}\n}`,
+    // Dark colors when the user chose to follow the device and it prefers dark (light is the default, decision 70)
+    `@media (prefers-color-scheme: dark) {\n${base}[data-mode="system"] {\n${paletteVariables(theme.colors.dark)}\ncolor-scheme: dark;\n}\n}`,
     // Each area's own surfaces, light, forced dark, and dark when the phone prefers it; the whole page takes them while an area is showing, so the tab bar and the edges match (decision 69)
     ...Object.entries(theme.areas ?? {}).flatMap(([area, palettes]) => [
       // Light
       `${base}:has([data-area="${area}"]), ${base} [data-area="${area}"] {\n${partialVariables(palettes.light)}\n}`,
       // Forced dark
       `${base}[data-mode="dark"]:has([data-area="${area}"]), ${base}[data-mode="dark"] [data-area="${area}"] {\n${partialVariables(palettes.dark)}\n}`,
-      // Preferred dark
-      `@media (prefers-color-scheme: dark) {\n${base}:not([data-mode="light"]):has([data-area="${area}"]), ${base}:not([data-mode="light"]) [data-area="${area}"] {\n${partialVariables(palettes.dark)}\n}\n}`,
+      // Preferred dark, when following the device
+      `@media (prefers-color-scheme: dark) {\n${base}[data-mode="system"]:has([data-area="${area}"]), ${base}[data-mode="system"] [data-area="${area}"] {\n${partialVariables(palettes.dark)}\n}\n}`,
     ]),
   ].join("\n");
 }

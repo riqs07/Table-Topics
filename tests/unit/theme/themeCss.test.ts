@@ -26,10 +26,10 @@ describe("themeCss", () => {
     for (const role of ROLES) expect(css).toContain(`--vl-${role}: ${THEMES.notebook.colors.light[role]};`);
   });
 
-  // Dark mode follows the phone's setting unless light is forced
-  it("switches to dark colors when the phone prefers dark", () => {
-    // Confirm the media query and the selector that respects a forced light mode
-    expect(css).toContain(`@media (prefers-color-scheme: dark) {\n[data-theme="notebook"]:not([data-mode="light"]) {`);
+  // Light is the default; dark follows the phone only when the user chose Auto (decision 70)
+  it("switches to dark colors when the phone prefers dark only when following the device", () => {
+    // Confirm the media query applies only with data-mode="system", never without an attribute
+    expect([css.includes(`@media (prefers-color-scheme: dark) {\n[data-theme="notebook"][data-mode="system"] {`), css.includes(`:not([data-mode="light"])`)]).toEqual([true, false]);
     // Confirm a dark value is present
     expect(css).toContain(`--vl-paper: ${THEMES.notebook.colors.dark.paper};`);
   });
@@ -43,7 +43,7 @@ describe("themeCss", () => {
   // An area (the recording stage) gets its own surfaces, and the whole page takes them while it shows (decision 69)
   it("writes each area's colours for the area and for the page around it, in light and dark", () => {
     // Confirm the light, forced-dark and preferred-dark selectors
-    expect([css.includes(`[data-theme="calm-studio"]:has([data-area="stage"]), [data-theme="calm-studio"] [data-area="stage"] {`), css.includes(`[data-theme="calm-studio"][data-mode="dark"]:has([data-area="stage"])`), css.includes(`[data-theme="calm-studio"]:not([data-mode="light"]):has([data-area="stage"])`), css.includes(`--vl-paper-raised: ${THEMES["calm-studio"].areas.stage.light["paper-raised"]};`)]).toEqual([true, true, true, true]);
+    expect([css.includes(`[data-theme="calm-studio"]:has([data-area="stage"]), [data-theme="calm-studio"] [data-area="stage"] {`), css.includes(`[data-theme="calm-studio"][data-mode="dark"]:has([data-area="stage"])`), css.includes(`[data-theme="calm-studio"][data-mode="system"]:has([data-area="stage"])`), css.includes(`--vl-paper-raised: ${THEMES["calm-studio"].areas.stage.light["paper-raised"]};`)]).toEqual([true, true, true, true]);
   });
 
   // Fonts are part of the theme too

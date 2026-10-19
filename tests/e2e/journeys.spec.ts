@@ -457,6 +457,20 @@ test("Mission: predict, try, debrief, compare", async ({ page }) => {
 });
 
 // Light or dark: chosen in Settings, kept after a reload, with no flash of the other mode and a clean console
+test("Appearance: light by default, even on a phone set to dark", async ({ page }) => {
+  // The phone prefers dark
+  await page.emulateMedia({ colorScheme: "dark" });
+  // Open Today with nothing saved
+  await page.goto("/");
+  // The paper is the light one (decision 70)
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#f3ece2");
+  // Choose Auto in Settings
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Auto" }).click();
+  // Now it follows the phone and turns dark
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#161917");
+});
+
 test("Appearance: choose dark in Settings and it stays dark after a reload", async ({ page }) => {
   // Open Settings
   await page.goto("/settings");

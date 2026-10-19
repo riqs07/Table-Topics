@@ -14,22 +14,42 @@ beforeEach(() => {
 
 // Group the checks about the light and dark choice
 describe("colorMode", () => {
-  // Nothing saved, or something unknown, means follow the device
-  it("follows the device unless light or dark was saved", () => {
+  // Nothing saved, or something unknown, means light (decision 70)
+  it("is light unless dark or follow-the-device was saved", () => {
     // Nothing saved
     const empty = readColorMode();
     // An unknown word
     localStorage.setItem("voicelab-color-mode", "purple");
-    // Confirm both follow the device
-    expect([empty, readColorMode()]).toEqual(["system", "system"]);
+    // Confirm both are light
+    expect([empty, readColorMode()]).toEqual(["light", "light"]);
   });
 
   // A choice is remembered and shown
   it("saves a choice and applies it to the page", () => {
-    // Choose light
-    saveColorMode("light");
+    // Choose to follow the device
+    saveColorMode("system");
     // Confirm it is read back and shown
-    expect([readColorMode(), document.documentElement.getAttribute("data-mode")]).toEqual(["light", "light"]);
+    const followed = [readColorMode(), document.documentElement.getAttribute("data-mode")];
+    // Back to light
+    saveColorMode("light");
+    // Confirm light clears both the override and the stored word
+    expect([followed, [readColorMode(), document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual([["system", "system"], ["light", null, null]]);
+  });
+
+  // The early script also applies a saved follow-the-device choice, and leaves light alone
+  it("has an early script that applies a saved device choice and ignores anything else", () => {
+    // Save follow-the-device
+    localStorage.setItem("voicelab-color-mode", "system");
+    // Run the script
+    new Function(COLOR_MODE_SCRIPT)();
+    // What it set
+    const followed = document.documentElement.getAttribute("data-mode");
+    // Now an unknown word, from a clean page
+    document.documentElement.removeAttribute("data-mode");
+    localStorage.setItem("voicelab-color-mode", "purple");
+    new Function(COLOR_MODE_SCRIPT)();
+    // Confirm
+    expect([followed, document.documentElement.getAttribute("data-mode")]).toEqual(["system", null]);
   });
 
   // The early script applies a saved choice before the page is drawn

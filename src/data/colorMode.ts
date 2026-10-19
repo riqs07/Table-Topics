@@ -1,4 +1,4 @@
-// Light, dark, or follow the device: kept in this browser only, like the welcome flag (not part of the data export; decision 60)
+// Light, dark, or follow the device: kept in this browser only, like the welcome flag (not part of the data export; decision 60); light unless something else was chosen (decision 70)
 
 // Key the choice is stored under (app-specific, as setup rule S1 asks)
 const KEY = "voicelab-color-mode";
@@ -6,14 +6,14 @@ const KEY = "voicelab-color-mode";
 // The three choices
 export type ColorMode = "system" | "light" | "dark";
 
-// Every choice, in the order Settings shows them
+// Every choice, in the order Settings shows them (the default first)
 export const COLOR_MODES: ReadonlyArray<{ id: ColorMode; name: string }> = [
-  // Follow the phone or computer
-  { id: "system", name: "Auto" },
-  // Always light
+  // Always light (the default)
   { id: "light", name: "Light" },
   // Always dark
   { id: "dark", name: "Dark" },
+  // Follow the phone or computer
+  { id: "system", name: "Auto" },
 ];
 
 // Whether a stored value is one of the choices
@@ -22,27 +22,27 @@ function isColorMode(value: string | null): value is ColorMode {
   return value === "system" || value === "light" || value === "dark";
 }
 
-// The saved choice (following the device when nothing is saved or storage is blocked)
+// The saved choice (light when nothing is saved or storage is blocked)
 export function readColorMode(): ColorMode {
   // Storage can be blocked (private browsing), so guard the read
   try {
     // The stored word
     const stored = localStorage.getItem(KEY);
     // Use it if it is a known choice
-    return isColorMode(stored) ? stored : "system";
+    return isColorMode(stored) ? stored : "light";
   } catch {
-    // Blocked storage: follow the device
-    return "system";
+    // Blocked storage: light
+    return "light";
   }
 }
 
-// Show a choice on the page: the theme CSS reads data-mode on the page root (none means follow the device)
+// Show a choice on the page: the theme CSS reads data-mode on the page root (none means light)
 export function applyColorMode(mode: ColorMode): void {
   // The page root
   const root = document.documentElement;
-  // Following the device: no override
-  if (mode === "system") root.removeAttribute("data-mode");
-  // Otherwise force light or dark
+  // Light: no attribute needed
+  if (mode === "light") root.removeAttribute("data-mode");
+  // Otherwise dark, or follow the device
   else root.setAttribute("data-mode", mode);
 }
 
@@ -52,8 +52,8 @@ export function saveColorMode(mode: ColorMode): void {
   applyColorMode(mode);
   // Storage can be blocked, so guard the write
   try {
-    // Following the device needs nothing stored
-    if (mode === "system") localStorage.removeItem(KEY);
+    // Light, the default, needs nothing stored
+    if (mode === "light") localStorage.removeItem(KEY);
     // Otherwise remember the word
     else localStorage.setItem(KEY, mode);
   } catch {
@@ -61,5 +61,5 @@ export function saveColorMode(mode: ColorMode): void {
   }
 }
 
-// A tiny script for the page head that applies the saved choice before anything is drawn, so a dark choice never flashes light first
-export const COLOR_MODE_SCRIPT = `try{var m=localStorage.getItem(${JSON.stringify(KEY)});if(m==="light"||m==="dark")document.documentElement.setAttribute("data-mode",m)}catch(e){}`;
+// A tiny script for the page head that applies the saved choice before anything is drawn, so a dark or device choice never flashes light first
+export const COLOR_MODE_SCRIPT = `try{var m=localStorage.getItem(${JSON.stringify(KEY)});if(m==="dark"||m==="system")document.documentElement.setAttribute("data-mode",m)}catch(e){}`;

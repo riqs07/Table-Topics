@@ -57,14 +57,20 @@ describe("SettingsScreen", () => {
     localStorage.clear();
     // Draw the screen
     render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Light is chosen to begin with (decision 70)
+    const start = screen.getByRole("button", { name: "Light" }).getAttribute("aria-pressed");
     // Choose dark
     await userEvent.click(await screen.findByRole("button", { name: "Dark" }));
     // What the page and storage say after dark
     const dark = [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode"), screen.getByRole("button", { name: "Dark" }).getAttribute("aria-pressed")];
-    // Go back to the device's choice
+    // Follow the device
     await userEvent.click(screen.getByRole("button", { name: "Auto" }));
-    // Confirm dark was applied and saved, then cleared
-    expect([dark, [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual([["dark", "dark", "true"], [null, null]]);
+    // What the page and storage say after Auto
+    const auto = [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")];
+    // Back to light
+    await userEvent.click(screen.getByRole("button", { name: "Light" }));
+    // Confirm light first, then dark, then the device, then light again with nothing stored
+    expect([start, dark, auto, [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual(["true", ["dark", "dark", "true"], ["system", "system"], [null, null]]);
   });
 
   // Deleting everything takes two deliberate taps
