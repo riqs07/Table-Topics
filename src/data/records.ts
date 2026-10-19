@@ -213,6 +213,12 @@ export interface SettingsRecord {
   scenarios?: Record<string, ScenarioProgress>;
   // Steps of today's practice put off with "Can't speak now?": the day (YYYY-MM-DD) and each step's key; another day's list means nothing (decision 77; missing until the first skip)
   skipped?: { day: string; steps: string[] };
+  // Hide the run and the week's squares on Today (decision 78; missing means shown)
+  hideStreak?: boolean;
+  // When the user practises, in their words, such as "after my morning coffee" (decision 78; missing until chosen)
+  anchor?: string;
+  // The daily reminder's time, "HH:MM", for the calendar file (decision 78; missing until chosen)
+  reminderTime?: string;
 }
 
 // What each stored collection holds

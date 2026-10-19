@@ -1,32 +1,22 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the sentence builders being checked
-import { dayLabel, formatRate, progressSentence, streakSentence } from "@/core/copy";
+import { dayLabel, formatRate, progressSentence, streakLines } from "@/core/copy";
 
-// Group the checks about the streak sentence on Home
-describe("streakSentence", () => {
-  // No streak, no sentence
-  it("is empty with no streak", () => {
-    // Confirm nothing is said
-    expect(streakSentence(0)).toBe("");
+// Group the checks about the practice run lines on Today (decision 78)
+describe("streakLines", () => {
+  // A run as the page gets it
+  const run = (lastSeven: number, runDays: number, firstDay = false, any = true) => ({ lastSeven, runDays, firstDay, any });
+  // Nothing before the first practice, the first day plainly, and a welcome after time away
+  it("says nothing, then the first day, then welcomes back", () => {
+    // Confirm the three
+    expect([streakLines(run(0, 0, false, false)), streakLines(run(1, 1, true)), streakLines(run(0, 0))]).toEqual([[], ["First day."], ["Welcome back."]]);
   });
 
-  // The first day is named plainly
-  it("names the first day", () => {
-    // Confirm the wording
-    expect(streakSentence(1)).toBe("First day.");
-  });
-
-  // Small numbers are written as words, like a printed page
-  it("writes small numbers as words", () => {
-    // Confirm the wording for four days
-    expect(streakSentence(4)).toBe("Fourth day running.");
-  });
-
-  // Large numbers use digits
-  it("uses digits after ten", () => {
-    // Confirm the wording for 23 days
-    expect(streakSentence(23)).toBe("Day 23 running.");
+  // Days in the last seven lead; the run joins them from a week of practice
+  it("leads with the last seven days and adds the run from day 7", () => {
+    // Confirm before and after a week
+    expect([streakLines(run(4, 6)), streakLines(run(5, 12))]).toEqual([["4 of the last 7 days."], ["5 of the last 7 days.", "12 practice days and counting."]]);
   });
 });
 

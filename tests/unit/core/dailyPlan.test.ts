@@ -26,10 +26,18 @@ const regularPlan = (day: Date, extra: Partial<Parameters<typeof dailyPlan>[0]> 
 describe("dailyPlan", () => {
   // Every day: a Learn card, the warm-up reading, then two picks from the bank
   it("starts with a Learn card, then the warm-up, then two picks", () => {
-    // A new user's plan and a regular user's
-    const plans = [dailyPlan({ day: DAY, sessions: [], focusId: "pausing", nextTalk: null }), regularPlan(DAY)];
-    // Confirm the shape of both
-    expect(plans.map((plan) => [plan.length, plan[0]?.kind, plan[0]?.promptId, plan[1]?.label, plan[1]?.mode])).toEqual([0, 1].map(() => [4, "card", LEARN_CARDS[0]?.id, "Warm up", "read"]));
+    // A regular user's plan
+    const plan = regularPlan(DAY);
+    // Confirm its shape
+    expect([plan.length, plan[0]?.kind, plan[0]?.promptId, plan[1]?.label, plan[1]?.mode]).toEqual([4, "card", LEARN_CARDS[0]?.id, "Warm up", "read"]);
+  });
+
+  // Day one opens with half a minute of free talk, then the card, then two picks: no reading aloud first (decision 78)
+  it("opens day one with free talk", () => {
+    // A new user's plan, and the same user's on day two (one session yesterday)
+    const [first, second] = [dailyPlan({ day: DAY, sessions: [], focusId: "pausing", nextTalk: null }), dailyPlan({ day: DAY, sessions: [daysAgo(1)], focusId: "pausing", nextTalk: null })];
+    // Confirm free talk then the card on day one, and the usual card then warm-up on day two
+    expect([first.length, first[0]?.mode, first[0]?.title, first[1]?.kind, second[0]?.kind, second[1]?.label]).toEqual([4, "free", "Say anything about your day", "card", "card", "Warm up"]);
   });
 
   // The two picks come from two different groups, a different pair each day, and a group never offers the same kind twice in a row

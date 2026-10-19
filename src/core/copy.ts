@@ -4,20 +4,19 @@
 import { daysBetween } from "@/core/dates";
 // Load the progress type
 import type { BaselineProgress } from "@/core/progress";
+// Load the practice run type
+import type { PracticeRun } from "@/core/streak";
 
-// Ordinal words for the first ten days, as a printed page would write them
-const ORDINALS = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"];
-
-// The streak as a short sentence for Home
-export function streakSentence(days: number): string {
-  // No streak, nothing to say
-  if (days <= 0) return "";
-  // The first day stands alone
-  if (days === 1) return "First day.";
-  // Days two to ten as words
-  if (days <= ORDINALS.length) return `${ORDINALS[days - 1]} day running.`;
-  // Longer streaks in digits
-  return `Day ${days} running.`;
+// The practice run as one or two short lines for Today (decision 78): days in the last seven first; the run itself only from a week of practice; never a broken run
+export function streakLines(run: PracticeRun): string[] {
+  // Nothing yet, nothing to say
+  if (!run.any) return [];
+  // The very first day stands alone
+  if (run.firstDay) return ["First day."];
+  // Back after more than a week: a welcome, not a zero
+  if (run.lastSeven === 0) return ["Welcome back."];
+  // Days in the last seven, and the run once it is a week of practice
+  return [`${run.lastSeven} of the last 7 days.`, ...(run.runDays >= 7 ? [`${run.runDays} practice days and counting.`] : [])];
 }
 
 // A per-minute rate written with one decimal place

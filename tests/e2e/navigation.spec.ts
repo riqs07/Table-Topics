@@ -5,6 +5,8 @@ import { NAV_LINKS, NAV_PAGES, expect, test } from "./support/fixtures";
 for (const start of NAV_PAGES) {
   // Every link works from here
   test(`navigation from ${start.path}`, async ({ page }) => {
+    // Past the welcome, which has no tabs (decision 78)
+    await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
     // Try each link in turn
     for (const link of NAV_LINKS) {
       // Load the starting page fresh

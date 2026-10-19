@@ -601,8 +601,10 @@ describe("RecordingScreen", () => {
 
   // "Can't speak now?" puts a speaking step off for today, without counting it as done, and moves on to the first open step (decision 77)
   it("puts a step off for today and moves on", async () => {
-    // An empty repository and today's plan in it
+    // A repository past day one (a session yesterday), so the plan is the card, the warm-up and two picks
     const repository = createRepository(new MemoryStore());
+    // Yesterday's session
+    await repository.saveSession(makeSession({ id: "yesterday", createdAt: new Date(2026, 9, 12, 9).toISOString() }));
     // The plan on the fake clock's day
     const plan = await loadDailyPlan(repository, new Date(2026, 9, 13, 10));
     // The warm-up: step 2

@@ -1,4 +1,4 @@
-// Today's practice: four steps, a Learn card, the warm-up reading, then two kinds of practice picked from the bank, taken in turn by day (decision 51; see documents/plan-daily-mix-and-connection.md)
+// Today's practice: four steps, a Learn card, the warm-up reading, then two kinds of practice picked from the bank, taken in turn by day (decision 51; see documents/plan-daily-mix-and-connection.md); day one opens with free talk instead (decision 78)
 
 // Load the day pickers and lookups for the spoken prompts and texts
 import { PAUSE_DRILLS, PASSAGES, bookendForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
@@ -290,12 +290,17 @@ function inFirstDays(before: ReadonlyArray<SessionRecord>): boolean {
   return new Set(before.map((session) => dayKey(new Date(session.createdAt)))).size < 3;
 }
 
-// Today's steps: the Learn card (when there is one), the warm-up reading, then two picks from the bank
+// The very first step on day one: half a minute of free talk, so the first thing a new user does is speak (decision 78)
+const FIRST_TALK: PlanStep = { lane: "warmup", kind: "session", label: "Free talk", title: "Say anything about your day", mode: "free", promptId: "free", minutes: 1, href: "/session?mode=free&prompt=free" };
+
+// Today's steps: the Learn card (when there is one), the warm-up reading, then two picks from the bank; on day one, free talk comes first in place of the reading
 export function dailyPlan(input: PlanInput): PlanStep[] {
   // Sessions before today, so the plan stays the same all day
   const before = beforeToday(input.sessions, input.day);
   // The day's Learn card, when there is one
   const card = learnStep(input);
+  // Day one: free talk, the card, then the two picks
+  if (before.length === 0) return [FIRST_TALK, ...(card ? [card] : []), ...picks(input, before, true)];
   // The card, the warm-up, then the two picks
   return [...(card ? [card] : []), warmUp(before), ...picks(input, before, inFirstDays(before))];
 }

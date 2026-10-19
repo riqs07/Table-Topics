@@ -37,6 +37,8 @@ import { markExported, readSafetyFacts } from "@/data/storageSafety";
 import { lastCopyText, type SafetyFacts } from "@/core/storageSafety";
 // Load the light and dark choice
 import { COLOR_MODES, readColorMode, saveColorMode, type ColorMode } from "@/data/colorMode";
+// Load the practice time section
+import { PracticeTime } from "@/components/script/PracticeTime";
 // Load the timing tones choice
 import { readTimingTones, saveTimingTones } from "@/data/timingTones";
 // Load the shared button looks
@@ -189,6 +191,16 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     };
   }, [repo, today]);
 
+  // Save changed settings and say so
+  async function saveSettingsWith(next: SettingsRecord, said: string) {
+    // Save them
+    await repo.saveSettings(next);
+    // Show the new values
+    setSettings(next);
+    // Say what happened
+    setMessage(said);
+  }
+
   // Let the coach read the user's notes, or stop it
   async function changeShareNotes(event: ChangeEvent<HTMLInputElement>) {
     // Nothing to do before settings load
@@ -334,6 +346,26 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}
       {today && <Section title="Appearance">
         <ColorModeChoice />
+      </Section>}
+
+      {/* When the user practises, and a daily reminder (decision 78) */}
+      {settings && <Section title="Your practice time" id="practice-time">
+        <PracticeTime settings={settings} onSave={(next, said) => void saveSettingsWith(next, said)} />
+      </Section>}
+
+      {/* Whether Today shows the run (decision 78) */}
+      {settings && <Section title="Today">
+        <label className="flex min-h-11 items-start gap-3">
+          {/* The switch */}
+          <input type="checkbox" checked={settings.hideStreak !== true} onChange={(event) => void saveSettingsWith({ ...settings, hideStreak: !event.target.checked }, "Saved.")} className="mt-1 size-5 flex-none accent-accent" />
+          {/* What it does */}
+          <span>
+            {/* The choice */}
+            Show my practice days
+            {/* What that means */}
+            <span className="block text-footnote text-ink-muted">Days practised in the last week, and your run. Two rest days a week never break a run, and two days in a row after a longer break win it back.</span>
+          </span>
+        </label>
       </Section>}
 
       {/* Cues while speaking (drawn in the browser only, where the saved choice can be read) */}

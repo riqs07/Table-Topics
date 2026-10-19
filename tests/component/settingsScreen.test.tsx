@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Load the test helpers from the test runner
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and finding things on it
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 // Load the tool for acting like a user
@@ -91,6 +91,44 @@ describe("SettingsScreen", () => {
     await userEvent.click(toggle);
     // Confirm off, on, then off with nothing stored
     expect([start, on, localStorage.getItem("voicelab-timing-tones")]).toEqual([false, "on", null]);
+  });
+
+  // A practice time is saved from a quick pick, and the reminder downloads a calendar file (decision 78)
+  it("saves a practice time and makes a calendar reminder", async () => {
+    // Stand in for the browser's object URLs
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:reminder"), revokeObjectURL: vi.fn() });
+    // Catch the download instead of navigating
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // Pick a moment
+    await userEvent.click(await screen.findByRole("button", { name: "before bed" }));
+    // Make the reminder
+    await userEvent.click(screen.getByRole("button", { name: "Add a daily reminder to my calendar" }));
+    // The saved settings
+    const saved = await repository.getSettings(NOW);
+    // Confirm the moment and time were saved, and a file was handed over
+    expect([saved.anchor, saved.reminderTime, click.mock.calls.length]).toEqual(["before bed", "08:00", 1]);
+    // Put clicking back
+    click.mockRestore();
+  });
+
+  // The run on Today can be hidden (decision 78)
+  it("hides the practice days on Today", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // The switch, on to begin with
+    const toggle = await screen.findByRole("checkbox", { name: /Show my practice days/ });
+    // Read it
+    const start = (toggle as HTMLInputElement).checked;
+    // Switch it off
+    await userEvent.click(toggle);
+    // Confirm on, then saved as hidden
+    await waitFor(async () => expect([start, (await repository.getSettings(NOW)).hideStreak]).toEqual([true, true]));
   });
 
   // Deleting everything takes two deliberate taps

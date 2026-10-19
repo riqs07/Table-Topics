@@ -7,10 +7,12 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   await useStandIns(page);
   // Start at home
   await page.goto("/");
-  // A first visit asks one question: choose speaking on the spot
+  // A first visit has one Start and no tabs (decision 78)
+  await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
+  // Start
   await page.getByRole("link", { name: "Start", exact: true }).click();
-  // It opens today's first step, a Learn card
-  await expect(page).toHaveURL(/\/learn\/card\?id=[a-z0-9-]+&plan=1/);
+  // It opens today's first step: on day one, free talk (decision 78)
+  await expect(page).toHaveURL(/\/session\?mode=free&prompt=free&plan=1/);
   // Close it (practising hides the tab bar), back to Today
   await page.getByRole("link", { name: "Close, back to Today" }).click();
   // Go to Practice instead
@@ -136,6 +138,8 @@ test("Event prep: date a talk, follow today's step, see progress", async ({ page
 test("Openings and closings: an opening drill from home to its findings", async ({ page }) => {
   // Use the stand-in microphone and speech
   await useStandIns(page);
+  // Past the welcome, which has no tabs (decision 78)
+  await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
   // Start at home
   await page.goto("/");
   // Open the drills from Practice
@@ -213,31 +217,31 @@ test("Whole speech: open it from Skills, read part 1, then go on to part 2", asy
 });
 
 // Today's practice: start from Today with the Learn card, read the warm-up without waiting to listen back, and go on to the first pick
-test("Today's practice: the card, the warm-up, then on to the picks", async ({ page }) => {
-  // The stand-in speech reads the opening of the warm-up speech
-  await useStandIns(page, "Fellow Countrymen At this second appearing to take the oath of the Presidential office there is less occasion for an extended address than there was at the first");
+test("Today's practice: day one speaks first, then the card, then on to the picks", async ({ page }) => {
+  // The stand-in speech says a little about the day
+  await useStandIns(page, "Today I walked to work and the sun was out so I took the long way round past the river");
   // Start at Today
   await page.goto("/");
-  // Skip the welcome question, which opens the first step straight away
+  // The welcome's Start opens the first step straight away
   await page.getByRole("link", { name: "Start", exact: true }).click();
-  // Step 1 of 4: the Learn card
-  await expect(page.getByText("Step 1 of 4")).toBeVisible();
-  // Read it one screen at a time, to the last
-  for (let screen = 0; screen < 3; screen++) await page.getByRole("button", { name: "Next", exact: true }).click();
-  // On to the warm-up
-  await page.getByRole("link", { name: /^Next: step 2/ }).click();
-  // Step 2 of 4: the warm-up reading
-  await expect(page.getByText("Today’s practice · step 2 of 4")).toBeVisible();
-  // Start reading
-  await page.getByRole("button", { name: /Start reading/ }).click();
-  // Read past the minimum
+  // Step 1 of 4 on day one: free talk (decision 78)
+  await expect(page.getByText("Today’s practice · step 1 of 4")).toBeVisible();
+  // Start speaking
+  await page.getByRole("button", { name: /Start speaking/ }).click();
+  // Speak past the minimum
   await expect(page.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 10_000 });
   // Wait
   await page.waitForTimeout(11_500);
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
-  // Move on without listening back
-  await page.getByRole("link", { name: /^Next: step 3/ }).click({ timeout: 15_000 });
+  // On to the card
+  await page.getByRole("link", { name: /^Next: step 2/ }).click({ timeout: 15_000 });
+  // Step 2 of 4: the Learn card
+  await expect(page.getByText("Step 2 of 4")).toBeVisible();
+  // Read it one screen at a time, to the last
+  for (let screen = 0; screen < 3; screen++) await page.getByRole("button", { name: "Next", exact: true }).click();
+  // On to the first pick
+  await page.getByRole("link", { name: /^Next: step 3/ }).click();
   // The first pick opens inside the plan
   await expect(page).toHaveURL(/plan=3/);
   // Back on Today, two steps are done and the next is the first pick

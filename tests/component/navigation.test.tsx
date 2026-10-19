@@ -49,7 +49,12 @@ describe("main navigation", () => {
   // Every screen offers the same way to every section, with its own section marked
   it.each([
     // Today
-    ["Today", "Today", async () => <HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    ["Today", "Today", async () => {
+      // Past the welcome, which has no tabs (decision 78)
+      localStorage.setItem("voicelab-welcome-seen", "yes");
+      // Today itself
+      return <HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />;
+    }],
     // Practice
     ["Practice", "Practice", async () => <PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Skills is a page inside Practice

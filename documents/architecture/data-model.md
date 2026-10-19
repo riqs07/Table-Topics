@@ -74,6 +74,9 @@ Talks are stored in their own collection (added to existing databases by raising
 | missions | Every mission try, oldest first (decision 52): the mission id, the day, the status (accepted, skipped or done), the prediction (1 to 5), whether it was tried, how it went (1 to 5), what the user noticed (text only, never sent anywhere), whether it felt like too much, and when it was debriefed. Missing until the first mission is answered |
 | scenarios | Scenario questions by id (decision 54): the tier of the first reply chosen and of the latest, and when each was answered. Missing until the first scenario is answered |
 | skipped | Steps of today's practice put off with "Can't speak now?" (decision 77): the day (YYYY-MM-DD) and each step's key (`kind:mode:promptId`). A list from another day counts for nothing. Missing until the first skip |
+| hideStreak | Whether Today hides the practice days (the line, the squares and the week sentence; decision 78). Missing means shown |
+| anchor | When the user practises, in their words, up to 60 characters, such as "after my morning coffee" (decision 78). Shown on Today and written into the calendar reminder. Missing until chosen |
+| reminderTime | The daily reminder's time, "HH:MM", last used for the calendar file (decision 78). The reminder itself lives in the user's calendar, not in the app. Missing until chosen |
 
 ### Prompts
 
@@ -81,7 +84,7 @@ Prompts ship inside the app as fixed content. They are not user data.
 
 ## Derived, not stored
 
-- **Streak:** calculated from session dates, so it can never get out of sync.
+- **Practice days and the run:** calculated from session and mission dates (decision 78: days in the last seven, and a run that two rest days a week never break), so they can never get out of sync.
 - **Trend lines and before/after numbers:** calculated from sessions on demand.
 
 ## Retention rules

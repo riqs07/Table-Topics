@@ -7,14 +7,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { PRESS, PRIMARY, RowLink } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, RowLink, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load the streak sentence
-import { streakSentence } from "@/core/copy";
+import { streakLines } from "@/core/copy";
 // Load the weekly focus rules
 import { currentFocus, type Focus } from "@/core/focus";
 // Load the streak calculator
-import { currentStreak } from "@/core/streak";
+import { practiceRun, type PracticeRun } from "@/core/streak";
+// Load the week's summary
+import { yourWeek, type YourWeek } from "@/core/yourWeek";
+// Load the card that shows it
+import { YourWeekCard } from "@/components/script/YourWeekCard";
 // Load the seven-day strip
 import { weekStrip, type StripDay } from "@/core/weekStrip";
 // Load the repository type
@@ -22,7 +26,7 @@ import type { Repository } from "@/data/repository";
 // Load today's practice and the next talk with a date
 import { loadDailyPlan, type LoadedPlan } from "@/data/dailyPlan";
 // Load the plan's time and addresses
-import { nextStepIndex, planHref, planMinutes } from "@/core/dailyPlan";
+import { nextStepIndex, planHref, planMinutes, type PlanStep } from "@/core/dailyPlan";
 // Load the done and next marks on a path
 import { PathMark } from "@/components/script/PathMark";
 // Load the day's summary wording
@@ -59,12 +63,24 @@ import { safetyNudge, type SafetyNudge } from "@/core/storageSafety";
 // Load the browser facts behind it, and the way to put it aside
 import { markNudgeDismissed, readSafetyFacts } from "@/data/storageSafety";
 
+// A step in a few words for the action band, so its side text never reads like a tab name ("a Learn card", "Warm up")
+function stepWords(step: PlanStep): string {
+  // A card, or the step's own name
+  return step.kind === "card" ? "a Learn card" : step.label;
+}
+
 // Everything Home shows that comes from saved data
 interface HomeData {
   // Number of sessions so far
   sessionCount: number;
-  // Consecutive practice days
-  streak: number;
+  // Where practice stands: days in the last seven and the forgiving run (decision 78)
+  run: PracticeRun;
+  // Whether the run and the week's squares are hidden (a setting)
+  hideStreak: boolean;
+  // When the user practises, in their words, or empty
+  anchor: string;
+  // Fillers over three weeks and one suggestion, once there are three sessions
+  week: YourWeek | null;
   // The last seven days, marked where there was practice
   strip: StripDay[];
   // This week's focus
@@ -101,8 +117,14 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
   return {
     // How many sessions there are
     sessionCount: sessions.length,
-    // Consecutive days with a session
-    streak: currentStreak([...sessions.map((session) => new Date(session.createdAt)), ...missionDays(settings.missions ?? [])], now),
+    // Days in the last seven and the forgiving run (sessions and missions count)
+    run: practiceRun([...sessions.map((session) => new Date(session.createdAt)), ...missionDays(settings.missions ?? [])], now),
+    // Whether to hide it
+    hideStreak: settings.hideStreak === true,
+    // The practice time in the user's words
+    anchor: settings.anchor?.trim() ?? "",
+    // The week's summary
+    week: yourWeek(sessions, now),
     // The last seven days
     strip: weekStrip([...sessions.map((session) => new Date(session.createdAt)), ...missionDays(settings.missions ?? [])], now),
     // This week's focus
@@ -165,13 +187,17 @@ export function HomeScreen(props: ScreenProps) {
   const allDone = !!plan && plan.done.every(Boolean);
   // Steps done
   const doneCount = plan ? plan.done.filter(Boolean).length : 0;
+  // The run's lines, unless hidden
+  const runLines = data && !data.showWelcome && !data.hideStreak ? streakLines(data.run) : [];
+  // The next step, in words for the action band ("Step 1 · a Learn card")
+  const nextStep = plan && nextIndex !== -1 ? plan.steps[nextIndex] : undefined;
 
   // Draw the page
   return (
     // Full-height page: one column on a phone, margin plus main column on a computer
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Name and links */}
-      <Masthead title="VoiceLab" section="today" />
+      <Masthead title="VoiceLab" section="today" nav={!data?.showWelcome} />
 
       {/* Until saved data is read, a quiet placeholder, so the page appears in one piece (decision 76) */}
       {!data && <Skeleton blocks={["h-24", "h-96"]} />}
@@ -179,10 +205,10 @@ export function HomeScreen(props: ScreenProps) {
       {data && <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Context: streak and focus (above the step on a phone, in the margin on a computer) */}
         <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
-          {/* The streak, once there is one (nothing on a first day: the steps speak for themselves) */}
-          {data && !data.showWelcome && !(data.sessionCount === 0 && data.streak === 0) && <p>{streakSentence(data.streak)}</p>}
+          {/* Where practice stands: days in the last seven, and the run from a week of practice; never a broken run (decision 78) */}
+          {runLines.map((line) => <p key={line}>{line}</p>)}
           {/* The last seven days as squares, filled where there was practice */}
-          {data && !data.showWelcome && (data.sessionCount > 0 || data.strip.some((day) => day.practised)) && (
+          {data && !data.showWelcome && !data.hideStreak && data.run.any && (
             <ul aria-label="The last seven days" className="mt-3 mb-4 flex gap-1.5">
               {/* Each day, popping in one after another */}
               {data.strip.map((day, index) => (
@@ -196,6 +222,10 @@ export function HomeScreen(props: ScreenProps) {
           )}
           {/* This week's focus, in a few words (held back during the welcome, which asks one thing only) */}
           {data && !data.showWelcome && <p className="md:mt-3">This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
+          {/* When the user practises, in their words (decision 78) */}
+          {data && !data.showWelcome && data.anchor && <p className="mt-1">Your time: <em className="text-ink">{data.anchor}</em>.</p>}
+          {/* On a computer, the week's summary in this column */}
+          {data && !data.showWelcome && data.week && <div className="mt-8 hidden md:block"><YourWeekCard week={data.week} /></div>}
         </aside>
 
         {/* Main column */}
@@ -207,6 +237,8 @@ export function HomeScreen(props: ScreenProps) {
               <h1 className="font-display text-prompt font-semibold tracking-tight motion-safe:animate-rise md:text-prompt-xl">Welcome to VoiceLab</h1>
               {/* What it is, and the privacy promise */}
               <p className="mt-3 max-w-[52ch] text-lede">Practise speaking, privately. Your recordings stay on this device.</p>
+              {/* What a session gives (decision 78) */}
+              <p className="mt-2 max-w-[52ch] text-lede">Every take ends with one change to try.</p>
               {/* One way in: today's first step (the "what brings you here?" question went with decision 67; two of its three answers led to the same place) */}
               <p className="mt-6"><Link href={firstStep} onClick={finishWelcome} className={PRIMARY}>Start</Link></p>
             </section>
@@ -218,16 +250,18 @@ export function HomeScreen(props: ScreenProps) {
               {/* Once done: the full ring, badge and (the first time) sparks */}
               {allDone && <DoneBurst celebrate={data?.celebrate ?? false} />}
               {/* What it is and how long, with how far through */}
-              <p className="flex justify-between text-footnote text-ink-muted"><span>Today · about {planMinutes(plan.steps)} min</span>{!allDone && <span className="font-semibold text-warm-ink">{doneCount} of {plan.steps.length}</span>}</p>
+              <p className="flex justify-between text-footnote text-ink-muted"><span>Today · about {planMinutes(plan.steps)} min</span>{!allDone && doneCount > 0 && <span className="font-semibold text-warm-ink">{doneCount} of {plan.steps.length}</span>}</p>
               {/* Where things stand, set like a headline */}
               <h1 className="mt-2 font-display text-statement font-semibold tracking-tight md:text-statement-xl">{allDone ? "Done for today." : nextIndex === -1 ? "The rest can wait." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
               {/* Once done: the time spoken today, and which day of the week this is */}
-              {allDone && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)} {data.weekLine}</p>}
-              {/* How far through, as a bar that fills in */}
-              <span aria-hidden="true" className="mt-4 block h-2 overflow-hidden rounded-full bg-paper">
-                {/* The filled part */}
-                <span className="block h-full origin-left rounded-full bg-accent motion-safe:animate-fill" style={{ width: `${(doneCount / Math.max(1, plan.steps.length)) * 100}%`, animationDelay: "300ms" }} />
-              </span>
+              {allDone && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)}{data.hideStreak ? "" : ` ${data.weekLine}`}</p>}
+              {/* How far through, as a bar that fills in, once a step is done (an empty bar first thing reads as a zero; decision 78) */}
+              {doneCount > 0 && (
+                <span aria-hidden="true" className="mt-4 block h-2 overflow-hidden rounded-full bg-paper">
+                  {/* The filled part */}
+                  <span className="block h-full origin-left rounded-full bg-accent motion-safe:animate-fill" style={{ width: `${(doneCount / Math.max(1, plan.steps.length)) * 100}%`, animationDelay: "300ms" }} />
+                </span>
+              )}
               {/* The steps */}
               <ol aria-label="Steps" className="mt-4 flex flex-col gap-2">
                 {/* Each step */}
@@ -261,6 +295,8 @@ export function HomeScreen(props: ScreenProps) {
               </ol>
               {/* Once done, a word on what is next */}
               {nextIndex === -1 && <p className="mt-3 max-w-[52ch] text-ink-muted">{allDone ? "A new practice is ready tomorrow." : "Skipped steps are still here if a moment comes up."}</p>}
+              {/* Once done, and no practice time chosen yet: a way to choose one (decision 78) */}
+              {allDone && data && !data.anchor && <p><Link href="/settings#practice-time" className={TEXT_LINK}>Choose when you’ll practise tomorrow</Link></p>}
             </section>
           )}
 
@@ -277,6 +313,9 @@ export function HomeScreen(props: ScreenProps) {
               <MissionCard key={data.missions.length} repo={repo} now={today} state={missionToday(data.missions, today)} onChange={(missions) => setData({ ...data, missions })} compact />
             </div>
           )}
+
+          {/* On a phone, the week's summary under the mission (on a computer it sits in the margin) */}
+          {data && !data.showWelcome && data.week && <div className="mt-8 md:hidden"><YourWeekCard week={data.week} /></div>}
 
           {/* Once done: more to do, for anyone who wants to keep going */}
           {plan && nextIndex === -1 && plan.more.length > 0 && (
@@ -307,7 +346,7 @@ export function HomeScreen(props: ScreenProps) {
           {plan && (nextIndex === -1 ? (
             <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />
           ) : (
-            <ActionBand action={doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={plan.steps[nextIndex]?.label ?? ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
+            <ActionBand action={doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={nextStep ? `Step ${nextIndex + 1} · ${stepWords(nextStep)}` : ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
           ))}
         </div>
       </div>}
