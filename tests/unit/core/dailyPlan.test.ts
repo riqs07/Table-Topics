@@ -150,6 +150,22 @@ describe("planProgress", () => {
     expect(planProgress(plan, sessions, day, { [plan[0]!.promptId]: firstRead(day) })).toEqual([true, true, false, false]);
   });
 
+  // Quick scenarios are in the conversation group's turn (decision 72): no recording, counted once, done after a round's worth of answers today
+  it("offers a round of quick scenarios, done after three answers today", () => {
+    // A new user's plan on a day the conversation pick is scenarios
+    const day = new Date(2026, 9, 13, 10);
+    // The plan
+    const plan = dailyPlan({ day, sessions: [], focusId: "pausing", nextTalk: null });
+    // The scenarios step
+    const step = plan.find((item) => item.kind === "scenarios")!;
+    // An answer on a day
+    const answer = (at: Date) => ({ firstTier: "best", lastTier: "best", firstAt: at.toISOString(), lastAt: at.toISOString() });
+    // Two answered today, then three, then three yesterday
+    const done = (count: number, at: Date) => planProgress([step], [], day, {}, Object.fromEntries(Array.from({ length: count }, (_, index) => [`sc-${index}`, answer(at)])))[0];
+    // Confirm its look, its address in the plan, its time, and when it is done
+    expect([step.label, step.lane, step.mode, planHref(step, 4), planMinutes([step]), done(2, day), done(3, day), done(3, new Date(2026, 9, 12, 10))]).toEqual(["Quick scenarios", "connection", null, "/learn/scenarios?plan=4", 2, false, true, false]);
+  });
+
   // A step's address carries its number in the plan, cards included
   it("marks a step's address with its number", () => {
     // The plan

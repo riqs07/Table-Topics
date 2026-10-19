@@ -153,4 +153,19 @@ describe("Learn", () => {
     // Confirm the result: the first three scenarios' first replies are a best, a misstep and a misstep
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("1 of 3 best.");
   });
+
+  // Inside today's practice (decision 72): the way out leads to Today, and the end moves on to the next step
+  it("runs as a step of today's practice", async () => {
+    // Draw the page as the last step of four
+    render(<ScenariosScreen repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} planStep={4} />);
+    // Each of three
+    for (let round = 0; round < 3; round++) {
+      // Choose the first reply
+      fireEvent.click(within(await screen.findByRole("group", { name: "Replies" })).getAllByRole("button")[0]!);
+      // Move on
+      fireEvent.click(screen.getByRole("button", { name: round < 2 ? "Next scenario" : "Finish" }));
+    }
+    // Confirm the way out and the finish
+    expect([screen.getByRole("link", { name: "Close, back to Today" }).getAttribute("href"), (await screen.findByRole("link", { name: /^Finish today’s practice/ })).getAttribute("href")]).toEqual(["/", "/"]);
+  });
 });

@@ -58,5 +58,5 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   // The steps
   const steps = dailyPlan(input);
   // Hand back the steps, what is done, today's sessions, and more to do afterwards
-  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps) };
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps) };
 }

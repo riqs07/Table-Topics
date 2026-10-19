@@ -31,7 +31,7 @@ One step from each lane, each day:
 |------|------------|
 | **Delivery** | The next part of a speech to read aloud, a pause drill, a skill lesson, tricky words, (later) a voice-variety drill |
 | **Thinking on your feet** | A Table Topic, an everyday small-talk question, an opening or closing drill, a prepared speech (at most once a week) |
-| **Connection** | The next Connection lesson, today's mission (with its evening debrief), a listening or follow-up drill, (later) a live conversation, a Learn card |
+| **Connection** | The next Connection lesson, a round of quick scenarios (decision 72), today's mission (with its evening debrief), a listening or follow-up drill, (later) a live conversation, a Learn card |
 
 Rules:
 - Picked from the date and the sessions before today, so it never reshuffles during the day (as now).

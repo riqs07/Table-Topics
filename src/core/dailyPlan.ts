@@ -14,7 +14,9 @@ import { SMALL_TALK_LESSONS, drillForDay, smallTalkForDay, unitOf } from "@/cont
 // Load the next Learn card
 import { nextCard, type LearnProgress } from "@/core/learn";
 // Load the record types
-import type { SessionMode, SessionRecord } from "@/data/records";
+import type { ScenarioProgress, SessionMode, SessionRecord } from "@/data/records";
+// Load how many scenarios a quick round holds
+import { QUICK_COUNT } from "@/core/scenarios";
 
 // Where a step of the day's practice comes from: the Learn card, the warm-up, or one of the bank's three groups (speaking on the spot, delivery skills, conversation)
 export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection";
@@ -23,8 +25,8 @@ export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection";
 export interface PlanStep {
   // Its lane
   lane: PlanLane;
-  // A recorded session, or a Learn card
-  kind: "session" | "card";
+  // A recorded session, a Learn card, or a round of quick scenarios (decision 72)
+  kind: "session" | "card" | "scenarios";
   // The step's short name, such as "Warm up"
   label: string;
   // What it is, such as "Inaugural Address, part 3 of 12"
@@ -140,7 +142,7 @@ function skill(focusId: string, day: Date): PlanStep {
 }
 
 // One kind of practice the day can pick
-type PickKind = "talk" | "response" | "bookend" | "skill" | "pause" | "connect" | "smalltalk";
+type PickKind = "talk" | "response" | "bookend" | "skill" | "pause" | "connect" | "smalltalk" | "scenarios";
 
 // The bank in three groups, each with its lane: speaking on the spot, delivery skills, and conversation
 const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> = [
@@ -148,8 +150,8 @@ const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> 
   { lane: "spot", kinds: ["talk", "bookend", "response"] },
   // Delivery: the week's focus drill, a pause drill
   { lane: "delivery", kinds: ["skill", "pause"] },
-  // Conversation: the next Connect lesson or drill, an everyday question
-  { lane: "connection", kinds: ["connect", "smalltalk"] },
+  // Conversation: the next Connect lesson or drill, a round of quick scenarios, an everyday question (decision 72)
+  { lane: "connection", kinds: ["connect", "scenarios", "smalltalk"] },
 ];
 
 // The two groups the day picks from, taken in turn by day, so each group comes up two days in three
@@ -212,6 +214,8 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
   }
   // The next Connect lesson or drill
   if (kind === "connect") return { ...connection(input, before), lane };
+  // A round of quick scenarios: choose the best reply, then say it (decision 72)
+  if (kind === "scenarios") return { lane, kind: "scenarios", label: "Quick scenarios", title: "Choose the best reply, then say it", mode: null, promptId: "scenarios", minutes: 2, href: "/learn/scenarios" };
   // An everyday small-talk question
   if (kind === "smalltalk") {
     // Today's question
@@ -314,12 +318,14 @@ export function moreToDo(input: PlanInput, plan: ReadonlyArray<PlanStep>): PlanS
   return [...practice, ...learn].slice(0, 4);
 }
 
-// Which steps were done today: a session today of the same kind and prompt, or a card read today (or, on older progress, its recall answered today)
-export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}): boolean[] {
+// Which steps were done today: a session today of the same kind and prompt, a card read today (or, on older progress, its recall answered today), or a round of scenarios answered today
+export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}, scenarios: Readonly<Record<string, ScenarioProgress>> = {}): boolean[] {
   // Today's sessions
   const today = sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(day));
   // Each step
   return plan.map((step) => {
+    // Scenarios: a round's worth answered today
+    if (step.kind === "scenarios") return Object.values(scenarios).filter((item) => dayKey(new Date(item.lastAt)) === dayKey(day)).length >= QUICK_COUNT;
     // A card's progress
     const card = learn[step.promptId];
     // A card: read today, or its recall answered today
@@ -329,14 +335,14 @@ export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyAr
   });
 }
 
-// Speaking minutes plus listening back (about the same again; a card has nothing to hear back): the time the plan takes
+// Speaking minutes plus listening back (about the same again; a card or a round of scenarios has nothing to hear back): the time the plan takes
 export function planMinutes(plan: ReadonlyArray<PlanStep>): number {
-  // Twice the speaking time, once for a card
-  return plan.reduce((total, step) => total + step.minutes * (step.kind === "card" ? 1 : 2), 0);
+  // Twice the speaking time for a session, once otherwise
+  return plan.reduce((total, step) => total + step.minutes * (step.kind === "session" ? 2 : 1), 0);
 }
 
 // A step's address inside the plan (numbered from 1), so the pages after it know which step comes next
 export function planHref(step: PlanStep, number: number): string {
-  // The step's own address with the plan marker
-  return `${step.href}&plan=${number}`;
+  // The step's own address with the plan marker (after a ? when the address has no query yet)
+  return `${step.href}${step.href.includes("?") ? "&" : "?"}plan=${number}`;
 }

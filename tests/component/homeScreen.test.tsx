@@ -13,6 +13,9 @@ import { createRepository } from "@/data/repository";
 // Load the Learn cards and the reading rule
 import { LEARN_CARDS } from "@/content/learn";
 import { firstRead } from "@/core/learn";
+// Load the scenarios and the way answers are saved
+import { SCENARIOS } from "@/content/scenarios";
+import { saveScenarioAnswer } from "@/data/scenarioProgress";
 // Load the plan loader, to know today's picks
 import { loadDailyPlan } from "@/data/dailyPlan";
 // Load a sample session builder
@@ -107,14 +110,19 @@ describe("HomeScreen", () => {
     await repository.saveSettings({ ...(await repository.getSettings(NOW)), learn: { [LEARN_CARDS[0]!.id]: firstRead(NOW) } });
     // The warm-up, with a note
     await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", durationSec: 70, fillersPerMinute: 5, createdAt: new Date(2026, 9, 13, 8).toISOString(), selfReview: { worked: "", change: "Look up more", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
-    // The two picks, without notes
-    for (const [index, step] of plan.steps.slice(2).entries()) await repository.saveSession(makeSession({ id: `p${index}`, mode: step.mode!, promptId: step.promptId, durationSec: index === 0 ? 90 : 30, fillersPerMinute: 6, createdAt: new Date(2026, 9, 13, 9, index).toISOString(), selfReview: null }));
+    // The two picks, without notes (a round of quick scenarios is three answers, not a recording; decision 72)
+    for (const [index, step] of plan.steps.slice(2).entries()) {
+      // Quick scenarios: three answered today
+      if (step.kind === "scenarios") for (const scenario of SCENARIOS.slice(0, 3)) await saveScenarioAnswer(repository, scenario.id, "best", NOW);
+      // A session
+      else await repository.saveSession(makeSession({ id: `p${index}`, mode: step.mode!, promptId: step.promptId, durationSec: index === 0 ? 90 : 30, fillersPerMinute: 6, createdAt: new Date(2026, 9, 13, 9, index).toISOString(), selfReview: null }));
+    }
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
     // The steps
     const steps = await screen.findByRole("list", { name: "Steps" });
     // Confirm the headline, the summary, each step's line, no filler counts, and the moment playing
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 3 minutes 10 today. First day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/fillers a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length]).toEqual(["Done for today.", true, true, true, null, 4]);
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 2 minutes 40 today. First day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/fillers a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length]).toEqual(["Done for today.", true, true, true, null, 4]);
     // The suggestions to keep going
     const more = within(screen.getByRole("region", { name: "Keep going" })).getAllByRole("link");
     // Confirm three or four, none of them today's steps, the last another card

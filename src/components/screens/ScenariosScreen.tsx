@@ -1,5 +1,5 @@
 "use client";
-// Quick scenarios: three situations one at a time (a missed move comes back in a new situation), then how the first tries went (decision 54)
+// Quick scenarios: three situations one at a time (a missed move comes back in a new situation), then how the first tries went (decision 54); also a step of today's practice (decision 72)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -22,9 +22,13 @@ import { nextScenarios } from "@/core/scenarios";
 import { loadScenarioProgress, saveScenarioAnswer } from "@/data/scenarioProgress";
 // Load the shared button looks
 import { PRIMARY, TEXT_LINK } from "@/components/script/Buttons";
+// Load the plan navigation type, today's practice and step addresses
+import type { PlanNav } from "@/components/screens/planNav";
+import { loadDailyPlan } from "@/data/dailyPlan";
+import { planHref } from "@/core/dailyPlan";
 
 // Draw the page
-export function ScenariosScreen({ services = browserRecordingServices, ...props }: ScreenProps & { services?: RecordingServices }) {
+export function ScenariosScreen({ services = browserRecordingServices, planStep = null, ...props }: ScreenProps & { services?: RecordingServices; planStep?: number | null }) {
   // The repository and today
   const { repo, today } = useScreenBasics(props);
   // This round's scenarios (null while loading)
@@ -33,6 +37,30 @@ export function ScenariosScreen({ services = browserRecordingServices, ...props 
   const [index, setIndex] = useState(0);
   // The tier chosen for each, so far
   const [tiers, setTiers] = useState<Tier[]>([]);
+  // Inside today's practice: this step, how many there are, and the next one
+  const [plan, setPlan] = useState<PlanNav | null>(null);
+
+  // Inside today's practice, load the plan to find the next step
+  useEffect(() => {
+    // Only inside the plan, in the browser
+    if (!planStep || !today) return;
+    // Ignore the result if closed first
+    let cancelled = false;
+    // Load it
+    loadDailyPlan(repo, today).then((loaded) => {
+      // Stop if closed
+      if (cancelled) return;
+      // The next step, if any
+      const after = loaded.steps[planStep];
+      // Keep where this step sits
+      setPlan({ step: planStep, total: loaded.steps.length, next: after ? { href: planHref(after, planStep + 1), label: after.label } : null });
+    });
+    // Mark as closed
+    return () => {
+      // Stop the update
+      cancelled = true;
+    };
+  }, [planStep, repo, today]);
 
   // Choose the round once in the browser
   useEffect(() => {
@@ -69,7 +97,7 @@ export function ScenariosScreen({ services = browserRecordingServices, ...props 
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Title, with a way back to Learn */}
-      <Masthead title="Scenarios" nav={false} close={{ href: "/learn", label: "Close, back to Learn" }}>{round && !finished ? `${index + 1} of ${round.length}` : ""}</Masthead>
+      <Masthead title="Scenarios" nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/learn", label: "Close, back to Learn" }}>{plan ? `Step ${plan.step} of ${plan.total}` : round && !finished ? `${index + 1} of ${round.length}` : ""}</Masthead>
       {/* One scenario */}
       {scenario && !finished && (
         <section key={scenario.id} aria-label={scenario.title} className="mt-6">
@@ -88,12 +116,12 @@ export function ScenariosScreen({ services = browserRecordingServices, ...props 
           <h1 className="font-display text-statement tracking-tight">{tiers.filter((tier) => tier === "best").length} of {tiers.length} best.</h1>
           {/* What happens next */}
           <p className="mt-3 max-w-[52ch] text-lede">A move you missed comes back in a new situation next time. Choosing is the warm-up; saying it aloud and trying it for real are what change things.</p>
-          {/* A real try */}
-          <p className="mt-4"><Link href="/learn#missions" className={TEXT_LINK}>Today’s mission</Link></p>
+          {/* A real try (not inside today's practice, which shows the mission on Today) */}
+          {!planStep && <p className="mt-4"><Link href="/learn#missions" className={TEXT_LINK}>Today’s mission</Link></p>}
           {/* Push the band down */}
           <div className="flex-1" />
-          {/* Back to Learn */}
-          <ActionBand action="Back to Learn" aside="done" href="/learn" />
+          {/* Inside today's practice: on to the next step, or finish; otherwise back to Learn */}
+          {planStep ? (plan?.next ? <ActionBand action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <ActionBand action="Finish today’s practice" aside="back to Today" href="/" />) : <ActionBand action="Back to Learn" aside="done" href="/learn" />}
         </section>
       )}
     </main>
