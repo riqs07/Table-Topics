@@ -13,8 +13,6 @@ import { dayKey, daysBetween, startOfDay } from "@/core/dates";
 import { SMALL_TALK_LESSONS, drillForDay, smallTalkForDay, unitOf } from "@/content/smallTalk";
 // Load the next Learn card
 import { nextCard, type LearnProgress } from "@/core/learn";
-// Load the cards, for a review once every card is read
-import { LEARN_CARDS } from "@/content/learn";
 // Load the record types
 import type { SessionMode, SessionRecord } from "@/data/records";
 
@@ -260,12 +258,10 @@ function connection(input: PlanInput, before: ReadonlyArray<SessionRecord>): Pla
   return { lane: "connection", kind: "session", label: unit === "asking" ? "Follow-up" : unit === "news" ? "News" : "Listening", title: unit === "listening" ? "A short story to respond to" : drill.text, mode: "smalltalk", promptId: drill.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${drill.id}` };
 }
 
-// Learn: one card every day. The next card not read before today; once every card is read, the first card due for review today (or reviewed today, so the step stays put after it is done); none when nothing is due
+// Learn: one card every day, the next one not read before today; none once every card is read (decision 67)
 function learnStep(input: PlanInput): PlanStep | null {
-  // Today's start and end
+  // Today's start
   const start = startOfDay(input.day);
-  // The end of today
-  const end = new Date(start.getTime() + 86_400_000);
   // Progress
   const progress = input.learn ?? {};
   // Cards read before today
@@ -274,15 +270,8 @@ function learnStep(input: PlanInput): PlanStep | null {
   const card = nextCard(learned);
   // A new card
   if (card) return { lane: "learn", kind: "card", label: "Learn", title: card.title, mode: null, promptId: card.id, minutes: 1, href: `/learn/card?id=${card.id}` };
-  // Every card read: the first one due today, or already reviewed today
-  const review = LEARN_CARDS.find((item) => {
-    // Its progress
-    const own = progress[item.id];
-    // Due by the end of today, or answered today
-    return !!own && (new Date(own.dueAt) < end || (!!own.recalledAt && new Date(own.recalledAt) >= start));
-  });
-  // A review, or nothing
-  return review ? { lane: "learn", kind: "card", label: "Learn · review", title: review.title, mode: null, promptId: review.id, minutes: 1, href: `/learn/card?id=${review.id}` } : null;
+  // Every card read: no Learn step (cards have no review since decision 67)
+  return null;
 }
 
 // Sessions recorded before today
@@ -325,7 +314,7 @@ export function moreToDo(input: PlanInput, plan: ReadonlyArray<PlanStep>): PlanS
   return [...practice, ...learn].slice(0, 4);
 }
 
-// Which steps were done today: a session today of the same kind and prompt, or a card read or reviewed today
+// Which steps were done today: a session today of the same kind and prompt, or a card read today (or, on older progress, its recall answered today)
 export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}): boolean[] {
   // Today's sessions
   const today = sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(day));

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 // Load the plan rules being checked
 import { dailyPlan, moreToDo, planHref, planMinutes, planProgress } from "@/core/dailyPlan";
 // Load the Learn rules, for a card read
-import { afterRecall, firstRead } from "@/core/learn";
+import { firstRead } from "@/core/learn";
 // Load the cards
 import { LEARN_CARDS } from "@/content/learn";
 // Load the small-talk lessons
@@ -62,18 +62,12 @@ describe("dailyPlan", () => {
     expect(step?.promptId).toBe("stl1");
   });
 
-  // Once every card is read, the Learn step is a card due for review, and it stays put after the review; none when nothing is due
-  it("reviews a due card once every card is read", () => {
-    // Every card read a while ago, due again in a month
-    const read = Object.fromEntries(LEARN_CARDS.map((card) => [card.id, { ...firstRead(new Date(2026, 8, 1)), dueAt: new Date(2026, 10, 20).toISOString() }]));
-    // The same with the third card due today
-    const due = { ...read, [LEARN_CARDS[2]!.id]: { ...read[LEARN_CARDS[2]!.id]!, dueAt: new Date(2026, 9, 16, 8).toISOString() } };
-    // The morning's plan
-    const morning = regularPlan(DAY, { learn: due });
-    // After answering it right today (due again in a week)
-    const after = { ...due, [LEARN_CARDS[2]!.id]: afterRecall(due[LEARN_CARDS[2]!.id], true, DAY) };
-    // Confirm nothing due means no card (the warm-up first), a due card is reviewed, and the step stays and is done after the review
-    expect([regularPlan(DAY, { learn: read })[0]?.label, morning[0]?.label, morning[0]?.promptId, regularPlan(DAY, { learn: after })[0]?.promptId, planProgress(morning, [], DAY, after)[0]]).toEqual(["Warm up", "Learn · review", LEARN_CARDS[2]?.id, LEARN_CARDS[2]?.id, true]);
+  // Once every card is read, there is no Learn step (cards have no review since decision 67)
+  it("drops the Learn step once every card is read", () => {
+    // Every card read a while ago
+    const read = Object.fromEntries(LEARN_CARDS.map((card) => [card.id, firstRead(new Date(2026, 8, 1))]));
+    // Confirm the warm-up comes first and no step is a card
+    expect([regularPlan(DAY, { learn: read })[0]?.label, regularPlan(DAY, { learn: read }).some((step) => step.kind === "card")]).toEqual(["Warm up", false]);
   });
 
   // After the answering lessons come the asking, listening and news ones; once every lesson is done, a follow-up, a story and some news in turn

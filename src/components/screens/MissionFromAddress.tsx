@@ -11,5 +11,5 @@ export function MissionFromAddress() {
   // The address's query
   const params = useSearchParams();
   // The debrief
-  return <MissionScreen key={params.get("id") ?? ""} recordId={params.get("id") ?? ""} />;
+  return <MissionScreen key={params.get("id") ?? ""} recordId={params.get("id") ?? ""} from={params.get("from") === "today" ? "today" : "learn"} />;
 }

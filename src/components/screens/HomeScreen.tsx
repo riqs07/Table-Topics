@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { QUIET, RowLink } from "@/components/script/Buttons";
+import { PRIMARY, RowLink } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
@@ -39,15 +39,6 @@ import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 // The number of steps as a word, for the headline ("Four short steps.")
 const STEP_COUNTS: Readonly<Record<number, string>> = { 1: "One", 2: "Two", 3: "Three", 4: "Four" };
 
-// The welcome question's answers and where each leads (null: straight into the first step of today's practice, a one-minute reading)
-const WELCOME_CHOICES: ReadonlyArray<{ text: string; href: string | null }> = [
-  // Speaking without a script
-  { text: "I want to speak better on the spot", href: null },
-  // One skill
-  { text: "I want to work on one skill", href: null },
-  // Everyday conversation (in place of "I have a talk coming up" while your talks are hidden, decision 49)
-  { text: "I want to be better in conversation", href: "/small-talk/unit?id=answering" },
-];
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the mission card and rules
@@ -208,21 +199,8 @@ export function HomeScreen(props: ScreenProps) {
               <h1 className="font-display text-prompt tracking-tight md:text-prompt-xl">Welcome to VoiceLab</h1>
               {/* What it is, and the privacy promise */}
               <p className="mt-3 max-w-[52ch] text-lede">Practise speaking, privately. Your recordings stay on this device.</p>
-              {/* The question */}
-              <p className="mt-6 text-ink-muted">What brings you here?</p>
-              {/* The three answers */}
-              <ul aria-label="What brings you here?" className="mt-2 divide-y divide-rule border-y border-ink">
-                {/* Each answer */}
-                {WELCOME_CHOICES.map((choice) => (
-                  // One answer
-                  <li key={choice.text}>
-                    {/* It leads to its job, or into today's first step */}
-                    <Link href={choice.href ?? firstStep} onClick={finishWelcome} className="block py-3 font-display text-cue hover:text-accent">{choice.text}</Link>
-                  </li>
-                ))}
-              </ul>
-              {/* Skip, which also starts today's first step */}
-              <Link href={firstStep} onClick={finishWelcome} className={`${QUIET} mt-4`}>Skip</Link>
+              {/* One way in: today's first step (the "what brings you here?" question went with decision 67; two of its three answers led to the same place) */}
+              <p className="mt-6"><Link href={firstStep} onClick={finishWelcome} className={PRIMARY}>Start</Link></p>
             </section>
           )}
 

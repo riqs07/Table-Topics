@@ -119,7 +119,7 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
           {/* What was expected */}
           <p className="mt-2 text-footnote text-ink-muted">You expected it to go {SCALE_WORDS[state.record.predicted ?? 3]?.toLowerCase()}.</p>
           {/* Debrief */}
-          <p className="mt-3"><Link href={`/mission?id=${state.record.id}`} className={PRIMARY}>How did it go?</Link></p>
+          <p className="mt-3"><Link href={`/mission?id=${state.record.id}&from=${compact ? "today" : "learn"}`} className={PRIMARY}>How did it go?</Link></p>
         </>
       )}
       {/* Answered today */}

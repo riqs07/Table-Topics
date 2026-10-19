@@ -8,7 +8,7 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   // Start at home
   await page.goto("/");
   // A first visit asks one question: choose speaking on the spot
-  await page.getByRole("link", { name: "I want to speak better on the spot" }).click();
+  await page.getByRole("link", { name: "Start", exact: true }).click();
   // It opens today's first step, a Learn card
   await expect(page).toHaveURL(/\/learn\/card\?id=[a-z0-9-]+&plan=1/);
   // Close it (practising hides the tab bar), back to Today
@@ -219,11 +219,11 @@ test("Today's practice: the card, the warm-up, then on to the picks", async ({ p
   // Start at Today
   await page.goto("/");
   // Skip the welcome question, which opens the first step straight away
-  await page.getByRole("link", { name: "Skip" }).click();
+  await page.getByRole("link", { name: "Start", exact: true }).click();
   // Step 1 of 4: the Learn card
   await expect(page.getByText("Step 1 of 4")).toBeVisible();
   // Read it one screen at a time, to the last
-  for (let screen = 0; screen < 4; screen++) await page.getByRole("button", { name: "Next", exact: true }).click();
+  for (let screen = 0; screen < 3; screen++) await page.getByRole("button", { name: "Next", exact: true }).click();
   // On to the warm-up
   await page.getByRole("link", { name: /^Next: step 2/ }).click();
   // Step 2 of 4: the warm-up reading
@@ -398,8 +398,8 @@ test("One moment a day: record a note and see it on the Small talk page", async 
   await expect(page.getByRole("list", { name: "Your moments" })).toContainText("I fixed the bike chain myself", { timeout: 15_000 });
 });
 
-// Learn: from its tab, a myth-or-fact card screen by screen, then its recall question
-test("Learn: read a card one screen at a time and answer its question", async ({ page }) => {
+// Learn: from its tab, a myth-or-fact card screen by screen, then on to the next card (no quiz since decision 67)
+test("Learn: read a card one screen at a time", async ({ page }) => {
   // Start at Learn
   await page.goto("/learn");
   // Open the body-language set
@@ -411,13 +411,11 @@ test("Learn: read a card one screen at a time and answer its question", async ({
   // The verdict
   await expect(page.getByRole("status")).toContainText("It's a myth.");
   // Through the screens
-  for (let screenNumber = 0; screenNumber < 4; screenNumber++) await page.getByRole("button", { name: "Next" }).click();
-  // Answer the question correctly
-  await page.getByRole("group", { name: "Answers" }).getByRole("button", { name: "Small lab studies about single words and liking" }).click();
-  // It comes back in a week
-  await expect(page.getByText("This question comes back in a week.")).toBeVisible();
-  // Back on Learn, the card is done
-  await page.getByRole("link", { name: "Back to Body language: myth or fact", exact: true }).click();
+  for (let screenNumber = 0; screenNumber < 3; screenNumber++) await page.getByRole("button", { name: "Next" }).click();
+  // The last screen offers the next card
+  await expect(page.getByRole("link", { name: "Next card" })).toBeVisible();
+  // Back to the set
+  await page.getByRole("link", { name: /^Close, back to Body language/ }).click();
   // The body-language set shows one read
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Body language: myth or fact");
   // The card is marked done on the set's path
@@ -429,7 +427,7 @@ test("Mission: predict, try, debrief, compare", async ({ page }) => {
   // Start at Today
   await page.goto("/");
   // Skip the welcome question
-  await page.getByRole("link", { name: "Skip" }).click();
+  await page.getByRole("link", { name: "Start", exact: true }).click();
   // Back to Today from the first step
   await page.getByRole("link", { name: "Close, back to Today" }).click();
   // Today's mission leads to Learn, where the prediction is made
@@ -452,7 +450,7 @@ test("Mission: predict, try, debrief, compare", async ({ page }) => {
   await page.getByRole("button", { name: "Save and compare" }).click();
   // The comparison
   await expect(page.getByRole("status")).toContainText("You expected 2 of 5. It went 4 of 5.");
-  // Back to Today
+  // Back to Learn, where it was opened (decision 67)
   await page.locator("[data-action-band]").click();
   // The card says how it went
   await expect(page.getByRole("region", { name: "Today’s mission" })).toContainText("Better than you feared");

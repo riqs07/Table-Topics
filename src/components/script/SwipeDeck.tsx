@@ -3,6 +3,8 @@
 
 // Load React's tools
 import { useEffect, useRef, type ReactNode } from "react";
+// Load Next.js's link component
+import Link from "next/link";
 // Load the shared button looks
 import { PRIMARY, QUIET } from "@/components/script/Buttons";
 
@@ -16,10 +18,12 @@ interface SwipeDeckProps {
   onIndex: (index: number) => void;
   // What the deck is, for screen readers
   label: string;
+  // On the last screen, where to go on to, in place of Next (such as the next card or today's next step)
+  finish?: { label: string; href: string } | null;
 }
 
 // Draw the deck
-export function SwipeDeck({ screens, index, onIndex, label }: SwipeDeckProps) {
+export function SwipeDeck({ screens, index, onIndex, label, finish = null }: SwipeDeckProps) {
   // The sliding row
   const row = useRef<HTMLDivElement | null>(null);
   // The screen a button or key is sliding to, while the slide is under way (its scroll events are not swipes)
@@ -107,8 +111,12 @@ export function SwipeDeck({ screens, index, onIndex, label }: SwipeDeckProps) {
       <div className="mt-4 mb-6 flex items-center gap-3 md:justify-end">
         {/* Back (hidden on the first screen) */}
         <button type="button" onClick={() => go(index - 1)} disabled={index === 0} className={`${QUIET} disabled:hidden`}>Back</button>
-        {/* Next, filling the rest of the row (hidden on the last screen) */}
-        <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${PRIMARY} flex-1 disabled:invisible md:min-w-40 md:flex-none`}>Next</button>
+        {/* Next, filling the rest of the row; on the last screen, where to go on to (or nothing) */}
+        {index === last && finish ? (
+          <Link href={finish.href} className={`${PRIMARY} flex-1 md:min-w-40 md:flex-none`}>{finish.label}</Link>
+        ) : (
+          <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${PRIMARY} flex-1 disabled:invisible md:min-w-40 md:flex-none`}>Next</button>
+        )}
       </div>
     </section>
   );

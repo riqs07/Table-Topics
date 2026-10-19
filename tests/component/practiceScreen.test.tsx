@@ -9,7 +9,9 @@ import { PracticeScreen } from "@/components/screens/PracticeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the day's pickers
-import { promptForDay, tableTopicForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
+// Load the lessons
+import { LESSONS } from "@/content/lessons";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -27,10 +29,12 @@ describe("PracticeScreen", () => {
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // A group's rows as [name, address]
     const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
-    // Confirm the groups and where each row leads
+    // Wait until the lessons row leads straight into the next lesson (decision 67)
+    await waitFor(async () => expect((await rows("Build a skill"))[1]?.[1]).toBe(`/session?mode=lesson&prompt=${LESSONS[0]?.id}`));
+    // Confirm the groups and where each row leads ("See all" first in Build a skill)
     expect([await rows("Everyday conversation"), await rows("Build a skill"), (await rows("Speak on the spot")).slice(0, 3)]).toEqual([
       [["Answering", "/small-talk/unit?id=answering"], ["Asking", "/small-talk/unit?id=asking"], ["Listening", "/small-talk/unit?id=listening"], ["Responding to news", "/small-talk/unit?id=news"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
-      [["Lessons", "/skills#lessons"], ["Read aloud", "/skills#readings"], ["Pause drills", "/skills#pause-drills"], ["Tricky words", "/skills#tricky-words"]],
+      [[undefined, "/skills"], ["Lessons", `/session?mode=lesson&prompt=${LESSONS[0]?.id}`], ["Read aloud", "/skills#readings"], ["Pause drills", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Tricky words", `/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`]],
       [["Table Topic", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Openings and closings", "/bookends"]],
     ]);
   });

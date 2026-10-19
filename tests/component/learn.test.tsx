@@ -2,19 +2,18 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a screen and acting on it
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 // Load the screens being checked
 import { LearnScreen } from "@/components/screens/LearnScreen";
 import { LearnSetScreen } from "@/components/screens/LearnSetScreen";
 import { ScenariosScreen } from "@/components/screens/ScenariosScreen";
 import { CardScreen } from "@/components/screens/CardScreen";
-import { ReviewScreen } from "@/components/screens/ReviewScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
-// Load the cards and the recall rules
-import { LEARN_CARDS, findCard } from "@/content/learn";
-import { firstRead, shuffledRecall } from "@/core/learn";
+// Load the cards and the read rule
+import { LEARN_CARDS } from "@/content/learn";
+import { firstRead } from "@/core/learn";
 // Load the recording contracts
 import type { LiveText, RecordingServices } from "@/audio/services";
 // Load a sample session builder
@@ -75,8 +74,8 @@ describe("Learn", () => {
     expect([screen.getByRole("heading", { level: 1 }).textContent, cards[1]?.textContent?.startsWith("2Next"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual(["Nerves and presence", true, `/learn/card?id=${LEARN_CARDS[1]?.id}`]);
   });
 
-  // A myth-or-fact card: guess, read on, answer the recall question, and it is saved to come back in a week
-  it("takes a guess, then saves a right recall answer", async () => {
+  // A myth-or-fact card: guess, read on to the end, and it is saved as read, with the next card as the way on (no quiz since decision 67)
+  it("takes a guess, then saves the card as read at the end", async () => {
     // A repository
     const repository = createRepository(new MemoryStore());
     // Draw the "93%" card
@@ -86,59 +85,11 @@ describe("Learn", () => {
     // Confirm the verdict
     expect(screen.getByRole("status").textContent).toContain("It's a myth. You got it.");
     // Go to the last screen
-    next(4);
-    // The right answer's words
-    const card = findCard("body-93")!;
-    // The answer to tap
-    const right = card.recall.options[card.recall.answer]!;
-    // Tap it
-    fireEvent.click(within(screen.getByRole("group", { name: "Answers" })).getByRole("button", { name: right }));
-    // Confirm the result and when it comes back
-    expect(await screen.findByText("This question comes back in a week.")).toBeTruthy();
-    // Confirm it was saved
-    await waitFor(async () => expect((await repository.getSettings(NOW)).learn?.["body-93"]).toMatchObject({ box: 1, lastResult: "right" }));
-  });
-
-  // Saying it back: record your own words, compare with the main point, and say how it went
-  it("lets you say the point in your own words", async () => {
-    // A repository
-    const repository = createRepository(new MemoryStore());
-    // Draw a card
-    render(<CardScreen cardId="talk-liking-gap" repository={repository} now={NOW} services={fakeServices("people like me more than I think")} />);
-    // To the last screen
-    next(4);
-    // Say it
-    fireEvent.click(await screen.findByRole("button", { name: "Say it" }));
-    // Let the microphone open
-    await act(async () => {});
-    // Stop
-    await act(async () => fireEvent.click(await screen.findByRole("button", { name: "Stop" })));
-    // Confirm the words and the main point
-    expect([!!(await screen.findByText("people like me more than I think")), !!screen.getByText(/The main point:/)]).toEqual([true, true]);
-    // It went well
-    fireEvent.click(screen.getByRole("button", { name: "I had it" }));
-    // Confirm it was saved as right
-    await waitFor(async () => expect((await repository.getSettings(NOW)).learn?.["talk-liking-gap"]?.lastResult).toBe("right"));
-  });
-
-  // Review: due questions one at a time, then a result
-  it("reviews due questions and shows the result", async () => {
-    // A repository with one card read two days ago
-    const repository = createRepository(new MemoryStore());
-    // The settings
-    const settings = await repository.getSettings(NOW);
-    // Save the read card
-    await repository.saveSettings({ ...settings, learn: { "body-lies": firstRead(new Date(NOW.getTime() - 2 * 86_400_000)) } });
-    // Draw the review
-    render(<ReviewScreen repository={repository} now={NOW} />);
-    // The card's shuffled answers
-    const recall = shuffledRecall(findCard("body-lies")!);
-    // Tap a wrong answer
-    fireEvent.click(await screen.findByRole("button", { name: recall.options[(recall.answer + 1) % 3]! }));
-    // Finish
-    fireEvent.click(screen.getByRole("button", { name: /Finish/ }));
-    // Confirm the result and that it comes back tomorrow
-    expect([screen.getByRole("heading", { level: 1 }).textContent, (await repository.getSettings(NOW)).learn?.["body-lies"]?.box]).toEqual(["0 of 1 right.", 0]);
+    next(3);
+    // Confirm the way on is the next card, and there is no quiz
+    expect([(await screen.findByRole("link", { name: "Next card" })).getAttribute("href")?.startsWith("/learn/card?id="), screen.queryByRole("group", { name: "Answers" })]).toEqual([true, null]);
+    // Confirm it was saved as read
+    await waitFor(async () => expect((await repository.getSettings(NOW)).learn?.["body-93"]?.readAt).toBeTruthy());
   });
 
   // Inside today's practice, a card says which step it is and ends with the way on
@@ -150,13 +101,13 @@ describe("Learn", () => {
     // Draw a card as step 4
     render(<CardScreen cardId="body-93" repository={repository} now={NOW} services={fakeServices("")} planStep={4} />);
     // To the last screen
-    next(4);
+    next(3);
     // Confirm the step and the finish
     expect([!!(await screen.findByText("Step 4 of 4")), (await screen.findByRole("link", { name: /Finish today/ })).getAttribute("href")]).toEqual([true, "/"]);
   });
 
-  // A card with a scenario: choose a reply, see every reply's tier and why, the move, then a spoken step; the answer is saved
-  it("teaches with a scenario before the recall question", async () => {
+  // A card with a scenario on its last screen: choose a reply, see every reply's tier and why, the move, then a spoken step; the answer is saved
+  it("teaches with a scenario on its last screen", async () => {
     // A repository
     const repository = createRepository(new MemoryStore());
     // Draw the boomerasking card (myth or fact, with the Monday coffee scenario)

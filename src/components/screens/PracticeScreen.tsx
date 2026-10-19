@@ -15,12 +15,20 @@ import type { Icon } from "@phosphor-icons/react";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load this week's challenge
 import { WeeklyChallenge } from "@/components/screens/WeeklyChallenge";
-// Load the day's pickers
-import { promptForDay, tableTopicForDay } from "@/content/prompts";
+// Load the day's pickers, and the drills
+import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
+// Load the lessons
+import { LESSONS } from "@/content/lessons";
+// Load the rule for which comes next
+import { nextToPractise } from "@/core/skillNext";
+// Load React's state and effect tools
+import { useEffect, useState } from "react";
 // Load the moment note's prompt
 import { MOMENT_PROMPT } from "@/content/smallTalk";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared link look
+import { TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -69,12 +77,17 @@ function WayRow({ way }: { way: Way }) {
 }
 
 // A group of rows under a run-in heading
-function Group({ id, title, ways }: { id: string; title: string; ways: ReadonlyArray<Way> }) {
-  // The heading, then the rows between rules
+function Group({ id, title, ways, more }: { id: string; title: string; ways: ReadonlyArray<Way>; more?: { href: string; label: string } }) {
+  // The heading (with a link to everything, when there is one), then the rows between rules
   return (
     <section aria-labelledby={id} className="mt-8">
-      {/* Run-in heading */}
-      <h2 id={id} className={SECTION_HEADING}>{title}</h2>
+      {/* Heading, and the link to everything */}
+      <div className="flex items-baseline justify-between gap-4">
+        {/* Run-in heading */}
+        <h2 id={id} className={SECTION_HEADING}>{title}</h2>
+        {/* Everything in this group */}
+        {more && <Link href={more.href} className={`${TEXT_LINK} text-footnote`}>{more.label}</Link>}
+      </div>
       {/* The rows */}
       <ul className="mt-2 divide-y divide-rule border-y border-rule">
         {/* Each kind of practice */}
@@ -88,6 +101,38 @@ function Group({ id, title, ways }: { id: string; title: string; ways: ReadonlyA
 export function PracticeScreen(props: ScreenProps) {
   // The repository and today (null until in the browser)
   const { repo, today } = useScreenBasics(props);
+
+  // How often each lesson and drill was practised, once read (empty until then, so the rows first lead to the lists)
+  const [counts, setCounts] = useState<ReadonlyMap<string, number> | null>(null);
+
+  // Count the lessons, readings and drills practised
+  useEffect(() => {
+    // Ignore the result if the page closes first
+    let cancelled = false;
+    // Read the sessions
+    repo.listSessions().then((sessions) => {
+      // Stop if closed
+      if (cancelled) return;
+      // Count by prompt
+      const next = new Map<string, number>();
+      // Each lesson, reading or drill adds one
+      for (const session of sessions) if (session.mode === "lesson" || session.mode === "read" || session.mode === "pause") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
+      // Keep them
+      setCounts(next);
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [repo]);
+
+  // The next lesson, pause drill and tricky-words text (once counted)
+  const nextLesson = counts ? LESSONS.find((lesson) => lesson.id === nextToPractise(LESSONS.map((item) => item.id), counts)) : undefined;
+  // The next pause drill
+  const nextPause = counts ? PAUSE_DRILLS.find((drill) => drill.id === nextToPractise(PAUSE_DRILLS.map((item) => item.id), counts)) : undefined;
+  // The next tricky-words text
+  const nextTricky = counts ? TRICKY_WORDS.find((drill) => drill.id === nextToPractise(TRICKY_WORDS.map((item) => item.id), counts)) : undefined;
 
   // Today's Table Topic and prepared-speech task (one along from today's practice, so they differ from its steps)
   const topic = today ? tableTopicForDay(today, 1) : null;
@@ -138,15 +183,16 @@ export function PracticeScreen(props: ScreenProps) {
       <Group
         id="skills"
         title="Build a skill"
+        more={{ href: "/skills", label: "See all" }}
         ways={[
-          // Lessons
-          { name: "Lessons", detail: "One practical tip each, 2 to 3 min", href: "/skills#lessons", icon: GraduationCapIcon },
+          // Lessons: straight into the next one (decision 67)
+          { name: "Lessons", detail: nextLesson ? `Next: ${nextLesson.title}` : "One practical tip each, 2 to 3 min", href: nextLesson ? `/session?mode=lesson&prompt=${nextLesson.id}` : "/skills#lessons", icon: GraduationCapIcon },
           // Readings
           { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills#readings", icon: BookOpenTextIcon },
-          // Pause drills
-          { name: "Pause drills", detail: "Pause where the text is marked, 1 min", href: "/skills#pause-drills", icon: PauseIcon },
-          // Tricky words
-          { name: "Tricky words", detail: "Crisp consonants, 1 min", href: "/skills#tricky-words", icon: TextAaIcon },
+          // Pause drills: straight into the next one
+          { name: "Pause drills", detail: nextPause ? `Next: ${nextPause.title}` : "Pause where the text is marked, 1 min", href: nextPause ? `/session?mode=pause&prompt=${nextPause.id}` : "/skills#pause-drills", icon: PauseIcon },
+          // Tricky words: straight into the next one
+          { name: "Tricky words", detail: nextTricky ? `Next: ${nextTricky.title}` : "Crisp consonants, 1 min", href: nextTricky ? `/session?mode=read&prompt=${nextTricky.id}` : "/skills#tricky-words", icon: TextAaIcon },
         ]}
       />
 

@@ -27,7 +27,9 @@ import type { MissionRecord } from "@/data/records";
 import { PRIMARY } from "@/components/script/Buttons";
 
 // Draw the debrief
-export function MissionScreen({ recordId, services = browserRecordingServices, ...props }: ScreenProps & { recordId: string; services?: RecordingServices }) {
+export function MissionScreen({ recordId, from = "learn", services = browserRecordingServices, ...props }: ScreenProps & { recordId: string; from?: "today" | "learn"; services?: RecordingServices }) {
+  // Where the debrief was opened from, and the way back there (decision 67)
+  const origin = from === "today" ? { href: "/", name: "Today" } : { href: "/learn", name: "Learn" };
   // The repository and today
   const { repo, today } = useScreenBasics(props);
   // The try being debriefed (undefined while loading, null if missing)
@@ -80,9 +82,9 @@ export function MissionScreen({ recordId, services = browserRecordingServices, .
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Title and a way back to Today */}
-      <Masthead title="Mission" nav={false} close={{ href: "/", label: "Close, back to Today" }}>{mission?.move ?? ""}</Masthead>
+      <Masthead title="Mission" nav={false} close={{ href: origin.href, label: `Close, back to ${origin.name}` }}>{mission?.move ?? ""}</Masthead>
       {/* Missing */}
-      {record === null && <p className="mt-8 text-lede">This mission could not be found. <Link href="/" className="underline underline-offset-4">Back to Today</Link></p>}
+      {record === null && <p className="mt-8 text-lede">This mission could not be found. <Link href={origin.href} className="underline underline-offset-4">Back to {origin.name}</Link></p>}
       {/* The debrief */}
       {record && mission && (
         <div className="flex flex-1 flex-col">
@@ -138,8 +140,8 @@ export function MissionScreen({ recordId, services = browserRecordingServices, .
           )}
           {/* Push the band down */}
           <div className="flex-1" />
-          {/* Back to Today once debriefed */}
-          {record.status === "done" && <div className="mt-8"><ActionBand action="Back to Today" aside="done" href="/" /></div>}
+          {/* Back to where it was opened from, once debriefed */}
+          {record.status === "done" && <div className="mt-8"><ActionBand action={`Back to ${origin.name}`} aside="done" href={origin.href} /></div>}
         </div>
       )}
     </main>

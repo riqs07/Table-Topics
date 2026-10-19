@@ -33,7 +33,6 @@ export const ROUTES: ReadonlyArray<string> = [
   // Learn, a card, and the review
   "/learn",
   "/learn/card?id=body-93",
-  "/learn/review",
   // Quick scenarios, and a card with a scenario
   "/learn/scenarios",
   // A Learn set

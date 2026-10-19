@@ -35,28 +35,14 @@ describe("HomeScreen", () => {
   // Each check starts with a fresh browser, as far as the welcome is concerned
   beforeEach(() => localStorage.clear());
 
-  // A brand-new user is asked one question; a talk leads to rehearsing, the rest straight into today's first step (a one-minute reading)
-  it("welcomes a new user with one question", async () => {
+  // A brand-new user gets a greeting and one Start, straight into today's first step (decision 67), and the welcome does not come back
+  it("welcomes a new user with one Start, once", async () => {
     // Draw the screen
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // The choices
-    const choices = await screen.findByRole("list", { name: "What brings you here?" });
-    // Confirm the heading, the privacy line, and where each choice leads
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/stay on this device/), within(choices).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])]).toEqual([
-      "Welcome to VoiceLab",
-      true,
-      [["I want to speak better on the spot", FIRST_STEP], ["I want to work on one skill", FIRST_STEP], ["I want to be better in conversation", "/small-talk/unit?id=answering"]],
-    ]);
-  });
-
-  // Skipping also starts today's first step, and the welcome does not come back
-  it("skips the welcome for good", async () => {
-    // Draw the screen
-    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Skip
-    const skip = await screen.findByRole("link", { name: "Skip" });
-    // Confirm it leads into the first step
-    expect(skip.getAttribute("href")).toBe(FIRST_STEP);
+    // Start
+    const skip = await screen.findByRole("link", { name: "Start" });
+    // Confirm the heading, the privacy line, and that Start leads into the first step
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/stay on this device/), skip.getAttribute("href")]).toEqual(["Welcome to VoiceLab", true, FIRST_STEP]);
     // Follow it
     await userEvent.click(skip);
     // Confirm today's practice shows behind it

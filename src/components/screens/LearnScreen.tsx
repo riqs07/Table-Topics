@@ -1,10 +1,8 @@
 "use client";
-// The Learn page: questions due for review, quick scenarios, then each set as a card that opens its own page (decision 57)
+// The Learn page: today's mission, quick scenarios, then each set as a card that opens its own page (decisions 57, 66 and 67)
 
 // Load React's tools
 import { useEffect, useState } from "react";
-// Load Next.js's link component
-import Link from "next/link";
 // Load the scenarios icon
 import { CardsIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
@@ -21,14 +19,12 @@ import { LEARN_CARDS, LEARN_SETS } from "@/content/learn";
 // Load the scenarios, for their count
 import { SCENARIOS } from "@/content/scenarios";
 // Load the rules
-import { dueCards, nextCard, setProgress, type LearnProgress } from "@/core/learn";
+import { nextCard, setProgress, type LearnProgress } from "@/core/learn";
 // Load progress
 import { loadLearnProgress } from "@/data/learnProgress";
 import { loadScenarioProgress } from "@/data/scenarioProgress";
 // Load the scenario progress type
 import type { ScenarioProgress } from "@/data/records";
-// Load the shared button looks
-import { TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
@@ -68,8 +64,6 @@ export function LearnScreen(props: ScreenProps) {
     };
   }, [repo, today]);
 
-  // Questions due now
-  const due = progress && today ? dueCards(progress, today) : [];
   // The next card to read
   const upNext = progress ? nextCard(progress) : undefined;
 
@@ -87,15 +81,6 @@ export function LearnScreen(props: ScreenProps) {
       {/* Today's mission, and how tries have gone (decision 66) */}
       {today && <MissionSection repo={repo} today={today} />}
 
-      {/* Questions due, as one line */}
-      {due.length > 0 && (
-        <p className="mt-4 flex flex-wrap items-baseline justify-between gap-x-4 border-y border-ink py-2">
-          {/* How many */}
-          <span className="font-display text-cue">{due.length === 1 ? "One question to review" : `${due.length} questions to review`}</span>
-          {/* Go */}
-          <Link href="/learn/review" className={TEXT_LINK}>Review now</Link>
-        </p>
-      )}
 
       {/* Practice: quick scenarios */}
       <h2 className={`${SECTION_HEADING} mt-6`}>Practise</h2>
@@ -121,12 +106,8 @@ export function LearnScreen(props: ScreenProps) {
         })}
       </ul>
 
-      {/* The main action: review first, otherwise the next card */}
-      {due.length > 0 ? (
-        <ActionBand action="Review" aside={`${due.length} due`} href="/learn/review" />
-      ) : (
-        upNext && <ActionBand action="Next card" aside={nextSet?.name ?? "about a minute"} href={`/learn/card?id=${upNext.id}`} />
-      )}
+      {/* The main action: the next card */}
+      {upNext && <ActionBand action="Next card" aside={nextSet?.name ?? "about a minute"} href={`/learn/card?id=${upNext.id}`} />}
     </main>
   );
 }

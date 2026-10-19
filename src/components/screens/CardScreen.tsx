@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 import { SwipeDeck } from "@/components/script/SwipeDeck";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-import { PrimaryLink, QUIET, TEXT_LINK } from "@/components/script/Buttons";
+import { PrimaryLink } from "@/components/script/Buttons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the scenarios, their item and progress saving
@@ -21,14 +21,12 @@ import { browserRecordingServices } from "@/audio/browserServices";
 import type { RecordingServices } from "@/audio/services";
 // Load the cards
 import { EVIDENCE_LABELS, LEARN_CARDS, LEARN_SETS, findCard, type Verdict } from "@/content/learn";
-// Load the recall rules
-import { RECALL_DAYS, shuffledRecall, type LearnProgress } from "@/core/learn";
 // Load the plan navigation type, today's practice and step addresses
 import type { PlanNav } from "@/components/screens/planNav";
 import { loadDailyPlan } from "@/data/dailyPlan";
 import { planHref } from "@/core/dailyPlan";
 // Load progress saving
-import { loadLearnProgress, markCardRead, saveRecall } from "@/data/learnProgress";
+import { markCardRead } from "@/data/learnProgress";
 
 // The words for each verdict
 const VERDICT_WORDS: Readonly<Record<Verdict, string>> = {
@@ -56,12 +54,6 @@ function Kicker({ children }: { children: string }) {
   return <p className="mt-6 text-footnote text-ink-muted md:mt-0">{children}</p>;
 }
 
-// When a recall question comes back, in words
-function comesBack(days: number): string {
-  // A day, a week, a month, or longer
-  return days <= 1 ? "tomorrow" : days <= 7 ? "in a week" : days <= 30 ? "in a month" : "in three months";
-}
-
 // Draw a card
 export function CardScreen({ cardId, services = browserRecordingServices, planStep = null, ...props }: ScreenProps & { cardId: string; services?: RecordingServices; planStep?: number | null }) {
   // The repository and today
@@ -72,14 +64,6 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   const [index, setIndex] = useState(0);
   // A myth-or-fact guess
   const [guess, setGuess] = useState<Verdict | null>(null);
-  // The recall answer tapped
-  const [picked, setPicked] = useState<number | null>(null);
-  // What was said when saying it back, once stopped
-  const [said, setSaid] = useState<string | null>(null);
-  // Whether the recall has been saved (once per visit)
-  const [recalled, setRecalled] = useState<boolean | null>(null);
-  // Progress, for the "comes back" line
-  const [progress, setProgress] = useState<LearnProgress>({});
   // Inside today's practice: this step, how many there are, and the next one
   const [plan, setPlan] = useState<PlanNav | null>(null);
 
@@ -105,35 +89,17 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
     };
   }, [planStep, repo, today]);
 
-  // Load progress once in the browser
-  useEffect(() => {
-    // Wait for the browser
-    if (!today) return;
-    // Ignore the result if closed first
-    let cancelled = false;
-    // Load it
-    loadLearnProgress(repo, today).then((loaded) => {
-      // Keep it if still open
-      if (!cancelled) setProgress(loaded);
-    });
-    // Mark as closed
-    return () => {
-      // Stop the update
-      cancelled = true;
-    };
-  }, [repo, today]);
-
-  // The card's scenario, if it has one (an extra screen before the recall question)
+  // The card's scenario, if it has one (an extra, last screen)
   const scenario = card?.scenario ? findScenario(card.scenario) : undefined;
-  // The last screen's place
-  const lastScreen = scenario ? 5 : 4;
+  // The last screen's place (the recall quiz screen went with decision 67)
+  const lastScreen = scenario ? 4 : 3;
 
   // Reaching the last screen counts as reading the card
   useEffect(() => {
     // Only on the last screen, in the browser, for a real card
     if (!today || !card || index < lastScreen) return;
     // Note it (keeps earlier progress)
-    void markCardRead(repo, card.id, today).then(setProgress);
+    void markCardRead(repo, card.id, today);
   }, [card, index, lastScreen, repo, today]);
 
   // An unknown card
@@ -151,25 +117,13 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
 
   // The card's set
   const set = LEARN_SETS.find((item) => item.id === card.set);
-  // The recall answers in their stable shuffled order
-  const recall = shuffledRecall(card);
   // The card after this one
   const next = LEARN_CARDS[LEARN_CARDS.findIndex((item) => item.id === card.id) + 1];
 
-  // Save a recall result once
-  function remember(right: boolean) {
-    // Once per visit, and only in the browser
-    if (recalled !== null || !today || !card) return;
-    // Note it on screen
-    setRecalled(right);
-    // Save it
-    void saveRecall(repo, card.id, right, today).then(setProgress);
-  }
+  // Where to go on to from the last screen: today's next step, or the next card, or back to the set
+  const finish = plan ? { label: plan.next ? `Next: step ${plan.step + 1}` : "Finish today\u2019s practice", href: plan.next ? plan.next.href : "/" } : next ? { label: "Next card", href: `/learn/card?id=${next.id}` } : { label: `Back to ${set?.name ?? "Learn"}`, href: `/learn/set?id=${card.set}` };
 
-  // When the question comes back, once answered
-  const back = recalled === null ? null : comesBack(RECALL_DAYS[Math.min(progress[card.id]?.box ?? 0, RECALL_DAYS.length - 1)] ?? 1);
-
-  // The five screens
+  // The screens: the question, the finding, the meaning, what to do, and a scenario on cards that have one
   const screens = [
     // 1. The question or belief
     <div key="question">
@@ -201,6 +155,13 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       <Kicker>What the research found</Kicker>
       {/* The finding */}
       <p className="mt-2 max-w-[52ch] text-cue leading-snug">{card.finding}</p>
+      {/* The evidence and source */}
+      <p className="mt-4 text-footnote text-ink-muted">
+        {/* The label in words */}
+        <strong className="font-normal text-ink">{EVIDENCE_LABELS[card.evidence]}.</strong>{" "}
+        {/* The source */}
+        {card.source.url ? <a href={card.source.url} data-inline target="_blank" rel="noreferrer" className="underline underline-offset-4">{card.source.text}</a> : card.source.text}
+      </p>
     </div>,
     // 3. What it means
     <div key="meaning">
@@ -238,75 +199,6 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
         <div className="mt-2"><ScenarioItem scenario={scenario} services={services} onAnswer={(tier) => { if (today) void saveScenarioAnswer(repo, scenario.id, tier, today); }} /></div>
       </div>,
     ] : []),
-    // Remember it
-    <div key="remember">
-      {/* Heading */}
-      <Kicker>Remember it</Kicker>
-      {/* The question */}
-      <p className="mt-2 font-display text-cue">{card.recall.question}</p>
-      {/* The answers to tap */}
-      <div role="group" aria-label="Answers" className="mt-3 flex flex-col gap-2">
-        {/* Each answer */}
-        {recall.options.map((option, position) => {
-          // Whether this answer has been revealed as right or wrong
-          const shown = picked !== null && (position === recall.answer || position === picked);
-          // One answer
-          return (
-            <button key={option} type="button" disabled={picked !== null || said !== null} onClick={() => { setPicked(position); remember(position === recall.answer); }} data-result={shown ? (position === recall.answer ? "right" : "wrong") : undefined} className={`min-h-11 border px-4 py-2 text-left ${shown && position === recall.answer ? "border-fill bg-fill text-fill-ink" : shown ? "border-ink line-through" : "border-rule"}`}>
-              {option}
-            </button>
-          );
-        })}
-      </div>
-      {/* After a tap: right or not, and the line to remember */}
-      {picked !== null && <p role="status" className="mt-3 text-lede">{picked === recall.answer ? "Right." : "Not quite."} <em>{card.keyLine}</em></p>}
-      {/* Or say it back in your own words */}
-      {picked === null && (
-        <div className="mt-6 border-t border-rule pt-3">
-          {/* The offer */}
-          <p className="text-footnote text-ink-muted">Or say the main point in your own words</p>
-          {/* Record it */}
-          <QuickRecorder services={services} action="Say it" maxSec={30} onDone={setSaid} />
-          {/* Then compare, and say how it went */}
-          {said !== null && (
-            <div className="mt-4">
-              {/* The line to compare with */}
-              <p className="text-lede">The main point: <em>{card.keyLine}</em></p>
-              {/* How it went */}
-              {recalled === null ? (
-                <p className="mt-2 flex flex-wrap gap-2">
-                  {/* Had it */}
-                  <button type="button" onClick={() => remember(true)} className="min-h-11 border border-ink px-4">I had it</button>
-                  {/* Not quite */}
-                  <button type="button" onClick={() => remember(false)} className="min-h-11 border border-rule px-4">Not quite</button>
-                </p>
-              ) : (
-                // Noted
-                <p role="status" className="mt-2 text-ink-muted">Noted.</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-      {/* When it comes back */}
-      {back && <p className="mt-3 text-footnote text-ink-muted">This question comes back {back}.</p>}
-      {/* The evidence and source */}
-      <p className="mt-6 border-t border-rule pt-3 text-footnote text-ink-muted">
-        {/* The label in words */}
-        <strong className="font-normal text-ink">{EVIDENCE_LABELS[card.evidence]}.</strong>{" "}
-        {/* The source */}
-        {card.source.url ? <a href={card.source.url} data-inline target="_blank" rel="noreferrer" className="underline underline-offset-4">{card.source.text}</a> : card.source.text}
-      </p>
-      {/* Inside today's practice: on to the next step, or finish */}
-      {plan && <p className="mt-6"><PrimaryLink href={plan.next ? plan.next.href : "/"}>{plan.next ? `Next: step ${plan.step + 1}` : "Finish today\u2019s practice"}</PrimaryLink></p>}
-      {/* On to the next card, or back */}
-      {!plan && <p className="mt-4 flex flex-wrap gap-x-4">
-        {/* The next card */}
-        {next && <Link href={`/learn/card?id=${next.id}`} className={TEXT_LINK}>Next card</Link>}
-        {/* Back */}
-        <Link href={`/learn/set?id=${card.set}`} className={QUIET}>Back to {set?.name ?? "Learn"}</Link>
-      </p>}
-    </div>,
   ];
 
   // Draw the page
@@ -315,7 +207,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {/* The set's name, with a way out instead of the tab bar */}
       <Masthead title={set?.name ?? "Learn"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: `/learn/set?id=${card.set}`, label: `Close, back to ${set?.name ?? "Learn"}` }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
       {/* The screens */}
-      <SwipeDeck screens={screens} index={index} onIndex={setIndex} label={card.title} />
+      <SwipeDeck screens={screens} index={index} onIndex={setIndex} label={card.title} finish={finish} />
     </main>
   );
 }
