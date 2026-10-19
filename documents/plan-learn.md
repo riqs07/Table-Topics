@@ -138,6 +138,8 @@ Each label is shown in words, never as a colour alone.
 
 - **Warmth and connection** (decision 54): nine cards from the 2026-10 deep dive, plus scenario questions on ten cards and a quick-scenarios practice.
 
+- **Four new sets and a real-world step** (decision 71, 2026-10-19). *Your voice* (pace, pitch, vocal fry, silent pauses, variety), *Getting your point across* (the curse of knowledge, points not a script, point-reason-example, concrete examples, repeating the question in Q&A), *Changing minds* (answer the objection, argue from their values, listen and swap stories, “free to say no”, three reasons not four) and *Hard conversations* (disagreeing, apologising, asking for help, asking for advice, humblebragging). Body language gained looking away, a still audience, body over face at peaks, listening for feelings and reading the room; Nerves gained talking to yourself by name; Warmth gained thank-you notes. Each new card has an `outThere` line, shown on its last screen as “Try it for real”: one small step to take away from the app. Sources were checked against abstracts and study summaries; where only secondary coverage was found, the card says so through its evidence label (mixed or practical).
+
 ## Open questions
 
 - **Where Learn lives:** its own tab (Today · Practice · Connect · Learn · History), or inside Skills?

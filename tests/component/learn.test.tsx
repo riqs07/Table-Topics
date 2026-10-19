@@ -106,6 +106,17 @@ describe("Learn", () => {
     expect([!!(await screen.findByText("Step 4 of 4")), (await screen.findByRole("link", { name: /Finish today/ })).getAttribute("href")]).toEqual([true, "/"]);
   });
 
+  // A new card's last screen has a small step to try away from the app
+  it("ends with a small step to try for real (decision 71)", async () => {
+    // Draw the apology card
+    render(<CardScreen cardId="hard-apology" repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} />);
+    // Wait for it, then through to "What to do"
+    await screen.findByRole("heading", { name: "What makes an apology work?" });
+    next(3);
+    // Confirm the step is there, in its own words
+    expect(screen.getByText("Try it for real").nextElementSibling?.textContent).toBe("Next time you owe an apology, use: “I [did this]. That was my mistake. Here’s what I’ll do: …”");
+  });
+
   // A card with a scenario on its last screen: choose a reply, see every reply's tier and why, the move, then a spoken step; the answer is saved
   it("teaches with a scenario on its last screen", async () => {
     // A repository

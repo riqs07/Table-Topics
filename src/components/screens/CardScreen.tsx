@@ -9,6 +9,9 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 import { SwipeDeck } from "@/components/script/SwipeDeck";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
+// Load the icon for the real-world step
+import { GlobeHemisphereWestIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the shared button looks
 import { PRESS, PrimaryLink } from "@/components/script/Buttons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -185,6 +188,20 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
           <p className="mt-1 text-lede">{card.exercise}</p>
           {/* Record it and hear it back */}
           <QuickRecorder services={services} action="Record it" maxSec={30} />
+        </div>
+      )}
+      {/* A small step to try for real, away from the app */}
+      {card.outThere && (
+        <div className="mt-6 flex gap-3 rounded-2xl bg-card p-4">
+          {/* The icon */}
+          <span aria-hidden="true" className="flex size-10 flex-none items-center justify-center rounded-xl bg-warm-tint text-warm-ink"><GlobeHemisphereWestIcon className="size-6" /></span>
+          {/* The step */}
+          <span>
+            {/* Heading */}
+            <span className="block text-footnote font-semibold text-warm-ink">Try it for real</span>
+            {/* The step itself */}
+            <span className="mt-1 block">{card.outThere}</span>
+          </span>
         </div>
       )}
       {/* Practise it elsewhere */}

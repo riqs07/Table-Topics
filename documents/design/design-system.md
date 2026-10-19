@@ -21,6 +21,7 @@ The user found the script page stiff and asked for something more fun. These rul
 - **Recording.** The bar meter is replaced by the **voice shape** (`VoiceBlob` in `RecordingScreen.tsx`): a soft shape that slowly changes outline, grows with the voice, takes the timing light's colour (warm before the window opens) and holds the clock; a dashed halo turns around it. It keeps the "Microphone level" name. The "Recording" dot is warm and breathes.
 - **Results.** The numbers are tiles that count up into place (`core/countUp.ts`, `useCountUp`). A timed session shows a ring drawn round to its length against the window's end, beside the timing sentence. The one change is a card with a "One change" pill. The player is a rounded panel with a round play button.
 - **Learn.** The swipe deck's segments are rounded and the current one is a little taller; Myth and Fact are rounded buttons side by side; the verdict pops in.
+- **Try it for real** (decision 71). A card's "What to do" screen can end with a white rounded panel: a globe on a warm tile, "Try it for real" in warm ink, and one small step to take away from the app.
 - **Light by default** (decision 70). The app is light unless the user picks Dark or Auto in Settings → Appearance; Auto follows the phone or computer.
 - **Motion** (`globals.css`): pop, rise, fill, burst, morph, slow spin, breathe and ring. Every one is used through `motion-safe:`, so with reduced motion the end state shows at once and nothing moves; counting up also starts at the final numbers.
 
