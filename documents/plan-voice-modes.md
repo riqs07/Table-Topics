@@ -1,16 +1,17 @@
 # Plan: voice modes (warm-ups, clear sounds, volume, pitch, tone, pausing, shadowing)
 
-Proposed 2026-10-19, for the user to read before anything is built. The user asked for pronunciation drills, rhythm, pitch and volume drills, tone and pausing drills, and shadowing ("copy a speaker you admire: their pace, their energy, the way they land a point"), each with a daily minute of speaking. This plan fleshes out the modes; how to build them comes later.
+Proposed 2026-10-19 and updated the same day with the user's answers, for the user to read before anything is built. The user asked for pronunciation drills, rhythm, pitch and volume drills, tone and pausing drills, and shadowing ("copy a speaker you admire: their pace, their energy, the way they land a point"), each with a daily minute of speaking. This plan fleshes out the modes; how to build them comes later.
 
 ## What the user decided so far (2026-10-19)
 
 | Question | Decision |
 |----------|----------|
-| Warm-ups | Their own mode, with more of them, and part of today's practice |
+| Warm-ups | Their own mode, with more of them, and part of today's practice. **No recording**: warm-ups never use the microphone |
+| The reading in step 2 | **Stays where it is for now** (the speech-in-parts reading is still step 2 of today's practice) |
 | Volume drills | Yes |
 | Pitch tracking | Yes |
 | Tone drills | Yes; the model reads come from the ElevenLabs work planned for later |
-| Shadowing audio | Open: ElevenLabs, YouTube, or the speaker's own audio (recommendation in mode 7) |
+| Shadowing audio | **A mix:** the built-in library, plus a few YouTube videos the user picks |
 | Building | Later. This plan describes the modes only |
 
 ## The shape
@@ -33,9 +34,10 @@ Each mode links to its card in Learn's "Your voice" set, and that set grows a ca
 
 **In today's practice:**
 
-- **Step 2 becomes a one-minute voice warm-up every day** (mode 1). The speech-in-parts reading it replaces moves into the delivery group as one of its picks.
-- **The delivery group takes the voice modes in turn.** Its picks today are the week's focus drill and a pause drill. They would become the focus drill, a voice drill and a reading part. The voice drill cycles through Clear sounds, Volume, Pitch and stress, Tone, Pausing and Shadowing, one each time the group comes up.
-- **Day one is unchanged.** Free talk still comes first (decision 78), with the warm-up from day two.
+- **Step 2 stays the speech-in-parts reading** (the user's decision).
+- **The delivery group takes the voice modes in turn.** Its picks today are the week's focus drill and a pause drill. They would become the focus drill and a voice drill. The voice drill cycles through Warm-ups, Clear sounds, Volume, Pitch and stress, Tone, Pausing and Shadowing, one each time the group comes up.
+- **Warm-ups are also offered just before the reading** as an optional "Warm up first" link on step 2. That puts a minute of warm-up within reach every day without moving the reading.
+- **Day one is unchanged.** Free talk still comes first (decision 78).
 
 The plan stays four steps and about the same length.
 
@@ -47,7 +49,7 @@ The plan stays four steps and about the same length.
 
 **What it trains.** Breath, a loose jaw and face, and a ready mouth, before speaking. It is presented as getting ready, not as a cure: no claims about protecting the voice.
 
-**What you do.** A one-minute routine of three moves of about 20 seconds each: one for breath or body, one for face and mouth, and one articulation line that is recorded. A soft timer and the move's name and cue fill the screen. The voice shape counts down each move; a tap skips ahead. Only the last move is recorded, so there is something to check.
+**What you do.** A one-minute routine of three moves of about 20 seconds each: one for breath or body, one for face and mouth, and one articulation line or voice move to say aloud. A soft timer and the move's name and cue fill the screen. The shape counts down each move; a tap skips ahead. **Nothing is recorded** (the user's decision): the microphone stays off, so warm-ups are quick, private and work anywhere.
 
 **The moves** (about 18 to start, so a routine rarely repeats within a week):
 
@@ -62,7 +64,7 @@ The plan stays four steps and about the same length.
 | | Tongue circles | Run your tongue around the front of your teeth, five each way |
 | | Chewing hum | Chew slowly with your mouth closed, humming |
 | | Jaw drop | Let your jaw hang open, then close gently. No forcing |
-| Articulation (recorded) | Tip of the tongue | "The tip of the tongue, the teeth, the lips", three times, a little faster each time |
+| Articulation (said aloud) | Tip of the tongue | "The tip of the tongue, the teeth, the lips", three times, a little faster each time |
 | | Red leather | "Red leather, yellow leather" |
 | | Unique New York | "Unique New York, you know you need unique New York" |
 | | Copper coffee pot | "A proper copper coffee pot" |
@@ -72,11 +74,11 @@ The plan stays four steps and about the same length.
 | | Siren | Slide "ooo" from low to high and back, gently |
 | | Ready line | Say your first line as if to the back of the room |
 
-**Afterwards.** One line: "All words caught" or "Hard to catch: leather, yellow". Tap a word to hear it (word times and tap-to-play already exist). Nothing else: warm-ups should feel quick.
+**Afterwards.** No numbers and no check, just "Warmed up" and the way on (back to Today's next step, or into the drill that follows). Words from Clear sounds' "words to watch" list can turn up as the articulation line, so warm-ups still follow your trouble words.
 
-**In today's practice.** Step 2, every day from day two, rotating so each routine mixes one move from each set.
+**In today's practice.** One of the delivery group's picks in turn, and an optional "Warm up first" link on the reading step. Each routine mixes one move from each set.
 
-**What it needs.** Mostly existing pieces: the word check from reading aloud and tap-to-play. New: a guided routine screen with timed moves (no microphone until the last move), and the move list as content.
+**What it needs.** A guided routine screen with timed moves and no microphone, and the move list as content. Nothing else: it is the simplest mode to build.
 
 ## 2. Clear sounds (pronunciation)
 
@@ -94,7 +96,7 @@ About 15 sets to start.
 
 **Afterwards.**
 - **Hard-to-catch words.** The words the speech service did not catch, highlighted; tap to hear each one.
-- **Words to watch.** A list that builds over days. Those words come back in later warm-ups and drills, so practice follows your own trouble words.
+- **Words to watch.** A list that builds over days. Those words come back in later drills, and as warm-up lines to say aloud, so practice follows your own trouble words.
 
 **Honest limit.** The browser's speech service works word by word, not syllable by syllable, and it mishears accents. So the app says "hard to catch", never "mispronounced", and shows no score.
 
@@ -215,26 +217,26 @@ About 15 sets to start.
 | **Your own audio file** (a talk you recorded, a podcast you downloaded) | Yes | Yes | Found by the app at the silences | Yes | Stays on your device. You find the file yourself. The browser cannot turn a file into text, so you paste the words if you want them shown |
 | **Public-domain recordings** of speeches already in the app | Yes (for example some presidential speeches) | Yes | Prepared once | Yes | Each clip's rights need checking before it ships |
 
-**Recommendation.** Use three layers, in this order:
+**Decided: a mix of two sources.**
 
-1. **A built-in library**, for the daily drill:
+1. **The built-in library**, for the daily drill:
    - ElevenLabs reads of passages and lines already in the app, in two or three speaking styles (steady storyteller, energetic, calm authority).
    - Public-domain recordings of real speakers wherever their rights are clear.
 
    It works offline and every comparison works.
-2. **"A speaker you admire"** from a YouTube link, played in YouTube's player:
-   - The phrase points are marked by hand.
-   - Comparison covers timing, pauses and words, but not pitch or loudness, because the app never receives the audio.
-   - This covers the motivating part, copying someone you look up to, within YouTube's rules.
-3. **Your own audio file**, for full comparison with a real speaker.
+2. **A few YouTube videos the user picks**, of speakers worth copying:
+   - They play in YouTube's own player.
+   - Their phrases are marked by hand once (start, end, the words, and what to copy) and shipped as a small set alongside the library.
+   - Comparison covers timing, pauses and words, but not the speaker's pitch or loudness, because the app never receives the audio.
+
+Your own audio files are not planned for now; they stay in the table above as an option.
 
 **What it needs.**
 - A phrase player.
 - A comparison screen.
 - Pitch tracking (mode 4) for the pitch lines.
 - The ElevenLabs reads with timings.
-- For YouTube: the embedded player and a way to mark phrases.
-- For files: decoding on the device and splitting at the silences.
+- For YouTube: the embedded player, and the hand-marked phrases for each chosen video.
 
 ---
 
@@ -242,31 +244,30 @@ About 15 sets to start.
 
 | Piece | Used by | Exists today? |
 |-------|---------|---------------|
-| Guided routine screen with timed moves | Warm-ups | No |
-| Word check, word times, tap-to-play | Warm-ups, Clear sounds, Shadowing | Yes |
+| Guided routine screen with timed moves, no microphone | Warm-ups | No |
+| Word check, word times, tap-to-play | Clear sounds, Shadowing | Yes |
 | Loudness readings, fading endings, pauses | Volume, Pausing, Shadowing | Yes |
 | Automatic volume levelling switched off | Volume | No (needs a phone check) |
 | Pitch tracking on the device | Pitch, Tone, Shadowing | No (needs a phone check and a decision) |
 | Side-by-side takes | Volume, Tone, Shadowing | Partly (before and after on a retry) |
 | "Words to watch" list | Clear sounds, Warm-ups | No |
 | ElevenLabs reads with timings, shipped as files | Tone, Shadowing | No (the voice service exists for small talk) |
-| YouTube embedded player and phrase marking | Shadowing | No |
+| YouTube embedded player and hand-marked phrases for the chosen videos | Shadowing | No |
 
 ## A possible order, when building starts
 
-1. **Warm-ups**, as a mode and as step 2 of today's practice. No new technology beyond the routine screen.
+1. **Warm-ups**, as a mode, in the delivery picks and as "Warm up first" on the reading step. No new technology beyond the routine screen.
 2. **Clear sounds and Pausing.** Mostly existing pieces.
 3. **Volume**, after checking that automatic levelling can be switched off on phones.
 4. **Pitch tracking** check on real phones, then **Pitch and stress**.
 5. **Tone**: first with your own three takes and the guessing game, then with ElevenLabs model reads.
-6. **Shadowing**: the built-in library first, then YouTube links, then your own files.
+6. **Shadowing**: the built-in library first, then the user's chosen YouTube videos.
 
-## Questions for the user
+## Still open
 
-1. Should the speech-in-parts reading move into the delivery picks, as proposed, so the warm-up can take step 2 every day?
-2. Shadowing: is the three-layer approach right, and which comes first after the built-in library: YouTube links or your own files?
-3. Is "Your voice" the right name for the Practice group, and should pause drills and tricky words move into it?
-4. In warm-ups, should the last move be recorded and checked, or should warm-ups stay recording-free?
+1. Is "Your voice" the right name for the Practice group, and should pause drills and tricky words move into it?
+2. Which YouTube videos to use for shadowing: the user will pick a few. For each, the plan needs the link and the stretch to use (about one to two minutes); the phrases are then marked by hand.
+3. Later, once warm-ups exist: should the reading step ever give way to a warm-up, or stay as it is?
 
 ## Sources
 
