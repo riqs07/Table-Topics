@@ -907,8 +907,8 @@ describe("RecordingScreen", () => {
     const mismatch = vi.fn();
     // Take over the page in a browser that does support speech
     const root = await act(async () => hydrateRoot(container, <RecordingScreen {...props} services={fakeServices().services} />, { onRecoverableError: mismatch }));
-    // Confirm no mismatch, and the start action is offered
-    expect([mismatch.mock.calls.length, !!container.querySelector("button")?.textContent?.includes("Start speaking")]).toEqual([0, true]);
+    // Confirm no mismatch, and the start action is offered in the band and on the voice shape
+    expect([mismatch.mock.calls.length, !!container.querySelector("button[data-action-band]")?.textContent?.includes("Start speaking"), !!container.querySelector("button[aria-label=\"Tap to start\"]")]).toEqual([0, true, true]);
     // Clean up
     act(() => root.unmount());
     // Remove the page
@@ -976,7 +976,7 @@ describe("RecordingScreen", () => {
     // Draw free talk
     const { repository, clock, navigate } = draw({ mode: "free", promptId: "free" });
     // Confirm the invitation and the length line
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText("of as long as you like")]).toEqual(["Talk about anything.", true]);
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText("no time limit")]).toEqual(["Talk about anything.", true]);
     // Start, speak for 20 seconds, stop
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // The stop button
@@ -990,6 +990,25 @@ describe("RecordingScreen", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // Confirm it was saved as free talk
     expect((await repository.listSessions())[0]).toMatchObject({ mode: "free", promptId: "free" });
+  });
+
+  // The voice shape starts and stops a recording too (decision 74)
+  it("starts and stops by tapping the voice shape", async () => {
+    // Draw a one-minute session
+    const { repository, clock, navigate } = draw();
+    // Tap the shape to start
+    fireEvent.click(await screen.findByRole("button", { name: "Tap to start" }));
+    // While recording, the shape is the stop button, and still shows the level
+    const shape = await screen.findByRole("button", { name: "Tap to stop" });
+    // Confirm the start shape is gone and the level is named inside the stop shape
+    expect([screen.queryByRole("button", { name: "Tap to start" }), !!within(shape).getByRole("img", { name: "Microphone level" })]).toEqual([null, true]);
+    // Speak for 20 seconds, then tap the shape
+    clock.advance(20_000);
+    fireEvent.click(shape);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm it was saved
+    expect((await repository.listSessions()).length).toBe(1);
   });
 
   // A short speech (decision 73): the topic and points in view before and while speaking, a light against its length, and the plan saved with it

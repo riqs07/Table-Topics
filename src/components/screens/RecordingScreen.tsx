@@ -50,7 +50,9 @@ import { markMicExplained, readMicExplained } from "@/data/micExplained";
 // Load today's practice, for its number of steps
 import { loadDailyPlan } from "@/data/dailyPlan";
 // Load the shared button looks
-import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, QUIET, TEXT_LINK } from "@/components/script/Buttons";
+// Load the microphone for the start button
+import { MicrophoneIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the request that keeps saved practice from being cleared
 import { requestPersistentStorage } from "@/data/storageSafety";
 
@@ -334,24 +336,51 @@ const HALO_EDGE: Record<TimeSignal, string> = {
   overtime: "border-light-red",
 };
 
-// The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69; replaces the bar meter)
-function VoiceBlob({ levels, signal, clock }: { levels: number[]; signal: TimeSignal; clock: string }) {
+// The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69; replaces the bar meter); tapping it stops (decision 74)
+function VoiceBlob({ levels, signal, clock, onStop }: { levels: number[]; signal: TimeSignal; clock: string; onStop: () => void }) {
   // The latest few readings, averaged so the shape does not jitter
   const recent = levels.slice(-4);
   // How loud, from 0 to 1
   const level = Math.min(1, (recent.reduce((sum, value) => sum + value, 0) / Math.max(1, recent.length)) * 4);
   // The shape's size: bigger as the voice gets louder
   const scale = 0.82 + level * 0.3;
-  // A square stage with the halo, the shape and the clock on top
+  // A round button holding the halo, the shape and the clock (the level stays named for screen readers)
   return (
-    <div role="img" aria-label="Microphone level" className="relative mx-auto my-6 flex size-72 items-center justify-center">
+    <button type="button" onClick={onStop} aria-label="Tap to stop" className={`relative mx-auto my-6 flex size-72 items-center justify-center rounded-full ${PRESS}`}>
+      {/* The level, named for screen readers */}
+      <span role="img" aria-label="Microphone level" className="absolute inset-0" />
       {/* The dashed halo, turning slowly */}
       <span aria-hidden="true" className={`absolute inset-0 rounded-full border-2 border-dashed opacity-60 motion-safe:animate-spin-slow ${HALO_EDGE[signal]}`} />
       {/* The shape, growing with the voice and changing colour with the light */}
       <span aria-hidden="true" className={`absolute inset-6 rounded-full transition-[transform,background-color] duration-150 ease-out motion-safe:animate-morph ${BLOB_FILL[signal]}`} style={{ transform: `scale(${scale})` }} />
-      {/* The clock inside */}
-      <span aria-hidden="true" className="relative font-display text-prompt-xl font-semibold tabular-nums tracking-tight text-on-warm">{clock}</span>
-    </div>
+      {/* The clock inside, and what a tap does */}
+      <span aria-hidden="true" className="relative flex flex-col items-center text-on-warm">
+        {/* The clock */}
+        <span className="font-display text-prompt-xl font-semibold tabular-nums tracking-tight">{clock}</span>
+        {/* The hint */}
+        <span className="text-footnote font-semibold">Tap to stop</span>
+      </span>
+    </button>
+  );
+}
+
+// Before recording: the same shape, still and smaller, as a big round start button (decision 74)
+function StartBlob({ onStart }: { onStart: () => void }) {
+  // A round button with a quiet halo, the warm shape and a microphone
+  return (
+    <button type="button" onClick={onStart} aria-label="Tap to start" className={`relative mx-auto my-6 flex size-48 items-center justify-center rounded-full ${PRESS}`}>
+      {/* The dashed halo, still */}
+      <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-dashed border-warm opacity-60" />
+      {/* The shape, breathing slowly when motion is welcome */}
+      <span aria-hidden="true" className="absolute inset-4 rounded-full bg-warm shadow-card motion-safe:animate-morph" />
+      {/* The microphone and the hint */}
+      <span aria-hidden="true" className="relative flex flex-col items-center gap-1 text-on-warm">
+        {/* The microphone */}
+        <MicrophoneIcon weight="fill" className="size-10" />
+        {/* The hint */}
+        <span className="text-footnote font-semibold">Tap to start</span>
+      </span>
+    </button>
   );
 }
 
@@ -994,7 +1023,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             </p>
           )}
           {/* The length to aim for, or what the countdown is for */}
-          <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
+          <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : mode === "free" ? "no time limit" : `of ${lengthText}`}</p>
           {/* During a Table Topic or Record Response, the timing light */}
           {recording && hasLight && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds, promptId)} mode={mode} promptId={promptId} />}
           {/* Prompt reminder while recording */}
@@ -1180,11 +1209,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             </div>
           )}
 
+          {/* Before starting (when no text to read fills the screen): the shape as a big start button, doing what the band does (decision 74) */}
+          {!script && !problem && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") && <StartBlob onStart={begin} />}
           {/* While recording: the meter and the words */}
           {recording && (
             <>
               {/* The live voice shape, with the clock inside */}
-              <VoiceBlob levels={levels} signal={hasLight ? timeSignal(mode, elapsed, goalSeconds, promptId) : "none"} clock={formatClock(elapsed)} />
+              <VoiceBlob levels={levels} signal={hasLight ? timeSignal(mode, elapsed, goalSeconds, promptId) : "none"} clock={formatClock(elapsed)} onStop={() => void stop()} />
               {/* Words so far (not while reading: the text itself is on screen) */}
               {(!script || textHidden) && <div className="mt-8"><LiveWords text={text} /></div>}
             </>
