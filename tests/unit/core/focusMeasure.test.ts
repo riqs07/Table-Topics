@@ -69,22 +69,10 @@ describe("headlineFor", () => {
     expect(headlineFor(makeSession({ focus: "pausing", durationSec: 30, loudness: TWO_PAUSES }))).toBe("4.0 pauses a minute.");
   });
 
-  // No number: name the focus instead
-  it("names the focus when there is no number", () => {
-    // Confirm the sentence
-    expect(headlineFor(makeSession({ focus: "strong-opening" }))).toBe("Strong opening.");
-  });
-
-  // An old session keeps its retired focus's name
-  it("names a retired focus on an old session", () => {
-    // Confirm the sentence
-    expect(headlineFor(makeSession({ focus: "start-and-finish" }))).toBe("Start and finish.");
-  });
-
-  // Pausing week without readings names the focus
-  it("names the focus when the pause count cannot be read", () => {
-    // Confirm the sentence
-    expect(headlineFor(makeSession({ focus: "pausing", loudness: undefined }))).toBe("Pausing.");
+  // No number: no headline, so the one change leads (decision 67)
+  it("gives no headline when nothing measures the focus", () => {
+    // Confirm for an unmeasured focus, a retired one, and pausing without readings
+    expect([headlineFor(makeSession({ focus: "strong-opening" })), headlineFor(makeSession({ focus: "start-and-finish" })), headlineFor(makeSession({ focus: "pausing", loudness: undefined }))]).toEqual([null, null, null]);
   });
 });
 

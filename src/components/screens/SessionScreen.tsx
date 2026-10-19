@@ -21,7 +21,7 @@ import { planHref } from "@/core/dailyPlan";
 // Load the plan navigation type
 import type { PlanNav } from "@/components/screens/planNav";
 // Load the listen-back step
-import { ReviewStep } from "@/components/screens/ReviewStep";
+import { NotesFold } from "@/components/screens/NotesFold";
 // Load the quick tags, for showing the user's notes
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
 // Load the small-talk beats and checks
@@ -38,7 +38,7 @@ import { marksPaused, marksSentence, paceAcross } from "@/core/wordTiming";
 // Load the script splitter, to place the pause marks among the timed words
 import { readingTokens } from "@/core/liveReading";
 // Load the compact row of numbers
-import { resultNumbers } from "@/core/resultNumbers";
+import { resultChanges, resultNumbers } from "@/core/resultNumbers";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the then-and-now helpers
@@ -56,7 +56,7 @@ import { talkSections } from "@/core/eventPrep";
 // Load the Table Topics timing sentence
 import { LOUDNESS_TICK_MS, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
-import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
+import { headlineFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
 import { BOOKENDS, promptForDay } from "@/content/prompts";
 // Load the lookup for every text to read, full speeches included
@@ -84,8 +84,6 @@ interface SessionScreenProps extends ScreenProps {
   fetchFn?: typeof fetch;
   // Inside today's practice: which step this is (counted from 1), or null
   planStep?: number | null;
-  // Where to go next (the router in the app)
-  navigate?: (path: string) => void;
 }
 
 // What to say while feedback is being asked for, or why it has not come
@@ -265,7 +263,7 @@ function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: 
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed, plan, navigate }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void; plan: PlanNav | null; navigate?: (path: string) => void }) {
+function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed, plan }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void; plan: PlanNav | null }) {
   // The lesson, on the skill path
   const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
   // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
@@ -316,18 +314,6 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const home = sessionHome(session.mode, session.promptId, plan !== null);
   // For one part of a full speech: the speech, and the part read
   const speechPart = session.mode === "read" ? partOf(session.promptId) : undefined;
-  // A new first try asks the user to listen back and write notes before anything else
-  if (session.selfReview === null) {
-    // The listening step in place of the feedback
-    return (
-      <>
-        {/* Title and day, and a way out instead of the tab bar (focus mode) */}
-        <Masthead title={title} nav={false} close={home}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(session.createdAt), now)}</Masthead>
-        {/* Listen, write, continue */}
-        <ReviewStep repo={repo} session={session} onSaved={onReviewed} plan={plan} retryHref={retryHref} navigate={navigate} />
-      </>
-    );
-  }
   // Draw the page
   return (
     <>
@@ -376,31 +362,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             // The beats: how many, then each with the words that showed it
             <SmallTalkBeats session={session} />
           ) : (
-            // The focus number as a sentence
-            <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
-          )}
-          {/* The user's own notes, first */}
-          {review && (review.worked || review.change || tagWords.length > 0) && (
-            <div className="mt-5 border-y border-rule py-3 text-lede">
-              {/* Small heading */}
-              <p className="text-footnote text-ink-muted">Your notes</p>
-              {/* What worked */}
-              {review.worked && <p className="mt-1"><em>Worked.</em> {review.worked}</p>}
-              {/* What to change */}
-              {review.change && <p className="mt-1"><em>Change.</em> {review.change}</p>}
-              {/* The tags */}
-              {tagWords.length > 0 && <p className="mt-1 text-footnote text-ink-muted">{smallTalk ? "You heard" : "Tagged"}: {tagWords.join(", ")}.</p>}
-              {/* The notes against the numbers */}
-              {checks.length > 0 && (
-                <ul aria-label="Your notes against the numbers" className="mt-2 text-footnote">
-                  {/* Each comparison, marked by whether it matched */}
-                  {checks.map((check) => (
-                    // One comparison
-                    <li key={check.text} data-kind={check.kind} className={`mt-1 border-l-2 pl-2 ${check.kind === "matched" ? "border-accent" : "border-rule text-ink-muted"}`}>{check.text}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            // The focus number as a sentence, when one measures it (otherwise the one change leads)
+            headlineFor(session) && <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
           )}
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
           <div className="mt-5 border-l-4 border-accent bg-paper px-4 py-4">
@@ -433,6 +396,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           </div>
           {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
           {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this session."}</p>}
+          {/* Listen back, right under the change (decision 67) */}
+          {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
           {/* The numbers together */}
           {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} />}
           {/* (The pause count is in the numbers row; the longer pause sentence and the "no number measures this" line were cut, decision 63) */}
@@ -444,8 +409,31 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {timed && <p className="mt-2 text-footnote text-ink-muted">{timingSentence(session.mode, session.durationSec, undefined, session.promptId)}</p>}
           {/* After a rehearsal with a goal, how the timing went */}
           {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
-          {/* Listen back */}
-          {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
+          {/* The user's own notes, once added (decision 67: after the feedback, never before it) */}
+          {review && (review.worked || review.change || tagWords.length > 0) && (
+            <div className="mt-5 border-y border-rule py-3 text-lede">
+              {/* Small heading */}
+              <p className="text-footnote text-ink-muted">Your notes</p>
+              {/* What worked */}
+              {review.worked && <p className="mt-1"><em>Worked.</em> {review.worked}</p>}
+              {/* What to change */}
+              {review.change && <p className="mt-1"><em>Change.</em> {review.change}</p>}
+              {/* The tags */}
+              {tagWords.length > 0 && <p className="mt-1 text-footnote text-ink-muted">{smallTalk ? "You heard" : "Tagged"}: {tagWords.join(", ")}.</p>}
+              {/* The notes against the numbers */}
+              {checks.length > 0 && (
+                <ul aria-label="Your notes against the numbers" className="mt-2 text-footnote">
+                  {/* Each comparison, marked by whether it matched */}
+                  {checks.map((check) => (
+                    // One comparison
+                    <li key={check.text} data-kind={check.kind} className={`mt-1 border-l-2 pl-2 ${check.kind === "matched" ? "border-accent" : "border-rule text-ink-muted"}`}>{check.text}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {/* No notes yet: an optional fold to add them */}
+          {session.selfReview === null && <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} />}
           {/* What the coach said to keep, after the next step and the numbers */}
           {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
           {/* Quieter options, as a short list of rows (no empty space above them) */}
@@ -461,9 +449,9 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {/* After small talk, another question, back on its own page */}
             {/* A follow-up or a reply: trying the same one again is a row, since the main action moves on */}
             {quick && !plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
-            {smallTalk && <li><RowLink href={`/small-talk/unit?id=${findSmallTalk(session.promptId)?.unit ?? "answering"}`}>{quick ? "Back to Connect" : "Another question"}</RowLink></li>}
-            {/* Finish (small talk has its own page, so it leads back there instead) */}
-            {!smallTalk && <li><RowLink href="/">Finish for today</RowLink></li>}
+            {smallTalk && !quick && <li><RowLink href={`/small-talk/unit?id=${findSmallTalk(session.promptId)?.unit ?? "answering"}`}>Another question</RowLink></li>}
+            {/* Back to where it was started (outside today's practice, whose band moves on; decision 67) */}
+            {!plan && !rehearsed && <li><RowLink href={home.href}>{home.label.replace("Close, back to", "Back to")}</RowLink></li>}
           </ul>
           {/* Inside today's practice, the next step; after an old warm-up, a Record Response; otherwise the retry */}
           {plan ? (
@@ -589,41 +577,63 @@ function PlanBand({ plan }: { plan: PlanNav }) {
 
 // The Retry result screen
 function RetryView({ repo, retry, original, now, plan }: { repo: Repository; retry: SessionRecord; original: SessionRecord; now: Date; plan: PlanNav | null }) {
-  // The number for the focus, or the filler rate when the focus has none
-  const measure = measureFor(original.focus) ?? measureFor("cut-fillers");
-  // Write one try's number with its unit
-  const numberOf = (session: SessionRecord) => {
-    // The number, if this try has one (old tries have no pause count)
-    const value = measure?.read(session) ?? null;
-    // The number and its unit, or a plain note
-    return measure && value !== null ? `${measure.format(value)} ${measure.unit}.` : "No count for this try.";
-  };
+  // Where the session belongs, and the way back
+  const home = sessionHome(retry.mode, retry.promptId, plan !== null);
+  // The cue the first try gave
+  const cue = (original.feedback ?? localChange(original)).retryCue;
+  // The pauses on each try, when loudness was recorded
+  const pausesOf = (session: SessionRecord) => (session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS).count : null);
+  // Both tries' numbers
+  const changes = resultChanges(original, retry, { before: pausesOf(original), after: pausesOf(retry) });
   // Draw the page
   return (
     <>
       {/* Title and day */}
-      <Masthead title="Second try" section={sessionHome(retry.mode, retry.promptId, plan !== null).section}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(retry.createdAt), now)}</Masthead>
-      {/* Margin and main column on a computer */}
-      <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
-        {/* Both tries, in the margin on a computer (the headline already says both numbers on a phone) */}
-        <aside className="hidden text-footnote text-ink-muted md:block">
-          {/* First try */}
-          <p><em>First try.</em> {numberOf(original)}</p>
-          {/* Second try */}
-          <p className="mt-3 border-t border-rule pt-3"><em className="text-ink">Second try.</em> {numberOf(retry)}</p>
-        </aside>
+      <Masthead title="Second try" section={home.section}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(retry.createdAt), now)}</Masthead>
+      {/* One column (both tries' numbers are in the table below) */}
+      <div className="flex flex-1 flex-col md:max-w-2xl md:pt-8">
         {/* Main column */}
         <div className="flex flex-1 flex-col">
           {/* The change as one sentence */}
           <h1 className="mt-6 font-display text-statement tracking-tight md:mt-0 md:max-w-[18ch] md:text-statement-xl">{retryHeadline(retry, original)}</h1>
+          {/* What the first try said to work on */}
+          {cue && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">You were working on: {cue}</p>}
+          {/* Both tries' numbers, first then second (decision 67) */}
+          <table aria-label="First and second try" className="mt-5 w-full max-w-md border-y border-rule text-left">
+            {/* The column names */}
+            <thead className="text-footnote text-ink-muted">
+              <tr>
+                {/* What it counts */}
+                <th scope="col" className="py-2 font-normal" />
+                {/* First try */}
+                <th scope="col" className="py-2 font-normal">First</th>
+                {/* Second try */}
+                <th scope="col" className="py-2 font-normal">Second</th>
+              </tr>
+            </thead>
+            {/* One row per number */}
+            <tbody>
+              {changes.map((row) => (
+                // One number on both tries
+                <tr key={row.label} className="border-t border-rule">
+                  {/* What it counts */}
+                  <th scope="row" className="py-2 text-footnote font-normal text-ink-muted">{row.label}</th>
+                  {/* First try */}
+                  <td className="py-2 text-ink-muted">{row.before}</td>
+                  {/* Second try */}
+                  <td className="py-2 font-display text-cue">{row.after}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           {/* The coach's notes on the retry */}
           {retry.feedback && <p className="mt-5 max-w-[48ch] text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
           {/* Listen back to the second try */}
           <div className="max-w-[48ch]"><Playback repo={repo} session={retry} /></div>
           {/* Push the action down */}
           <div className="flex-1" />
-          {/* Finish */}
-          <div className="mt-8">{plan ? <PlanBand plan={plan} /> : <ActionBand action="Finish" aside="saved" href="/" />}</div>
+          {/* Move on: the next step, or back to where it started (decision 67) */}
+          <div className="mt-8">{plan ? <PlanBand plan={plan} /> : <ActionBand action="Done" aside={home.label.replace("Close, back to", "back to")} href={home.href} />}</div>
         </div>
       </div>
     </>
@@ -631,7 +641,7 @@ function RetryView({ repo, retry, original, now, plan }: { repo: Repository; ret
 }
 
 // Draw the session page
-export function SessionScreen({ sessionId, fetchFn, planStep = null, navigate, ...props }: SessionScreenProps) {
+export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }: SessionScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
   // What was loaded
@@ -736,7 +746,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, navigate, .
       {/* A retry with its first try */}
       {loaded?.session && loaded.original && loaded.session.mode !== "smalltalk" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && (!loaded.original || loaded.session.mode === "smalltalk") && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} navigate={navigate} onReviewed={(updated) => {
+      {loaded?.session && (!loaded.original || loaded.session.mode === "smalltalk") && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} onReviewed={(updated) => {
         // Show the notes and the feedback
         setLoaded((previous) => (previous ? { ...previous, session: updated } : previous));
         // If the coach was waiting for the notes, ask it now

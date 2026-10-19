@@ -2,8 +2,6 @@
 
 // Load the number formatter for filler rates
 import { formatRate } from "@/core/copy";
-// Load the focus lookup, for titles of current and retired focuses
-import { findFocus } from "@/core/focus";
 // Load the pause finder, for pausing week
 import { findPauses } from "@/core/pauses";
 // Load the spacing of loudness readings
@@ -71,20 +69,14 @@ export function measureFor(focusId: string): FocusMeasure | null {
   return null;
 }
 
-// The focus title, or a plain fallback if the id is unknown
-function focusTitle(focusId: string): string {
-  // Look up the title
-  return findFocus(focusId)?.title ?? "Your take";
-}
-
-// The headline sentence on the Feedback screen
-export function headlineFor(session: SessionRecord): string {
+// The headline sentence on the results: the focus's number, or null when nothing measures it (the focus's bare name read like praise, so the one change leads instead; decision 67)
+export function headlineFor(session: SessionRecord): string | null {
   // Find the focus's number
   const measure = measureFor(session.focus);
   // The number, if there is one
   const value = measure?.read(session) ?? null;
-  // No number: name the focus
-  if (!measure || value === null) return `${focusTitle(session.focus)}.`;
+  // No number: no headline
+  if (!measure || value === null) return null;
   // Otherwise the number and its unit
   return `${measure.format(value)} ${measure.unit}.`;
 }

@@ -29,3 +29,25 @@ export function resultNumbers(session: SessionRecord, pauseCount: number | null)
   // Pauses only when they were measured, singular for one
   return pauseCount === null ? numbers : [...numbers, { label: pauseCount === 1 ? "pause" : "pauses", value: String(pauseCount) }];
 }
+
+// One number on both tries of a retry
+export interface ResultChange {
+  // What it counts
+  label: string;
+  // On the first try
+  before: string;
+  // On the second try
+  after: string;
+}
+
+// The same numbers for a first try and its retry, side by side (pauses only when both were measured; decision 67)
+export function resultChanges(original: SessionRecord, retry: SessionRecord, pauses: { before: number | null; after: number | null }): ResultChange[] {
+  // Pauses count only when both tries have them
+  const both = pauses.before !== null && pauses.after !== null;
+  // The first try's numbers
+  const before = resultNumbers(original, both ? pauses.before : null);
+  // The second try's numbers
+  const after = resultNumbers(retry, both ? pauses.after : null);
+  // Paired by position (the same labels in the same order; "pauses" is used for both counts)
+  return before.map((item, index) => ({ label: item.label === "pause" ? "pauses" : item.label, before: item.value, after: after[index]?.value ?? "" }));
+}

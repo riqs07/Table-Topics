@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 // Load the tool for acting like a user
 import userEvent from "@testing-library/user-event";
 // Load the screen being checked
@@ -147,8 +147,24 @@ describe("SessionScreen", () => {
     render(<SessionScreen sessionId="s2" repository={await repositoryWith(first, retry)} now={NOW} />);
     // Confirm the statement
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("From 4.2 to 1.8 fillers a minute.");
-    // Confirm the finish action goes home
-    expect(screen.getByRole("link", { name: /Finish/ }).getAttribute("href")).toBe("/");
+    // The fillers row of the table
+    const fillers = within(screen.getByRole("table", { name: "First and second try" })).getByRole("row", { name: /fillers a minute/ });
+    // Confirm both numbers, and that "Done" leads back to where the session started (decision 67)
+    expect([within(fillers).getAllByRole("cell").map((cell) => cell.textContent), screen.getByRole("link", { name: /^Done/ }).getAttribute("href")]).toEqual([["4.2", "1.8"], "/practice"]);
+  });
+
+  // Even when the week's focus has no number, a retry shows both tries' numbers (decision 67)
+  it("shows both tries' numbers when the focus has none", async () => {
+    // A first try and retry in a strong-opening week
+    const first = makeSession({ id: "s1", focus: "strong-opening", durationSec: 13, feedback: FEEDBACK, feedbackStatus: "done" });
+    // The retry, longer
+    const retry = makeSession({ id: "s2", focus: "strong-opening", retryOf: "s1", durationSec: 64, feedback: FEEDBACK, feedbackStatus: "done", createdAt: "2026-10-12T16:00:00.000Z" });
+    // Draw the retry's page
+    render(<SessionScreen sessionId="s2" repository={await repositoryWith(first, retry)} now={NOW} />);
+    // The length row
+    const length = within(await screen.findByRole("table", { name: "First and second try" })).getByRole("row", { name: /long/ });
+    // Confirm the lengths and the cue the first try gave
+    expect([within(length).getAllByRole("cell").map((cell) => cell.textContent), !!screen.getByText(`You were working on: ${FEEDBACK.retryCue}`)]).toEqual([["0:13", "1:04"], true]);
   });
 
   // An old warm-up leads into a Record Response rather than a retry
@@ -470,8 +486,8 @@ describe("SessionScreen", () => {
   });
 
   // A new first try asks you to listen back before the feedback opens
-  describe("listening back first", () => {
-    // A new first try with audio and word times
+  describe("one results screen (decision 67)", () => {
+    // A new first try with audio
     const fresh = () => makeSession({ id: "s1", audioKey: "s1", durationSec: 4, transcript: "Um I went home", spokenTimes: [1, 1.5, 2, 3], selfReview: null, feedback: FEEDBACK, feedbackStatus: "done" });
     // A repository holding it and its audio
     const withAudio = async (session = fresh()) => {
@@ -484,79 +500,31 @@ describe("SessionScreen", () => {
       // Hand it back
       return repository;
     };
-    // Play the recording from start to end, a second at a time
-    const playThrough = async (seconds: number) => {
-      // The audio element
-      const audio = (await screen.findByLabelText("Your recording")) as HTMLAudioElement;
-      // Report it as playing
-      Object.defineProperty(audio, "paused", { configurable: true, value: false });
-      // Each second
-      for (let second = 0; second < seconds; second++) {
-        // The position
-        Object.defineProperty(audio, "currentTime", { configurable: true, writable: true, value: second + 0.5 });
-        // Tell the page
-        fireEvent.timeUpdate(audio);
-      }
-    };
 
-    // The step comes first: no feedback, and saving waits until you have listened
-    it("asks you to listen before showing the feedback", async () => {
+    // The feedback and the player show at once: no listening step and nothing to fill in first
+    it("shows the feedback and the player straight away", async () => {
       // Draw the screen
       render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} />);
-      // The step
-      await screen.findByRole("heading", { name: "Listen back first." });
-      // Confirm no feedback and a waiting save button
-      expect([screen.queryByText(FEEDBACK.change), (screen.getByRole("button", { name: /Save my notes/ }) as HTMLButtonElement).disabled]).toEqual([null, true]);
+      // Confirm the change, the player, the closed notes fold, and no listening step
+      expect([!!(await screen.findByText(FEEDBACK.change)), !!(await screen.findByLabelText("Your recording")), (screen.getByText("Add your notes").closest("details") as HTMLDetailsElement).open, screen.queryByRole("heading", { name: "Listen back first." })]).toEqual([true, true, false, null]);
     });
 
-    // Skipping opens the feedback and remembers the skip
-    it("opens the feedback when you skip", async () => {
+    // Notes are optional: tags and a line, saved and shown with the feedback, and the recording kept
+    it("saves notes from the fold and shows them", async () => {
       // The repository
       const repository = await withAudio();
       // Draw the screen
       render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
-      // Skip
-      await userEvent.click(await screen.findByRole("button", { name: "Skip this time" }));
-      // Confirm the feedback shows and the skip was saved
-      expect([!!(await screen.findByText(FEEDBACK.change)), (await repository.getSession("s1"))?.selfReview?.skipped]).toEqual([true, true]);
-    });
-
-    // After listening through, your notes and tags are saved and shown with the feedback
-    it("saves your notes after you listen, and shows them", async () => {
-      // The repository
-      const repository = await withAudio();
-      // Draw the screen
-      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
-      // Listen to it all
-      await playThrough(4);
-      // Write what to change
-      await userEvent.type(screen.getByLabelText("What would you change?"), "Breathe first");
+      // Open the fold
+      await userEvent.click(await screen.findByText("Add your notes"));
       // Tap a tag
       await userEvent.click(screen.getByRole("button", { name: "Fillers" }));
+      // Write a line
+      await userEvent.type(screen.getByLabelText("Anything else? (optional)"), "Breathe first");
       // Save
-      await userEvent.click(screen.getByRole("button", { name: /Save my notes/ }));
-      // Confirm the notes, the tag and the feedback show, and the notes were saved
-      expect([!!(await screen.findByText("Breathe first")), !!screen.getByText("Tagged: fillers."), !!screen.getByText(FEEDBACK.change), (await repository.getSession("s1"))?.selfReview?.tags]).toEqual([true, true, true, ["fillers"]]);
-    });
-
-    // Tapping a word plays from just before it
-    it("plays from a word when you tap it", async () => {
-      // Draw the screen
-      render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} />);
-      // The audio element
-      const audio = (await screen.findByLabelText("Your recording")) as HTMLAudioElement;
-      // Tap "home", heard at 3 seconds
-      await userEvent.click(screen.getByRole("button", { name: "home" }));
-      // Confirm it moved to 1.7 seconds
-      expect(audio.currentTime).toBe(1.7);
-    });
-
-    // With the audio gone, notes can still be written and saved
-    it("lets you continue when the recording is not on this device", async () => {
-      // A new first try whose audio was pruned
-      render(<SessionScreen sessionId="s1" repository={await repositoryWith({ ...fresh(), audioKey: null })} now={NOW} />);
-      // Confirm the explanation and an open save button
-      expect([!!(await screen.findByText(/not on this device, so there is nothing to play/)), (screen.getByRole("button", { name: /Save my notes/ }) as HTMLButtonElement).disabled]).toEqual([true, false]);
+      await userEvent.click(screen.getByRole("button", { name: "Save my notes" }));
+      // Confirm the notes show, the fold is gone, the tags were saved, and the recording is still there
+      expect([!!(await screen.findByText("Breathe first")), !!screen.getByText("Tagged: fillers."), screen.queryByText("Add your notes"), (await repository.getSession("s1"))?.selfReview?.tags, !!(await repository.getAudio("s1"))]).toEqual([true, true, null, ["fillers"], true]);
     });
 
     // Your tags are checked against the numbers
@@ -569,11 +537,11 @@ describe("SessionScreen", () => {
       expect(within(await screen.findByRole("list", { name: "Your notes against the numbers" })).getByText(/^You said too fast, and it was: 182 words a minute/)).toBeTruthy();
     });
 
-    // With sharing on, the coach is asked only after the notes are saved, and gets them
+    // With sharing on, the coach waits for notes: the fold opens, and the note goes with the request
     it("asks the coach after your notes when it may read them", async () => {
       // A saved passphrase
       savePassphrase("a-long-enough-passphrase");
-      // A new first try waiting for feedback, with no audio to listen to
+      // A new first try waiting for feedback, with no audio
       const repository = await repositoryWith({ ...fresh(), audioKey: null, feedback: null, feedbackStatus: "pending" });
       // Sharing is on
       await repository.saveSettings({ ...(await repository.getSettings(NOW)), shareNotes: true });
@@ -581,12 +549,12 @@ describe("SessionScreen", () => {
       const network = vi.fn(async () => Response.json({ feedback: FEEDBACK }, { status: 200 }));
       // Draw the screen
       render(<SessionScreen sessionId="s1" repository={repository} now={NOW} fetchFn={network} />);
-      // Write a note
-      await userEvent.type(await screen.findByLabelText("What would you change?"), "Slow down");
+      // Write a line in the fold, which opens by itself
+      await userEvent.type(await screen.findByLabelText("Anything else? (optional)"), "Slow down");
       // Nothing sent yet
       const before = network.mock.calls.length;
       // Save
-      await userEvent.click(screen.getByRole("button", { name: /Save my notes/ }));
+      await userEvent.click(screen.getByRole("button", { name: "Save my notes" }));
       // The feedback arrives
       await screen.findByText(FEEDBACK.change);
       // What was sent
@@ -595,100 +563,62 @@ describe("SessionScreen", () => {
       expect([before, body.notes?.change]).toEqual([0, "Slow down"]);
     });
 
-    // Unless kept, the recording is deleted once the notes are saved; the session stays
-    it("deletes the recording after your notes unless you keep it", async () => {
-      // The repository
-      const repository = await withAudio();
+    // When the coach waits for notes, it can be asked without any
+    it("lets you get feedback without notes", async () => {
+      // A saved passphrase
+      savePassphrase("a-long-enough-passphrase");
+      // A new first try waiting for feedback
+      const repository = await repositoryWith({ ...fresh(), audioKey: null, feedback: null, feedbackStatus: "pending" });
+      // Sharing is on
+      await repository.saveSettings({ ...(await repository.getSettings(NOW)), shareNotes: true });
+      // A network that answers with feedback
+      const network = vi.fn(async () => Response.json({ feedback: FEEDBACK }, { status: 200 }));
       // Draw the screen
-      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
-      // The keep box, off by default
-      const box = (await screen.findByLabelText(/Keep this recording/)) as HTMLInputElement;
-      // Was it off?
-      const before = box.checked;
-      // Skip (which saves too)
-      await userEvent.click(screen.getByRole("button", { name: "Skip this time" }));
-      // Wait for the feedback
-      await screen.findByText(FEEDBACK.change);
-      // Confirm it was off, the audio is gone, and the session no longer points at it
-      expect([before, await repository.getAudio("s1"), (await repository.getSession("s1"))?.audioKey]).toEqual([false, undefined, null]);
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} fetchFn={network} />);
+      // Go on without notes
+      await userEvent.click(await screen.findByRole("button", { name: "Get feedback without notes" }));
+      // Confirm the feedback arrives and the skip was noted
+      expect([!!(await screen.findByText(FEEDBACK.change)), (await repository.getSession("s1"))?.selfReview?.skipped]).toEqual([true, true]);
     });
 
-    // Ticking the box keeps it
-    it("keeps the recording when you choose to", async () => {
-      // The repository
-      const repository = await withAudio();
-      // Draw the screen
-      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
-      // Keep it
-      await userEvent.click(await screen.findByLabelText(/Keep this recording/));
-      // Skip
-      await userEvent.click(screen.getByRole("button", { name: "Skip this time" }));
-      // Wait for the feedback
-      await screen.findByText(FEEDBACK.change);
-      // Confirm the audio and its link are still there
-      expect([!!(await repository.getAudio("s1")), (await repository.getSession("s1"))?.audioKey]).toEqual([true, "s1"]);
-    });
-
-    // The first recording is always kept, and says so instead of asking
-    it("always keeps the first recording", async () => {
-      // The repository, holding a first recording
-      const repository = await withAudio({ ...fresh(), isBaseline: true });
-      // Draw the screen
-      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
-      // Confirm the note, no box
-      expect([!!(await screen.findByText(/Your first recording is kept/)), screen.queryByLabelText(/Keep this recording/)]).toEqual([true, null]);
-      // Skip
-      await userEvent.click(screen.getByRole("button", { name: "Skip this time" }));
-      // Wait for the feedback
-      await screen.findByText(FEEDBACK.change);
-      // Confirm the audio is still there
-      expect(!!(await repository.getAudio("s1"))).toBe(true);
-    });
-
-    // Inside today's practice, the next step is open before listening, and moving on saves the step
-    it("moves on to the next step of today's practice without listening first", async () => {
+    // Inside today's practice, the feedback shows and the main action is the next step
+    it("shows the feedback inside today's practice, with the next step as the main action", async () => {
       // The repository
       const repository = await withAudio();
       // Today's plan, for where step 3 is
       const plan = await loadDailyPlan(repository, NOW);
-      // Where the app goes
-      const navigate = vi.fn();
-      // Draw step 2 of the plan (the warm-up)
-      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} planStep={2} navigate={navigate} />);
-      // The next-step button, open at once
-      const next = (await screen.findByRole("button", { name: /^Next: step 3/ })) as HTMLButtonElement;
-      // Whether it was open
-      const open = !next.disabled;
-      // Move on
-      await userEvent.click(next);
-      // Wait for the move
-      await waitFor(() => expect(navigate).toHaveBeenCalled());
-      // Confirm it was open, went to step 3 inside the plan, and noted the step as reviewed (skipped, nothing written)
-      expect([open, navigate.mock.calls[0]?.[0], (await repository.getSession("s1"))?.selfReview?.skipped, !!screen.queryByText("Today’s practice · step 2 of 4")]).toEqual([true, `${plan.steps[2]?.href}&plan=3`, true, true]);
+      // Draw step 2 of the plan
+      render(<SessionScreen sessionId="s1" repository={repository} now={NOW} planStep={2} />);
+      // The next step
+      const next = await screen.findByRole("link", { name: /^Next: step 3/ });
+      // Confirm the feedback is on screen and the next step stays inside the plan
+      expect([!!screen.getByText(FEEDBACK.change), next.getAttribute("href")]).toEqual([true, `${plan.steps[2]?.href}&plan=3`]);
     });
 
     // The last step finishes the practice, and trying again stays inside the plan
     it("finishes today's practice after the last step, with a retry on offer", async () => {
-      // Where the app goes
-      const navigate = vi.fn();
       // Draw step 4 of 4
-      render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} planStep={4} navigate={navigate} />);
-      // Where trying again leads
+      render(<SessionScreen sessionId="s1" repository={await withAudio()} now={NOW} planStep={4} />);
+      // Where trying again and finishing lead
       const retry = (await screen.findByRole("link", { name: "Try it again" })).getAttribute("href");
-      // Finish
-      await userEvent.click(await screen.findByRole("button", { name: /^Finish today’s practice/ }));
-      // Wait for the move
-      await waitFor(() => expect(navigate).toHaveBeenCalled());
       // Confirm back to Today, and the retry keeps the plan step
-      expect([navigate.mock.calls[0]?.[0], retry?.endsWith("&retryOf=s1&plan=4")]).toEqual(["/", true]);
+      expect([(await screen.findByRole("link", { name: /^Finish today’s practice/ })).getAttribute("href"), retry?.endsWith("&retryOf=s1&plan=4")]).toEqual(["/", true]);
     });
 
-    // Older sessions skip the step
-    it("does not ask on older sessions", async () => {
-      // A session from before the step existed
+    // Outside today's practice, the way out goes back to where the session started
+    it("leads back to where the session started", async () => {
+      // Draw a Table Topic outside the plan
+      render(<SessionScreen sessionId="s1" repository={await repositoryWith(makeSession({ id: "s1", mode: "talk", promptId: "t001", feedback: FEEDBACK, feedbackStatus: "done" }))} now={NOW} />);
+      // Confirm the row back to Practice
+      expect((await screen.findByRole("link", { name: "Back to Practice" })).getAttribute("href")).toBe("/practice");
+    });
+
+    // Older sessions have no notes fold
+    it("does not offer notes on older sessions", async () => {
+      // A session from before notes existed
       render(<SessionScreen sessionId="s1" repository={await repositoryWith(makeSession({ id: "s1", feedback: FEEDBACK, feedbackStatus: "done" }))} now={NOW} />);
-      // Confirm the feedback shows at once
-      expect(!!(await screen.findByText(FEEDBACK.change))).toBe(true);
+      // Confirm the feedback and no fold
+      expect([!!(await screen.findByText(FEEDBACK.change)), screen.queryByText("Add your notes")]).toEqual([true, null]);
     });
   });
 });

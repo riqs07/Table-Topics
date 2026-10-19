@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the numbers builder being checked
-import { resultNumbers } from "@/core/resultNumbers";
+import { resultChanges, resultNumbers } from "@/core/resultNumbers";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -31,5 +31,23 @@ describe("resultNumbers", () => {
   it("uses the plural for several pauses", () => {
     // Confirm the label
     expect(resultNumbers(makeSession(), 4).at(-1)).toEqual({ label: "pauses", value: "4" });
+  });
+});
+
+// Group the checks about a retry's numbers beside the first try's
+describe("resultChanges", () => {
+  // Each number on both tries, with pauses only when both were measured
+  it("pairs each number, adding pauses only when both tries have them", () => {
+    // Two tries
+    const first = makeSession({ fillersPerMinute: 4.25, wordsPerMinute: 150, durationSec: 13 });
+    // The retry
+    const second = makeSession({ fillersPerMinute: 1.8, wordsPerMinute: 140, durationSec: 64 });
+    // Confirm with both pause counts, then with one missing
+    expect([resultChanges(first, second, { before: 1, after: 3 }).at(-1), resultChanges(first, second, { before: null, after: 3 })]).toEqual([
+      // Pauses, plural on both
+      { label: "pauses", before: "1", after: "3" },
+      // No pause row
+      [{ label: "fillers a minute", before: "4.3", after: "1.8" }, { label: "words a minute", before: "150", after: "140" }, { label: "long", before: "0:13", after: "1:04" }],
+    ]);
   });
 });

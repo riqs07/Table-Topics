@@ -110,16 +110,21 @@ export function BookendsScreen(props: ScreenProps) {
         </section>
       )}
 
-      {/* Every prompt */}
-      <section className="mt-10 grid gap-8 md:grid-cols-2">
+      {/* Every other prompt, folded until wanted (decision 67) */}
+      <section aria-label="More prompts" className="mt-10 border-t border-rule">
         {/* Openings, then closes */}
         {(["opening", "close"] as const).map((part) => (
-          // One list
-          <div key={part}>
-            {/* Small heading */}
-            <h2 className={SECTION_HEADING}>{part === "opening" ? "More openings" : "More closes"}</h2>
+          // One folded list
+          <details key={part} className="border-b border-rule">
+            {/* Its name and size */}
+            <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 font-display text-xl">
+              {/* Name */}
+              {part === "opening" ? "More openings" : "More closes"}
+              {/* How many */}
+              <span className="font-body text-footnote text-ink-muted">{BOOKENDS.filter((item) => item.part === part && !pair?.some((today) => today.id === item.id)).length}</span>
+            </summary>
             {/* The prompts */}
-            <ul className="mt-2 divide-y divide-rule border-y border-rule">
+            <ul className="divide-y divide-rule border-t border-rule">
               {/* Each prompt */}
               {BOOKENDS.filter((item) => item.part === part && !pair?.some((today) => today.id === item.id)).map((item) => (
                 // One prompt
@@ -129,7 +134,7 @@ export function BookendsScreen(props: ScreenProps) {
                 </li>
               ))}
             </ul>
-          </div>
+          </details>
         ))}
       </section>
     </main>

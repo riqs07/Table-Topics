@@ -33,20 +33,18 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   await stop.click();
   // The saved session opens (bug B1: never stuck on "Saving…")
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
-  // The transcript is shown, in the listen-back step
-  await expect(page.getByText(/raincoat/).first()).toBeVisible();
-  // Listen back: play the recording
+  // The results show at once, with the one change and the player (decision 67)
+  await expect(page.getByText("One change.")).toBeVisible();
+  // Play the recording
   await page.getByRole("button", { name: "Play your recording" }).click();
-  // Saving opens once it has all been heard
-  const save = page.getByRole("button", { name: /Save my notes/ });
-  // The recording is about 12 seconds long
-  await expect(save).toBeEnabled({ timeout: 20_000 });
-  // Note what to change
-  await page.getByLabel("What would you change?").fill("Start without the um");
+  // Open the optional notes
+  await page.getByText("Add your notes").click();
   // Tap a tag
   await page.getByRole("button", { name: "Fillers" }).click();
+  // Note what to change
+  await page.getByLabel("Anything else? (optional)").fill("Start without the um");
   // Save
-  await save.click();
+  await page.getByRole("button", { name: "Save my notes" }).click();
   // The notes show with the feedback page
   await expect(page.getByText("Start without the um")).toBeVisible();
 });
@@ -77,8 +75,6 @@ test("Rehearse my talk: save, rehearse, saved session, history", async ({ page }
   await stop.click();
   // The saved session opens
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
-  // Skip listening back this time
-  await page.getByRole("button", { name: "Skip this time" }).click();
   // It names the talk that was rehearsed
   await expect(page.getByText(/Team update/).first()).toBeVisible();
   // History, folded inside Settings, lists it
@@ -130,8 +126,6 @@ test("Event prep: date a talk, follow today's step, see progress", async ({ page
   await stop.click();
   // The saved session opens
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
-  // Skip listening back this time
-  await page.getByRole("button", { name: "Skip this time" }).click();
   // Go back to the talk
   await page.getByRole("link", { name: "Back to your talk" }).click();
   // The opening shows one of two runs done
@@ -160,8 +154,8 @@ test("Openings and closings: an opening drill from home to its findings", async 
   await page.waitForTimeout(11_500);
   // Stop recording
   await page.getByRole("button", { name: /Stop/ }).click();
-  // Skip listening back this time
-  await page.getByRole("button", { name: "Skip this time" }).click({ timeout: 15_000 });
+  // The results open at once
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The saved session shows the drill's findings
   await expect(page.getByText(/You opened with “Um so”/)).toBeVisible();
 });
@@ -184,8 +178,8 @@ test("Read aloud: words light up as they are read, then the reading is saved", a
   await page.waitForTimeout(8_000);
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
-  // Skip listening back this time
-  await page.getByRole("button", { name: "Skip this time" }).click({ timeout: 15_000 });
+  // The results open at once
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The saved reading says how far it got (stopped early, so not a low percentage)
   await expect(page.getByTestId("reading-headline")).toHaveText("You read the first 19 words.", { timeout: 15_000 });
 });
@@ -210,8 +204,8 @@ test("Whole speech: open it from Skills, read part 1, then go on to part 2", asy
   await page.waitForTimeout(11_500);
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
-  // Skip listening back this time
-  await page.getByRole("button", { name: "Skip this time" }).click({ timeout: 15_000 });
+  // The results open at once
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // Go on to part 2
   await page.getByRole("link", { name: "Read part 2" }).click();
   // Part 2 opens
@@ -243,7 +237,7 @@ test("Today's practice: the card, the warm-up, then on to the picks", async ({ p
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
   // Move on without listening back
-  await page.getByRole("button", { name: /^Next: step 3/ }).click({ timeout: 15_000 });
+  await page.getByRole("link", { name: /^Next: step 3/ }).click({ timeout: 15_000 });
   // The first pick opens inside the plan
   await expect(page).toHaveURL(/plan=3/);
   // Back on Today, two steps are done and the next is the first pick
@@ -336,14 +330,14 @@ test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
   await page.waitForTimeout(11_500);
   // Stop
   await stop.click();
-  // The answer opens on listening back
+  // The answer opens on its results
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
-  // Listen to it
-  await page.getByRole("button", { name: "Play your recording" }).click();
+  // Open the optional beats to tick
+  await page.getByText("Which beats did you hear yourself do?").click();
   // Tick the moment
   await page.getByRole("list", { name: "Listen for" }).getByRole("button", { name: /^Moment/ }).click();
-  // Save once it has been heard
-  await page.getByRole("button", { name: /Save my notes/ }).click({ timeout: 20_000 });
+  // Save
+  await page.getByRole("button", { name: "Save my notes" }).click();
   // The beats show, with the phone's evidence
   await expect(page.getByRole("list", { name: "The beats" })).toContainText("“fun”");
   // Back on the Answering page, the answer is listed
