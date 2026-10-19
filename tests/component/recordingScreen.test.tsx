@@ -907,8 +907,8 @@ describe("RecordingScreen", () => {
     const mismatch = vi.fn();
     // Take over the page in a browser that does support speech
     const root = await act(async () => hydrateRoot(container, <RecordingScreen {...props} services={fakeServices().services} />, { onRecoverableError: mismatch }));
-    // Confirm no mismatch, and the start action is offered in the band and on the voice shape
-    expect([mismatch.mock.calls.length, !!container.querySelector("button[data-action-band]")?.textContent?.includes("Start speaking"), !!container.querySelector("button[aria-label=\"Tap to start\"]")]).toEqual([0, true, true]);
+    // Confirm no mismatch, and the start action is offered on the voice shape, with no band at the bottom (decision 75)
+    expect([mismatch.mock.calls.length, !!container.querySelector("button[data-variant=\"start\"]")?.textContent?.includes("Start speaking"), !!container.querySelector("[data-action-band]")]).toEqual([0, true, false]);
     // Clean up
     act(() => root.unmount());
     // Remove the page
@@ -992,16 +992,20 @@ describe("RecordingScreen", () => {
     expect((await repository.listSessions())[0]).toMatchObject({ mode: "free", promptId: "free" });
   });
 
-  // The voice shape starts and stops a recording too (decision 74)
-  it("starts and stops by tapping the voice shape", async () => {
+  // The voice shape is the start and stop button, and there is no band at the bottom (decisions 74 and 75)
+  it("starts and stops on the voice shape, with no band at the bottom", async () => {
     // Draw a one-minute session
     const { repository, clock, navigate } = draw();
-    // Tap the shape to start
-    fireEvent.click(await screen.findByRole("button", { name: "Tap to start" }));
-    // While recording, the shape is the stop button, and still shows the level
-    const shape = await screen.findByRole("button", { name: "Tap to stop" });
-    // Confirm the start shape is gone and the level is named inside the stop shape
-    expect([screen.queryByRole("button", { name: "Tap to start" }), !!within(shape).getByRole("img", { name: "Microphone level" })]).toEqual([null, true]);
+    // The start shape, with its words and length
+    const start = await screen.findByRole("button", { name: /Start speaking/ });
+    // Confirm its words and that no band is drawn
+    expect([start.textContent, document.querySelector("[data-action-band]")]).toEqual(["Start speakingabout a minute", null]);
+    // Tap it
+    fireEvent.click(start);
+    // While recording, the shape is the stop button and still shows the level
+    const shape = await screen.findByRole("button", { name: "Stop" });
+    // Confirm the level is named inside it, and still no band
+    expect([!!within(shape).getByRole("img", { name: "Microphone level" }), document.querySelector("[data-action-band]")]).toEqual([true, null]);
     // Speak for 20 seconds, then tap the shape
     clock.advance(20_000);
     fireEvent.click(shape);
