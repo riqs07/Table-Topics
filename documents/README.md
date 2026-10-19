@@ -34,7 +34,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 20 | [plan-learn.md](plan-learn.md) | What will the Learn cards teach, how are they built, and how do they come back for review? | 8 min |
 | 21 | [research/charisma-connection-deep-dive-2026-10.md](research/charisma-connection-deep-dive-2026-10.md) | What builds warmth and connection in conversation, how are these skills trained, and how should text scenario questions work in VoiceLab? | 15 min |
 | 22 | [plan-research-applied.md](plan-research-applied.md) | How does the charisma and connection research change the app: missions, feedback, Learn, Connect? | 5 min |
-| 23 | [plan-voice-modes.md](plan-voice-modes.md) | What would the voice modes (warm-ups, clear sounds, volume, pitch, tone, pausing, shadowing) do, and where would shadowing audio come from? | 8 min |
+| 23 | [plan-voice-modes.md](plan-voice-modes.md) | What do the voice modes (warm-ups, clear sounds, volume, pitch, tone, pausing, shadowing) do, and where will shadowing audio come from? (Built, decision 80) | 8 min |
 
 ## Inspector checklist
 

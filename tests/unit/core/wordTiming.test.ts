@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the timing findings being checked
-import { marksPaused, marksSentence, paceAcross } from "@/core/wordTiming";
+import { markPauses, marksPaused, pauseLengthsLine, marksSentence, paceAcross } from "@/core/wordTiming";
 // Load the script splitter
 import { readingTokens } from "@/core/liveReading";
 
@@ -61,5 +61,33 @@ describe("marksPaused", () => {
   it("says so when every mark had a pause", () => {
     // Confirm the sentence
     expect(marksSentence({ taken: 3, total: 3, missedAfter: [] })).toBe("You paused at all 3 marks.");
+  });
+});
+
+// Group the checks about pause lengths at the marks (decision 80)
+describe("markPauses", () => {
+  // Each mark's gap from the word before to the word after, or null when one was not heard
+  it("measures the gap at each mark", () => {
+    // Three words with a mark after each of the first two
+    const tokens = readingTokens("one / two / three");
+    // Times: the second mark's next word never heard
+    const gaps = markPauses(tokens, [0, 1.4, null]);
+    // Confirm
+    expect(gaps).toEqual([{ after: "one", seconds: 1.4 }, { after: "two", seconds: null }]);
+  });
+});
+
+
+// Group the checks about the pause-length line
+describe("pauseLengthsLine", () => {
+  // How many were one to two seconds, with the most useful nudge
+  it("counts the pauses in the target", () => {
+    // Short ones, long ones, all good, none measured
+    expect([pauseLengthsLine([{ seconds: 0.4 }, { seconds: 1.5 }, { seconds: null }]), pauseLengthsLine([{ seconds: 3.2 }, { seconds: 1.2 }]), pauseLengthsLine([{ seconds: 1 }, { seconds: 2 }]), pauseLengthsLine([{ seconds: null }])]).toEqual([
+      "1 of 2 pauses were one to two seconds. Hold the short ones a beat longer.",
+      "1 of 2 pauses were one to two seconds. Keep the long ones under two seconds.",
+      "2 of 2 pauses were one to two seconds.",
+      "The pause lengths could not be measured.",
+    ]);
   });
 });

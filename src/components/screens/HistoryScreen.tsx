@@ -25,6 +25,8 @@ import type { Repository } from "@/data/repository";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the prompt library
 import { BOOKENDS, findPrompt } from "@/content/prompts";
+// Load the voice drills and passages, for naming them (decision 80)
+import { VOICE_MODE_NAMES, findShadowPassage, findVoiceDrill } from "@/content/voice";
 // Load the lookup for every text to read, full speeches included
 import { findReading } from "@/content/readings";
 // Load the lesson lookup
@@ -103,6 +105,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.mode === "read") return `Read aloud: ${findReading(session.promptId)?.title ?? text}`;
   // And pause drills
   if (session.mode === "pause") return `Pause drill: ${text}`;
+  // And voice drills and shadowing, by their kind and name (decision 80)
+  if (session.mode === "voice") return `${session.voice ? VOICE_MODE_NAMES[session.voice.kind] : "Voice drill"}: ${(session.voice?.kind === "shadow" ? findShadowPassage(session.promptId)?.title : findVoiceDrill(session.promptId)?.title) ?? "a drill"}`;
   // And Q&A answers, by their question
   if (session.mode === "qa") return `Q&A: ${session.question ?? "a question"}`;
   // And openings and closings drills

@@ -100,6 +100,41 @@ export function marksPaused(tokens: ReadonlyArray<ReadingToken>, times: Readonly
   return { taken, total, missedAfter };
 }
 
+// How long the gap was at each pause mark: the time from the word before it to the word after it, in seconds to a tenth (approximate, since word times are), or null when either word was not heard (decision 80)
+export function markPauses(tokens: ReadonlyArray<ReadingToken>, times: ReadonlyArray<number | null>): { after: string; seconds: number | null }[] {
+  // The gaps found
+  const gaps: { after: string; seconds: number | null }[] = [];
+  // The last word seen
+  let before: { word: number; text: string } | null = null;
+  // The word before a mark still waiting for the word after it
+  let waiting: { word: number; text: string } | null = null;
+  // Walk the script
+  for (const token of tokens) {
+    // A mark: wait for the next word
+    if (token.kind === "pause") {
+      // Remember the word before it
+      waiting = before;
+      // Next piece
+      continue;
+    }
+    // Spaces and stage directions do not count
+    if (token.word === null) continue;
+    // The word after a mark: measure the gap
+    if (waiting) {
+      // Both times
+      const [then, now] = [times[waiting.word], times[token.word]];
+      // The gap, when both were heard
+      gaps.push({ after: waiting.text.replace(/[^\p{L}\p{N}'’]+$/u, ""), seconds: then !== null && then !== undefined && now !== null && now !== undefined ? Math.round((now - then) * 10) / 10 : null });
+      // Done with this mark
+      waiting = null;
+    }
+    // This word is now the last one seen
+    before = { word: token.word, text: token.text };
+  }
+  // Hand them back
+  return gaps;
+}
+
 // The pause marks as a sentence, or nothing if no mark could be judged
 export function marksSentence({ taken, total, missedAfter }: { taken: number; total: number; missedAfter: ReadonlyArray<string> }): string {
   // Nothing judged
@@ -112,4 +147,21 @@ export function marksSentence({ taken, total, missedAfter }: { taken: number; to
   const more = missedAfter.length > MAX_NAMED ? `, and ${missedAfter.length - MAX_NAMED} more` : "";
   // The count and the misses
   return `You paused at ${taken} of the ${total} marks. No pause after ${named}${more}.`;
+}
+
+// The target length of a pause at a mark, in seconds: about one to two (a little either way still counts, since word times are approximate)
+export const PAUSE_TARGET = { shortest: 0.9, longest: 2.5 } as const;
+
+// One line on the pause lengths: how many of the measured marks were in the target
+export function pauseLengthsLine(gaps: ReadonlyArray<{ seconds: number | null }>): string {
+  // The marks that could be measured
+  const measured = gaps.filter((gap): gap is { seconds: number } => gap.seconds !== null);
+  // None measured
+  if (measured.length === 0) return "The pause lengths could not be measured.";
+  // In the target
+  const good = measured.filter((gap) => gap.seconds >= PAUSE_TARGET.shortest && gap.seconds <= PAUSE_TARGET.longest).length;
+  // Too short
+  const short = measured.filter((gap) => gap.seconds < PAUSE_TARGET.shortest).length;
+  // The count, and the most useful nudge
+  return `${good} of ${measured.length} pauses were one to two seconds.${short > 0 ? " Hold the short ones a beat longer." : good < measured.length ? " Keep the long ones under two seconds." : ""}`;
 }

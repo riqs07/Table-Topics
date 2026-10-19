@@ -1,5 +1,7 @@
 // A folded group as a card: a row with its name, a short line and a count, that opens to its list (decision 79; used on Skills, Openings and closings, and Small talk)
 
+// Load React's effect tool
+import { useEffect } from "react";
 // Load the chevron
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the type for content passed in
@@ -11,7 +13,7 @@ import { CARD } from "./textStyles";
 
 // What a fold shows
 interface FoldCardProps {
-  // Its id, so a link such as /skills#pause-drills can open it
+  // Its id, so a link such as /voice#pausing can open it
   id?: string;
   // Its name
   name: string;
@@ -41,4 +43,28 @@ export function FoldCard({ id, name, detail, count, children }: FoldCardProps) {
       <div className="pb-4">{children}</div>
     </details>
   );
+}
+
+// Open the fold a link points at (such as /voice#pausing), and bring it into view; also when the address's # changes
+export function useOpenFoldFromAddress(): void {
+  // Once in the browser
+  useEffect(() => {
+    // Open the fold named in the address, if any
+    const openFromAddress = () => {
+      // The fold
+      const fold = document.getElementById(window.location.hash.slice(1));
+      // Only a fold
+      if (!(fold instanceof HTMLDetailsElement)) return;
+      // Open it
+      fold.open = true;
+      // Into view
+      fold.scrollIntoView?.({ block: "start" });
+    };
+    // Now
+    openFromAddress();
+    // And when the address changes
+    window.addEventListener("hashchange", openFromAddress);
+    // Stop listening when leaving
+    return () => window.removeEventListener("hashchange", openFromAddress);
+  }, []);
 }

@@ -621,6 +621,22 @@ describe("RecordingScreen", () => {
     expect([navigate.mock.calls[0]?.[0], after.skipped, after.done[1]]).toEqual([planHref(plan.steps[0]!, 1), [false, true, false, false], false]);
   });
 
+  // The reading step offers a one-minute warm-up first, which comes back to it (decision 80)
+  it("offers a warm-up before the reading step", async () => {
+    // A repository past day one, so step 2 is the reading
+    const repository = createRepository(new MemoryStore());
+    // Yesterday's session
+    await repository.saveSession(makeSession({ id: "yesterday", createdAt: new Date(2026, 9, 12, 9).toISOString() }));
+    // The plan on the fake clock's day
+    const plan = await loadDailyPlan(repository, new Date(2026, 9, 13, 10));
+    // The reading: step 2
+    const reading = plan.steps[1]!;
+    // Draw that step
+    draw({ repository, planStep: 2, mode: reading.mode!, promptId: reading.promptId });
+    // Confirm the link leads to the warm-up and back
+    expect((await screen.findByRole("link", { name: "Warm up first" })).getAttribute("href")).toBe(`/voice/warmup?then=${encodeURIComponent(planHref(reading, 2))}`);
+  });
+
   // Outside today's practice, or once speaking, there is nothing to put off
   it("offers no skip outside today's practice", async () => {
     // Draw a plain session

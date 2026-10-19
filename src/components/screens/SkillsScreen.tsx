@@ -30,13 +30,13 @@ import { PathMark } from "@/components/script/PathMark";
 // Load the catalogue
 import { MODES, type ModeInfo } from "@/content/modes";
 // Load the texts
-import { PASSAGES, PAUSE_DRILLS, TRICKY_WORDS, type Passage } from "@/content/prompts";
+import { PASSAGES, type Passage } from "@/content/prompts";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 // Load the shared card list look
 import { CARD, CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the folded group card
-import { FoldCard } from "@/components/script/FoldCard";
+import { FoldCard, useOpenFoldFromAddress } from "@/components/script/FoldCard";
 
 // The catalogue entry for an id (always present for the ids used here)
 const mode = (id: string) => MODES.find((item) => item.id === id) as ModeInfo;
@@ -154,26 +154,8 @@ export function SkillsScreen(props: ScreenProps) {
     };
   }, [repo]);
 
-  // Open the group a link points at (such as /skills#pause-drills), and bring it into view
-  useEffect(() => {
-    // Open the group named in the address, if any
-    const openFromAddress = () => {
-      // The group
-      const group = document.getElementById(window.location.hash.slice(1));
-      // Only a group
-      if (!(group instanceof HTMLDetailsElement)) return;
-      // Open it
-      group.open = true;
-      // Into view
-      group.scrollIntoView?.({ block: "start" });
-    };
-    // Now
-    openFromAddress();
-    // And when the address changes
-    window.addEventListener("hashchange", openFromAddress);
-    // Stop listening when leaving
-    return () => window.removeEventListener("hashchange", openFromAddress);
-  }, []);
+  // Open the group a link points at (such as /skills#readings), and bring it into view
+  useOpenFoldFromAddress();
 
   // The done and next marks, in lesson order
   const marks = lessonPath(LESSONS.map((lesson) => lesson.id), counts);
@@ -218,10 +200,6 @@ export function SkillsScreen(props: ScreenProps) {
     { id: "short-readings", name: "Short readings", detail: "famous moments, under two minutes", count: PASSAGES.filter((passage) => passage.kind === "speech").length, list: <SpeechCards items={PASSAGES.filter((passage) => passage.kind === "speech")} /> },
     // Practice passages
     { id: "passages", name: "Practice passages", detail: "plain texts for steady reading", count: PASSAGES.filter((passage) => passage.kind === "practice").length, list: <TextList items={PASSAGES.filter((passage) => passage.kind === "practice")} sessionMode="read" /> },
-    // Pause drills
-    { id: "pause-drills", name: "Pause drills", detail: `${mode("pause-drills").subtitle} · ${mode("pause-drills").length}`, count: PAUSE_DRILLS.length, list: <TextList items={PAUSE_DRILLS} sessionMode="pause" /> },
-    // Tricky words
-    { id: "tricky-words", name: "Tricky words", detail: `${mode("tricky-words").subtitle} · ${mode("tricky-words").length}`, count: TRICKY_WORDS.length, list: <TextList items={TRICKY_WORDS} sessionMode="read" /> },
   ];
   // Draw the page
   return (

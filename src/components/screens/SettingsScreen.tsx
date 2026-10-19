@@ -9,7 +9,6 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
-// Load the history's content, shown folded inside Settings
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the day label helper for the export file name

@@ -25,7 +25,7 @@ afterEach(cleanup);
 
 // Group the checks about the Skills page
 describe("SkillsScreen", () => {
-  // Lessons, readings, pause drills and tricky words in one place: the next lesson and reading first, then one folded row per group (decision 79)
+  // Lessons and readings in one place: the next lesson and reading first, then one folded row per group (decision 79; pause drills and tricky words moved to Your voice, decision 80)
   it("puts lessons and every reading in one place, folded by group", async () => {
     // Draw the page
     const { container } = render(<SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
@@ -36,11 +36,11 @@ describe("SkillsScreen", () => {
     // Confirm every lesson and text is there, the groups start folded under the ids other pages link to, and up next leads with lesson 1 and the first whole speech's part 1
     expect([
       LESSONS.every((lesson) => hrefs.includes(`/session?mode=lesson&prompt=${lesson.id}`)),
-      [...PASSAGES, ...TRICKY_WORDS].every((item) => hrefs.includes(`/session?mode=read&prompt=${item.id}`)),
-      PAUSE_DRILLS.every((item) => hrefs.includes(`/session?mode=pause&prompt=${item.id}`)),
-      ["lessons", "readings", "pause-drills", "tricky-words"].every((id) => container.querySelector(`details#${id}:not([open])`) !== null),
+      PASSAGES.every((item) => hrefs.includes(`/session?mode=read&prompt=${item.id}`)),
+      [...PAUSE_DRILLS, ...TRICKY_WORDS].some((item) => hrefs.some((href) => href?.endsWith(`prompt=${item.id}`))),
+      ["lessons", "readings"].every((id) => container.querySelector(`details#${id}:not([open])`) !== null),
       upNext,
-    ]).toEqual([true, true, true, true, [`/session?mode=lesson&prompt=${LESSONS[0]!.id}`, `/session?mode=read&prompt=${FULL_SPEECHES.find((speech) => !speech.commencement)!.id}-1`]]);
+    ]).toEqual([true, true, false, true, [`/session?mode=lesson&prompt=${LESSONS[0]!.id}`, `/session?mode=read&prompt=${FULL_SPEECHES.find((speech) => !speech.commencement)!.id}-1`]]);
   });
 
   // The lessons read as a path: practised ones done, the first one not done marked next

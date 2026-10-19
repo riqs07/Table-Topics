@@ -2,6 +2,8 @@
 import { describe, expect, it } from "vitest";
 // Load the rule being checked
 import { sessionHome, practiceSessions } from "@/core/sessionHome";
+// Load the voice-home lists
+import { PAUSE_DRILLS, TRICKY_WORDS } from "@/content/prompts";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -13,6 +15,14 @@ describe("sessionHome", () => {
     const homes = [sessionHome("read", "r001", false), sessionHome("talk", "t1", false), sessionHome("rehearse", "talk 1", false), sessionHome("read", "r001", true)].map((home) => [home.section, home.href]);
     // Confirm each
     expect(homes).toEqual([["skills", "/skills"], ["practice", "/practice"], ["practice", "/talk?id=talk%201"], ["today", "/"]]);
+  });
+
+  // Voice drills, pause drills and tricky-word lists close back to Your voice (decision 80)
+  it("leads voice, pause and tricky-word sessions back to Your voice", () => {
+    // One of each
+    const homes = [sessionHome("voice", "v01", false), sessionHome("pause", PAUSE_DRILLS[0]!.id, false), sessionHome("read", TRICKY_WORDS[0]!.id, false)].map((home) => home.href);
+    // Confirm each
+    expect(homes).toEqual(["/voice", "/voice", "/voice"]);
   });
 
   // Small talk and moment notes are kept apart from the speech practice

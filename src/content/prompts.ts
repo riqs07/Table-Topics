@@ -415,6 +415,12 @@ export const PAUSE_DRILLS: ReadonlyArray<Passage> = [
   { id: "d004", kind: "pause", title: "A short story", source: "Pause drill", text: "A short story", body: "When I was nine, / I forgot every word of my school speech. / I stood there, / silent, / for what felt like an hour. / Then a teacher at the back nodded at me. / Just a nod. / I found my first line, / and the rest came with it. / I still look for that nod in every room." },
   // Drill 5
   { id: "d005", kind: "pause", title: "The closing line", source: "Pause drill", text: "The closing line", body: "Thank you all for being here. / We have covered a lot today, / but if you remember one thing, / let it be this. / You do not need to be fearless to speak well. / You only need to keep going / while the fear is still there. / Thank you." },
+  // Drill 6: a pause for effect, one to two seconds before the key word (decision 80)
+  { id: "d006", kind: "pause", title: "Pause for effect", source: "Pause drill", text: "Pause for effect", body: "And the award goes to / you. / There was one thing / that changed everything. / The answer, / it turns out, / was right in front of us / all along." },
+  // Drill 7: a pause after a question, so it lands
+  { id: "d007", kind: "pause", title: "Question pause", source: "Pause drill", text: "Question pause", body: "What would you do with one extra hour a day? / Most of us would say: rest. / So why do we fill every hour we already have? / Think about it. / What would you stop doing? /" },
+  // Drill 8: a pause between points
+  { id: "d008", kind: "pause", title: "Between points", source: "Pause drill", text: "Between points", body: "Three things matter this year. / First, our customers. / Second, our people. / And third, / the way we work together. / Customers, / people, / and how we work." },
 ];
 
 // Lists of words that are easy to stumble on, for the practice library. DRAFT: approved at checkpoint C13

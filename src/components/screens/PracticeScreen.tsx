@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { BookOpenTextIcon, ListNumbersIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, SunHorizonIcon, TextAaIcon } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, RepeatIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
@@ -16,7 +16,9 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 // Load this week's challenge
 import { WeeklyChallenge } from "@/components/screens/WeeklyChallenge";
 // Load the day's pickers, and the drills
-import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, promptForDay, tableTopicForDay } from "@/content/prompts";
+// Load the voice drills' next picks (decision 80)
+import { nextShadowPassage, nextVoiceDrill } from "@/core/voicePicks";
 // Load the lessons
 import { LESSONS } from "@/content/lessons";
 // Load the rule for which comes next
@@ -115,8 +117,8 @@ export function PracticeScreen(props: ScreenProps) {
       if (cancelled) return;
       // Count by prompt
       const next = new Map<string, number>();
-      // Each lesson, reading or drill adds one
-      for (const session of sessions) if (session.mode === "lesson" || session.mode === "read" || session.mode === "pause") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
+      // Each lesson, reading, drill or voice drill adds one
+      for (const session of sessions) if (session.mode === "lesson" || session.mode === "read" || session.mode === "pause" || session.mode === "voice") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
       // Keep them
       setCounts(next);
     });
@@ -131,8 +133,10 @@ export function PracticeScreen(props: ScreenProps) {
   const nextLesson = counts ? LESSONS.find((lesson) => lesson.id === nextToPractise(LESSONS.map((item) => item.id), counts)) : undefined;
   // The next pause drill
   const nextPause = counts ? PAUSE_DRILLS.find((drill) => drill.id === nextToPractise(PAUSE_DRILLS.map((item) => item.id), counts)) : undefined;
-  // The next tricky-words text
-  const nextTricky = counts ? TRICKY_WORDS.find((drill) => drill.id === nextToPractise(TRICKY_WORDS.map((item) => item.id), counts)) : undefined;
+  // The next drill of each voice mode (the first of each until counted)
+  const nextVoice = (kind: "clear" | "volume" | "pitch" | "tone") => nextVoiceDrill(kind, counts ?? new Map());
+  // The next passage to shadow
+  const nextShadow = nextShadowPassage(counts ?? new Map());
 
   // Today's Table Topic and prepared-speech task (one along from today's practice, so they differ from its steps)
   const topic = today ? tableTopicForDay(today, 1) : null;
@@ -183,6 +187,29 @@ export function PracticeScreen(props: ScreenProps) {
         ]}
       />
 
+      {/* How you sound: warm-ups and voice drills, straight into the next of each (decision 80) */}
+      <Group
+        id="voice"
+        title="Your voice"
+        more={{ href: "/voice", label: "See all" }}
+        ways={[
+          // A warm-up, nothing recorded
+          { name: "Warm-up", detail: "Three moves, one minute, nothing recorded", href: "/voice/warmup", icon: WindIcon },
+          // Clear sounds
+          { name: "Clear sounds", detail: `Next: ${nextVoice("clear").title}`, href: `/voice/drill?id=${nextVoice("clear").id}`, icon: TextAaIcon },
+          // Volume
+          { name: "Volume", detail: `Next: ${nextVoice("volume").title}`, href: `/voice/drill?id=${nextVoice("volume").id}`, icon: SpeakerHighIcon },
+          // Pitch and stress
+          { name: "Pitch and stress", detail: `Next: ${nextVoice("pitch").title}`, href: `/voice/drill?id=${nextVoice("pitch").id}`, icon: WaveSineIcon },
+          // Tone
+          { name: "Tone", detail: `Next: ${nextVoice("tone").title}`, href: `/voice/drill?id=${nextVoice("tone").id}`, icon: MaskHappyIcon },
+          // Pausing: the pause drills, straight into the next one
+          { name: "Pausing", detail: nextPause ? `Next: ${nextPause.title}` : "Pause where the text is marked, 1 min", href: nextPause ? `/session?mode=pause&prompt=${nextPause.id}` : "/voice#pausing", icon: PauseIcon },
+          // Shadowing
+          { name: "Shadowing", detail: `Next: ${nextShadow.title}`, href: `/voice/shadow?id=${nextShadow.id}`, icon: RepeatIcon },
+        ]}
+      />
+
       {/* Building one skill */}
       <Group
         id="skills"
@@ -193,10 +220,6 @@ export function PracticeScreen(props: ScreenProps) {
           { name: "Lessons", detail: nextLesson ? `Next: ${nextLesson.title}` : "One practical tip each, 2 to 3 min", href: nextLesson ? `/session?mode=lesson&prompt=${nextLesson.id}` : "/skills#lessons", icon: GraduationCapIcon },
           // Readings
           { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills#readings", icon: BookOpenTextIcon },
-          // Pause drills: straight into the next one
-          { name: "Pause drills", detail: nextPause ? `Next: ${nextPause.title}` : "Pause where the text is marked, 1 min", href: nextPause ? `/session?mode=pause&prompt=${nextPause.id}` : "/skills#pause-drills", icon: PauseIcon },
-          // Tricky words: straight into the next one
-          { name: "Tricky words", detail: nextTricky ? `Next: ${nextTricky.title}` : "Crisp consonants, 1 min", href: nextTricky ? `/session?mode=read&prompt=${nextTricky.id}` : "/skills#tricky-words", icon: TextAaIcon },
         ]}
       />
 

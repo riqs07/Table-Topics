@@ -1,5 +1,7 @@
 // The real recording pieces, built on the browser's speech recognition, MediaRecorder, and Web Audio
 
+// Load the pitch reader (decision 80)
+import { detectPitch } from "@/core/pitch";
 // Load the transcript stitcher
 import { TranscriptAssembler, type RecognitionResult } from "@/audio/transcriptAssembler";
 // Load the contracts these pieces fulfil
@@ -172,6 +174,10 @@ class MediaCapture implements AudioCapture {
   private readonly analyser: AnalyserNode;
   // A reusable buffer for waveform samples
   private readonly samples: Uint8Array<ArrayBuffer>;
+  // Reads a longer slice for pitch (long enough for a deep voice; decision 80)
+  private readonly pitchAnalyser: AnalyserNode;
+  // A reusable buffer for that slice
+  private readonly pitchSamples: Float32Array<ArrayBuffer>;
 
   // Start recording and measuring
   constructor(private readonly stream: MediaStream) {
@@ -190,10 +196,28 @@ class MediaCapture implements AudioCapture {
     this.analyser = this.context.createAnalyser();
     // A small window is enough for a level meter
     this.analyser.fftSize = 512;
-    // Feed the microphone into the reader
-    this.context.createMediaStreamSource(stream).connect(this.analyser);
+    // The microphone in the audio graph
+    const source = this.context.createMediaStreamSource(stream);
+    // Feed it into the reader
+    source.connect(this.analyser);
     // Make the sample buffer
     this.samples = new Uint8Array(this.analyser.fftSize);
+    // Make the pitch reader, with a slice of about 40 milliseconds
+    this.pitchAnalyser = this.context.createAnalyser();
+    // The slice's size
+    this.pitchAnalyser.fftSize = 2048;
+    // Feed the microphone into it too
+    source.connect(this.pitchAnalyser);
+    // Its buffer
+    this.pitchSamples = new Float32Array(this.pitchAnalyser.fftSize);
+  }
+
+  // Current voice pitch in hertz, or null when silent or unvoiced
+  pitch(): number | null {
+    // Copy the latest slice
+    this.pitchAnalyser.getFloatTimeDomainData(this.pitchSamples);
+    // Work out its pitch
+    return detectPitch(this.pitchSamples, this.context.sampleRate);
   }
 
   // Current loudness
@@ -262,7 +286,7 @@ export const browserRecordingServices: RecordingServices = {
     }
   },
   // Ask for the microphone
-  openMicrophone: () => navigator.mediaDevices.getUserMedia({ audio: true }),
+  openMicrophone: (options) => navigator.mediaDevices.getUserMedia({ audio: options?.raw ? { autoGainControl: false, noiseSuppression: false, echoCancellation: false } : true }),
   // Get a question's ElevenLabs audio ready
   prepareSpeech: (promptId) => prepareQuestionVoice(promptId),
   // Say a question: the ElevenLabs audio when ready, otherwise the phone's own voice

@@ -207,3 +207,21 @@ describe("planSkipped", () => {
     expect([partly, none]).toEqual([2, -1]);
   });
 });
+
+// Group the checks about voice drills in today's practice (decision 80)
+describe("voice drills in the plan", () => {
+  // The delivery group's voice pick goes warm-up, clear sounds, volume... by how many were done before today; a warm-up step is done when finished today
+  it("takes the voice modes in turn", () => {
+    // Days on which the delivery group offers its voice pick, over a month
+    const days = Array.from({ length: 30 }, (_, offset) => dayAfter(offset)).filter((day) => regularPlan(day).some((step) => step.lane === "delivery" && (step.kind === "warmup" || step.mode === "voice")));
+    // The first such day with nothing done, then with one warm-up and two voice sessions before it
+    const day = days[0]!;
+    // The voice step with nothing done
+    const first = regularPlan(day).find((step) => step.lane === "delivery")!;
+    // Two voice sessions and a warm-up before today
+    const later = dailyPlan({ day, sessions: [...regular, daysAgo(4, { mode: "voice", promptId: "c01" }), daysAgo(5, { mode: "voice", promptId: "c02" })], focusId: "pausing", nextTalk: null, warmupDays: ["2026-01-02"] }).find((step) => step.lane === "delivery")!;
+    // Confirm a warm-up first, done only once finished today, then the fourth mode in turn
+    expect([days.length > 0, first.kind, first.href, planProgress([first], [], day, {}, {}, [])[0], planProgress([first], [], day, {}, {}, [`${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`])[0], later.label]).toEqual([true, "warmup", "/voice/warmup", false, true, "Pitch and stress"]);
+  });
+});
+

@@ -2,7 +2,7 @@
 import { expect, test } from "./support/fixtures";
 
 // Pages to measure
-const PAGES: ReadonlyArray<string> = ["/", "/practice", "/skills", "/rehearse", "/history", "/settings", "/bookends", "/talk?id=missing", "/session?mode=response&prompt=p040", "/sessions?id=missing", "/speech?id=jfk-inaugural"];
+const PAGES: ReadonlyArray<string> = ["/", "/practice", "/skills", "/rehearse", "/history", "/settings", "/bookends", "/talk?id=missing", "/session?mode=response&prompt=p040", "/sessions?id=missing", "/speech?id=jfk-inaugural", "/voice", "/voice/warmup", "/voice/drill?id=p04", "/voice/shadow?id=s01"];
 
 // One check per page
 for (const path of PAGES) {

@@ -10,6 +10,12 @@ export const ROUTES: ReadonlyArray<string> = [
   "/",
   // Practice
   "/practice",
+  // Your voice, the warm-up, a voice drill, shadowing, and a drill that does not exist (decision 80)
+  "/voice",
+  "/voice/warmup",
+  "/voice/drill?id=p04",
+  "/voice/shadow?id=s01",
+  "/voice/drill?id=missing",
   // The old Lessons and Library addresses, which now lead to Skills
   "/lessons",
   "/library",

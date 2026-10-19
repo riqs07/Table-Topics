@@ -555,6 +555,40 @@ describe("SessionScreen", () => {
     expect(await screen.findByText(/^You paused at 0 of the \d+ marks\. No pause after /)).toBeTruthy();
   });
 
+  // A pause drill with word times shows how long each pause was, against the one-to-two-second target (decision 80)
+  it("shows how long each pause was", async () => {
+    // A drill's words, 0.3 seconds apart, with a 1.5-second gap at every mark
+    const tokens = readingTokens(PAUSE_DRILLS[0]!.body);
+    // The words
+    const words = scriptWords(tokens);
+    // The word numbers that come straight after a mark
+    const afterMark = new Set<number>();
+    // Walk the script, noting the first word after each mark
+    let waiting = false;
+    // Each piece
+    for (const token of tokens) {
+      // A mark: the next word follows it
+      if (token.kind === "pause") waiting = true;
+      // A word after a mark
+      else if (token.word !== null && waiting) {
+        // Note it
+        afterMark.add(token.word);
+        // Done with this mark
+        waiting = false;
+      }
+    }
+    // The times, with the gaps added
+    let time = 0;
+    // Each word's time
+    const times = words.map((_, index) => (time += afterMark.has(index) ? 1.5 : 0.3));
+    // A pause drill session with those times
+    const session = makeSession({ id: "s1", mode: "pause", promptId: PAUSE_DRILLS[0]!.id, scriptTimes: times, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Every mark in the target, one bar each
+    expect([(await screen.findByText(/pauses were one to two seconds/)).textContent, within(screen.getByRole("list", { name: "Pause at each mark" })).getAllByRole("listitem").every((item) => item.textContent?.endsWith("1.5 s"))]).toEqual([`${afterMark.size} of ${afterMark.size} pauses were one to two seconds.`, true]);
+  });
+
   // After a part of a full speech, the next part is offered, and the last part leads back to the speech
   it("offers the next part of a speech", async () => {
     // Part 1 and the last part of Lincoln's second inaugural, read

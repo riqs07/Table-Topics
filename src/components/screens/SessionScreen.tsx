@@ -34,7 +34,11 @@ import { compareNotes } from "@/core/notesCheck";
 // Load the sentence helpers
 import { dayLabel } from "@/core/copy";
 // Load the findings from word times
-import { marksPaused, marksSentence, paceAcross } from "@/core/wordTiming";
+import { markPauses, marksPaused, marksSentence, paceAcross } from "@/core/wordTiming";
+// Load the pause-length bars (decision 80)
+import { PauseLengths } from "@/components/script/PauseLengths";
+// Load the saved voice drill's view (decision 80)
+import { VoiceSessionView } from "@/components/screens/VoiceSessionView";
 // Load the script splitter, to place the pause marks among the timed words
 import { readingTokens } from "@/core/liveReading";
 // Load the compact row of numbers
@@ -390,6 +394,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const pace = session.spokenTimes ? paceAcross(session.spokenTimes) : null;
   // In a pause drill with word times, which marks had a pause
   const marks = session.mode === "pause" && passage && session.scriptTimes ? marksSentence(marksPaused(readingTokens(passage.body), session.scriptTimes)) : "";
+  // In a pause drill with word times, how long the pause was at each mark (decision 80)
+  const gaps = session.mode === "pause" && passage && session.scriptTimes ? markPauses(readingTokens(passage.body), session.scriptTimes) : [];
   // Whether this was an old warm-up (it leads into a Record Response instead of a retry)
   const warmup = session.mode === "warmup";
   // Whether this was a Table Topic
@@ -560,6 +566,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* (The pause count is in the numbers row; the longer pause sentence and the "no number measures this" line were cut, decision 63) */}
           {/* Which pause marks had a pause */}
           {marks && <p className="mt-2 text-footnote text-ink-muted">{marks}</p>}
+          {/* How long each pause was, against the one-to-two-second target */}
+          {gaps.length > 0 && <PauseLengths gaps={gaps} />}
           {/* How the pace changed */}
           {pace && !quick && <p className="mt-2 text-footnote text-ink-muted">{pace.sentence}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
@@ -923,9 +931,11 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
         </>
       )}
       {/* A retry with its first try */}
-      {loaded?.session && loaded.original && loaded.session.mode !== "smalltalk" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} view={view} />}
+      {/* A voice drill or shadowing: its saved lines (decision 80) */}
+      {loaded?.session?.mode === "voice" && today && <VoiceSessionView session={loaded.session} now={today} plan={plan} />}
+      {loaded?.session && loaded.session.mode !== "voice" && loaded.original && loaded.session.mode !== "smalltalk" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} view={view} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && (!loaded.original || loaded.session.mode === "smalltalk") && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} view={view} onReviewed={(updated) => {
+      {loaded?.session && loaded.session.mode !== "voice" && (!loaded.original || loaded.session.mode === "smalltalk") && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} view={view} onReviewed={(updated) => {
         // Show the notes and the feedback
         setLoaded((previous) => (previous ? { ...previous, session: updated } : previous));
         // If the coach was waiting for the notes, ask it now

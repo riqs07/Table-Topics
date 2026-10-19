@@ -402,6 +402,41 @@ test("One moment a day: record a note and see it on the Small talk page", async 
   await expect(page.getByRole("list", { name: "Your moments" })).toContainText("I fixed the bike chain myself", { timeout: 15_000 });
 });
 
+// Your voice: a warm-up with nothing recorded, then a volume drill take by take, its results and the next drill (decision 80)
+test("Your voice: warm up, then a volume drill", async ({ page }) => {
+  // The stand-in microphone (a steady tone) and speech
+  await useStandIns(page);
+  // Start at Practice
+  await page.goto("/practice");
+  // The warm-up row
+  await page.getByRole("link", { name: /^Warm-up/ }).click();
+  // Start the routine
+  await page.getByRole("button", { name: "Start" }).click();
+  // Skip through the three moves
+  for (let move = 0; move < 3; move++) await page.getByRole("button", { name: /^Next move/ }).click();
+  // Warmed up
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Warmed up.");
+  // Back to Your voice
+  await page.getByRole("link", { name: /Back to Your voice/ }).click();
+  // Open the volume drills and the first one
+  await page.getByText("Volume", { exact: true }).click();
+  // The first three-rooms drill
+  await page.getByRole("link", { name: /^Three rooms: the greeting/ }).click();
+  // Three takes
+  for (let take = 0; take < 3; take++) {
+    // Record
+    await page.getByRole("button", { name: /^Record/ }).click();
+    // Speak for a moment
+    await page.waitForTimeout(1500);
+    // Stop
+    await page.getByRole("button", { name: "Stop" }).click();
+  }
+  // The results: one bar per take, and the next drill offered
+  await expect(page.getByRole("list", { name: "How loud each take was" }).getByRole("listitem")).toHaveCount(3);
+  // The next drill
+  await expect(page.getByRole("link", { name: /^Next drill/ })).toHaveAttribute("href", "/voice/drill?id=v02");
+});
+
 // Learn: from its tab, a myth-or-fact card screen by screen, then on to the next card (no quiz since decision 67)
 test("Learn: read a card one screen at a time", async ({ page }) => {
   // Start at Learn

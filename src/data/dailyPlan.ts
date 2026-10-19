@@ -56,11 +56,11 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   // A talk coming up
   const talk = nextTalkFrom(await repository.listTalks(), now);
   // The steps
-  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {} };
+  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [] };
   // The steps
   const steps = dailyPlan(input);
   // Hand back the steps, what is done, today's sessions, and more to do afterwards
-  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps) };
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? []), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps) };
 }
 
 // Put a step off for today ("Can't speak now?"): it is not done, it is just not offered next; another day's skips are dropped (decision 77)
@@ -73,4 +73,16 @@ export async function skipStepToday(repository: Repository, step: PlanStep, now:
   const steps = settings.skipped?.day === day ? settings.skipped.steps : [];
   // Add this one, once
   await repository.saveSettings({ ...settings, skipped: { day, steps: steps.includes(stepKey(step)) ? steps : [...steps, stepKey(step)] } });
+}
+
+// Note a finished warm-up routine for today (warm-ups record nothing, so their days are kept in the settings; the latest 60; decision 80)
+export async function markWarmupDone(repository: Repository, now: Date): Promise<void> {
+  // The settings
+  const settings = await repository.getSettings(now);
+  // Today
+  const day = dayKey(now);
+  // Earlier days, without today
+  const earlier = (settings.warmupDays ?? []).filter((item) => item !== day);
+  // Today added, the latest kept
+  await repository.saveSettings({ ...settings, warmupDays: [...earlier, day].slice(-60) });
 }

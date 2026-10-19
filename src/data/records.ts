@@ -40,8 +40,8 @@ export interface SmallTalkFeedback {
   livelier: string;
 }
 
-// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment"), or free talk about anything ("free") and a short speech the user planned themselves ("outline", decision 73)
-export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment", "free", "outline"] as const;
+// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment"), or free talk about anything ("free") and a short speech the user planned themselves ("outline", decision 73), or a voice drill or shadowing, recorded take by take ("voice", decision 80)
+export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment", "free", "outline", "voice"] as const;
 
 // One kind of session (bookend: an openings and closings drill; qa: an answer to a likely audience question; both added 2026-10-15)
 export type SessionMode = (typeof SESSION_MODES)[number];
@@ -115,6 +115,18 @@ export interface SessionRecord {
   selfReview?: SelfReview | null;
   // Key of the saved audio, or null if there is none or it was pruned
   audioKey: string | null;
+  // For a voice drill or shadowing (mode "voice"): what kind, the headline, and one line per take; the takes' audio is kept only while on the page (decision 80)
+  voice?: VoiceSummary;
+}
+
+// What a voice drill or a shadowing session showed, kept with the session (decision 80)
+export interface VoiceSummary {
+  // The kind: clear sounds, volume, pitch and stress, tone, or shadowing
+  kind: "clear" | "volume" | "pitch" | "tone" | "shadow";
+  // The headline shown at the end
+  headline: string;
+  // Each take's name and its line
+  takes: { label: string; line: string }[];
 }
 
 // One of the user's own talks, saved for Rehearse my talk (stays on the device)
@@ -223,6 +235,10 @@ export interface SettingsRecord {
   showPauseWords?: boolean;
   // "I stammer": hides pause words, repeats and fluency judgements, and tells the coach to leave fluency alone (decision 79; missing means off)
   stammer?: boolean;
+  // Days a warm-up routine was finished (YYYY-MM-DD, the latest 60), since warm-ups record nothing (decision 80; missing until the first)
+  warmupDays?: string[];
+  // Words clear-sounds drills found hard to catch, with how often (decision 80; missing until the first)
+  wordsToWatch?: Record<string, number>;
 }
 
 // What each stored collection holds

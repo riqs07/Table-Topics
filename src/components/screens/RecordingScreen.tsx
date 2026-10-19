@@ -59,11 +59,13 @@ import { loadDailyPlan, skipStepToday, type LoadedPlan } from "@/data/dailyPlan"
 // Load the plan rules, to find the next step after one is put off
 import { nextStepIndex, planHref, stepKey } from "@/core/dailyPlan";
 // Load the shared button looks
-import { PRESS, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+// Load the plain explanations of microphone and speech problems
+import { ALLOW_STEPS, PROBLEM_TEXT } from "@/components/script/microphoneHelp";
+// Load the voice shape in its forms
+import { StartBlob, StatusBlob, TakeControls, VoiceBlob } from "@/components/script/VoiceShapes";
 // Load the screen hold
 import { holdScreenAwake } from "@/audio/wakeLock";
-// Load the microphone for the start button
-import { MicrophoneIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the request that keeps saved practice from being cleared
 import { requestPersistentStorage } from "@/data/storageSafety";
 // Load the tab title helper
@@ -123,28 +125,6 @@ const RECENT_MOMENTS = 3;
 
 // The stage for a browser without speech recognition (one shared value, so it is the same between redraws)
 const UNSUPPORTED: Stage = { problem: "speech-unsupported" };
-
-// Plain explanations for each problem
-const PROBLEM_TEXT: Record<RecordingProblem, string> = {
-  // Microphone refused (the steps to allow it follow on screen)
-  "microphone-blocked": "The microphone is blocked for this site, so VoiceLab cannot hear you. To allow it:",
-  // No microphone found
-  "no-microphone": "No microphone was found. Plug one in or check your sound settings, then try again.",
-  // Browser cannot transcribe
-  "speech-unsupported": "This browser cannot turn speech into text. Use Chrome, Edge, or Safari.",
-  // Speech service unreachable
-  "speech-offline": "The browser’s speech service could not be reached. Check your connection, then try again.",
-};
-
-// How to allow a blocked microphone, by device
-const ALLOW_STEPS: ReadonlyArray<string> = [
-  // iPhone and iPad
-  "iPhone or iPad (Safari): tap aA in the address bar, then Website Settings, and set Microphone to Allow.",
-  // Android
-  "Android (Chrome): tap the icon left of the address, then Permissions, and turn on Microphone.",
-  // A computer
-  "Computer: click the icon at the left of the address bar and allow the microphone.",
-];
 
 // Number of bars in the level meter
 const METER_BARS = 24;
@@ -310,123 +290,6 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
         return <span key={index} {...marks}>{token.text}</span>;
       })}
     </p>
-  );
-}
-
-// The voice shape's colour at each timing state: warm until the window opens, then the light's own colour
-const BLOB_FILL: Record<TimeSignal, string> = {
-  // Before the window: the warm accent
-  none: "bg-warm",
-  // Green
-  green: "bg-light-green",
-  // Yellow
-  yellow: "bg-light-yellow",
-  // Red
-  red: "bg-light-red",
-  // Past the limit
-  overtime: "bg-light-red",
-};
-
-// The halo's colour at each timing state, matching the shape
-const HALO_EDGE: Record<TimeSignal, string> = {
-  // Before the window
-  none: "border-warm",
-  // Green
-  green: "border-light-green",
-  // Yellow
-  yellow: "border-light-yellow",
-  // Red
-  red: "border-light-red",
-  // Past the limit
-  overtime: "border-light-red",
-};
-
-// Where a shape sits: large in the column (centred on a phone, lined up with the text on a computer; decision 79), or (on screens with text to read) small in the bottom corner, beside a clear lane the text never enters on a phone (decisions 75 and 77)
-function shapePlace(compact: boolean, size: string): string {
-  // Floating in the corner, or centred in the column
-  return compact ? "fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 size-20 drop-shadow-lg md:right-10 md:size-28" : `relative mx-auto my-6 md:mx-0 ${size}`;
-}
-
-// The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69); it is the stop button (decisions 74 and 75)
-function VoiceBlob({ levels, signal, clock, onStop, compact, paused = false }: { levels: number[]; signal: TimeSignal; clock: string; onStop: () => void; compact: boolean; paused?: boolean }) {
-  // The latest few readings, averaged so the shape does not jitter
-  const recent = levels.slice(-4);
-  // How loud, from 0 to 1
-  const level = Math.min(1, (recent.reduce((sum, value) => sum + value, 0) / Math.max(1, recent.length)) * 4);
-  // The shape's size: bigger as the voice gets louder
-  const scale = 0.82 + level * 0.3;
-  // A round button holding the halo, the shape, the clock and "Stop" (the level stays named for screen readers)
-  return (
-    <button type="button" onClick={onStop} aria-label="Stop" data-variant="stop" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-72")}`}>
-      {/* The level, named for screen readers */}
-      <span role="img" aria-label="Microphone level" className="absolute inset-0" />
-      {/* The dashed halo, turning slowly */}
-      <span aria-hidden="true" className={`absolute inset-0 rounded-full border-2 border-dashed opacity-60 motion-safe:animate-spin-slow ${HALO_EDGE[signal]}`} />
-      {/* The shape, growing with the voice and changing colour with the light */}
-      <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-6"} rounded-full transition-[transform,background-color,opacity] duration-150 ease-out ${paused ? "opacity-60" : "motion-safe:animate-morph"} ${BLOB_FILL[signal]}`} style={{ transform: `scale(${paused ? 0.82 : scale})` }} />
-      {/* The clock, and the action */}
-      <span className="relative flex flex-col items-center text-on-warm">
-        {/* The clock (the button is named "Stop" alone) */}
-        <span aria-hidden="true" className={`font-display font-semibold tabular-nums tracking-tight ${compact ? "text-xl" : "text-prompt-xl"}`}>{clock}</span>
-        {/* The action */}
-        <span className="text-footnote font-semibold">Stop</span>
-      </span>
-    </button>
-  );
-}
-
-// Pause or resume, and discard, as two quiet buttons (decision 77)
-function TakeControls({ paused, onPause, onResume, onDiscard }: { paused: boolean; onPause: () => void; onResume: () => void; onDiscard: () => void }) {
-  // Side by side, centred under the shape
-  return (
-    <p className="mt-1 flex flex-wrap justify-center gap-3 md:justify-start">
-      {/* Pause or carry on */}
-      <button type="button" onClick={paused ? onResume : onPause} className={QUIET}>{paused ? "Resume" : "Pause"}</button>
-      {/* Throw this take away (it can be undone for a few seconds) */}
-      <button type="button" onClick={onDiscard} className={QUIET}>Discard</button>
-    </p>
-  );
-}
-
-// Before recording, or to start early: the same shape, still, as a round start button, with what it does and a short detail (decisions 74 and 75)
-function StartBlob({ label, detail, onStart, compact }: { label: string; detail: string; onStart: () => void; compact: boolean }) {
-  // A round button with a quiet halo, the warm shape, a microphone and the words
-  return (
-    <button type="button" onClick={onStart} data-variant="start" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-56")}`}>
-      {/* The dashed halo, still */}
-      <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-dashed border-warm opacity-60" />
-      {/* The shape, breathing slowly when motion is welcome */}
-      <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-4"} rounded-full bg-warm shadow-card motion-safe:animate-morph`} />
-      {/* The microphone and the words */}
-      <span className="relative flex max-w-[80%] flex-col items-center gap-0.5 text-center text-on-warm">
-        {/* The microphone */}
-        <MicrophoneIcon aria-hidden="true" weight="fill" className={compact ? "size-5 md:size-6" : "size-9"} />
-        {/* What it does */}
-        <span className={`font-semibold leading-tight ${compact ? "text-tab" : "font-display text-xl"}`}>{label}</span>
-        {/* The detail (left out of the small corner shape) */}
-        <span className={compact ? "sr-only" : "text-footnote leading-tight"}>{detail}</span>
-      </span>
-    </button>
-  );
-}
-
-// While waiting (a countdown, a question being said, the microphone starting, saving): the still shape with what is happening, not a button
-function StatusBlob({ label, detail, compact }: { label: string; detail: string; compact: boolean }) {
-  // The shape, quieter, with the words announced politely
-  return (
-    <div role="status" className={`flex items-center justify-center rounded-full ${shapePlace(compact, "size-56")}`}>
-      {/* The dashed halo, turning slowly */}
-      <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-dashed border-warm opacity-60 motion-safe:animate-spin-slow" />
-      {/* The shape, faded */}
-      <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-4"} rounded-full bg-warm opacity-70 motion-safe:animate-morph`} />
-      {/* The words */}
-      <span className="relative flex max-w-[80%] flex-col items-center text-center text-on-warm">
-        {/* What is happening */}
-        <span className={`font-semibold leading-tight ${compact ? "text-tab" : "font-display text-xl"}`}>{label}</span>
-        {/* The detail */}
-        <span className={compact ? "sr-only" : "text-footnote leading-tight"}>{detail}</span>
-      </span>
-    </div>
   );
 }
 
@@ -1017,6 +880,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const thisStep = plan && planStep ? plan.steps[planStep - 1] : undefined;
   // Only a speaking step can be put off ("Can't speak now?" is about speaking)
   const skippable = !!thisStep && thisStep.kind === "session" && thisStep.mode === mode && thisStep.promptId === promptId && !retryOf;
+  // The reading step can start with an optional warm-up, which comes back here afterwards (decision 80)
+  const warmUpFirst = skippable && thisStep.lane === "warmup" && mode === "read" && planStep ? `/voice/warmup?then=${encodeURIComponent(planHref(thisStep, planStep))}` : null;
 
   // "Can't speak now?": put this step off for today (not done, just not offered next) and go on to the next open step, or back to Today (decision 77)
   const skipForToday = useCallback(async () => {
@@ -1238,7 +1103,14 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The step */}
           <p className="font-medium text-accent">Today’s practice · step {planStep}{plan ? ` of ${plan.steps.length}` : ""}</p>
           {/* Before speaking: a way to put the step off without it counting as done (decision 77) */}
-          {skippable && !busy && <button type="button" onClick={() => void skipForToday()} aria-label="Can’t speak now? Skip this step for today" className={`${TEXT_LINK} text-ink-muted`}>Can’t speak now?</button>}
+          {skippable && !busy && (
+            <span className="flex flex-wrap gap-x-4">
+              {/* A minute of warm-up first, on the reading step (decision 80) */}
+              {warmUpFirst && <Link href={warmUpFirst} className={`${TEXT_LINK} text-accent`}>Warm up first</Link>}
+              {/* Put it off */}
+              <button type="button" onClick={() => void skipForToday()} aria-label="Can’t speak now? Skip this step for today" className={`${TEXT_LINK} text-ink-muted`}>Can’t speak now?</button>
+            </span>
+          )}
         </div>
       )}
 

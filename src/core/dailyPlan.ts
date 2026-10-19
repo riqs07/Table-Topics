@@ -17,6 +17,9 @@ import { nextCard, type LearnProgress } from "@/core/learn";
 import type { ScenarioProgress, SessionMode, SessionRecord } from "@/data/records";
 // Load how many scenarios a quick round holds
 import { QUICK_COUNT } from "@/core/scenarios";
+// Load the voice picks and names (decision 80)
+import { VOICE_ROTATION, nextShadowPassage, nextVoiceDrill, warmupRoutine } from "@/core/voicePicks";
+import { VOICE_MODE_NAMES } from "@/content/voice";
 
 // Where a step of the day's practice comes from: the Learn card, the warm-up, or one of the bank's three groups (speaking on the spot, delivery skills, conversation)
 export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection";
@@ -25,8 +28,8 @@ export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection";
 export interface PlanStep {
   // Its lane
   lane: PlanLane;
-  // A recorded session, a Learn card, or a round of quick scenarios (decision 72)
-  kind: "session" | "card" | "scenarios";
+  // A recorded session, a Learn card, a round of quick scenarios (decision 72), or a warm-up routine, which records nothing (decision 80)
+  kind: "session" | "card" | "scenarios" | "warmup";
   // The step's short name, such as "Warm up"
   label: string;
   // What it is, such as "Inaugural Address, part 3 of 12"
@@ -53,6 +56,8 @@ export interface PlanInput {
   nextTalk: { id: string; title: string; headline: string } | null;
   // Learn progress (only what was read before today is used, so the plan stays the same all day)
   learn?: LearnProgress;
+  // Days a warm-up routine was finished (only those before today are used)
+  warmupDays?: ReadonlyArray<string>;
 }
 
 // The order speeches are offered in when none is under way: short and familiar first
@@ -142,14 +147,14 @@ function skill(focusId: string, day: Date): PlanStep {
 }
 
 // One kind of practice the day can pick
-type PickKind = "talk" | "response" | "bookend" | "skill" | "pause" | "connect" | "smalltalk" | "scenarios";
+type PickKind = "talk" | "response" | "bookend" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios";
 
 // The bank in three groups, each with its lane: speaking on the spot, delivery skills, and conversation
 const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> = [
   // On the spot: a Table Topic, an opening or closing, a prepared speech
   { lane: "spot", kinds: ["talk", "bookend", "response"] },
-  // Delivery: the week's focus drill, a pause drill
-  { lane: "delivery", kinds: ["skill", "pause"] },
+  // Delivery: the week's focus drill, a voice drill (the voice modes in turn; decision 80), a pause drill
+  { lane: "delivery", kinds: ["skill", "voice", "pause"] },
   // Conversation: the next Connect lesson or drill, a round of quick scenarios, an everyday question (decision 72)
   { lane: "connection", kinds: ["connect", "scenarios", "smalltalk"] },
 ];
@@ -198,6 +203,8 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
   }
   // The week's focus drill
   if (kind === "skill") return { ...skill(input.focusId, input.day), lane };
+  // A voice drill: warm-up, clear sounds, volume, pitch and stress, tone or shadowing, in turn
+  if (kind === "voice") return { ...voiceStep(input, before), lane };
   // A pause drill (a practice passage in pausing week, when the focus drill may already be one)
   if (kind === "pause") {
     // In pausing week, a practice passage
@@ -227,6 +234,33 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
   const topic = tableTopicForDay(input.day);
   // The step (the question stays hidden until the countdown, as in a real Table Topic)
   return { lane, kind: "session", label: "Table Topic", title: "A surprise question, answered on the spot", mode: "talk", promptId: topic.id, minutes: 2, href: `/session?mode=talk&prompt=${topic.id}` };
+}
+
+// The voice drill: the voice modes taken in turn by how many were done before today (a warm-up counts by its day, since it records nothing), each mode's next drill the one done least (decision 80)
+function voiceStep(input: PlanInput, before: ReadonlyArray<SessionRecord>): PlanStep {
+  // Voice sessions before today
+  const voiceBefore = before.filter((session) => session.mode === "voice");
+  // Warm-ups finished before today
+  const warmupsBefore = (input.warmupDays ?? []).filter((day) => day < dayKey(input.day)).length;
+  // The mode whose turn it is
+  const pick = VOICE_ROTATION[(voiceBefore.length + warmupsBefore) % VOICE_ROTATION.length]!;
+  // A warm-up routine, no recording
+  if (pick === "warmup") return { lane: "delivery", kind: "warmup", label: VOICE_MODE_NAMES.warmup, title: warmupRoutine(input.day).map((move) => move.name).join(", "), mode: null, promptId: "warmup", minutes: 1, href: "/voice/warmup" };
+  // How often each drill or passage was done
+  const counts = new Map<string, number>();
+  // Count them
+  for (const session of voiceBefore) counts.set(session.promptId, (counts.get(session.promptId) ?? 0) + 1);
+  // Shadowing: the next passage
+  if (pick === "shadow") {
+    // The passage
+    const passage = nextShadowPassage(counts);
+    // The step
+    return { lane: "delivery", kind: "session", label: VOICE_MODE_NAMES.shadow, title: passage.title, mode: "voice", promptId: passage.id, minutes: 3, href: `/voice/shadow?id=${passage.id}` };
+  }
+  // A drill of the mode
+  const drill = nextVoiceDrill(pick, counts);
+  // The step
+  return { lane: "delivery", kind: "session", label: VOICE_MODE_NAMES[pick], title: drill.title, mode: "voice", promptId: drill.id, minutes: 1, href: `/voice/drill?id=${drill.id}` };
 }
 
 // The day's two picks from the bank (a talk coming up takes the first)
@@ -323,12 +357,14 @@ export function moreToDo(input: PlanInput, plan: ReadonlyArray<PlanStep>): PlanS
   return [...practice, ...learn].slice(0, 4);
 }
 
-// Which steps were done today: a session today of the same kind and prompt, a card read today (or, on older progress, its recall answered today), or a round of scenarios answered today
-export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}, scenarios: Readonly<Record<string, ScenarioProgress>> = {}): boolean[] {
+// Which steps were done today: a session today of the same kind and prompt, a card read today (or, on older progress, its recall answered today), a round of scenarios answered today, or a warm-up finished today
+export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}, scenarios: Readonly<Record<string, ScenarioProgress>> = {}, warmupDays: ReadonlyArray<string> = []): boolean[] {
   // Today's sessions
   const today = sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(day));
   // Each step
   return plan.map((step) => {
+    // A warm-up: finished today
+    if (step.kind === "warmup") return warmupDays.includes(dayKey(day));
     // Scenarios: a round's worth answered today
     if (step.kind === "scenarios") return Object.values(scenarios).filter((item) => dayKey(new Date(item.lastAt)) === dayKey(day)).length >= QUICK_COUNT;
     // A card's progress
