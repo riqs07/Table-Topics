@@ -26,8 +26,8 @@ export interface LocalChange {
 // Sessions at least this long are expected to have a few pauses
 const PAUSES_EXPECTED_AFTER = 30;
 
-// Pick the biggest gap in the numbers, in order: timing, fillers, pace, trailing off, pauses; otherwise the week's focus
-export function localChange(session: SessionRecord): LocalChange {
+// Pick the biggest gap in the numbers, in order: timing, pause words, pace, trailing off, pauses; otherwise the week's focus. Pause words are skipped when hidden, and slow pace and fading phrases when fluency is not judged ("I stammer"; decision 79)
+export function localChange(session: SessionRecord, options: { pauseWords?: boolean; fluency?: boolean } = {}): LocalChange {
   // A small-talk answer has its own order: dead end, length, feeling, hand-back
   if (session.mode === "smalltalk") return smallTalkChange(session);
   // The timing window, for a Table Topic or a prepared speech
@@ -37,19 +37,19 @@ export function localChange(session: SessionRecord): LocalChange {
   // Past the window and its grace
   if (timing && session.durationSec > timing.limit) return { change: `Wrap up sooner: you spoke for ${formatClock(session.durationSec)}, past the ${formatClock(timing.end)} mark.`, retryCue: "Start your close when the light turns yellow." };
   // Many fillers
-  if (session.fillersPerMinute >= MANY_FILLERS) return { change: `Swap fillers for a pause: ${formatRate(session.fillersPerMinute)} a minute were counted.`, retryCue: "When an um is coming, close your mouth and pause instead." };
+  if (options.pauseWords !== false && session.fillersPerMinute >= MANY_FILLERS) return { change: `Swap pause words for a silent pause: ${formatRate(session.fillersPerMinute)} a minute were counted.`, retryCue: "When an um is coming, close your mouth and pause instead." };
   // The pace, in whole words a minute
   const speed = Math.round(session.wordsPerMinute);
   // Too fast
   if (speed > FAST) return { change: `Slow down a little: ${speed} words a minute, where about 120 to 160 is comfortable to follow.`, retryCue: "Take a breath at every full stop." };
   // Too slow
-  if (speed > 0 && speed < SLOW) return { change: `Keep the words moving: ${speed} words a minute, where about 120 to 160 is comfortable to follow.`, retryCue: "Pause between sentences, not inside them." };
+  if (options.fluency !== false && speed > 0 && speed < SLOW) return { change: `Keep the words moving: ${speed} words a minute, where about 120 to 160 is comfortable to follow.`, retryCue: "Pause between sentences, not inside them." };
   // The loudness readings, when recorded
   const levels = session.loudness && session.loudness.length > 0 ? session.loudness : null;
   // Phrases that faded at the end
   const endings = levels ? fadingEnds(levels, LOUDNESS_TICK_MS) : null;
   // Trailing off
-  if (endings && endings.stretches >= MIN_ENDINGS && endings.faded / endings.stretches >= FADING) return { change: `Finish your sentences at full strength: ${endings.faded} of ${endings.stretches} phrases faded at the end.`, retryCue: "Land the last word of each sentence." };
+  if (options.fluency !== false && endings && endings.stretches >= MIN_ENDINGS && endings.faded / endings.stretches >= FADING) return { change: `Finish your sentences at full strength: ${endings.faded} of ${endings.stretches} phrases faded at the end.`, retryCue: "Land the last word of each sentence." };
   // Pauses longer than 0.6 seconds
   const pauses = levels ? findPauses(levels, LOUDNESS_TICK_MS) : null;
   // Too few pauses in a longer session

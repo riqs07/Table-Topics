@@ -12,7 +12,7 @@ import { CardScreen } from "@/components/screens/CardScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the cards and the read rule
-import { LEARN_CARDS } from "@/content/learn";
+import { LEARN_CARDS, LEARN_SETS } from "@/content/learn";
 import { firstRead } from "@/core/learn";
 // Load the recording contracts
 import type { LiveText, RecordingServices } from "@/audio/services";
@@ -48,12 +48,16 @@ const next = (times: number) => {
 
 // Group the checks about Learn
 describe("Learn", () => {
-  // The page lists the sets as cards with progress, marks the next one, and leads with the first card
-  it("lists the sets as cards and leads with the first card", async () => {
+  // The page lists the sets as cards with progress in two groups, marks the next one, and leads with the first card (decision 79)
+  it("lists the sets as cards in two groups and leads with the first card", async () => {
     // Draw it with no progress
     render(<LearnScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // The set cards
-    const sets = within(await screen.findByRole("list", { name: "Sets" })).getAllByRole("link");
+    // The speaking set cards
+    const sets = within(await screen.findByRole("list", { name: "Speaking sets" })).getAllByRole("link");
+    // Every set appears once across the two groups
+    const all = [...sets, ...within(screen.getByRole("list", { name: "People sets" })).getAllByRole("link")].map((link) => link.getAttribute("href"));
+    // Confirm each set once
+    expect([...all].sort()).toEqual(LEARN_SETS.map((set) => `/learn/set?id=${set.id}`).sort());
     // Confirm the first card's name, address and note, and the main action
     expect([sets[0]?.getAttribute("aria-label"), sets[0]?.getAttribute("href"), sets[0]?.textContent?.includes("Next up"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([`Nerves and presence, 0 of ${LEARN_CARDS.filter((card) => card.set === "nerves").length}`, "/learn/set?id=nerves", true, `/learn/card?id=${LEARN_CARDS[0]?.id}`]);
   });

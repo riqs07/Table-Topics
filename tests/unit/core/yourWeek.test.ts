@@ -37,6 +37,6 @@ describe("yourWeek", () => {
     // Steady, with a second try this week
     const tried = yourWeek([take(8, 3), take(9, 3), take(1, 3), take(0, 3, { retryOf: "t1-3" })], NOW)?.suggestion.action;
     // Confirm each
-    expect([down?.startsWith("Fewer fillers"), up?.action, up?.href?.startsWith("/session?mode=pause"), steady?.startsWith("Try a second take"), tried]).toEqual([true, "Try a pause drill", true, true, "Plan a short speech"]);
+    expect([down?.startsWith("Fewer pause words"), up?.action, up?.href?.startsWith("/session?mode=pause"), steady?.startsWith("Try a second take"), tried]).toEqual([true, "Try a pause drill", true, true, "Plan a short speech"]);
   });
 });

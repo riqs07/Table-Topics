@@ -49,6 +49,14 @@ export const LEARN_SETS: ReadonlyArray<{ id: LearnSetId; name: string; blurb: st
   { id: "hard", name: "Hard conversations", blurb: "Disagreeing, apologising and asking." },
 ];
 
+// The sets in two groups on the Learn page, so eleven sets do not read as one long list (decision 79): speaking to a room, and being with people
+export const LEARN_GROUPS: ReadonlyArray<{ name: string; sets: ReadonlyArray<LearnSetId> }> = [
+  // Speaking: nerves, voice, getting the point across, stories, and how practice works
+  { name: "Speaking", sets: ["nerves", "voice", "point", "stories", "practice"] },
+  // People: charisma, body language, conversation, warmth, persuasion and hard talks
+  { name: "People", sets: ["charisma", "body", "conversation", "warmth", "minds", "hard"] },
+];
+
 // A myth-or-fact card's verdict
 export type Verdict = "myth" | "fact" | "mixed";
 

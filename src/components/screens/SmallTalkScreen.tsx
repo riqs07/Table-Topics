@@ -9,7 +9,9 @@ import Link from "next/link";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { PRIMARY, QUIET, RowLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, QUIET, RowLink, TEXT_LINK } from "@/components/script/Buttons";
+// Load the folded group card
+import { FoldCard } from "@/components/script/FoldCard";
 // Load the loading placeholder
 import { Skeleton } from "@/components/script/Skeleton";
 import { Masthead } from "@/components/script/Masthead";
@@ -178,27 +180,25 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       <section aria-labelledby="lessons" className="mt-10">
         {/* Run-in heading */}
         <h2 id="lessons" className={SECTION_HEADING}>{unit.name} lessons</h2>
-        {/* The path */}
-        <ol className="mt-2">
+        {/* The path, as rows in one card (the old connecting line is gone; decision 79) */}
+        <ol className={`mt-2 ${CARD_LIST}`}>
           {/* One row per lesson */}
           {lessons.map((lesson, index) => (
-            // One lesson, joined to the next by a line down the path
-            <li key={lesson.id} className="relative">
-              {/* The line to the next lesson (not after the last) */}
-              {index < lessons.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
+            // One lesson
+            <li key={lesson.id}>
               {/* The whole row starts the lesson */}
-              <Link href={answerHref(lesson.id)} aria-label={`${unit.name} lesson ${lesson.number}: ${lesson.title}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
+              <Link href={answerHref(lesson.id)} aria-label={`${unit.name} lesson ${lesson.number}: ${lesson.title}`} className={`flex min-h-14 items-center gap-x-3 py-2.5 hover:text-accent ${PRESS}`}>
                 {/* Its mark on the path */}
                 <PathMark mark={marks[index] ?? "open"} number={lesson.number} />
                 {/* Title (the idea is in the lesson itself, decision 63) */}
                 <span className="min-w-0 flex-1">
                   {/* "Next" above the lesson to do next */}
-                  {marks[index] === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
+                  {marks[index] === "next" && <span className="block text-footnote font-semibold text-accent">Next</span>}
                   {/* Title */}
-                  <span className="block font-display text-xl leading-tight">{lesson.title}</span>
+                  <span className="block font-semibold leading-snug">{lesson.title}</span>
                 </span>
                 {/* The chevron */}
-                <CaretRightIcon aria-hidden="true" className="size-5 flex-none self-center text-ink-muted" />
+                <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
               </Link>
             </li>
           ))}
@@ -210,27 +210,23 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         <section aria-labelledby="questions" className="mt-10">
           {/* Run-in heading */}
           <h2 id="questions" className={SECTION_HEADING}>Everyday questions</h2>
-          {/* Each group, folded */}
-          {QUESTION_GROUPS.map((group) => (
-            // One group
-            <details key={group.id} className="border-b border-rule">
-              {/* Its name and size */}
-              <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 font-display text-cue">
-                {/* Name */}
-                {group.name}
-                {/* How many */}
-                <span className="font-body text-footnote text-ink-muted">{SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id).length} questions</span>
-              </summary>
-              {/* Its questions */}
-              <ul className="divide-y divide-rule border-t border-rule">
-                {/* Each question */}
-                {SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id).map((item) => (
-                  // One question, answered by tapping it
-                  <li key={item.id}><RowLink href={answerHref(item.id)}>{item.text}</RowLink></li>
-                ))}
-              </ul>
-            </details>
-          ))}
+          {/* Each group, folded, as rounded cards (decision 79) */}
+          <div className="mt-2 flex flex-col gap-2">
+            {QUESTION_GROUPS.map((group) => {
+              // Its questions
+              const questions = SMALL_TALK_QUESTIONS.filter((item) => item.group === group.id);
+              // One group
+              return (
+                <FoldCard key={group.id} name={group.name} detail={`${questions.length} questions`}>
+                  {/* Its questions */}
+                  <ul className="divide-y divide-rule">
+                    {/* Each question, answered by tapping it */}
+                    {questions.map((item) => <li key={item.id}><RowLink href={answerHref(item.id)}>{item.text}</RowLink></li>)}
+                  </ul>
+                </FoldCard>
+              );
+            })}
+          </div>
         </section>
       )}
       {/* Everything people say in the asking drills */}

@@ -131,7 +131,7 @@ describe("HomeScreen", () => {
     // The steps
     const steps = await screen.findByRole("list", { name: "Steps" });
     // Confirm the headline, the summary, each step's line, no filler counts, and the moment playing
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 2 minutes 40 today. Second day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/fillers a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length]).toEqual(["Done for today.", true, true, true, null, 4]);
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 2 minutes 40 today. Second day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/pause words a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length]).toEqual(["Done for today.", true, true, true, null, 4]);
     // The suggestions to keep going
     const more = within(screen.getByRole("region", { name: "Keep going" })).getAllByRole("link");
     // Confirm three or four, none of them today's steps, the last another card
@@ -233,7 +233,7 @@ describe("HomeScreen", () => {
     // The card (drawn twice: in the margin on a computer and under the mission on a phone)
     const card = within((await screen.findAllByRole("region", { name: "Your week" }))[0]!);
     // Confirm the weeks, the suggestion, the history link and the time
-    expect([card.getAllByRole("listitem").map((item) => item.getAttribute("aria-label")), !!card.getByText(/Fewer fillers than last week/), card.getByRole("link", { name: "All your history" }).getAttribute("href"), !!screen.getByText("after my morning coffee")]).toEqual([["Two weeks ago: 4.0", "Last week: 3.0", "This week: 2.0"], true, "/history", true]);
+    expect([card.getAllByRole("listitem").map((item) => item.getAttribute("aria-label")), !!card.getByText(/Fewer pause words than last week/), card.getByRole("link", { name: "All your history" }).getAttribute("href"), !!screen.getByText("after my morning coffee")]).toEqual([["Two weeks ago: 4.0", "Last week: 3.0", "This week: 2.0"], true, "/history", true]);
   });
 
   // When a week has passed, the next focus is shown and saved

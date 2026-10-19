@@ -3,6 +3,9 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
+// Load the pause-word setting rule and the clock formatter
+import { pauseWordsShown } from "@/core/pauseWords";
+import { formatClock } from "@/core/recordingRules";
 // Load the small-talk questions
 import { findSmallTalk, findUnit } from "@/content/smallTalk";
 // Load the missions and their rules
@@ -15,7 +18,7 @@ import Link from "next/link";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
 // Load the filled button link
-import { PrimaryLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PrimaryLink, TEXT_LINK } from "@/components/script/Buttons";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the shared screen starting points
@@ -33,7 +36,14 @@ import { baselineProgress, historyRows, trendSeries, type HistoryRow } from "@/c
 // Load the session record type
 import type { MissionRecord, SessionRecord } from "@/data/records";
 // Load the shared heading look
-import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
+import { CARD, SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
+
+// What the list can show (decision 79)
+type HistoryFilter = "all" | "speaking" | "reading";
+// The choices, in order
+const HISTORY_FILTERS: ReadonlyArray<{ id: HistoryFilter; name: string }> = [{ id: "all", name: "All" }, { id: "speaking", name: "Speaking" }, { id: "reading", name: "Reading aloud" }];
+// Kinds of session that read a text (a passage, a pause drill, a lesson's text, or the user's own script)
+const READING_MODES: ReadonlyArray<SessionRecord["mode"]> = ["read", "pause", "lesson", "rehearse"];
 
 // Size of the trend drawing (it stretches to fit its column)
 const CHART = { width: 300, height: 80 };
@@ -52,11 +62,13 @@ function Trend({ values }: { values: number[] }) {
   const points = values.map((value, index) => `${(index / (values.length - 1)) * CHART.width},${y(value)}`).join(" ");
   // Draw it in the accent color, inside a captioned figure
   return (
-    <figure aria-label="Fillers a minute, first try of each session" className="mt-5">
+    <figure aria-label="Pause words a minute, first try of each session" className="mt-5">
       {/* What the line measures */}
-      <figcaption className="text-footnote text-ink-muted">Fillers a minute, first try of each session. Lower is better.</figcaption>
+      <figcaption className="text-footnote text-ink-muted">Pause words (um, uh, like) a minute, first try of each session. Fewer is smoother.</figcaption>
       {/* The drawing, stretched to the column */}
-      <svg viewBox={`0 0 ${CHART.width} ${CHART.height}`} preserveAspectRatio="none" className="mt-3 h-20 w-full text-accent" role="img" aria-label={`Fillers per minute, from ${formatRate(values[0] ?? 0)} to ${formatRate(values.at(-1) ?? 0)}`}>
+      <svg viewBox={`0 0 ${CHART.width} ${CHART.height}`} preserveAspectRatio="none" className="mt-3 h-20 w-full text-accent" role="img" aria-label={`Pause words a minute, from ${formatRate(values[0] ?? 0)} to ${formatRate(values.at(-1) ?? 0)}`}>
+        {/* A soft area under the line (decision 79) */}
+        <polygon points={`0,${CHART.height} ${points} ${CHART.width},${CHART.height}`} fill="currentColor" fillOpacity="0.1" />
         {/* Dotted guide at the first recording's value */}
         <line x1="0" x2={CHART.width} y1={y(values[0] ?? 0)} y2={y(values[0] ?? 0)} stroke="currentColor" strokeOpacity="0.35" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
         {/* The trend line */}
@@ -65,9 +77,9 @@ function Trend({ values }: { values: number[] }) {
       {/* The values at each end */}
       <p className="mt-1 flex justify-between text-footnote text-ink-muted">
         {/* Where it started */}
-        <span>{`First: ${formatRate(values[0] ?? 0)}`}</span>
+        <span>{`First: ${formatRate(values[0] ?? 0)} a minute`}</span>
         {/* Where it is now */}
-        <span className="text-ink">{`Latest: ${formatRate(values.at(-1) ?? 0)}`}</span>
+        <span className="font-semibold text-ink">{`Latest: ${formatRate(values.at(-1) ?? 0)} a minute`}</span>
       </p>
     </figure>
   );
@@ -116,21 +128,22 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
 }
 
 // One line of the contents: day, prompt, dotted leader, result
-function Row({ row, now, talkTitles }: { row: HistoryRow; now: Date; talkTitles: ReadonlyMap<string, string> }) {
-  // First try's rate, and the retry's if there was one
-  const result = row.retry ? `${formatRate(row.session.fillersPerMinute)}, then ${formatRate(row.retry.fillersPerMinute)}` : formatRate(row.session.fillersPerMinute);
+function Row({ row, now, talkTitles, pauseWords }: { row: HistoryRow; now: Date; talkTitles: ReadonlyMap<string, string>; pauseWords: boolean }) {
+  // First try's rate, and the retry's if there was one (or the length, when pause words are hidden; decision 79)
+  const result = !pauseWords ? formatClock(row.session.durationSec) : row.retry ? `${formatRate(row.session.fillersPerMinute)}, then ${formatRate(row.retry.fillersPerMinute)}` : formatRate(row.session.fillersPerMinute);
   // A link to the session, laid out as a baseline-aligned row
   return (
     <li>
-      <Link href={`/sessions?id=${row.session.id}`} className="flex min-h-11 items-baseline gap-3 py-3 hover:text-accent">
-        {/* Day in italic, fixed width so prompts line up */}
-        <span className="w-20 flex-none text-ink-muted max-md:w-16">{dayLabel(new Date(row.session.createdAt), now)}</span>
-        {/* The prompt: wraps on a phone, cut short on a computer where the leader takes the space */}
-        <span className="min-w-0 flex-1 md:flex-initial md:truncate">{promptText(row.session, talkTitles)}</span>
-        {/* Dotted leader, on a computer only */}
-        <span className="hidden min-w-6 flex-1 border-b border-dotted border-ink-muted md:block" />
-        {/* The result */}
-        <span className="flex-none text-right">{result}<span className="block text-footnote text-ink-muted md:ml-1 md:inline">fillers a min</span></span>
+      <Link href={`/sessions?id=${row.session.id}`} className={`flex min-h-14 items-center gap-3 py-3 hover:text-accent ${PRESS}`}>
+        {/* The prompt, with the day under it (decision 79: rows in a card, no dotted leader) */}
+        <span className="min-w-0 flex-1">
+          {/* The prompt */}
+          <span className="block leading-snug">{promptText(row.session, talkTitles)}</span>
+          {/* The day, and whether it was tried twice */}
+          <span className="block text-footnote text-ink-muted">{dayLabel(new Date(row.session.createdAt), now)}{row.retry ? " · tried twice" : ""}</span>
+        </span>
+        {/* The result, with its unit */}
+        <span className="flex-none text-right"><span className="block font-semibold tabular-nums">{result}</span><span className="block text-footnote text-ink-muted">{pauseWords ? "pause words a minute" : "long"}</span></span>
       </Link>
     </li>
   );
@@ -160,6 +173,10 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
   const [talkTitles, setTalkTitles] = useState<ReadonlyMap<string, string>>(new Map());
   // Mission tries, oldest first
   const [missions, setMissions] = useState<MissionRecord[]>([]);
+  // Which sessions the list shows: all, speaking, or reading aloud (decision 79)
+  const [show, setShow] = useState<HistoryFilter>("all");
+  // Whether pause words are counted (decision 79; counted until Settings is read)
+  const [pauseWords, setPauseWords] = useState(true);
 
   // Load the sessions once the date is known
   useEffect(() => {
@@ -176,6 +193,8 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
     repo.getSettings(today).then((settings) => {
       // Keep them if the screen is still open
       if (!cancelled) setMissions(settings.missions ?? []);
+      // And whether pause words are counted
+      if (!cancelled) setPauseWords(pauseWordsShown(settings));
     });
     // Load the talk titles too
     repo.listTalks().then((talks) => {
@@ -193,8 +212,8 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
   const progress = sessions ? baselineProgress(sessions) : null;
   // Trend values
   const trend = sessions ? trendSeries(sessions) : [];
-  // List rows
-  const rows = sessions ? historyRows(sessions) : [];
+  // List rows, filtered
+  const rows = sessions ? historyRows(sessions).filter((row) => show === "all" || (show === "reading") === READING_MODES.includes(row.session.mode)) : [];
   // The first recording, for the listen link
   const baseline = sessions?.find((session) => session.isBaseline);
 
@@ -215,23 +234,33 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
       {sessions && sessions.length > 0 && today && (
         <div className="md:grid md:grid-cols-[280px_minmax(0,1fr)] md:gap-14 md:pt-8">
           {/* Progress (top on a phone, margin on a computer) */}
-          <aside className="mt-5 md:mt-0">
+          <aside className={`mt-5 self-start p-5 md:mt-0 ${CARD}`}>
             {/* Progress as one sentence, or a note that there is only one recording so far */}
-            <h1 className="font-display text-cue font-semibold tracking-tight">{progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h1>
-            {/* The trend, once there are two first tries */}
-            {trend.length >= 2 && <Trend values={trend} />}
+            <h1 className="font-display text-cue font-semibold tracking-tight">{!pauseWords ? `${rows.length} ${rows.length === 1 ? "session" : "sessions"} so far.` : progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h1>
+            {/* The trend, once there are two first tries (it counts pause words, so not when they are hidden) */}
+            {pauseWords && trend.length >= 2 && <Trend values={trend} />}
             {/* Listen to the first recording, if its audio is kept */}
             {baseline?.audioKey && (
-              <p className="mt-6 border-t border-rule pt-3 text-footnote">
-                <Link href={`/sessions?id=${baseline.id}`} className={TEXT_LINK}>Listen to your first recording.</Link>
+              <p className="mt-4 text-footnote">
+                <Link href={`/sessions?id=${baseline.id}`} className={TEXT_LINK}>Listen to your first recording</Link>
               </p>
             )}
           </aside>
-          {/* The contents list */}
-          <ul className="mt-6 border-t border-ink pt-2 text-lede md:mt-0 md:border-t-0 md:pt-0">
-            {/* One row per first try, newest first */}
-            {rows.map((row) => <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} />)}
-          </ul>
+          {/* The list, with a choice of what it shows */}
+          <div className="mt-6 md:mt-0">
+            {/* All, speaking, or reading aloud */}
+            <div role="group" aria-label="Show" className="flex max-w-sm gap-1 rounded-2xl bg-paper p-1 text-footnote">
+              {/* One button per choice */}
+              {HISTORY_FILTERS.map((choice) => <button key={choice.id} type="button" aria-pressed={show === choice.id} onClick={() => setShow(choice.id)} className={`min-h-11 flex-1 rounded-xl px-3 ${PRESS} ${show === choice.id ? "bg-fill font-semibold text-fill-ink" : "text-ink-muted hover:bg-card hover:text-ink"}`}>{choice.name}</button>)}
+            </div>
+            {/* The contents list */}
+            <ul aria-label="Sessions" className={`mt-3 text-lede ${CARD_LIST}`}>
+              {/* One row per first try, newest first */}
+              {rows.map((row) => <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} pauseWords={pauseWords} />)}
+              {/* Nothing of this kind yet */}
+              {rows.length === 0 && <li className="py-4 text-ink-muted">Nothing of this kind yet.</li>}
+            </ul>
+          </div>
         </div>
       )}
 

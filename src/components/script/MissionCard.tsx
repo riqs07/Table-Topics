@@ -77,6 +77,21 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
     onChange(await skipMission(repo, mission.id, now));
   }
 
+  // Once taken on or answered, one slim line: the task and what is next, so it no longer leads the page (decision 79)
+  if (state.kind !== "offer") {
+    // The slim card
+    return (
+      <section aria-labelledby="mission-heading" className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[18px] bg-warm-tint px-4 py-3 motion-safe:animate-rise">
+        {/* What it is, and the task */}
+        <p className="min-w-0 flex-1"><span id="mission-heading" className="font-semibold text-warm-ink">Today’s mission</span> · {mission.task}</p>
+        {/* Waiting for its debrief: the way in */}
+        {state.kind === "debrief" && <Link href={`/mission?id=${state.record.id}&from=${compact ? "today" : "learn"}`} className={`${TEXT_LINK} font-semibold`}>How did it go?</Link>}
+        {/* Answered today: how it went, or that it was skipped */}
+        {state.kind === "answered" && <p className="basis-full text-footnote text-ink-muted">{state.record.status === "skipped" ? "Skipped for today. A mission will be here tomorrow." : compareLine(state.record)}</p>}
+      </section>
+    );
+  }
+
   // Draw it
   return (
     <section aria-labelledby="mission-heading" className="rounded-[18px] bg-warm-tint p-4 motion-safe:animate-rise">
@@ -112,19 +127,6 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
             <button type="button" onClick={() => void skip()} disabled={saving} className={QUIET}>Not today</button>
           </p>
         </>
-      )}
-      {/* Waiting for its debrief */}
-      {state.kind === "debrief" && (
-        <>
-          {/* What was expected */}
-          <p className="mt-2 text-footnote text-ink-muted">You expected it to go {SCALE_WORDS[state.record.predicted ?? 3]?.toLowerCase()}.</p>
-          {/* Debrief */}
-          <p className="mt-3"><Link href={`/mission?id=${state.record.id}&from=${compact ? "today" : "learn"}`} className={PRIMARY}>How did it go?</Link></p>
-        </>
-      )}
-      {/* Answered today */}
-      {state.kind === "answered" && (
-        <p className="mt-2 text-lede">{state.record.status === "skipped" ? "Skipped for today. A mission will be here tomorrow." : compareLine(state.record)}</p>
       )}
     </section>
   );

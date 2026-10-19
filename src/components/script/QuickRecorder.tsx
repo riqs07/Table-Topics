@@ -5,6 +5,8 @@
 import { useEffect, useRef, useState } from "react";
 // Load the player
 import { Player } from "@/components/script/Player";
+// Load the shared press effect (decision 79)
+import { PRESS } from "@/components/script/Buttons";
 // Load the recording contracts
 import type { AudioCapture, LiveTranscriber, RecordingServices } from "@/audio/services";
 
@@ -119,7 +121,7 @@ export function QuickRecorder({ services, action, maxSec = 30, onDone }: QuickRe
   return (
     <div className="mt-4">
       {/* The button: start, stop, or again */}
-      <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={`inline-flex min-h-11 items-center px-4 ${stage === "recording" ? "bg-ink text-paper-raised" : "border border-ink"}`}>
+      <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={`inline-flex min-h-11 items-center rounded-2xl px-4 font-semibold ${PRESS} ${stage === "recording" ? "bg-ink text-paper-raised" : "border-2 border-ink"}`}>
         {stage === "recording" ? "Stop" : stage === "done" ? "Try again" : action}
       </button>
       {/* A refused microphone */}

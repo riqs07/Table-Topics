@@ -10,7 +10,6 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load the history's content, shown folded inside Settings
-import { HistoryContent } from "@/components/screens/HistoryScreen";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the day label helper for the export file name
@@ -41,10 +40,14 @@ import { COLOR_MODES, readColorMode, saveColorMode, type ColorMode } from "@/dat
 import { PracticeTime } from "@/components/script/PracticeTime";
 // Load the timing tones choice
 import { readTimingTones, saveTimingTones } from "@/data/timingTones";
+// Load the space bar shortcut choice
+import { readSpaceShortcut, saveSpaceShortcut } from "@/data/spaceShortcut";
 // Load the shared button looks
-import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, QUIET, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+// Load the switch row
+import { CheckRow } from "@/components/script/CheckRow";
 // Load the shared heading look
-import { SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -74,11 +77,11 @@ function ColorModeChoice() {
 
   // The three buttons
   return (
-    <div role="group" aria-label="Appearance" className="grid max-w-md grid-cols-3">
+    <div role="group" aria-label="Appearance" className="grid max-w-md grid-cols-3 gap-1 rounded-2xl bg-paper p-1">
       {/* One button per choice */}
       {COLOR_MODES.map((choice) => (
         // One choice, filled when chosen
-        <button key={choice.id} type="button" aria-pressed={mode === choice.id} onClick={() => choose(choice.id)} className={`-ml-px min-h-11 border px-3 first:ml-0 ${mode === choice.id ? "relative border-fill bg-fill text-fill-ink" : "border-rule text-ink-muted hover:text-ink"}`}>{choice.name}</button>
+        <button key={choice.id} type="button" aria-pressed={mode === choice.id} onClick={() => choose(choice.id)} className={`min-h-11 rounded-xl px-3 ${PRESS} ${mode === choice.id ? "bg-fill font-semibold text-fill-ink" : "text-ink-muted hover:bg-card hover:text-ink"}`}>{choice.name}</button>
       ))}
     </div>
   );
@@ -99,25 +102,32 @@ function TimingTonesChoice() {
 
   // A labelled switch
   return (
-    <label className="flex min-h-11 items-start gap-3">
-      {/* The switch */}
-      <input type="checkbox" checked={on} onChange={change} className="mt-1 size-5 flex-none accent-accent" />
-      {/* What it does */}
-      <span>
-        {/* The choice */}
-        Timing tones
-        {/* What that means */}
-        <span className="block text-footnote text-ink-muted">A soft tone when the light turns on and two at red, so you can keep your eyes up. Android phones buzz too. iPhones stay quiet on silent.</span>
-      </span>
-    </label>
+    <CheckRow checked={on} onChange={change} detail="A soft tone when the light turns on and two at red, so you can keep your eyes up. Android phones buzz too. iPhones stay quiet on silent.">Timing tones</CheckRow>
   );
+}
+
+// The space bar shortcut on recording screens: on unless switched off (WCAG 2.1.4; decision 79)
+function SpaceShortcutChoice() {
+  // The saved choice, read once when drawn
+  const [on, setOn] = useState(readSpaceShortcut);
+
+  // Save a new choice
+  function change(event: React.ChangeEvent<HTMLInputElement>) {
+    // Store it
+    saveSpaceShortcut(event.target.checked);
+    // Show it
+    setOn(event.target.checked);
+  }
+
+  // A labelled switch
+  return <CheckRow checked={on} onChange={change} detail="On a computer keyboard. Switch it off if it gets pressed by accident.">Space bar starts and stops recording</CheckRow>;
 }
 
 // A section of the settings page: a section heading and its content
 function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   // Ruled block with a run-in heading
   return (
-    <section id={id} className="mt-8 scroll-mt-6 border-t border-rule pt-4 text-lede">
+    <section id={id} className={`mt-4 scroll-mt-6 p-5 text-lede ${CARD}`}>
       {/* Heading */}
       <h2 className={SECTION_HEADING}>{title}</h2>
       {/* Content */}
@@ -136,8 +146,6 @@ interface SettingsScreenProps extends ScreenProps {
 export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
-  // Whether the folded history is open (it loads only once opened)
-  const [historyOpen, setHistoryOpen] = useState(false);
   // The passphrase being typed (starts with the saved one)
   const [passphrase, setPassphrase] = useState(() => (typeof window === "undefined" ? "" : readPassphrase()));
   // How many sessions are waiting for feedback
@@ -333,14 +341,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Result of the last action, read out to screen readers (takes no room until there is one) */}
       <p role="status" className={message ? "mt-4 text-accent" : "sr-only"}>{message}</p>
 
-      {/* History, folded away until wanted (drawn only once opened) */}
+      {/* History, on its own page (decision 79) */}
       <Section title="History">
-        <details onToggle={(event) => setHistoryOpen(event.currentTarget.open)}>
-          {/* Open it */}
-          <summary className={`${TEXT_LINK} cursor-pointer`}>Show your practice history</summary>
-          {/* The history itself */}
-          {historyOpen && <HistoryContent repo={repo} today={today} />}
-        </details>
+        <RowLink href="/history">See your practice history</RowLink>
       </Section>
 
       {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}
@@ -355,22 +358,28 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
 
       {/* Whether Today shows the run (decision 78) */}
       {settings && <Section title="Today">
-        <label className="flex min-h-11 items-start gap-3">
-          {/* The switch */}
-          <input type="checkbox" checked={settings.hideStreak !== true} onChange={(event) => void saveSettingsWith({ ...settings, hideStreak: !event.target.checked }, "Saved.")} className="mt-1 size-5 flex-none accent-accent" />
-          {/* What it does */}
-          <span>
-            {/* The choice */}
-            Show my practice days
-            {/* What that means */}
-            <span className="block text-footnote text-ink-muted">Days practised in the last week, and your run. Two rest days a week never break a run, and two days in a row after a longer break win it back.</span>
-          </span>
-        </label>
+        <CheckRow checked={settings.hideStreak !== true} onChange={(event) => void saveSettingsWith({ ...settings, hideStreak: !event.target.checked }, "Saved.")} detail="Days practised in the last week, and your run. Two rest days a week never break a run, and two days in a row after a longer break win it back.">Show my practice days</CheckRow>
+      </Section>}
+
+      {/* Pause words and fluency (decision 79) */}
+      {settings && <Section title="Pause words">
+        <p className="text-footnote text-ink-muted">Um, uh, like and the rest. A few are normal; listeners hear them as a sign you are thinking.</p>
+        <div className="mt-3 flex flex-col gap-2">
+          {/* Counts on or off */}
+          <CheckRow checked={settings.showPauseWords !== false && settings.stammer !== true} onChange={(event) => void saveSettingsWith({ ...settings, showPauseWords: event.target.checked }, "Saved.")} detail={settings.stammer ? "Off while “I stammer” is on." : "On results, History and Today."}>Show pause-word counts</CheckRow>
+          {/* I stammer */}
+          <CheckRow checked={settings.stammer === true} onChange={(event) => void saveSettingsWith({ ...settings, stammer: event.target.checked }, "Saved.")} detail="Hides pause words, repeats and judgements about fluency, and asks the coach to leave fluency alone.">I stammer</CheckRow>
+        </div>
       </Section>}
 
       {/* Cues while speaking (drawn in the browser only, where the saved choice can be read) */}
       {today && <Section title="While speaking">
-        <TimingTonesChoice />
+        <div className="flex flex-col gap-2">
+          {/* Tones */}
+          <TimingTonesChoice />
+          {/* The space bar */}
+          <SpaceShortcutChoice />
+        </div>
       </Section>}
 
       {/* How long recordings are kept */}
@@ -401,7 +410,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             {/* The field */}
             <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 rounded-xl border-2 border-rule bg-card px-3 py-1" />
             {/* Save */}
-            <button type="button" onClick={storePassphrase} className={TEXT_LINK}>Save passphrase</button>
+            <button type="button" onClick={storePassphrase} className={SECONDARY}>Save passphrase</button>
           </p>
           {/* The saved passphrase's fingerprint, to compare with the one pnpm live-check prints for APP_ACCESS_SECRET */}
           {fingerprint && <p className="mt-2 text-footnote text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
@@ -410,21 +419,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             <p className="mt-3">
               {pendingCount} {pendingCount === 1 ? "session is" : "sessions are"} waiting for feedback.{" "}
               {/* Send now */}
-              <button type="button" onClick={sendNow} className={TEXT_LINK}>Send now</button>
+              <button type="button" onClick={sendNow} className={SECONDARY}>Send now</button>
             </p>
           )}
           {/* Whether the coach may read the user's own notes */}
-          <label className="mt-4 flex min-h-11 items-start gap-3">
-            {/* The switch */}
-            <input type="checkbox" checked={settings?.shareNotes === true} onChange={changeShareNotes} className="mt-1 size-5 flex-none accent-accent" />
-            {/* What it does */}
-            <span>
-              {/* The choice */}
-              Let the coach read my notes after I listen back.
-              {/* What that means */}
-              <span className="block text-footnote text-ink-muted">Your notes are sent with the transcript, and the coach answers them. Feedback then waits until you have saved your notes. Off by default.</span>
-            </span>
-          </label>
+          <div className="mt-4"><CheckRow checked={settings?.shareNotes === true} onChange={changeShareNotes} detail="Your notes are sent with the transcript, and the coach answers them. Feedback then waits until you have saved your notes. Off by default.">Let the coach read my notes after I listen back.</CheckRow></div>
         </details>
       </Section>}
 
@@ -437,10 +436,10 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {!(today && safety) && <p aria-hidden="true" className="mt-2 min-h-12" />}
         {today && safety && <p className="mt-2 min-h-12 text-footnote text-ink-muted">{safety.persisted ? "Protected from being cleared by the browser." : safety.iosSafari && !safety.installed ? "Safari may clear this if VoiceLab is not used for a while. Add it to your Home Screen to keep it." : "The browser may clear this if space runs low."} {lastCopyText(safety.daysSinceExport)}.</p>}
         {/* Export */}
-        <button type="button" onClick={exportData} className={`${TEXT_LINK} mt-3`}>Export my data</button>
+        <button type="button" onClick={exportData} className={`${SECONDARY} mt-3`}>Export my data</button>
         {/* Import */}
         <p className="mt-3">
-          <label className="cursor-pointer underline underline-offset-4">
+          <label className={`${SECONDARY} cursor-pointer`}>
             Import a file
             {/* The hidden file chooser, opened by the label */}
             <input type="file" accept="application/json,.json" aria-label="Import a file" onChange={importData} className="sr-only" />
@@ -452,7 +451,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       <Section title="Start over">
         {/* First step */}
         {!confirmingDelete && (
-          <button type="button" onClick={() => setConfirmingDelete(true)} className={TEXT_LINK}>Delete all my data</button>
+          <button type="button" onClick={() => setConfirmingDelete(true)} className={QUIET}>Delete all my data</button>
         )}
         {/* Confirmation step */}
         {confirmingDelete && (
@@ -460,7 +459,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             {/* What will happen */}
             <p>This removes every recording, transcript, and setting on this device. It cannot be undone.</p>
             {/* Confirm */}
-            <button type="button" onClick={deleteEverything} className="mt-3 min-h-11 bg-ink px-4 text-paper-raised">Yes, delete everything</button>
+            <button type="button" onClick={deleteEverything} className={`mt-3 min-h-11 rounded-2xl bg-ink px-4 font-semibold text-paper-raised ${PRESS}`}>Yes, delete everything</button>
             {/* Back out */}
             <button type="button" onClick={() => setConfirmingDelete(false)} className={`${QUIET} ml-4`}>Keep my data</button>
           </div>
@@ -471,7 +470,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {DEVELOPMENT && (
         <Section title="While building (not in the released app)">
           {/* Fill with sample sessions */}
-          <button type="button" onClick={loadSamples} className={TEXT_LINK}>Fill with sample sessions</button>
+          <button type="button" onClick={loadSamples} className={SECONDARY}>Fill with sample sessions</button>
           {/* Links to design pages */}
           <p className="mt-3 text-ink-muted">
             <Link href="/style" className={TEXT_LINK}>Style page</Link>

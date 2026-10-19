@@ -42,7 +42,7 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   // Open the optional notes
   await page.getByText("Add your notes").click();
   // Tap a tag
-  await page.getByRole("button", { name: "Fillers", exact: true }).click();
+  await page.getByRole("button", { name: "Pause words", exact: true }).click();
   // Note what to change
   await page.getByLabel("Anything else? (optional)").fill("Start without the um");
   // Save
@@ -79,10 +79,10 @@ test("Rehearse my talk: save, rehearse, saved session, history", async ({ page }
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // It names the talk that was rehearsed
   await expect(page.getByText(/Team update/).first()).toBeVisible();
-  // History, folded inside Settings, lists it
+  // History, linked from Settings, lists it (decision 79)
   await page.locator("header").getByRole("link", { name: "Settings" }).click();
-  // Open the fold
-  await page.getByText("Show your practice history").click();
+  // Open the history page
+  await page.getByRole("link", { name: "See your practice history" }).click();
   // At least one session row
   await expect(page.getByRole("link", { name: /Team update|Rehearsal/ }).first()).toBeVisible();
 });
@@ -192,8 +192,8 @@ test("Read aloud: words light up as they are read, then the reading is saved", a
 test("Whole speech: open it from Skills, read part 1, then go on to part 2", async ({ page }) => {
   // The stand-in speech reads the opening of Lincoln's second inaugural
   await useStandIns(page, "Fellow Countrymen At this second appearing to take the oath of the Presidential office there is less occasion for an extended address than there was at the first");
-  // Start at Skills
-  await page.goto("/skills");
+  // Start at Skills, at the whole speeches (a link with #readings opens that group; decision 79)
+  await page.goto("/skills#readings");
   // Open Lincoln's second inaugural
   await page.getByRole("list", { name: "Whole speeches, a part at a time" }).getByRole("link", { name: /Second Inaugural Address/ }).click();
   // Its page lists seven parts of about a minute

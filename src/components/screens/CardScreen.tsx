@@ -134,8 +134,8 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   const screens = [
     // 1. The question or belief
     <div key="question">
-      {/* Which set, and what kind of card */}
-      <Kicker>{card.kind === "myth-or-fact" ? "Myth or fact?" : card.kind === "try-it" ? "Try it" : (set?.name ?? "Learn")}</Kicker>
+      {/* What kind of card, when it is not a plain explainer (the set's name is already the page title; decision 79) */}
+      {card.kind !== "explainer" && <Kicker>{card.kind === "myth-or-fact" ? "Myth or fact?" : "Try it"}</Kicker>}
       {/* The question, set like a headline */}
       <h1 className="mt-2 font-display text-prompt font-semibold tracking-tight">{card.title}</h1>
       {/* A myth-or-fact guess, before the research */}

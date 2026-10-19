@@ -81,6 +81,20 @@ describe("feedback handler", () => {
     expect([ok.status, (seen[0] as { notes?: unknown }).notes, tooLong.status]).toEqual([200, { worked: "w", change: "c", tags: ["fillers"] }, 400]);
   });
 
+  // The stammer flag reaches the coach (decision 79)
+  it("passes on that the speaker stammers", async () => {
+    // A coach that remembers what it was given
+    const seen: unknown[] = [];
+    // The coach
+    const coach: Coach = { async getFeedback(input) { seen.push(input); return { status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } }; } };
+    // The handler
+    const handle = createFeedbackHandler(deps({ coach }));
+    // A request with the flag
+    const response = await handle(request({ ...BODY, stammer: true }));
+    // Confirm it arrived
+    expect([response.status, (seen[0] as { stammer?: unknown }).stammer]).toEqual([200, true]);
+  });
+
   // A missing setting fails clearly, naming what to fix
   it("explains a missing server setting", async () => {
     // Make the settings reader fail as it would with a missing key

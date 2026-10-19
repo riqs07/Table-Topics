@@ -21,7 +21,7 @@ export const WORKED_TAGS: ReadonlyArray<ReviewTag> = [
 export const CHANGE_TAGS: ReadonlyArray<ReviewTag> = [
   { id: "too-fast", label: "Too fast" },
   { id: "too-slow", label: "Too slow" },
-  { id: "fillers", label: "Fillers" },
+  { id: "fillers", label: "Pause words" },
   { id: "no-pauses", label: "Not enough pauses" },
   { id: "trailed-off", label: "Trailed off" },
   { id: "lost-place", label: "Lost my place" },

@@ -37,6 +37,8 @@ const RequestSchema = z.object({
   outline: z.object({ topic: z.string().max(140), points: z.array(z.string().max(140)).max(4), goalMinutes: z.number().int().min(1).max(10) }).optional(),
   // The user's own notes after listening back, only when they let the coach read them
   notes: z.object({ worked: z.string().max(500), change: z.string().max(500), tags: z.array(z.string().max(40)).max(12) }).optional(),
+  // The speaker stammers, so the coach leaves fluency alone (decision 79)
+  stammer: z.boolean().optional(),
 });
 
 // Build the handler for POST /api/feedback

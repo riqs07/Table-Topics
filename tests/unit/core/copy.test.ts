@@ -36,19 +36,19 @@ describe("progressSentence", () => {
   // Fewer fillers is said plainly
   it("describes a fall", () => {
     // Confirm the wording
-    expect(progressSentence({ baselineDate: new Date(2026, 9, 2).toISOString(), baseline: 6, latest: 2.4, percentChange: -60 })).toBe("Since your first recording on 2 October, fillers fell from 6.0 to 2.4 a minute.");
+    expect(progressSentence({ baselineDate: new Date(2026, 9, 2).toISOString(), baseline: 6, latest: 2.4, percentChange: -60 })).toBe("Since your first recording on 2 October, pause words fell from 6.0 to 2.4 a minute.");
   });
 
   // More fillers is said just as plainly, without alarm
   it("describes a rise", () => {
     // Confirm the wording
-    expect(progressSentence({ baselineDate: new Date(2026, 9, 2).toISOString(), baseline: 3, latest: 3.6, percentChange: 20 })).toBe("Since your first recording on 2 October, fillers went from 3.0 to 3.6 a minute.");
+    expect(progressSentence({ baselineDate: new Date(2026, 9, 2).toISOString(), baseline: 3, latest: 3.6, percentChange: 20 })).toBe("Since your first recording on 2 October, pause words went from 3.0 to 3.6 a minute.");
   });
 
   // A tiny change counts as holding steady
   it("describes no real change", () => {
     // Confirm the wording
-    expect(progressSentence({ baselineDate: new Date(2026, 9, 2).toISOString(), baseline: 3, latest: 3.1, percentChange: 3 })).toBe("Since your first recording on 2 October, fillers have held at about 3.0 a minute.");
+    expect(progressSentence({ baselineDate: new Date(2026, 9, 2).toISOString(), baseline: 3, latest: 3.1, percentChange: 3 })).toBe("Since your first recording on 2 October, pause words have held at about 3.0 a minute.");
   });
 });
 

@@ -24,7 +24,7 @@ export const WEEKLY_FOCUSES: ReadonlyArray<Focus> = [
   // Focus 3: silence as a tool
   { id: "pausing", title: "Pausing", description: "Pause between ideas instead of filling the gap.", needsAudioAnalysis: false },
   // Focus 4: fewer ums and uhs
-  { id: "cut-fillers", title: "Cut filler words", description: "Replace um and uh with a short pause.", needsAudioAnalysis: false },
+  { id: "cut-fillers", title: "Fewer pause words", description: "Replace um and uh with a short pause.", needsAudioAnalysis: false },
   // Focus 5: the last thing the audience hears
   { id: "strong-close", title: "Strong close", description: "End on your point, then stop. No trailing “so, yeah”.", needsAudioAnalysis: false },
   // Focus 6: needs pitch, which the app cannot measure yet (plan step D4)

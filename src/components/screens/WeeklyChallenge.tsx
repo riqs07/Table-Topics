@@ -3,10 +3,11 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
+// Load the tick and the card look (decision 79)
+import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
+import { CARD } from "@/components/script/textStyles";
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
-// Load the footnote style
-import { Footnote } from "@/components/script/Footnote";
 // Load the weekly challenge picker
 import { challengeForWeek, type Challenge } from "@/content/challenges";
 // Load the day label helper
@@ -69,16 +70,21 @@ export function WeeklyChallenge({ repo, today }: { repo: Repository; today: Date
 
   // Nothing until loaded
   if (!state) return null;
-  // The challenge as a footnote with a checkbox
+  // The challenge as a small card with a checkbox (decision 79)
   return (
-    <Footnote>
+    <div className="mt-6 text-footnote leading-snug">
       {/* Label wraps the box and text so either can be tapped */}
-      <label className="flex min-h-11 cursor-pointer items-center gap-3">
-        {/* Square checkbox, filled with the accent when ticked */}
-        <input type="checkbox" checked={state.done} onChange={(event) => void toggle(event.target.checked)} className="mt-0.5 size-6 flex-none appearance-none border-2 border-ink checked:border-accent checked:bg-accent" />
+      <label className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl px-4 py-2 ${CARD}`}>
+        {/* A rounded box, filled with the accent when ticked, inside a 44-pixel target (decision 79) */}
+        <span className="relative flex size-11 flex-none items-center justify-center">
+          {/* The box */}
+          <input type="checkbox" checked={state.done} onChange={(event) => void toggle(event.target.checked)} className="peer size-6 appearance-none rounded-lg border-2 border-ink checked:border-fill checked:bg-fill" />
+          {/* The tick, shown when ticked */}
+          <CheckIcon aria-hidden="true" weight="bold" className="pointer-events-none absolute size-4 text-fill-ink opacity-0 peer-checked:opacity-100" />
+        </span>
         {/* The challenge */}
         <span>Off the page this week: <span>{state.challenge.text.charAt(0).toLowerCase() + state.challenge.text.slice(1)}</span></span>
       </label>
-    </Footnote>
+    </div>
   );
 }

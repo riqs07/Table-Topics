@@ -77,6 +77,8 @@ Talks are stored in their own collection (added to existing databases by raising
 | hideStreak | Whether Today hides the practice days (the line, the squares and the week sentence; decision 78). Missing means shown |
 | anchor | When the user practises, in their words, up to 60 characters, such as "after my morning coffee" (decision 78). Shown on Today and written into the calendar reminder. Missing until chosen |
 | reminderTime | The daily reminder's time, "HH:MM", last used for the calendar file (decision 78). The reminder itself lives in the user's calendar, not in the app. Missing until chosen |
+| showPauseWords | Whether pause-word counts, marks and headlines show (decision 79). Missing means shown |
+| stammer | "I stammer" (decision 79): hides pause words, repeats and fluency judgements, and is sent to the coach as `stammer: true` so it leaves fluency alone. Missing means off |
 
 ### Prompts
 

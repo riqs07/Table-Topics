@@ -7,7 +7,7 @@ import { formatClock } from "@/core/recordingRules";
 // Load the session record type
 import type { SessionRecord } from "@/data/records";
 
-// Under this many seconds a rate scales a few fillers up into an alarming number, so counts are given instead ("2 fillers in 11 seconds"; decision 77)
+// Under this many seconds a rate scales a few fillers up into an alarming number, so counts are given instead ("2 pause words in 11 seconds"; decision 77)
 export const SHORT_TAKE_SECONDS = 30;
 
 // Whether a take is short enough to give counts rather than rates
@@ -22,7 +22,7 @@ export function fillerCount(session: SessionRecord): number {
   return Math.round((session.fillersPerMinute * session.durationSec) / 60);
 }
 
-// A count over a short take, such as "2 fillers in 11 seconds" or "1 pause in 8 seconds"
+// A count over a short take, such as "2 pause words in 11 seconds" or "1 pause in 8 seconds"
 export function countPhrase(count: number, thing: string, durationSec: number): string {
   // Whole seconds
   const seconds = Math.round(durationSec);
@@ -33,7 +33,7 @@ export function countPhrase(count: number, thing: string, durationSec: number): 
 // The fillers in words: a count for a short take, otherwise the rate
 export function fillerPhrase(session: SessionRecord): string {
   // A count, or the rate
-  return isShortTake(session) ? countPhrase(fillerCount(session), "filler", session.durationSec) : `${formatRate(session.fillersPerMinute)} fillers a minute`;
+  return isShortTake(session) ? countPhrase(fillerCount(session), "pause word", session.durationSec) : `${formatRate(session.fillersPerMinute)} pause words a minute`;
 }
 
 // Which number a result tile shows
@@ -64,7 +64,7 @@ export function resultNumbers(session: SessionRecord, pauseCount: number | null,
   // Fillers, speed, and length are always known
   const numbers: ResultNumber[] = [
     // Fillers: a count over a short take, otherwise a rate to one decimal
-    options.counts && isShortTake(session) ? { kind: "fillers", label: countPhrase(count, "filler", session.durationSec).replace(/^\d+ /, ""), value: String(count) } : { kind: "fillers", label: "fillers a minute", value: formatRate(session.fillersPerMinute) },
+    options.counts && isShortTake(session) ? { kind: "fillers", label: countPhrase(count, "pause word", session.durationSec).replace(/^\d+ /, ""), value: String(count) } : { kind: "fillers", label: "pause words a minute", value: formatRate(session.fillersPerMinute) },
     // Words a minute, whole
     { kind: "speed", label: "words a minute", value: String(Math.round(session.wordsPerMinute)) },
     // Length as a clock

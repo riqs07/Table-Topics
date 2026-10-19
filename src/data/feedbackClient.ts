@@ -71,8 +71,10 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   const session = await repository.getSession(sessionId);
   // A missing session cannot be sent
   if (!session) return plain("invalid");
+  // The settings: whether the coach may read the user's notes, and whether the user stammers
+  const settings = await repository.getSettings(new Date());
   // Whether the coach may read the user's notes
-  const shareNotes = (await repository.getSettings(new Date())).shareNotes === true;
+  const shareNotes = settings.shareNotes === true;
   // Wait for notes the coach is allowed to read
   if (shareNotes && session.selfReview === null) return plain("awaiting-notes");
   // The notes to send: only when allowed, written, and not skipped
@@ -90,7 +92,7 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
       // JSON body and the passphrase header
       headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase },
       // The session details the coach needs
-      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}) }),
+      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}) }),
     });
   } catch {
     // Offline or unreachable: the session waits

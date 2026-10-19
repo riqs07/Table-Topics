@@ -217,7 +217,7 @@ describe("RecordingScreen", () => {
     // Draw a warm-up
     const { repository, clock, navigate } = draw({ mode: "warmup", promptId: WARMUP_PROMPTS[0]!.id });
     // Confirm the length is stated
-    expect(await screen.findByText("of 30 seconds")).toBeTruthy();
+    expect(await screen.findByText("aim for 30 seconds")).toBeTruthy();
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // Wait for recording
@@ -496,7 +496,7 @@ describe("RecordingScreen", () => {
     // Recording starts once it has been said
     const stop = await screen.findByRole("button", { name: /Stop/ });
     // Confirm the voice said the question, and the timing light shows the small-talk window
-    expect([fake.said, screen.getByText("of 0:20 to 0:45")?.tagName]).toEqual([["How was your weekend?"], "P"]);
+    expect([fake.said, screen.getByText("aim for 0:20 to 0:45")?.tagName]).toEqual([["How was your weekend?"], "P"]);
     // Speak past the minimum
     clock.advance(25_000);
     // Stop
@@ -677,7 +677,7 @@ describe("RecordingScreen", () => {
     // Draw a rehearsal of it
     draw({ mode: "rehearse", promptId: "talk-1", repository });
     // Confirm the title, the text, the goal, and the start action
-    expect([!!(await screen.findByText("Team update")), !!screen.getByTestId("passage"), !!screen.getByText("of a 5:00 goal"), !!screen.getByRole("button", { name: /Start rehearsing/ })]).toEqual([true, true, true, true]);
+    expect([!!(await screen.findByText("Team update")), !!screen.getByTestId("passage"), !!screen.getByText("aim for a 5:00 goal"), !!screen.getByRole("button", { name: /Start rehearsing/ })]).toEqual([true, true, true, true]);
     // Step to keywords
     fireEvent.click(screen.getByRole("button", { name: "Keywords" }));
     // Confirm cue words only
@@ -709,7 +709,7 @@ describe("RecordingScreen", () => {
     // Draw a rehearsal of the middle section
     const { clock, navigate } = draw({ mode: "rehearse", promptId: "talk-1", repository, sectionIndex: 1 });
     // Confirm only that section shows, named as such, with no goal
-    expect([(await screen.findByTestId("passage")).textContent, !!screen.getByText("Your talk · section 2 of 3"), screen.queryByText("of a 5:00 goal")]).toEqual(["We shipped three things.", true, null]);
+    expect([(await screen.findByTestId("passage")).textContent, !!screen.getByText("Your talk · section 2 of 3"), screen.queryByText("aim for a 5:00 goal")]).toEqual(["We shipped three things.", true, null]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start rehearsing/ }));
     // Speak for 20 seconds
@@ -1011,6 +1011,22 @@ describe("RecordingScreen", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalled());
   });
 
+  // The space bar can be switched off in Settings (WCAG 2.1.4; decision 79)
+  it("ignores the space bar when the shortcut is off", async () => {
+    // Switched off
+    localStorage.setItem("voicelab-space-shortcut", "off");
+    // Draw the screen
+    draw();
+    // Wait for the screen
+    await screen.findByRole("button", { name: /Start speaking/ });
+    // Press space
+    fireEvent.keyDown(window, { key: " " });
+    // Confirm nothing started
+    expect(screen.queryByRole("button", { name: /Stop/ })).toBeNull();
+    // Back on for other checks
+    localStorage.removeItem("voicelab-space-shortcut");
+  });
+
   // The server cannot tell whether the browser supports speech, so its drawing must match the browser's first drawing
   it("draws the same first page on the server and in the browser", async () => {
     // Fixed props for both drawings
@@ -1064,7 +1080,7 @@ describe("RecordingScreen", () => {
     // Draw an opening drill
     draw({ mode: "bookend", promptId: "b001" });
     // Confirm the task, the tip, and the goal
-    expect([!!(await screen.findByText("Open a talk on why your team needs a new tool.")), !!screen.getByText(/Stand still, breathe in, look up/), !!screen.getByText("of a 0:45 goal")]).toEqual([true, true, true]);
+    expect([!!(await screen.findByText("Open a talk on why your team needs a new tool.")), !!screen.getByText(/Stand still, breathe in, look up/), !!screen.getByText("aim for a 0:45 goal")]).toEqual([true, true, true]);
   });
 
   // A Q&A answer shows the question it answers, and saves it with the answer
@@ -1076,7 +1092,7 @@ describe("RecordingScreen", () => {
     // Draw an answer to the second question
     const { clock, navigate } = draw({ mode: "qa", promptId: "r1", questionIndex: 1, repository });
     // Confirm the question and the one-minute goal
-    expect([!!(await screen.findByText("Why now?")), !!screen.getByText("of a 1:00 goal")]).toEqual([true, true]);
+    expect([!!(await screen.findByText("Why now?")), !!screen.getByText("aim for a 1:00 goal")]).toEqual([true, true]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // Speak for 20 seconds
@@ -1160,7 +1176,7 @@ describe("RecordingScreen", () => {
     // Draw it
     const { repository, clock, navigate } = draw({ mode: "outline", promptId: "outline", outline });
     // Confirm the topic, the points and the goal
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, within(screen.getByRole("list", { name: "Your points" })).getAllByRole("listitem").map((item) => item.textContent), !!screen.getByText("of a 1:00 goal")]).toEqual(["Why I run", ["1It clears my head", "2I met friends"], true]);
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, within(screen.getByRole("list", { name: "Your points" })).getAllByRole("listitem").map((item) => item.textContent), !!screen.getByText("aim for a 1:00 goal")]).toEqual(["Why I run", ["1It clears my head", "2I met friends"], true]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // The stop button

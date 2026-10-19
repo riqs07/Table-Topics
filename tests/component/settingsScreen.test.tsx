@@ -131,6 +131,26 @@ describe("SettingsScreen", () => {
     await waitFor(async () => expect([start, (await repository.getSettings(NOW)).hideStreak]).toEqual([true, true]));
   });
 
+  // "I stammer" switches pause-word counts off with it, and both are saved (decision 79)
+  it("saves I stammer and the pause-word counts switch", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // Switch counts off, then on again
+    const counts = await screen.findByRole("checkbox", { name: /Show pause-word counts/ });
+    // Off
+    await userEvent.click(counts);
+    // Read what was saved
+    const off = (await repository.getSettings(NOW)).showPauseWords;
+    // Back on
+    await userEvent.click(counts);
+    // Switch "I stammer" on
+    await userEvent.click(screen.getByRole("checkbox", { name: /I stammer/ }));
+    // Confirm counts were off then on, stammer is saved, and the counts box now reads off
+    await waitFor(async () => expect([off, (await repository.getSettings(NOW)).stammer, (screen.getByRole("checkbox", { name: /Show pause-word counts/ }) as HTMLInputElement).checked]).toEqual([false, true, false]));
+  });
+
   // Deleting everything takes two deliberate taps
   it("deletes all data only after confirming", async () => {
     // Make a repository with data
@@ -227,21 +247,11 @@ describe("SettingsScreen", () => {
     await waitFor(async () => expect([before, (await repository.getSettings(NOW)).shareNotes]).toEqual([false, true]));
   });
 
-  // History lives here, folded away until opened
-  it("shows the history folded, and draws it when opened", async () => {
-    // A user with one session
-    const repository = createRepository(new MemoryStore());
-    // The session
-    await repository.saveSession(makeSession({ id: "s1", createdAt: new Date(2026, 9, 12, 9).toISOString(), isBaseline: true }));
+  // History has its own page; Settings links to it (decision 79)
+  it("links to the history page", async () => {
     // Draw Settings
-    render(<SettingsScreen repository={repository} now={NOW} />);
-    // The fold
-    const summary = await screen.findByText("Show your practice history");
-    // Closed: nothing drawn yet
-    const before = screen.queryByText(/Your first recording is in/);
-    // Open it
-    await userEvent.click(summary);
-    // Confirm it drew once opened
-    expect([before, !!(await screen.findByText(/Your first recording is in/))]).toEqual([null, true]);
+    render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the link
+    expect((await screen.findByRole("link", { name: "See your practice history" })).getAttribute("href")).toBe("/history");
   });
 });

@@ -57,7 +57,7 @@ function WayRow({ way }: { way: Way }) {
       {/* Name and detail */}
       <span className="min-w-0 flex-1">
         {/* The name */}
-        <span className="block font-display text-xl leading-tight">{way.name}</span>
+        <span className="block font-display text-xl font-semibold leading-tight tracking-tight">{way.name}</span>
         {/* What it is */}
         <span className="block text-footnote text-ink-muted">{way.detail}</span>
       </span>

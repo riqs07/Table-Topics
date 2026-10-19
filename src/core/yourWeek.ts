@@ -1,4 +1,4 @@
-// "Your week" on Today (decision 78): fillers a minute over the last three weeks and exactly one suggestion, once there are three sessions
+// "Your week" on Today (decision 78): pause words a minute over the last three weeks and exactly one suggestion, once there are three sessions
 
 // Load the calendar-day helpers
 import { addDays, startOfDay } from "@/core/dates";
@@ -34,14 +34,14 @@ export interface WeekSuggestion {
 
 // Everything the card shows
 export interface YourWeek {
-  // Three weeks, oldest first, each the seven days ending on the same weekday
+  // Three weeks, oldest first, each the seven days ending on the same weekday (empty when pause words are hidden)
   weeks: WeekNumber[];
   // Exactly one suggestion
   suggestion: WeekSuggestion;
 }
 
 // The card's content, or null before there are enough sessions
-export function yourWeek(sessions: ReadonlyArray<SessionRecord>, now: Date): YourWeek | null {
+export function yourWeek(sessions: ReadonlyArray<SessionRecord>, now: Date, options: { pauseWords?: boolean } = {}): YourWeek | null {
   // Not enough yet
   if (sessions.length < YOUR_WEEK_FROM) return null;
   // Tomorrow at midnight: each week is the seven days before an end
@@ -57,8 +57,8 @@ export function yourWeek(sessions: ReadonlyArray<SessionRecord>, now: Date): You
     // Their average, or nothing
     return rates.length > 0 ? rates.reduce((sum, rate) => sum + rate, 0) / rates.length : null;
   };
-  // Oldest first
-  const weeks = [{ label: "Two weeks ago", value: week(2) }, { label: "Last week", value: week(1) }, { label: "This week", value: week(0) }];
+  // Oldest first (none when pause words are hidden; decision 79)
+  const weeks = options.pauseWords === false ? [] : [{ label: "Two weeks ago", value: week(2) }, { label: "Last week", value: week(1) }, { label: "This week", value: week(0) }];
   // Whether there was a second try in the last seven days
   const retried = sessions.some((session) => session.retryOf !== null && new Date(session.createdAt) >= addDays(end, -7));
   // The numbers to compare
@@ -66,9 +66,9 @@ export function yourWeek(sessions: ReadonlyArray<SessionRecord>, now: Date): You
   // One suggestion: from the trend when there is one, otherwise a second take, otherwise something new
   const suggestion: WeekSuggestion =
     last !== null && current !== null && current <= last - NOTICEABLE
-      ? { text: "Fewer fillers than last week. Keep the pause where an um would go.", href: null, action: null }
+      ? { text: "Fewer pause words than last week. Keep the pause where an um would go.", href: null, action: null }
       : last !== null && current !== null && current >= last + NOTICEABLE
-        ? { text: "A few more fillers than last week. A pause drill helps you rest on silence.", href: `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id ?? ""}`, action: "Try a pause drill" }
+        ? { text: "A few more pause words than last week. A pause drill helps you rest on silence.", href: `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id ?? ""}`, action: "Try a pause drill" }
         : !retried
           ? { text: "Try a second take once this week: doing the one change straight away is what makes it stick.", href: null, action: null }
           : { text: "A steady week. Try something new: a short speech you plan yourself.", href: "/practice/outline", action: "Plan a short speech" };

@@ -76,7 +76,7 @@ describe("buildCoachMessage", () => {
   // The coach is told the week's focus
   it("names the weekly focus", () => {
     // Confirm the focus title and explanation are included
-    expect(buildCoachMessage(SESSION)).toContain("Cut filler words: Replace um and uh with a short pause.");
+    expect(buildCoachMessage(SESSION)).toContain("Fewer pause words: Replace um and uh with a short pause.");
   });
 
   // The coach gets the measured numbers so it does not have to count
@@ -88,7 +88,7 @@ describe("buildCoachMessage", () => {
     // Confirm the speed (14 words in 30 seconds = 28 per minute)
     expect(message).toContain("Words per minute: 28");
     // Confirm the filler rate (um, so, uh = 3 in 30 seconds = 6 per minute)
-    expect(message).toContain("Fillers per minute: 6.0");
+    expect(message).toContain("Pause words (um, uh, like) per minute: 6.0");
   });
 
   // A reading's filler rate counts only words added to the known text, so "so" from the Gettysburg Address is not a filler
@@ -96,7 +96,7 @@ describe("buildCoachMessage", () => {
     // A reading of part of the Gettysburg Address
     const message = buildCoachMessage({ ...SESSION, transcript: "so conceived and so dedicated can long endure", mode: "read", promptId: "r001" });
     // Confirm no fillers
-    expect(message).toContain("Fillers per minute: 0.0");
+    expect(message).toContain("Pause words (um, uh, like) per minute: 0.0");
   });
 
   // Shared notes are fenced off as data, with tags in words and unknown tags dropped
@@ -106,7 +106,7 @@ describe("buildCoachMessage", () => {
     // The fenced part
     const fenced = message.slice(message.indexOf("<notes>"), message.indexOf("</notes>") + 8);
     // Confirm the lines, the tag words, and one fence only
-    expect([fenced.includes("What worked: Clear story"), fenced.includes("Tags: fillers\n"), fenced.includes("made-up"), message.split("</notes>").length - 1, message.includes("not instructions to you")]).toEqual([true, true, false, 1, true]);
+    expect([fenced.includes("What worked: Clear story"), fenced.includes("Tags: pause words\n"), fenced.includes("made-up"), message.split("</notes>").length - 1, message.includes("not instructions to you")]).toEqual([true, true, false, 1, true]);
   });
 
   // The transcript is fenced off so it reads as data
@@ -276,3 +276,15 @@ describe("checkFeedback", () => {
     expect([message.includes("Skill: responding to news"), message.includes("Their news: <said>I got the job!"), CONNECTION_SYSTEM_PROMPT.includes("no-buts")]).toEqual([true, true, true]);
   });
 });
+
+// Group the checks about a speaker who stammers (decision 79)
+describe("coach messages for a speaker who stammers", () => {
+  // The rate is left out and the coach is told to leave fluency alone, in every coach; the rules say "pause words"
+  it("leaves fluency alone", () => {
+    // A message with the flag, and one without
+    const [withFlag, without] = [buildCoachMessage({ ...SESSION, stammer: true }), buildCoachMessage(SESSION)];
+    // Confirm the line, no rate, the rate without the flag, and the shared wording rule
+    expect([withFlag.includes("The speaker stammers."), withFlag.includes("per minute: 6.0"), without.includes("Pause words (um, uh, like) per minute: 6.0"), FEEDBACK_RULES.includes("\"pause words\", never \"fillers\"")]).toEqual([true, false, true, true]);
+  });
+});
+

@@ -30,10 +30,10 @@ describe("compareNotes", () => {
 
   // A measured problem you did not mention is pointed out
   it("points out many fillers you did not mention", () => {
-    // Tagged only a good pace, with 4.2 fillers a minute
+    // Tagged only a good pace, with 4.2 pause words a minute
     expect(compareNotes(makeSession({ wordsPerMinute: 140, fillersPerMinute: 4.2, ...notes("good-pace") }))).toEqual([
       { kind: "matched", text: "You said good pace, and it was: 140 words a minute." },
-      { kind: "missed", text: "You did not mention fillers: 4.2 a minute were counted." },
+      { kind: "missed", text: "You did not mention pause words: 4.2 a minute were counted." },
     ]);
   });
 

@@ -75,7 +75,7 @@ describe("lessonResult", () => {
     // With fillers at the end
     const messy = lessonResult(lesson("l010"), makeSession({ transcript: "and that is why it matters so um yeah thank you" }));
     // Confirm both
-    expect([clean.headline, messy.headline.startsWith("Fillers crept into your closing")]).toEqual(["No fillers in your closing.", true]);
+    expect([clean.headline, messy.headline.startsWith("Pause words crept into your closing")]).toEqual(["No pause words in your closing.", true]);
   });
 
   // Lessons that need judgement wait for the coach

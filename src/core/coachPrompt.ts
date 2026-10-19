@@ -25,6 +25,7 @@ import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
 
 // Feedback rules shared by every coach (decision 53): about the task, never the person, and the move behind any example (feedback aimed at the self often makes performance worse; rules transfer better than scripts)
 export const FEEDBACK_RULES = `- Talk about what was said and done, never about the person: do not judge their personality, confidence, nerves, or how they "come across".
+- Call um, uh, like and similar words "pause words", never "fillers". A few are normal; listeners hear them as a sign the speaker is thinking.
 - When you give an example of how it could sound, name the move behind it in a few words, so it is a principle to use in their own words, not a line to memorise.`;
 
 // The coach's standing instructions; kept free of per-session details so it can be cached
@@ -68,7 +69,12 @@ export interface CoachInput {
   outline?: { topic: string; points: string[]; goalMinutes: number };
   // The speaker's own notes after listening back, when they let the coach read them
   notes?: { worked: string; change: string; tags: string[] };
+  // The speaker stammers ("I stammer" in Settings): no comments on fluency (decision 79)
+  stammer?: boolean;
 }
+
+// For a speaker who stammers, the line that keeps the coach off fluency (decision 79)
+const STAMMER_LINE = "The speaker stammers. Do not comment on fluency in any way: not pause words, repeated words or sounds, blocks, pauses, or pace. Base the keep, the change and the cue on what they said: the content, how it was organised, and how clear the point was.";
 
 // The speaker's notes as plain lines, with tags turned into their words (unknown tags are dropped)
 function notesText(notes: { worked: string; change: string; tags: string[] }): string {
@@ -102,8 +108,8 @@ export function buildCoachMessage(input: CoachInput): string {
     `Length: ${Math.round(input.durationSec)} seconds`,
     // Speaking speed, as a whole number
     `Words per minute: ${Math.round(wordsPerMinute(input.transcript, input.durationSec))}`,
-    // Filler rate, to one decimal place
-    `Fillers per minute: ${fillersPerMinute(input.transcript, input.durationSec, passage?.body ?? lesson?.body).toFixed(1)}`,
+    // Pause-word rate, to one decimal place (left out for a speaker who stammers)
+    ...(input.stammer ? [STAMMER_LINE] : [`Pause words (um, uh, like) per minute: ${fillersPerMinute(input.transcript, input.durationSec, passage?.body ?? lesson?.body).toFixed(1)}`]),
     // On a warm-up, keep it brief and light
     ...(input.mode === "warmup" ? ["This is a 30-second warm-up. Keep every part to one short sentence, and keep it light."] : []),
     // On a Table Topic, its rules and how long it ran, so the coach looks at the whole answer
@@ -111,7 +117,7 @@ export function buildCoachMessage(input: CoachInput): string {
     // On a Record Response, its preparation and goal, so the coach looks at the whole answer
     ...(input.mode === "response" ? [`This is a prepared speech: up to ${thinkSeconds("response")} seconds to plan with hints, then 2 to 4 minutes of speaking (green light at ${formatClock(SPEECH_WINDOW.start)}, red at ${formatClock(SPEECH_WINDOW.end)}). It ran ${Math.round(input.durationSec)} seconds. Comment on how the speech was organised across the whole time.`] : []),
     // On a reading, ask about delivery only
-    ...(input.mode === "read" ? ["This was read aloud from a known text. Comment only on delivery (pace, pauses, skipped or repeated words, fillers), not on the content, which the speaker did not write."] : []),
+    ...(input.mode === "read" ? ["This was read aloud from a known text. Comment only on delivery (pace, pauses, skipped or repeated words, pause words), not on the content, which the speaker did not write."] : []),
     // On a lesson, the skill and its tip
     ...(lesson ? [`This was a skill lesson: ${lesson.title}. The tip was: ${lesson.tip} Comment only on that skill.`] : []),
     // On a rehearsal, what it is (the script stays on the device)
@@ -209,6 +215,8 @@ export function buildSmallTalkMessage(input: CoachInput): string {
     `Question: ${found?.question ?? "an everyday question"}`,
     // How long they spoke
     `Length: ${Math.round(input.durationSec)} seconds (the aim is 20 to 45)`,
+    // For a speaker who stammers, no comments on fluency
+    ...(input.stammer ? [STAMMER_LINE] : []),
     // In a lesson, what it teaches
     ...(found?.lesson ? [`This was lesson ${found.lesson.number}, "${found.lesson.title}": ${found.lesson.idea}${beat ? ` Pay most attention to the ${beat.name.toLowerCase()} beat.` : ""}`] : []),
     // On a retry, the change to check for
@@ -314,6 +322,8 @@ export function buildConnectionMessage(input: CoachInput): string {
     `${asking ? "They said" : news ? "Their news" : "Their story"}: <said>${fenceSafe(found?.question ?? "").replace(/<\/?said>/gi, "")}</said>`,
     // How long they spoke
     `Length: ${Math.round(input.durationSec)} seconds`,
+    // For a speaker who stammers, no comments on fluency
+    ...(input.stammer ? [STAMMER_LINE] : []),
     // In a lesson, what it teaches
     ...(found?.lesson ? [`This was ${found.unit} lesson ${found.lesson.number}, "${found.lesson.title}": ${found.lesson.idea}${beat ? ` Pay most attention to the ${beat.id} beat.` : ""}`] : []),
     // On a retry, the change to check for

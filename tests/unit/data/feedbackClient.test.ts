@@ -97,6 +97,22 @@ describe("requestFeedback", () => {
     expect(body.notes).toBeUndefined();
   });
 
+  // "I stammer" goes with the request, so the coach leaves fluency alone (decision 79)
+  it("tells the coach when the speaker stammers", async () => {
+    // A session, with the setting on
+    const repository = await repositoryWith(makeSession({ id: "s1" }));
+    // Switch it on
+    await repository.saveSettings({ ...(await repository.getSettings(new Date())), stammer: true });
+    // The network
+    const network = answer(200, { feedback: FEEDBACK });
+    // Ask
+    await requestFeedback(repository, "s1", { passphrase: "pass", fetchFn: network });
+    // What was sent
+    const body = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { stammer?: unknown };
+    // Confirm the flag
+    expect(body.stammer).toBe(true);
+  });
+
   // Notes saved while the coach is thinking are kept when the feedback arrives
   it("keeps notes saved while the request was under way", async () => {
     // A session waiting for feedback

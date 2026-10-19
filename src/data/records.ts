@@ -219,6 +219,10 @@ export interface SettingsRecord {
   anchor?: string;
   // The daily reminder's time, "HH:MM", for the calendar file (decision 78; missing until chosen)
   reminderTime?: string;
+  // Show pause-word counts (decision 79; missing means shown)
+  showPauseWords?: boolean;
+  // "I stammer": hides pause words, repeats and fluency judgements, and tells the coach to leave fluency alone (decision 79; missing means off)
+  stammer?: boolean;
 }
 
 // What each stored collection holds

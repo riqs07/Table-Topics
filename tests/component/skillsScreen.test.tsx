@@ -17,24 +17,30 @@ import { PASSAGES, PAUSE_DRILLS, TRICKY_WORDS } from "@/content/prompts";
 // A fixed "now"
 const NOW = new Date(2026, 9, 15, 10);
 
+// Load the whole speeches
+import { FULL_SPEECHES } from "@/content/speeches";
+
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
 // Group the checks about the Skills page
 describe("SkillsScreen", () => {
-  // Lessons, readings, pause drills and tricky words in one place, with a jump list at the top
-  it("puts lessons and every reading in one place", async () => {
+  // Lessons, readings, pause drills and tricky words in one place: the next lesson and reading first, then one folded row per group (decision 79)
+  it("puts lessons and every reading in one place, folded by group", async () => {
     // Draw the page
-    render(<SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Every practice link on the page
+    const { container } = render(<SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Every practice link on the page (folded lists are still in the page)
     const hrefs = (await screen.findAllByRole("link")).map((link) => link.getAttribute("href"));
-    // Confirm every lesson and text is there, and the jump links
+    // The up-next rows
+    const upNext = within(screen.getByRole("region", { name: "Up next" })).getAllByRole("link").map((link) => link.getAttribute("href"));
+    // Confirm every lesson and text is there, the groups start folded under the ids other pages link to, and up next leads with lesson 1 and the first whole speech's part 1
     expect([
       LESSONS.every((lesson) => hrefs.includes(`/session?mode=lesson&prompt=${lesson.id}`)),
       [...PASSAGES, ...TRICKY_WORDS].every((item) => hrefs.includes(`/session?mode=read&prompt=${item.id}`)),
       PAUSE_DRILLS.every((item) => hrefs.includes(`/session?mode=pause&prompt=${item.id}`)),
-      ["#lessons", "#readings", "#pause-drills", "#tricky-words"].every((anchor) => hrefs.includes(anchor)),
-    ]).toEqual([true, true, true, true]);
+      ["lessons", "readings", "pause-drills", "tricky-words"].every((id) => container.querySelector(`details#${id}:not([open])`) !== null),
+      upNext,
+    ]).toEqual([true, true, true, true, [`/session?mode=lesson&prompt=${LESSONS[0]!.id}`, `/session?mode=read&prompt=${FULL_SPEECHES.find((speech) => !speech.commencement)!.id}-1`]]);
   });
 
   // The lessons read as a path: practised ones done, the first one not done marked next

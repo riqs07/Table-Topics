@@ -15,7 +15,7 @@ import { LEARN_SET_ICONS } from "@/components/script/learnSetIcons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the cards
-import { LEARN_CARDS, LEARN_SETS } from "@/content/learn";
+import { LEARN_GROUPS, LEARN_SETS } from "@/content/learn";
 // Load the scenarios, for their count
 import { SCENARIOS } from "@/content/scenarios";
 // Load the rules
@@ -103,22 +103,31 @@ export function LearnScreen(props: ScreenProps) {
         <CourseCard href="/learn/scenarios" name="Quick scenarios" blurb="Choose the best reply, then say it aloud." icon={CardsIcon} done={scenarios ? Object.keys(scenarios).length : 0} total={SCENARIOS.length} count={`${SCENARIOS.length} scenarios`} />
       </div>
 
-      {/* The sets, as cards; each opens its own page */}
-      <h2 className={`${SECTION_HEADING} mt-8`}>Sets</h2>
-      {/* The cards */}
-      <ul aria-label="Sets" className="mt-2 grid gap-3 md:grid-cols-2">
-        {/* Each set */}
-        {LEARN_SETS.map((set) => {
-          // How far through
-          const done = progress ? setProgress(set.id, progress) : { read: 0, total: LEARN_CARDS.filter((card) => card.set === set.id).length };
-          // One set's card
-          return (
-            <li key={set.id}>
-              <CourseCard href={`/learn/set?id=${set.id}`} name={set.name} blurb={set.blurb} icon={LEARN_SET_ICONS[set.id]} done={done.read} total={done.total} note={set.id === nextSet?.id ? "Next up" : undefined} count={done.total === 1 ? "1 card" : `${done.total} cards`} />
-            </li>
-          );
-        })}
-      </ul>
+      {/* The sets, as cards in two groups (Speaking, People); each opens its own page (decision 79) */}
+      {LEARN_GROUPS.map((group) => (
+        <section key={group.name} aria-labelledby={`group-${group.name}`}>
+          {/* The group's heading */}
+          <h2 id={`group-${group.name}`} className={`${SECTION_HEADING} mt-8`}>{group.name}</h2>
+          {/* Its sets */}
+          <ul aria-label={`${group.name} sets`} className="mt-2 grid gap-3 md:grid-cols-2">
+            {/* Each set */}
+            {group.sets.map((id) => {
+              // The set
+              const set = LEARN_SETS.find((item) => item.id === id);
+              // Not found (cannot happen with the fixed list)
+              if (!set) return null;
+              // How far through
+              const done = setProgress(set.id, progress);
+              // One set's card
+              return (
+                <li key={set.id}>
+                  <CourseCard href={`/learn/set?id=${set.id}`} name={set.name} blurb={set.blurb} icon={LEARN_SET_ICONS[set.id]} done={done.read} total={done.total} note={set.id === nextSet?.id ? "Next up" : undefined} count={done.total === 1 ? "1 card" : `${done.total} cards`} />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
 
       </>)}
 

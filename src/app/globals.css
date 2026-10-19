@@ -299,3 +299,12 @@
     scroll-padding-bottom: 9.5rem;
   }
 }
+
+/* On a computer the band sticks to the bottom of the window (decision 79), so focus scrolls clear of it too */
+@media (min-width: 48rem) {
+  /* A page with a sticky main action */
+  html:has([data-action-band]) {
+    /* The band and a little air */
+    scroll-padding-bottom: 7rem;
+  }
+}

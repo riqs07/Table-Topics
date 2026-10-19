@@ -64,9 +64,9 @@ export function compareNotes(session: SessionRecord): NoteCheck[] {
   if (!tags.has("too-fast") && !tags.has("good-pace") && speed > FAST) checks.push({ kind: "missed", text: `You did not mention pace: it measured ${speed} words a minute, on the fast side.` });
 
   // Fillers
-  if (tags.has("fillers")) checks.push(session.fillersPerMinute >= FEW_FILLERS ? { kind: "matched", text: `You said fillers, and there were: ${fillers} a minute.` } : { kind: "differed", text: `You said fillers, but only ${fillers} a minute were counted.` });
+  if (tags.has("fillers")) checks.push(session.fillersPerMinute >= FEW_FILLERS ? { kind: "matched", text: `You said pause words, and there were: ${fillers} a minute.` } : { kind: "differed", text: `You said pause words, but only ${fillers} a minute were counted.` });
   // Many fillers not noted
-  else if (session.fillersPerMinute >= MANY_FILLERS) checks.push({ kind: "missed", text: `You did not mention fillers: ${fillers} a minute were counted.` });
+  else if (session.fillersPerMinute >= MANY_FILLERS) checks.push({ kind: "missed", text: `You did not mention pause words: ${fillers} a minute were counted.` });
 
   // Pauses, when they could be measured
   if (pauses) {

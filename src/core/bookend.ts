@@ -55,19 +55,21 @@ function closingFillers(transcript: string): string {
   // Fillers among them, as said
   const fillers = markFillers(closing).filter((piece) => piece.filler).map((piece) => piece.text);
   // None, or the list
-  return fillers.length === 0 ? "No fillers in your closing." : `Fillers crept into your closing: ${fillers.join(", ")}.`;
+  return fillers.length === 0 ? "No pause words in your closing." : `Pause words crept into your closing: ${fillers.join(", ")}.`;
 }
 
 // The result of an opening or closing drill
-export function bookendResult(part: BookendPart, session: SessionRecord): BookendResult {
+export function bookendResult(part: BookendPart, session: SessionRecord, options: { pauseWords?: boolean } = {}): BookendResult {
   // Loudness readings, if recorded
   const loudness = session.loudness ?? [];
-  // An opening: the pause before the first word, then the first words
-  if (part === "opening") return { headline: loudness.length ? openingPauseSentence(loudness) : "Loudness was not recorded, so the opening pause could not be measured.", detail: openingWords(session.transcript) };
+  // Whether pause words may be named (decision 79)
+  const pauseWords = options.pauseWords !== false;
+  // An opening: the pause before the first word, then the first words (which name any pause words, so they are left out when hidden)
+  if (part === "opening") return { headline: loudness.length ? openingPauseSentence(loudness) : "Loudness was not recorded, so the opening pause could not be measured.", detail: pauseWords ? openingWords(session.transcript) : "" };
   // A close: fillers in the last words, then whether sentences faded
   const { faded, stretches } = loudness.length ? fadingEnds(loudness, LOUDNESS_TICK_MS) : { faded: 0, stretches: 0 };
   // The ending sentence
   const ending = !loudness.length ? "Loudness was not recorded, so endings could not be checked." : faded === 0 ? "None of your sentences faded at the end." : `${faded} of ${stretches} stretches faded at the end. Keep your voice up to the last word.`;
-  // Both sentences
-  return { headline: closingFillers(session.transcript), detail: ending };
+  // Both sentences (without pause words, the endings lead and nothing follows)
+  return pauseWords ? { headline: closingFillers(session.transcript), detail: ending } : { headline: ending, detail: "" };
 }

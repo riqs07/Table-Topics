@@ -3,6 +3,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a screen and finding things on it
 import { cleanup, render, screen, within } from "@testing-library/react";
+// Load the tool for acting like a user
+import userEvent from "@testing-library/user-event";
 // Load the screen being checked
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
 // Load the in-memory store and repository
@@ -52,9 +54,9 @@ describe("HistoryScreen", () => {
     // Draw the screen with sample data
     render(<HistoryScreen repository={await sampleRepository()} now={NOW} />);
     // The chart's caption
-    const figure = within(await screen.findByRole("figure", { name: /Fillers a minute/ }));
+    const figure = within(await screen.findByRole("figure", { name: /Pause words a minute/ }));
     // Confirm the end labels
-    expect([!!figure.getByText(/^First: \d+\.\d$/), !!figure.getByText(/^Latest: \d+\.\d$/)]).toEqual([true, true]);
+    expect([!!figure.getByText(/^First: \d+\.\d a minute$/), !!figure.getByText(/^Latest: \d+\.\d a minute$/)]).toEqual([true, true]);
   });
 
   // Progress since the first recording is one sentence
@@ -62,21 +64,25 @@ describe("HistoryScreen", () => {
     // Draw the screen with sample data
     render(<HistoryScreen repository={await sampleRepository()} now={NOW} />);
     // Confirm the sentence starts as expected
-    expect(await screen.findByText(/^Since your first recording on 29 September, fillers/)).toBeTruthy();
+    expect(await screen.findByText(/^Since your first recording on 29 September, pause words/)).toBeTruthy();
   });
 
-  // Each first try is listed, with its retry beside it, linking to the session
+  // Each first try is listed, with its retry beside it, linking to the session; the list can show speaking or reading only (decision 79)
   it("lists sessions with retries paired and links to each", async () => {
     // Draw the screen with sample data
     render(<HistoryScreen repository={await sampleRepository()} now={NOW} />);
-    // Find the list items (not the menu's "Today", which is only that word)
-    const links = await screen.findAllByRole("link", { name: /^(Today|Yesterday|Sat|Sun|Mon|Tue|Wed|Thu|Fri|\d+ (Sep|Oct))(?!$)/ });
+    // The rows in the sessions list
+    const links = within(await screen.findByRole("list", { name: "Sessions" })).getAllByRole("link");
     // Confirm one row per first try (8 full sessions and 1 warm-up in the sample)
     expect(links).toHaveLength(9);
-    // Confirm the newest row shows the first try and the retry
-    expect(links[0]!.textContent).toMatch(/Today.*\d\.\d, then \d\.\d/);
+    // Confirm the newest row shows the first try and the retry, with the unit
+    expect(links[0]!.textContent).toMatch(/Today · tried twice\d\.\d, then \d\.\dpause words a minute/);
     // Confirm it links to that session
     expect(links[0]!.getAttribute("href")).toBe("/sessions?id=sample-7");
+    // Reading aloud only: none in the sample
+    await userEvent.click(screen.getByRole("button", { name: "Reading aloud" }));
+    // Confirm the empty line
+    expect(within(screen.getByRole("list", { name: "Sessions" })).getByText("Nothing of this kind yet.")).toBeTruthy();
   });
 
   // Warm-ups are listed and marked, and do not change the progress sentence
@@ -122,4 +128,19 @@ describe("HistoryScreen", () => {
     // Confirm the label
     expect(await screen.findByText("Your first recording")).toBeTruthy();
   });
+
+  // With pause words hidden, History shows lengths and no pause-word trend (decision 79)
+  it("shows lengths when pause words are hidden", async () => {
+    // The sample sessions, with counts switched off
+    const repository = await sampleRepository();
+    // Switch them off
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), showPauseWords: false });
+    // Draw the screen
+    render(<HistoryScreen repository={repository} now={NOW} />);
+    // The heading
+    const heading = await screen.findByRole("heading", { level: 1, name: /sessions so far/ });
+    // Confirm the count, no trend, and lengths in the rows
+    expect([!!heading, screen.queryByRole("figure"), within(screen.getByRole("list", { name: "Sessions" })).queryAllByText("long").length > 0]).toEqual([true, null, true]);
+  });
 });
+

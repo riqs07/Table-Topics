@@ -11,11 +11,11 @@ const TWO_PAUSES = [...Array(20).fill(0.5), ...Array(10).fill(0), ...Array(20).f
 // Group the checks about which number goes with each weekly focus
 describe("measureFor", () => {
   // Filler week measures fillers
-  it("measures fillers a minute in filler week", () => {
+  it("measures pause words a minute in filler week", () => {
     // Confirm the measure's unit and reading
     const measure = measureFor("cut-fillers");
     // Confirm the unit
-    expect(measure?.unit).toBe("fillers a minute");
+    expect(measure?.unit).toBe("pause words a minute");
     // Confirm it reads the filler rate
     expect(measure?.read(makeSession({ fillersPerMinute: 4.25 }))).toBe(4.25);
   });
@@ -53,16 +53,16 @@ describe("measureFor", () => {
 describe("headlineFor", () => {
   // A take under 30 seconds: a count, not a rate scaled up to a minute (decision 77)
   it("counts fillers on a short take", () => {
-    // Two fillers in 11 seconds, and the kind of number the headline gives
+    // Two pause words in 11 seconds, and the kind of number the headline gives
     const session = makeSession({ focus: "cut-fillers", fillersPerMinute: (2 * 60) / 11, durationSec: 11 });
     // Confirm the sentence and its kind
-    expect([headlineFor(session), headlineKind(session), headlineKind(makeSession({ focus: "structure" }))]).toEqual(["2 fillers in 11 seconds.", "fillers", null]);
+    expect([headlineFor(session), headlineKind(session), headlineKind(makeSession({ focus: "structure" }))]).toEqual(["2 pause words in 11 seconds.", "fillers", null]);
   });
 
   // Filler week: one decimal place
   it("writes the filler rate in filler week", () => {
     // Confirm the sentence
-    expect(headlineFor(makeSession({ focus: "cut-fillers", fillersPerMinute: 4.25 }))).toBe("4.3 fillers a minute.");
+    expect(headlineFor(makeSession({ focus: "cut-fillers", fillersPerMinute: 4.25 }))).toBe("4.3 pause words a minute.");
   });
 
   // Pace week: whole words
@@ -89,7 +89,7 @@ describe("retryHeadline", () => {
   // Filler week compares filler rates
   it("compares filler rates in filler week", () => {
     // Confirm the sentence
-    expect(retryHeadline(makeSession({ focus: "cut-fillers", fillersPerMinute: 1.8 }), makeSession({ focus: "cut-fillers", fillersPerMinute: 4.2 }))).toBe("From 4.2 to 1.8 fillers a minute.");
+    expect(retryHeadline(makeSession({ focus: "cut-fillers", fillersPerMinute: 1.8 }), makeSession({ focus: "cut-fillers", fillersPerMinute: 4.2 }))).toBe("From 4.2 to 1.8 pause words a minute.");
   });
 
   // Pace week compares speeds
@@ -101,7 +101,7 @@ describe("retryHeadline", () => {
   // A change too small to matter is said plainly
   it("says when the number held steady", () => {
     // Confirm the sentence for fillers
-    expect(retryHeadline(makeSession({ fillersPerMinute: 3.05 }), makeSession({ fillersPerMinute: 3.1 }))).toBe("Again about 3.1 fillers a minute.");
+    expect(retryHeadline(makeSession({ fillersPerMinute: 3.05 }), makeSession({ fillersPerMinute: 3.1 }))).toBe("Again about 3.1 pause words a minute.");
   });
 
   // Either try without readings: a plain statement

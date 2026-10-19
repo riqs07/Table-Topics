@@ -28,6 +28,10 @@ import { speechThreshold } from "@/core/pauses";
 import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 // Load the recording length rules
 import { LOUDNESS_TICK_MS, formatClock, maxSeconds, minSeconds, readingSeconds, speakingWindow, targetSeconds, thinkSeconds, timeSignal, timingCue, type SpeakingWindow, type TimeSignal } from "@/core/recordingRules";
+// Load the pause-word setting rule
+import { pauseWordsShown } from "@/core/pauseWords";
+// Load the space bar shortcut choice
+import { readSpaceShortcut } from "@/data/spaceShortcut";
 // Load the timing tones choice and player type
 import { readTimingTones } from "@/data/timingTones";
 import type { CuePlayer } from "@/audio/timingTones";
@@ -146,12 +150,12 @@ const ALLOW_STEPS: ReadonlyArray<string> = [
 const METER_BARS = 24;
 
 // Draw the transcript so far, with fillers marked and unsettled words lighter
-function LiveWords({ text }: { text: LiveText }) {
-  // Settled words with fillers marked, then words still being heard
+function LiveWords({ text, marks = true }: { text: LiveText; marks?: boolean }) {
+  // Settled words with fillers marked (unless pause words are hidden; decision 79), then words still being heard
   return (
     <p className="max-w-[34ch] font-display text-cue">
       {/* Settled words, piece by piece */}
-      {markFillers(text.final).map((piece, index) =>
+      {(marks ? markFillers(text.final) : [{ text: text.final, filler: false }]).map((piece, index) =>
         // Fillers quietly marked, everything else plain
         piece.filler ? <span key={index} className="text-filler underline decoration-dotted underline-offset-4">{piece.text}</span> : <span key={index}>{piece.text}</span>,
       )}
@@ -337,10 +341,10 @@ const HALO_EDGE: Record<TimeSignal, string> = {
   overtime: "border-light-red",
 };
 
-// Where a shape sits: large in the column, or (on screens with text to read) small in the bottom corner, beside a clear lane the text never enters on a phone (decisions 75 and 77)
+// Where a shape sits: large in the column (centred on a phone, lined up with the text on a computer; decision 79), or (on screens with text to read) small in the bottom corner, beside a clear lane the text never enters on a phone (decisions 75 and 77)
 function shapePlace(compact: boolean, size: string): string {
   // Floating in the corner, or centred in the column
-  return compact ? "fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 size-20 drop-shadow-lg md:right-10 md:size-28" : `relative mx-auto my-6 ${size}`;
+  return compact ? "fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 size-20 drop-shadow-lg md:right-10 md:size-28" : `relative mx-auto my-6 md:mx-0 ${size}`;
 }
 
 // The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69); it is the stop button (decisions 74 and 75)
@@ -375,7 +379,7 @@ function VoiceBlob({ levels, signal, clock, onStop, compact, paused = false }: {
 function TakeControls({ paused, onPause, onResume, onDiscard }: { paused: boolean; onPause: () => void; onResume: () => void; onDiscard: () => void }) {
   // Side by side, centred under the shape
   return (
-    <p className="mt-1 flex flex-wrap justify-center gap-3">
+    <p className="mt-1 flex flex-wrap justify-center gap-3 md:justify-start">
       {/* Pause or carry on */}
       <button type="button" onClick={paused ? onResume : onPause} className={QUIET}>{paused ? "Resume" : "Pause"}</button>
       {/* Throw this take away (it can be undone for a few seconds) */}
@@ -626,6 +630,24 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       cancelled = true;
     };
   }, [repo, retryOf]);
+
+  // Whether pause words are marked in the live words (decision 79; marked until Settings is read)
+  const [pauseWords, setPauseWords] = useState(true);
+  // Read it once
+  useEffect(() => {
+    // Ignore the answer if the screen closes first
+    let cancelled = false;
+    // Read the settings
+    repo.getSettings(clock()).then((settings) => {
+      // Keep it if still open
+      if (!cancelled) setPauseWords(pauseWordsShown(settings));
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the update
+      cancelled = true;
+    };
+  }, [repo, clock]);
 
   // Inside today's practice, load the plan to say how many steps it has (and where "Can't speak now?" leads)
   useEffect(() => {
@@ -1090,8 +1112,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const onKey = (event: KeyboardEvent) => {
       // Leave keys alone while typing or when a button has focus (it handles its own space)
       if (event.target instanceof HTMLElement && event.target.closest("button, input, textarea, select, a")) return;
-      // Space: start when ready, stop when recording
-      if (event.key === " ") {
+      // Space: start when ready, stop when recording (unless switched off in Settings; decision 79)
+      if (event.key === " " && readSpaceShortcut()) {
         // Stop the page from scrolling
         event.preventDefault();
         // Start or stop
@@ -1227,7 +1249,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The clock, large, only while thinking about a prepared speech (a Table Topic counts down in the shape; while recording the clock is in the shape; decision 77) */}
           {thinking && mode !== "talk" && <p className="font-display text-prompt-xl font-semibold text-ink tabular-nums">{formatClock(Math.ceil(thinkLeft))}</p>}
           {/* The length to aim for, or what the countdown is for (the countdown's own words are in the shape) */}
-          {!(thinking && mode === "talk") && <p className={`mt-1 ${recording ? "max-md:hidden" : ""}`}>{thinking ? "to think" : mode === "talk" ? `aim for ${lengthText}` : mode === "free" ? "no time limit" : `of ${lengthText}`}</p>}
+          {!(thinking && mode === "talk") && <p className={`mt-1 ${recording ? "max-md:hidden" : ""}`}>{thinking ? "to think" : mode === "free" ? "no time limit" : `aim for ${lengthText}`}</p>}
           {/* A lesson keeps its tip in view while speaking */}
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
@@ -1444,7 +1466,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {/* Pause and discard, under the shape */}
               {!script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
               {/* Words so far, the latest few lines, older ones fading (not while reading: the text itself is on screen) */}
-              {(!script || textHidden) && <div className="mt-6 flex max-h-[3.7em] flex-col justify-end overflow-hidden text-cue [mask-image:linear-gradient(to_bottom,transparent,black_45%)]"><LiveWords text={text} /></div>}
+              {(!script || textHidden) && <div className="mt-6 flex max-h-[3.7em] flex-col justify-end overflow-hidden text-cue [mask-image:linear-gradient(to_bottom,transparent,black_45%)]"><LiveWords text={text} marks={pauseWords} /></div>}
             </>
           )}
 

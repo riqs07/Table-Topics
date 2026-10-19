@@ -65,7 +65,9 @@ import { talkSections } from "@/core/eventPrep";
 // Load the Table Topics timing sentence
 import { LOUDNESS_TICK_MS, formatClock, speakingWindow, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
-import { headlineFor, headlineKind, retryHeadline } from "@/core/focusMeasure";
+import { headlineFor, headlineKind, measureFor, retryHeadline } from "@/core/focusMeasure";
+// Load the pause-word and fluency settings rules
+import { fluencyJudged, pauseWordsShown } from "@/core/pauseWords";
 // Load the daily prompt picker, for the step after a warm-up
 import { BOOKENDS, promptForDay } from "@/content/prompts";
 // Load the lookup for every text to read, full speeches included
@@ -131,10 +133,18 @@ interface Loaded {
   qaIndex: number | null;
 }
 
+// How results are shown, from Settings: pause words counted and marked, and fluency judged (decision 79)
+interface ResultView {
+  // Pause-word numbers, marks and headlines
+  pauseWords: boolean;
+  // Repeats, slow pace and fading phrases
+  fluency: boolean;
+}
+
 // The transcript with fillers marked quietly; given the times each word was heard and a way to play, each filler plays its moment when tapped (decision 77)
-function Transcript({ text, times = null, onPlay = null }: { text: string; times?: ReadonlyArray<number> | null; onPlay?: ((seconds: number) => void) | null }) {
-  // The pieces, fillers marked
-  const pieces = markFillers(text);
+function Transcript({ text, times = null, onPlay = null, marks = true }: { text: string; times?: ReadonlyArray<number> | null; onPlay?: ((seconds: number) => void) | null; marks?: boolean }) {
+  // The pieces, fillers marked (one plain piece when pause words are hidden; decision 79)
+  const pieces = marks ? markFillers(text) : [{ text, filler: false }];
   // Where each piece starts in the text
   const starts = pieces.map((_, index) => pieces.slice(0, index).reduce((sum, piece) => sum + piece.text.length, 0));
   // Draw each piece, marking fillers
@@ -166,6 +176,8 @@ function Playback({ repo, session, onAudio }: { repo: Repository; session: Sessi
     <div className="mt-5">
       {/* Small heading */}
       <p className="text-footnote text-ink-muted">{session.isBaseline ? "Your first recording, the one progress is measured against" : "Listen back"}</p>
+      {/* A kinder way to listen (decision 79) */}
+      <p className="text-footnote text-ink-muted">Most people dislike hearing their own voice. Listen the way a friendly coach would.</p>
       {/* The player */}
       <div className="mt-2"><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} onAudio={onAudio} /></div>
     </div>
@@ -173,13 +185,13 @@ function Playback({ repo, session, onAudio }: { repo: Repository; session: Sessi
 }
 
 // One line of numbers for a take, such as "Day 1: 4.2 fillers a minute, 172 words a minute."
-function takeNumbers(day: number, session: SessionRecord): string {
+function takeNumbers(day: number, session: SessionRecord, pauseWords = true): string {
   // Day, filler rate, and speed
-  return `Day ${day}: ${fillerPhrase(session)}, ${Math.round(session.wordsPerMinute)} words a minute.`;
+  return `Day ${day}: ${pauseWords ? `${fillerPhrase(session)}, ` : ""}${Math.round(session.wordsPerMinute)} words a minute.`;
 }
 
 // Then and now: an earlier day's recording of the same prompt beside this one, with a button to hear them in turn
-function ThenAndNow({ repo, then, now, thenDay, nowDay, onNowAudio }: { repo: Repository; then: SessionRecord; now: SessionRecord; thenDay: number; nowDay: number; onNowAudio?: (element: HTMLAudioElement | null) => void }) {
+function ThenAndNow({ repo, then, now, thenDay, nowDay, onNowAudio, pauseWords = true }: { repo: Repository; then: SessionRecord; now: SessionRecord; thenDay: number; nowDay: number; onNowAudio?: (element: HTMLAudioElement | null) => void; pauseWords?: boolean }) {
   // The earlier audio's address
   const thenUrl = useAudioUrl(repo, then.audioKey).url;
   // This session's audio address
@@ -218,11 +230,11 @@ function ThenAndNow({ repo, then, now, thenDay, nowDay, onNowAudio }: { repo: Re
       {/* Small heading */}
       <p className="text-footnote text-ink-muted">Then and now, same prompt</p>
       {/* The earlier take */}
-      <p className="mt-3 text-footnote">{takeNumbers(thenDay, then)}</p>
+      <p className="mt-3 text-footnote">{takeNumbers(thenDay, then, pauseWords)}</p>
       {/* Its player, if the audio is still on this device */}
       {thenUrl && <div className="mt-1"><Player src={thenUrl} label={`Your recording from day ${thenDay}`} name={`day ${thenDay}`} durationSec={then.durationSec} onAudio={(element) => { thenPlayer.current = element; }} /></div>}
       {/* This take */}
-      <p className="mt-3 text-footnote">{takeNumbers(nowDay, now)}</p>
+      <p className="mt-3 text-footnote">{takeNumbers(nowDay, now, pauseWords)}</p>
       {/* Its player */}
       {nowUrl && <div className="mt-1"><Player src={nowUrl} label={`Your recording from day ${nowDay}`} name={`day ${nowDay}`} durationSec={now.durationSec} onAudio={(element) => { nowPlayer.current = element; onNowAudio?.(element); }} /></div>}
       {/* Hear both in turn */}
@@ -363,7 +375,7 @@ function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: 
 }
 
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed, plan }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void; plan: PlanNav | null }) {
+function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed, plan, view }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void; plan: PlanNav | null; view: ResultView }) {
   // The lesson, on the skill path
   const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
   // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
@@ -397,7 +409,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // An openings and closings drill's prompt, and what it measured
   const bookend = session.mode === "bookend" ? BOOKENDS.find((item) => item.id === session.promptId) : undefined;
   // The drill's two findings
-  const bookendOutcome = bookend ? bookendResult(bookend.part, session) : null;
+  const bookendOutcome = bookend ? bookendResult(bookend.part, session, { pauseWords: view.pauseWords }) : null;
   // Whether the transcript is open on a phone (it is always shown on a computer)
   const [showTranscript, setShowTranscript] = useState(false);
   // This take's audio element, for playing a filler's moment (decision 77)
@@ -442,7 +454,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // The notes against the numbers
   const checks = smallTalk ? [] : compareNotes(session);
   // One change picked from the numbers, shown until the coach's arrives
-  const ownChange = localChange(session);
+  const ownChange = localChange(session, view);
   // Where the session belongs
   const home = sessionHome(session.mode, session.promptId, plan !== null);
   // For one part of a full speech: the speech, and the part read
@@ -451,6 +463,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const asked = answeredPrompt(session);
   // The number the headline already gives (only where the focus headline is shown), so its tile is left out
   const shownHeadline = !reading && !bookendOutcome && !smallTalk ? headlineKind(session) : null;
+  // The focus headline, unless it would count pause words that are hidden (decision 79)
+  const headline = shownHeadline === "fillers" && !view.pauseWords ? null : headlineFor(session);
   // Draw the page
   return (
     <>
@@ -461,9 +475,9 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
         {/* The transcript (the narrow right column on a computer, opened on demand on a phone) */}
         <div ref={transcriptBlock} tabIndex={-1} role="region" aria-label="What you said" className={`${showTranscript ? "mt-6" : "hidden"} scroll-mt-6 outline-none md:order-2 md:mt-0 md:block`}>
           {/* Small heading, saying how to hear a filler when that works */}
-          <p className="text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}{!reading && canPlay && fillerCount(session) > 0 && <span className="block text-footnote">Tap a marked filler to hear it.</span>}</p>
+          <p className="text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}{!reading && view.pauseWords && canPlay && fillerCount(session) > 0 && <span className="block text-footnote">Tap a marked pause word to hear it.</span>}</p>
           {/* The words: the passage marked for a reading, otherwise the transcript */}
-          <div className="mt-3 max-w-[46ch]">{reading ? <MarkedPassage check={reading} /> : <Transcript text={session.transcript} times={session.spokenTimes} onPlay={canPlay ? playAt : null} />}</div>
+          <div className="mt-3 max-w-[46ch]">{reading ? <MarkedPassage check={reading} /> : <Transcript text={session.transcript} times={session.spokenTimes} onPlay={canPlay ? playAt : null} marks={view.pauseWords} />}</div>
           {/* For a reading, what the marks mean */}
           {reading && <p className="mt-3 max-w-[46ch] text-footnote text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.{reading.stoppedEarly ? " Dimmed words come after where you stopped." : ""}</p>}
         </div>
@@ -484,7 +498,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
               {/* How much of the passage was read */}
               <h1 data-testid="reading-headline" className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</h1>
               {/* The detail */}
-              <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
+              <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}{view.fluency ? `, ${reading.repeated} repeated` : ""}, {reading.extra} extra ({view.pauseWords ? "pause words and added words" : "added words"}).</p>
               {/* A lesson's tip, as a reminder */}
               {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
             </>
@@ -500,10 +514,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             <SmallTalkBeats session={session} />
           ) : (
             // The focus number as a sentence, when one measures it (otherwise the one change leads)
-            headlineFor(session) ? <h1 className={`font-display text-3xl font-semibold tracking-tight ${asked ? "mt-4" : "mt-5 md:mt-0"}`}>{headlineFor(session)}</h1> : <h1 className="sr-only">{title}</h1>
+            headline ? <h1 className={`font-display text-3xl font-semibold tracking-tight ${asked ? "mt-4" : "mt-5 md:mt-0"}`}>{headline}</h1> : <h1 className="sr-only">{title}</h1>
           )}
           {/* When the headline is the fillers (so no fillers tile below), the way to see where they were */}
-          {shownHeadline === "fillers" && fillerCount(session) > 0 && !reading && <p><button type="button" onClick={showFillers} className={`${TEXT_LINK} text-footnote`}>Show where</button></p>}
+          {headline && shownHeadline === "fillers" && fillerCount(session) > 0 && !reading && <p><button type="button" onClick={showFillers} className={`${TEXT_LINK} text-footnote`}>Show where</button></p>}
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
           <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
             {/* The pill that names it, and where it comes from until the coach's note arrives */}
@@ -538,9 +552,11 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
           {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this session."}</p>}
           {/* Listen back, right under the change (decision 67) */}
-          {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} onNowAudio={(element) => { audio.current = element; }} /> : <Playback repo={repo} session={session} onAudio={(element) => { audio.current = element; }} />}
+          {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} onNowAudio={(element) => { audio.current = element; }} pauseWords={view.pauseWords} /> : <Playback repo={repo} session={session} onAudio={(element) => { audio.current = element; }} />}
           {/* The numbers together */}
-          {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} leaveOut={[...(shownHeadline ? [shownHeadline] : []), ...(timed ? (["length"] as const) : [])]} onShowFillers={reading ? null : showFillers} />}
+          {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} leaveOut={[...(headline && shownHeadline ? [shownHeadline] : []), ...(timed ? (["length"] as const) : []), ...(view.pauseWords ? [] : (["fillers"] as const))]} onShowFillers={reading ? null : showFillers} />}
+          {/* One quiet line on what the counts are (decision 79) */}
+          {!quick && !reading && <p className="mt-2 text-footnote text-ink-muted">{view.pauseWords ? "A few pause words (um, uh, like) are normal. Counts are rough: speech services can mishear accents." : "Counts are rough: speech services can mishear accents."}</p>}
           {/* (The pause count is in the numbers row; the longer pause sentence and the "no number measures this" line were cut, decision 63) */}
           {/* Which pause marks had a pause */}
           {marks && <p className="mt-2 text-footnote text-ink-muted">{marks}</p>}
@@ -719,15 +735,15 @@ function PlanBand({ plan }: { plan: PlanNav }) {
 }
 
 // The Retry result screen
-function RetryView({ repo, retry, original, now, plan }: { repo: Repository; retry: SessionRecord; original: SessionRecord; now: Date; plan: PlanNav | null }) {
+function RetryView({ repo, retry, original, now, plan, view }: { repo: Repository; retry: SessionRecord; original: SessionRecord; now: Date; plan: PlanNav | null; view: ResultView }) {
   // Where the session belongs, and the way back
   const home = sessionHome(retry.mode, retry.promptId, plan !== null);
   // The cue the first try gave
-  const cue = (original.feedback ?? localChange(original)).retryCue;
+  const cue = (original.feedback ?? localChange(original, view)).retryCue;
   // The pauses on each try, when loudness was recorded
   const pausesOf = (session: SessionRecord) => (session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS).count : null);
   // Both tries' numbers
-  const changes = resultChanges(original, retry, { before: pausesOf(original), after: pausesOf(retry) });
+  const changes = resultChanges(original, retry, { before: pausesOf(original), after: pausesOf(retry) }).filter((change) => view.pauseWords || change.label !== "pause words a minute");
   // Draw the page
   return (
     <>
@@ -738,7 +754,7 @@ function RetryView({ repo, retry, original, now, plan }: { repo: Repository; ret
         {/* Main column */}
         <div className="flex flex-1 flex-col">
           {/* The change as one sentence */}
-          <h1 className="mt-6 font-display text-statement font-semibold tracking-tight motion-safe:animate-rise md:mt-0 md:max-w-[18ch] md:text-statement-xl">{retryHeadline(retry, original)}</h1>
+          <h1 className="mt-6 font-display text-statement font-semibold tracking-tight motion-safe:animate-rise md:mt-0 md:max-w-[18ch] md:text-statement-xl">{view.pauseWords || measureFor(original.focus)?.kind !== "fillers" ? retryHeadline(retry, original) : "Your second try is in."}</h1>
           {/* What the first try said to work on */}
           {cue && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">You were working on: {cue}</p>}
           {/* Both tries' numbers, first then second (decision 67) */}
@@ -795,6 +811,26 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
   const [plan, setPlan] = useState<PlanNav | null>(null);
   // Bumped to ask the coach again, once notes it was waiting for are saved
   const [askAgain, setAskAgain] = useState(0);
+  // Whether pause words show and fluency is judged, from Settings (decision 79; shown until read)
+  const [view, setView] = useState<ResultView>({ pauseWords: true, fluency: true });
+
+  // Read the two settings once the date is known
+  useEffect(() => {
+    // Wait for the date
+    if (!today) return;
+    // Ignore the result if closed first
+    let cancelled = false;
+    // Read them
+    repo.getSettings(today).then((settings) => {
+      // Keep them if still open
+      if (!cancelled) setView({ pauseWords: pauseWordsShown(settings), fluency: fluencyJudged(settings) });
+    });
+    // Mark as closed
+    return () => {
+      // Stop the update
+      cancelled = true;
+    };
+  }, [repo, today]);
 
   // Load the session (and its first try, for a retry) once the date is known
   useEffect(() => {
@@ -887,9 +923,9 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
         </>
       )}
       {/* A retry with its first try */}
-      {loaded?.session && loaded.original && loaded.session.mode !== "smalltalk" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} />}
+      {loaded?.session && loaded.original && loaded.session.mode !== "smalltalk" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} view={view} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && (!loaded.original || loaded.session.mode === "smalltalk") && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} onReviewed={(updated) => {
+      {loaded?.session && (!loaded.original || loaded.session.mode === "smalltalk") && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} view={view} onReviewed={(updated) => {
         // Show the notes and the feedback
         setLoaded((previous) => (previous ? { ...previous, session: updated } : previous));
         // If the coach was waiting for the notes, ask it now

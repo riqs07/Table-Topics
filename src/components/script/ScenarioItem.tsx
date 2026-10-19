@@ -9,6 +9,9 @@ import { QuickRecorder } from "@/components/script/QuickRecorder";
 import { TIER_NAMES, type Scenario, type Tier } from "@/content/scenarios";
 // Load the recording contract
 import type { RecordingServices } from "@/audio/services";
+// Load the shared press effect and card look (decision 79)
+import { PRESS } from "@/components/script/Buttons";
+import { CARD } from "@/components/script/textStyles";
 
 // What the item needs
 interface ScenarioItemProps {
@@ -21,7 +24,7 @@ interface ScenarioItemProps {
 }
 
 // The look of each tier once revealed: best filled, the others by their edge
-const TIER_LOOK: Readonly<Record<Tier, string>> = { best: "border-fill bg-fill text-fill-ink", good: "border-accent", flat: "border-rule", misstep: "border-ink" };
+const TIER_LOOK: Readonly<Record<Tier, string>> = { best: "border-fill bg-fill text-fill-ink", good: "border-accent bg-card", flat: "border-transparent bg-card text-ink-muted", misstep: "border-ink bg-card" };
 
 // Draw the item
 export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps) {
@@ -55,7 +58,7 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
         {/* Each reply */}
         {scenario.options.map((option, position) => (
           // One reply: a button before choosing, then marked with its tier and pattern
-          <button key={option.text} type="button" disabled={chosen !== null} onClick={() => choose(position)} data-tier={chosen !== null ? option.tier : undefined} className={`min-h-11 border px-4 py-2 text-left ${chosen !== null ? TIER_LOOK[option.tier] : "border-rule hover:border-accent"}`}>
+          <button key={option.text} type="button" disabled={chosen !== null} onClick={() => choose(position)} data-tier={chosen !== null ? option.tier : undefined} className={`min-h-14 rounded-2xl border-2 px-4 py-3 text-left shadow-card ${PRESS} ${chosen !== null ? TIER_LOOK[option.tier] : "border-transparent bg-card hover:border-accent"}`}>
             {/* The words */}
             <span className="block">{option.text}</span>
             {/* Once chosen: its tier and the pattern behind it */}
@@ -77,7 +80,7 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
           {/* A note on context */}
           {scenario.note && <p className="mt-2 text-footnote text-ink-muted">{scenario.note}</p>}
           {/* Say it aloud */}
-          <div className="mt-5 border-t border-rule pt-3">
+          <div className={`mt-5 p-4 ${CARD}`}>
             {/* The ask */}
             <p className="text-footnote text-ink-muted">Now say it in your own words</p>
             {/* What to say */}

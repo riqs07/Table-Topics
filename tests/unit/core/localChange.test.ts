@@ -29,7 +29,19 @@ describe("localChange", () => {
     // Slow only
     const slow = localChange(makeSession({ ...STEADY, wordsPerMinute: 95 }));
     // Confirm each
-    expect([fillers.change, fast.change.startsWith("Slow down a little: 190 words"), slow.change.startsWith("Keep the words moving: 95 words")]).toEqual(["Swap fillers for a pause: 4.2 a minute were counted.", true, true]);
+    expect([fillers.change, fast.change.startsWith("Slow down a little: 190 words"), slow.change.startsWith("Keep the words moving: 95 words")]).toEqual(["Swap pause words for a silent pause: 4.2 a minute were counted.", true, true]);
+  });
+
+  // With pause words hidden, they are never the change; for a speaker who stammers, slow pace is not judged either (decision 79)
+  it("leaves pause words and fluency alone when asked", () => {
+    // Many pause words and slow
+    const session = makeSession({ ...STEADY, fillersPerMinute: 4.2, wordsPerMinute: 95 });
+    // Hidden pause words: slow pace comes next
+    const hidden = localChange(session, { pauseWords: false });
+    // A speaker who stammers: neither
+    const stammer = localChange(session, { pauseWords: false, fluency: false });
+    // Confirm
+    expect([hidden.change.startsWith("Keep the words moving"), stammer.change.startsWith("Swap"), stammer.change.startsWith("Keep the words moving")]).toEqual([true, false, false]);
   });
 
   // With loudness readings, too few pauses in a longer session

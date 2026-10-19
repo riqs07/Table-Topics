@@ -13,7 +13,7 @@ describe("resultNumbers", () => {
     const session = makeSession({ fillersPerMinute: 2.4, wordsPerMinute: 128.4, durationSec: 134 });
     // Confirm the three numbers with their labels
     expect(resultNumbers(session, null)).toEqual([
-      { kind: "fillers", label: "fillers a minute", value: "2.4" },
+      { kind: "fillers", label: "pause words a minute", value: "2.4" },
       { kind: "speed", label: "words a minute", value: "128" },
       { kind: "length", label: "long", value: "2:14" },
     ]);
@@ -36,14 +36,14 @@ describe("resultNumbers", () => {
 
 // Short takes and numbers said elsewhere (decision 77)
 describe("resultNumbers on a results page", () => {
-  // Under 30 seconds, fillers are a count over the take, not a rate scaled up to a minute
+  // Under 30 seconds, pause words are a count over the take, not a rate scaled up to a minute
   it("counts fillers on a take under 30 seconds", () => {
     // An 11-second take with two fillers (10.9 a minute)
     const short = makeSession({ fillersPerMinute: (2 * 60) / 11, durationSec: 11 });
     // A minute-long take
     const long = makeSession({ fillersPerMinute: 2, durationSec: 60 });
     // Confirm the count, the rate kept without counts, and the rate on a long take
-    expect([resultNumbers(short, null, { counts: true })[0], resultNumbers(short, null)[0]?.value, resultNumbers(long, null, { counts: true })[0]?.label, fillerPhrase(short), fillerPhrase(long)]).toEqual([{ kind: "fillers", label: "fillers in 11 seconds", value: "2" }, "10.9", "fillers a minute", "2 fillers in 11 seconds", "2.0 fillers a minute"]);
+    expect([resultNumbers(short, null, { counts: true })[0], resultNumbers(short, null)[0]?.value, resultNumbers(long, null, { counts: true })[0]?.label, fillerPhrase(short), fillerPhrase(long)]).toEqual([{ kind: "fillers", label: "pause words in 11 seconds", value: "2" }, "10.9", "pause words a minute", "2 pause words in 11 seconds", "2.0 pause words a minute"]);
   });
 
   // A number the headline or the timing ring already gives is left out
@@ -72,7 +72,7 @@ describe("resultChanges", () => {
       // Pauses, plural on both
       { label: "pauses", before: "1", after: "3" },
       // No pause row
-      [{ label: "fillers a minute", before: "4.3", after: "1.8" }, { label: "words a minute", before: "150", after: "140" }, { label: "long", before: "0:13", after: "1:04" }],
+      [{ label: "pause words a minute", before: "4.3", after: "1.8" }, { label: "words a minute", before: "150", after: "140" }, { label: "long", before: "0:13", after: "1:04" }],
     ]);
   });
 });

@@ -1,4 +1,4 @@
-// The masthead at the top of every screen: the main navigation, then the title in the display face with a note or links on the right (decision 69)
+// The masthead at the top of every screen: one bar with the title in the display face, the main navigation (on a computer) and a note or links on the right (decisions 69 and 79)
 
 // Load Next.js's link component
 import Link from "next/link";
@@ -40,39 +40,39 @@ interface MastheadProps {
 
 // Draw the masthead
 export function Masthead({ title, children, section, nav = true, close = null }: MastheadProps) {
-  // Navigation row, then the title row
+  // One bar: the name, the navigation, then the gear or the way out
   return (
     <>
-      {/* The main navigation: a tab bar fixed to the bottom of a phone, a row of tabs above the title on a computer, the current one in a filled pill */}
-      {nav && (
-        <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:mb-6 md:flex md:gap-x-2 md:border-0 md:bg-transparent md:p-0">
-          {/* One link per section */}
-          {SECTIONS.map((item) => {
-            // Whether this is the current section
-            const current = item.id === section || (item.id === "practice" && section === "skills");
-            // The section's icon
-            const TabIcon = item.icon;
-            // On a phone: icon over a small label, at least 44 pixels tall; on a computer: a text link
-            return (
-              <Link key={item.id} href={item.href} aria-current={current ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-tab md:min-h-11 md:flex-row md:rounded-full md:px-4 md:text-footnote ${current ? "font-semibold text-ink md:bg-fill md:text-fill-ink" : "text-ink-muted hover:text-ink"}`}>
-                {/* The icon, phone only, in a filled pill for the current section */}
-                <span aria-hidden="true" className={`flex h-8 w-14 items-center justify-center rounded-full md:hidden ${current ? "bg-fill text-fill-ink" : ""}`}>
-                  {/* The icon (filled for the current section) */}
-                  <TabIcon weight={current ? "fill" : "regular"} className="size-5" />
-                </span>
-                {/* The name */}
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
-      {/* Header landmark (centred, so the gear or cross lines up with the title) */}
+      {/* Header landmark: one bar with the name, the tabs (on a computer) and the gear or cross, centred so they line up */}
       <header className="flex min-h-11 items-center justify-between gap-4 pb-1">
         {/* Title in the display face */}
         <span className="font-display text-xl font-semibold tracking-tight md:text-2xl">{title}</span>
+        {/* The main navigation: a tab bar fixed to the bottom of a phone, tabs in this bar on a computer (decision 79), the current one in a filled pill */}
+        {nav && (
+          <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:ml-4 md:flex md:flex-1 md:gap-x-2 md:border-0 md:bg-transparent md:p-0">
+            {/* One link per section */}
+            {SECTIONS.map((item) => {
+              // Whether this is the current section
+              const current = item.id === section || (item.id === "practice" && section === "skills");
+              // The section's icon
+              const TabIcon = item.icon;
+              // On a phone: icon over a small label, at least 44 pixels tall; on a computer: a text link
+              return (
+                <Link key={item.id} href={item.href} aria-current={current ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-tab md:min-h-11 md:flex-row md:rounded-full md:px-4 md:text-footnote ${current ? "font-semibold text-ink md:bg-fill md:text-fill-ink" : "text-ink-muted hover:text-ink"}`}>
+                  {/* The icon, phone only, in a filled pill for the current section */}
+                  <span aria-hidden="true" className={`flex h-8 w-14 items-center justify-center rounded-full md:hidden ${current ? "bg-fill text-fill-ink" : ""}`}>
+                    {/* The icon (filled for the current section) */}
+                    <TabIcon weight={current ? "fill" : "regular"} className="size-5" />
+                  </span>
+                  {/* The name */}
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
         {/* Note or links, then the settings gear or the way out */}
-        <span className="flex items-center gap-3">
+        <span className="flex items-center gap-3 md:ml-auto">
           {/* The note */}
           <span className="text-ink-muted">{children}</span>
           {/* Settings, wherever the navigation shows (filled on the settings page) */}

@@ -34,7 +34,7 @@ describe("bookendResult for a close", () => {
     // A clean close; the voice holds up
     const session = makeSession({ mode: "bookend", transcript: "Pick one customer and call them this week. Thank you.", loudness: [...run(0.5, 30), ...run(0, 10)] });
     // Confirm both sentences
-    expect(bookendResult("close", session)).toEqual({ headline: "No fillers in your closing.", detail: "None of your sentences faded at the end." });
+    expect(bookendResult("close", session)).toEqual({ headline: "No pause words in your closing.", detail: "None of your sentences faded at the end." });
   });
 
   // A close that trails off
@@ -42,6 +42,14 @@ describe("bookendResult for a close", () => {
     // A trailing close
     const session = makeSession({ mode: "bookend", transcript: "And that is the plan, so, yeah, that's it I guess.", loudness: [] });
     // Confirm the fillers are named, and that loudness was missing
-    expect(bookendResult("close", session)).toEqual({ headline: "Fillers crept into your closing: so, yeah, I guess.", detail: "Loudness was not recorded, so endings could not be checked." });
+    expect(bookendResult("close", session)).toEqual({ headline: "Pause words crept into your closing: so, yeah, I guess.", detail: "Loudness was not recorded, so endings could not be checked." });
+  });
+
+  // With pause words hidden, the close leads with its endings and names no pause words (decision 79)
+  it("names no pause words when they are hidden", () => {
+    // A trailing close
+    const session = makeSession({ mode: "bookend", transcript: "And that is the plan, so, yeah, that's it I guess.", loudness: [] });
+    // Confirm
+    expect(bookendResult("close", session, { pauseWords: false })).toEqual({ headline: "Loudness was not recorded, so endings could not be checked.", detail: "" });
   });
 });

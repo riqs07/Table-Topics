@@ -17,6 +17,8 @@ import { currentFocus, type Focus } from "@/core/focus";
 import { practiceRun, type PracticeRun } from "@/core/streak";
 // Load the week's summary
 import { yourWeek, type YourWeek } from "@/core/yourWeek";
+// Load the pause-word setting rule
+import { pauseWordsShown } from "@/core/pauseWords";
 // Load the card that shows it
 import { YourWeekCard } from "@/components/script/YourWeekCard";
 // Load the seven-day strip
@@ -124,7 +126,7 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     // The practice time in the user's words
     anchor: settings.anchor?.trim() ?? "",
     // The week's summary
-    week: yourWeek(sessions, now),
+    week: yourWeek(sessions, now, { pauseWords: pauseWordsShown(settings) }),
     // The last seven days
     strip: weekStrip([...sessions.map((session) => new Date(session.createdAt)), ...missionDays(settings.missions ?? [])], now),
     // This week's focus

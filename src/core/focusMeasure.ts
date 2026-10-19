@@ -34,7 +34,7 @@ const FILLERS: FocusMeasure = {
   // A count over a short take
   short: fillerPhrase,
   // Unit words
-  unit: "fillers a minute",
+  unit: "pause words a minute",
   // Read the filler rate
   read: (session) => session.fillersPerMinute,
   // One decimal place

@@ -40,7 +40,7 @@ export function progressSentence(progress: BaselineProgress): string {
   // The first recording's date, written like "2 October"
   const date = new Date(progress.baselineDate);
   // Start of the sentence
-  const opening = `Since your first recording on ${date.getDate()} ${FULL_MONTHS[date.getMonth()]}, fillers`;
+  const opening = `Since your first recording on ${date.getDate()} ${FULL_MONTHS[date.getMonth()]}, pause words`;
   // Work out the change
   const difference = progress.latest - progress.baseline;
   // A tiny change is described as holding steady

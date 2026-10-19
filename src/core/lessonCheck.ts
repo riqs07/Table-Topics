@@ -88,7 +88,7 @@ function skillSentence(lesson: Lesson, session: SessionRecord, percentRead: numb
       // The last words, with fillers marked
       const closing = markFillers(session.transcript.split(/\s+/).slice(-CLOSING_WORDS).join(" ")).filter((piece) => piece.filler).map((piece) => piece.text.toLowerCase());
       // Clean, or which fillers
-      return closing.length === 0 ? "No fillers in your closing." : `Fillers crept into your closing: ${closing.join(", ")}.`;
+      return closing.length === 0 ? "No pause words in your closing." : `Pause words crept into your closing: ${closing.join(", ")}.`;
     }
     // Recovering from a blank: a deliberate stop, then carrying on
     case "recovery": {

@@ -48,7 +48,7 @@ describe("SessionScreen", () => {
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the headline number
-    expect(await screen.findByText("4.2 fillers a minute.")).toBeTruthy();
+    expect(await screen.findByText("4.2 pause words a minute.")).toBeTruthy();
     // Confirm each part of the feedback
     for (const text of [FEEDBACK.keep, FEEDBACK.change, FEEDBACK.retryCue]) expect(screen.getByText(text)).toBeTruthy();
     // Confirm the retry action keeps the prompt and links back to this session
@@ -112,7 +112,7 @@ describe("SessionScreen", () => {
     // The row
     const row = within(await screen.findByRole("region", { name: "Your numbers" }));
     // Confirm speed and length in the row, and the fillers only in the headline (decision 77)
-    expect([!!row.getByText("128"), !!row.getByText("2:14"), row.queryByText("fillers a minute"), screen.getByRole("heading", { level: 1 }).textContent]).toEqual([true, true, null, "2.4 fillers a minute."]);
+    expect([!!row.getByText("128"), !!row.getByText("2:14"), row.queryByText("pause words a minute"), screen.getByRole("heading", { level: 1 }).textContent]).toEqual([true, true, null, "2.4 pause words a minute."]);
   });
 
   // A short Table Topic: the topic it answered, a count rather than a rate, and the length only beside the ring (decision 77)
@@ -126,7 +126,7 @@ describe("SessionScreen", () => {
     // The row
     const row = within(screen.getByRole("region", { name: "Your numbers" }));
     // Confirm the topic, the count, and a row with the speed but neither fillers nor length
-    expect([!!screen.getByText(TABLE_TOPICS[0]!.text), headline.textContent, !!row.getByText("120"), row.queryByText("0:11"), row.queryByText(/fillers/)]).toEqual([true, "2 fillers in 11 seconds.", true, null, null]);
+    expect([!!screen.getByText(TABLE_TOPICS[0]!.text), headline.textContent, !!row.getByText("120"), row.queryByText("0:11"), row.queryByText(/fillers/)]).toEqual([true, "2 pause words in 11 seconds.", true, null, null]);
   });
 
   // "Show where" opens what was said, and a marked filler plays its moment (decision 77)
@@ -173,6 +173,38 @@ describe("SessionScreen", () => {
     expect([!!screen.getByText("Why walk"), !!(points.compareDocumentPosition(screen.getByRole("region", { name: "Your numbers" })) & Node.DOCUMENT_POSITION_FOLLOWING)]).toEqual([true, true]);
   });
 
+  // "I stammer": no pause-word headline, tile or marks, and a quiet line on rough counts; and the kinder listen-back line (decision 79)
+  it("leaves pause words out for a speaker who stammers", async () => {
+    // A session in filler week with pause words in it
+    const session = makeSession({ id: "s1", focus: "cut-fillers", transcript: "Um so I went home", fillersPerMinute: 4, wordsPerMinute: 130, durationSec: 60, feedback: FEEDBACK, feedbackStatus: "done" });
+    // A repository holding it, with the setting on
+    const repository = await repositoryWith(session);
+    // Switch it on
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), stammer: true });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // Wait for the line under the numbers
+    await screen.findByText("Counts are rough: speech services can mishear accents.");
+    // Confirm no pause-word headline, tile, or marked words
+    expect([screen.queryByText(/pause words a minute/), screen.queryByRole("button", { name: /show where/i }), document.querySelector("mark")]).toEqual([null, null, null]);
+  });
+
+  // The listen-back line is kind, above the player (decision 79)
+  it("listens back kindly", async () => {
+    // Stand in for the browser's object URLs
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:take"), revokeObjectURL: vi.fn() });
+    // A session with audio
+    const session = makeSession({ id: "s1", audioKey: "s1", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Repository holding it and its audio
+    const repository = await repositoryWith(session);
+    // Save the audio
+    await repository.saveAudio("s1", new Blob(["sound"], { type: "audio/webm" }));
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // Confirm the line
+    expect(await screen.findByText("Most people dislike hearing their own voice. Listen the way a friendly coach would.")).toBeTruthy();
+  });
+
   // The recording plays from one large button that becomes Pause
   it("plays the recording from its own button", async () => {
     // Stand in for the browser's object URLs
@@ -204,9 +236,9 @@ describe("SessionScreen", () => {
     // Draw the retry's page
     render(<SessionScreen sessionId="s2" repository={await repositoryWith(first, retry)} now={NOW} />);
     // Confirm the statement
-    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("From 4.2 to 1.8 fillers a minute.");
+    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("From 4.2 to 1.8 pause words a minute.");
     // The fillers row of the table
-    const fillers = within(screen.getByRole("table", { name: "First and second try" })).getByRole("row", { name: /fillers a minute/ });
+    const fillers = within(screen.getByRole("table", { name: "First and second try" })).getByRole("row", { name: /pause words a minute/ });
     // Confirm both numbers, and that "Done" leads back to where the session started (decision 67)
     expect([within(fillers).getAllByRole("cell").map((cell) => cell.textContent), screen.getByRole("link", { name: /^Done/ }).getAttribute("href")]).toEqual([["4.2", "1.8"], "/practice"]);
   });
@@ -410,7 +442,7 @@ describe("SessionScreen", () => {
     // Draw the later session
     render(<SessionScreen sessionId="b" repository={repository} now={NOW} />);
     // Confirm both players and both lines of numbers
-    expect([!!(await screen.findByLabelText("Your recording from day 1")), !!(await screen.findByLabelText("Your recording from day 13")), !!screen.getByText("Day 1: 4.2 fillers a minute, 172 words a minute."), !!screen.getByText("Day 13: 1.8 fillers a minute, 148 words a minute."), !!screen.getByRole("button", { name: /Play both/ })]).toEqual([true, true, true, true, true]);
+    expect([!!(await screen.findByLabelText("Your recording from day 1")), !!(await screen.findByLabelText("Your recording from day 13")), !!screen.getByText("Day 1: 4.2 pause words a minute, 172 words a minute."), !!screen.getByText("Day 13: 1.8 pause words a minute, 148 words a minute."), !!screen.getByRole("button", { name: /Play both/ })]).toEqual([true, true, true, true, true]);
   });
 
   // A read-aloud session shows how much of the text was read, with skipped words marked on the passage
@@ -576,13 +608,13 @@ describe("SessionScreen", () => {
       // Open the fold
       await userEvent.click(await screen.findByText("Add your notes"));
       // Tap a tag
-      await userEvent.click(screen.getByRole("button", { name: "Fillers" }));
+      await userEvent.click(screen.getByRole("button", { name: "Pause words" }));
       // Write a line
       await userEvent.type(screen.getByLabelText("Anything else? (optional)"), "Breathe first");
       // Save
       await userEvent.click(screen.getByRole("button", { name: "Save my notes" }));
       // Confirm the notes show, the fold is gone, the tags were saved, and the recording is still there
-      expect([!!(await screen.findByText("Breathe first")), !!screen.getByText("Tagged: fillers."), screen.queryByText("Add your notes"), (await repository.getSession("s1"))?.selfReview?.tags, !!(await repository.getAudio("s1"))]).toEqual([true, true, null, ["fillers"], true]);
+      expect([!!(await screen.findByText("Breathe first")), !!screen.getByText("Tagged: pause words."), screen.queryByText("Add your notes"), (await repository.getSession("s1"))?.selfReview?.tags, !!(await repository.getAudio("s1"))]).toEqual([true, true, null, ["fillers"], true]);
     });
 
     // Your tags are checked against the numbers

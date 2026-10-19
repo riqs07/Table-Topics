@@ -5,6 +5,8 @@
 import { useEffect, useState } from "react";
 // Load the shared button and row styles
 import { RowLink, SecondaryLink } from "@/components/script/Buttons";
+// Load the folded group card
+import { FoldCard } from "@/components/script/FoldCard";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared screen set-up
@@ -110,32 +112,29 @@ export function BookendsScreen(props: ScreenProps) {
         </section>
       )}
 
-      {/* Every other prompt, folded until wanted (decision 67) */}
-      <section aria-label="More prompts" className="mt-10 border-t border-rule">
+      {/* Every other prompt, folded until wanted (decision 67), as rounded cards (decision 79) */}
+      <section aria-label="More prompts" className="mt-10 flex flex-col gap-2">
         {/* Openings, then closes */}
-        {(["opening", "close"] as const).map((part) => (
+        {(["opening", "close"] as const).map((part) => {
+          // The prompts not already offered today
+          const rest = BOOKENDS.filter((item) => item.part === part && !pair?.some((today) => today.id === item.id));
           // One folded list
-          <details key={part} className="border-b border-rule">
-            {/* Its name and size */}
-            <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-3 font-display text-xl">
-              {/* Name */}
-              {part === "opening" ? "More openings" : "More closes"}
-              {/* How many */}
-              <span className="font-body text-footnote text-ink-muted">{BOOKENDS.filter((item) => item.part === part && !pair?.some((today) => today.id === item.id)).length}</span>
-            </summary>
-            {/* The prompts */}
-            <ul className="divide-y divide-rule border-t border-rule">
-              {/* Each prompt */}
-              {BOOKENDS.filter((item) => item.part === part && !pair?.some((today) => today.id === item.id)).map((item) => (
-                // One prompt
-                <li key={item.id}>
-                  {/* The link */}
-                  <RowLink href={drillHref(item)}>{item.text}</RowLink>
-                </li>
-              ))}
-            </ul>
-          </details>
-        ))}
+          return (
+            <FoldCard key={part} name={part === "opening" ? "More openings" : "More closes"} count={rest.length}>
+              {/* The prompts */}
+              <ul className="divide-y divide-rule">
+                {/* Each prompt */}
+                {rest.map((item) => (
+                  // One prompt
+                  <li key={item.id}>
+                    {/* The link */}
+                    <RowLink href={drillHref(item)}>{item.text}</RowLink>
+                  </li>
+                ))}
+              </ul>
+            </FoldCard>
+          );
+        })}
       </section>
     </main>
   );
