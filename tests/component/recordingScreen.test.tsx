@@ -19,6 +19,9 @@ import { PASSAGES, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@
 import { findLesson } from "@/content/lessons";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
+// Load today's practice, to put a step off
+import { loadDailyPlan } from "@/data/dailyPlan";
+import { planHref } from "@/core/dailyPlan";
 
 // Remove drawn screens and fake timers after each check
 afterEach(() => {
@@ -29,7 +32,7 @@ afterEach(() => {
 });
 
 // Fake recording services that a check can drive by hand
-function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string; permission?: MicPermission; voice?: boolean } = {}) {
+function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string | string[]; permission?: MicPermission; voice?: boolean } = {}) {
   // What the voice was asked to say
   const said: string[] = [];
   // How many times the microphone was asked for
@@ -40,6 +43,8 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
   let onProblem: (problem: RecordingProblem) => void = () => {};
   // The microphone's one track, which a check can end
   const track = new EventTarget();
+  // The final words each listener gives in turn (one listener per part, when a take is paused); the last repeats
+  const finals = Array.isArray(options.finalText) ? [...options.finalText] : [options.finalText ?? "Um, the best part of my week was the dog."];
   // The services the screen uses
   const services: RecordingServices = {
     // Speech support, on unless switched off
@@ -66,8 +71,8 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
         // Keep the problem callback
         onProblem = problem;
       },
-      // Stopping returns the final words
-      stop: async () => options.finalText ?? "Um, the best part of my week was the dog.",
+      // Stopping returns the next final words
+      stop: async () => (finals.length > 1 ? finals.shift() : finals[0]) ?? "",
     }),
     // A capture with a steady level and fixed audio
     createCapture: () => ({ level: () => 0.5, stop: async () => new Blob(["voice"]) }),
@@ -257,8 +262,8 @@ describe("RecordingScreen", () => {
     const { clock } = draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id });
     // Show the topic
     fireEvent.click(await screen.findByRole("button", { name: /Show my topic/ }));
-    // Confirm the question and the countdown, and that there is no early start
-    expect([!!(await screen.findByText(TABLE_TOPICS[0]!.text)), !!screen.getByText("0:10"), screen.queryByRole("button", { name: /Ready/ })]).toEqual([true, true, null]);
+    // Confirm the question and the one countdown (no second clock), and that there is no early start
+    expect([!!(await screen.findByText(TABLE_TOPICS[0]!.text)), !!screen.getByText("starting in 10"), screen.queryByText("0:10"), screen.queryByRole("button", { name: /Ready/ })]).toEqual([true, true, null, null]);
     // Let 11 seconds pass
     clock.advance(11_000);
     // Let the timer tick
@@ -594,6 +599,63 @@ describe("RecordingScreen", () => {
     expect([!!line, /^\/sessions\?id=.+&plan=1$/.test(String(navigate.mock.calls[0]?.[0]))]).toEqual([true, true]);
   });
 
+  // "Can't speak now?" puts a speaking step off for today, without counting it as done, and moves on to the first open step (decision 77)
+  it("puts a step off for today and moves on", async () => {
+    // An empty repository and today's plan in it
+    const repository = createRepository(new MemoryStore());
+    // The plan on the fake clock's day
+    const plan = await loadDailyPlan(repository, new Date(2026, 9, 13, 10));
+    // The warm-up: step 2
+    const warmUp = plan.steps[1]!;
+    // Draw that step
+    const { navigate } = draw({ repository, planStep: 2, mode: warmUp.mode!, promptId: warmUp.promptId });
+    // Put it off
+    fireEvent.click(await screen.findByRole("button", { name: /Can’t speak now/ }));
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // The plan afterwards
+    const after = await loadDailyPlan(repository, new Date(2026, 9, 13, 10));
+    // Confirm it went to the first open step (the card, which needs no speaking), and the warm-up is put off but not done
+    expect([navigate.mock.calls[0]?.[0], after.skipped, after.done[1]]).toEqual([planHref(plan.steps[0]!, 1), [false, true, false, false], false]);
+  });
+
+  // Outside today's practice, or once speaking, there is nothing to put off
+  it("offers no skip outside today's practice", async () => {
+    // Draw a plain session
+    draw();
+    // Wait for the screen
+    await screen.findByRole("button", { name: /Start speaking/ });
+    // Confirm no skip
+    expect(screen.queryByRole("button", { name: /Can’t speak now/ })).toBeNull();
+  });
+
+  // With timing tones switched on, the light's changes are heard: one tone at green, two at red (decision 77)
+  it("plays timing tones when switched on", async () => {
+    // Use fake timers that still let promises run
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Tones on
+    localStorage.setItem("voicelab-timing-tones", "on");
+    // The cues played
+    const played: string[] = [];
+    // Services with a cue player that notes each cue
+    const services = { ...fakeServices().services, createCuePlayer: () => ({ prime: () => {}, play: (cue: string) => void played.push(cue), close: () => {} }) };
+    // Draw a Table Topic
+    const { clock } = draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id, services });
+    // Get to recording
+    await startTableTopic(clock);
+    // Move past green, then past red
+    for (const ms of [61_000, 60_000]) {
+      // Move the clock
+      clock.advance(ms);
+      // Let the timer tick
+      await act(async () => vi.advanceTimersByTime(200));
+    }
+    // Switch tones off again for other checks
+    localStorage.removeItem("voicelab-timing-tones");
+    // Confirm one tone, then two
+    expect(played).toEqual(["one", "two"]);
+  });
+
   // A pause drill shows its pause marks as visible pause signs, not slashes
   it("shows the pause marks in a pause drill", async () => {
     // Draw a pause drill
@@ -837,18 +899,72 @@ describe("RecordingScreen", () => {
     expect([await repository.listSessions(), navigate.mock.calls.length]).toEqual([[], 0]);
   });
 
-  // Discarding stops without saving and goes home
-  it("discards without saving", async () => {
+  // Discarding stops without saving, offers an undo, and lets the user start again (decision 77)
+  it("discards without saving and offers an undo", async () => {
     // Draw the screen
     const { repository, navigate } = draw();
     // Start
     fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
     // Discard
-    fireEvent.click(await screen.findByRole("button", { name: /Discard this one/ }));
-    // Confirm it went home
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/"));
-    // Confirm nothing was saved
-    expect(await repository.listSessions()).toHaveLength(0);
+    fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
+    // Confirm the note and its undo
+    expect([!!(await screen.findByText("Take discarded.")), !!screen.getByRole("button", { name: "Undo" })]).toEqual([true, true]);
+    // Confirm nothing was saved, the page did not change, and a fresh start is offered
+    expect([await repository.listSessions(), navigate.mock.calls.length, !!screen.getByRole("button", { name: /Start again/ })]).toEqual([[], 0, true]);
+  });
+
+  // Undo keeps the discarded take after all, saving it and opening its page
+  it("saves a discarded take when undone", async () => {
+    // Draw the screen
+    const { repository, clock, fake, navigate } = draw();
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Words arrive
+    await fake.say({ final: "So I went home", interim: "" });
+    // Let 20 seconds pass
+    clock.advance(20_000);
+    // Discard
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    // Undo
+    fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
+    // Confirm the session was saved and opened
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm one session
+    expect(await repository.listSessions()).toHaveLength(1);
+  });
+
+  // Pausing stops the clock and the listening; resuming carries on and the words join up
+  it("pauses and resumes, leaving the paused time out of the length", async () => {
+    // Draw the screen
+    const { repository, clock, fake, navigate } = draw({}, { finalText: ["So I went home", "and then I slept"] });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Words arrive
+    await fake.say({ final: "So I went home", interim: "" });
+    // Speak for 20 seconds
+    clock.advance(20_000);
+    // Pause
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    // Confirm the status says paused and the button now resumes
+    expect([(await screen.findByRole("status", { name: "Paused" })).textContent, !!screen.getByRole("button", { name: "Resume" })]).toEqual([expect.stringContaining("Paused"), true]);
+    // A minute passes while paused
+    clock.advance(60_000);
+    // Resume
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    // Speak for 10 more seconds
+    clock.advance(10_000);
+    // Stop
+    fireEvent.click(await screen.findByRole("button", { name: /Stop/ }));
+    // Wait for the save
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Read the saved session
+    const [saved] = await repository.listSessions();
+    // Confirm 30 seconds, not 90, and both parts of the words
+    expect([saved?.durationSec, saved?.transcript]).toEqual([30, "So I went home and then I slept"]);
   });
 
   // Regression: without a clock passed in (as in the real app), recording must keep running across redraws

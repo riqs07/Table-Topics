@@ -3,7 +3,7 @@
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
 // Load the plan rules
-import { dailyPlan, moreToDo, planProgress, type PlanStep } from "@/core/dailyPlan";
+import { dailyPlan, moreToDo, planProgress, planSkipped, stepKey, type PlanStep } from "@/core/dailyPlan";
 // Load the weekly focus rules
 import { currentFocus } from "@/core/focus";
 // Load the event-prep rules, for a talk coming up
@@ -37,6 +37,8 @@ export interface LoadedPlan {
   steps: PlanStep[];
   // Which are done
   done: boolean[];
+  // Which were put off today with "Can't speak now?" (decision 77)
+  skipped: boolean[];
   // Today's sessions, newest first
   today: SessionRecord[];
   // More to do once the steps are done
@@ -58,5 +60,17 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   // The steps
   const steps = dailyPlan(input);
   // Hand back the steps, what is done, today's sessions, and more to do afterwards
-  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps) };
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps) };
+}
+
+// Put a step off for today ("Can't speak now?"): it is not done, it is just not offered next; another day's skips are dropped (decision 77)
+export async function skipStepToday(repository: Repository, step: PlanStep, now: Date): Promise<void> {
+  // The settings, where skips are kept
+  const settings = await repository.getSettings(now);
+  // Today's date as text
+  const day = dayKey(now);
+  // Today's skips so far (none if the list is from another day)
+  const steps = settings.skipped?.day === day ? settings.skipped.steps : [];
+  // Add this one, once
+  await repository.saveSettings({ ...settings, skipped: { day, steps: steps.includes(stepKey(step)) ? steps : [...steps, stepKey(step)] } });
 }

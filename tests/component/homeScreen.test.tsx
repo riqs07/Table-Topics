@@ -147,6 +147,24 @@ describe("HomeScreen", () => {
     expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), !!screen.getByRole("link", { name: /^Continue: step 1/ }), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, true, null]);
   });
 
+  // A step put off with "Can't speak now?" is marked, not done, and the next open step is offered; once only put-off steps are left, the rest can wait (decision 77)
+  it("passes over a step put off for today", async () => {
+    // A repository with the warm-up put off today
+    const repository = emptyRepository();
+    // The settings
+    const settings = await repository.getSettings(NOW);
+    // Put the warm-up off
+    await repository.saveSettings({ ...settings, skipped: { day: "2026-10-13", steps: ["session:read:lincoln-second-inaugural-1"] } });
+    // Mark the welcome as seen
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The warm-up's row
+    const row = await screen.findByRole("link", { name: "Step 2: Warm up" });
+    // Confirm the mark, the count and the action, which still starts at the card
+    expect([!!within(row).getByText("Skipped for today"), !!screen.getByText("0 of 4"), !!screen.getByRole("link", { name: /^Start today’s practice/ })]).toEqual([true, true, true]);
+  });
+
   // Today shows only today's steps; everything else is in Practice
   it("keeps to today's steps and leaves other practice to Practice", async () => {
     // The welcome was already skipped

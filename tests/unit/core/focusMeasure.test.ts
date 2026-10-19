@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the focus measure being checked
-import { headlineFor, measureFor, retryHeadline } from "@/core/focusMeasure";
+import { headlineFor, headlineKind, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -51,6 +51,14 @@ describe("measureFor", () => {
 
 // Group the checks about the feedback headline
 describe("headlineFor", () => {
+  // A take under 30 seconds: a count, not a rate scaled up to a minute (decision 77)
+  it("counts fillers on a short take", () => {
+    // Two fillers in 11 seconds, and the kind of number the headline gives
+    const session = makeSession({ focus: "cut-fillers", fillersPerMinute: (2 * 60) / 11, durationSec: 11 });
+    // Confirm the sentence and its kind
+    expect([headlineFor(session), headlineKind(session), headlineKind(makeSession({ focus: "structure" }))]).toEqual(["2 fillers in 11 seconds.", "fillers", null]);
+  });
+
   // Filler week: one decimal place
   it("writes the filler rate in filler week", () => {
     // Confirm the sentence

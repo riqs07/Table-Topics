@@ -185,6 +185,21 @@ export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: num
   return "none";
 }
 
+// A timing cue without looking: one soft tone, or two (decision 77)
+export type TimingCue = "one" | "two";
+
+// The cue when the light changes: one tone when it first lights (green, or yellow for a light with no green), two at red; nothing otherwise
+export function timingCue(previous: TimeSignal, next: TimeSignal): TimingCue | null {
+  // No change, no cue
+  if (previous === next) return null;
+  // Red: time to finish
+  if (next === "red") return "two";
+  // Green, or a first yellow straight from off (a prepared speech, a drill or a rehearsal): the light is on
+  if (next === "green" || (next === "yellow" && previous === "none")) return "one";
+  // Anything else (yellow after green, past the limit) stays quiet
+  return null;
+}
+
 // One plain sentence on the timing: for a Table Topic, whether it would qualify; otherwise, how it compared with the goal (a rehearsal passes its own goal)
 export function timingSentence(mode: SessionMode, durationSec: number, goalSeconds?: number, promptId = ""): string {
   // Whole seconds, as the timer would record them

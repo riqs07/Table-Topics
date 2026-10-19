@@ -27,7 +27,10 @@ import { followReading, readingTokens, scriptWords, scrollGuide, stampFirstRead,
 import { speechThreshold } from "@/core/pauses";
 import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 // Load the recording length rules
-import { LOUDNESS_TICK_MS, formatClock, maxSeconds, minSeconds, readingSeconds, speakingWindow, targetSeconds, thinkSeconds, timeSignal, type SpeakingWindow, type TimeSignal } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, formatClock, maxSeconds, minSeconds, readingSeconds, speakingWindow, targetSeconds, thinkSeconds, timeSignal, timingCue, type SpeakingWindow, type TimeSignal } from "@/core/recordingRules";
+// Load the timing tones choice and player type
+import { readTimingTones } from "@/data/timingTones";
+import type { CuePlayer } from "@/audio/timingTones";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -48,9 +51,11 @@ import { localChange } from "@/core/localChange";
 // Load the flag for explaining the microphone first
 import { markMicExplained, readMicExplained } from "@/data/micExplained";
 // Load today's practice, for its number of steps
-import { loadDailyPlan } from "@/data/dailyPlan";
+import { loadDailyPlan, skipStepToday, type LoadedPlan } from "@/data/dailyPlan";
+// Load the plan rules, to find the next step after one is put off
+import { nextStepIndex, planHref, stepKey } from "@/core/dailyPlan";
 // Load the shared button looks
-import { PRESS, QUIET, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the screen hold
 import { holdScreenAwake } from "@/audio/wakeLock";
 // Load the microphone for the start button
@@ -107,7 +112,7 @@ const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
 ];
 
 // Where the screen is in the flow
-type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | { problem: RecordingProblem };
+type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | { problem: RecordingProblem };
 
 // How many recent moment notes to show beside a question about what you have been up to
 const RECENT_MOMENTS = 3;
@@ -187,34 +192,18 @@ const RESPONSE_SIGNAL_TEXT: Record<TimeSignal, string> = {
   overtime: "",
 };
 
-// Fill for the lamp at each state
-const SIGNAL_LAMP: Record<TimeSignal, string> = {
-  // Off: an empty ring
-  none: "border-dashed border-ink-muted bg-transparent",
-  // Green
-  green: "border-light-green bg-light-green",
-  // Yellow
-  yellow: "border-light-yellow bg-light-yellow",
-  // Red
-  red: "border-light-red bg-light-red",
-  // Still red past the limit, with a heavier ring
-  overtime: "border-ink bg-light-red",
-};
-
-// The timing light: a lamp that changes color as the time goes on (green, yellow, red for a Table Topic; yellow, red for a Record Response)
+// The timing light's words in the status line while recording (green, yellow, red for a Table Topic; yellow, red for a Record Response); the voice shape carries the colour, so there is no separate lamp (decision 77)
 function TimingLight({ signal, mode, promptId }: { signal: TimeSignal; mode: SessionMode; promptId: string }) {
   // The window, for a Table Topic, a prepared speech or small talk
   const window = speakingWindow(mode, promptId);
   // The words for this kind of session
   const words = window ? windowSignalText(window) : RESPONSE_SIGNAL_TEXT;
-  // Lamp plus words, announced politely when they change
+  // The words, announced politely when they change
   return (
-    <p role="status" aria-label="Timing light" data-signal={signal} className="mt-3 flex items-center gap-3">
-      {/* The lamp itself (decorative; the words carry the meaning) */}
-      <span aria-hidden="true" className={`inline-block size-10 flex-none rounded-full border-2 transition-colors ${SIGNAL_LAMP[signal]}`} />
-      {/* What the lamp means */}
-      <span className="text-lede">{words[signal]}</span>
-    </p>
+    <span role="status" aria-label="Timing light" data-signal={signal} className="text-footnote font-normal text-ink-muted">
+      {/* What the light means now */}
+      {words[signal]}
+    </span>
   );
 }
 
@@ -268,6 +257,14 @@ const SCROLL_WHEN_PAST = 0.55;
 const KEEP_LINE_AT = 0.3;
 // Readings between updates of the silence level (once a second)
 const PACE_REFRESH_TICKS = 10;
+// How long a discarded take can be brought back (Material suggests 4 to 10 seconds; decision 77)
+const UNDO_MS = 8000;
+
+// Words heard before a pause, then the words since, as one transcript
+function joinWords(earlier: string, later: string): string {
+  // Whichever exist, with one space between
+  return [earlier.trim(), later.trim()].filter((part) => part !== "").join(" ");
+}
 
 // The text to read, with pause marks as pause signs, *stressed* words in bold and [directions] in quiet italics; while recording, words already read are lit, the next word is marked, and the rest is dimmed
 function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray<ReadingToken>; place: number | null; guide: number | null; className: string }) {
@@ -340,14 +337,14 @@ const HALO_EDGE: Record<TimeSignal, string> = {
   overtime: "border-light-red",
 };
 
-// Where a shape sits: large in the column, or (on screens with text to read) small in the bottom corner so the text stays in view (decision 75)
+// Where a shape sits: large in the column, or (on screens with text to read) small in the bottom corner, beside a clear lane the text never enters on a phone (decisions 75 and 77)
 function shapePlace(compact: boolean, size: string): string {
   // Floating in the corner, or centred in the column
-  return compact ? "fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 size-28 drop-shadow-lg md:right-10" : `relative mx-auto my-6 ${size}`;
+  return compact ? "fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 size-20 drop-shadow-lg md:right-10 md:size-28" : `relative mx-auto my-6 ${size}`;
 }
 
 // The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69); it is the stop button (decisions 74 and 75)
-function VoiceBlob({ levels, signal, clock, onStop, compact }: { levels: number[]; signal: TimeSignal; clock: string; onStop: () => void; compact: boolean }) {
+function VoiceBlob({ levels, signal, clock, onStop, compact, paused = false }: { levels: number[]; signal: TimeSignal; clock: string; onStop: () => void; compact: boolean; paused?: boolean }) {
   // The latest few readings, averaged so the shape does not jitter
   const recent = levels.slice(-4);
   // How loud, from 0 to 1
@@ -362,7 +359,7 @@ function VoiceBlob({ levels, signal, clock, onStop, compact }: { levels: number[
       {/* The dashed halo, turning slowly */}
       <span aria-hidden="true" className={`absolute inset-0 rounded-full border-2 border-dashed opacity-60 motion-safe:animate-spin-slow ${HALO_EDGE[signal]}`} />
       {/* The shape, growing with the voice and changing colour with the light */}
-      <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-6"} rounded-full transition-[transform,background-color] duration-150 ease-out motion-safe:animate-morph ${BLOB_FILL[signal]}`} style={{ transform: `scale(${scale})` }} />
+      <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-6"} rounded-full transition-[transform,background-color,opacity] duration-150 ease-out ${paused ? "opacity-60" : "motion-safe:animate-morph"} ${BLOB_FILL[signal]}`} style={{ transform: `scale(${paused ? 0.82 : scale})` }} />
       {/* The clock, and the action */}
       <span className="relative flex flex-col items-center text-on-warm">
         {/* The clock (the button is named "Stop" alone) */}
@@ -371,6 +368,19 @@ function VoiceBlob({ levels, signal, clock, onStop, compact }: { levels: number[
         <span className="text-footnote font-semibold">Stop</span>
       </span>
     </button>
+  );
+}
+
+// Pause or resume, and discard, as two quiet buttons (decision 77)
+function TakeControls({ paused, onPause, onResume, onDiscard }: { paused: boolean; onPause: () => void; onResume: () => void; onDiscard: () => void }) {
+  // Side by side, centred under the shape
+  return (
+    <p className="mt-1 flex flex-wrap justify-center gap-3">
+      {/* Pause or carry on */}
+      <button type="button" onClick={paused ? onResume : onPause} className={QUIET}>{paused ? "Resume" : "Pause"}</button>
+      {/* Throw this take away (it can be undone for a few seconds) */}
+      <button type="button" onClick={onDiscard} className={QUIET}>Discard</button>
+    </p>
   );
 }
 
@@ -386,7 +396,7 @@ function StartBlob({ label, detail, onStart, compact }: { label: string; detail:
       {/* The microphone and the words */}
       <span className="relative flex max-w-[80%] flex-col items-center gap-0.5 text-center text-on-warm">
         {/* The microphone */}
-        <MicrophoneIcon aria-hidden="true" weight="fill" className={compact ? "size-6" : "size-9"} />
+        <MicrophoneIcon aria-hidden="true" weight="fill" className={compact ? "size-5 md:size-6" : "size-9"} />
         {/* What it does */}
         <span className={`font-semibold leading-tight ${compact ? "text-tab" : "font-display text-xl"}`}>{label}</span>
         {/* The detail (left out of the small corner shape) */}
@@ -447,9 +457,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Whether the retry cue is the coach's (otherwise it was picked from the numbers)
   const [cueFromCoach, setCueFromCoach] = useState(true);
   // The live transcriber, audio capture, start time, and timer, kept between renders
-  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; spokenTimes: number[]; scriptTimes: (number | null)[] } | null>(null);
+  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; spokenTimes: number[]; scriptTimes: (number | null)[]; pausedAt: Date | null; earlier: string; tick: () => void; onWords: (latest: LiveText) => void } | null>(null);
+  // Whether the recording is paused (decision 77)
+  const [paused, setPaused] = useState(false);
+  // Timing tones, when switched on in Settings: made during the start tap, since browsers only let sound start from one (decision 77)
+  const cues = useRef<CuePlayer | null>(null);
+  // The timing light at the last cue check, to hear when it changes
+  const lastSignal = useRef<TimeSignal>("none");
+  // A take that was just discarded, kept for a few seconds so it can be undone (decision 77)
+  const discarded = useRef<{ transcript: string; audio: Blob; durationSec: number; loudness: number[]; spokenTimes: number[]; scriptTimes: (number | null)[] | null } | null>(null);
   // Inside today's practice, how many steps it has (loaded below)
-  const [planTotal, setPlanTotal] = useState<number | null>(null);
+  const [plan, setPlan] = useState<LoadedPlan | null>(null);
   // While reading, the number of the next word to read (every word before it is lit up)
   const [place, setPlace] = useState(0);
   // The word to keep in view: the place, moved on at a reading pace while the reader is speaking and recognition lags
@@ -609,16 +627,16 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     };
   }, [repo, retryOf]);
 
-  // Inside today's practice, load the plan to say how many steps it has
+  // Inside today's practice, load the plan to say how many steps it has (and where "Can't speak now?" leads)
   useEffect(() => {
     // Only inside the plan
     if (!planStep) return;
     // Ignore the result if the screen closes first
     let cancelled = false;
     // Load it
-    loadDailyPlan(repo, clock()).then((plan) => {
-      // Keep the count if still open
-      if (!cancelled) setPlanTotal(plan.steps.length);
+    loadDailyPlan(repo, clock()).then((loaded) => {
+      // Keep it if still open
+      if (!cancelled) setPlan(loaded);
     });
     // Mark as closed when leaving
     return () => {
@@ -637,28 +655,24 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     live.current = null;
     // Stop the timer
     clearInterval(current.timer);
-    // Work out the length, capped at the limit
-    const durationSec = Math.min(limit, Math.round((clock().getTime() - current.startedAt.getTime()) / 1000));
+    // Work out the length (up to the pause, if paused), capped at the limit
+    const durationSec = Math.min(limit, Math.round(((current.pausedAt ?? clock()).getTime() - current.startedAt.getTime()) / 1000));
     // Stop transcribing and recording together
-    const [transcript, audio] = await Promise.all([current.transcriber.stop(), current.capture.stop()]);
+    const [latestWords, audio] = await Promise.all([current.transcriber.stop(), current.capture.stop()]);
+    // Everything said, including before any pause
+    const transcript = joinWords(current.earlier, latestWords);
+    // No longer paused
+    setPaused(false);
     // One time per word of the final transcript: the noted times, filled with the end time where the final words ran past them
     const spokenTimes = stampSpoken(current.spokenTimes, transcript.split(/\s+/).filter((word) => word !== "").length, durationSec).slice(0, transcript.split(/\s+/).filter((word) => word !== "").length);
     // Hand back the results, with the loudness readings for finding pauses and the word times
     return { transcript, audio, durationSec, loudness: current.readings, spokenTimes, scriptTimes: current.scriptTimes.length > 0 ? current.scriptTimes : null };
   }, [clock, limit]);
 
-  // Stop recording, then save the session and open it (or explain that nothing was heard)
-  const stop = useCallback(async () => {
-    // Only stop once
-    if (stopping.current) return;
-    // Mark as stopping
-    stopping.current = true;
-    // Show that saving is under way
-    setStage("saving");
+  // Save a finished take and open it (or explain that nothing was heard); used on stop and on undoing a discard
+  const keep = useCallback(async (result: Awaited<ReturnType<typeof finishCapture>>) => {
     // Any step below can fail (the browser database can refuse a write), so never leave the screen on "Saving…"
     try {
-      // Stop everything
-      const result = await finishCapture();
       // Nothing was running (it was already stopped elsewhere): back to the start
       if (!result) {
         // Allow another attempt
@@ -702,7 +716,19 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [clock, finishCapture, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest]);
+  }, [clock, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest]);
+
+  // Stop recording, then keep the take
+  const stop = useCallback(async () => {
+    // Only stop once
+    if (stopping.current) return;
+    // Mark as stopping
+    stopping.current = true;
+    // Show that saving is under way
+    setStage("saving");
+    // Stop everything, then keep what was recorded
+    await keep(await finishCapture());
+  }, [finishCapture, keep]);
 
   // Stop because of a problem, saving nothing
   const fail = useCallback(
@@ -759,15 +785,18 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const transcriber = services.createTranscriber();
     // Note the start time
     const startedAt = clock();
-    // Update the timer and meter, and stop at the limit
     // Loudness readings for the whole recording, kept for finding pauses afterwards
     const readings: number[] = [];
+    // The words to listen for in the text on screen (none without text)
+    const expected = wordsToHear.current;
+    // Keep the running pieces, with no word times yet (the clock, tick and word handler are filled in below)
+    const pieces: NonNullable<typeof live.current> = { transcriber, capture, startedAt, timer: 0 as unknown as ReturnType<typeof setInterval>, readings, spokenTimes: [], scriptTimes: expected.map((): number | null => null), pausedAt: null, earlier: "", tick: () => {}, onWords: () => {} };
     // For scrolling at the reader's pace: the matched place, seconds spoken since it last moved, and the loudness below which it is silence
     const pace = { place: 0, voiced: 0, threshold: speechThreshold([]) };
-    // Tick
-    const timer = setInterval(() => {
-      // Seconds since starting
-      const seconds = (clock().getTime() - startedAt.getTime()) / 1000;
+    // Tick: update the timer and meter, and stop at the limit
+    pieces.tick = () => {
+      // Seconds since starting (pauses left out)
+      const seconds = (clock().getTime() - pieces.startedAt.getTime()) / 1000;
       // Show the time
       setElapsed(seconds);
       // Read the loudness once
@@ -787,19 +816,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       }
       // Stop by itself at the limit
       if (seconds >= limit) void stop();
-    }, LOUDNESS_TICK_MS);
-    // The words to listen for in the text on screen (none without text)
-    const expected = wordsToHear.current;
-    // Keep the running pieces, with no word times yet
-    const pieces = { transcriber, capture, startedAt, timer, readings, spokenTimes: [] as number[], scriptTimes: expected.map((): number | null => null) };
+    };
+    // Start the clock
+    pieces.timer = setInterval(pieces.tick, LOUDNESS_TICK_MS);
     // Keep them between renders
     live.current = pieces;
     // Each time words arrive: show them, note when each was first heard, and move the place in the text
     const heardWords = (latest: LiveText) => {
       // Show them
       setText(latest);
-      // Seconds since starting
-      const seconds = (clock().getTime() - startedAt.getTime()) / 1000;
+      // Seconds since starting (pauses left out)
+      const seconds = (clock().getTime() - pieces.startedAt.getTime()) / 1000;
       // Everything heard so far
       const heard = `${latest.final} ${latest.interim}`;
       // Note the new word positions
@@ -820,8 +847,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Move the place forward, never back
       setPlace((previous) => Math.max(previous, follow.next));
     };
+    // Words from the current listener, after any heard before a pause
+    pieces.onWords = (latest: LiveText) => heardWords({ final: joinWords(pieces.earlier, latest.final), interim: latest.interim });
     // Begin transcribing, showing words and handling problems
-    transcriber.start(heardWords, (problem) => void fail(problem));
+    transcriber.start(pieces.onWords, (problem) => void fail(problem));
     // Now recording
     setStage("recording");
   }, [clock, endThinking, fail, limit, services, stop]);
@@ -867,10 +896,119 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // Stop without saving
     stopping.current = true;
     // Stop everything
-    await finishCapture();
-    // Go home
-    navigate("/");
+    const result = await finishCapture();
+    // Thinking only, nothing recorded: go home
+    if (!result) {
+      // Home
+      navigate("/");
+      // Done
+      return;
+    }
+    // Keep the take for a few seconds, in case it was a slip (decision 77)
+    discarded.current = result;
+    // Allow a fresh start
+    stopping.current = false;
+    // Say so, with an undo
+    setStage("discarded");
   }, [endThinking, finishCapture, navigate]);
+
+  // Undo a discard: keep the take after all
+  const undoDiscard = useCallback(async () => {
+    // The take, if it is still held
+    const held = discarded.current;
+    // Nothing to undo
+    if (!held) return;
+    // Let it go from the hold
+    discarded.current = null;
+    // Saving now
+    stopping.current = true;
+    // Show it
+    setStage("saving");
+    // Keep it
+    await keep(held);
+  }, [keep]);
+
+  // A discarded take is let go after a few seconds, and the screen is ready for another go
+  useEffect(() => {
+    // Only while showing the undo
+    if (stage !== "discarded") return;
+    // After the undo window
+    const timer = setTimeout(() => {
+      // Let the take go
+      discarded.current = null;
+      // Ready again
+      setStage("ready");
+    }, UNDO_MS);
+    // Cancel if the stage changes first
+    return () => clearTimeout(timer);
+  }, [stage]);
+
+  // Pause: stop the clock, the audio and the listening, keeping everything so far (decision 77)
+  const pause = useCallback(async () => {
+    // What is running
+    const current = live.current;
+    // Nothing to pause, or already paused
+    if (!current || current.pausedAt) return;
+    // Stop the clock
+    clearInterval(current.timer);
+    // Note when
+    current.pausedAt = clock();
+    // Pause the audio
+    current.capture.pause?.();
+    // The listener in use
+    const listener = current.transcriber;
+    // Swap in a silent stand-in, so a stop while paused does not stop it twice
+    current.transcriber = { start: () => {}, stop: async () => "" };
+    // Shown as paused straight away
+    setPaused(true);
+    // Keep its words
+    current.earlier = joinWords(current.earlier, await listener.stop());
+    // Show them as settled
+    setText({ final: current.earlier, interim: "" });
+  }, [clock]);
+
+  // Resume: carry on from where it paused
+  const resume = useCallback(() => {
+    // What is running
+    const current = live.current;
+    // Nothing paused
+    if (!current || !current.pausedAt) return;
+    // Move the start on by the paused time, so the clock and the length skip it
+    current.startedAt = new Date(current.startedAt.getTime() + (clock().getTime() - current.pausedAt.getTime()));
+    // No longer paused
+    current.pausedAt = null;
+    // Carry on recording audio
+    current.capture.resume?.();
+    // A fresh listener, its words added after the earlier ones
+    const listener = services.createTranscriber();
+    // Use it
+    current.transcriber = listener;
+    // Start listening
+    listener.start(current.onWords, (problem) => void fail(problem));
+    // Restart the clock
+    current.timer = setInterval(current.tick, LOUDNESS_TICK_MS);
+    // Shown as recording
+    setPaused(false);
+  }, [clock, fail, services]);
+
+  // This screen's step of today's practice, when it is one (checked against the page, so a stale step number never skips the wrong step)
+  const thisStep = plan && planStep ? plan.steps[planStep - 1] : undefined;
+  // Only a speaking step can be put off ("Can't speak now?" is about speaking)
+  const skippable = !!thisStep && thisStep.kind === "session" && thisStep.mode === mode && thisStep.promptId === promptId && !retryOf;
+
+  // "Can't speak now?": put this step off for today (not done, just not offered next) and go on to the next open step, or back to Today (decision 77)
+  const skipForToday = useCallback(async () => {
+    // Nothing to skip
+    if (!plan || !thisStep) return;
+    // Remember it for today
+    await skipStepToday(repo, thisStep, clock());
+    // Which steps are now put off, counting this one
+    const skipped = plan.steps.map((step, index) => plan.skipped[index] || stepKey(step) === stepKey(thisStep));
+    // The next step neither done nor put off
+    const next = nextStepIndex(plan.done, skipped);
+    // Go there, or back to Today when none is left
+    navigate(next === -1 ? "/" : planHref(plan.steps[next]!, next + 1));
+  }, [clock, navigate, plan, repo, thisStep]);
 
   // Before the first ever recording, find out whether the browser will ask for the microphone
   useEffect(() => {
@@ -892,6 +1030,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
   // Start this kind of session: the countdown or thinking time if it has one, otherwise recording; the explanation first if needed
   const begin = useCallback(() => {
+    // A new take lets any discarded one go
+    discarded.current = null;
+    // Timing tones, if switched on: get the sound ready now, during the tap
+    if (readTimingTones() && services.createCuePlayer) {
+      // Make the player once
+      cues.current ??= services.createCuePlayer();
+      // Wake its sound
+      cues.current.prime();
+    }
     // The start itself: a small-talk question is asked aloud first, a Table Topic or prepared speech counts down, anything else records
     const go = smallTalk ? () => void ask(smallTalk.question) : think > 0 ? beginThinking : () => void start();
     // The first ever recording: explain the microphone, and start once it is allowed
@@ -905,7 +1052,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     }
     // Otherwise start now
     go();
-  }, [ask, beginThinking, needsPrimer, smallTalk, start, think]);
+  }, [ask, beginThinking, needsPrimer, services, smallTalk, start, think]);
 
   // From the explanation: let the browser ask now, then start
   const allowMicrophone = useCallback(async () => {
@@ -1001,6 +1148,24 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
   // Name the tab after it
   usePageTitle(title);
+  // The timing light now, while recording (off otherwise)
+  const signal = recording && hasLight ? timeSignal(mode, elapsed, goalSeconds, promptId) : "none";
+  // A tone (and a buzz, where the phone allows) when the light first comes on and at red, if switched on (decision 77)
+  useEffect(() => {
+    // The cue for this change, if any
+    const cue = timingCue(lastSignal.current, signal);
+    // Remember the light
+    lastSignal.current = signal;
+    // Play it (nothing happens unless tones were switched on at the start)
+    if (cue) cues.current?.play(cue);
+  }, [signal]);
+  // Let the sound go when the screen closes
+  useEffect(() => () => {
+    // Close the player, if one was made
+    cues.current?.close();
+    // Forget it
+    cues.current = null;
+  }, []);
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "smalltalk" ? `space to hear ${unit ? "them" : "the question"}` : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
@@ -1046,45 +1211,66 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         {(script || smallTalk) && !busy && <span className="pointer-fine:hidden md:hidden">{lengthText}</span>}
       </Masthead>
       {/* Inside today's practice, which step this is */}
-      {planStep && <p className="mt-3 text-footnote font-medium text-accent">Today’s practice · step {planStep}{planTotal ? ` of ${planTotal}` : ""}</p>}
+      {planStep && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 text-footnote">
+          {/* The step */}
+          <p className="font-medium text-accent">Today’s practice · step {planStep}{plan ? ` of ${plan.steps.length}` : ""}</p>
+          {/* Before speaking: a way to put the step off without it counting as done (decision 77) */}
+          {skippable && !busy && <button type="button" onClick={() => void skipForToday()} aria-label="Can’t speak now? Skip this step for today" className={`${TEXT_LINK} text-ink-muted`}>Can’t speak now?</button>}
+        </div>
+      )}
 
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Margin: time, length, prompt reminder, discard */}
-        <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${(script || smallTalk) && !busy ? "hidden" : "flex"}`}>
-          {/* The clock, large (while recording it sits inside the voice shape instead) */}
-          {!recording && <p className={`font-display font-semibold text-ink tabular-nums ${thinking ? "text-prompt-xl" : "text-statement"}`}>{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>}
-          {/* While recording: a plain, pulsing marker that says so */}
-          {recording && (
-            <p role="status" aria-label="Recording" className="flex items-center gap-2 font-semibold text-warm">
-              {/* The warm dot (breathes only when motion is welcome) */}
-              <span aria-hidden="true" className="inline-block size-3 rounded-full bg-warm motion-safe:animate-breathe" />
-              {/* The word */}
-              Recording
-            </p>
-          )}
-          {/* The length to aim for, or what the countdown is for */}
-          <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : mode === "free" ? "no time limit" : `of ${lengthText}`}</p>
-          {/* During a Table Topic or Record Response, the timing light */}
-          {recording && hasLight && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds, promptId)} mode={mode} promptId={promptId} />}
-          {/* Prompt reminder while recording */}
-          {recording && prompt && !smallTalk && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
+        <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${(script || smallTalk) && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
+          {/* The clock, large, only while thinking about a prepared speech (a Table Topic counts down in the shape; while recording the clock is in the shape; decision 77) */}
+          {thinking && mode !== "talk" && <p className="font-display text-prompt-xl font-semibold text-ink tabular-nums">{formatClock(Math.ceil(thinkLeft))}</p>}
+          {/* The length to aim for, or what the countdown is for (the countdown's own words are in the shape) */}
+          {!(thinking && mode === "talk") && <p className={`mt-1 ${recording ? "max-md:hidden" : ""}`}>{thinking ? "to think" : mode === "talk" ? `aim for ${lengthText}` : mode === "free" ? "no time limit" : `of ${lengthText}`}</p>}
           {/* A lesson keeps its tip in view while speaking */}
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
           {recording && angles.length > 0 && <Hints angles={angles} compact />}
-          {/* Push discard down */}
+          {/* Push the way out down */}
           <div className="hidden flex-1 md:block" />
-          {/* Discard while recording */}
-          {(recording || thinking) && (
+          {/* Leave while thinking (while recording, Pause and Discard sit by the shape) */}
+          {thinking && (
             <button type="button" onClick={() => void discard()} className={`${QUIET} mt-4 self-start md:mb-10`}>
-              {thinking ? "Leave without speaking" : "Discard this one"}
+              Leave without speaking
             </button>
           )}
         </aside>
 
         {/* Main column */}
         <div className="flex flex-1 flex-col">
+          {/* While recording: one status line (recording or paused, and the timing words), the question, and, beside text to read, the controls (decision 77) */}
+          {recording && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {/* Recording or paused */}
+              <p role="status" aria-label={paused ? "Paused" : "Recording"} className="flex items-center gap-2 text-footnote font-semibold text-warm">
+                {/* The warm dot (breathes only while recording and when motion is welcome) */}
+                <span aria-hidden="true" className={`inline-block size-3 rounded-full bg-warm ${paused ? "" : "motion-safe:animate-breathe"}`} />
+                {/* The word */}
+                {paused ? "Paused" : "Recording"}
+              </p>
+              {/* The timing words, or (without a light, on a phone, where the margin moves below) the length to aim for */}
+              {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? lengthText : `aim for ${lengthText}`}</span>}
+            </div>
+          )}
+          {/* The question being answered, above the shape */}
+          {recording && prompt && !smallTalk && !script && <p className="mt-3 max-w-[30ch] font-display text-cue font-semibold tracking-tight">{prompt.text}</p>}
+          {/* Beside text to read, the controls sit at the top (the shape floats in the corner) */}
+          {recording && script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
+          {/* A discarded take, which can be brought back for a few seconds */}
+          {stage === "discarded" && (
+            <div role="status" className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 md:mt-0">
+              {/* What happened */}
+              <span className="min-w-0 flex-1">Take discarded.</span>
+              {/* Bring it back */}
+              <button type="button" onClick={() => void undoDiscard()} className={SECONDARY}>Undo</button>
+            </div>
+          )}
           {/* A problem, explained plainly (first in the column, so a phone shows it above any text to read) */}
           {problem && <p role="alert" className="mt-6 max-w-[48ch] text-lede md:mt-0">{PROBLEM_TEXT[problem]}</p>}
           {/* A blocked microphone: how to allow it on each kind of device, then try again */}
@@ -1140,7 +1326,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Pause for a second at each ‖.</p>}
               {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
               {!textHidden && (
-<ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
+<ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed max-md:pr-20`} />
               )}
             </>
           )}
@@ -1254,9 +1440,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {recording && (
             <>
               {/* The live voice shape, with the clock inside */}
-              <VoiceBlob levels={levels} signal={hasLight ? timeSignal(mode, elapsed, goalSeconds, promptId) : "none"} clock={formatClock(elapsed)} onStop={() => void stop()} compact={!!script} />
-              {/* Words so far (not while reading: the text itself is on screen) */}
-              {(!script || textHidden) && <div className="mt-8"><LiveWords text={text} /></div>}
+              <VoiceBlob levels={levels} signal={signal} clock={formatClock(elapsed)} onStop={() => void stop()} compact={!!script} paused={paused} />
+              {/* Pause and discard, under the shape */}
+              {!script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
+              {/* Words so far, the latest few lines, older ones fading (not while reading: the text itself is on screen) */}
+              {(!script || textHidden) && <div className="mt-6 flex max-h-[3.7em] flex-col justify-end overflow-hidden text-cue [mask-image:linear-gradient(to_bottom,transparent,black_45%)]"><LiveWords text={text} /></div>}
             </>
           )}
 
@@ -1268,8 +1456,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* Saving failed */}
           {stage === "save-failed" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
           {/* The one action for this stage, on the voice shape (the bottom band went with decision 75): large in the column, or small in the corner beside text to read */}
-          {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || (problem && problem !== "speech-unsupported")) && (
-            <StartBlob compact={!!script} onStart={begin} label={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : lengthText} />
+          {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
+            <StartBlob compact={!!script} onStart={begin} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : lengthText} />
           )}
           {/* Thinking about a Record Response: start speaking early */}
           {thinking && mode === "response" && <StartBlob compact={!!script} onStart={() => void start()} label="Ready" detail="start speaking" />}

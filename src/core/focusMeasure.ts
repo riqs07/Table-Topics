@@ -8,9 +8,15 @@ import { findPauses } from "@/core/pauses";
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the session record type
 import type { SessionRecord } from "@/data/records";
+// Load the short-take wording and the kinds of result number
+import { countPhrase, fillerPhrase, isShortTake, type ResultKind } from "@/core/resultNumbers";
 
 // One measurable number for a focus
 export interface FocusMeasure {
+  // Which result number it is, so the page shows it once (decision 77)
+  kind: ResultKind;
+  // The number in words for a short take, as a count rather than a rate (decision 77); missing where a rate stays fair
+  short?: (session: SessionRecord) => string | null;
   // Words that follow the number, like "fillers a minute"
   unit: string;
   // Reads the number from a session, or null when the session cannot give it
@@ -23,6 +29,10 @@ export interface FocusMeasure {
 
 // Filler week: fillers a minute, one decimal place
 const FILLERS: FocusMeasure = {
+  // The fillers number
+  kind: "fillers",
+  // A count over a short take
+  short: fillerPhrase,
   // Unit words
   unit: "fillers a minute",
   // Read the filler rate
@@ -35,6 +45,8 @@ const FILLERS: FocusMeasure = {
 
 // Pace week: words a minute, whole numbers
 const PACE: FocusMeasure = {
+  // The speed number
+  kind: "speed",
   // Unit words
   unit: "words a minute",
   // Read the speaking speed
@@ -47,6 +59,10 @@ const PACE: FocusMeasure = {
 
 // Pausing week: pauses a minute, from the loudness readings, one decimal place
 const PAUSES: FocusMeasure = {
+  // The pauses number
+  kind: "pauses",
+  // A count over a short take, when loudness was kept
+  short: (session) => (session.loudness ? countPhrase(findPauses(session.loudness, LOUDNESS_TICK_MS).count, "pause", session.durationSec) : null),
   // Unit words
   unit: "pauses a minute",
   // Count pauses, or nothing for sessions saved before loudness was kept
@@ -77,8 +93,16 @@ export function headlineFor(session: SessionRecord): string | null {
   const value = measure?.read(session) ?? null;
   // No number: no headline
   if (!measure || value === null) return null;
+  // A short take: a count, where the measure has one
+  const short = isShortTake(session) ? (measure.short?.(session) ?? null) : null;
   // Otherwise the number and its unit
-  return `${measure.format(value)} ${measure.unit}.`;
+  return short ? `${short}.` : `${measure.format(value)} ${measure.unit}.`;
+}
+
+// Which result number the headline already gives, so the tiles leave it out (null when there is no headline)
+export function headlineKind(session: SessionRecord): ResultKind | null {
+  // The focus's measure, when it gives a headline
+  return headlineFor(session) ? (measureFor(session.focus)?.kind ?? null) : null;
 }
 
 // The headline sentence on the Retry result screen

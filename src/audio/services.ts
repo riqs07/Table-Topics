@@ -1,5 +1,8 @@
 // The recording pieces the screen depends on, described as small contracts so tests can swap in fakes
 
+// Load the timing tone player type
+import type { CuePlayer } from "@/audio/timingTones";
+
 // Why recording had to stop
 export type RecordingProblem =
   // The browser or the user blocked the microphone
@@ -33,6 +36,10 @@ export interface AudioCapture {
   level(): number;
   // Stop recording and hand back the audio
   stop(): Promise<Blob>;
+  // Pause and resume the recording, where the browser can (decision 77)
+  pause?(): void;
+  // Carry on after a pause
+  resume?(): void;
 }
 
 // Whether the browser already lets this site use the microphone ("unknown" when it cannot say)
@@ -54,4 +61,6 @@ export interface RecordingServices {
   createTranscriber(): LiveTranscriber;
   // Start recording audio from the microphone
   createCapture(stream: MediaStream): AudioCapture;
+  // Make a player for timing tones (optional: without it, the light is only seen; decision 77)
+  createCuePlayer?(): CuePlayer;
 }

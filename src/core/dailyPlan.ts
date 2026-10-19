@@ -335,6 +335,26 @@ export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyAr
   });
 }
 
+// A step's key, the same all day: its kind, its kind of session and what it uses
+export function stepKey(step: PlanStep): string {
+  // Joined with colons
+  return `${step.kind}:${step.mode ?? ""}:${step.promptId}`;
+}
+
+// Which steps were put off today with "Can't speak now?" (a skip from another day counts for nothing; decision 77)
+export function planSkipped(plan: ReadonlyArray<PlanStep>, skipped: { day: string; steps: ReadonlyArray<string> } | undefined, day: Date): boolean[] {
+  // Today's skips only
+  const today = skipped && skipped.day === dayKey(day) ? skipped.steps : [];
+  // Each step
+  return plan.map((step) => today.includes(stepKey(step)));
+}
+
+// The next step to offer: the first neither done nor put off today (-1 when none is left)
+export function nextStepIndex(done: ReadonlyArray<boolean>, skipped: ReadonlyArray<boolean>): number {
+  // The first open one
+  return done.findIndex((isDone, index) => !isDone && !skipped[index]);
+}
+
 // Speaking minutes plus listening back (about the same again; a card or a round of scenarios has nothing to hear back): the time the plan takes
 export function planMinutes(plan: ReadonlyArray<PlanStep>): number {
   // Twice the speaking time for a session, once otherwise

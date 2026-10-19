@@ -40,7 +40,7 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   // Open the optional notes
   await page.getByText("Add your notes").click();
   // Tap a tag
-  await page.getByRole("button", { name: "Fillers" }).click();
+  await page.getByRole("button", { name: "Fillers", exact: true }).click();
   // Note what to change
   await page.getByLabel("Anything else? (optional)").fill("Start without the um");
   // Save

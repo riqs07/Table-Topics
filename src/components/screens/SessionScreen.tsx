@@ -2,12 +2,12 @@
 // One saved session: the Feedback screen for a first try, or the Retry result screen for a retry
 
 // Load React's state and effect tools
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { RowButton, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, RowButton, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 import { Player } from "@/components/script/Player";
 // Load the shared screen starting points
@@ -32,13 +32,15 @@ import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the comparison of notes with the numbers
 import { compareNotes } from "@/core/notesCheck";
 // Load the sentence helpers
-import { dayLabel, formatRate } from "@/core/copy";
+import { dayLabel } from "@/core/copy";
 // Load the findings from word times
 import { marksPaused, marksSentence, paceAcross } from "@/core/wordTiming";
 // Load the script splitter, to place the pause marks among the timed words
 import { readingTokens } from "@/core/liveReading";
 // Load the compact row of numbers
-import { resultChanges, resultNumbers } from "@/core/resultNumbers";
+import { fillerCount, fillerPhrase, resultChanges, resultNumbers, type ResultKind } from "@/core/resultNumbers";
+// Load what a take answered
+import { answeredPrompt } from "@/core/answeredPrompt";
 // Load the count-up rules and the hook that runs them
 import { countUpValue } from "@/core/countUp";
 // Load the check for which planned points were said
@@ -61,9 +63,9 @@ import { localChange } from "@/core/localChange";
 // Load the section splitter, for rehearsals of one section
 import { talkSections } from "@/core/eventPrep";
 // Load the Table Topics timing sentence
-import { LOUDNESS_TICK_MS, speakingWindow, timingSentence } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, formatClock, speakingWindow, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
-import { headlineFor, retryHeadline } from "@/core/focusMeasure";
+import { headlineFor, headlineKind, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
 import { BOOKENDS, promptForDay } from "@/content/prompts";
 // Load the lookup for every text to read, full speeches included
@@ -129,22 +131,32 @@ interface Loaded {
   qaIndex: number | null;
 }
 
-// The transcript with fillers marked quietly
-function Transcript({ text }: { text: string }) {
+// The transcript with fillers marked quietly; given the times each word was heard and a way to play, each filler plays its moment when tapped (decision 77)
+function Transcript({ text, times = null, onPlay = null }: { text: string; times?: ReadonlyArray<number> | null; onPlay?: ((seconds: number) => void) | null }) {
+  // The pieces, fillers marked
+  const pieces = markFillers(text);
+  // Where each piece starts in the text
+  const starts = pieces.map((_, index) => pieces.slice(0, index).reduce((sum, piece) => sum + piece.text.length, 0));
   // Draw each piece, marking fillers
   return (
     <p className="text-running">
       {/* One span per piece */}
-      {markFillers(text).map((piece, index) =>
-        // Fillers as a soft highlight (not an underline, which reads as a link), everything else plain
-        piece.filler ? <mark key={index} className="bg-filler/15 px-0.5 text-filler">{piece.text}</mark> : <span key={index}>{piece.text}</span>,
-      )}
+      {pieces.map((piece, index) => {
+        // Plain words
+        if (!piece.filler) return <span key={index}>{piece.text}</span>;
+        // When this filler was heard: the time of its first word (the words before it, counted the way the times were saved)
+        const at = times?.[text.slice(0, starts[index]).split(/\s+/).filter((word) => word !== "").length];
+        // With a time and a recording: a soft highlight that plays from just before it
+        if (onPlay && typeof at === "number") return <button key={index} type="button" onClick={() => onPlay(at)} aria-label={`Play “${piece.text}” at ${formatClock(Math.floor(at))}`} className="rounded bg-filler/15 px-0.5 text-filler underline decoration-dotted underline-offset-4 hover:bg-filler/25">{piece.text}</button>;
+        // Otherwise a soft highlight (not an underline, which reads as a link)
+        return <mark key={index} className="bg-filler/15 px-0.5 text-filler">{piece.text}</mark>;
+      })}
     </p>
   );
 }
 
 // A player for a session's saved audio (draws nothing if the audio is gone)
-function Playback({ repo, session }: { repo: Repository; session: SessionRecord }) {
+function Playback({ repo, session, onAudio }: { repo: Repository; session: SessionRecord; onAudio?: (element: HTMLAudioElement | null) => void }) {
   // The audio's address
   const url = useAudioUrl(repo, session.audioKey).url;
   // Nothing to play
@@ -155,7 +167,7 @@ function Playback({ repo, session }: { repo: Repository; session: SessionRecord 
       {/* Small heading */}
       <p className="text-footnote text-ink-muted">{session.isBaseline ? "Your first recording, the one progress is measured against" : "Listen back"}</p>
       {/* The player */}
-      <div className="mt-2"><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} /></div>
+      <div className="mt-2"><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} onAudio={onAudio} /></div>
     </div>
   );
 }
@@ -163,11 +175,11 @@ function Playback({ repo, session }: { repo: Repository; session: SessionRecord 
 // One line of numbers for a take, such as "Day 1: 4.2 fillers a minute, 172 words a minute."
 function takeNumbers(day: number, session: SessionRecord): string {
   // Day, filler rate, and speed
-  return `Day ${day}: ${formatRate(session.fillersPerMinute)} fillers a minute, ${Math.round(session.wordsPerMinute)} words a minute.`;
+  return `Day ${day}: ${fillerPhrase(session)}, ${Math.round(session.wordsPerMinute)} words a minute.`;
 }
 
 // Then and now: an earlier day's recording of the same prompt beside this one, with a button to hear them in turn
-function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; then: SessionRecord; now: SessionRecord; thenDay: number; nowDay: number }) {
+function ThenAndNow({ repo, then, now, thenDay, nowDay, onNowAudio }: { repo: Repository; then: SessionRecord; now: SessionRecord; thenDay: number; nowDay: number; onNowAudio?: (element: HTMLAudioElement | null) => void }) {
   // The earlier audio's address
   const thenUrl = useAudioUrl(repo, then.audioKey).url;
   // This session's audio address
@@ -212,7 +224,7 @@ function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; th
       {/* This take */}
       <p className="mt-3 text-footnote">{takeNumbers(nowDay, now)}</p>
       {/* Its player */}
-      {nowUrl && <div className="mt-1"><Player src={nowUrl} label={`Your recording from day ${nowDay}`} name={`day ${nowDay}`} durationSec={now.durationSec} onAudio={(element) => { nowPlayer.current = element; }} /></div>}
+      {nowUrl && <div className="mt-1"><Player src={nowUrl} label={`Your recording from day ${nowDay}`} name={`day ${nowDay}`} durationSec={now.durationSec} onAudio={(element) => { nowPlayer.current = element; onNowAudio?.(element); }} /></div>}
       {/* Hear both in turn */}
       {thenUrl && nowUrl && (
         <button type="button" onClick={playBoth} className={`${SECONDARY} mt-3`}>
@@ -242,23 +254,45 @@ function MarkedPassage({ check }: { check: ReadingCheck }) {
   );
 }
 
-// The numbers as tiles: fillers, speed, length, and pauses when measured, each counting up into place (decision 69)
-function NumbersRow({ session, pauseCount }: { session: SessionRecord; pauseCount: number | null }) {
+// Columns by how many tiles there are: up to three share a row on any phone, four go two by two until there is room for one row
+const TILE_COLUMNS: Readonly<Record<number, string>> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-2 min-[400px]:grid-cols-4" };
+
+// The numbers as tiles: fillers, speed, length, and pauses when measured, each counting up into place (decision 69); each number once, counts on a short take, and the fillers tile shows where they were (decision 77)
+function NumbersRow({ session, pauseCount, leaveOut, onShowFillers }: { session: SessionRecord; pauseCount: number | null; leaveOut: ReadonlyArray<ResultKind>; onShowFillers: (() => void) | null }) {
   // How far the count has got
   const progress = useCountUp();
+  // The numbers to show
+  const numbers = resultNumbers(session, pauseCount, { counts: true, leaveOut });
+  // Nothing left to show
+  if (numbers.length === 0) return null;
   // One tile per number, the number large and its words small beneath
   return (
-    <section aria-label="Your numbers" className="mt-4 grid grid-cols-2 gap-2 motion-safe:animate-rise min-[400px]:grid-cols-4" style={{ animationDelay: "220ms" }}>
+    <section aria-label="Your numbers" className={`mt-4 grid gap-2 motion-safe:animate-rise ${TILE_COLUMNS[numbers.length] ?? "grid-cols-2"}`} style={{ animationDelay: "220ms" }}>
       {/* Each number */}
-      {resultNumbers(session, pauseCount).map((item) => (
-        // One tile
-        <div key={item.label} className="min-w-0 rounded-2xl bg-card px-3 pt-3 pb-2.5">
-          {/* The number, counting up */}
-          <p className="font-display text-cue font-semibold tabular-nums">{countUpValue(item.value, progress)}</p>
-          {/* Its words */}
-          <p className="text-footnote leading-tight text-ink-muted">{item.label}</p>
-        </div>
-      ))}
+      {numbers.map((item) => {
+        // The number and its words
+        const body = (
+          <>
+            {/* The number, counting up */}
+            <span className="block font-display text-cue font-semibold tabular-nums">{countUpValue(item.value, progress)}</span>
+            {/* Its words */}
+            <span className="block text-footnote leading-tight text-ink-muted">{item.label}</span>
+          </>
+        );
+        // Fillers, when there were some: a button that shows them in what was said
+        if (item.kind === "fillers" && onShowFillers && fillerCount(session) > 0) {
+          // The tile as a button, with a small "show" under the words
+          return (
+            <button key={item.kind} type="button" onClick={onShowFillers} aria-label={`${item.value} ${item.label}: show where`} className={`min-w-0 rounded-2xl bg-card px-3 pt-3 pb-2.5 text-left hover:bg-paper ${PRESS}`}>
+              {body}
+              {/* Where it leads */}
+              <span aria-hidden="true" className="mt-1 block text-footnote font-semibold text-accent">Show where</span>
+            </button>
+          );
+        }
+        // Any other number: a plain tile
+        return <div key={item.kind} className="min-w-0 rounded-2xl bg-card px-3 pt-3 pb-2.5">{body}</div>;
+      })}
     </section>
   );
 }
@@ -366,6 +400,37 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const bookendOutcome = bookend ? bookendResult(bookend.part, session) : null;
   // Whether the transcript is open on a phone (it is always shown on a computer)
   const [showTranscript, setShowTranscript] = useState(false);
+  // This take's audio element, for playing a filler's moment (decision 77)
+  const audio = useRef<HTMLAudioElement | null>(null);
+  // The transcript block, brought into view when the fillers are asked for
+  const transcriptBlock = useRef<HTMLDivElement | null>(null);
+  // Whether a filler can play its moment: the recording is kept and each word's time was saved
+  const canPlay = !!session.audioKey && !!session.spokenTimes && session.spokenTimes.length > 0;
+  // Play from a second before a moment
+  const playAt = useCallback((seconds: number) => {
+    // The player's audio
+    const element = audio.current;
+    // Nothing to play
+    if (!element) return;
+    // Just before it, for context
+    element.currentTime = Math.max(0, seconds - 1);
+    // Play (the browser may refuse, which is fine)
+    void element.play().catch(() => {});
+  }, []);
+  // Show the fillers in what was said: open the transcript, then bring it into view and move focus to it
+  const showFillers = useCallback(() => {
+    // Open it on a phone
+    setShowTranscript(true);
+    // Once drawn
+    setTimeout(() => {
+      // The block
+      const block = transcriptBlock.current;
+      // Into view, without motion when it is unwelcome
+      block?.scrollIntoView?.({ block: "start", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      // Focus, so a screen reader goes there too
+      block?.focus({ preventScroll: true });
+    }, 0);
+  }, []);
   // The page title for this kind of session
   const title = warmup ? "Warm-up" : talk ? "Table Topic" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : smallTalk ? "Small talk" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared speech" : session.mode === "free" ? "Free talk" : session.mode === "outline" ? "Short speech" : timed ? "Your answer" : "Your take";
   // Name the tab after it
@@ -382,6 +447,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const home = sessionHome(session.mode, session.promptId, plan !== null);
   // For one part of a full speech: the speech, and the part read
   const speechPart = session.mode === "read" ? partOf(session.promptId) : undefined;
+  // What it answered, shown first (decision 77)
+  const asked = answeredPrompt(session);
+  // The number the headline already gives (only where the focus headline is shown), so its tile is left out
+  const shownHeadline = !reading && !bookendOutcome && !smallTalk ? headlineKind(session) : null;
   // Draw the page
   return (
     <>
@@ -390,23 +459,23 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
       {/* Notes column and transcript column on a computer (the notes lead and take the wide column; the transcript sits beside them, decision 65) */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[minmax(0,1fr)_320px] md:gap-14 md:pt-8">
         {/* The transcript (the narrow right column on a computer, opened on demand on a phone) */}
-        <div className={`${showTranscript ? "mt-6" : "hidden"} md:order-2 md:mt-0 md:block`}>
-          {/* Small heading */}
-          <p className="text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}</p>
+        <div ref={transcriptBlock} tabIndex={-1} role="region" aria-label="What you said" className={`${showTranscript ? "mt-6" : "hidden"} scroll-mt-6 outline-none md:order-2 md:mt-0 md:block`}>
+          {/* Small heading, saying how to hear a filler when that works */}
+          <p className="text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}{!reading && canPlay && fillerCount(session) > 0 && <span className="block text-footnote">Tap a marked filler to hear it.</span>}</p>
           {/* The words: the passage marked for a reading, otherwise the transcript */}
-          <div className="mt-3 max-w-[46ch]">{reading ? <MarkedPassage check={reading} /> : <Transcript text={session.transcript} />}</div>
+          <div className="mt-3 max-w-[46ch]">{reading ? <MarkedPassage check={reading} /> : <Transcript text={session.transcript} times={session.spokenTimes} onPlay={canPlay ? playAt : null} />}</div>
           {/* For a reading, what the marks mean */}
           {reading && <p className="mt-3 max-w-[46ch] text-footnote text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.{reading.stoppedEarly ? " Dimmed words come after where you stopped." : ""}</p>}
         </div>
         {/* The notes (first on a phone, the wide left column on a computer) */}
         <aside className="order-first flex flex-1 flex-col md:order-1 md:max-w-xl">
-          {/* For a Q&A answer, the question it answered */}
-          {qa && session.question && (
+          {/* What it answered: the topic, prompt or question (decision 77) */}
+          {asked && (
             <div className="mt-5 md:mt-0 md:mb-5">
               {/* Small heading */}
-              <p className="text-footnote text-ink-muted">The question</p>
-              {/* The question itself */}
-              <p className="mt-1 font-display text-cue">{session.question}</p>
+              <p className="text-footnote text-ink-muted">{asked.label}</p>
+              {/* The words themselves */}
+              <p className="mt-1 max-w-[40ch] font-display text-cue">{asked.text}</p>
             </div>
           )}
           {/* The focus number as a sentence (or the focus's name when no number measures it) */}
@@ -431,8 +500,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             <SmallTalkBeats session={session} />
           ) : (
             // The focus number as a sentence, when one measures it (otherwise the one change leads)
-            headlineFor(session) ? <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{headlineFor(session)}</h1> : <h1 className="sr-only">{title}</h1>
+            headlineFor(session) ? <h1 className={`font-display text-3xl font-semibold tracking-tight ${asked ? "mt-4" : "mt-5 md:mt-0"}`}>{headlineFor(session)}</h1> : <h1 className="sr-only">{title}</h1>
           )}
+          {/* When the headline is the fillers (so no fillers tile below), the way to see where they were */}
+          {shownHeadline === "fillers" && fillerCount(session) > 0 && !reading && <p><button type="button" onClick={showFillers} className={`${TEXT_LINK} text-footnote`}>Show where</button></p>}
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
           <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
             {/* The pill that names it, and where it comes from until the coach's note arrives */}
@@ -462,12 +533,14 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
               </>
             )}
           </div>
+          {/* A short speech's points, right under the change: the answer people look for first (decision 77) */}
+          <OutlinePoints session={session} />
           {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
           {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this session."}</p>}
           {/* Listen back, right under the change (decision 67) */}
-          {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} /> : <Playback repo={repo} session={session} />}
+          {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} onNowAudio={(element) => { audio.current = element; }} /> : <Playback repo={repo} session={session} onAudio={(element) => { audio.current = element; }} />}
           {/* The numbers together */}
-          {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} />}
+          {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} leaveOut={[...(shownHeadline ? [shownHeadline] : []), ...(timed ? (["length"] as const) : [])]} onShowFillers={reading ? null : showFillers} />}
           {/* (The pause count is in the numbers row; the longer pause sentence and the "no number measures this" line were cut, decision 63) */}
           {/* Which pause marks had a pause */}
           {marks && <p className="mt-2 text-footnote text-ink-muted">{marks}</p>}
@@ -477,8 +550,6 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {timed && <LengthRing session={session} />}
           {/* After a short speech, how the timing went against its length, and which points were heard */}
           {session.mode === "outline" && session.outline && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, session.outline.goalMinutes * 60)}</p>}
-          {/* The planned points */}
-          <OutlinePoints session={session} />
           {/* After a rehearsal with a goal, how the timing went */}
           {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
           {/* The user's own notes, once added (decision 67: after the feedback, never before it) */}

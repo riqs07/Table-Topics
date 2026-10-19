@@ -17,7 +17,7 @@ import { makeSession, makeTalk } from "../support/fixtures";
 // Load the passphrase storage
 import { savePassphrase } from "@/data/passphrase";
 // Load the daily prompt picker and the pause drills
-import { PAUSE_DRILLS, promptForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, TABLE_TOPICS, promptForDay } from "@/content/prompts";
 // Load the script splitter
 import { readingTokens, scriptWords } from "@/core/liveReading";
 
@@ -104,15 +104,73 @@ describe("SessionScreen", () => {
   });
 
   // The numbers sit together in one compact row
-  it("shows the numbers together in one row", async () => {
-    // A 2:14 session
+  it("shows the numbers together in one row, each once", async () => {
+    // A 2:14 session in filler week
     const session = makeSession({ id: "s1", fillersPerMinute: 2.4, wordsPerMinute: 128, durationSec: 134, feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
     // The row
     const row = within(await screen.findByRole("region", { name: "Your numbers" }));
-    // Confirm each number with its label
-    expect([!!row.getByText("2.4"), !!row.getByText("fillers a minute"), !!row.getByText("128"), !!row.getByText("2:14")]).toEqual([true, true, true, true]);
+    // Confirm speed and length in the row, and the fillers only in the headline (decision 77)
+    expect([!!row.getByText("128"), !!row.getByText("2:14"), row.queryByText("fillers a minute"), screen.getByRole("heading", { level: 1 }).textContent]).toEqual([true, true, null, "2.4 fillers a minute."]);
+  });
+
+  // A short Table Topic: the topic it answered, a count rather than a rate, and the length only beside the ring (decision 77)
+  it("shows a short take's topic, counts and each number once", async () => {
+    // An 11-second Table Topic with two fillers
+    const session = makeSession({ id: "s1", mode: "talk", promptId: TABLE_TOPICS[0]!.id, fillersPerMinute: (2 * 60) / 11, wordsPerMinute: 120, durationSec: 11, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // The headline
+    const headline = await screen.findByRole("heading", { level: 1 });
+    // The row
+    const row = within(screen.getByRole("region", { name: "Your numbers" }));
+    // Confirm the topic, the count, and a row with the speed but neither fillers nor length
+    expect([!!screen.getByText(TABLE_TOPICS[0]!.text), headline.textContent, !!row.getByText("120"), row.queryByText("0:11"), row.queryByText(/fillers/)]).toEqual([true, "2 fillers in 11 seconds.", true, null, null]);
+  });
+
+  // "Show where" opens what was said, and a marked filler plays its moment (decision 77)
+  it("shows where the fillers were and plays one", async () => {
+    // Stand in for the browser's object URLs
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:take"), revokeObjectURL: vi.fn() });
+    // Stand in for playing (jsdom cannot play sound)
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    // A take with audio and word times: "So" at 1.0 s, "um" at 4.0 s
+    const session = makeSession({ id: "s1", audioKey: "s1", transcript: "So um I went home", spokenTimes: [1, 4, 4.5, 5, 5.5], fillersPerMinute: 1, durationSec: 60, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Repository holding it and its audio
+    const repository = await repositoryWith(session);
+    // Save the audio
+    await repository.saveAudio("s1", new Blob(["sound"], { type: "audio/webm" }));
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // The transcript starts closed on a phone
+    const block = await screen.findByRole("region", { name: "What you said", hidden: true });
+    // Closed at first
+    const closed = block.className.includes("hidden");
+    // Ask where the fillers were (the headline gives the fillers, so the link sits under it)
+    await userEvent.click(await screen.findByRole("button", { name: "Show where" }));
+    // Wait for the player, then tap the filler
+    await screen.findByRole("button", { name: /Play your recording/ });
+    // Tap it
+    await userEvent.click(screen.getByRole("button", { name: "Play “um” at 0:04" }));
+    // The audio element
+    const audio = document.querySelector("audio")!;
+    // Confirm it opened, and played from a second before
+    expect([closed, block.className.includes("hidden"), play.mock.calls.length, audio.currentTime]).toEqual([true, false, 1, 3]);
+    // Put playing back
+    play.mockRestore();
+  });
+
+  // A short speech's points come straight after the one change, before the numbers (decision 77)
+  it("puts a short speech's points under the one change", async () => {
+    // A short speech
+    const session = makeSession({ id: "s1", mode: "outline", promptId: "outline", outline: { topic: "Why walk", points: ["Health", "Calm"], goalMinutes: 2 }, transcript: "Walking is good for health", durationSec: 90, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // The points
+    const points = await screen.findByRole("region", { name: "Your points" });
+    // Confirm the topic shows, and the points come before the numbers
+    expect([!!screen.getByText("Why walk"), !!(points.compareDocumentPosition(screen.getByRole("region", { name: "Your numbers" })) & Node.DOCUMENT_POSITION_FOLLOWING)]).toEqual([true, true]);
   });
 
   // The recording plays from one large button that becomes Pause

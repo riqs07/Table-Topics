@@ -73,6 +73,7 @@ Talks are stored in their own collection (added to existing databases by raising
 | learn | Learn progress by card id (decision 45): when the card was first read (`readAt`). The recall fields (`box`, `dueAt`, `lastResult`, `recalledAt`) stay on older progress but are no longer used: cards have no quiz and no review since decision 67 |
 | missions | Every mission try, oldest first (decision 52): the mission id, the day, the status (accepted, skipped or done), the prediction (1 to 5), whether it was tried, how it went (1 to 5), what the user noticed (text only, never sent anywhere), whether it felt like too much, and when it was debriefed. Missing until the first mission is answered |
 | scenarios | Scenario questions by id (decision 54): the tier of the first reply chosen and of the latest, and when each was answered. Missing until the first scenario is answered |
+| skipped | Steps of today's practice put off with "Can't speak now?" (decision 77): the day (YYYY-MM-DD) and each step's key (`kind:mode:promptId`). A list from another day counts for nothing. Missing until the first skip |
 
 ### Prompts
 

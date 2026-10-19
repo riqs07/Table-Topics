@@ -211,6 +211,8 @@ export interface SettingsRecord {
   missions?: MissionRecord[];
   // Scenario questions: how each went, by scenario id (missing until the first is answered)
   scenarios?: Record<string, ScenarioProgress>;
+  // Steps of today's practice put off with "Can't speak now?": the day (YYYY-MM-DD) and each step's key; another day's list means nothing (decision 77; missing until the first skip)
+  skipped?: { day: string; steps: string[] };
 }
 
 // What each stored collection holds

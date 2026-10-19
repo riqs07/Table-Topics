@@ -6,6 +6,8 @@ import { TranscriptAssembler, type RecognitionResult } from "@/audio/transcriptA
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the question voice (ElevenLabs when ready, otherwise the phone's own)
 import { prepareQuestionVoice, speakQuestion } from "@/audio/questionVoice";
+// Load the timing tone player
+import { createCuePlayer } from "@/audio/timingTones";
 
 // The minimal shape of the browser's speech recognizer that the app uses
 interface SpeechRecognizer {
@@ -202,6 +204,18 @@ class MediaCapture implements AudioCapture {
     return rmsLevel(this.samples);
   }
 
+  // Pause the recording (the level reader keeps running, but nothing is kept)
+  pause(): void {
+    // Only while recording
+    if (this.recorder.state === "recording") this.recorder.pause();
+  }
+
+  // Carry on recording
+  resume(): void {
+    // Only while paused
+    if (this.recorder.state === "paused") this.recorder.resume();
+  }
+
   // Stop everything and hand back the recording
   stop(): Promise<Blob> {
     // Wait for the recorder to deliver its last piece
@@ -257,4 +271,6 @@ export const browserRecordingServices: RecordingServices = {
   createTranscriber: () => new WebSpeechTranscriber(),
   // Audio recording and level
   createCapture: (stream) => new MediaCapture(stream),
+  // Timing tones and buzzes
+  createCuePlayer: () => createCuePlayer(),
 };

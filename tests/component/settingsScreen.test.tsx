@@ -73,6 +73,26 @@ describe("SettingsScreen", () => {
     expect([start, dark, auto, [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual(["true", ["dark", "dark", "true"], ["system", "system"], [null, null]]);
   });
 
+  // Timing tones are off until switched on, and the choice is kept in this browser (decision 77)
+  it("switches timing tones on and off", async () => {
+    // Start from nothing saved
+    localStorage.clear();
+    // Draw the screen
+    render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The switch
+    const toggle = await screen.findByRole("checkbox", { name: /Timing tones/ });
+    // Off to begin with
+    const start = (toggle as HTMLInputElement).checked;
+    // Switch on
+    await userEvent.click(toggle);
+    // What storage says
+    const on = localStorage.getItem("voicelab-timing-tones");
+    // Switch off
+    await userEvent.click(toggle);
+    // Confirm off, on, then off with nothing stored
+    expect([start, on, localStorage.getItem("voicelab-timing-tones")]).toEqual([false, "on", null]);
+  });
+
   // Deleting everything takes two deliberate taps
   it("deletes all data only after confirming", async () => {
     // Make a repository with data

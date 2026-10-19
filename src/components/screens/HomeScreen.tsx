@@ -22,7 +22,7 @@ import type { Repository } from "@/data/repository";
 // Load today's practice and the next talk with a date
 import { loadDailyPlan, type LoadedPlan } from "@/data/dailyPlan";
 // Load the plan's time and addresses
-import { planHref, planMinutes } from "@/core/dailyPlan";
+import { nextStepIndex, planHref, planMinutes } from "@/core/dailyPlan";
 // Load the done and next marks on a path
 import { PathMark } from "@/components/script/PathMark";
 // Load the day's summary wording
@@ -159,8 +159,10 @@ export function HomeScreen(props: ScreenProps) {
   const plan = data && !data.showWelcome ? data.plan : null;
   // Where the welcome leads by default: the first step of today's practice, so the first win comes in about a minute
   const firstStep = data?.plan.steps[0] ? planHref(data.plan.steps[0], 1) : "/practice";
-  // The first step not yet done (-1 when all are)
-  const nextIndex = plan ? plan.done.indexOf(false) : -1;
+  // The first step neither done nor put off today (-1 when none is left)
+  const nextIndex = plan ? nextStepIndex(plan.done, plan.skipped) : -1;
+  // Whether every step is done (put-off steps are not done; decision 77)
+  const allDone = !!plan && plan.done.every(Boolean);
   // Steps done
   const doneCount = plan ? plan.done.filter(Boolean).length : 0;
 
@@ -214,13 +216,13 @@ export function HomeScreen(props: ScreenProps) {
           {plan && (
             <section aria-label="Today's practice" className={`-mx-2 mt-6 p-5 motion-safe:animate-rise md:mx-0 md:mt-0 md:p-7 ${CARD}`}>
               {/* Once done: the full ring, badge and (the first time) sparks */}
-              {nextIndex === -1 && <DoneBurst celebrate={data?.celebrate ?? false} />}
+              {allDone && <DoneBurst celebrate={data?.celebrate ?? false} />}
               {/* What it is and how long, with how far through */}
-              <p className="flex justify-between text-footnote text-ink-muted"><span>Today · about {planMinutes(plan.steps)} min</span>{nextIndex !== -1 && <span className="font-semibold text-warm-ink">{doneCount} of {plan.steps.length}</span>}</p>
+              <p className="flex justify-between text-footnote text-ink-muted"><span>Today · about {planMinutes(plan.steps)} min</span>{!allDone && <span className="font-semibold text-warm-ink">{doneCount} of {plan.steps.length}</span>}</p>
               {/* Where things stand, set like a headline */}
-              <h1 className="mt-2 font-display text-statement font-semibold tracking-tight md:text-statement-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
+              <h1 className="mt-2 font-display text-statement font-semibold tracking-tight md:text-statement-xl">{allDone ? "Done for today." : nextIndex === -1 ? "The rest can wait." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
               {/* Once done: the time spoken today, and which day of the week this is */}
-              {nextIndex === -1 && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)} {data.weekLine}</p>}
+              {allDone && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)} {data.weekLine}</p>}
               {/* How far through, as a bar that fills in */}
               <span aria-hidden="true" className="mt-4 block h-2 overflow-hidden rounded-full bg-paper">
                 {/* The filled part */}
@@ -234,8 +236,8 @@ export function HomeScreen(props: ScreenProps) {
                   const mark = plan.done[index] ? "done" : index === nextIndex ? "next" : "open";
                   // When done, a line from today's session: the user's note, or how long they spoke (never a filler count)
                   const session = plan.done[index] ? plan.today.find((item) => item.mode === step.mode && item.promptId === step.promptId) : undefined;
-                  // That line
-                  const result = session ? stepNote(session) : null;
+                  // That line (or, for a step put off today, saying so)
+                  const result = session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
                   // One step
                   return (
                     <li key={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
@@ -258,7 +260,7 @@ export function HomeScreen(props: ScreenProps) {
                 })}
               </ol>
               {/* Once done, a word on what is next */}
-              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] text-ink-muted">A new practice is ready tomorrow.</p>}
+              {nextIndex === -1 && <p className="mt-3 max-w-[52ch] text-ink-muted">{allDone ? "A new practice is ready tomorrow." : "Skipped steps are still here if a moment comes up."}</p>}
             </section>
           )}
 

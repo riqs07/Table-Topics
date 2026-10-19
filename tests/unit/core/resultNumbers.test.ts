@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the numbers builder being checked
-import { resultChanges, resultNumbers } from "@/core/resultNumbers";
+import { countPhrase, fillerPhrase, resultChanges, resultNumbers } from "@/core/resultNumbers";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -13,9 +13,9 @@ describe("resultNumbers", () => {
     const session = makeSession({ fillersPerMinute: 2.4, wordsPerMinute: 128.4, durationSec: 134 });
     // Confirm the three numbers with their labels
     expect(resultNumbers(session, null)).toEqual([
-      { label: "fillers a minute", value: "2.4" },
-      { label: "words a minute", value: "128" },
-      { label: "long", value: "2:14" },
+      { kind: "fillers", label: "fillers a minute", value: "2.4" },
+      { kind: "speed", label: "words a minute", value: "128" },
+      { kind: "length", label: "long", value: "2:14" },
     ]);
   });
 
@@ -24,13 +24,38 @@ describe("resultNumbers", () => {
     // A short session
     const session = makeSession({ fillersPerMinute: 0, wordsPerMinute: 140, durationSec: 61 });
     // Confirm the fourth number, singular for one pause
-    expect(resultNumbers(session, 1).at(-1)).toEqual({ label: "pause", value: "1" });
+    expect(resultNumbers(session, 1).at(-1)).toEqual({ kind: "pauses", label: "pause", value: "1" });
   });
 
   // Several pauses use the plural
   it("uses the plural for several pauses", () => {
     // Confirm the label
-    expect(resultNumbers(makeSession(), 4).at(-1)).toEqual({ label: "pauses", value: "4" });
+    expect(resultNumbers(makeSession(), 4).at(-1)).toEqual({ kind: "pauses", label: "pauses", value: "4" });
+  });
+});
+
+// Short takes and numbers said elsewhere (decision 77)
+describe("resultNumbers on a results page", () => {
+  // Under 30 seconds, fillers are a count over the take, not a rate scaled up to a minute
+  it("counts fillers on a take under 30 seconds", () => {
+    // An 11-second take with two fillers (10.9 a minute)
+    const short = makeSession({ fillersPerMinute: (2 * 60) / 11, durationSec: 11 });
+    // A minute-long take
+    const long = makeSession({ fillersPerMinute: 2, durationSec: 60 });
+    // Confirm the count, the rate kept without counts, and the rate on a long take
+    expect([resultNumbers(short, null, { counts: true })[0], resultNumbers(short, null)[0]?.value, resultNumbers(long, null, { counts: true })[0]?.label, fillerPhrase(short), fillerPhrase(long)]).toEqual([{ kind: "fillers", label: "fillers in 11 seconds", value: "2" }, "10.9", "fillers a minute", "2 fillers in 11 seconds", "2.0 fillers a minute"]);
+  });
+
+  // A number the headline or the timing ring already gives is left out
+  it("leaves out numbers said elsewhere", () => {
+    // Confirm only speed and pauses remain
+    expect(resultNumbers(makeSession(), 2, { leaveOut: ["fillers", "length"] }).map((item) => item.kind)).toEqual(["speed", "pauses"]);
+  });
+
+  // One filler, one second: singular words
+  it("uses singular words for one", () => {
+    // Confirm
+    expect(countPhrase(1, "pause", 1)).toBe("1 pause in 1 second");
   });
 });
 

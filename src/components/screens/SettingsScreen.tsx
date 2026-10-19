@@ -37,6 +37,8 @@ import { markExported, readSafetyFacts } from "@/data/storageSafety";
 import { lastCopyText, type SafetyFacts } from "@/core/storageSafety";
 // Load the light and dark choice
 import { COLOR_MODES, readColorMode, saveColorMode, type ColorMode } from "@/data/colorMode";
+// Load the timing tones choice
+import { readTimingTones, saveTimingTones } from "@/data/timingTones";
 // Load the shared button looks
 import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared heading look
@@ -77,6 +79,35 @@ function ColorModeChoice() {
         <button key={choice.id} type="button" aria-pressed={mode === choice.id} onClick={() => choose(choice.id)} className={`-ml-px min-h-11 border px-3 first:ml-0 ${mode === choice.id ? "relative border-fill bg-fill text-fill-ink" : "border-rule text-ink-muted hover:text-ink"}`}>{choice.name}</button>
       ))}
     </div>
+  );
+}
+
+// Timing tones: a soft tone and a buzz when the light changes, for speaking without looking (off by default; decision 77)
+function TimingTonesChoice() {
+  // The saved choice, read once when drawn
+  const [on, setOn] = useState(readTimingTones);
+
+  // Save a new choice
+  function change(event: React.ChangeEvent<HTMLInputElement>) {
+    // Store it
+    saveTimingTones(event.target.checked);
+    // Show it
+    setOn(event.target.checked);
+  }
+
+  // A labelled switch
+  return (
+    <label className="flex min-h-11 items-start gap-3">
+      {/* The switch */}
+      <input type="checkbox" checked={on} onChange={change} className="mt-1 size-5 flex-none accent-accent" />
+      {/* What it does */}
+      <span>
+        {/* The choice */}
+        Timing tones
+        {/* What that means */}
+        <span className="block text-footnote text-ink-muted">A soft tone when the light turns on and two at red, so you can keep your eyes up. Android phones buzz too. iPhones stay quiet on silent.</span>
+      </span>
+    </label>
   );
 }
 
@@ -303,6 +334,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}
       {today && <Section title="Appearance">
         <ColorModeChoice />
+      </Section>}
+
+      {/* Cues while speaking (drawn in the browser only, where the saved choice can be read) */}
+      {today && <Section title="While speaking">
+        <TimingTonesChoice />
       </Section>}
 
       {/* How long recordings are kept */}

@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the plan rules being checked
-import { dailyPlan, moreToDo, planHref, planMinutes, planProgress } from "@/core/dailyPlan";
+import { dailyPlan, moreToDo, nextStepIndex, planHref, planMinutes, planProgress, planSkipped, stepKey } from "@/core/dailyPlan";
 // Load the Learn rules, for a card read
 import { firstRead } from "@/core/learn";
 // Load the cards
@@ -172,5 +172,30 @@ describe("planProgress", () => {
     const plan = regularPlan(DAY);
     // Confirm both markers
     expect([planHref(plan[0]!, 1), planHref(plan[1]!, 2)]).toEqual([`/learn/card?id=${LEARN_CARDS[0]?.id}&plan=1`, "/session?mode=read&prompt=lincoln-second-inaugural-1&plan=2"]);
+  });
+});
+
+// Group the checks about putting a step off ("Can't speak now?", decision 77)
+describe("planSkipped", () => {
+  // Today's skips mark their steps; another day's mean nothing
+  it("marks steps put off today only", () => {
+    // The plan
+    const plan = regularPlan(DAY);
+    // The warm-up put off today, then the same list dated yesterday
+    const today = planSkipped(plan, { day: "2026-10-16", steps: [stepKey(plan[1]!)] }, DAY);
+    // Yesterday's
+    const yesterday = planSkipped(plan, { day: "2026-10-15", steps: [stepKey(plan[1]!)] }, DAY);
+    // Confirm both, and that nothing saved means nothing skipped
+    expect([today, yesterday, planSkipped(plan, undefined, DAY)]).toEqual([[false, true, false, false], [false, false, false, false], [false, false, false, false]]);
+  });
+
+  // The next step passes over steps done or put off, and none is left once every step is one or the other
+  it("offers the first step neither done nor put off", () => {
+    // Card done, warm-up put off
+    const partly = nextStepIndex([true, false, false, false], [false, true, false, false]);
+    // Everything done or put off
+    const none = nextStepIndex([true, false, true, true], [false, true, false, false]);
+    // Confirm the third step, then none
+    expect([partly, none]).toEqual([2, -1]);
   });
 });

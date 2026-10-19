@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the recording rules being checked
-import { MIN_SECONDS, formatClock, maxSeconds, minSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, timingSentence } from "@/core/recordingRules";
+import { MIN_SECONDS, formatClock, maxSeconds, minSeconds, readingSeconds, targetSeconds, thinkSeconds, timeSignal, timingCue, timingSentence } from "@/core/recordingRules";
 
 // Group the checks about how long recordings run
 describe("recording length", () => {
@@ -196,5 +196,20 @@ describe("Q&A answers", () => {
       [2, 30, "yellow", "0:06, inside the 0:02 to 0:12 window."],
       [2, 60, "green", "0:06, inside the 0:05 to 0:30 window."],
     ]);
+  });
+});
+
+// Group the checks about timing tones (decision 77)
+describe("timingCue", () => {
+  // One tone when the light first comes on (green, or yellow for a light with no green), two at red, quiet otherwise
+  it("sounds once when the light comes on and twice at red", () => {
+    // A Table Topic's run of lights
+    const topic = [timingCue("none", "green"), timingCue("green", "yellow"), timingCue("yellow", "red"), timingCue("red", "overtime")];
+    // A prepared speech's (no green)
+    const speech = [timingCue("none", "yellow"), timingCue("yellow", "red")];
+    // No change
+    const same = timingCue("green", "green");
+    // Confirm all three
+    expect([topic, speech, same]).toEqual([["one", null, "two", null], ["one", "two"], null]);
   });
 });
