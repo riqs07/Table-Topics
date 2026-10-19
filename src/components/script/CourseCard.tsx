@@ -4,6 +4,10 @@
 import Link from "next/link";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
+// Load the shared card look
+import { CARD } from "./textStyles";
+// Load the shared press effect
+import { PRESS } from "./Buttons";
 
 // What the card shows
 interface CourseCardProps {
@@ -33,18 +37,18 @@ export function CourseCard({ href, name, blurb, icon: IconShape, done, total, no
   const started = done > 0 && total > 1;
   // The whole card is the link
   return (
-    <Link href={href} aria-label={`${name}, ${done} of ${total}`} className="flex h-full min-h-20 items-center gap-4 border border-rule bg-paper p-4 hover:border-ink">
-      {/* The icon on a faint accent tile */}
-      <span aria-hidden="true" className="flex size-12 flex-none items-center justify-center bg-accent/10 text-accent">
+    <Link href={href} aria-label={`${name}, ${done} of ${total}`} className={`flex h-full min-h-20 items-center gap-4 p-4 ${CARD} ${PRESS}`}>
+      {/* The icon on a rounded warm tile */}
+      <span aria-hidden="true" className="flex size-12 flex-none items-center justify-center rounded-[14px] bg-warm-tint text-warm-ink">
         {/* The icon */}
         <IconShape className="size-7" />
       </span>
       {/* Name, line and progress */}
       <span className="min-w-0 flex-1">
         {/* A note, such as "Next up" */}
-        {note && <span className="block text-footnote font-medium text-accent">{note}</span>}
+        {note && <span className="block text-footnote font-semibold text-warm-ink">{note}</span>}
         {/* The name */}
-        <span className="block font-display text-xl leading-tight">{name}</span>
+        <span className="block font-display text-xl font-semibold leading-tight tracking-tight">{name}</span>
         {/* What it is */}
         <span className="block text-footnote text-ink-muted">{blurb}</span>
         {/* Before starting: how many there are */}
@@ -52,9 +56,9 @@ export function CourseCard({ href, name, blurb, icon: IconShape, done, total, no
         {/* Once started: the bar and the count */}
         {started && <span aria-hidden="true" className="mt-2 flex items-center gap-3">
           {/* The bar */}
-          <span className="h-1.5 flex-1 bg-rule">
-            {/* Its filled part */}
-            <span className="block h-full bg-accent" style={{ width: `${share * 100}%` }} />
+          <span className="h-2 flex-1 overflow-hidden rounded-full bg-paper">
+            {/* Its filled part, filling in from the left */}
+            <span className="block h-full origin-left rounded-full bg-accent motion-safe:animate-fill" style={{ width: `${share * 100}%` }} />
           </span>
           {/* The count */}
           <span className="text-footnote tabular-nums text-ink-muted">{done}/{total}</span>

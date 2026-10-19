@@ -9,7 +9,7 @@ export function PageTitle({ title, children }: { title: string; children?: React
   return (
     <>
       {/* The page's name */}
-      <h1 className="mt-6 font-display text-statement tracking-tight">{title}</h1>
+      <h1 className="mt-6 font-display text-statement font-semibold tracking-tight motion-safe:animate-rise">{title}</h1>
       {/* One short line on what is here */}
       {children && <p className="mt-2 max-w-[52ch] text-ink-muted">{children}</p>}
     </>

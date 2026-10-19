@@ -1,8 +1,27 @@
 # Design System
 
 **Purpose:** How you control colors, fonts, and feel, and the rules that keep the look in one place.
-**Last updated:** 2026-10-18
+**Last updated:** 2026-10-19
 **Status:** Built in milestone 2. **Calm studio with a forest green accent was chosen at C6 (2026-10-12).** All three themes stay on the style page (`/style`) for comparison.
+
+## Warm and lively (decision 69, 2026-10-19)
+
+The user found the script page stiff and asked for something more fun. These rules sit on top of the script page below and win wherever the two disagree (the older rules are kept for their history).
+
+- **Type.** Headlines, page titles, section headings, card names, the action band and every big number are in **Fraunces** (semibold, slightly tight); running text is **Atkinson Hyperlegible**. Both are set by the calm studio theme (`src/theme/fonts.ts`, `themes.ts`).
+- **New colour roles**: `card` (white panels lifted off the page), `warm` (the apricot accent: today's square, the next step's number, the done badge, the live dot), `warm-tint` (its soft background: the next step's row, the mission card, icon tiles, the "One change" pill), `warm-ink` (text on the tint) and `on-warm` (text and ticks on `warm`). The contrast test covers every pair they are used in.
+- **Areas** (`data-area`). Three parts of the app get their own surfaces, defined per theme in `themes.areas` and written by `themeCss.ts`; while one is showing, the whole page takes its colours so the tab bar and edges match:
+  - `stage`: deep green with light ink while the clock runs (thinking and recording).
+  - `results`: a soft green on the session page.
+  - `learn`: sand on Learn, a set's page and a card.
+- **Cards.** `CARD` in `textStyles.ts`: white, rounded 22 px, a soft shadow (`shadow-card`). `CARD_LIST` is a list of rows inside one card, hairlines between rows. Course cards, Today's plan, the one change, the retry table, "Keep going" and the option lists all use them. Icon tiles are rounded on the warm tint.
+- **Buttons and the action band.** `PRIMARY`, `SECONDARY` and `QUIET` are rounded (16 px) and squash slightly when pressed (`PRESS`). The action band floats: rounded, inset 16 px from the edges, a little above the tab bar, with a shadow; the action is in Fraunces semibold.
+- **Masthead and tabs.** No ink rule under the title; the title is in Fraunces. The gear and the cross are 44 px rounded tiles. The current tab sits in a filled pill (around the icon on a phone, around the name on a computer).
+- **Today.** The week as rounded squares that pop in one after another (green where practised, warm for today). The plan sits in a card with a bar that fills in and each step as a rounded row (the next one warm). When the day is done: a full ring, a warm badge with a tick and, the first time that day, a burst of sparks (`DoneBurst.tsx`).
+- **Recording.** The bar meter is replaced by the **voice shape** (`VoiceBlob` in `RecordingScreen.tsx`): a soft shape that slowly changes outline, grows with the voice, takes the timing light's colour (warm before the window opens) and holds the clock; a dashed halo turns around it. It keeps the "Microphone level" name. The "Recording" dot is warm and breathes.
+- **Results.** The numbers are tiles that count up into place (`core/countUp.ts`, `useCountUp`). A timed session shows a ring drawn round to its length against the window's end, beside the timing sentence. The one change is a card with a "One change" pill. The player is a rounded panel with a round play button.
+- **Learn.** The swipe deck's segments are rounded and the current one is a little taller; Myth and Fact are rounded buttons side by side; the verdict pops in.
+- **Motion** (`globals.css`): pop, rise, fill, burst, morph, slow spin, breathe and ring. Every one is used through `motion-safe:`, so with reduced motion the end state shows at once and nothing moves; counting up also starts at the final numbers.
 
 ## Direction: the script page (chosen 2026-10-13)
 
@@ -44,7 +63,7 @@ Rules for every screen:
 - **Footnotes** (a thin rule, smaller text) for anything secondary: the weekly challenge, "or choose another", "Listen to your first recording."
 - **Left-aligned, square edges, hairline rules.** Lists use dotted leaders like a table of contents.
 
-Never: pill-shaped buttons, uppercase letter-spaced micro-labels, rounded or shadowed cards, centered stacks of widgets, emoji, gradients, or cheerleading copy. A test fails if the wireframes use pill buttons or uppercase labels.
+Never: uppercase letter-spaced micro-labels, centered stacks of widgets, emoji, gradients, or cheerleading copy. (Rounded and shadowed cards, rounded buttons and the tab pill have been allowed since decision 69.) A test fails if the wireframes use pill buttons or uppercase labels.
 
 Type sizes are named in `src/app/globals.css` (`text-footnote`, `text-lede`, `text-running`, `text-cue`, `text-band`, `text-statement`, `text-prompt`); components use the names, not pixel values.
 

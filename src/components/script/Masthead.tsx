@@ -1,4 +1,4 @@
-// The masthead at the top of every screen: the main navigation, then the title in small capitals with an italic note or links on the right
+// The masthead at the top of every screen: the main navigation, then the title in the display face with a note or links on the right (decision 69)
 
 // Load Next.js's link component
 import Link from "next/link";
@@ -8,6 +8,8 @@ import { GearIcon, LightbulbIcon, MicrophoneIcon, SunIcon, XIcon } from "@phosph
 import type { Icon } from "@phosphor-icons/react";
 // Load the type for content passed in
 import type { ReactNode } from "react";
+// Load the shared press effect
+import { PRESS } from "./Buttons";
 
 // The sections a page can belong to (Settings is the gear in the title row, not a tab; Skills is a page inside Practice)
 export type Section = "today" | "practice" | "skills" | "learn" | "settings";
@@ -38,12 +40,12 @@ interface MastheadProps {
 
 // Draw the masthead
 export function Masthead({ title, children, section, nav = true, close = null }: MastheadProps) {
-  // Navigation row, then a baseline-aligned title row over a solid hairline
+  // Navigation row, then the title row
   return (
     <>
-      {/* The main navigation: a tab bar fixed to the bottom of a phone, a row of tabs above the title on a computer, the current one underlined in the accent */}
+      {/* The main navigation: a tab bar fixed to the bottom of a phone, a row of tabs above the title on a computer, the current one in a filled pill */}
       {nav && (
-        <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:mb-6 md:flex md:gap-x-6 md:border-0 md:bg-transparent md:p-0">
+        <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:mb-6 md:flex md:gap-x-2 md:border-0 md:bg-transparent md:p-0">
           {/* One link per section */}
           {SECTIONS.map((item) => {
             // Whether this is the current section
@@ -52,9 +54,12 @@ export function Masthead({ title, children, section, nav = true, close = null }:
             const TabIcon = item.icon;
             // On a phone: icon over a small label, at least 44 pixels tall; on a computer: a text link
             return (
-              <Link key={item.id} href={item.href} aria-current={current ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-tab md:min-h-11 md:border-b-2 md:text-footnote ${current ? "text-accent md:border-accent md:text-ink" : "text-ink-muted hover:text-ink md:border-transparent"}`}>
-                {/* The icon, phone only (filled for the current section) */}
-                <TabIcon aria-hidden="true" weight={current ? "fill" : "regular"} className="size-6 md:hidden" />
+              <Link key={item.id} href={item.href} aria-current={current ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-tab md:min-h-11 md:flex-row md:rounded-full md:px-4 md:text-footnote ${current ? "font-semibold text-ink md:bg-fill md:text-fill-ink" : "text-ink-muted hover:text-ink"}`}>
+                {/* The icon, phone only, in a filled pill for the current section */}
+                <span aria-hidden="true" className={`flex h-8 w-14 items-center justify-center rounded-full md:hidden ${current ? "bg-fill text-fill-ink" : ""}`}>
+                  {/* The icon (filled for the current section) */}
+                  <TabIcon weight={current ? "fill" : "regular"} className="size-5" />
+                </span>
                 {/* The name */}
                 {item.name}
               </Link>
@@ -62,26 +67,26 @@ export function Masthead({ title, children, section, nav = true, close = null }:
           })}
         </nav>
       )}
-      {/* Header landmark with the ink rule underneath (centred, so the gear or cross lines up with the title) */}
-      <header className="flex min-h-11 items-center justify-between gap-4 border-b border-ink pb-2 md:pb-3">
-        {/* Title in small capitals */}
-        <span className="text-lg tracking-wide [font-variant-caps:small-caps] md:text-xl">{title}</span>
-        {/* Note or links in italic, then the settings gear or the way out */}
+      {/* Header landmark (centred, so the gear or cross lines up with the title) */}
+      <header className="flex min-h-11 items-center justify-between gap-4 pb-1">
+        {/* Title in the display face */}
+        <span className="font-display text-xl font-semibold tracking-tight md:text-2xl">{title}</span>
+        {/* Note or links, then the settings gear or the way out */}
         <span className="flex items-center gap-3">
           {/* The note */}
           <span className="text-ink-muted">{children}</span>
           {/* Settings, wherever the navigation shows (filled on the settings page) */}
           {nav && (
-            <Link href="/settings" aria-label="Settings" aria-current={section === "settings" ? "page" : undefined} className={`-my-2 inline-flex size-11 flex-none items-center justify-center ${section === "settings" ? "text-accent" : "text-ink-muted hover:text-ink"}`}>
+            <Link href="/settings" aria-label="Settings" aria-current={section === "settings" ? "page" : undefined} className={`inline-flex size-11 flex-none items-center justify-center rounded-[14px] ${PRESS} ${section === "settings" ? "bg-fill text-fill-ink" : "bg-paper text-ink-muted hover:text-ink"}`}>
               {/* The gear */}
-              <GearIcon aria-hidden="true" weight={section === "settings" ? "fill" : "regular"} className="size-6" />
+              <GearIcon aria-hidden="true" weight={section === "settings" ? "fill" : "regular"} className="size-5" />
             </Link>
           )}
           {/* While practising: a way out instead */}
           {!nav && close && (
-            <Link href={close.href} aria-label={close.label} className="-my-2 inline-flex size-11 flex-none items-center justify-center text-ink-muted hover:text-ink">
+            <Link href={close.href} aria-label={close.label} className={`inline-flex size-11 flex-none items-center justify-center rounded-[14px] bg-paper text-ink ${PRESS}`}>
               {/* The cross */}
-              <XIcon aria-hidden="true" className="size-6" />
+              <XIcon aria-hidden="true" weight="bold" className="size-5" />
             </Link>
           )}
         </span>

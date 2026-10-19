@@ -331,7 +331,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           {/* Passphrase field and save */}
           <p className="mt-3 flex flex-wrap items-baseline gap-3">
             {/* The field */}
-            <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 border-b border-ink bg-transparent py-1" />
+            <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 rounded-xl border-2 border-rule bg-card px-3 py-1" />
             {/* Save */}
             <button type="button" onClick={storePassphrase} className={TEXT_LINK}>Save passphrase</button>
           </p>

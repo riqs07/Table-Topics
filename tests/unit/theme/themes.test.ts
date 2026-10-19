@@ -5,10 +5,10 @@ import { contrastRatio } from "@/theme/contrast";
 // Load the role list and the readability rules
 import { CONTRAST_RULES, ROLES } from "@/theme/roles";
 // Load the themes being checked
-import { DEFAULT_THEME, THEMES } from "@/theme/themes";
+import { DEFAULT_THEME, THEMES, type Theme } from "@/theme/themes";
 
 // Every theme, as id and definition pairs
-const themeEntries = Object.entries(THEMES);
+const themeEntries: Array<[string, Theme]> = Object.entries(THEMES);
 // Both color modes each theme must define
 const MODES = ["light", "dark"] as const;
 
@@ -63,12 +63,33 @@ describe("themes", () => {
     expect(failures).toEqual([]);
   });
 
-  // The script-page direction (chosen after C11 feedback) sets calm studio in Newsreader
-  it("sets calm studio in the Newsreader serif", () => {
-    // Confirm the body font
-    expect(THEMES["calm-studio"].fonts.body).toContain("--font-newsreader");
-    // Confirm the display font
-    expect(THEMES["calm-studio"].fonts.display).toContain("--font-newsreader");
+  // Each area's surfaces (Learn's sand, results' green, the dark recording stage) keep every pair readable too (decision 69)
+  it.each(themeEntries)("%s areas pass every contrast rule in both modes", (_id, theme) => {
+    // Collect any failures
+    const failures: string[] = [];
+    // Each area
+    for (const [area, palettes] of Object.entries(theme.areas ?? {})) {
+      // Light and dark
+      for (const mode of MODES) {
+        // The theme's colors with the area's on top
+        const colors = { ...theme.colors[mode], ...palettes[mode] };
+        // Each rule
+        for (const rule of CONTRAST_RULES) {
+          // The ratio
+          const ratio = contrastRatio(colors[rule.foreground], colors[rule.background]);
+          // Record a shortfall
+          if (ratio < rule.minimum) failures.push(`${area} ${mode}: ${rule.foreground} on ${rule.background} is ${ratio.toFixed(2)}`);
+        }
+      }
+    }
+    // Confirm none
+    expect(failures).toEqual([]);
+  });
+
+  // Warm and lively (decision 69): Fraunces headlines over Atkinson Hyperlegible text
+  it("sets calm studio in Fraunces and Atkinson Hyperlegible", () => {
+    // Confirm both fonts
+    expect([THEMES["calm-studio"].fonts.body.includes("--font-atkinson"), THEMES["calm-studio"].fonts.display.includes("--font-fraunces")]).toEqual([true, true]);
   });
 
   // Each theme names a body font and a display font

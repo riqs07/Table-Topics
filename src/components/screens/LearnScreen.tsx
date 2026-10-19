@@ -72,7 +72,7 @@ export function LearnScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className={PAGE}>
+    <main data-area="learn" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="VoiceLab" section="learn" />
       {/* The page's name, and what is here */}

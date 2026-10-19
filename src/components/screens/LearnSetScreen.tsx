@@ -21,7 +21,7 @@ import { setProgress, type LearnProgress } from "@/core/learn";
 // Load progress
 import { loadLearnProgress } from "@/data/learnProgress";
 // Load the shared button looks
-import { TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -61,7 +61,7 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
 
   // Draw the page
   return (
-    <main className={PAGE}>
+    <main data-area="learn" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Learn" section="learn" />
       {/* Back to all sets */}
@@ -78,37 +78,35 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
               // The set's icon
               const IconShape = LEARN_SET_ICONS[set.id];
               // The tile
-              return <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center bg-accent/10 text-accent"><IconShape className="size-9" /></span>;
+              return <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center rounded-[18px] bg-warm-tint text-warm-ink"><IconShape className="size-9" /></span>;
             })()}
             {/* Name and blurb */}
             <div className="min-w-0 flex-1">
               {/* Name */}
-              <h1 className="font-display text-statement tracking-tight">{set.name}</h1>
+              <h1 className="font-display text-statement font-semibold tracking-tight">{set.name}</h1>
               {/* How far through, or how many cards (the blurb is on the set's card on Learn) */}
               <p className="text-footnote text-ink-muted">{progress && setProgress(set.id, progress).read > 0 ? `${setProgress(set.id, progress).read} of ${cards.length} read` : `${cards.length} cards`}</p>
             </div>
           </div>
           {/* The cards, as a path */}
-          <ol aria-label="Cards" className="mt-6">
+          <ol aria-label="Cards" className="mt-6 flex flex-col gap-2">
             {/* Each card */}
             {cards.map((card, index) => {
               // Done, next, or still to come
               const mark = progress?.[card.id] ? "done" : card.id === upNext?.id ? "next" : "open";
               // One card
               return (
-                <li key={card.id} className="relative">
-                  {/* The line to the next card */}
-                  {index < cards.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
-                  {/* The whole row opens the card */}
-                  <Link href={`/learn/card?id=${card.id}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
+                <li key={card.id}>
+                  {/* The whole row opens the card: a rounded tile, warm when next */}
+                  <Link href={`/learn/card?id=${card.id}`} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-card"}`}>
                     {/* Its mark */}
                     <PathMark mark={mark} number={index + 1} />
                     {/* Its title (the kind and evidence show on the card itself, decision 63) */}
                     <span className="min-w-0 flex-1">
                       {/* Next */}
-                      {mark === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
+                      {mark === "next" && <span className="block text-footnote font-semibold text-warm-ink">Next</span>}
                       {/* Title */}
-                      <span className="block text-lede">{card.title}</span>
+                      <span className="block leading-snug">{card.title}</span>
                     </span>
                     {/* The chevron */}
                     <CaretRightIcon aria-hidden="true" className="size-5 flex-none self-center text-ink-muted" />

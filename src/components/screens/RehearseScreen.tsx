@@ -18,7 +18,7 @@ import { daysAway, daysUntil } from "@/core/eventPrep";
 // Load the talk record type
 import type { TalkRecord } from "@/data/records";
 // Load the shared heading look
-import { SECTION_HEADING } from "@/components/script/textStyles";
+import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -126,7 +126,7 @@ export function RehearseScreen(props: ScreenProps) {
         {/* Nothing yet */}
         {talks && talks.length === 0 && <p className="mt-2 text-ink-muted">None saved yet.</p>}
         {/* One row per talk */}
-        <ul className="mt-2 divide-y divide-rule border-y border-rule">
+        <ul className={`mt-2 ${CARD_LIST}`}>
           {/* Each talk */}
           {talks?.map((talk) => (
             // One row
@@ -165,7 +165,7 @@ export function RehearseScreen(props: ScreenProps) {
           {/* Label text */}
           <span>Title</span>
           {/* Field */}
-          <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} className="min-h-11 border-b border-ink bg-transparent py-1" />
+          <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} className="min-h-11 rounded-xl border-2 border-rule bg-card px-3 py-1" />
         </label>
         {/* The words */}
         <label className="flex flex-col gap-1">
@@ -179,7 +179,7 @@ export function RehearseScreen(props: ScreenProps) {
           {/* Label text */}
           <span>Goal in minutes (optional)</span>
           {/* Field */}
-          <input type="number" min={1} max={60} value={goal} onChange={(event) => setGoal(event.target.value)} className="min-h-11 w-20 border-b border-ink bg-transparent py-1" />
+          <input type="number" min={1} max={60} value={goal} onChange={(event) => setGoal(event.target.value)} className="min-h-11 w-20 rounded-xl border-2 border-rule bg-card px-3 py-1" />
         </label>
         {/* Save */}
         {/* The date of the talk, for a countdown plan */}
@@ -187,7 +187,7 @@ export function RehearseScreen(props: ScreenProps) {
           {/* Its name */}
           <span>Date of the talk (optional)</span>
           {/* The field */}
-          <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="min-h-11 border-b border-ink bg-transparent py-1" />
+          <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="min-h-11 rounded-xl border-2 border-rule bg-card px-3 py-1" />
         </label>
         <button type="submit" className={`${PRIMARY} self-start`}>Save talk</button>
         {/* Message */}

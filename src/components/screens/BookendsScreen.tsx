@@ -16,7 +16,7 @@ import { talkSections } from "@/core/eventPrep";
 // Load the talk record type
 import type { TalkRecord } from "@/data/records";
 // Load the shared heading look
-import { SECTION_HEADING } from "@/components/script/textStyles";
+import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -69,7 +69,7 @@ export function BookendsScreen(props: ScreenProps) {
           {/* Small heading */}
           <h2 className={SECTION_HEADING}>Today</h2>
           {/* The two prompts */}
-          <ul className="mt-2 divide-y divide-rule border-y border-ink">
+          <ul className={`mt-2 ${CARD_LIST}`}>
             {/* Each one */}
             {pair.map((item) => (
               // One prompt
@@ -93,7 +93,7 @@ export function BookendsScreen(props: ScreenProps) {
           {/* Small heading */}
           <h2 className={SECTION_HEADING}>From your talks</h2>
           {/* One row per talk */}
-          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+          <ul className={`mt-2 ${CARD_LIST}`}>
             {/* Each talk */}
             {sectioned.map(({ talk, count }) => (
               // One talk

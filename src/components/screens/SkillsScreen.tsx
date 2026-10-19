@@ -35,6 +35,8 @@ import { MODES, type ModeInfo } from "@/content/modes";
 import { PASSAGES, PAUSE_DRILLS, TRICKY_WORDS, type Passage } from "@/content/prompts";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
+// Load the shared card list look
+import { CARD_LIST } from "@/components/script/textStyles";
 
 // The catalogue entry for an id (always present for the ids used here)
 const mode = (id: string) => MODES.find((item) => item.id === id) as ModeInfo;
@@ -53,7 +55,7 @@ function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passag
       {/* An optional small heading */}
       {heading && <h3 className="mt-4 text-footnote text-ink-muted">{heading}</h3>}
       {/* The texts */}
-      <ul className="mt-2 divide-y divide-rule border-y border-rule">
+      <ul className={`mt-2 ${CARD_LIST}`}>
         {/* One row per text */}
         {items.map((item) => (
           // One text

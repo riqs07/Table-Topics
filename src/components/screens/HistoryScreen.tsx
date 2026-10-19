@@ -33,7 +33,7 @@ import { baselineProgress, historyRows, trendSeries, type HistoryRow } from "@/c
 // Load the session record type
 import type { MissionRecord, SessionRecord } from "@/data/records";
 // Load the shared heading look
-import { SECTION_HEADING } from "@/components/script/textStyles";
+import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 
 // Size of the trend drawing (it stretches to fit its column)
 const CHART = { width: 300, height: 80 };
@@ -239,7 +239,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
           {/* The headline */}
           <p className="mt-2 text-lede">{triedMissions(missions).length} {triedMissions(missions).length === 1 ? "mission" : "missions"} tried; {betterThanFeared(missions).better} went better than you expected.</p>
           {/* Each try */}
-          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+          <ul className={`mt-2 ${CARD_LIST}`}>
             {/* One try */}
             {triedMissions(missions).map((record) => (
               // The task, the day, and expected against actual

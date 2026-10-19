@@ -85,12 +85,12 @@ export function NotesFold({ repo, session, onSaved, coachWaiting = false }: Note
 
   // The fold
   return (
-    <details open={coachWaiting} className="mt-6 border-y border-rule py-2">
+    <details open={coachWaiting} className="mt-6 rounded-[22px] bg-card px-4 py-2 shadow-card">
       {/* Open it */}
       <summary className={`${TEXT_LINK} cursor-pointer`}>{smallTalk ? "Which beats did you hear yourself do?" : "Add your notes"}</summary>
       {/* For small talk, the beats to tick */}
       {smallTalk ? (
-        <ul aria-label="Listen for" className="mt-2 divide-y divide-rule border-y border-rule">
+        <ul aria-label="Listen for" className="mt-2 divide-y divide-rule">
           {/* Each beat */}
           {beatsFor(unitOf(session.promptId)).map((beat) => (
             // One beat, ticked when heard

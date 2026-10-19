@@ -75,7 +75,7 @@ export function Player({ src, label, name, durationSec, onAudio, onTime, speeds 
   const action = `${playing ? "Pause" : "Play"} ${name}`;
   // Draw the button, the bar, and the time
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 rounded-[18px] bg-card px-3 py-2">
       {/* The hidden audio element that does the playing */}
       <audio
         ref={(element) => {
@@ -100,7 +100,7 @@ export function Player({ src, label, name, durationSec, onAudio, onTime, speeds 
         }}
       />
       {/* Play or pause, a large square button in the accent */}
-      <button type="button" onClick={toggle} aria-label={action} className="flex size-12 flex-none items-center justify-center bg-fill text-fill-ink">
+      <button type="button" onClick={toggle} aria-label={action} className="flex size-12 flex-none items-center justify-center rounded-full bg-fill text-fill-ink transition-transform duration-100 motion-safe:active:scale-[.94]">
         {/* The icon for what a press does */}
         {playing ? <PauseIcon size={24} weight="fill" aria-hidden /> : <PlayIcon size={24} weight="fill" aria-hidden />}
       </button>
@@ -113,7 +113,7 @@ export function Player({ src, label, name, durationSec, onAudio, onTime, speeds 
       </div>
       {/* Faster or normal speed, when offered */}
       {speeds && (
-        <button type="button" onClick={toggleSpeed} aria-pressed={fast} aria-label="Play at 1.5 times the speed" className="min-h-11 flex-none border border-rule px-3 text-footnote">
+        <button type="button" onClick={toggleSpeed} aria-pressed={fast} aria-label="Play at 1.5 times the speed" className="min-h-11 flex-none rounded-xl border-2 border-rule px-3 text-footnote">
           {/* The speed */}
           {fast ? "1.5×" : "1×"}
         </button>

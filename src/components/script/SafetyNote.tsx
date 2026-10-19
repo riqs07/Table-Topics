@@ -11,7 +11,7 @@ import type { SafetyNudge } from "@/core/storageSafety";
 export function SafetyNote({ nudge, onDismiss }: { nudge: Exclude<SafetyNudge, null>; onDismiss: () => void }) {
   // A ruled note with the words, then its actions
   return (
-    <section aria-label="Keep your practice safe" className="border-l-2 border-accent pl-3">
+    <section aria-label="Keep your practice safe" className="rounded-2xl bg-card p-4">
       {/* What to do, in a line */}
       <p>{nudge === "install" ? "Add VoiceLab to your Home Screen so Safari keeps your practice: tap Share, then Add to Home Screen." : "Save a copy of your practice now and then."}</p>
       {/* Do it, or not now */}

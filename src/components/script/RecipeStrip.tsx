@@ -26,7 +26,7 @@ export function RecipeStrip({ level, focus = null }: { level: StripLevel; focus?
   }
   // The four beats in a row (two by two on a narrow phone)
   return (
-    <ol aria-label="The recipe" className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-rule py-3 sm:grid-cols-4">
+    <ol aria-label="The recipe" className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 rounded-2xl bg-card p-4 sm:grid-cols-4">
       {/* Each beat */}
       {beatsFor(level.unit).map((beat, index) => (
         // One beat: the lesson's own beat is marked in the accent

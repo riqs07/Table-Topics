@@ -26,7 +26,7 @@ import { useEffect, useState } from "react";
 // Load the moment note's prompt
 import { MOMENT_PROMPT } from "@/content/smallTalk";
 // Load the shared heading look
-import { SECTION_HEADING } from "@/components/script/textStyles";
+import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared link look
 import { TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared page shell
@@ -50,7 +50,7 @@ function WayRow({ way }: { way: Way }) {
   const words = (
     <>
       {/* The icon on a faint tile, as on the course cards */}
-      <span aria-hidden="true" className={`flex size-11 flex-none items-center justify-center ${way.href ? "bg-accent/10 text-accent" : "bg-rule/50 text-ink-muted"}`}>
+      <span aria-hidden="true" className={`flex size-11 flex-none items-center justify-center rounded-[14px] ${way.href ? "bg-warm-tint text-warm-ink" : "bg-paper text-ink-muted"}`}>
         {/* The icon */}
         <way.icon className="size-6" />
       </span>
@@ -89,7 +89,7 @@ function Group({ id, title, ways, more }: { id: string; title: string; ways: Rea
         {more && <Link href={more.href} className={`${TEXT_LINK} text-footnote`}>{more.label}</Link>}
       </div>
       {/* The rows */}
-      <ul className="mt-2 divide-y divide-rule border-y border-rule">
+      <ul className={`mt-2 ${CARD_LIST}`}>
         {/* Each kind of practice */}
         {ways.map((way) => <li key={way.name}><WayRow way={way} /></li>)}
       </ul>

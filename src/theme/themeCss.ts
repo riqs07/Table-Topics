@@ -11,6 +11,12 @@ function paletteVariables(palette: Palette): string {
   return ROLES.map((role) => `--vl-${role}: ${palette[role]};`).join("\n");
 }
 
+// Write CSS variable lines for only the roles an area overrides
+function partialVariables(palette: Partial<Palette>): string {
+  // Each role the area sets
+  return ROLES.filter((role) => palette[role] !== undefined).map((role) => `--vl-${role}: ${palette[role]};`).join("\n");
+}
+
 // Write the CSS blocks for one theme
 function themeBlocks(id: string, theme: Theme): string {
   // Selector that switches this theme on
@@ -23,6 +29,15 @@ function themeBlocks(id: string, theme: Theme): string {
     `${base}[data-mode="dark"] {\n${paletteVariables(theme.colors.dark)}\ncolor-scheme: dark;\n}`,
     // Dark colors when the phone prefers dark, unless light is forced
     `@media (prefers-color-scheme: dark) {\n${base}:not([data-mode="light"]) {\n${paletteVariables(theme.colors.dark)}\ncolor-scheme: dark;\n}\n}`,
+    // Each area's own surfaces, light, forced dark, and dark when the phone prefers it; the whole page takes them while an area is showing, so the tab bar and the edges match (decision 69)
+    ...Object.entries(theme.areas ?? {}).flatMap(([area, palettes]) => [
+      // Light
+      `${base}:has([data-area="${area}"]), ${base} [data-area="${area}"] {\n${partialVariables(palettes.light)}\n}`,
+      // Forced dark
+      `${base}[data-mode="dark"]:has([data-area="${area}"]), ${base}[data-mode="dark"] [data-area="${area}"] {\n${partialVariables(palettes.dark)}\n}`,
+      // Preferred dark
+      `@media (prefers-color-scheme: dark) {\n${base}:not([data-mode="light"]):has([data-area="${area}"]), ${base}:not([data-mode="light"]) [data-area="${area}"] {\n${partialVariables(palettes.dark)}\n}\n}`,
+    ]),
   ].join("\n");
 }
 

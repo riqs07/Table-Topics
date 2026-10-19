@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { PRIMARY, RowLink } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, RowLink } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load the streak sentence
 import { streakSentence } from "@/core/copy";
@@ -46,8 +46,10 @@ import { MissionCard } from "@/components/script/MissionCard";
 import { missionDays, missionToday } from "@/core/missions";
 // Load the record type for mission tries
 import type { MissionRecord } from "@/data/records";
-// Load the shared heading look
-import { SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared heading and card looks
+import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
+// Load the end-of-day moment
+import { DoneBurst } from "@/components/script/DoneBurst";
 // Load the reminder to keep practice safe
 import { SafetyNote } from "@/components/script/SafetyNote";
 // Load the rule for which reminder to show
@@ -176,10 +178,10 @@ export function HomeScreen(props: ScreenProps) {
           {/* The last seven days as squares, filled where there was practice */}
           {data && !data.showWelcome && (data.sessionCount > 0 || data.strip.some((day) => day.practised)) && (
             <ul aria-label="The last seven days" className="mt-3 mb-4 flex gap-1.5">
-              {/* Each day */}
-              {data.strip.map((day) => (
-                // One square with the day's letter; today has a darker edge
-                <li key={day.key} aria-label={`${day.name}${day.isToday ? ", today" : ""}: ${day.practised ? "practised" : "not yet"}`} className={`flex size-8 items-center justify-center border text-tab ${day.practised ? "border-fill bg-fill text-fill-ink" : "border-rule text-ink-muted"} ${day.isToday ? "outline-2 outline-offset-2 outline-ink" : ""}`}>
+              {/* Each day, popping in one after another */}
+              {data.strip.map((day, index) => (
+                // One rounded square with the day's letter: green where practised, warm for today, ringed in the warm tint
+                <li key={day.key} aria-label={`${day.name}${day.isToday ? ", today" : ""}: ${day.practised ? "practised" : "not yet"}`} className={`flex size-8 items-center justify-center rounded-[10px] text-tab motion-safe:animate-pop ${day.practised ? "bg-fill text-fill-ink" : day.isToday ? "bg-warm text-on-warm" : "bg-paper text-ink-muted"} ${day.isToday ? "outline-3 outline-warm-tint" : ""}`} style={{ animationDelay: `${100 + index * 60}ms` }}>
                   {/* The letter, which the label already says */}
                   <span aria-hidden="true">{day.letter}</span>
                 </li>
@@ -196,7 +198,7 @@ export function HomeScreen(props: ScreenProps) {
           {data?.showWelcome && (
             <section aria-label="Welcome" className="mt-8 md:mt-0">
               {/* The greeting */}
-              <h1 className="font-display text-prompt tracking-tight md:text-prompt-xl">Welcome to VoiceLab</h1>
+              <h1 className="font-display text-prompt font-semibold tracking-tight motion-safe:animate-rise md:text-prompt-xl">Welcome to VoiceLab</h1>
               {/* What it is, and the privacy promise */}
               <p className="mt-3 max-w-[52ch] text-lede">Practise speaking, privately. Your recordings stay on this device.</p>
               {/* One way in: today's first step (the "what brings you here?" question went with decision 67; two of its three answers led to the same place) */}
@@ -206,15 +208,22 @@ export function HomeScreen(props: ScreenProps) {
 
           {/* Today's practice: the steps, with done and next marks */}
           {plan && (
-            <section aria-label="Today's practice" className="mt-8 md:mt-0">
-              {/* What it is and how long */}
-              <p className="text-footnote text-ink-muted">Today · about {planMinutes(plan.steps)} min</p>
+            <section aria-label="Today's practice" className={`-mx-2 mt-6 p-5 motion-safe:animate-rise md:mx-0 md:mt-0 md:p-7 ${CARD}`}>
+              {/* Once done: the full ring, badge and (the first time) sparks */}
+              {nextIndex === -1 && <DoneBurst celebrate={data?.celebrate ?? false} />}
+              {/* What it is and how long, with how far through */}
+              <p className="flex justify-between text-footnote text-ink-muted"><span>Today · about {planMinutes(plan.steps)} min</span>{nextIndex !== -1 && <span className="font-semibold text-warm-ink">{doneCount} of {plan.steps.length}</span>}</p>
               {/* Where things stand, set like a headline */}
-              <h1 className="mt-2 font-display text-prompt tracking-tight md:text-prompt-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
+              <h1 className="mt-2 font-display text-statement font-semibold tracking-tight md:text-statement-xl">{nextIndex === -1 ? "Done for today." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
               {/* Once done: the time spoken today, and which day of the week this is */}
               {nextIndex === -1 && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)} {data.weekLine}</p>}
+              {/* How far through, as a bar that fills in */}
+              <span aria-hidden="true" className="mt-4 block h-2 overflow-hidden rounded-full bg-paper">
+                {/* The filled part */}
+                <span className="block h-full origin-left rounded-full bg-accent motion-safe:animate-fill" style={{ width: `${(doneCount / Math.max(1, plan.steps.length)) * 100}%`, animationDelay: "300ms" }} />
+              </span>
               {/* The steps */}
-              <ol aria-label="Steps" className="mt-4">
+              <ol aria-label="Steps" className="mt-4 flex flex-col gap-2">
                 {/* Each step */}
                 {plan.steps.map((step, index) => {
                   // Done, next, or still to come
@@ -225,19 +234,17 @@ export function HomeScreen(props: ScreenProps) {
                   const result = session ? stepNote(session) : null;
                   // One step
                   return (
-                    <li key={step.lane} className="relative">
-                      {/* The line to the next step (not after the last) */}
-                      {index < plan.steps.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
-                      {/* The whole row starts the step */}
-                      <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} className="relative flex items-start gap-x-4 py-3 hover:text-accent">
+                    <li key={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
+                      {/* The whole row starts the step: a rounded tile, warm when next */}
+                      <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
                         {/* Its mark (when the day is first done, the ticks grow in one by one, unless motion is unwelcome) */}
-                        <span className={data?.celebrate ? "motion-safe:animate-tick-in" : undefined} style={data?.celebrate ? { animationDelay: `${index * 300}ms` } : undefined}><PathMark mark={mark} number={index + 1} /></span>
+                        <span className={data?.celebrate ? "motion-safe:animate-pop" : undefined} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}><PathMark mark={mark} number={index + 1} /></span>
                         {/* What it is */}
                         <span className="min-w-0 flex-1">
                           {/* Its name and time */}
-                          <span className={`block text-footnote ${mark === "next" ? "font-medium text-accent" : "text-ink-muted"}`}>{step.label} · {step.minutes} min</span>
+                          <span className={`block text-footnote ${mark === "next" ? "font-semibold text-warm-ink" : "text-ink-muted"}`}>{step.label} · {step.minutes} min</span>
                           {/* What it uses */}
-                          <span className="block text-lede">{step.title}</span>
+                          <span className="block leading-snug">{step.title}</span>
                           {/* How it went, once done */}
                           {result && <span className="block text-footnote text-ink-muted">{result}</span>}
                         </span>
@@ -271,7 +278,7 @@ export function HomeScreen(props: ScreenProps) {
               {/* Run-in heading */}
               <h2 id="keep-going" className={SECTION_HEADING}>Keep going</h2>
               {/* The suggestions */}
-              <ul className="mt-2 divide-y divide-rule border-y border-rule">
+              <ul className={`mt-3 divide-y divide-rule px-4 ${CARD}`}>
                 {/* Each one */}
                 {plan.more.map((step) => (
                   // One suggestion: what kind, then what it uses

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 import { SwipeDeck } from "@/components/script/SwipeDeck";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-import { PrimaryLink } from "@/components/script/Buttons";
+import { PRESS, PrimaryLink } from "@/components/script/Buttons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the scenarios, their item and progress saving
@@ -106,7 +106,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   if (!card) {
     // Say so, with a way back
     return (
-      <main className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main data-area="learn" className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Heading */}
         <Masthead title="Learn" section="learn" />
         {/* Explanation */}
@@ -130,7 +130,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {/* Which set, and what kind of card */}
       <Kicker>{card.kind === "myth-or-fact" ? "Myth or fact?" : card.kind === "try-it" ? "Try it" : (set?.name ?? "Learn")}</Kicker>
       {/* The question, set like a headline */}
-      <h1 className="mt-2 font-display text-prompt tracking-tight">{card.title}</h1>
+      <h1 className="mt-2 font-display text-prompt font-semibold tracking-tight">{card.title}</h1>
       {/* A myth-or-fact guess, before the research */}
       {card.verdict && (
         <div className="mt-6">
@@ -141,11 +141,11 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
             {/* Each guess */}
             {GUESSES.map((option) => (
               // One guess, filled once chosen
-              <button key={option.verdict} type="button" aria-pressed={guess === option.verdict} disabled={guess !== null} onClick={() => setGuess(option.verdict)} className={`min-h-11 border px-4 ${guess === option.verdict ? "border-fill bg-fill text-fill-ink" : "border-ink disabled:opacity-60"}`}>{option.label}</button>
+              <button key={option.verdict} type="button" aria-pressed={guess === option.verdict} disabled={guess !== null} onClick={() => setGuess(option.verdict)} className={`min-h-12 flex-1 rounded-[14px] border-2 px-4 font-semibold ${PRESS} ${guess === option.verdict ? "border-fill bg-fill text-fill-ink" : "border-rule bg-card disabled:opacity-60"}`}>{option.label}</button>
             ))}
           </div>
           {/* The answer, once guessed */}
-          {guess && <p role="status" className="mt-4 font-display text-cue">{VERDICT_WORDS[card.verdict]} {guess === card.verdict ? "You got it." : ""}</p>}
+          {guess && <p role="status" className="mt-4 rounded-2xl bg-card px-4 py-3 font-display text-cue font-semibold motion-safe:animate-pop">{VERDICT_WORDS[card.verdict]} {guess === card.verdict ? "You got it." : ""}</p>}
         </div>
       )}
     </div>,
@@ -168,7 +168,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {/* Heading */}
       <Kicker>What it means</Kicker>
       {/* The meaning, set large */}
-      <p className="mt-2 max-w-[40ch] font-display text-statement tracking-tight">{card.meaning}</p>
+      <p className="mt-2 max-w-[40ch] font-display text-statement font-semibold tracking-tight">{card.meaning}</p>
     </div>,
     // 4. What to do
     <div key="do">
@@ -178,7 +178,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       <p className="mt-2 max-w-[52ch] text-cue leading-snug">{card.doThis}</p>
       {/* A short exercise to say aloud, on try-it cards */}
       {card.exercise && (
-        <div className="mt-6 border-l-2 border-accent pl-4">
+        <div className="mt-6 rounded-2xl bg-warm-tint p-4">
           {/* Heading */}
           <p className="text-footnote text-ink-muted">Try it now</p>
           {/* The exercise */}
@@ -203,7 +203,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
 
   // Draw the page
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main data-area="learn" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* The set's name, with a way out instead of the tab bar */}
       <Masthead title={set?.name ?? "Learn"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: `/learn/set?id=${card.set}`, label: `Close, back to ${set?.name ?? "Learn"}` }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
       {/* The screens */}

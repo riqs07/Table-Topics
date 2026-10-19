@@ -114,7 +114,7 @@ describe("HomeScreen", () => {
     // The steps
     const steps = await screen.findByRole("list", { name: "Steps" });
     // Confirm the headline, the summary, each step's line, no filler counts, and the moment playing
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 3 minutes 10 today. First day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/fillers a minute/), steps.querySelectorAll(".motion-safe\\:animate-tick-in").length]).toEqual(["Done for today.", true, true, true, null, 4]);
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 3 minutes 10 today. First day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/fillers a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length]).toEqual(["Done for today.", true, true, true, null, 4]);
     // The suggestions to keep going
     const more = within(screen.getByRole("region", { name: "Keep going" })).getAllByRole("link");
     // Confirm three or four, none of them today's steps, the last another card
@@ -124,7 +124,7 @@ describe("HomeScreen", () => {
     // The later visit
     render(<HomeScreen repository={repository} now={NOW} />);
     // Confirm no moment this time
-    expect((await screen.findByRole("list", { name: "Steps" })).querySelectorAll(".motion-safe\\:animate-tick-in").length).toBe(0);
+    expect((await screen.findByRole("list", { name: "Steps" })).querySelectorAll(".motion-safe\\:animate-pop").length).toBe(0);
   });
 
   // A step done today is ticked, and the main action carries on from the first step not done

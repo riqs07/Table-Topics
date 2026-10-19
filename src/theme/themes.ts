@@ -16,7 +16,12 @@ export interface Theme {
   colors: { light: Palette; dark: Palette };
   // CSS font stacks; the variables are set by the font loader in theme/fonts.ts
   fonts: { body: string; display: string };
+  // Optional per-area overrides (an element with data-area="learn" and so on), for light and dark (decision 69)
+  areas?: Partial<Record<AreaId, { light: Partial<Palette>; dark: Partial<Palette> }>>;
 }
+
+// The areas that can carry their own surfaces
+export type AreaId = "learn" | "results" | "stage";
 
 // The phone's own fonts, used as a fallback in every stack
 const SYSTEM_SANS = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -53,6 +58,16 @@ export const THEMES = {
         "fill": "#a94a28",
         // Text on large filled areas
         "fill-ink": "#fffcf6",
+        // Cards lifted off the page
+        "card": "#ffffff",
+        // The warm accent, for highlights and celebration shapes
+        "warm": "#e8935c",
+        // Text on the warm tint
+        "warm-ink": "#7a3418",
+        // A soft warm background for what is next
+        "warm-tint": "#f8e3d2",
+        // Marks drawn on the warm accent
+        "on-warm": "#2a2420",
         // Filler words in a transcript
         "filler": "#736a61",
         // Keyboard focus outline
@@ -84,6 +99,16 @@ export const THEMES = {
         "fill": "#e08a66",
         // Text on large filled areas
         "fill-ink": "#1d1a17",
+        // Cards lifted off the page
+        "card": "#2f2a25",
+        // The warm accent, for highlights and celebration shapes
+        "warm": "#e8935c",
+        // Text on the warm tint
+        "warm-ink": "#f2c3a1",
+        // A soft warm background for what is next
+        "warm-tint": "#3a2b20",
+        // Marks drawn on the warm accent
+        "on-warm": "#1d1a17",
         // Filler words in a transcript
         "filler": "#a59a8b",
         // Keyboard focus outline
@@ -109,21 +134,21 @@ export const THEMES = {
     // Name shown on the style page
     name: "Calm studio",
     // What the theme is going for
-    description: "Cool stone grays, one forest green accent, set in Newsreader like a printed script. Chosen at C6.",
+    description: "Warm cream, forest green and apricot, Fraunces headlines over Atkinson Hyperlegible text. Chosen at C6, warmed up in decision 69.",
     // Colors for each mode
     colors: {
       // Daytime colors
       light: {
         // Page background
-        "paper": "#f3f4f2",
+        "paper": "#f3ece2",
         // Lifted surfaces
-        "paper-raised": "#fcfcfb",
+        "paper-raised": "#fbf6ef",
         // Main text
         "ink": "#1e2320",
         // Secondary text
         "ink-muted": "#59615c",
         // Dividing lines
-        "rule": "#d4d9d5",
+        "rule": "#e6dccf",
         // Record button and your one fix
         "accent": "#2d5a3d",
         // Text on the accent
@@ -132,8 +157,18 @@ export const THEMES = {
         "fill": "#2d5a3d",
         // Text on large filled areas
         "fill-ink": "#fcfcfb",
+        // Cards lifted off the page
+        "card": "#ffffff",
+        // The warm accent, for highlights and celebration shapes
+        "warm": "#f4a46c",
+        // Text on the warm tint
+        "warm-ink": "#8a3f1f",
+        // A soft warm background for what is next
+        "warm-tint": "#fce7d6",
+        // Marks drawn on the warm accent
+        "on-warm": "#1e2320",
         // Filler words in a transcript
-        "filler": "#666e69",
+        "filler": "#5f6762",
         // Keyboard focus outline
         "focus-ring": "#2c5a88",
         // Table Topics timing light (green)
@@ -163,6 +198,16 @@ export const THEMES = {
         "fill": "#3d6b4e",
         // Text on large filled areas
         "fill-ink": "#eef2ef",
+        // Cards lifted off the page
+        "card": "#242925",
+        // The warm accent, for highlights and celebration shapes
+        "warm": "#e8935c",
+        // Text on the warm tint
+        "warm-ink": "#f2c3a1",
+        // A soft warm background for what is next
+        "warm-tint": "#3a2b20",
+        // Marks drawn on the warm accent
+        "on-warm": "#161917",
         // Filler words in a transcript
         "filler": "#959d98",
         // Keyboard focus outline
@@ -176,11 +221,23 @@ export const THEMES = {
       },
     },
     // One editorial serif for everything (script-page direction)
+    // Each area's own surfaces and, for the recording stage, its own ink (decision 69)
+    areas: {
+      // Learn: warm sand
+      learn: { light: { "paper-raised": "#f6efe3", "paper": "#efe4d3" }, dark: { "paper-raised": "#211e19", "paper": "#1a1814" } },
+      // A session's results: pale green
+      results: { light: { "paper-raised": "#f3f7f2", "paper": "#e3eee6" }, dark: { "paper-raised": "#1b221d", "paper": "#151a16" } },
+      // The recording stage: deep green with light ink, in both modes
+      stage: {
+        light: { "paper-raised": "#12291c", "paper": "#0c1f15", "ink": "#f4f1ea", "ink-muted": "#b9c9be", "rule": "#3c5a47", "accent": "#8bd3a0", "fill": "#f4f1ea", "fill-ink": "#12291c", "filler": "#a9bcb0", "card": "#1b3626", "accent-ink": "#12291c", "warm-tint": "#3a2b20", "warm-ink": "#f2c3a1", "focus-ring": "#9cc3e8", "light-green": "#66bb6a", "light-yellow": "#e8b923", "light-red": "#f26b5b" },
+        dark: { "paper-raised": "#0e1e15", "paper": "#09160f", "ink": "#f4f1ea", "ink-muted": "#b9c9be", "rule": "#33503e", "accent": "#8bd3a0", "fill": "#f4f1ea", "fill-ink": "#12291c", "filler": "#a9bcb0", "card": "#173022", "accent-ink": "#12291c", "warm-tint": "#3a2b20", "warm-ink": "#f2c3a1", "focus-ring": "#9cc3e8", "light-green": "#66bb6a", "light-yellow": "#e8b923", "light-red": "#f26b5b" },
+      },
+    },
     fonts: {
       // Font for running text
-      body: `var(--font-newsreader), ${SYSTEM_SERIF}`,
+      body: `var(--font-atkinson), ${SYSTEM_SANS}`,
       // Font for headings and the daily prompt
-      display: `var(--font-newsreader), ${SYSTEM_SERIF}`,
+      display: `var(--font-fraunces), ${SYSTEM_SERIF}`,
     },
   },
   // Neutral grayscale for building screens before a palette is chosen
@@ -211,6 +268,16 @@ export const THEMES = {
         "fill": "#333333",
         // Text on large filled areas
         "fill-ink": "#ffffff",
+        // Cards lifted off the page
+        "card": "#ffffff",
+        // The warm accent, for highlights and celebration shapes
+        "warm": "#b0b0b0",
+        // Text on the warm tint
+        "warm-ink": "#1f1f1f",
+        // A soft warm background for what is next
+        "warm-tint": "#ececec",
+        // Marks drawn on the warm accent
+        "on-warm": "#161616",
         // Filler words in a transcript
         "filler": "#6b6b6b",
         // Keyboard focus outline
@@ -242,6 +309,16 @@ export const THEMES = {
         "fill": "#d9d9d9",
         // Text on large filled areas
         "fill-ink": "#161616",
+        // Cards lifted off the page
+        "card": "#262626",
+        // The warm accent, for highlights and celebration shapes
+        "warm": "#8a8a8a",
+        // Text on the warm tint
+        "warm-ink": "#f0f0f0",
+        // A soft warm background for what is next
+        "warm-tint": "#333333",
+        // Marks drawn on the warm accent
+        "on-warm": "#161616",
         // Filler words in a transcript
         "filler": "#949494",
         // Keyboard focus outline

@@ -14,6 +14,8 @@ import { dayLabel } from "@/core/copy";
 // Load the record and repository types
 import type { MissionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
+// Load the shared card look
+import { CARD } from "./textStyles";
 
 // How many recent tries to list
 const RECENT_MISSIONS = 5;
@@ -56,7 +58,7 @@ export function MissionSection({ repo, today }: { repo: Repository; today: Date 
           {/* The headline */}
           <p className="mt-4 text-lede">{betterThanFeared(missions).better} of {betterThanFeared(missions).total} went better than you expected.</p>
           {/* The latest */}
-          <ul aria-label="Your missions" className="mt-2 divide-y divide-rule border-y border-rule">
+          <ul aria-label="Your missions" className={`mt-2 divide-y divide-rule px-4 ${CARD}`}>
             {/* Each try */}
             {tried.slice(0, RECENT_MISSIONS).map((record) => (
               // One try: the move, then expected against actual as two short bars
@@ -71,9 +73,9 @@ export function MissionSection({ repo, today }: { repo: Repository; today: Date 
                 {/* Expected against actual */}
                 <span aria-label={`Expected ${record.predicted} of 5, went ${record.outcome} of 5`} className="flex w-32 flex-none flex-col gap-1">
                   {/* Expected */}
-                  <span aria-hidden="true" className="flex items-center gap-2 text-footnote text-ink-muted"><span className="w-10">said</span><span className="h-1.5 bg-rule" style={{ width: `${(record.predicted ?? 0) * 12}px` }} /></span>
+                  <span aria-hidden="true" className="flex items-center gap-2 text-footnote text-ink-muted"><span className="w-10">said</span><span className="h-1.5 rounded-full bg-rule" style={{ width: `${(record.predicted ?? 0) * 12}px` }} /></span>
                   {/* Actual */}
-                  <span aria-hidden="true" className="flex items-center gap-2 text-footnote"><span className="w-10">went</span><span className="h-1.5 bg-accent" style={{ width: `${(record.outcome ?? 0) * 12}px` }} /></span>
+                  <span aria-hidden="true" className="flex items-center gap-2 text-footnote"><span className="w-10">went</span><span className="h-1.5 rounded-full bg-accent" style={{ width: `${(record.outcome ?? 0) * 12}px` }} /></span>
                 </span>
               </li>
             ))}

@@ -20,7 +20,7 @@ import { formatClock } from "@/core/recordingRules";
 // Load the record types
 import type { SessionRecord, TalkRecord } from "@/data/records";
 // Load the shared heading look
-import { SECTION_HEADING } from "@/components/script/textStyles";
+import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -139,7 +139,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
           {/* Its name */}
           <span>Date of the talk</span>
           {/* The field */}
-          <input type="date" value={dateInput} onChange={(event) => setDateInput(event.target.value)} className="min-h-11 border-b border-ink bg-transparent py-1" />
+          <input type="date" value={dateInput} onChange={(event) => setDateInput(event.target.value)} className="min-h-11 rounded-xl border-2 border-rule bg-card px-3 py-1" />
         </label>
         {/* Save it */}
         <button type="submit" className={TEXT_LINK}>Save date</button>
@@ -149,7 +149,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
 
       {/* Today's step */}
       {step && daysLeft !== null && (
-        <section className="mt-8 border-y border-ink py-5">
+        <section className="mt-8 rounded-[22px] bg-card p-5 shadow-card">
           {/* What to do today */}
           <p className="font-display text-statement leading-snug">{prepHeadline(daysLeft, step)}</p>
           {/* Each task, with progress and a link */}
@@ -202,7 +202,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
         {/* Small heading */}
         <h2 className={SECTION_HEADING}>Practise any part</h2>
         {/* One row per section, then the whole talk */}
-        <ul className="mt-2 divide-y divide-rule border-y border-rule">
+        <ul className={`mt-2 ${CARD_LIST}`}>
           {/* Each section */}
           {sections.map((section, index) => (
             // One section

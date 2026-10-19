@@ -20,6 +20,16 @@ export const ROLES = [
   "fill",
   // Text placed on a large filled area
   "fill-ink",
+  // Cards lifted off the page (white in light mode; decision 69)
+  "card",
+  // The warm accent, for highlights, "next" marks and celebration shapes (never for text)
+  "warm",
+  // Text on the warm tint
+  "warm-ink",
+  // A soft warm background for what is next and for today's mission
+  "warm-tint",
+  // Marks (ticks, icons) drawn on the warm accent
+  "on-warm",
   // Filler words in a transcript: quiet, never alarming
   "filler",
   // Keyboard focus outline
@@ -68,6 +78,22 @@ export const CONTRAST_RULES: ReadonlyArray<ContrastRule> = [
   { foreground: "accent-ink", background: "accent", minimum: TEXT },
   // Text on the action band, main buttons and icon tiles
   { foreground: "fill-ink", background: "fill", minimum: TEXT },
+  // Text on cards
+  { foreground: "ink", background: "card", minimum: TEXT },
+  // (secondary text too)
+  { foreground: "ink-muted", background: "card", minimum: TEXT },
+  // Text on the warm tint
+  { foreground: "warm-ink", background: "warm-tint", minimum: TEXT },
+  // Main text on the warm tint
+  { foreground: "ink", background: "warm-tint", minimum: TEXT },
+  // (secondary text too, as in the mission card)
+  { foreground: "ink-muted", background: "warm-tint", minimum: TEXT },
+  // Numbers, ticks and icons drawn on the warm accent
+  { foreground: "on-warm", background: "warm", minimum: TEXT },
+  // Muted numbers on the plain paper tiles inside a card
+  { foreground: "ink-muted", background: "paper", minimum: TEXT },
+  // Progress bars and rings in the accent must show on a card
+  { foreground: "accent", background: "card", minimum: NON_TEXT },
   // The accent shape must stand out from both surfaces
   { foreground: "accent", background: "paper", minimum: NON_TEXT },
   // (same, on lifted surfaces)

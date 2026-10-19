@@ -92,9 +92,9 @@ export function SwipeDeck({ screens, index, onIndex, label, finish = null }: Swi
   return (
     <section aria-roledescription="carousel" aria-label={label} className="flex flex-1 flex-col">
       {/* Where you are: one segment per screen across the top, those seen filled */}
-      <span aria-hidden="true" className="mt-4 flex gap-1">
+      <span aria-hidden="true" className="mt-4 flex gap-1.5">
         {/* Each screen's segment */}
-        {screens.map((_, position) => <span key={position} className={`h-1 flex-1 ${position <= index ? "bg-accent" : "bg-rule"}`} />)}
+        {screens.map((_, position) => <span key={position} className={`h-1.5 flex-1 rounded-full transition-[background-color,transform] duration-300 ${position <= index ? "bg-accent" : "bg-rule"} ${position === index ? "scale-y-150" : ""}`} />)}
       </span>
       {/* The screens, side by side, one in view at a time */}
       <div ref={row} onScroll={onScroll} className="-mx-6 flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:mx-0">

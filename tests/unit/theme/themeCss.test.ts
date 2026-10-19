@@ -40,6 +40,12 @@ describe("themeCss", () => {
     expect(css).toContain(`[data-theme="notebook"][data-mode="dark"] {`);
   });
 
+  // An area (the recording stage) gets its own surfaces, and the whole page takes them while it shows (decision 69)
+  it("writes each area's colours for the area and for the page around it, in light and dark", () => {
+    // Confirm the light, forced-dark and preferred-dark selectors
+    expect([css.includes(`[data-theme="calm-studio"]:has([data-area="stage"]), [data-theme="calm-studio"] [data-area="stage"] {`), css.includes(`[data-theme="calm-studio"][data-mode="dark"]:has([data-area="stage"])`), css.includes(`[data-theme="calm-studio"]:not([data-mode="light"]):has([data-area="stage"])`), css.includes(`--vl-paper-raised: ${THEMES["calm-studio"].areas.stage.light["paper-raised"]};`)]).toEqual([true, true, true, true]);
+  });
+
   // Fonts are part of the theme too
   it("sets the body and display font variables", () => {
     // Confirm the notebook body font stack is set

@@ -29,7 +29,7 @@ import { dayKey } from "@/core/dates";
 // Load the record types
 import type { SessionRecord } from "@/data/records";
 // Load the shared heading look
-import { SECTION_HEADING } from "@/components/script/textStyles";
+import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -97,7 +97,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {/* Icon, name, and when it is for */}
       <div className="mt-2 flex items-center gap-4">
         {/* The icon on an accent tile */}
-        <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center bg-accent/10 text-accent">{(() => { const IconShape = UNIT_ICONS[unit.id]; return <IconShape className="size-9" />; })()}</span>
+        <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center rounded-[18px] bg-warm-tint text-warm-ink">{(() => { const IconShape = UNIT_ICONS[unit.id]; return <IconShape className="size-9" />; })()}</span>
         {/* Name (when it is for is on its card on Connect, decision 63) */}
         <p className="min-w-0 flex-1 font-display text-statement tracking-tight">{unit.name}</p>
       </div>
@@ -130,7 +130,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           <p className="mt-2"><Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className={TEXT_LINK}>{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Add another moment" : "Record today\u2019s moment"}</Link></p>
           {/* The latest few, in the words they were said */}
           {moments.length > 0 && (
-            <ul aria-label="Your moments" className="mt-2 divide-y divide-rule border-y border-rule">
+            <ul aria-label="Your moments" className={`mt-2 ${CARD_LIST}`}>
               {/* Each moment */}
               {moments.slice(0, RECENT_MOMENTS).map((moment) => (
                 // One moment: the day, then what was said
@@ -151,7 +151,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         {/* Run-in heading */}
         <h2 id="recipe" className={SECTION_HEADING}>{unit.words.recipe}, in four beats</h2>
         {/* The beats */}
-        <ol className="mt-3 divide-y divide-rule border-y border-rule">
+        <ol className={`mt-3 ${CARD_LIST}`}>
           {/* Each beat */}
           {unit.beats.map((beat, index) => (
             // One beat: its name and what it means (why it works is in the lessons, decision 63)
@@ -233,7 +233,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           {/* Run-in heading */}
           <h2 id="remarks" className={SECTION_HEADING}>Things people say</h2>
           {/* Each one, followed up by tapping it */}
-          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+          <ul className={`mt-2 ${CARD_LIST}`}>
             {/* One remark */}
             {ASKING_DRILLS.map((item) => <li key={item.id}><RowLink href={answerHref(item.id)}>{item.text}</RowLink></li>)}
           </ul>
@@ -246,7 +246,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           {/* Run-in heading */}
           <h2 id="your-answers" className={SECTION_HEADING}>Your answers</h2>
           {/* The most recent */}
-          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+          <ul className={`mt-2 ${CARD_LIST}`}>
             {/* Each answer */}
             {answers.slice(0, RECENT_ANSWERS).map((answer) => (
               // One answer: its question, day, and beats

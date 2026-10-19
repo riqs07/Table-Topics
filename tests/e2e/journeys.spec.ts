@@ -34,7 +34,7 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   // The saved session opens (bug B1: never stuck on "Saving…")
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The results show at once, with the one change and the player (decision 67)
-  await expect(page.getByText("One change.")).toBeVisible();
+  await expect(page.getByText("One change", { exact: true })).toBeVisible();
   // Play the recording
   await page.getByRole("button", { name: "Play your recording" }).click();
   // Open the optional notes

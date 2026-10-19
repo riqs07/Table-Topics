@@ -2,7 +2,7 @@
 // One saved session: the Feedback screen for a first try, or the Retry result screen for a retry
 
 // Load React's state and effect tools
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
@@ -39,6 +39,11 @@ import { marksPaused, marksSentence, paceAcross } from "@/core/wordTiming";
 import { readingTokens } from "@/core/liveReading";
 // Load the compact row of numbers
 import { resultChanges, resultNumbers } from "@/core/resultNumbers";
+// Load the count-up rules and the hook that runs them
+import { countUpValue } from "@/core/countUp";
+// Load the shared card look
+import { CARD, CARD_LIST } from "@/components/script/textStyles";
+import { useCountUp } from "@/components/script/useCountUp";
 // Load the filler marker
 import { markFillers } from "@/core/fillers";
 // Load the then-and-now helpers
@@ -54,7 +59,7 @@ import { localChange } from "@/core/localChange";
 // Load the section splitter, for rehearsals of one section
 import { talkSections } from "@/core/eventPrep";
 // Load the Table Topics timing sentence
-import { LOUDNESS_TICK_MS, timingSentence } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, speakingWindow, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
 import { headlineFor, retryHeadline } from "@/core/focusMeasure";
 // Load the daily prompt picker, for the step after a warm-up
@@ -193,7 +198,7 @@ function ThenAndNow({ repo, then, now, thenDay, nowDay }: { repo: Repository; th
 
   // Draw both takes
   return (
-    <div className="mt-5 border-y border-rule py-4">
+    <div className={`mt-5 p-4 ${CARD}`}>
       {/* Small heading */}
       <p className="text-footnote text-ink-muted">Then and now, same prompt</p>
       {/* The earlier take */}
@@ -233,22 +238,48 @@ function MarkedPassage({ check }: { check: ReadingCheck }) {
   );
 }
 
-// The compact row of numbers: fillers, speed, length, and pauses when measured
+// The numbers as tiles: fillers, speed, length, and pauses when measured, each counting up into place (decision 69)
 function NumbersRow({ session, pauseCount }: { session: SessionRecord; pauseCount: number | null }) {
-  // One cell per number, the number large and its words small beneath
+  // How far the count has got
+  const progress = useCountUp();
+  // One tile per number, the number large and its words small beneath
   return (
-    <section aria-label="Your numbers" className="mt-5 flex border-y border-rule py-3">
+    <section aria-label="Your numbers" className="mt-4 grid grid-cols-2 gap-2 motion-safe:animate-rise min-[400px]:grid-cols-4" style={{ animationDelay: "220ms" }}>
       {/* Each number */}
       {resultNumbers(session, pauseCount).map((item) => (
-        // One cell
-        <div key={item.label} className="min-w-0 flex-1">
-          {/* The number */}
-          <p className="font-display text-cue">{item.value}</p>
+        // One tile
+        <div key={item.label} className="min-w-0 rounded-2xl bg-card px-3 pt-3 pb-2.5">
+          {/* The number, counting up */}
+          <p className="font-display text-cue font-semibold tabular-nums">{countUpValue(item.value, progress)}</p>
           {/* Its words */}
           <p className="text-footnote leading-tight text-ink-muted">{item.label}</p>
         </div>
       ))}
     </section>
+  );
+}
+
+// For a timed session: a ring that draws round to how long you spoke against the window's end, beside how the timing went (decision 69)
+function LengthRing({ session }: { session: SessionRecord }) {
+  // The window, when this kind of session has one
+  const window = speakingWindow(session.mode, session.promptId);
+  // How far round: the length against the window's end (or a full ring without one)
+  const share = window ? Math.min(1, session.durationSec / window.end) : 1;
+  // The ring's length
+  const length = 239;
+  // The ring and the sentence beside it
+  return (
+    <div className="mt-4 flex items-center gap-4 motion-safe:animate-rise" style={{ animationDelay: "300ms" }}>
+      {/* The ring */}
+      <svg aria-hidden="true" viewBox="0 0 92 92" className="size-20 flex-none -rotate-90">
+        {/* Its track */}
+        <circle cx="46" cy="46" r="38" fill="none" strokeWidth="10" className="stroke-paper" />
+        {/* The part spoken */}
+        <circle cx="46" cy="46" r="38" fill="none" strokeWidth="10" strokeLinecap="round" strokeDasharray={length} strokeDashoffset={length * (1 - share)} className="stroke-accent motion-safe:animate-ring" style={{ "--vl-ring-len": String(length) } as CSSProperties} />
+      </svg>
+      {/* How the timing went, with the length */}
+      <p className="text-lede">{timingSentence(session.mode, session.durationSec, undefined, session.promptId)}</p>
+    </div>
   );
 }
 
@@ -345,7 +376,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {reading ? (
             <>
               {/* How much of the passage was read */}
-              <p data-testid="reading-headline" className="mt-5 font-display text-3xl md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</p>
+              <p data-testid="reading-headline" className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</p>
               {/* The detail */}
               <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}, {reading.repeated} repeated, {reading.extra} extra (fillers and added words).</p>
               {/* A lesson's tip, as a reminder */}
@@ -354,7 +385,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           ) : bookendOutcome ? (
             <>
               {/* The drill's main finding */}
-              <p className="mt-5 font-display text-3xl md:mt-0">{bookendOutcome.headline}</p>
+              <p className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{bookendOutcome.headline}</p>
               {/* Its second finding */}
               <p className="mt-2 text-footnote text-ink-muted">{bookendOutcome.detail}</p>
             </>
@@ -363,18 +394,18 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             <SmallTalkBeats session={session} />
           ) : (
             // The focus number as a sentence, when one measures it (otherwise the one change leads)
-            headlineFor(session) && <p className="mt-5 font-display text-3xl md:mt-0">{headlineFor(session)}</p>
+            headlineFor(session) && <p className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{headlineFor(session)}</p>
           )}
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
-          <div className="mt-5 border-l-4 border-accent bg-paper px-4 py-4">
-            {/* Where it comes from, until the coach's note arrives */}
-            {!session.feedback && <p className="mb-2 text-footnote text-ink-muted">From your numbers</p>}
-            {/* One change */}
-            <p className="text-lede"><em>One change.</em> <span>{(session.feedback ?? ownChange).change}</span></p>
+          <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
+            {/* The pill that names it, and where it comes from until the coach's note arrives */}
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="inline-flex rounded-full bg-warm-tint px-2.5 py-1 text-footnote font-semibold text-warm-ink">One change</span>{!session.feedback && <span className="text-footnote text-ink-muted">From your numbers</span>}</p>
+            {/* The change */}
+            <p className="mt-3 text-lede">{(session.feedback ?? ownChange).change}</p>
             {/* Small heading for the cue */}
             <p className="mt-4 text-footnote text-ink-muted">{warmup ? "Before your response" : "Before you try again"}</p>
             {/* The cue */}
-            <p className="mt-1 font-display text-cue">{(session.feedback ?? ownChange).retryCue}</p>
+            <p className="mt-1 font-display text-cue font-semibold tracking-tight">{(session.feedback ?? ownChange).retryCue}</p>
             {/* For a follow-up question or a reply to a story, a better one */}
             {session.feedback?.connection && (
               <>
@@ -406,12 +437,12 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* How the pace changed */}
           {pace && !quick && <p className="mt-2 text-footnote text-ink-muted">{pace.sentence}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
-          {timed && <p className="mt-2 text-footnote text-ink-muted">{timingSentence(session.mode, session.durationSec, undefined, session.promptId)}</p>}
+          {timed && <LengthRing session={session} />}
           {/* After a rehearsal with a goal, how the timing went */}
           {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
           {/* The user's own notes, once added (decision 67: after the feedback, never before it) */}
           {review && (review.worked || review.change || tagWords.length > 0) && (
-            <div className="mt-5 border-y border-rule py-3 text-lede">
+            <div className={`mt-5 p-4 text-lede ${CARD}`}>
               {/* Small heading */}
               <p className="text-footnote text-ink-muted">Your notes</p>
               {/* What worked */}
@@ -437,7 +468,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* What the coach said to keep, after the next step and the numbers */}
           {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
           {/* Quieter options, as a short list of rows (no empty space above them) */}
-          <ul aria-label="More options" className="mt-6 mb-6 divide-y divide-rule border-y border-rule">
+          <ul aria-label="More options" className={`mt-6 mb-6 divide-y divide-rule px-4 ${CARD}`}>
             {/* Open the transcript on a phone */}
             <li className="md:hidden"><RowButton onClick={() => setShowTranscript(!showTranscript)}>{showTranscript ? "Hide what I said" : "Read what I said"}</RowButton></li>
             {/* After a part of a full speech, the next part, or the speech's page after the last */}
@@ -525,11 +556,11 @@ function SmallTalkBeats({ session }: { session: SessionRecord }) {
         </div>
       )}
       {/* How many, as a headline */}
-      <p className={`font-display text-3xl ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{count === 4 ? "All four beats." : `${count} of 4 beats.`}</p>
+      <p className={`font-display text-3xl font-semibold tracking-tight ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{count === 4 ? "All four beats." : `${count} of 4 beats.`}</p>
       {/* A dead-end opening, said plainly */}
       {unit === "answering" && deadEndOpening(session.transcript) && <p className="mt-2 text-lede">It stopped at the opening. Even a quiet day has one thing worth telling.</p>}
       {/* Each beat */}
-      <ul aria-label="The beats" className="mt-3 divide-y divide-rule border-y border-rule">
+      <ul aria-label="The beats" className={`mt-3 ${CARD_LIST}`}>
         {/* One row per beat */}
         {beatsFor(unit).map((beat) => {
           // Whether it was found
@@ -595,16 +626,16 @@ function RetryView({ repo, retry, original, now, plan }: { repo: Repository; ret
         {/* Main column */}
         <div className="flex flex-1 flex-col">
           {/* The change as one sentence */}
-          <h1 className="mt-6 font-display text-statement tracking-tight md:mt-0 md:max-w-[18ch] md:text-statement-xl">{retryHeadline(retry, original)}</h1>
+          <h1 className="mt-6 font-display text-statement font-semibold tracking-tight motion-safe:animate-rise md:mt-0 md:max-w-[18ch] md:text-statement-xl">{retryHeadline(retry, original)}</h1>
           {/* What the first try said to work on */}
           {cue && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">You were working on: {cue}</p>}
           {/* Both tries' numbers, first then second (decision 67) */}
-          <table aria-label="First and second try" className="mt-5 w-full max-w-md border-y border-rule text-left">
+          <table aria-label="First and second try" className={`mt-5 w-full max-w-md overflow-hidden text-left ${CARD}`}>
             {/* The column names */}
             <thead className="text-footnote text-ink-muted">
               <tr>
                 {/* What it counts */}
-                <th scope="col" className="py-2 font-normal" />
+                <th scope="col" className="py-2 pl-4 font-normal" />
                 {/* First try */}
                 <th scope="col" className="py-2 font-normal">First</th>
                 {/* Second try */}
@@ -617,11 +648,11 @@ function RetryView({ repo, retry, original, now, plan }: { repo: Repository; ret
                 // One number on both tries
                 <tr key={row.label} className="border-t border-rule">
                   {/* What it counts */}
-                  <th scope="row" className="py-2 text-footnote font-normal text-ink-muted">{row.label}</th>
+                  <th scope="row" className="py-2 pl-4 text-footnote font-normal text-ink-muted">{row.label}</th>
                   {/* First try */}
                   <td className="py-2 text-ink-muted">{row.before}</td>
                   {/* Second try */}
-                  <td className="py-2 font-display text-cue">{row.after}</td>
+                  <td className="py-2 pr-4 font-display text-cue font-semibold">{row.after}</td>
                 </tr>
               ))}
             </tbody>
@@ -732,8 +763,8 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
 
   // Draw the page
   return (
-    // One column on a phone, two on a computer
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    // One column on a phone, two on a computer; the results take their soft green surfaces (decision 69)
+    <main data-area={loaded?.session ? "results" : undefined} className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Nothing yet while loading */}
       {loaded && !loaded.session && (
         <>

@@ -302,16 +302,51 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
   );
 }
 
-// Draw the level meter from recent loudness readings
-function Meter({ levels }: { levels: number[] }) {
-  // A row of thin bars growing from a centre line, like a waveform; loud bars in the accent
+// The voice shape's colour at each timing state: warm until the window opens, then the light's own colour
+const BLOB_FILL: Record<TimeSignal, string> = {
+  // Before the window: the warm accent
+  none: "bg-warm",
+  // Green
+  green: "bg-light-green",
+  // Yellow
+  yellow: "bg-light-yellow",
+  // Red
+  red: "bg-light-red",
+  // Past the limit
+  overtime: "bg-light-red",
+};
+
+// The halo's colour at each timing state, matching the shape
+const HALO_EDGE: Record<TimeSignal, string> = {
+  // Before the window
+  none: "border-warm",
+  // Green
+  green: "border-light-green",
+  // Yellow
+  yellow: "border-light-yellow",
+  // Red
+  red: "border-light-red",
+  // Past the limit
+  overtime: "border-light-red",
+};
+
+// The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69; replaces the bar meter)
+function VoiceBlob({ levels, signal, clock }: { levels: number[]; signal: TimeSignal; clock: string }) {
+  // The latest few readings, averaged so the shape does not jitter
+  const recent = levels.slice(-4);
+  // How loud, from 0 to 1
+  const level = Math.min(1, (recent.reduce((sum, value) => sum + value, 0) / Math.max(1, recent.length)) * 4);
+  // The shape's size: bigger as the voice gets louder
+  const scale = 0.82 + level * 0.3;
+  // A square stage with the halo, the shape and the clock on top
   return (
-    <div className="flex h-16 items-center justify-between" role="img" aria-label="Microphone level">
-      {/* One bar per reading, at least a sliver tall */}
-      {levels.map((level, index) => (
-        // A single bar
-        <span key={index} className={`w-1 rounded-full ${level > 0.04 ? "bg-accent" : "bg-rule"}`} style={{ height: `${Math.max(6, Math.min(100, level * 300))}%` }} />
-      ))}
+    <div role="img" aria-label="Microphone level" className="relative mx-auto my-6 flex size-72 items-center justify-center">
+      {/* The dashed halo, turning slowly */}
+      <span aria-hidden="true" className={`absolute inset-0 rounded-full border-2 border-dashed opacity-60 motion-safe:animate-spin-slow ${HALO_EDGE[signal]}`} />
+      {/* The shape, growing with the voice and changing colour with the light */}
+      <span aria-hidden="true" className={`absolute inset-6 rounded-full transition-[transform,background-color] duration-150 ease-out motion-safe:animate-morph ${BLOB_FILL[signal]}`} style={{ transform: `scale(${scale})` }} />
+      {/* The clock inside */}
+      <span aria-hidden="true" className="relative font-display text-prompt-xl font-semibold tabular-nums tracking-tight text-on-warm">{clock}</span>
     </div>
   );
 }
@@ -876,6 +911,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId) ? `${formatClock(speakingWindow(mode, promptId)!.start)} to ${formatClock(speakingWindow(mode, promptId)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
+  // Whether this kind of session has a timing light
+  const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "bookend" || mode === "qa" || (mode === "rehearse" && !!goalSeconds);
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
   const busy = recording || thinking || stage === "asking" || stage === "starting" || stage === "saving";
   // Where this kind of session belongs, for the close button (practising hides the tab bar)
@@ -921,8 +958,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
   // Draw the page
   return (
-    // One column on a phone, margin plus main column on a computer
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    // One column on a phone, margin plus main column on a computer; dark green while the clock runs (the stage, decision 69)
+    <main data-area={recording || thinking ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Navigation (hidden while recording), title and keyboard hint */}
       <Masthead title={title} nav={false} close={busy ? null : home}>
         {/* The keyboard hint, on computers only */}
@@ -937,13 +974,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Margin: time, length, prompt reminder, discard */}
         <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${(script || smallTalk) && !busy ? "hidden" : "flex"}`}>
-          {/* The clock, large */}
-          <p className={`font-display text-ink tabular-nums ${recording || thinking ? "text-prompt-xl" : "text-statement"}`}>{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>
+          {/* The clock, large (while recording it sits inside the voice shape instead) */}
+          {!recording && <p className={`font-display font-semibold text-ink tabular-nums ${thinking ? "text-prompt-xl" : "text-statement"}`}>{formatClock(thinking ? Math.ceil(thinkLeft) : elapsed)}</p>}
           {/* While recording: a plain, pulsing marker that says so */}
           {recording && (
-            <p role="status" aria-label="Recording" className="mt-2 flex items-center gap-2 text-ink">
-              {/* The red dot (pulses only when motion is welcome) */}
-              <span aria-hidden="true" className="inline-block size-3 rounded-full bg-light-red motion-safe:animate-pulse" />
+            <p role="status" aria-label="Recording" className="flex items-center gap-2 font-semibold text-warm">
+              {/* The warm dot (breathes only when motion is welcome) */}
+              <span aria-hidden="true" className="inline-block size-3 rounded-full bg-warm motion-safe:animate-breathe" />
               {/* The word */}
               Recording
             </p>
@@ -951,7 +988,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* The length to aim for, or what the countdown is for */}
           <p className="mt-1">{thinking ? (mode === "talk" ? "until you start" : "to think") : mode === "talk" ? `aim for ${lengthText}` : `of ${lengthText}`}</p>
           {/* During a Table Topic or Record Response, the timing light */}
-          {recording && (mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "bookend" || mode === "qa" || (mode === "rehearse" && goalSeconds)) && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds, promptId)} mode={mode} promptId={promptId} />}
+          {recording && hasLight && <TimingLight signal={timeSignal(mode, elapsed, goalSeconds, promptId)} mode={mode} promptId={promptId} />}
           {/* Prompt reminder while recording */}
           {recording && prompt && !smallTalk && <p className="mt-6 border-t border-rule pt-3 italic">{prompt.text}</p>}
           {/* A lesson keeps its tip in view while speaking */}
@@ -1094,7 +1131,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {thinking && angles.length > 0 && <Hints angles={angles} compact={false} />}
           {/* On a retry, the cue to carry in */}
           {!recording && (retryCue || ownNote) && (
-            <div className="mt-6 max-w-md border-y border-ink py-4">
+            <div className="mt-6 max-w-md rounded-2xl bg-warm-tint p-4">
               {/* Small heading */}
               <p className="text-footnote text-ink-muted">Before you start</p>
               {/* The user's own note first, in their words */}
@@ -1107,8 +1144,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* While recording: the meter and the words */}
           {recording && (
             <>
-              {/* Live level meter */}
-              <Meter levels={levels} />
+              {/* The live voice shape, with the clock inside */}
+              <VoiceBlob levels={levels} signal={hasLight ? timeSignal(mode, elapsed, goalSeconds, promptId) : "none"} clock={formatClock(elapsed)} />
               {/* Words so far (not while reading: the text itself is on screen) */}
               {(!script || textHidden) && <div className="mt-8"><LiveWords text={text} /></div>}
             </>
