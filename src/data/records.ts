@@ -2,6 +2,9 @@
 // Dates are stored as ISO text such as "2026-10-12T15:00:00.000Z" so exports round-trip exactly
 
 // The coach's three-part feedback for one session
+// Load the short-speech plan type
+import type { Outline } from "@/core/outline";
+
 export interface Feedback {
   // One thing done well, quoting the user
   keep: string;
@@ -37,8 +40,8 @@ export interface SmallTalkFeedback {
   livelier: string;
 }
 
-// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment")
-export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment"] as const;
+// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment"), or free talk about anything ("free") and a short speech the user planned themselves ("outline", decision 73)
+export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment", "free", "outline"] as const;
 
 // One kind of session (bookend: an openings and closings drill; qa: an answer to a likely audience question; both added 2026-10-15)
 export type SessionMode = (typeof SESSION_MODES)[number];
@@ -106,6 +109,8 @@ export interface SessionRecord {
   question?: string;
   // For a rehearsal: which section of the talk was rehearsed (counted from 0), or null or missing for the whole talk
   sectionIndex?: number | null;
+  // For a short speech the user planned: its topic, points and length (decision 73)
+  outline?: Outline;
   // The user's notes after listening back: null while waiting for them (new first tries), missing on older sessions and retries, which skip the step
   selfReview?: SelfReview | null;
   // Key of the saved audio, or null if there is none or it was pruned

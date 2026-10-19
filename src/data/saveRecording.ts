@@ -1,6 +1,8 @@
 // Saves a finished recording as a session: measured numbers, the week's focus, the baseline rule, and the audio
 
 // Load the weekly focus rules
+// Load the short-speech plan type
+import type { Outline } from "@/core/outline";
 import { currentFocus } from "@/core/focus";
 // Load the measurements
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
@@ -41,6 +43,8 @@ export interface FinishedRecording {
   sectionIndex?: number | null;
   // For a Q&A answer: the question it answered
   question?: string;
+  // For a short speech the user planned: its topic, points and length
+  outline?: Outline;
 }
 
 // Round seconds to a tenth
@@ -85,6 +89,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.retryOf === null && recording.mode !== "moment" && !(recording.mode === "smalltalk" && unitOf(recording.promptId) !== "answering") ? { selfReview: null } : {}),
     // Keep the question a Q&A answer answered
     ...(recording.question ? { question: recording.question } : {}),
+    // Keep a short speech's plan
+    ...(recording.outline ? { outline: recording.outline } : {}),
     // Keep the section of a section rehearsal
     ...(recording.sectionIndex !== undefined && recording.sectionIndex !== null ? { sectionIndex: recording.sectionIndex } : {}),
   };

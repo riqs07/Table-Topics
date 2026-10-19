@@ -41,6 +41,8 @@ import { readingTokens } from "@/core/liveReading";
 import { resultChanges, resultNumbers } from "@/core/resultNumbers";
 // Load the count-up rules and the hook that runs them
 import { countUpValue } from "@/core/countUp";
+// Load the check for which planned points were said
+import { pointsCovered } from "@/core/outline";
 // Load the shared card look
 import { CARD, CARD_LIST } from "@/components/script/textStyles";
 import { useCountUp } from "@/components/script/useCountUp";
@@ -283,6 +285,37 @@ function LengthRing({ session }: { session: SessionRecord }) {
   );
 }
 
+// For a short speech: each planned point, and whether it was heard in what was said (decision 73)
+function OutlinePoints({ session }: { session: SessionRecord }) {
+  // The plan
+  const outline = session.outline;
+  // Nothing without one
+  if (!outline) return null;
+  // Which points were heard
+  const covered = pointsCovered(outline.points, session.transcript);
+  // The card
+  return (
+    <section aria-label="Your points" className={`mt-5 p-4 ${CARD}`}>
+      {/* Heading and count */}
+      <p className="text-footnote text-ink-muted"><span className="font-semibold text-ink">Your points</span> · {covered.filter(Boolean).length} of {outline.points.length} heard</p>
+      {/* Each point */}
+      <ul className="mt-2 flex flex-col gap-2">
+        {outline.points.map((point, index) => (
+          // One point, ticked when heard
+          <li key={index} className="flex items-start gap-3">
+            {/* The mark */}
+            <span aria-hidden="true" className={`mt-0.5 flex size-6 flex-none items-center justify-center rounded-lg ${covered[index] ? "bg-fill text-fill-ink" : "bg-paper text-ink-muted"}`}>{covered[index] ? <CheckIcon weight="bold" className="size-4" /> : index + 1}</span>
+            {/* The point, and whether it was heard */}
+            <span><span className="block">{point}</span><span className="block text-footnote text-ink-muted">{covered[index] ? "Heard" : "Not heard"}</span></span>
+          </li>
+        ))}
+      </ul>
+      {/* How it is matched */}
+      <p className="mt-3 text-footnote text-ink-muted">Matched by key words, so a point said in other words may show as not heard.</p>
+    </section>
+  );
+}
+
 // The text a rehearsal was checked against: one section, or the whole talk
 function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: string; body: string } {
   // The talk's sections
@@ -324,7 +357,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // Whether this is an answer to an audience question
   const qa = session.mode === "qa";
   // Where "try it again" leads: the same question for an old Q&A answer (or the session it came from, if the question was replaced; Q&A practice is gone, decision 61), otherwise the same prompt
-  const retryHref = qa && qaIndex === null ? `/sessions?id=${session.promptId}` : `/session?${timed || reading ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}${plan ? `&plan=${plan.step}` : ""}`;
+  const retryHref = qa && qaIndex === null ? `/sessions?id=${session.promptId}` : `/session?${timed || reading || session.mode === "free" || session.mode === "outline" ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}${plan ? `&plan=${plan.step}` : ""}`;
   // An openings and closings drill's prompt, and what it measured
   const bookend = session.mode === "bookend" ? BOOKENDS.find((item) => item.id === session.promptId) : undefined;
   // The drill's two findings
@@ -438,6 +471,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {pace && !quick && <p className="mt-2 text-footnote text-ink-muted">{pace.sentence}</p>}
           {/* After a Table Topic or Record Response, how the timing went */}
           {timed && <LengthRing session={session} />}
+          {/* After a short speech, how the timing went against its length, and which points were heard */}
+          {session.mode === "outline" && session.outline && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, session.outline.goalMinutes * 60)}</p>}
+          {/* The planned points */}
+          <OutlinePoints session={session} />
           {/* After a rehearsal with a goal, how the timing went */}
           {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
           {/* The user's own notes, once added (decision 67: after the feedback, never before it) */}

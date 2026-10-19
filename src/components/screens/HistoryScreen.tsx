@@ -79,6 +79,10 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.isBaseline) return "Your first recording";
   // Look up the prompt, falling back to a plain label
   const text = findPrompt(session.promptId)?.text ?? "A prompt";
+  // Free talk and a short speech (decision 73)
+  if (session.mode === "free") return "Free talk";
+  // A short speech, by its topic
+  if (session.mode === "outline") return `Short speech: ${session.outline?.topic ?? "your topic"}`;
   // Mark warm-ups so they read differently from full sessions
   if (session.mode === "warmup") return `Warm-up: ${text}`;
   // Mark Table Topics the same way

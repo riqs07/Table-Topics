@@ -58,6 +58,10 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   { id: "prepared", job: "spot", name: "Prepared speech", subtitle: "2 minutes to plan, then speak for 2 to 4", length: "about 6 min", youDo: "Read a speaking task, plan it for up to 2 minutes with a hint, then speak for 2 to 4 minutes, with green, yellow and red lights.", youGet: "Your time against the 2:00 to 4:00 window, this week's number, and one fix." },
   // Openings and closings
   { id: "openings", job: "spot", name: "Openings and closings", subtitle: "the first or last 45 seconds", length: "1 min", youDo: "Practise only how a talk starts or how it ends.", youGet: "The pause before your first word, or how cleanly you finished." },
+  // Free talk (decision 73)
+  { id: "free-talk", job: "spot", name: "Free talk", subtitle: "anything, as long as you like", length: "up to 10 min", youDo: "Talk about whatever you like, with no question and no clock to beat.", youGet: "Your pace, fillers and pauses, and one change." },
+  // A short speech the user plans (decision 73)
+  { id: "short-speech", job: "spot", name: "Short speech", subtitle: "your topic and a few points", length: "1 to 5 min", youDo: "Type what it's about and up to four points, choose a length, then speak with your points in view.", youGet: "Which points were heard, your time against your length, and one change." },
   // Q&A practice (removed from the app, decision 61; kept so old Q&A answers still find their name)
   { id: "qa", job: "spot", name: "Q&A practice", subtitle: "answer likely questions", length: "1 min a question", youDo: "Answer the questions an audience would ask after your talk or prepared speech.", youGet: "Your time against a 1:00 goal, and whether you answered directly." },
   // Lessons
@@ -96,6 +100,10 @@ const SESSION_TO_MODE: Readonly<Partial<Record<SessionMode, string>>> = {
   smalltalk: "small-talk",
   // A moment note
   moment: "moments",
+  // Free talk
+  free: "free-talk",
+  // A short speech
+  outline: "short-speech",
 };
 
 // The catalogue entry that explains a kind of session, if it has one

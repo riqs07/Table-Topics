@@ -33,6 +33,8 @@ const RequestSchema = z.object({
   promptId: z.string().max(64).optional(),
   // For a Q&A answer: the question it answered (written by the coach or typed by the user)
   question: z.string().max(300).optional(),
+  // For a short speech: the topic, points and length the speaker planned (decision 73)
+  outline: z.object({ topic: z.string().max(140), points: z.array(z.string().max(140)).max(4), goalMinutes: z.number().int().min(1).max(10) }).optional(),
   // The user's own notes after listening back, only when they let the coach read them
   notes: z.object({ worked: z.string().max(500), change: z.string().max(500), tags: z.array(z.string().max(40)).max(12) }).optional(),
 });

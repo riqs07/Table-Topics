@@ -621,4 +621,16 @@ describe("SessionScreen", () => {
       expect([!!(await screen.findByText(FEEDBACK.change)), screen.queryByText("Add your notes")]).toEqual([true, null]);
     });
   });
+
+  // A short speech (decision 73): which planned points were heard, the time against its length, and a retry that keeps the plan
+  it("shows which planned points were heard in a short speech", async () => {
+    // A short speech that covered one of two points
+    const session = makeSession({ id: "o1", mode: "outline", promptId: "outline", durationSec: 75, transcript: "Running clears my head every single morning.", feedback: FEEDBACK, feedbackStatus: "done", outline: { topic: "Why I run", points: ["It clears my head", "I met new friends"], goalMinutes: 1 } });
+    // Draw the screen
+    render(<SessionScreen sessionId="o1" repository={await repositoryWith(session)} now={NOW} />);
+    // The points card
+    const card = await screen.findByRole("region", { name: "Your points" });
+    // Confirm the count, each point's state, the timing against one minute, and the retry address
+    expect([!!within(card).getByText(/1 of 2 heard/), within(card).getAllByRole("listitem").map((item) => item.textContent), !!screen.getByText(/1:00/), screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, ["It clears my headHeard", "2I met new friendsNot heard"], true, "/session?mode=outline&prompt=outline&retryOf=o1"]);
+  });
 });

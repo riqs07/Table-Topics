@@ -32,6 +32,8 @@ import { LOUDNESS_TICK_MS, formatClock, maxSeconds, minSeconds, readingSeconds, 
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
 import type { SessionMode, SessionRecord, TalkRecord } from "@/data/records";
+// Load the short-speech plan type
+import type { Outline } from "@/core/outline";
 import type { Repository } from "@/data/repository";
 // Load the recording saver
 import { saveRecording } from "@/data/saveRecording";
@@ -76,6 +78,8 @@ interface RecordingScreenProps {
   questionIndex?: number;
   // Inside today's practice: which step this is (counted from 1), or null
   planStep?: number | null;
+  // For a short speech: the user's topic, points and length (on a retry, read from the first try instead)
+  outline?: Outline | null;
 }
 
 // One tip for each end of a talk, shown before an openings and closings drill
@@ -352,7 +356,9 @@ function VoiceBlob({ levels, signal, clock }: { levels: number[]; signal: TimeSi
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null }: RecordingScreenProps) {
+  // A short speech's plan: from the address, or (on a retry) from the first try
+  const [outline, setOutline] = useState<Outline | null>(givenOutline);
   // Use the given repository, or the browser's
   const [repo] = useState(() => repository ?? browserRepository());
   // Use the given clock, or the real one, kept the same between redraws (a new one each time would restart the effects below)
@@ -446,7 +452,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     textForFillers.current = fullText;
   }, [scriptBody, fullText]);
   // A rehearsal's own goal in seconds, if it has one (whole-talk runs only)
-  const goalSeconds = talk?.goalMinutes && section === null ? talk.goalMinutes * 60 : undefined;
+  const goalSeconds = talk?.goalMinutes && section === null ? talk.goalMinutes * 60 : mode === "outline" && outline ? outline.goalMinutes * 60 : undefined;
 
   // For a small-talk answer, get the question's voice ready and load the earlier answers
   useEffect(() => {
@@ -532,6 +538,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       setCueFromCoach(!!original?.feedback);
       // And the user's own note, if they wrote one
       setOwnNote(original?.selfReview?.change || null);
+      // A short speech keeps the first try's plan
+      if (original?.outline) setOutline((current) => current ?? original.outline ?? null);
     });
     // Mark as closed when leaving
     return () => {
@@ -618,7 +626,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}) }, clock());
       // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
       void requestPersistentStorage();
       // A moment note goes straight back to the Small talk page, where it is listed; anything else opens its page (feedback is requested there)
@@ -633,7 +641,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [clock, finishCapture, mode, navigate, planStep, promptId, qaQuestion, repo, retryOf, section, shortest]);
+  }, [clock, finishCapture, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest]);
 
   // Stop because of a problem, saving nothing
   const fail = useCallback(
@@ -908,11 +916,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId) ? `${formatClock(speakingWindow(mode, promptId)!.start)} to ${formatClock(speakingWindow(mode, promptId)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : "about a minute";
+  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId) ? `${formatClock(speakingWindow(mode, promptId)!.start)} to ${formatClock(speakingWindow(mode, promptId)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : mode === "free" ? "as long as you like" : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // Whether this kind of session has a timing light
-  const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "bookend" || mode === "qa" || (mode === "rehearse" && !!goalSeconds);
+  const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "bookend" || mode === "qa" || ((mode === "rehearse" || mode === "outline") && !!goalSeconds);
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
   const busy = recording || thinking || stage === "asking" || stage === "starting" || stage === "saving";
   // Where this kind of session belongs, for the close button (practising hides the tab bar)
@@ -922,7 +930,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // A story to listen to is not shown before answering, except in a lesson (you listen the way you would in person)
   const storyHidden = smallTalk?.unit === "listening" && !smallTalk.lesson;
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : "Recording";
+  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Table Topic" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
   // The keyboard hint for this stage
   const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "smalltalk" ? `space to hear ${unit ? "them" : "the question"}` : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
@@ -1127,6 +1135,37 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           )}
           {/* An openings and closings drill: one tip for that end of a talk */}
           {showPrompt && bookend && <p className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4 text-lede">{BOOKEND_TIPS[bookend.part]}</p>}
+          {/* Free talk, before starting: what it is (decision 73) */}
+          {mode === "free" && !recording && (
+            <>
+              {/* The invitation */}
+              <h1 className="mt-8 font-display text-prompt font-semibold tracking-tight md:mt-0 md:max-w-[16ch] md:text-prompt-xl">Talk about anything.</h1>
+              {/* A few ideas, and that there is no clock to beat */}
+              <p className="mt-4 max-w-[48ch] text-lede">Your day, an idea, something you’d explain to a friend. Stop when you’re done.</p>
+            </>
+          )}
+          {/* A short speech: the topic and the points, before and while speaking (smaller while speaking, so the voice shape stays in view) */}
+          {mode === "outline" && outline && (
+            <section aria-label="Your plan" className={recording ? "mt-6 md:mt-0" : "mt-8 md:mt-0"}>
+              {/* The topic */}
+              <h1 className={`font-display font-semibold tracking-tight ${recording ? "text-cue" : "text-statement md:max-w-[20ch]"}`}>{outline.topic}</h1>
+              {/* The points, numbered */}
+              <ol aria-label="Your points" className={`mt-3 flex max-w-[52ch] flex-col gap-2 ${recording ? "text-footnote" : "text-lede"}`}>
+                {/* Each point */}
+                {outline.points.map((point, index) => (
+                  // One point on a rounded tile
+                  <li key={index} className="flex items-start gap-3 rounded-2xl bg-card px-3 py-2">
+                    {/* Its number */}
+                    <span aria-hidden="true" className="flex size-7 flex-none items-center justify-center rounded-lg bg-warm-tint text-footnote font-semibold text-warm-ink">{index + 1}</span>
+                    {/* The point */}
+                    <span className="pt-0.5">{point}</span>
+                  </li>
+                ))}
+              </ol>
+              {/* Before starting, how to use them */}
+              {!recording && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Open with why it matters, give each point an example, then close on one line.</p>}
+            </section>
+          )}
           {/* Thinking about a Record Response: the hints */}
           {thinking && angles.length > 0 && <Hints angles={angles} compact={false} />}
           {/* On a retry, the cue to carry in */}

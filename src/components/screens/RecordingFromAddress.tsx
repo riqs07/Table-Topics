@@ -11,6 +11,8 @@ import { RecordingScreen } from "@/components/screens/RecordingScreen";
 import { promptForDay } from "@/content/prompts";
 // Load the check for a known kind of session
 import { isSessionMode } from "@/data/records";
+// Load the reader for a short speech's plan
+import { outlineFromQuery } from "@/core/outline";
 
 // Show the recording screen for the prompt in the address
 export function RecordingFromAddress() {
@@ -25,8 +27,10 @@ export function RecordingFromAddress() {
   // Draw the screen with the real browser pieces
   return (
     <RecordingScreen
-      // The prompt in the address, or today's
-      promptId={params.get("prompt") ?? promptForDay(new Date()).id}
+      // The prompt in the address, or today's (free talk and a short speech have no prompt; decision 73)
+      promptId={params.get("prompt") ?? (mode === "free" || mode === "outline" ? mode : promptForDay(new Date()).id)}
+      // A short speech's topic, points and length
+      outline={mode === "outline" ? outlineFromQuery(params) : null}
       // Full session or warm-up
       mode={mode}
       // The session being retried, if any

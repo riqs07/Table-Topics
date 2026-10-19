@@ -90,7 +90,7 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
       // JSON body and the passphrase header
       headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase },
       // The session details the coach needs
-      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}) }),
+      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}) }),
     });
   } catch {
     // Offline or unreachable: the session waits

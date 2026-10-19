@@ -19,6 +19,10 @@ export function targetSeconds(mode: SessionMode, promptId = ""): number {
   if (mode === "smalltalk") return smallTalkWindow(promptId).end;
   // A moment note is a few sentences
   if (mode === "moment") return 30;
+  // Free talk has no goal; two minutes is a good stretch (decision 73)
+  if (mode === "free") return 120;
+  // A short speech uses its own length (passed as the goal); two minutes without one
+  if (mode === "outline") return 120;
   // Warm-ups are 30 seconds; full sessions about a minute
   return mode === "warmup" ? 30 : 60;
 }
@@ -33,6 +37,8 @@ export function maxSeconds(mode: SessionMode, promptId = ""): number {
   if (mode === "read" || mode === "pause" || mode === "lesson") return 600;
   // A rehearsal: long enough for most real talks
   if (mode === "rehearse") return 1800;
+  // Free talk: as long as you like, up to ten minutes; a short speech up to ten too (its longest goal is five)
+  if (mode === "free" || mode === "outline") return 600;
   // An openings and closings drill stops at a minute
   if (mode === "bookend") return 60;
   // A Q&A answer stops at two minutes
@@ -148,12 +154,12 @@ export type TimeSignal = "none" | "green" | "yellow" | "red" | "overtime";
 
 // The timing light for a moment in a session (Table Topics, Record Responses, and rehearsals with a goal have one)
 export function timeSignal(mode: SessionMode, seconds: number, goalSeconds?: number, promptId = ""): TimeSignal {
-  // A rehearsal without a goal has no light
-  if (mode === "rehearse" && !goalSeconds) return "none";
+  // A rehearsal without a goal, or free talk, has no light
+  if ((mode === "rehearse" && !goalSeconds) || mode === "free") return "none";
   // An openings and closings drill or a Q&A answer: yellow for the last 15 seconds before the goal, red past it
   if (mode === "bookend" || mode === "qa") return seconds > targetSeconds(mode) ? "red" : seconds >= targetSeconds(mode) - BOOKEND_YELLOW_LEAD ? "yellow" : "none";
-  // A rehearsal with a goal: yellow in the last stretch before it, red past it
-  if (mode === "rehearse") {
+  // A rehearsal or a short speech with a goal: yellow in the last stretch before it, red past it
+  if (mode === "rehearse" || mode === "outline") {
     // The rehearsal's own goal
     const goal = goalSeconds ?? targetSeconds(mode);
     // Past the goal

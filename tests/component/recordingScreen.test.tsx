@@ -971,6 +971,50 @@ describe("RecordingScreen", () => {
     expect((await repository.listSessions()).find((session) => session.mode === "qa")).toMatchObject({ promptId: "r1", question: "Why now?" });
   });
 
+  // Free talk (decision 73): an open invitation, no timing light, and saved as free talk
+  it("invites free talk with no clock to beat, and saves it", async () => {
+    // Draw free talk
+    const { repository, clock, navigate } = draw({ mode: "free", promptId: "free" });
+    // Confirm the invitation and the length line
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText("of as long as you like")]).toEqual(["Talk about anything.", true]);
+    // Start, speak for 20 seconds, stop
+    fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
+    // The stop button
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Confirm no timing light while speaking
+    expect(screen.queryByRole("status", { name: "Timing light" })).toBeNull();
+    // Advance and stop
+    clock.advance(20_000);
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm it was saved as free talk
+    expect((await repository.listSessions())[0]).toMatchObject({ mode: "free", promptId: "free" });
+  });
+
+  // A short speech (decision 73): the topic and points in view before and while speaking, a light against its length, and the plan saved with it
+  it("shows a short speech's plan, times it against its length, and saves the plan", async () => {
+    // The plan
+    const outline = { topic: "Why I run", points: ["It clears my head", "I met friends"], goalMinutes: 1 };
+    // Draw it
+    const { repository, clock, navigate } = draw({ mode: "outline", promptId: "outline", outline });
+    // Confirm the topic, the points and the goal
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, within(screen.getByRole("list", { name: "Your points" })).getAllByRole("listitem").map((item) => item.textContent), !!screen.getByText("of a 1:00 goal")]).toEqual(["Why I run", ["1It clears my head", "2I met friends"], true]);
+    // Start
+    fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
+    // The stop button
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Confirm the points stay in view, with a timing light
+    expect([!!screen.getByRole("list", { name: "Your points" }), !!screen.getByRole("status", { name: "Timing light" })]).toEqual([true, true]);
+    // Advance and stop
+    clock.advance(20_000);
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Confirm the plan was saved with the session
+    expect((await repository.listSessions())[0]).toMatchObject({ mode: "outline", outline });
+  });
+
   // A lesson's [instruction] shows as a quiet instruction, not words to read
   it("shows a lesson's bracketed instruction in italics, without brackets", async () => {
     // Draw the blank-recovery lesson
