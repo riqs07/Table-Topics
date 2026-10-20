@@ -106,3 +106,17 @@ export async function readSafetyFacts(sessionCount: number, now: Date): Promise<
   // Gather the answers
   return { persisted: await readPersisted(), installed: isInstalled(), iosSafari: isIosSafari(), sessionCount, daysSinceExport: daysSinceExport(now), daysSinceDismissed: daysSince(DISMISS_KEY, now) };
 }
+
+// How many bytes the app's data uses on this device, as the browser estimates it (null where it cannot say)
+export async function readStorageUsed(): Promise<number | null> {
+  // Not every browser can say
+  if (typeof navigator === "undefined" || !navigator.storage?.estimate) return null;
+  // Reading can fail in private windows
+  try {
+    // The estimate's amount used
+    return (await navigator.storage.estimate()).usage ?? null;
+  } catch {
+    // Unknown
+    return null;
+  }
+}

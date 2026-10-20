@@ -73,7 +73,7 @@ Talks are stored in their own collection (added to existing databases by raising
 |-------|---------|
 | focusIndex | Which weekly focus the user is on (position in the v1 focus list in `core/focus.ts`) |
 | focusStartedOn | Date the current focus began |
-| audioRetention | Number of recent sessions whose audio is kept (default 30) |
+| audioRetention | Number of recent sessions whose audio is kept (default 30). Beyond those, audio is also kept for the very first recording (the baseline) and for the first take of up to 20 prompts recorded again on a later day, the 20 practised most recently, so "then and now" has a pair (a prompt's takes are matched as in `earlierTake`: same prompt, section and question). Everything else loses its audio when the next recording is saved; transcripts, numbers and notes are always kept (decision 88; `src/core/audioRetention.ts`). Recordings are made at 32 kilobits a second, about 240 KB a minute |
 | shareNotes | Whether the coach may read the user's notes after listening back (decision 31). Off unless chosen; missing on older settings |
 | learn | Learn progress by card id (decision 45): when the card was first read (`readAt`). The recall fields (`box`, `dueAt`, `lastResult`, `recalledAt`) stay on older progress but are no longer used: cards have no quiz and no review since decision 67 |
 | missions | Every mission try, oldest first (decision 52): the mission id, the day, the status (accepted, skipped or done), the prediction (1 to 5), whether it was tried, how it went (1 to 5), what the user noticed (text only, never sent anywhere), whether it felt like too much, and when it was debriefed. Missing until the first mission is answered |
@@ -91,7 +91,7 @@ Talks are stored in their own collection (added to existing databases by raising
 
 Prompts ship inside the app as fixed content. They are not user data.
 
-The recordings of the fixed lines (small talk and shadowing, decision 82; the four conversation characters' lines, decision 83) ship as files in `public/clips/`. Once played, each is kept in the browser's cache store `voicelab-voice-v1` under its address, so it plays offline. That store also keeps any line fetched from `/api/voice`. It is not user data, is not exported, and the service worker leaves it alone when it updates.
+The recordings of the fixed lines (small talk and shadowing, decision 82; the four conversation characters' lines, decision 83) ship as files in `public/clips/`. Once played, each is kept in the browser's cache store `voicelab-voice-v1` under its address, so it plays offline. That store also keeps any line fetched from `/api/voice`. It is not user data, is not exported, and the service worker leaves it alone when it updates (each release's worker deletes only older `voicelab-app-<build>` caches and the old `voicelab-v<n>` ones; decision 88).
 
 ## Derived, not stored
 

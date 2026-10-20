@@ -251,6 +251,32 @@ describe("SettingsScreen", () => {
     await waitFor(async () => expect((await repository.getSettings(NOW)).audioRetention).toBe(10));
   });
 
+  // The recordings section says exactly which recordings are kept, and how much the device holds when the browser can say (decision 88)
+  it("explains what is kept and shows the storage used", async () => {
+    // The browser's storage estimate
+    Object.defineProperty(navigator, "storage", { configurable: true, value: { estimate: async () => ({ usage: 12_400_000, quota: 1e9 }) } });
+    // Draw the screen
+    render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the amount and the rule
+    expect([!!(await screen.findByText("About 12 MB used on this device.")), !!screen.getByText(/the first take of up to 20 prompts you have recorded again on a later day/)]).toEqual([true, true]);
+    // Take the stand-in away
+    Reflect.deleteProperty(navigator, "storage");
+  });
+
+  // Where the browser cannot say how much it holds, no amount is shown
+  it("shows no storage amount where the browser cannot estimate it", async () => {
+    // A browser without the estimate
+    Object.defineProperty(navigator, "storage", { configurable: true, value: { estimate: async () => { throw new Error("blocked"); } } });
+    // Draw the screen
+    render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Wait for the settings to load
+    await screen.findByLabelText("Keep recordings from your last");
+    // Confirm no amount
+    expect(screen.queryByText(/used on this device/)).toBeNull();
+    // Take the stand-in away
+    Reflect.deleteProperty(navigator, "storage");
+  });
+
   // A passphrase shorter than the server allows is refused at once, with the reason
   it("refuses a passphrase shorter than 16 characters", async () => {
     // Draw the screen

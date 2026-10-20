@@ -14,10 +14,10 @@ import { Player } from "@/components/script/Player";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the saved-audio loader
 import { useAudioUrl } from "@/components/screens/useAudioUrl";
-// Load today's practice, to find the next step
-import { loadDailyPlan } from "@/data/dailyPlan";
+// Load the plan loader (the plan's code loads after the page shows; decision 88)
+import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
 // Load the plan's addresses
-import { planHref } from "@/core/dailyPlan";
+import { planHref } from "@/core/planSteps";
 // Load the plan navigation type
 import type { PlanNav } from "@/components/screens/planNav";
 // Load the listen-back step
@@ -81,8 +81,10 @@ import { headlineFor, headlineKind, measureFor, retryHeadline } from "@/core/foc
 import { fluencyJudged, pauseWordsShown } from "@/core/pauseWords";
 // Load the daily prompt picker, for the step after a warm-up
 import { BOOKENDS, promptForDay } from "@/content/prompts";
-// Load the lookup for every text to read, full speeches included
-import { findReading, partId, partOf } from "@/content/readings";
+// Load the part ids and lookup for the full speeches, without their text
+import { partId, speechPartOf } from "@/content/readingIndex";
+// Load the text to read by id (a full speech's text loads only when a part of one is asked for; decision 88)
+import { useReading } from "@/components/screens/useReading";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the lesson checks
@@ -391,8 +393,10 @@ function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: 
 function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed, plan, view, usual }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void; plan: PlanNav | null; view: ResultView; usual: number | null }) {
   // The lesson, on the skill path
   const lesson = session.mode === "lesson" ? findLesson(session.promptId) : undefined;
+  // The text that was read aloud, once loaded
+  const readAloud = useReading(session.mode === "read" || session.mode === "pause" ? session.promptId : null).passage;
   // The text that was read or rehearsed: a passage, a lesson's practice text (without stress marks), or the user's talk
-  const passage = session.mode === "read" || session.mode === "pause" ? findReading(session.promptId) : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, body: lesson.body.replace(/\*/g, "") } : rehearsed ? rehearsedText(rehearsed, session.sectionIndex ?? null) : undefined;
+  const passage = session.mode === "read" || session.mode === "pause" ? readAloud : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, body: lesson.body.replace(/\*/g, "") } : rehearsed ? rehearsedText(rehearsed, session.sectionIndex ?? null) : undefined;
   // A lesson's own result
   const lessonOutcome = lesson ? lessonResult(lesson, session) : null;
   // The pauses, when loudness was recorded
@@ -473,7 +477,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // Where the session belongs
   const home = sessionHome(session.mode, session.promptId, plan !== null);
   // For one part of a full speech: the speech, and the part read
-  const speechPart = session.mode === "read" ? partOf(session.promptId) : undefined;
+  const speechPart = session.mode === "read" ? speechPartOf(session.promptId) : undefined;
   // What it answered, shown first (decision 77)
   const asked = answeredPrompt(session);
   // The number the headline already gives (only where the focus headline is shown), so its tile is left out
@@ -619,7 +623,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {/* Open the transcript on a phone */}
             <li className="md:hidden"><RowButton onClick={() => setShowTranscript(!showTranscript)}>{showTranscript ? "Hide what I said" : "Read what I said"}</RowButton></li>
             {/* After a part of a full speech, the next part, or the speech's page after the last */}
-            {speechPart && <li>{speechPart.part < speechPart.speech.parts.length ? <RowLink href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`}>Read part {speechPart.part + 1}</RowLink> : <RowLink href={`/speech?id=${speechPart.speech.id}`}>That was the last part</RowLink>}</li>}
+            {speechPart && <li>{speechPart.part < speechPart.speech.partCount ? <RowLink href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`}>Read part {speechPart.part + 1}</RowLink> : <RowLink href={`/speech?id=${speechPart.speech.id}`}>That was the last part</RowLink>}</li>}
             {/* After a rehearsal, back to the talk and its plan */}
             {rehearsed && <li><RowLink href={`/talk?id=${rehearsed.id}`}>Back to your talk</RowLink></li>}
             {/* Inside today's practice, trying again is offered here (the main action moves on) */}
@@ -935,7 +939,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
     // Ignore the result if the screen closes first
     let cancelled = false;
     // Load it
-    loadDailyPlan(repo, today).then((loadedPlan) => {
+    loadDailyPlanLater(repo, today).then((loadedPlan) => {
       // Stop if closed
       if (cancelled) return;
       // The next step, if there is one

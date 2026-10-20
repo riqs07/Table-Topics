@@ -25,10 +25,12 @@ import { YourWeekCard } from "@/components/script/YourWeekCard";
 import { weekStrip, type StripDay } from "@/core/weekStrip";
 // Load the repository type
 import type { Repository } from "@/data/repository";
-// Load today's practice and the next talk with a date
-import { loadDailyPlan, type LoadedPlan } from "@/data/dailyPlan";
+// Load the loaded-plan type
+import type { LoadedPlan } from "@/data/dailyPlan";
+// Load the plan loader (the plan's code and content load beside the saved data, not with the page; decision 88)
+import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
 // Load the plan's time and addresses
-import { nextStepIndex, planHref, planMinutes, type PlanStep } from "@/core/dailyPlan";
+import { nextStepIndex, planHref, planMinutes, type PlanStep } from "@/core/planSteps";
 // Load the done and next marks on a path
 import { PathMark } from "@/components/script/PathMark";
 // Load the day's summary wording
@@ -103,6 +105,8 @@ interface HomeData {
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
 async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
+  // Start fetching the plan's code at once, so it arrives while the saved data is read (a failure shows when the plan is loaded below)
+  void import("@/data/dailyPlan").catch(() => undefined);
   // Read every session that counts (private moment notes are left out)
   const sessions = practiceSessions(await repository.listSessions());
   // Read the settings (defaults for a new user)
@@ -114,7 +118,7 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
   // The saved talks
   const talks = await repository.listTalks();
   // Today's practice (after the focus is saved, so both agree)
-  const plan = await loadDailyPlan(repository, now);
+  const plan = await loadDailyPlanLater(repository, now);
   // Put everything together
   return {
     // How many sessions there are

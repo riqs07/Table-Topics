@@ -234,8 +234,8 @@ describe("deleteAllData", () => {
     expect((await repo.getSettings(NOW)).focusIndex).toBe(0);
   });
 
-  // The first recording of each prompt is kept so "then and now" can play it later
-  it("keeps the audio of the first recording of each prompt", async () => {
+  // The first take of a prompt recorded again is kept so "then and now" can play it; a prompt recorded once keeps nothing extra (every prompt's first take used to be kept, without limit; decision 88)
+  it("keeps the first take only of prompts recorded again", async () => {
     // Five sessions on different prompts, the second one first recorded on day 2
     for (let n = 1; n <= 5; n++) {
       // Save the audio
@@ -247,8 +247,8 @@ describe("deleteAllData", () => {
     await repo.saveSettings({ ...(await repo.getSettings(NOW)), audioRetention: 1 });
     // Prune
     await repo.pruneAudio();
-    // Confirm the first takes of p1, p2, p3 and the latest session keep their audio
-    expect((await repo.listSessions()).filter((session) => session.audioKey).map((session) => session.id)).toEqual(["s5", "s3", "s2", "s1"]);
+    // Confirm the first takes of p1 and p2 and the latest session keep their audio, and p3's single take does not
+    expect((await repo.listSessions()).filter((session) => session.audioKey).map((session) => session.id)).toEqual(["s5", "s2", "s1"]);
   });
 });
 

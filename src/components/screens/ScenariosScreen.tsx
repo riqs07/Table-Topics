@@ -24,8 +24,9 @@ import { loadScenarioProgress, saveScenarioAnswer } from "@/data/scenarioProgres
 import { PRIMARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the plan navigation type, today's practice and step addresses
 import type { PlanNav } from "@/components/screens/planNav";
-import { loadDailyPlan } from "@/data/dailyPlan";
-import { planHref } from "@/core/dailyPlan";
+// Load the plan loader (the plan's code loads after the page shows; decision 88)
+import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
+import { planHref } from "@/core/planSteps";
 
 // Draw the page
 export function ScenariosScreen({ services = browserRecordingServices, planStep = null, ...props }: ScreenProps & { services?: RecordingServices; planStep?: number | null }) {
@@ -47,7 +48,7 @@ export function ScenariosScreen({ services = browserRecordingServices, planStep 
     // Ignore the result if closed first
     let cancelled = false;
     // Load it
-    loadDailyPlan(repo, today).then((loaded) => {
+    loadDailyPlanLater(repo, today).then((loaded) => {
       // Stop if closed
       if (cancelled) return;
       // The next step, if any

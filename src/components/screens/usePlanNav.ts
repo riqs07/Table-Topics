@@ -3,10 +3,10 @@
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
-// Load the plan loader
-import { loadDailyPlan } from "@/data/dailyPlan";
+// Load the plan loader (the plan's code loads after the page shows; decision 88)
+import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
 // Load the plan address maker
-import { planHref } from "@/core/dailyPlan";
+import { planHref } from "@/core/planSteps";
 // Load the plan position type
 import type { PlanNav } from "@/components/screens/planNav";
 // Load the repository type
@@ -24,7 +24,7 @@ export function usePlanNav(repo: Repository, today: Date | null, planStep: numbe
     // Ignore the result if closed first
     let cancelled = false;
     // Load today's plan
-    loadDailyPlan(repo, today).then((loaded) => {
+    loadDailyPlanLater(repo, today).then((loaded) => {
       // Stop if closed
       if (cancelled) return;
       // The next step, if any

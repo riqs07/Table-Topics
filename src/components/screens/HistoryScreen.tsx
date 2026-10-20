@@ -29,8 +29,8 @@ import { BOOKENDS, findPrompt } from "@/content/prompts";
 import { VOICE_MODE_NAMES, findShadowPassage, findVoiceDrill } from "@/content/voice";
 // Load the conversation personas, to name who a conversation was with (decision 83)
 import { findPersona } from "@/content/conversations";
-// Load the lookup for every text to read, full speeches included
-import { findReading } from "@/content/readings";
+// Load the names of every text to read (without the full speeches' text)
+import { readingTitle } from "@/content/readingIndex";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the sentence builders
@@ -104,7 +104,7 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   // Mark Rapid Fire answers the same way (once called Table Topics; decision 85)
   if (session.mode === "talk") return `Rapid Fire: ${text}`;
   // And readings, by their title (a part of a full speech says which part)
-  if (session.mode === "read") return `Read aloud: ${findReading(session.promptId)?.title ?? text}`;
+  if (session.mode === "read") return `Read aloud: ${readingTitle(session.promptId) ?? text}`;
   // And pause drills
   if (session.mode === "pause") return `Pause drill: ${text}`;
   // And voice drills and shadowing, by their kind and name (decision 80)

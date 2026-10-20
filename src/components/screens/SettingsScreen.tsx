@@ -30,9 +30,9 @@ import { passphraseFingerprint } from "@/core/passphraseCheck";
 // Load the sentence for send results
 import { sendResultMessage } from "@/core/feedbackMessages";
 // Load what is known about keeping the data safe
-import { markExported, readSafetyFacts } from "@/data/storageSafety";
+import { markExported, readSafetyFacts, readStorageUsed } from "@/data/storageSafety";
 // Load the words for the last copy
-import { lastCopyText, type SafetyFacts } from "@/core/storageSafety";
+import { lastCopyText, storageUsedText, type SafetyFacts } from "@/core/storageSafety";
 // Load the light and dark choice
 import { COLOR_MODES, readColorMode, saveColorMode, type ColorMode } from "@/data/colorMode";
 // Load the practice time section
@@ -169,6 +169,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // How safe the data is from the browser clearing it, and when a copy was last saved (null until read)
   const [safety, setSafety] = useState<SafetyFacts | null>(null);
+  // How much this device holds for the app, in bytes (null until read, or where the browser cannot say)
+  const [storageUsed, setStorageUsed] = useState<number | null>(null);
 
   // Load the settings once the date is known
   useEffect(() => {
@@ -188,6 +190,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     void readSafetyFacts(0, today).then((facts) => {
       // Keep them only if the screen is still open
       if (!cancelled) setSafety(facts);
+    });
+    // Read how much the device holds for the app
+    void readStorageUsed().then((bytes) => {
+      // Keep it only if the screen is still open
+      if (!cancelled) setStorageUsed(bytes);
     });
     // Count sessions waiting for feedback
     repo.listSessions().then((sessions) => {
@@ -409,8 +416,10 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             {/* One option per choice */}
             {RETENTION_CHOICES.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
           </select>{" "}
-          sessions. Your first recording, and every transcript and note, are always kept.
+          sessions. Also kept: your very first recording, and the first take of up to 20 prompts you have recorded again on a later day, so you can hear then and now. Every transcript and note is always kept.
         </p>
+        {/* How much the device holds, where the browser can say */}
+        {storageUsedText(storageUsed) && <p className="mt-2 text-footnote text-ink-muted">{storageUsedText(storageUsed)}</p>}
       </Section>
 
       {/* Coach feedback (drawn in the browser only, where the saved passphrase can be read) */}

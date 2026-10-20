@@ -4,9 +4,9 @@
 import { PAUSE_DRILLS, PASSAGES, bookendForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the lessons
 import { findLesson } from "@/content/lessons";
-// Load the full speeches and their part lookups
-import { FULL_SPEECHES } from "@/content/speeches";
-import { findReading, findSpeech, partId } from "@/content/readings";
+// Load the speeches' index and the reading names (not the speeches' text, which is most of the app's download; decision 88)
+import { SPEECH_INDEX } from "@/content/speechIndex";
+import { findSpeechSummary, partId, readingTitle } from "@/content/readingIndex";
 // Load the calendar-day helpers
 import { dayKey, daysBetween, startOfDay } from "@/core/dates";
 // Load the small-talk questions and lessons
@@ -17,32 +17,13 @@ import { nextCard, type LearnProgress } from "@/core/learn";
 import type { ScenarioProgress, SessionMode, SessionRecord } from "@/data/records";
 // Load how many scenarios a quick round holds
 import { QUICK_COUNT } from "@/core/scenarios";
+// Load the step type and the rules about steps, which pages use without the plan (decision 88)
+import { stepKey, type PlanLane, type PlanStep } from "@/core/planSteps";
+// The step type and rules, for code that already loads the plan
+export { nextStepIndex, planHref, planMinutes, stepKey, type PlanLane, type PlanStep } from "@/core/planSteps";
 // Load the voice picks and names (decision 80)
 import { VOICE_ROTATION, nextShadowPassage, nextVoiceDrill, warmupRoutine } from "@/core/voicePicks";
 import { VOICE_MODE_NAMES } from "@/content/voice";
-
-// Where a step of the day's practice comes from: the Learn card, the warm-up, or one of the bank's three groups (speaking on the spot, delivery skills, conversation)
-export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection";
-
-// One step of today's practice
-export interface PlanStep {
-  // Its lane
-  lane: PlanLane;
-  // A recorded session, a Learn card, a round of quick scenarios (decision 72), or a warm-up routine, which records nothing (decision 80)
-  kind: "session" | "card" | "scenarios" | "warmup";
-  // The step's short name, such as "Warm up"
-  label: string;
-  // What it is, such as "Inaugural Address, part 3 of 12"
-  title: string;
-  // The kind of session it records (none for a card)
-  mode: SessionMode | null;
-  // The prompt, text, lesson or talk it uses
-  promptId: string;
-  // Speaking time in minutes, for the total
-  minutes: number;
-  // Where it starts (without the plan marker)
-  href: string;
-}
 
 // What the plan is worked out from
 export interface PlanInput {
@@ -121,19 +102,19 @@ function warmUp(before: ReadonlyArray<SessionRecord>): PlanStep {
   // Parts read before today
   const read = new Set(before.filter((session) => session.mode === "read").map((session) => session.promptId));
   // Whether a speech still has a part to read
-  const unfinished = (id: string) => (findSpeech(id)?.parts ?? []).some((_, index) => !read.has(`${id}-${index + 1}`));
+  const unfinished = (id: string) => Array.from({ length: findSpeechSummary(id)?.partCount ?? 0 }, (_, index) => index).some((index) => !read.has(`${id}-${index + 1}`));
   // The speech of the newest reading of a part, if it is unfinished (the list is newest first)
-  const current = before.filter((session) => session.mode === "read").map((session) => /^(.+)-\d+$/.exec(session.promptId)?.[1]).find((id) => id !== undefined && findSpeech(id) !== undefined);
+  const current = before.filter((session) => session.mode === "read").map((session) => /^(.+)-\d+$/.exec(session.promptId)?.[1]).find((id) => id !== undefined && findSpeechSummary(id) !== undefined);
   // That speech, or the first unfinished one in the starter order, or any unfinished one, or the first
-  const speechId = (current && unfinished(current) ? current : undefined) ?? STARTER_ORDER.find(unfinished) ?? FULL_SPEECHES.map((speech) => speech.id).find(unfinished) ?? STARTER_ORDER[0] ?? "";
+  const speechId = (current && unfinished(current) ? current : undefined) ?? STARTER_ORDER.find(unfinished) ?? SPEECH_INDEX.map((speech) => speech.id).find(unfinished) ?? STARTER_ORDER[0] ?? "";
   // The speech
-  const speech = findSpeech(speechId) ?? FULL_SPEECHES[0]!;
+  const speech = findSpeechSummary(speechId) ?? SPEECH_INDEX[0]!;
   // Its first part not yet read (or the first, if all are)
-  const part = Math.max(0, speech.parts.findIndex((_, index) => !read.has(partId(speech, index + 1)))) + 1;
+  const part = Math.max(0, Array.from({ length: speech.partCount }, (_, index) => index).findIndex((index) => !read.has(partId(speech, index + 1)))) + 1;
   // The part's id
   const id = partId(speech, part);
   // The step
-  return { lane: "warmup", kind: "session", label: "Warm up", title: findReading(id)?.title ?? speech.title, mode: "read", promptId: id, minutes: 1, href: `/session?mode=read&prompt=${id}` };
+  return { lane: "warmup", kind: "session", label: "Warm up", title: readingTitle(id) ?? speech.title, mode: "read", promptId: id, minutes: 1, href: `/session?mode=read&prompt=${id}` };
 }
 
 // The skill drill for this week's focus
@@ -141,7 +122,7 @@ function skill(focusId: string, day: Date): PlanStep {
   // The drill for today
   const drill = inTurn(SKILL_DRILLS[focusId] ?? PRACTICE, day);
   // Its name
-  const title = drill.mode === "lesson" ? `Lesson ${findLesson(drill.promptId)?.number}: ${findLesson(drill.promptId)?.title}` : drill.mode === "pause" ? `Pause drill: ${findReading(drill.promptId)?.title}` : (findReading(drill.promptId)?.title ?? "A short reading");
+  const title = drill.mode === "lesson" ? `Lesson ${findLesson(drill.promptId)?.number}: ${findLesson(drill.promptId)?.title}` : drill.mode === "pause" ? `Pause drill: ${readingTitle(drill.promptId)}` : (readingTitle(drill.promptId) ?? "A short reading");
   // The step
   return { lane: "delivery", kind: "session", label: "Skill", title, mode: drill.mode, promptId: drill.promptId, minutes: drill.mode === "lesson" ? 2 : 1, href: `/session?mode=${drill.mode}&prompt=${drill.promptId}` };
 }
@@ -212,12 +193,12 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
       // The passage
       const passage = inTurn(PRACTICE, input.day);
       // The step
-      return { lane, kind: "session", label: "Read aloud", title: findReading(passage.promptId)?.title ?? "A practice passage", mode: "read", promptId: passage.promptId, minutes: 1, href: `/session?mode=read&prompt=${passage.promptId}` };
+      return { lane, kind: "session", label: "Read aloud", title: readingTitle(passage.promptId) ?? "A practice passage", mode: "read", promptId: passage.promptId, minutes: 1, href: `/session?mode=read&prompt=${passage.promptId}` };
     }
     // The drill
     const drill = inTurn(PAUSE, input.day);
     // The step
-    return { lane, kind: "session", label: "Pause drill", title: findReading(drill.promptId)?.title ?? "A pause drill", mode: "pause", promptId: drill.promptId, minutes: 1, href: `/session?mode=pause&prompt=${drill.promptId}` };
+    return { lane, kind: "session", label: "Pause drill", title: readingTitle(drill.promptId) ?? "A pause drill", mode: "pause", promptId: drill.promptId, minutes: 1, href: `/session?mode=pause&prompt=${drill.promptId}` };
   }
   // The next Connect lesson or drill
   if (kind === "connect") return { ...connection(input, before), lane };
@@ -376,34 +357,10 @@ export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyAr
   });
 }
 
-// A step's key, the same all day: its kind, its kind of session and what it uses
-export function stepKey(step: PlanStep): string {
-  // Joined with colons
-  return `${step.kind}:${step.mode ?? ""}:${step.promptId}`;
-}
-
 // Which steps were put off today with "Can't speak now?" (a skip from another day counts for nothing; decision 77)
 export function planSkipped(plan: ReadonlyArray<PlanStep>, skipped: { day: string; steps: ReadonlyArray<string> } | undefined, day: Date): boolean[] {
   // Today's skips only
   const today = skipped && skipped.day === dayKey(day) ? skipped.steps : [];
   // Each step
   return plan.map((step) => today.includes(stepKey(step)));
-}
-
-// The next step to offer: the first neither done nor put off today (-1 when none is left)
-export function nextStepIndex(done: ReadonlyArray<boolean>, skipped: ReadonlyArray<boolean>): number {
-  // The first open one
-  return done.findIndex((isDone, index) => !isDone && !skipped[index]);
-}
-
-// Speaking minutes plus listening back (about the same again; a card or a round of scenarios has nothing to hear back): the time the plan takes
-export function planMinutes(plan: ReadonlyArray<PlanStep>): number {
-  // Twice the speaking time for a session, once otherwise
-  return plan.reduce((total, step) => total + step.minutes * (step.kind === "session" ? 2 : 1), 0);
-}
-
-// A step's address inside the plan (numbered from 1), so the pages after it know which step comes next
-export function planHref(step: PlanStep, number: number): string {
-  // The step's own address with the plan marker (after a ? when the address has no query yet)
-  return `${step.href}${step.href.includes("?") ? "&" : "?"}plan=${number}`;
 }

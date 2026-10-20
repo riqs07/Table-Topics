@@ -11,7 +11,7 @@
     "dev": "next dev",
     "fresh": "node scripts/fresh.mjs",
     "phone": "node scripts/phone.mjs",
-    "build": "next build",
+    "build": "next build && node scripts/build-sw.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "live-check": "tsx --env-file-if-exists=.env.local scripts/live-check.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "speech-index": "tsx scripts/speech-index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.133.0",

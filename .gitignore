@@ -21,3 +21,6 @@ next-env.d.ts
 # Browser check output
 test-results/
 playwright-report/
+
+# The service worker, written by `pnpm build` from src/serviceWorker/sw.template.js (decision 88)
+public/sw.js

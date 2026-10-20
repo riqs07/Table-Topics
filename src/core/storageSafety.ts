@@ -53,3 +53,15 @@ export function lastCopyText(daysSinceExport: number | null): string {
   // Some days ago
   return `Last copy saved ${daysSinceExport} days ago`;
 }
+
+// How much this device holds for the app, in a few words ("About 12 MB used on this device."), or nothing when the browser cannot say
+export function storageUsedText(bytes: number | null): string {
+  // Unknown
+  if (bytes === null || !Number.isFinite(bytes) || bytes < 0) return "";
+  // Megabytes, rounded (one decimal under ten, so small amounts do not read as zero)
+  const megabytes = bytes / 1_000_000;
+  // Under a tenth of a megabyte reads as "under 0.1 MB"
+  if (megabytes < 0.1) return "Under 0.1 MB used on this device.";
+  // The rounded amount
+  return `About ${megabytes < 10 ? megabytes.toFixed(1) : Math.round(megabytes)} MB used on this device.`;
+}

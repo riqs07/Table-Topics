@@ -159,6 +159,9 @@ export function rmsFloatLevel(samples: Float32Array): number {
   return Math.min(1, Math.sqrt(total / Math.max(1, samples.length)));
 }
 
+// Recording quality: 32 kilobits a second is clear for a voice and keeps a minute to about 240 KB (decision 88)
+export const RECORDING_BITS_PER_SECOND = 32_000;
+
 // Longest wait for the recorder's stop event before keeping the audio that already arrived
 const STOP_WAIT_MS = 3000;
 
@@ -181,8 +184,8 @@ class MediaCapture implements AudioCapture {
 
   // Start recording and measuring
   constructor(private readonly stream: MediaStream) {
-    // Make the recorder
-    this.recorder = new MediaRecorder(stream);
+    // Make the recorder at speech quality (about 240 KB a minute instead of about 1 MB; decision 88)
+    this.recorder = new MediaRecorder(stream, { audioBitsPerSecond: RECORDING_BITS_PER_SECOND });
     // Keep each piece of audio
     this.recorder.ondataavailable = (event) => {
       // Ignore empty pieces

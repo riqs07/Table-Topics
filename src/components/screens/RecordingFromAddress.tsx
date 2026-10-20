@@ -3,6 +3,8 @@
 
 // Load Next.js's tools for reading the address and changing page
 import { useRouter, useSearchParams } from "next/navigation";
+// Load the in-app link
+import Link from "next/link";
 // Load the real browser recording pieces
 import { browserRecordingServices } from "@/audio/browserServices";
 // Load the recording screen
@@ -13,6 +15,11 @@ import { promptForDay } from "@/content/prompts";
 import { isSessionMode } from "@/data/records";
 // Load the reader for a short speech's plan
 import { outlineFromQuery } from "@/core/outline";
+// Load the text loader, so a speech part's text is loaded before the screen shows (decision 88)
+import { useReading } from "@/components/screens/useReading";
+// Load the loading frame and the buttons' look
+import { PageFallback } from "@/components/script/PageFallback";
+import { SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 
 // Show the recording screen for the prompt in the address
 export function RecordingFromAddress() {
@@ -24,11 +31,34 @@ export function RecordingFromAddress() {
   const named = params.get("mode");
   // A Table Topic, a Record Response, reading aloud, a pause drill, a rehearsal, a lesson, an old warm-up, or (with no mode) an old one-minute session
   const mode = isSessionMode(named) ? named : "standard";
+  // The prompt in the address, or today's (free talk and a short speech have no prompt; decision 73)
+  const promptId = params.get("prompt") ?? (mode === "free" || mode === "outline" ? mode : promptForDay(new Date()).id);
+  // The text to read, when reading aloud or doing a pause drill (a speech part's text loads first)
+  const reading = useReading(mode === "read" || mode === "pause" ? promptId : null);
+  // While a speech's text loads, the page's frame
+  if (reading.status === "loading") return <PageFallback />;
+  // If it could not load (offline before it was ever saved), say so with a way to try again
+  if (reading.status === "failed") {
+    // The explanation
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 bg-paper-raised px-6 pt-10">
+        {/* What happened */}
+        <p role="alert">This reading could not be loaded. Check your connection and try again.</p>
+        {/* Try again, or go back */}
+        <div className="flex flex-wrap gap-3">
+          {/* Try again */}
+          <button type="button" onClick={reading.retry} className={SECONDARY}>Try again</button>
+          {/* Back to today */}
+          <Link href="/" className={TEXT_LINK}>Back to today</Link>
+        </div>
+      </main>
+    );
+  }
   // Draw the screen with the real browser pieces
   return (
     <RecordingScreen
-      // The prompt in the address, or today's (free talk and a short speech have no prompt; decision 73)
-      promptId={params.get("prompt") ?? (mode === "free" || mode === "outline" ? mode : promptForDay(new Date()).id)}
+      // The prompt
+      promptId={promptId}
       // A short speech's topic, points and length
       outline={mode === "outline" ? outlineFromQuery(params) : null}
       // Full session or warm-up

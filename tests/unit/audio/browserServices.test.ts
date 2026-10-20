@@ -190,4 +190,23 @@ describe("audio capture", () => {
     // Confirm the audio so far came back and the microphone was released
     expect([(await stopped).size, track.stop.mock.calls.length]).toEqual([5, 1]);
   });
+
+  // Recordings used to use the browser's default quality, about 1 MB a minute; speech quality is a quarter of that (decision 88)
+  it("records at speech quality", () => {
+    // The options the recorder was made with
+    const made: unknown[] = [];
+    // A recorder that notes its options
+    class NotingRecorder extends SilentRecorder {
+      // Note the options
+      constructor(_stream: unknown, options?: unknown) { super(); made.push(options); }
+    }
+    // Put the fakes in place
+    vi.stubGlobal("MediaRecorder", NotingRecorder);
+    // The audio graph fake
+    vi.stubGlobal("AudioContext", FakeAudioContext);
+    // Start capturing
+    browserRecordingServices.createCapture({ getTracks: () => [] } as unknown as MediaStream);
+    // Confirm 32 kilobits a second was asked for
+    expect(made).toEqual([{ audioBitsPerSecond: 32_000 }]);
+  });
 });

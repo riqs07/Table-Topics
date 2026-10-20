@@ -2,6 +2,8 @@
 
 // Load the start-of-day helper for default settings
 import { startOfDay } from "@/core/dates";
+// Load the rule for which recordings lose their audio
+import { audioToPrune } from "@/core/audioRetention";
 // Load the record types
 import { COLLECTION_NAMES, type ChallengeRecord, type SessionRecord, type SettingsRecord, type TalkRecord } from "@/data/records";
 // Load the storage contract
@@ -24,7 +26,7 @@ export interface Repository {
   saveAudio(key: string, audio: Blob): Promise<void>;
   // Load a recording by key
   getAudio(key: string): Promise<Blob | undefined>;
-  // Delete audio beyond the retention limit (never the baseline's); returns how many were removed
+  // Delete audio beyond the retention limit (never the baseline's, nor up to 20 first takes kept for comparing); returns how many were removed
   pruneAudio(): Promise<number>;
   // Delete one recording by key
   deleteAudio(key: string): Promise<void>;
@@ -87,21 +89,8 @@ export function createRepository(store: Store): Repository {
       const keep = Math.max(0, Math.floor(audioRetention) || 0);
       // Every session, newest first
       const sessions = await listSessions();
-      // The first recording of each prompt, kept so "then and now" can play it beside later ones
-      const firstTakes = new Set<string>();
-      // Oldest first, the first session seen for each prompt is its first take
-      const seenPrompts = new Set<string>();
-      // Walk from the oldest
-      for (const session of [...sessions].reverse()) {
-        // Skip prompts already seen
-        if (seenPrompts.has(session.promptId)) continue;
-        // Note the prompt
-        seenPrompts.add(session.promptId);
-        // Keep this session's audio
-        firstTakes.add(session.id);
-      }
-      // Find older sessions that still have audio and are neither the baseline nor a prompt's first take
-      const toPrune = sessions.slice(keep).filter((session) => session.audioKey && !session.isBaseline && !firstTakes.has(session.id));
+      // Older sessions that still have audio and are neither the baseline nor a first take kept for "then and now" (decision 88)
+      const toPrune = audioToPrune(sessions, keep);
       // Remove each one's audio and clear its pointer
       for (const session of toPrune) {
         // Delete the recording

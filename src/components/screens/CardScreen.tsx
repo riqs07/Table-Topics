@@ -26,8 +26,9 @@ import type { RecordingServices } from "@/audio/services";
 import { EVIDENCE_LABELS, LEARN_CARDS, LEARN_SETS, findCard, type Verdict } from "@/content/learn";
 // Load the plan navigation type, today's practice and step addresses
 import type { PlanNav } from "@/components/screens/planNav";
-import { loadDailyPlan } from "@/data/dailyPlan";
-import { planHref } from "@/core/dailyPlan";
+// Load the plan loader (the plan's code loads after the page shows; decision 88)
+import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
+import { planHref } from "@/core/planSteps";
 // Load progress saving
 import { markCardRead } from "@/data/learnProgress";
 // Load the tab title helper
@@ -81,7 +82,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
     // Ignore the result if closed first
     let cancelled = false;
     // Load it
-    loadDailyPlan(repo, today).then((loaded) => {
+    loadDailyPlanLater(repo, today).then((loaded) => {
       // Stop if closed
       if (cancelled) return;
       // The next step, if any

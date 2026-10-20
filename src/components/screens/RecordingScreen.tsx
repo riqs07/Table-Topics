@@ -15,8 +15,8 @@ import { subscribeToNothing } from "@/components/screens/screenBasics";
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
 import { BOOKENDS, STRUCTURE_HINT, findPrompt } from "@/content/prompts";
-// Load the lookup for every text to read, full speeches included
-import { findReading } from "@/content/readings";
+// Load the text to read by id (a full speech's text loads only when a part of one is asked for)
+import { useReading } from "@/components/screens/useReading";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
 // Load the filler marker
@@ -57,7 +57,7 @@ import { markMicExplained, readMicExplained } from "@/data/micExplained";
 // Load today's practice, for its number of steps
 import { loadDailyPlan, skipStepToday, type LoadedPlan } from "@/data/dailyPlan";
 // Load the plan rules, to find the next step after one is put off
-import { nextStepIndex, planHref, stepKey } from "@/core/dailyPlan";
+import { nextStepIndex, planHref, stepKey } from "@/core/planSteps";
 // Load the shared button looks
 import { QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the plain explanations of microphone and speech problems
@@ -374,7 +374,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The prompt to speak to (for reading aloud, its title; for a Q&A answer, the question)
   const prompt = mode === "qa" ? (qaQuestion ? { id: promptId, text: qaQuestion } : undefined) : findPrompt(promptId);
   // The passage, when reading aloud or doing a pause drill
-  const passage = mode === "read" || mode === "pause" ? findReading(promptId) : undefined;
+  const passage = useReading(mode === "read" || mode === "pause" ? promptId : null).passage;
   // The user's own talk, when rehearsing (loaded from storage below)
   const [talk, setTalk] = useState<TalkRecord | null>(null);
   // How much of the rehearsal text shows: all of it, cue words, or nothing

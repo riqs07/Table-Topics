@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load what is being checked
-import { lastCopyText, safetyNudge, type SafetyFacts } from "@/core/storageSafety";
+import { lastCopyText, safetyNudge, storageUsedText, type SafetyFacts } from "@/core/storageSafety";
 
 // A device with enough practice, nothing saved, nothing put aside, not an iPhone
 const BASE: SafetyFacts = { persisted: false, installed: false, iosSafari: false, sessionCount: 5, daysSinceExport: null, daysSinceDismissed: null };
@@ -33,5 +33,14 @@ describe("lastCopyText", () => {
   it("says when the last copy was saved", () => {
     // Confirm each
     expect([lastCopyText(null), lastCopyText(0), lastCopyText(1), lastCopyText(12)]).toEqual(["No copy saved yet", "Last copy saved today", "Last copy saved yesterday", "Last copy saved 12 days ago"]);
+  });
+});
+
+// Group the checks about the storage-used words (decision 88)
+describe("storageUsedText", () => {
+  // Unknown, tiny, small, large
+  it("says how much the device holds, or nothing when unknown", () => {
+    // Confirm each
+    expect([storageUsedText(null), storageUsedText(Number.NaN), storageUsedText(40_000), storageUsedText(2_340_000), storageUsedText(12_400_000)]).toEqual(["", "", "Under 0.1 MB used on this device.", "About 2.3 MB used on this device.", "About 12 MB used on this device."]);
   });
 });

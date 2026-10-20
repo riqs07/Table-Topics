@@ -1,15 +1,14 @@
-// Every text to read aloud in one place: the short passages and highlights, and each part of the full speeches
+// Every text to read aloud in one place, with its text: the short passages and highlights, and each part of the full speeches (pages that need only names use readingIndex.ts, which leaves the speeches' text out; decision 88)
 
 // Load the full speeches
 import { FULL_SPEECHES, type FullSpeech } from "@/content/speeches";
 // Load the short passages and their lookup
 import { findPassage, type Passage } from "@/content/prompts";
+// Load the part ids and titles, shared with the index so names always agree
+import { partId, speechPartOf, speechPartTitle } from "@/content/readingIndex";
 
-// The id of one part of a speech, such as "jfk-inaugural-2"
-export function partId(speech: FullSpeech, part: number): string {
-  // The speech's id and the part's number
-  return `${speech.id}-${part}`;
-}
+// The part id maker, for pages that already load the full speeches
+export { partId };
 
 // A full speech by id
 export function findSpeech(id: string): FullSpeech | undefined {
@@ -19,14 +18,12 @@ export function findSpeech(id: string): FullSpeech | undefined {
 
 // Which speech and part an id names, if it names one
 export function partOf(id: string): { speech: FullSpeech; part: number } | undefined {
-  // A speech id followed by a part number
-  const match = /^(.+)-(\d+)$/.exec(id);
-  // The speech
-  const speech = match ? findSpeech(match[1] ?? "") : undefined;
-  // The part number
-  const part = match ? Number(match[2]) : 0;
+  // The part, from the index
+  const found = speechPartOf(id);
+  // The full speech it belongs to
+  const speech = found ? findSpeech(found.speech.id) : undefined;
   // Only a part that exists
-  return speech && part >= 1 && part <= speech.parts.length ? { speech, part } : undefined;
+  return found && speech ? { speech, part: found.part } : undefined;
 }
 
 // Any text to read by id: a short passage, a highlight, or one part of a full speech
@@ -36,11 +33,13 @@ export function findReading(id: string): Passage | undefined {
   // Found
   if (passage) return passage;
   // Otherwise a part of a full speech
-  const found = partOf(id);
+  const found = speechPartOf(id);
+  // The full speech it belongs to
+  const speech = found ? findSpeech(found.speech.id) : undefined;
   // Not one either
-  if (!found) return undefined;
+  if (!found || !speech) return undefined;
   // Its title, with the part when there is more than one
-  const title = found.speech.parts.length > 1 ? `${found.speech.title}, part ${found.part} of ${found.speech.parts.length}` : found.speech.title;
+  const title = speechPartTitle(found.speech, found.part);
   // The part as a passage to read
-  return { id, kind: "speech", title, text: title, source: `${found.speech.speaker}, ${found.speech.year}`, body: found.speech.parts[found.part - 1] ?? "" };
+  return { id, kind: "speech", title, text: title, source: `${speech.speaker}, ${speech.year}`, body: speech.parts[found.part - 1] ?? "" };
 }
