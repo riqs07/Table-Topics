@@ -122,7 +122,7 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
 
   // Draw the page
   return (
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title and the way out */}
       <Masthead title="Warm-up" nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/voice", label: "Close, back to Your voice" }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
 

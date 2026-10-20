@@ -97,7 +97,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
 
   // Draw the page
   return (
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Practice" section="practice" />
       {/* Back to Connect */}

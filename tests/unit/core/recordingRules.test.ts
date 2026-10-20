@@ -62,8 +62,8 @@ describe("Table Topic", () => {
   it("says whether the length would qualify in a contest", () => {
     // Confirm under, inside, in the grace, at the edge, and over
     expect([timingSentence("talk", 52), timingSentence("talk", 107), timingSentence("talk", 132), timingSentence("talk", 150), timingSentence("talk", 161)]).toEqual([
-      // Under the minimum
-      "0:52, under the 1:00 minimum. In a contest this would not qualify.",
+      // Under the minimum: the plain timing only (a short take is practice, not a disqualification; decision 89)
+      "0:52, under the 1:00 minimum.",
       // Inside the window
       "1:47, inside the 1:00 to 2:00 window.",
       // Past red but inside the grace

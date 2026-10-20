@@ -86,6 +86,20 @@ describe("small talk", () => {
     expect([!!screen.getByText("From your numbers"), screen.getByRole("link", { name: /Another question/ }).getAttribute("href")]).toEqual([true, "/small-talk/unit?id=answering"]);
   });
 
+  // A fresh answer is never graded "0 of 4": until the user ticks or the coach reports, it asks which beats they hit, with the ticks open under the question (round 4)
+  it("asks which beats you hit on a fresh answer instead of showing a count", async () => {
+    // A new answer with no notes and no coach, whose words the phone finds nothing in
+    const repository = await repositoryWith(answer({ selfReview: null, transcript: "it was fine" }));
+    // Draw the answer's page
+    render(<SessionScreen sessionId="a1" repository={repository} now={NOW} />);
+    // The headline
+    const headline = await screen.findByRole("heading", { level: 1 });
+    // The ticks
+    const listen = screen.getByRole("list", { name: "Listen for" });
+    // Confirm the question, no count anywhere, the ticks open and placed after the headline, and no read-only list yet
+    expect([headline.textContent, screen.queryByText(/of 4 beats/), !!listen.closest("details")?.open, !!(headline.compareDocumentPosition(listen) & Node.DOCUMENT_POSITION_FOLLOWING), screen.queryByRole("list", { name: "The beats" })]).toEqual(["Which beats did you hit?", null, true, true, null]);
+  });
+
   // The coach's notes quote each beat and show the livelier version with its gaps marked
   it("shows the coach's quotes and the livelier version", async () => {
     // An answer with the coach's notes

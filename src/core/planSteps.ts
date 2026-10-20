@@ -38,10 +38,10 @@ export function nextStepIndex(done: ReadonlyArray<boolean>, skipped: ReadonlyArr
   return done.findIndex((isDone, index) => !isDone && !skipped[index]);
 }
 
-// Speaking minutes plus listening back (about the same again; a card or a round of scenarios has nothing to hear back): the time the plan takes
+// The plan's total: the steps' own minutes added up, so the total always matches the steps listed under it (it once doubled speaking steps for listening back, and four 1-minute steps read "about 7 min"; decision 89)
 export function planMinutes(plan: ReadonlyArray<PlanStep>): number {
-  // Twice the speaking time for a session, once otherwise
-  return plan.reduce((total, step) => total + step.minutes * (step.kind === "session" ? 2 : 1), 0);
+  // Each step's minutes, added up
+  return plan.reduce((total, step) => total + step.minutes, 0);
 }
 
 // A step's address inside the plan (numbered from 1), so the pages after it know which step comes next

@@ -50,7 +50,9 @@ export function missionToday(records: ReadonlyArray<MissionRecord>, now: Date): 
 // How the outcome compared with the prediction, in one plain sentence
 export function compareLine(record: MissionRecord): string {
   // Not tried, or nothing to compare
-  if (!record.tried || record.outcome === null || record.predicted === null) return "No comparison this time. The mission will be offered again.";
+  if (!record.tried || record.outcome === null) return "No comparison this time. The mission will be offered again.";
+  // Tried without a guess beforehand (the guess is optional): how it went, alone
+  if (record.predicted === null) return `It went ${record.outcome} of 5.`;
   // The two numbers
   const said = `You expected ${record.predicted} of 5. It went ${record.outcome} of 5.`;
   // Better than feared

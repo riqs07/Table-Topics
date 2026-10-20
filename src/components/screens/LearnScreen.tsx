@@ -18,6 +18,8 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 import { LEARN_GROUPS, LEARN_SETS } from "@/content/learn";
 // Load the scenarios, for their count
 import { SCENARIOS } from "@/content/scenarios";
+// Load how many scenarios a round has, so the card says what the round will show
+import { QUICK_COUNT } from "@/core/scenarios";
 // Load the rules
 import { nextCard, setProgress, type LearnProgress } from "@/core/learn";
 // Load progress
@@ -82,7 +84,7 @@ export function LearnScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main data-area="learn" className={PAGE}>
+    <main id="main" data-area="learn" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="VoiceLab" section="learn" />
       {/* The page's name, and what is here */}
@@ -100,7 +102,8 @@ export function LearnScreen(props: ScreenProps) {
       <h2 className={`${SECTION_HEADING} mt-6`}>Practise</h2>
       {/* The scenarios card */}
       <div className="mt-2">
-        <CourseCard href="/learn/scenarios" name="Quick scenarios" blurb="Choose the best reply, then say it aloud." icon={CardsIcon} done={scenarios ? Object.keys(scenarios).length : 0} total={SCENARIOS.length} count={`${SCENARIOS.length} scenarios`} />
+        {/* (Its count says a round is three of the whole bank, so it agrees with the "1 of 3" the round shows) */}
+        <CourseCard href="/learn/scenarios" name="Quick scenarios" blurb="Choose the best reply, then say it aloud." icon={CardsIcon} done={scenarios ? Object.keys(scenarios).length : 0} total={SCENARIOS.length} count={`${QUICK_COUNT} at a time, ${SCENARIOS.length} in all`} />
       </div>
 
       {/* The sets, as cards in two groups (Speaking, People); each opens its own page (decision 79) */}

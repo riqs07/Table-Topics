@@ -52,7 +52,7 @@ function OutlineForm({ draft }: { draft: Outline | null }) {
 
   // Draw it
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Title, with a way back to Practice */}
       <Masthead title="Short speech" nav={false} close={{ href: "/practice", label: "Close, back to Practice" }} />
       {/* The heading */}

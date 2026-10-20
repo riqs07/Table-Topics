@@ -41,7 +41,7 @@ export function RecordingFromAddress() {
   if (reading.status === "failed") {
     // The explanation
     return (
-      <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 bg-paper-raised px-6 pt-10">
+      <main id="main" className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 bg-paper-raised px-6 pt-10">
         {/* What happened */}
         <p role="alert">This reading could not be loaded. Check your connection and try again.</p>
         {/* Try again, or go back */}

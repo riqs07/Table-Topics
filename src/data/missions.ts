@@ -27,8 +27,8 @@ async function saveRecord(repository: Repository, record: MissionRecord, now: Da
   return next;
 }
 
-// Accept a mission with a prediction (1 to 5)
-export function acceptMission(repository: Repository, missionId: string, predicted: number, now: Date): Promise<MissionRecord[]> {
+// Accept a mission, with a prediction (1 to 5) or none (the guess is optional)
+export function acceptMission(repository: Repository, missionId: string, predicted: number | null, now: Date): Promise<MissionRecord[]> {
   // A new try, waiting for its debrief
   return saveRecord(repository, { id: crypto.randomUUID(), missionId, day: dayKey(now), status: "accepted", predicted, tried: null, outcome: null, note: "", tooMuch: false, debriefedAt: null }, now);
 }

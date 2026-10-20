@@ -288,7 +288,7 @@ export default function WireframesPage() {
   // Heading, explanation, and the screens
   return (
     // The app theme, so the type and accent can be judged
-    <main data-theme="calm-studio" className="min-h-dvh px-4 py-10">
+    <main id="main" data-theme="calm-studio" className="min-h-dvh px-4 py-10">
       {/* Intro column */}
       <div className="mx-auto max-w-6xl">
         {/* Page heading */}

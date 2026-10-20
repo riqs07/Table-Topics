@@ -9,7 +9,7 @@ import { PracticeScreen } from "@/components/screens/PracticeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the day's pickers
-import { PAUSE_DRILLS, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the lessons
 import { LESSONS } from "@/content/lessons";
 // Load a sample session builder
@@ -34,7 +34,7 @@ describe("PracticeScreen", () => {
     // Confirm the groups and where each row leads ("See all" first in Build a skill)
     expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Build a skill"), (await rows("Speak on the spot")).slice(0, 3)]).toEqual([
       [["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["Asking", "/small-talk/unit?id=asking"], ["Listening", "/small-talk/unit?id=listening"], ["Responding to news", "/small-talk/unit?id=news"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
-      [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Volume", "/voice/drill?id=v01"], ["Pitch and stress", "/voice/drill?id=p01"], ["Tone", "/voice/drill?id=t01"], ["Pausing", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Shadowing", "/voice/shadow?id=s01"]],
+      [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Tricky words", `/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`], ["Volume", "/voice/drill?id=v01"], ["Pitch and stress", "/voice/drill?id=p01"], ["Tone", "/voice/drill?id=t01"], ["Pausing", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Shadowing", "/voice/shadow?id=s01"]],
       [[undefined, "/skills"], ["Lessons", `/session?mode=lesson&prompt=${LESSONS[0]?.id}`], ["Read aloud", "/skills#readings"]],
       [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Openings and closings", "/bookends"]],
     ]);

@@ -17,6 +17,10 @@ import { practiceSessions } from "@/core/sessionHome";
 import Link from "next/link";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
+// Load the page title
+import { PageTitle } from "@/components/script/PageTitle";
+// Load the back arrow
+import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the filled button link
 import { PRESS, PrimaryLink, TEXT_LINK } from "@/components/script/Buttons";
 // Load the repository type
@@ -164,9 +168,13 @@ export function HistoryScreen(props: ScreenProps) {
   // Draw the page
   return (
     // One column on a phone, margin plus main column on a computer
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
-      {/* Title, with the settings gear marked */}
-      <Masthead title="History" section="settings" />
+    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
+      {/* The section it sits in, with the settings gear marked */}
+      <Masthead title="Settings" section="settings" />
+      {/* The way back to Settings, where it is reached from */}
+      <p className="mt-2"><Link href="/settings" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to Settings</Link></p>
+      {/* The page's name, as its main heading (also in the empty state) */}
+      <PageTitle title="History" />
       {/* The history itself */}
       <HistoryContent repo={repo} today={today} />
     </main>
@@ -244,7 +252,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
           {/* Progress (top on a phone, margin on a computer) */}
           <aside className={`mt-5 self-start p-5 md:mt-0 ${CARD}`}>
             {/* Progress as one sentence, or a note that there is only one recording so far */}
-            <h1 className="font-display text-cue font-semibold tracking-tight">{!pauseWords ? `${rows.length} ${rows.length === 1 ? "session" : "sessions"} so far.` : progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h1>
+            <h2 className="font-display text-cue font-semibold tracking-tight">{!pauseWords ? `${rows.length} ${rows.length === 1 ? "session" : "sessions"} so far.` : progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h2>
             {/* The trend, once there are two first tries (it counts pause words, so not when they are hidden) */}
             {pauseWords && trend.length >= 2 && <Trend values={trend} />}
             {/* Listen to the first recording, if its audio is kept */}
@@ -286,7 +294,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
               // The task, the day, and expected against actual
               <li key={record.id} className="py-3">
                 {/* The day and the numbers */}
-                <span className="block text-footnote text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)} · expected {record.predicted} of 5, went {record.outcome} of 5</span>
+                <span className="block text-footnote text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)} · {record.predicted !== null ? `expected ${record.predicted} of 5, ` : ""}went {record.outcome} of 5</span>
                 {/* The task */}
                 <span className="block">{findMission(record.missionId)?.task ?? "A mission"}</span>
                 {/* What they noticed */}

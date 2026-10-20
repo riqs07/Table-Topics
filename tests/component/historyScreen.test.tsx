@@ -37,8 +37,8 @@ describe("HistoryScreen", () => {
   it("shows an empty state for a new user", async () => {
     // Draw the screen with no data
     render(<HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the empty line
-    expect(await screen.findByText(/Nothing here yet/)).toBeTruthy();
+    // Confirm the empty line, a real main heading even when empty, and the way back to Settings, where History is reached from (round 4)
+    expect([!!(await screen.findByText(/Nothing here yet/)), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to Settings" }).getAttribute("href")]).toEqual([true, "History", "/settings"]);
   });
 
   // The empty state offers one thing to do
@@ -138,7 +138,7 @@ describe("HistoryScreen", () => {
     // Draw the screen
     render(<HistoryScreen repository={repository} now={NOW} />);
     // The heading
-    const heading = await screen.findByRole("heading", { level: 1, name: /sessions so far/ });
+    const heading = await screen.findByRole("heading", { level: 2, name: /sessions so far/ });
     // Confirm the count, no trend, and lengths in the rows
     expect([!!heading, screen.queryByRole("figure"), within(screen.getByRole("list", { name: "Sessions" })).queryAllByText("long").length > 0]).toEqual([true, null, true]);
   });

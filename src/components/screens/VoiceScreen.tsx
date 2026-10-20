@@ -23,7 +23,7 @@ import { SHADOW_PASSAGES, VOICE_DRILLS, VOICE_MODE_NAMES, type VoiceDrillKind } 
 import { PAUSE_DRILLS, TRICKY_WORDS } from "@/content/prompts";
 
 // What each drill mode is for, in a few words
-const MODE_LINES: Readonly<Record<VoiceDrillKind, string>> = { clear: "finish every word, 1 min", volume: "be heard without shouting, 1 min", pitch: "end low, lift a question, stress the key word", tone: "one line, three feelings" };
+const MODE_LINES: Readonly<Record<VoiceDrillKind, string>> = { clear: "Finish every word, 1 min", volume: "Be heard without shouting, 1 min", pitch: "End low, lift a question, stress the key word", tone: "One line, three feelings" };
 
 // How often something was done, in a few words
 function doneText(count: number): string {
@@ -64,7 +64,7 @@ export function VoiceScreen(props: ScreenProps) {
 
   // Draw it
   return (
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Practice" section="practice" />
       {/* The page's name */}
@@ -103,7 +103,7 @@ export function VoiceScreen(props: ScreenProps) {
             );
           })}
           {/* Tricky words: the word lists read aloud, checked word by word (moved here from Build a skill; decision 80) */}
-          <FoldCard id="tricky-words" name="Tricky words" detail="word lists to read aloud, crisp consonants" count={TRICKY_WORDS.length}>
+          <FoldCard id="tricky-words" name="Tricky words" detail="Word lists to read aloud, crisp consonants" count={TRICKY_WORDS.length}>
             {/* The lists */}
             <ul className="divide-y divide-rule">
               {/* Each list */}
@@ -111,7 +111,7 @@ export function VoiceScreen(props: ScreenProps) {
             </ul>
           </FoldCard>
           {/* Pausing: the pause drills */}
-          <FoldCard id="pausing" name="Pausing" detail="pause for effect, after a question, between points" count={PAUSE_DRILLS.length}>
+          <FoldCard id="pausing" name="Pausing" detail="Pause for effect, after a question, between points" count={PAUSE_DRILLS.length}>
             {/* The drills */}
             <ul className="divide-y divide-rule">
               {/* Each drill */}
@@ -119,7 +119,7 @@ export function VoiceScreen(props: ScreenProps) {
             </ul>
           </FoldCard>
           {/* Shadowing */}
-          <FoldCard id="shadowing" name={VOICE_MODE_NAMES.shadow} detail="hear a phrase, say it back the same way" count={SHADOW_PASSAGES.length}>
+          <FoldCard id="shadowing" name={VOICE_MODE_NAMES.shadow} detail="Hear a phrase, say it back the same way" count={SHADOW_PASSAGES.length}>
             {/* The passages */}
             <ul className="divide-y divide-rule">
               {/* Each passage */}

@@ -49,11 +49,11 @@ export function ConversationsScreen(props: ScreenProps) {
 
   // Draw it
   return (
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Practice" section="practice" />
       {/* The page's name */}
-      <PageTitle title="Talk with someone">About 3 minutes, out loud, in a new situation each time. They talk, you answer, then tap Done.</PageTitle>
+      <PageTitle title="Talk with someone">About 3 minutes, out loud. They talk, you answer, then tap Done.</PageTitle>
       {/* The people */}
       <ul aria-label="People to talk with" className={`mt-6 ${CARD_LIST}`}>
         {/* Each person */}

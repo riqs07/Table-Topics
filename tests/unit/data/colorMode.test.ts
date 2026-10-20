@@ -14,42 +14,44 @@ beforeEach(() => {
 
 // Group the checks about the light and dark choice
 describe("colorMode", () => {
-  // Nothing saved, or something unknown, means light (decision 70)
-  it("is light unless dark or follow-the-device was saved", () => {
+  // Nothing saved, or something unknown, means follow the device (decision 89; light until then, decision 70)
+  it("follows the device unless light or dark was saved", () => {
     // Nothing saved
     const empty = readColorMode();
     // An unknown word
     localStorage.setItem("voicelab-color-mode", "purple");
-    // Confirm both are light
-    expect([empty, readColorMode()]).toEqual(["light", "light"]);
+    // Confirm both follow the device
+    expect([empty, readColorMode()]).toEqual(["system", "system"]);
   });
 
   // A choice is remembered and shown
   it("saves a choice and applies it to the page", () => {
-    // Choose to follow the device
-    saveColorMode("system");
-    // Confirm it is read back and shown
-    const followed = [readColorMode(), document.documentElement.getAttribute("data-mode")];
-    // Back to light
+    // Choose light
     saveColorMode("light");
-    // Confirm light clears both the override and the stored word
-    expect([followed, [readColorMode(), document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual([["system", "system"], ["light", null, null]]);
+    // Confirm it is read back, shown (no attribute means light) and stored
+    const light = [readColorMode(), document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")];
+    // Back to following the device
+    saveColorMode("system");
+    // Confirm the device choice sets the attribute and clears the stored word
+    expect([light, [readColorMode(), document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual([["light", null, "light"], ["system", "system", null]]);
   });
 
-  // The early script also applies a saved follow-the-device choice, and leaves light alone
-  it("has an early script that applies a saved device choice and ignores anything else", () => {
-    // Save follow-the-device
-    localStorage.setItem("voicelab-color-mode", "system");
-    // Run the script
+  // The early script follows the device when nothing (or something unknown) is saved, and keeps a saved light choice light
+  it("has an early script that follows the device by default and honours a saved light choice", () => {
+    // Nothing saved, on a page drawn without the attribute
     new Function(COLOR_MODE_SCRIPT)();
     // What it set
-    const followed = document.documentElement.getAttribute("data-mode");
-    // Now an unknown word, from a clean page
-    document.documentElement.removeAttribute("data-mode");
+    const empty = document.documentElement.getAttribute("data-mode");
+    // An unknown word
     localStorage.setItem("voicelab-color-mode", "purple");
     new Function(COLOR_MODE_SCRIPT)();
-    // Confirm
-    expect([followed, document.documentElement.getAttribute("data-mode")]).toEqual(["system", null]);
+    // What it set
+    const unknown = document.documentElement.getAttribute("data-mode");
+    // A saved light choice, on a page drawn following the device
+    localStorage.setItem("voicelab-color-mode", "light");
+    new Function(COLOR_MODE_SCRIPT)();
+    // Confirm the device twice, then light (no attribute)
+    expect([empty, unknown, document.documentElement.getAttribute("data-mode")]).toEqual(["system", "system", null]);
   });
 
   // The early script applies a saved choice before the page is drawn

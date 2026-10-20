@@ -25,6 +25,8 @@ export interface LocalChange {
   retryCue: string;
   // When the change is about the voice, which voice line it repeats (so the page does not say it twice; decision 81)
   voiceKind?: VoiceLineKind;
+  // When the change is about the timing, so the page leaves out its own timing sentence (said once; decision 89)
+  aboutTiming?: boolean;
 }
 
 // The cue to carry into the next try for each voice change (fading has its own above; a very even volume is left to the voice section)
@@ -40,9 +42,9 @@ export function localChange(session: SessionRecord, options: { pauseWords?: bool
   // The timing window, for a Table Topic or a prepared speech
   const timing = speakingWindow(session.mode);
   // Too short for the window
-  if (timing && session.durationSec < timing.start) return { change: `Keep going a little longer: you spoke for ${formatClock(session.durationSec)}, and the window opens at ${formatClock(timing.start)}.`, retryCue: `Add one more example before you close, and pass ${formatClock(timing.start)}.` };
+  if (timing && session.durationSec < timing.start) return { change: `Keep going a little longer: you spoke for ${formatClock(session.durationSec)}, and the window opens at ${formatClock(timing.start)}.`, retryCue: "Add one more example before you close.", aboutTiming: true };
   // Past the window and its grace
-  if (timing && session.durationSec > timing.limit) return { change: `Wrap up sooner: you spoke for ${formatClock(session.durationSec)}, past the ${formatClock(timing.end)} mark.`, retryCue: "Start your close when the light turns yellow." };
+  if (timing && session.durationSec > timing.limit) return { change: `Wrap up sooner: you spoke for ${formatClock(session.durationSec)}, past the ${formatClock(timing.end)} mark.`, retryCue: "Start your close when the light turns yellow.", aboutTiming: true };
   // Many fillers
   if (options.pauseWords !== false && session.fillersPerMinute >= MANY_FILLERS) return { change: `Swap pause words for a silent pause: ${formatRate(session.fillersPerMinute)} a minute were counted.`, retryCue: "When an um is coming, close your mouth and pause instead." };
   // The pace, in whole words a minute

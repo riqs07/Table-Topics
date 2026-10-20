@@ -407,6 +407,20 @@ describe("SessionScreen", () => {
     await waitFor(() => expect(document.body.textContent).not.toMatch(/passphrase/i));
   });
 
+  // A short first Rapid Fire take says its timing once, without the contest line, and the baseline caption reads as two lines (round 4)
+  it("says a short take's timing once", async () => {
+    // Make sure no passphrase is saved
+    localStorage.clear();
+    // A 17-second take, waiting for feedback
+    const session = makeSession({ id: "s1", mode: "talk", durationSec: 17, fillersPerMinute: 1, wordsPerMinute: 120, feedback: null, feedbackStatus: "pending" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} fetchFn={vi.fn()} />);
+    // Wait for the change
+    await screen.findByText(/^Keep going a little longer/);
+    // Confirm the window's opening time is said once, and neither the ring's sentence nor the contest line appears
+    expect([(document.body.textContent?.match(/1:00/g) ?? []).length, screen.queryByText(/under the 1:00 minimum/), screen.queryByText(/would not qualify/)]).toEqual([1, null, null]);
+  });
+
   // An unknown id is explained plainly
   it("explains a session that is not on this device", async () => {
     // Draw the screen for a missing id
@@ -589,8 +603,8 @@ describe("SessionScreen", () => {
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
     // The section
     const section = await screen.findByRole("region", { name: "Your voice" });
-    // The pitch line and the lines, things to work on first
-    expect([!!within(section).getByRole("img", { name: /Your pitch across the take/ }), within(section).getAllByRole("listitem").map((item) => item.textContent)[0]]).toEqual([true, "5 of 5 phrases ended rising, which can sound unsure. Land your statements low."]);
+    // The pitch line and the lines, things to work on first (each named for screen readers, since the dot alone carries it)
+    expect([!!within(section).getByRole("img", { name: /Your pitch across the take/ }), within(section).getAllByRole("listitem").map((item) => item.textContent)[0]]).toEqual([true, "To work on: 5 of 5 phrases ended rising, which can sound unsure. Land your statements low."]);
   });
 
   // Without the coach's note, a voice change becomes the one change, and the section does not repeat it

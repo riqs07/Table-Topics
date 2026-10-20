@@ -65,7 +65,7 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
 
   // Draw the page
   return (
-    <main data-area="learn" className={PAGE}>
+    <main id="main" data-area="learn" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Learn" section="learn" />
       {/* Back to all sets */}

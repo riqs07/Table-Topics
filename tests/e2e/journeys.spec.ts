@@ -30,7 +30,7 @@ test("Rapid Fire: from the welcome through Practice, countdown, recording, saved
   // The countdown is 10 seconds
   await expect(stop).toBeVisible({ timeout: 15_000 });
   // The timing light is showing
-  await expect(page.getByRole("status", { name: "Timing light" })).toBeVisible();
+  await expect(page.locator("[role=status][data-signal]")).toBeVisible();
   // Speak past the 10-second minimum
   await page.waitForTimeout(11_500);
   // Stop recording
@@ -155,7 +155,7 @@ test("Openings and closings: an opening drill from home to its findings", async 
   // Start speaking
   await page.getByRole("button", { name: /Start speaking/ }).click();
   // Recording is under way, with a timing light
-  await expect(page.getByRole("status", { name: "Timing light" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator("[role=status][data-signal]")).toBeVisible({ timeout: 10_000 });
   // Speak past the 10-second minimum
   await page.waitForTimeout(11_500);
   // Stop recording
@@ -338,8 +338,8 @@ test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
   await stop.click();
   // The answer opens on its results
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
-  // Open the optional beats to tick
-  await page.getByText("Which beats did you hear yourself do?").click();
+  // The results ask which beats were hit, with the ticks already open under the question (round 4)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Which beats did you hit?");
   // Tick the moment
   await page.getByRole("list", { name: "Listen for" }).getByRole("button", { name: /^Moment/ }).click();
   // Save
@@ -593,18 +593,20 @@ test("Mission: predict, try, debrief, compare", async ({ page }) => {
 });
 
 // Light or dark: chosen in Settings, kept after a reload, with no flash of the other mode and a clean console
-test("Appearance: light by default, even on a phone set to dark", async ({ page }) => {
+test("Appearance: follows the phone by default, and Light keeps it light", async ({ page }) => {
   // The phone prefers dark
   await page.emulateMedia({ colorScheme: "dark" });
   // Open Today with nothing saved
   await page.goto("/");
-  // The paper is the light one (decision 70)
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#f3ece2");
-  // Choose Auto in Settings
-  await page.goto("/settings");
-  await page.getByRole("button", { name: "Auto" }).click();
-  // Now it follows the phone and turns dark
+  // The paper is the dark one: with nothing chosen the app follows the phone (decision 89; light until then, decision 70)
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#161917");
+  // Choose Light in Settings
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Light" }).click();
+  // Open another page from scratch
+  await page.goto("/practice");
+  // It stays light on a phone set to dark
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#f3ece2");
 });
 
 test("Appearance: choose dark in Settings and it stays dark after a reload", async ({ page }) => {

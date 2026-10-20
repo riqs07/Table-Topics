@@ -58,8 +58,8 @@ export function VoiceSection({ session, usual, hide, fluency }: VoiceSectionProp
             <li key={line.kind} className="flex gap-2.5 text-lede">
               {/* The dot */}
               <span aria-hidden="true" className={`mt-2.5 size-2 flex-none rounded-full ${line.tone === "good" ? "bg-accent" : "bg-warm"}`} />
-              {/* The words */}
-              <span>{line.text}</span>
+              {/* The words, with what the dot's colour means for screen readers */}
+              <span><span className="sr-only">{line.tone === "good" ? "Went well: " : "To work on: "}</span>{line.text}</span>
             </li>
           ))}
         </ul>

@@ -98,7 +98,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   if (!loaded && loadError !== null) {
     // Say so
     return (
-      <main className={PAGE}>
+      <main id="main" className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Your talk" section="practice" />
         {/* What happened */}
@@ -110,13 +110,13 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   }
 
   // Still loading, or not yet in the browser
-  if (!loaded || !today) return <main className={PAGE}><Masthead title="Your talk" section="practice" /></main>;
+  if (!loaded || !today) return <main id="main" className={PAGE}><Masthead title="Your talk" section="practice" /></main>;
 
   // The talk is not here
   if (!loaded.talk) {
     // Say so, with a way back
     return (
-      <main className={PAGE}>
+      <main id="main" className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Your talk" section="practice" />
         {/* The note */}
@@ -148,7 +148,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
 
   // Draw the page
   return (
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title={talk.title} section="practice" />
 

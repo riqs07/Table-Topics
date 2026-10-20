@@ -13,7 +13,7 @@ export default function StylePage() {
   // Draw one section per theme
   return (
     // Center a wide column with phone-friendly side padding
-    <main className="mx-auto max-w-5xl px-4 py-10">
+    <main id="main" className="mx-auto max-w-5xl px-4 py-10">
       {/* Page heading */}
       <h1 className="font-display text-3xl">Style tile</h1>
       {/* How to use the page */}

@@ -126,8 +126,10 @@ export function QuickRecorder({ services, action, maxSec = 30, onDone }: QuickRe
       </button>
       {/* A refused microphone */}
       {stage === "blocked" && <p role="alert" className="mt-2 text-footnote">The microphone is blocked. Allow it for this site, then try again.</p>}
-      {/* The words, while and after speaking */}
-      {(stage === "recording" || stage === "done") && <p className="mt-3 text-lede" aria-live="polite">{said || (stage === "recording" ? "Listening…" : "No words were caught.")}</p>}
+      {/* The words, while and after speaking (not a live region: read out while recording, a screen reader would speak your own words back into the microphone) */}
+      {(stage === "recording" || stage === "done") && <p data-testid="quick-words" className="mt-3 text-lede">{said || (stage === "recording" ? "Listening…" : "No words were caught.")}</p>}
+      {/* For screen readers: the final words, said once when the take is done */}
+      <p role="status" className="sr-only">{stage === "done" ? (said ? `You said: ${said}` : "No words were caught.") : ""}</p>
       {/* Play it back */}
       {stage === "done" && url && <div className="mt-3"><Player src={url} label="Your take" name="your take" durationSec={seconds} /></div>}
     </div>

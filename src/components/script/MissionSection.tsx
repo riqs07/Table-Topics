@@ -73,9 +73,9 @@ export function MissionSection({ repo, today, initial = null }: { repo: Reposito
                   <span className="block text-footnote text-ink-muted">{dayLabel(new Date(record.debriefedAt ?? record.day), today)}</span>
                 </span>
                 {/* Expected against actual */}
-                <span aria-label={`Expected ${record.predicted} of 5, went ${record.outcome} of 5`} className="flex w-32 flex-none flex-col gap-1">
-                  {/* Expected */}
-                  <span aria-hidden="true" className="flex items-center gap-2 text-footnote text-ink-muted"><span className="w-10">said</span><span className="h-1.5 rounded-full bg-rule" style={{ width: `${(record.predicted ?? 0) * 12}px` }} /></span>
+                <span aria-label={record.predicted === null ? `Went ${record.outcome} of 5` : `Expected ${record.predicted} of 5, went ${record.outcome} of 5`} className="flex w-32 flex-none flex-col gap-1">
+                  {/* Expected, when a guess was made (it is optional) */}
+                  {record.predicted !== null && <span aria-hidden="true" className="flex items-center gap-2 text-footnote text-ink-muted"><span className="w-10">said</span><span className="h-1.5 rounded-full bg-rule" style={{ width: `${record.predicted * 12}px` }} /></span>}
                   {/* Actual */}
                   <span aria-hidden="true" className="flex items-center gap-2 text-footnote"><span className="w-10">went</span><span className="h-1.5 rounded-full bg-accent" style={{ width: `${(record.outcome ?? 0) * 12}px` }} /></span>
                 </span>

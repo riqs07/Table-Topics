@@ -5,8 +5,8 @@ import Link from "next/link";
 // Load the shared press effect
 import { PRESS } from "./Buttons";
 
-// The main band: floating just above the bottom of a phone screen (and the tab bar, if any) so it is always in reach; on a computer it ends the column and sticks to the bottom of the window until reached, so the main action is never below the fold (decision 79)
-const STICKY_BAND = `fixed inset-x-4 bottom-[calc(var(--vl-tabbar-h)+0.5rem)] z-20 flex min-h-16 items-center justify-between gap-4 rounded-[20px] px-5 shadow-card md:sticky md:bottom-6 md:mt-8 md:mb-10 md:min-h-0 md:max-w-md md:pb-5 md:pt-5 ${PRESS}`;
+// The main band: floating just above the bottom of a phone screen (and the tab bar, if any) so it is always in reach, with the page padded below by its height so the last content scrolls clear of it (globals.css); on a computer it sits in place at the end of the column, never over the content (decision 89; it stuck to the bottom of the window before, decision 79, and covered grids such as a result's numbers)
+const STICKY_BAND = `fixed inset-x-4 bottom-[calc(var(--vl-tabbar-h)+0.5rem)] z-20 flex min-h-16 items-center justify-between gap-4 rounded-[20px] px-5 shadow-card md:static md:mt-8 md:mb-10 md:min-h-0 md:max-w-md md:pb-5 md:pt-5 ${PRESS}`;
 
 // What the band shows and where it goes
 interface ActionBandProps {

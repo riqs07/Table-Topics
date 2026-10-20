@@ -96,7 +96,7 @@ export function ScenariosScreen({ services = browserRecordingServices, planStep 
 
   // Draw it
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Title, with a way back to Learn */}
       <Masthead title="Scenarios" nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/learn", label: "Close, back to Learn" }}>{plan ? `Step ${plan.step} of ${plan.total}` : round && !finished ? `${index + 1} of ${round.length}` : ""}</Masthead>
       {/* One scenario */}

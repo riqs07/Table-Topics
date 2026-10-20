@@ -133,8 +133,8 @@ describe("Learn", () => {
     next(4);
     // Choose the boomerask
     fireEvent.click(within(screen.getByRole("group", { name: "Replies" })).getByRole("button", { name: /^“How was your weekend\? Mine was amazing/ }));
-    // The reveal
-    const reveal = screen.getAllByRole("status").at(-1)!;
+    // The reveal (the say-it recorder inside it has its own quiet status for the final words)
+    const reveal = screen.getAllByRole("status").find((status) => status.textContent?.includes("The best one:"))!;
     // Confirm the verdict, the best reply's reason, the move and the spoken step, and that it was saved
     expect([within(reveal).getByText("A common move. Here’s what it does.").tagName, !!within(reveal).getByText(/The best one:/), !!within(reveal).getByText("Share honestly, then hand it back. Don't ask just to tell your own."), !!within(reveal).getByRole("button", { name: "Say it" })]).toEqual(["P", true, true, true]);
     // Confirm the saved first try

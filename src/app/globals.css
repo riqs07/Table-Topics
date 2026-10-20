@@ -1,6 +1,9 @@
 /* Load Tailwind */
 @import "tailwindcss";
 
+/* A device with a keyboard and a mouse or trackpad (it can hover and point finely): keyboard hints show only here, never on a phone or tablet (used as keyboard:inline) */
+@custom-variant keyboard (@media (hover: hover) and (pointer: fine));
+
 /* Switch off Tailwind's built-in colors and fonts so only theme roles exist */
 @theme {
   /* Remove every built-in color such as blue-500 */
@@ -283,10 +286,10 @@
     /* The bar's height, plus the phone's home-indicator area */
     --vl-tabbar-h: calc(4rem + env(safe-area-inset-bottom));
   }
-  /* A page with a sticky main action */
+  /* A page with a floating main action */
   body:has([data-action-band]) {
-    /* The floating band's height and the gap around it */
-    --vl-band-h: 5rem;
+    /* The floating band's height (4rem, more if its words wrap), the gap under it and a little air above it, so nothing is left under it at the end of the page (decision 89) */
+    --vl-band-h: 6rem;
   }
   /* Keep the last content clear of both */
   body {
@@ -300,11 +303,3 @@
   }
 }
 
-/* On a computer the band sticks to the bottom of the window (decision 79), so focus scrolls clear of it too */
-@media (min-width: 48rem) {
-  /* A page with a sticky main action */
-  html:has([data-action-band]) {
-    /* The band and a little air */
-    scroll-padding-bottom: 7rem;
-  }
-}

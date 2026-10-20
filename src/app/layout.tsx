@@ -12,6 +12,8 @@ import { themeCss } from "@/theme/themeCss";
 import { FeedbackSync } from "@/components/FeedbackSync";
 // Load the focus mover for page changes
 import { RouteFocus } from "@/components/RouteFocus";
+// Load the link past the masthead to the content
+import { SkipLink } from "@/components/SkipLink";
 // Load the offline worker registration
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 // Load the app theme
@@ -19,7 +21,7 @@ import { DEFAULT_THEME, THEMES } from "@/theme/themes";
 // Load Tailwind and the role colors
 import "./globals.css";
 // Load the early script that applies a saved light or dark choice
-import { COLOR_MODE_SCRIPT } from "@/data/colorMode";
+import { COLOR_MODE_SCRIPT, DEFAULT_PAGE_MODE } from "@/data/colorMode";
 
 // Title and description shown in the browser tab and search results
 export const metadata: Metadata = {
@@ -48,8 +50,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   // Wrap every page in the basic HTML document structure
   return (
-    // Declare the language, switch on the current theme, and make every font available
-    <html lang="en" data-theme={DEFAULT_THEME} className={fontVariables} suppressHydrationWarning>
+    // Declare the language, switch on the current theme, follow the device's light or dark setting until a saved choice says otherwise, and make every font available
+    <html lang="en" data-theme={DEFAULT_THEME} data-mode={DEFAULT_PAGE_MODE} className={fontVariables} suppressHydrationWarning>
       <head>
         {/* Apply a saved light or dark choice before the page is drawn (it changes data-mode above, hence the hydration note) */}
         <script dangerouslySetInnerHTML={{ __html: COLOR_MODE_SCRIPT }} />
@@ -58,6 +60,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       {/* Place the current page inside the document body */}
       <body className="min-h-dvh antialiased">
+        {/* The first stop for the keyboard: a way past the masthead and tabs straight to the page's content, shown only when focused (WCAG 2.4.1) */}
+        <SkipLink />
         {/* The current page */}
         {children}
         {/* Move focus to each new page's main heading (decision 76) */}

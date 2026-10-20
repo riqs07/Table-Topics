@@ -105,7 +105,7 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
   if (persona) return <Conversation persona={persona} {...rest} />;
   // Unknown: say so, with the way back
   return (
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title and the way out */}
       <Masthead title="Conversation" nav={false} close={{ href: "/conversations", label: "Close, back to Conversations" }} />
       {/* What happened */}
@@ -483,7 +483,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   // Draw the page
   return (
     // Dark while you speak (the stage, decision 69)
-    <main data-area={recording ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main id="main" data-area={recording ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title, the time, and the way out (none mid-conversation; End saves it instead) */}
       <Masthead title="Conversation" nav={false} close={talking || phase === "saving" ? null : { href: "/conversations", label: "Close, back to Conversations" }}>{talking ? `${formatClock(elapsed)} of ${formatClock(CONVERSATION_LIMIT_SECONDS)}` : ""}</Masthead>
 
@@ -506,7 +506,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           {/* The coach could not be reached */}
           {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">The coach couldn’t be reached, so {persona.name} will use recorded lines here.</p>}
           {/* How it works */}
-          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. Answer out loud, then tap Done. {persona.name}’s voice is AI, by ElevenLabs.{coach ? "" : " Set the passphrase in Settings for a new situation each time."}</p>
+          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. Answer out loud, then tap Done. {persona.name}’s voice is AI, by ElevenLabs.</p>
           {/* No speech-to-text in this browser */}
           {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
           {/* Start, or another situation */}

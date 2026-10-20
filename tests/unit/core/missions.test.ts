@@ -54,6 +54,12 @@ describe("missions", () => {
     ]);
   });
 
+  // The guess beforehand is optional: without one, the line says only how it went
+  it("says how it went when no prediction was made", () => {
+    // Tried with no prediction, and not tried with no prediction
+    expect([compareLine(record({ predicted: null })), compareLine(record({ predicted: null, tried: false, outcome: null }))]).toEqual(["It went 4 of 5.", "No comparison this time. The mission will be offered again."]);
+  });
+
   // Only tried missions count, for the streak and for the record
   it("counts tried missions for the streak and the record", () => {
     // Tried, not tried, and accepted

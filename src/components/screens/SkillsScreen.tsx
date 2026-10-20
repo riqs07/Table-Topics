@@ -203,7 +203,7 @@ export function SkillsScreen(props: ScreenProps) {
   ];
   // Draw the page
   return (
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Practice" section="skills" />
       {/* The page's name */}

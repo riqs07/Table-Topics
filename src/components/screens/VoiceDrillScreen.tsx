@@ -262,7 +262,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, clock: gi
   if (!drill) {
     // Say so, with the way back
     return (
-      <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Title and the way out */}
         <Masthead title="Voice drill" nav={false} close={{ href: "/voice", label: "Close, back to Your voice" }} />
         {/* What happened */}
@@ -283,7 +283,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, clock: gi
   // Draw the page
   return (
     // Dark while a take records (the stage, decision 69)
-    <main data-area={recording ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main id="main" data-area={recording ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title, step and the way out */}
       <Masthead title={VOICE_MODE_NAMES[drill.kind]} nav={false} close={close}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
 

@@ -58,7 +58,7 @@ export function BookendsScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Openings and closings" section="practice" />
 

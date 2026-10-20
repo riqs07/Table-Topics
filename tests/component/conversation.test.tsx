@@ -258,8 +258,8 @@ describe("ConversationScreen", () => {
     const repository = createRepository(new MemoryStore());
     // Draw it without the coach
     render(<ConversationScreen characterId="maya" services={fakeServices(clock, ["", "Hi, I'm Sam"], said)} navigate={navigate} coachReady={() => false} repository={repository} now={NOW} clock={clock.now} />);
-    // Her own situation, a hint about the passphrase, and no other situations
-    expect([!!(await screen.findByText("At the office party")), !!screen.getByText(/Set the passphrase in Settings/), screen.queryByRole("button", { name: "Another situation" })]).toEqual([true, true, null]);
+    // Her own situation, no mention of setup words like the passphrase (round 4), and no other situations
+    expect([!!(await screen.findByText("At the office party")), /passphrase/i.test(document.body.textContent ?? ""), screen.queryByRole("button", { name: "Another situation" })]).toEqual([true, false, null]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
     // Done, with nothing caught

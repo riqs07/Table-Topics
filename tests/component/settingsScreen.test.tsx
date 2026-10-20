@@ -57,20 +57,20 @@ describe("SettingsScreen", () => {
     localStorage.clear();
     // Draw the screen
     render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Light is chosen to begin with (decision 70)
-    const start = screen.getByRole("button", { name: "Light" }).getAttribute("aria-pressed");
+    // Auto (following the device) is chosen to begin with (decision 89)
+    const start = screen.getByRole("button", { name: "Auto" }).getAttribute("aria-pressed");
     // Choose dark
     await userEvent.click(await screen.findByRole("button", { name: "Dark" }));
     // What the page and storage say after dark
     const dark = [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode"), screen.getByRole("button", { name: "Dark" }).getAttribute("aria-pressed")];
-    // Follow the device
-    await userEvent.click(screen.getByRole("button", { name: "Auto" }));
-    // What the page and storage say after Auto
-    const auto = [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")];
-    // Back to light
+    // Choose light
     await userEvent.click(screen.getByRole("button", { name: "Light" }));
-    // Confirm light first, then dark, then the device, then light again with nothing stored
-    expect([start, dark, auto, [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual(["true", ["dark", "dark", "true"], ["system", "system"], [null, null]]);
+    // What the page and storage say after light
+    const light = [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")];
+    // Back to following the device
+    await userEvent.click(screen.getByRole("button", { name: "Auto" }));
+    // Confirm the device first, then dark, then light, then the device again with nothing stored
+    expect([start, dark, light, [document.documentElement.getAttribute("data-mode"), localStorage.getItem("voicelab-color-mode")]]).toEqual(["true", ["dark", "dark", "true"], [null, "light"], ["system", null]]);
   });
 
   // Timing tones are off until switched on, and the choice is kept in this browser (decision 77)

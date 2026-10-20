@@ -7,7 +7,7 @@ import { Skeleton } from "./Skeleton";
 export function PageFallback({ title = "VoiceLab" }: { title?: string }) {
   // The same shell the pages use
   return (
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* The title line, where the masthead will be */}
       <p className="flex min-h-11 items-center font-display text-xl font-semibold tracking-tight md:text-2xl">{title}</p>
       {/* The blocks */}

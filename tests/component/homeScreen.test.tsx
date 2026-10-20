@@ -77,6 +77,22 @@ describe("HomeScreen", () => {
     expect([!!(await screen.findByRole("link", { name: "Start" })), screen.queryByRole("alert")]).toEqual([true, null]);
   });
 
+  // A returning user with no practice yet: no weekly line about nothing, no empty margin, and a total that matches the steps (round 4)
+  it("keeps Today honest before there is any practice", async () => {
+    // The welcome was seen, but nothing was ever practised
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // Draw the screen
+    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
+    // Today's practice
+    const plan = await screen.findByRole("region", { name: "Today's practice" });
+    // Each step's minutes, as listed
+    const stepMinutes = within(plan).getAllByRole("listitem").map((item) => Number(/· (\d+) min/.exec(item.textContent ?? "")?.[1] ?? 0));
+    // The total, as shown
+    const total = Number(/about (\d+) min/.exec(within(plan).getByText(/^Today · about/).textContent ?? "")?.[1]);
+    // Confirm: no weekly focus line, no margin, and the total is the steps added up
+    expect([screen.queryByText(/This week:/), document.querySelector("main aside"), total, stepMinutes.reduce((sum, minutes) => sum + minutes, 0)]).toEqual([null, null, total, total]);
+  });
+
   // A brand-new user gets a greeting and one Start, straight into today's first step (decision 67), and the welcome does not come back
   it("welcomes a new user with one Start, once", async () => {
     // Draw the screen
@@ -268,8 +284,8 @@ describe("HomeScreen", () => {
 
   // When a week has passed, the next focus is shown and saved
   it("moves to the next weekly focus after seven days", async () => {
-    // Make a repository whose focus began eight days ago
-    const repository = emptyRepository();
+    // Make a repository whose focus began eight days ago, with some practice so the focus line shows
+    const repository = await pastDayOne();
     // Save settings with the first focus started eight days ago
     await repository.saveSettings({ focusIndex: 0, focusStartedOn: new Date(2026, 9, 5).toISOString(), audioRetention: 30 });
     // The welcome was already answered

@@ -200,7 +200,7 @@ export function timingCue(previous: TimeSignal, next: TimeSignal): TimingCue | n
   return null;
 }
 
-// One plain sentence on the timing: for a Table Topic, whether it would qualify; otherwise, how it compared with the goal (a rehearsal passes its own goal)
+// One plain sentence on the timing: for a Table Topic over the limit, that it would not qualify; otherwise, how it compared with the goal (a rehearsal passes its own goal)
 export function timingSentence(mode: SessionMode, durationSec: number, goalSeconds?: number, promptId = ""): string {
   // Whole seconds, as the timer would record them
   const seconds = Math.round(durationSec);
@@ -221,10 +221,10 @@ export function timingSentence(mode: SessionMode, durationSec: number, goalSecon
     // Over, or under
     return difference > 0 ? `${opening}, ${difference} seconds over.` : `${opening}, ${-difference} seconds to spare.`;
   }
-  // What a contest would say, for a Table Topic only
+  // What a contest would say, for a Table Topic over the limit only (a short take is practice, not a disqualification; decision 89)
   const contest = mode === "talk" ? " In a contest this would not qualify." : "";
   // Under the minimum
-  if (seconds < window.start) return `${clock}, under the ${formatClock(window.start)} minimum.${contest}`;
+  if (seconds < window.start) return `${clock}, under the ${formatClock(window.start)} minimum.`;
   // Inside the window
   if (seconds <= window.end) return `${clock}, inside the ${formatClock(window.start)} to ${formatClock(window.end)} window.`;
   // In the grace after red

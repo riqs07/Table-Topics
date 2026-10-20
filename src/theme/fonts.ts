@@ -1,10 +1,13 @@
-// Loads the theme fonts from Google Fonts at build time and serves them from our own site
+// Loads the theme fonts (from Google Fonts at build time, and the body font from this project) and serves them from our own site
 
 // Load the font loaders for the web fonts the themes use
-import { Atkinson_Hyperlegible_Next, Fraunces, Newsreader, Young_Serif } from "next/font/google";
+import { Fraunces, Newsreader, Young_Serif } from "next/font/google";
+// Load the loader for a font file kept in this project
+import localFont from "next/font/local";
 
 // Notebook body font: designed for readability
-const atkinson = Atkinson_Hyperlegible_Next({ subsets: ["latin"], display: "swap", variable: "--font-atkinson" });
+// (kept in this project rather than fetched: the same Latin subset Google serves, with the zero redrawn without its slash, which read as "1:0̸0" in times; src/theme/fonts/OFL.txt and decision 89)
+const atkinson = localFont({ src: "./fonts/AtkinsonHyperlegibleNext-OpenZero.woff2", weight: "200 800", style: "normal", display: "swap", variable: "--font-atkinson" });
 // Notebook display font: a soft serif for headings and prompts (not preloaded: only the style page uses it; decision 76)
 const youngSerif = Young_Serif({ weight: "400", subsets: ["latin"], display: "swap", variable: "--font-young-serif", preload: false });
 // The earlier calm studio serif, with italics and optical sizes (not preloaded: only the style page uses it now; decision 76)

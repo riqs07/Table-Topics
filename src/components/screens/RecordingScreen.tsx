@@ -185,9 +185,9 @@ function TimingLight({ signal, mode, promptId }: { signal: TimeSignal; mode: Ses
   const window = speakingWindow(mode, promptId);
   // The words for this kind of session
   const words = window ? windowSignalText(window) : RESPONSE_SIGNAL_TEXT;
-  // The words, announced politely when they change
+  // The words, announced politely when they change (no separate name, so the words themselves are read)
   return (
-    <span role="status" aria-label="Timing light" data-signal={signal} className="text-footnote font-normal text-ink-muted">
+    <span role="status" data-signal={signal} className="text-footnote font-normal text-ink-muted">
       {/* What the light means now */}
       {words[signal]}
     </span>
@@ -368,6 +368,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       services.stopSpeaking?.();
     };
   }, [services]);
+
+  // The prompt's heading, focused when a Rapid Fire topic is revealed so it is read out
+  const promptHeading = useRef<HTMLHeadingElement>(null);
+  // The message after a take that was not kept, scrolled into view and focused so it is seen and read (below a long passage it would be off screen)
+  const notice = useRef<HTMLDivElement>(null);
 
   // For a Q&A answer, the question (loaded from the session it belongs to, below)
   const [qaQuestion, setQaQuestion] = useState<string | null>(null);
@@ -1134,20 +1139,44 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // Forget it
     cues.current = null;
   }, []);
+  // A Rapid Fire topic revealed: move focus to it, so a screen reader reads the topic rather than nothing (focus would otherwise fall to the page)
+  const revealing = stage === "thinking" && mode === "talk";
+  // Each time the countdown starts
+  useEffect(() => {
+    // Only when the topic has just appeared
+    if (revealing) promptHeading.current?.focus();
+  }, [revealing]);
+  // Whether a take just ended without being kept
+  const notKept = stage === "too-short" || stage === "nothing-heard" || stage === "save-failed";
+  // Each time one does: bring the reason into view and move focus to it
+  useEffect(() => {
+    // Only then
+    if (!notKept) return;
+    // Scroll it to the middle of the screen (it sits above any text to read), without animation when motion is unwelcome
+    notice.current?.scrollIntoView?.({ block: "center", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    // And focus it, so it is read out
+    notice.current?.focus({ preventScroll: true });
+  }, [notKept]);
   // The keyboard hint for this stage
-  const hint = recording ? "space to stop · esc to discard" : thinking ? (mode === "talk" ? "esc to leave" : "space to start speaking · esc to leave") : mode === "talk" ? "space to see your topic" : mode === "smalltalk" ? `space to hear ${unit ? "them" : "the question"}` : mode === "response" ? "space to start thinking" : mode === "rehearse" ? "space to start rehearsing" : passage || lesson ? "space to start reading" : "space to start";
+  const hint = recording ? "Space to stop · Esc to discard" : thinking ? (mode === "talk" ? "Esc to leave" : "Space to start speaking · Esc to leave") : mode === "talk" ? "Space to see your topic" : mode === "smalltalk" ? `Space to hear ${unit ? "them" : "the question"}` : mode === "response" ? "Space to start thinking" : mode === "rehearse" ? "Space to start rehearsing" : passage || lesson ? "Space to start reading" : "Space to start";
+  // After a Rapid Fire take that was not kept, the topic has been seen: it stays in view for the next try instead of hiding again
+  const topicSeen = mode === "talk" && (stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded");
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
-  const showPrompt = !recording && !!prompt && !script && !smallTalk && (mode !== "talk" || thinking);
-  // A Table Topic's briefing, shown before the question
-  const showBriefing = mode === "talk" && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed");
+  const showPrompt = !recording && !!prompt && !script && !smallTalk && (mode !== "talk" || thinking || topicSeen);
+  // A Table Topic's briefing, shown before the question is first seen
+  const showBriefing = mode === "talk" && stage === "ready";
   // This prompt's angles, for a Record Response
   const angles = mode === "response" ? (prompt?.angles ?? []) : [];
+  // Seconds left in a Rapid Fire countdown, as shown
+  const countdown = Math.ceil(thinkLeft);
+  // What the countdown says to screen readers: once at the start, then only the last three seconds (the shown number changes every second without being read)
+  const countdownSpoken = countdown > 3 ? `${think} seconds to think. Recording starts by itself.` : countdown > 0 ? String(countdown) : "";
 
   // Before the first ever recording: what the microphone is for, before the browser asks
   if (stage === "mic-primer") {
     // Draw the explanation on its own
     return (
-      <main className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+      <main id="main" className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
         {/* Navigation, title, no keyboard hint */}
         <Masthead title={title} nav={false} close={home}>{""}</Masthead>
         {/* The explanation */}
@@ -1167,16 +1196,40 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     );
   }
 
+  // The voice shape for this stage (the bottom band went with decision 75): large in the column, or small beside text to read
+  const shapeControl = (
+    <>
+      {/* While recording: the live voice shape, with the clock inside, which stops the take (and takes focus as recording starts, so the keyboard and screen readers land on it) */}
+      {recording && <VoiceBlob levels={levels} signal={signal} clock={formatClock(elapsed)} onStop={() => void stop()} compact={!!script} paused={paused} focusOnMount />}
+      {/* Ready, or ready again: the start shape */}
+      {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
+        <StartBlob compact={!!script} onStart={begin} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : lengthText} />
+      )}
+      {/* Thinking about a Record Response: start speaking early */}
+      {thinking && mode === "response" && <StartBlob compact={!!script} onStart={() => void start()} label="Ready" detail="start speaking" />}
+      {/* A Table Topic's countdown: no early start, just the time left */}
+      {thinking && mode === "talk" && <StatusBlob compact={!!script} label="Get ready" detail={`starting in ${countdown}`} live={false} />}
+      {/* What the countdown says to screen readers: at the start and in the last three seconds only */}
+      {thinking && mode === "talk" && <p role="status" data-testid="countdown-spoken" className="sr-only">{countdownSpoken}</p>}
+      {/* While a small-talk question is said aloud */}
+      {stage === "asking" && <StatusBlob compact={!!script} label="Listening…" detail={findUnit(smallTalk?.unit ?? "answering").words.then} />}
+      {/* Waiting for the microphone */}
+      {stage === "starting" && <StatusBlob compact={!!script} label="Starting…" detail="allow the microphone" />}
+      {/* Saving */}
+      {stage === "saving" && <StatusBlob compact={!!script} label="Saving…" detail="one moment" />}
+    </>
+  );
+
   // Draw the page
   return (
     // One column on a phone, margin plus main column on a computer; dark green while the clock runs (the stage, decision 69)
-    <main data-area={recording || thinking ? "stage" : undefined} className={`mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 ${script ? "pb-36" : "pb-10"}`}>
+    <main id="main" data-area={recording || thinking ? "stage" : undefined} className={`mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 ${script ? "pb-40 md:pb-10" : "pb-10"}`}>
       {/* Navigation (hidden while recording), title and keyboard hint */}
       <Masthead title={title} nav={false} close={busy ? null : home}>
-        {/* The keyboard hint, on computers only */}
-        <span className="hidden pointer-fine:inline">{hint}</span>
+        {/* The keyboard hint, only on devices with a mouse or trackpad (so never on a phone or tablet) */}
+        <span data-keyboard-hint className="hidden keyboard:inline">{hint}</span>
         {/* Before reading on a phone: the length, small, in place of the big clock */}
-        {(script || smallTalk) && !busy && <span className="pointer-fine:hidden md:hidden">{lengthText}</span>}
+        {(script || smallTalk) && !busy && <span className="keyboard:hidden md:hidden">{lengthText}</span>}
       </Masthead>
       {/* Inside today's practice, which step this is */}
       {planStep && (
@@ -1198,11 +1251,18 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       {/* Margin and main column on a computer */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Margin: time, length, prompt reminder, discard */}
-        <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${(script || smallTalk) && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
+        <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${script && !busy ? "flex max-md:mt-0" : smallTalk && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
           {/* The clock, large, only while thinking about a prepared speech (a Table Topic counts down in the shape; while recording the clock is in the shape; decision 77) */}
           {thinking && mode !== "talk" && <p className="font-display text-prompt-xl font-semibold text-ink tabular-nums">{formatClock(Math.ceil(thinkLeft))}</p>}
           {/* The length to aim for, or what the countdown is for (the countdown's own words are in the shape) */}
-          {!(thinking && mode === "talk") && <p className={`mt-1 ${recording ? "max-md:hidden" : ""}`}>{thinking ? "to think" : mode === "free" ? "no time limit" : `aim for ${lengthText}`}</p>}
+          {!(thinking && mode === "talk") && <p className={`mt-1 ${recording || ((script || smallTalk) && !busy) ? "max-md:hidden" : ""}`}>{thinking ? "To think" : mode === "free" ? "No time limit" : `Aim for ${lengthText}`}</p>}
+          {/* Beside text to read, the voice shape has its own place, never over the text: a bar at the bottom centre of a phone (the page leaves room for it below the text), and under the length in this margin on a computer, staying in view as the text scrolls (decision 89) */}
+          {script && (
+            <div data-shape-place className="max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:flex max-md:justify-center max-md:border-t max-md:border-rule max-md:bg-paper-raised max-md:pt-3 max-md:pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:sticky md:top-10 md:mt-6">
+              {/* The shape for this stage */}
+              {shapeControl}
+            </div>
+          )}
           {/* A lesson keeps its tip in view while speaking */}
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
@@ -1223,14 +1283,14 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {recording && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               {/* Recording or paused */}
-              <p role="status" aria-label={paused ? "Paused" : "Recording"} className="flex items-center gap-2 text-footnote font-semibold text-warm">
+              <p role="status" className="flex items-center gap-2 text-footnote font-semibold text-warm">
                 {/* The warm dot (breathes only while recording and when motion is welcome) */}
                 <span aria-hidden="true" className={`inline-block size-3 rounded-full bg-warm ${paused ? "" : "motion-safe:animate-breathe"}`} />
                 {/* The word */}
                 {paused ? "Paused" : "Recording"}
               </p>
               {/* The timing words, or (without a light, on a phone, where the margin moves below) the length to aim for */}
-              {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? lengthText : `aim for ${lengthText}`}</span>}
+              {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
             </div>
           )}
           {/* The question being answered, above the shape */}
@@ -1244,6 +1304,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               <span className="min-w-0 flex-1">Take discarded.</span>
               {/* Bring it back */}
               <button type="button" onClick={() => void undoDiscard()} className={SECONDARY}>Undo</button>
+            </div>
+          )}
+          {/* A take that was not kept, and why: first in the column, above any text to read, scrolled to and focused (so it is never left off screen below a long passage) */}
+          {notKept && (
+            <div ref={notice} tabIndex={-1} role="alert" data-testid="not-kept" className="mt-6 max-w-[48ch] rounded-2xl bg-warm-tint p-4 text-lede text-warm-ink outline-none md:mt-0">
+              {/* Nothing heard */}
+              {stage === "nothing-heard" && <p>I did not catch any words. Check that the right microphone is selected, then try again.</p>}
+              {/* Too short */}
+              {stage === "too-short" && <p>That was under {shortest} seconds, too short to measure, so it was not saved. Take your time and keep going a little longer.</p>}
+              {/* Saving failed */}
+              {stage === "save-failed" && <p>This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
             </div>
           )}
           {/* A problem, explained plainly (first in the column, so a phone shows it above any text to read) */}
@@ -1301,7 +1372,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Pause for a second at each ‖.</p>}
               {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
               {!textHidden && (
-<ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed max-md:pr-20`} />
+<ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
               )}
             </>
           )}
@@ -1360,9 +1431,14 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           )}
           {/* Before recording: the prompt and, on a retry, last time's cue */}
           {showPrompt && prompt && (
-            <h1 className="relative mt-8 font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:mt-0 md:max-w-[16ch] md:text-prompt-xl">
-              {prompt.text}
-            </h1>
+            <>
+              {/* A Rapid Fire topic already seen: say it is the same one for the next try */}
+              {topicSeen && <p className="mt-6 text-footnote text-ink-muted">Same topic for your next try</p>}
+              {/* The prompt, set like a headline (focusable from code, so it can be read out the moment a Rapid Fire topic is revealed) */}
+              <h1 ref={promptHeading} tabIndex={-1} className={`relative font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[16ch] md:text-prompt-xl ${topicSeen ? "mt-1" : "mt-8 md:mt-0"}`}>
+                {prompt.text}
+              </h1>
+            </>
           )}
           {/* An openings and closings drill: one tip for that end of a talk */}
           {showPrompt && bookend && <p className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4 text-lede">{BOOKEND_TIPS[bookend.part]}</p>}
@@ -1414,8 +1490,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* While recording: the meter and the words */}
           {recording && (
             <>
-              {/* The live voice shape, with the clock inside */}
-              <VoiceBlob levels={levels} signal={signal} clock={formatClock(elapsed)} onStop={() => void stop()} compact={!!script} paused={paused} />
+              {/* The live voice shape, with the clock inside (beside text to read, it sits in its own place; see below) */}
+              {!script && shapeControl}
               {/* Pause and discard, under the shape */}
               {!script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
               {/* Words so far, the latest few lines, older ones fading (not while reading: the text itself is on screen) */}
@@ -1423,10 +1499,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             </>
           )}
 
-          {/* Nothing heard */}
-          {stage === "nothing-heard" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">I did not catch any words. Check that the right microphone is selected, then try again.</p>}
-          {/* Too short */}
-          {stage === "too-short" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">That was under {shortest} seconds, too short to measure, so it was not saved. Take your time and keep going a little longer.</p>}
 
           {/* The speech service dropped mid-take: what was heard is saved, with the way to it */}
           {stage === "speech-dropped" && (
@@ -1438,22 +1510,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             </div>
           )}
 
-          {/* Saving failed */}
-          {stage === "save-failed" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
-          {/* The one action for this stage, on the voice shape (the bottom band went with decision 75): large in the column, or small in the corner beside text to read */}
-          {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
-            <StartBlob compact={!!script} onStart={begin} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : lengthText} />
-          )}
-          {/* Thinking about a Record Response: start speaking early */}
-          {thinking && mode === "response" && <StartBlob compact={!!script} onStart={() => void start()} label="Ready" detail="start speaking" />}
-          {/* A Table Topic's countdown: no early start, just the time left */}
-          {thinking && mode === "talk" && <StatusBlob compact={!!script} label="Get ready" detail={`starting in ${Math.ceil(thinkLeft)}`} />}
-          {/* While a small-talk question is said aloud */}
-          {stage === "asking" && <StatusBlob compact={!!script} label="Listening…" detail={findUnit(smallTalk?.unit ?? "answering").words.then} />}
-          {/* Waiting for the microphone */}
-          {stage === "starting" && <StatusBlob compact={!!script} label="Starting…" detail="allow the microphone" />}
-          {/* Saving */}
-          {stage === "saving" && <StatusBlob compact={!!script} label="Saving…" detail="one moment" />}
+          {/* The one action for this stage, on the voice shape, in the column (beside text to read it sits in its own place instead; see below) */}
+          {!script && !recording && shapeControl}
           {/* Push the footer down */}
           <div className="flex-1" />
 

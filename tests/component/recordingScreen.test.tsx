@@ -257,7 +257,7 @@ describe("RecordingScreen", () => {
     // Draw a warm-up
     const { repository, clock, navigate } = draw({ mode: "warmup", promptId: WARMUP_PROMPTS[0]!.id });
     // Confirm the length is stated
-    expect(await screen.findByText("aim for 30 seconds")).toBeTruthy();
+    expect(await screen.findByText("Aim for 30 seconds")).toBeTruthy();
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // Wait for recording
@@ -321,7 +321,7 @@ describe("RecordingScreen", () => {
     // Get to recording
     await startTableTopic(clock);
     // Read the light's state
-    const light = () => screen.getByRole("status", { name: "Timing light" }).getAttribute("data-signal");
+    const light = () => document.querySelector<HTMLElement>("[role=status][data-signal]")!.getAttribute("data-signal");
     // Confirm it starts off
     expect(light()).toBe("none");
     // The light and its words after moving the clock forward
@@ -331,7 +331,7 @@ describe("RecordingScreen", () => {
       // Let the timer tick
       await act(async () => vi.advanceTimersByTime(200));
       // Read both
-      return [light(), screen.getByRole("status", { name: "Timing light" }).textContent];
+      return [light(), document.querySelector<HTMLElement>("[role=status][data-signal]")!.textContent];
     };
     // Confirm each light with words for screen readers: 1:05, 1:35, 2:05, 2:35
     expect([await after(65_000), await after(30_000), await after(30_000), await after(30_000)]).toEqual([
@@ -385,7 +385,7 @@ describe("RecordingScreen", () => {
     // Wait for recording
     await screen.findByRole("button", { name: /Stop/ });
     // Read the light
-    const light = () => [screen.getByRole("status", { name: "Timing light" }).getAttribute("data-signal"), screen.getByRole("status", { name: "Timing light" }).textContent];
+    const light = () => [document.querySelector<HTMLElement>("[role=status][data-signal]")!.getAttribute("data-signal"), document.querySelector<HTMLElement>("[role=status][data-signal]")!.textContent];
     // The light after moving the clock forward
     const after = async (ms: number) => {
       // Move the clock
@@ -536,7 +536,7 @@ describe("RecordingScreen", () => {
     // Recording starts once it has been said
     const stop = await screen.findByRole("button", { name: /Stop/ });
     // Confirm the voice said the question, and the timing light shows the small-talk window
-    expect([fake.said, screen.getByText("aim for 0:20 to 0:45")?.tagName]).toEqual([["How was your weekend?"], "P"]);
+    expect([fake.said, screen.getByText("Aim for 0:20 to 0:45")?.tagName]).toEqual([["How was your weekend?"], "P"]);
     // Speak past the minimum
     clock.advance(25_000);
     // Stop
@@ -733,7 +733,7 @@ describe("RecordingScreen", () => {
     // Draw a rehearsal of it
     draw({ mode: "rehearse", promptId: "talk-1", repository });
     // Confirm the title, the text, the goal, and the start action
-    expect([!!(await screen.findByText("Team update")), !!screen.getByTestId("passage"), !!screen.getByText("aim for a 5:00 goal"), !!screen.getByRole("button", { name: /Start rehearsing/ })]).toEqual([true, true, true, true]);
+    expect([!!(await screen.findByText("Team update")), !!screen.getByTestId("passage"), !!screen.getByText("Aim for a 5:00 goal"), !!screen.getByRole("button", { name: /Start rehearsing/ })]).toEqual([true, true, true, true]);
     // Step to keywords
     fireEvent.click(screen.getByRole("button", { name: "Keywords" }));
     // Confirm cue words only
@@ -765,7 +765,7 @@ describe("RecordingScreen", () => {
     // Draw a rehearsal of the middle section
     const { clock, navigate } = draw({ mode: "rehearse", promptId: "talk-1", repository, sectionIndex: 1 });
     // Confirm only that section shows, named as such, with no goal
-    expect([(await screen.findByTestId("passage")).textContent, !!screen.getByText("Your talk · section 2 of 3"), screen.queryByText("aim for a 5:00 goal")]).toEqual(["We shipped three things.", true, null]);
+    expect([(await screen.findByTestId("passage")).textContent, !!screen.getByText("Your talk · section 2 of 3"), screen.queryByText("Aim for a 5:00 goal")]).toEqual(["We shipped three things.", true, null]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start rehearsing/ }));
     // Speak for 20 seconds
@@ -813,7 +813,7 @@ describe("RecordingScreen", () => {
     // Wait for recording
     await screen.findByRole("button", { name: /Stop/ });
     // Confirm there is no light
-    expect(screen.queryByRole("status", { name: "Timing light" })).toBeNull();
+    expect(document.querySelector("[role=status][data-signal]")).toBeNull();
   });
 
   // Under ten seconds is too short to measure: nothing is saved, and the user is told
@@ -832,6 +832,78 @@ describe("RecordingScreen", () => {
     expect(await screen.findByText(/under 10 seconds/)).toBeTruthy();
     // Confirm nothing was saved and the page did not change
     expect([await repository.listSessions(), navigate.mock.calls.length]).toEqual([[], 0]);
+  });
+
+  // A Rapid Fire take that was too short keeps the same topic in view for the next try, instead of hiding it again (round 4)
+  it("keeps the Rapid Fire topic in view after a take that was too short", async () => {
+    // Use fake timers that still let promises run
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Draw a Rapid Fire topic
+    const { clock } = draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id });
+    // Show the topic
+    fireEvent.click(await screen.findByRole("button", { name: /Show my topic/ }));
+    // Let the countdown run out
+    clock.advance(11_000);
+    // Let the timer tick
+    await act(async () => vi.advanceTimersByTime(500));
+    // Stop after five seconds
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    clock.advance(5_000);
+    fireEvent.click(stop);
+    // Wait for the explanation
+    await screen.findByText(/under 10 seconds/);
+    // Confirm the topic is still the heading, it says it is the same one, and the briefing has not come back
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("Same topic for your next try"), screen.queryByText(/Your topic is hidden/)]).toEqual([TABLE_TOPICS[0]!.text, true, null]);
+  });
+
+  // Below a long passage, the reason a reading was not kept would be off screen: it comes first, is scrolled to and takes focus (round 4)
+  it("brings the reason a reading was not kept into view, above the text", async () => {
+    // Watch scrolling (the test page cannot scroll by itself)
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    // Draw a reading
+    const { clock } = draw({ mode: "read", promptId: PASSAGES[0]!.id });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start reading/ }));
+    // Stop after two seconds
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    clock.advance(2_000);
+    fireEvent.click(stop);
+    // The explanation
+    const notice = await screen.findByTestId("not-kept");
+    // Confirm it sits before the passage, was scrolled to, and has focus
+    expect([!!(notice.compareDocumentPosition(screen.getByTestId("passage")) & Node.DOCUMENT_POSITION_FOLLOWING), scrolled.mock.calls.length > 0, document.activeElement === notice]).toEqual([true, true, true]);
+  });
+
+  // Revealing the topic moves focus to it, the countdown is read out only at the start and in the last three seconds, and the stop shape takes focus when recording starts (round 5)
+  it("reads the revealed topic and announces the countdown sparingly", async () => {
+    // Use fake timers that still let promises run
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Draw a Rapid Fire topic
+    const { clock } = draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id });
+    // Show the topic
+    fireEvent.click(await screen.findByRole("button", { name: /Show my topic/ }));
+    // The topic heading
+    const topic = await screen.findByRole("heading", { name: TABLE_TOPICS[0]!.text });
+    // What screen readers hear at the start
+    const spoken = () => screen.getByTestId("countdown-spoken").textContent;
+    // At the start: focus on the topic, the start announced, and the shown countdown not itself a live region
+    const atStart = [document.activeElement === topic, spoken(), screen.getByText("starting in 10").closest("[role=status]")];
+    // Four seconds on: still the same words (nothing new to announce)
+    clock.advance(4_000);
+    await act(async () => vi.advanceTimersByTime(200));
+    const middle = spoken();
+    // Eight seconds on: the last few seconds are read
+    clock.advance(4_000);
+    await act(async () => vi.advanceTimersByTime(200));
+    const end = spoken();
+    // Then recording starts by itself
+    clock.advance(3_000);
+    await act(async () => vi.advanceTimersByTime(500));
+    // The stop shape
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Confirm all of it
+    expect([atStart, middle, end, document.activeElement === stop]).toEqual([[true, "10 seconds to think. Recording starts by itself.", null], "10 seconds to think. Recording starts by itself.", "2", true]);
   });
 
   // A failed save is explained instead of leaving the screen on "Saving…" forever
@@ -1008,7 +1080,7 @@ describe("RecordingScreen", () => {
     // Pause
     fireEvent.click(screen.getByRole("button", { name: "Pause" }));
     // Confirm the status says paused and the button now resumes
-    expect([(await screen.findByRole("status", { name: "Paused" })).textContent, !!screen.getByRole("button", { name: "Resume" })]).toEqual([expect.stringContaining("Paused"), true]);
+    expect([(await screen.findByText("Paused")).closest("[role=status]")?.textContent, !!screen.getByRole("button", { name: "Resume" })]).toEqual([expect.stringContaining("Paused"), true]);
     // A minute passes while paused
     clock.advance(60_000);
     // Resume
@@ -1230,7 +1302,7 @@ describe("RecordingScreen", () => {
     // Draw an opening drill
     draw({ mode: "bookend", promptId: "b001" });
     // Confirm the task, the tip, and the goal
-    expect([!!(await screen.findByText("Open a talk on why your team needs a new tool.")), !!screen.getByText(/Stand still, breathe in, look up/), !!screen.getByText("aim for a 0:45 goal")]).toEqual([true, true, true]);
+    expect([!!(await screen.findByText("Open a talk on why your team needs a new tool.")), !!screen.getByText(/Stand still, breathe in, look up/), !!screen.getByText("Aim for a 0:45 goal")]).toEqual([true, true, true]);
   });
 
   // A Q&A answer shows the question it answers, and saves it with the answer
@@ -1242,7 +1314,7 @@ describe("RecordingScreen", () => {
     // Draw an answer to the second question
     const { clock, navigate } = draw({ mode: "qa", promptId: "r1", questionIndex: 1, repository });
     // Confirm the question and the one-minute goal
-    expect([!!(await screen.findByText("Why now?")), !!screen.getByText("aim for a 1:00 goal")]).toEqual([true, true]);
+    expect([!!(await screen.findByText("Why now?")), !!screen.getByText("Aim for a 1:00 goal")]).toEqual([true, true]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // Speak for 20 seconds
@@ -1262,13 +1334,13 @@ describe("RecordingScreen", () => {
     // Draw free talk
     const { repository, clock, navigate } = draw({ mode: "free", promptId: "free" });
     // Confirm the invitation and the length line
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText("no time limit")]).toEqual(["Talk about anything.", true]);
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText("No time limit")]).toEqual(["Talk about anything.", true]);
     // Start, speak for 20 seconds, stop
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // The stop button
     const stop = await screen.findByRole("button", { name: /Stop/ });
     // Confirm no timing light while speaking
-    expect(screen.queryByRole("status", { name: "Timing light" })).toBeNull();
+    expect(document.querySelector("[role=status][data-signal]")).toBeNull();
     // Advance and stop
     clock.advance(20_000);
     fireEvent.click(stop);
@@ -1326,13 +1398,13 @@ describe("RecordingScreen", () => {
     // Draw it
     const { repository, clock, navigate } = draw({ mode: "outline", promptId: "outline", outline });
     // Confirm the topic, the points and the goal
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, within(screen.getByRole("list", { name: "Your points" })).getAllByRole("listitem").map((item) => item.textContent), !!screen.getByText("aim for a 1:00 goal")]).toEqual(["Why I run", ["1It clears my head", "2I met friends"], true]);
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, within(screen.getByRole("list", { name: "Your points" })).getAllByRole("listitem").map((item) => item.textContent), !!screen.getByText("Aim for a 1:00 goal")]).toEqual(["Why I run", ["1It clears my head", "2I met friends"], true]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: /Start speaking/ }));
     // The stop button
     const stop = await screen.findByRole("button", { name: /Stop/ });
     // Confirm the points stay in view, with a timing light
-    expect([!!screen.getByRole("list", { name: "Your points" }), !!screen.getByRole("status", { name: "Timing light" })]).toEqual([true, true]);
+    expect([!!screen.getByRole("list", { name: "Your points" }), !!document.querySelector<HTMLElement>("[role=status][data-signal]")!]).toEqual([true, true]);
     // Advance and stop
     clock.advance(20_000);
     fireEvent.click(stop);
@@ -1365,6 +1437,6 @@ describe("RecordingScreen", () => {
     // The stop band
     const stop = await screen.findByRole("button", { name: /Stop/ });
     // Confirm the recording marker and the different look
-    expect([!!screen.getByRole("status", { name: "Recording" }), startVariant, stop.getAttribute("data-variant")]).toEqual([true, "start", "stop"]);
+    expect([screen.getAllByRole("status").some((status) => status.textContent === "Recording"), startVariant, stop.getAttribute("data-variant")]).toEqual([true, "start", "stop"]);
   });
 });

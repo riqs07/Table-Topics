@@ -357,7 +357,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   // Draw the page
   return (
     // A single readable column
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Title and a link home */}
       <Masthead title="VoiceLab" section="settings" />
       {/* The page's name */}
@@ -381,8 +381,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         <PracticeTime settings={settings} onSave={(next, said) => void saveSettingsWith(next, said)} />
       </Section>}
 
-      {/* Whether Today shows the run (decision 78) */}
-      {settings && <Section title="Today">
+      {/* Whether Today shows the run (decision 78; named for what it holds, so it is not mistaken for the Today tab) */}
+      {settings && <Section title="Practice days">
         <CheckRow checked={settings.hideStreak !== true} onChange={(event) => void saveSettingsWith({ ...settings, hideStreak: !event.target.checked }, "Saved.")} detail="Days practised in the last week, and your run. Two rest days a week never break a run, and two days in a row after a longer break win it back.">Show my practice days</CheckRow>
       </Section>}
 
@@ -402,8 +402,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         <div className="flex flex-col gap-2">
           {/* Tones */}
           <TimingTonesChoice />
-          {/* The space bar */}
-          <SpaceShortcutChoice />
+          {/* The space bar, only on devices with a keyboard and a mouse or trackpad (never on a phone or tablet) */}
+          <div data-keyboard-only className="hidden keyboard:block"><SpaceShortcutChoice /></div>
         </div>
       </Section>}
 

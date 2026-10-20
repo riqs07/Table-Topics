@@ -1,5 +1,8 @@
 // The voice shape in its forms (decisions 69, 74, 75 and 77): live while recording (the stop button), still before (the start button), faded while waiting, and the pause and discard controls under it; shared by the recording screen and the voice drills (decision 80)
 
+"use client";
+// Load React's effect and reference tools, for focusing the stop shape as recording starts
+import { useEffect, useRef } from "react";
 // Load the microphone icon
 import { MicrophoneIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared press effect and quiet button style
@@ -35,14 +38,21 @@ const HALO_EDGE: Record<TimeSignal, string> = {
   overtime: "border-light-red",
 };
 
-// Where a shape sits: large in the column (centred on a phone, lined up with the text on a computer; decision 79), or (on screens with text to read) small in the bottom corner, beside a clear lane the text never enters on a phone (decisions 75 and 77)
+// Where a shape sits: large in the column (centred on a phone, lined up with the text on a computer; decision 79), or (on screens with text to read) small, inside the place the screen gives it: a bar at the bottom centre of a phone, the margin on a computer (decision 89)
 function shapePlace(compact: boolean, size: string): string {
-  // Floating in the corner, or centred in the column
-  return compact ? "fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 size-20 drop-shadow-lg md:right-10 md:size-28" : `relative mx-auto my-6 md:mx-0 ${size}`;
+  // Small in its own place, or centred in the column
+  return compact ? "relative size-20 drop-shadow-lg md:size-28" : `relative mx-auto my-6 md:mx-0 ${size}`;
 }
 
 // The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69); it is the stop button (decisions 74 and 75), or in a conversation the "Done" button that ends your turn (decision 83)
-export function VoiceBlob({ levels, signal, clock, onStop, compact, paused = false, action = "Stop" }: { levels: number[]; signal: TimeSignal; clock: string; onStop: () => void; compact: boolean; paused?: boolean; action?: "Stop" | "Done" }) {
+export function VoiceBlob({ levels, signal, clock, onStop, compact, paused = false, action = "Stop", focusOnMount = false }: { levels: number[]; signal: TimeSignal; clock: string; onStop: () => void; compact: boolean; paused?: boolean; action?: "Stop" | "Done"; focusOnMount?: boolean }) {
+  // The button, for moving focus to it
+  const button = useRef<HTMLButtonElement>(null);
+  // When asked, focus it as it appears (recording has just started), so the keyboard and screen readers land on the way to stop
+  useEffect(() => {
+    // Only when asked
+    if (focusOnMount) button.current?.focus({ preventScroll: true });
+  }, [focusOnMount]);
   // The latest few readings, averaged so the shape does not jitter
   const recent = levels.slice(-4);
   // How loud, from 0 to 1
@@ -51,7 +61,7 @@ export function VoiceBlob({ levels, signal, clock, onStop, compact, paused = fal
   const scale = 0.82 + level * 0.3;
   // A round button holding the halo, the shape, the clock and its action (the level stays named for screen readers)
   return (
-    <button type="button" onClick={onStop} aria-label={action} data-variant="stop" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-72")}`}>
+    <button ref={button} type="button" onClick={onStop} aria-label={action} data-variant="stop" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-72")}`}>
       {/* The level, named for screen readers */}
       <span role="img" aria-label="Microphone level" className="absolute inset-0" />
       {/* The dashed halo, turning slowly */}
@@ -105,10 +115,10 @@ export function StartBlob({ label, detail, onStart, compact }: { label: string; 
 }
 
 // While waiting (a countdown, a question being said, the microphone starting, saving): the still shape with what is happening, not a button
-export function StatusBlob({ label, detail, compact }: { label: string; detail: string; compact: boolean }) {
-  // The shape, quieter, with the words announced politely
+export function StatusBlob({ label, detail, compact, live = true }: { label: string; detail: string; compact: boolean; live?: boolean }) {
+  // The shape, quieter, with the words announced politely (unless they change too often to read out, like a countdown, which announces itself separately)
   return (
-    <div role="status" className={`flex items-center justify-center rounded-full ${shapePlace(compact, "size-56")}`}>
+    <div role={live ? "status" : undefined} className={`flex items-center justify-center rounded-full ${shapePlace(compact, "size-56")}`}>
       {/* The dashed halo, turning slowly */}
       <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-dashed border-warm opacity-60 motion-safe:animate-spin-slow" />
       {/* The shape, faded */}

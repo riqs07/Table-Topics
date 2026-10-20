@@ -77,7 +77,7 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   // Small talk
   { id: "small-talk", job: "connect", name: "Small talk", subtitle: "everyday questions", length: "under a minute", youDo: "Hear an everyday question, like \u201cHow was your weekend?\u201d, and answer with one short story: a moment, a hook, how it felt, and a question back.", youGet: "Which of the four you heard yourself do, and one change." },
   // A conversation with a persona (decisions 83 and 84)
-  { id: "conversations", job: "connect", name: "Talk with someone", subtitle: "one of four people, out loud", length: "about 3 min", youDo: "Talk out loud with one of four people, in a new everyday situation each time. They answer in their own voice; tap Done at the end of each turn.", youGet: "How much of the talking was yours, your questions, and one of your lines made better." },
+  { id: "conversations", job: "connect", name: "Talk with someone", subtitle: "one of four people, out loud", length: "about 3 min", youDo: "Talk out loud with one of four people, in an everyday situation. They answer in their own voice; tap Done at the end of each turn.", youGet: "How much of the talking was yours, your questions, and one of your lines made better." },
   // One moment a day
   { id: "moments", job: "connect", name: "One moment a day", subtitle: "a short private voice note", length: "under a minute", youDo: "Say one thing from today worth telling, while you still remember it.", youGet: "A list of your own stories to draw on when someone asks what you have been up to." },
 ];

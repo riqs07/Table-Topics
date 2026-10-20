@@ -112,7 +112,7 @@ export function RehearseScreen(props: ScreenProps) {
   // Draw the page
   return (
     // One column, like settings
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Title and a way back */}
       <Masthead title="Your talks" section="practice" />
 
@@ -172,7 +172,7 @@ export function RehearseScreen(props: ScreenProps) {
           {/* Label text */}
           <span>Your talk or notes</span>
           {/* Field */}
-          <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={10} maxLength={MAX_LENGTH} className="border border-rule bg-paper p-3 text-running" />
+          <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={10} maxLength={MAX_LENGTH} className="rounded-xl border-2 border-rule bg-card p-3 text-running" />
         </label>
         {/* Goal */}
         <label className="flex items-baseline gap-3">

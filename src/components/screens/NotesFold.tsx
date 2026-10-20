@@ -44,10 +44,12 @@ interface NotesFoldProps {
   onSaved: (updated: SessionRecord) => void;
   // Whether the coach is waiting for the notes before it replies (open the fold and offer to go on without)
   coachWaiting?: boolean;
+  // Whether to start open (small talk's beats to tick, asked first on a fresh answer; round 4)
+  startOpen?: boolean;
 }
 
 // Draw the fold
-export function NotesFold({ repo, session, onSaved, coachWaiting = false }: NotesFoldProps) {
+export function NotesFold({ repo, session, onSaved, coachWaiting = false, startOpen = false }: NotesFoldProps) {
   // Tags chosen
   const [tags, setTags] = useState<ReadonlySet<string>>(new Set());
   // One line, in their words
@@ -87,9 +89,9 @@ export function NotesFold({ repo, session, onSaved, coachWaiting = false }: Note
 
   // The fold
   return (
-    <details open={coachWaiting} className="mt-6 rounded-[22px] bg-card px-4 py-2 shadow-card">
-      {/* Open it */}
-      <summary className={`${TEXT_LINK} cursor-pointer`}>{smallTalk ? "Which beats did you hear yourself do?" : "Add your notes"}</summary>
+    <details open={coachWaiting || startOpen} className={`${startOpen ? "mt-3" : "mt-6"} rounded-[22px] bg-card px-4 py-2 shadow-card`}>
+      {/* Open it (or, when it starts open under the question, fold it away) */}
+      <summary className={`${TEXT_LINK} cursor-pointer`}>{smallTalk ? (startOpen ? "Tick the ones you heard yourself do" : "Which beats did you hear yourself do?") : "Add your notes"}</summary>
       {/* For small talk, the beats to tick */}
       {smallTalk ? (
         <ul aria-label="Listen for" className="mt-2 divide-y divide-rule">

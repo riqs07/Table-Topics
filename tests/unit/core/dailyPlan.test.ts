@@ -122,12 +122,14 @@ describe("dailyPlan", () => {
     expect([step?.mode, step?.promptId, step?.title]).toEqual(["rehearse", "talk-1", "Your talk is in 3 days."]);
   });
 
-  // The plan takes about five to fourteen minutes, listening back included
-  it("fits in a few minutes", () => {
-    // The totals over three weeks
-    const totals = Array.from({ length: 21 }, (_, offset) => planMinutes(regularPlan(dayAfter(offset))));
-    // Confirm every day is between 4 and 16 minutes
-    expect(totals.every((total) => total >= 4 && total <= 16)).toBe(true);
+  // The plan takes a few minutes, and its total is the steps' own minutes added up, so it matches what Today lists (decision 89)
+  it("fits in a few minutes, with a total that matches its steps", () => {
+    // The plans over three weeks
+    const plans = Array.from({ length: 21 }, (_, offset) => regularPlan(dayAfter(offset)));
+    // Their totals
+    const totals = plans.map(planMinutes);
+    // Confirm every day is between 4 and 16 minutes, and each total is the sum of its steps
+    expect([totals.every((total) => total >= 4 && total <= 16), plans.every((plan, index) => totals[index] === plan.reduce((sum, step) => sum + step.minutes, 0)), planMinutes([{ ...plans[0]![0]!, kind: "session", minutes: 1 }, { ...plans[0]![0]!, kind: "session", minutes: 1 }])]).toEqual([true, true, 2]);
   });
 });
 

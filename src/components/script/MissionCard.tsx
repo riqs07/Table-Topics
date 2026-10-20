@@ -59,10 +59,8 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
   // The mission
   const mission = state.mission;
 
-  // Accept with the prediction
+  // Accept, with the prediction if one was picked (it is optional: the comparison afterwards simply leaves it out)
   async function accept() {
-    // Nothing to save without a prediction
-    if (predicted === null) return;
     // Saving
     setSaving(true);
     // Save, then update the page
@@ -115,14 +113,14 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
             {/* The card behind it */}
             {mission.cardId && <p><Link href={`/learn/card?id=${mission.cardId}`} className={`${TEXT_LINK} text-footnote`}>Read the card</Link></p>}
           </details>
-          {/* The prediction */}
-          <p className="mt-4 font-medium">How will it go?</p>
+          {/* The prediction (optional) */}
+          <p className="mt-4 font-medium">How will it go? <span className="font-normal text-ink-muted">Optional</span></p>
           {/* The scale */}
           <ScaleChoice label="How will it go?" value={predicted} onChoose={setPredicted} />
           {/* Accept, or not today */}
           <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
             {/* Accept */}
-            <button type="button" onClick={() => void accept()} disabled={predicted === null || saving} className={PRIMARY}>I’ll try it</button>
+            <button type="button" onClick={() => void accept()} disabled={saving} className={PRIMARY}>I’ll try it</button>
             {/* Skip */}
             <button type="button" onClick={() => void skip()} disabled={saving} className={QUIET}>Not today</button>
           </p>

@@ -65,7 +65,7 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
   if (!speech) {
     // Say so, with a way back
     return (
-      <main className={PAGE}>
+      <main id="main" className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Speech" section="skills" />
         {/* The explanation */}
@@ -89,7 +89,7 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
 
   // Draw the page
   return (
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 md:[&>:not(header,nav,[data-action-band])]:max-w-3xl">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 md:[&>:not(header,nav,[data-action-band])]:max-w-3xl">
       {/* Heading and navigation */}
       <Masthead title={speech.title} section="skills" />
       {/* Who, where and when */}

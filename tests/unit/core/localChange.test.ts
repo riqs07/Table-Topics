@@ -16,8 +16,8 @@ describe("localChange", () => {
     const short = localChange(makeSession({ ...STEADY, durationSec: 48, fillersPerMinute: 6 }));
     // Long
     const long = localChange(makeSession({ ...STEADY, durationSec: 170 }));
-    // Confirm both are about timing
-    expect([short.change, long.change]).toEqual(["Keep going a little longer: you spoke for 0:48, and the window opens at 1:00.", "Wrap up sooner: you spoke for 2:50, past the 2:00 mark."]);
+    // Confirm both are about timing, said once (the cue does not repeat the time, and the page is told to leave out its own timing sentence)
+    expect([short.change, short.retryCue, short.aboutTiming, long.change, long.aboutTiming]).toEqual(["Keep going a little longer: you spoke for 0:48, and the window opens at 1:00.", "Add one more example before you close.", true, "Wrap up sooner: you spoke for 2:50, past the 2:00 mark.", true]);
   });
 
   // Then fillers, then pace

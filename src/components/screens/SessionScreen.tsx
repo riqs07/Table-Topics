@@ -2,7 +2,7 @@
 // One saved session: the Feedback screen for a first try, or the Retry result screen for a retry
 
 // Load React's state and effect tools
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
@@ -190,9 +190,9 @@ function Playback({ repo, session, onAudio }: { repo: Repository; session: Sessi
   return (
     <div className="mt-5">
       {/* Small heading */}
-      <p className="text-footnote text-ink-muted">{session.isBaseline ? "Your first recording, the one progress is measured against" : "Listen back"}</p>
-      {/* A kinder way to listen (decision 79) */}
-      <p className="text-footnote text-ink-muted">Most people dislike hearing their own voice. Listen the way a friendly coach would.</p>
+      <p className="text-footnote font-semibold text-ink">{session.isBaseline ? "Your first recording. Progress is measured against it." : "Listen back"}</p>
+      {/* A kinder way to listen (decision 79), as its own line under the heading */}
+      <p className="mt-1 text-footnote text-ink-muted">Most people dislike hearing their own voice. Listen the way a friendly coach would.</p>
       {/* The player */}
       <div className="mt-2"><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} onAudio={onAudio} gain={playbackGain(session.loudnessScale)} /></div>
     </div>
@@ -487,8 +487,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // Draw the page
   return (
     <>
-      {/* Title and the secondary number; the tab bar marks where the session belongs (Today inside the plan) */}
-      <Masthead title={title} section={home.section}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(session.createdAt), now)}</Masthead>
+      {/* Title and the day it was recorded, as a small label (not to be mistaken for the Today tab); the tab bar marks where the session belongs (Today inside the plan) */}
+      <Masthead title={title} section={home.section}>{plan ? <PlanNote plan={plan} /> : <span data-testid="recorded-day" className="text-footnote">Recorded {dayLabel(new Date(session.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}</span>}</Masthead>
       {/* Notes column and transcript column on a computer (the notes lead and take the wide column; the transcript sits beside them, decision 65) */}
       <div className="flex flex-1 flex-col md:grid md:grid-cols-[minmax(0,1fr)_320px] md:gap-14 md:pt-8">
         {/* The transcript (the narrow right column on a computer, opened on demand on a phone) */}
@@ -530,7 +530,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             </>
           ) : smallTalk ? (
             // The beats: how many, then each with the words that showed it
-            <SmallTalkBeats session={session} />
+            <SmallTalkBeats session={session} ticks={session.selfReview === null ? <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} startOpen /> : null} />
           ) : (
             // The focus number as a sentence, when one measures it (otherwise the one change leads)
             headline ? <h1 className={`font-display text-3xl font-semibold tracking-tight ${asked ? "mt-4" : "mt-5 md:mt-0"}`}>{headline}</h1> : <h1 className="sr-only">{title}</h1>
@@ -583,8 +583,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {gaps.length > 0 && <PauseLengths gaps={gaps} />}
           {/* How the pace changed */}
           {pace && !quick && <p className="mt-2 text-footnote text-ink-muted">{pace.sentence}</p>}
-          {/* After a Table Topic or Record Response, how the timing went */}
-          {timed && <LengthRing session={session} />}
+          {/* After a Table Topic or Record Response, how the timing went (left out when the one change above already says it, so it is said once) */}
+          {timed && !(!session.feedback && ownChange.aboutTiming) && <LengthRing session={session} />}
           {/* How the voice sounded: pitch and volume (decision 81; not for a few-second reply) */}
           {!quick && <VoiceSection session={session} usual={usual} hide={session.feedback ? undefined : ownChange.voiceKind} fluency={view.fluency} />}
           {/* After a short speech, how the timing went against its length, and which points were heard */}
@@ -615,7 +615,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             </div>
           )}
           {/* No notes yet: an optional fold to add them */}
-          {session.selfReview === null && <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} />}
+          {session.selfReview === null && !smallTalk && <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} />}
           {/* What the coach said to keep, after the next step and the numbers */}
           {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
           {/* Quieter options, as a short list of rows (no empty space above them) */}
@@ -661,8 +661,8 @@ const FOUND_WITHOUT_QUOTE: Partial<Record<BeatId, string>> = {
   stay: "No story of your own.",
 };
 
-// A small-talk response's beats: what was said to them (for asking and listening), how many beats were found, then each beat with the words that showed it (the coach's quotes, or the phone's checks and the user's own ticks)
-function SmallTalkBeats({ session }: { session: SessionRecord }) {
+// A small-talk response's beats: what was said to them (for asking and listening), how many beats were found, then each beat with the words that showed it (the coach's quotes, or the phone's checks and the user's own ticks). On a fresh answer, before the user has ticked any and before the coach has reported, there is no count to grade it by: it asks which beats they hit, with the ticks to fill in straight under the question (round 4; "0 of 4 beats." read as a fail)
+function SmallTalkBeats({ session, ticks }: { session: SessionRecord; ticks: ReactNode }) {
   // What was said to them, and the unit
   const found = findSmallTalk(session.promptId);
   // The unit
@@ -673,6 +673,10 @@ function SmallTalkBeats({ session }: { session: SessionRecord }) {
   const connection = session.feedback?.connection;
   // How many beats were found
   const count = beatCount(session);
+  // Whether anyone has reported on the beats yet: the coach, or the user's own ticks
+  const reported = !!coach || !!connection || (!!session.selfReview && !session.selfReview.skipped);
+  // A fresh answer with no notes yet: ask, and offer the ticks instead of the list
+  const askFirst = !reported && session.selfReview === null;
   // The speaker's words that showed each beat (quotes), or null when there are none to show
   const quotes = (beat: BeatId): string[] => {
     // From the conversation coach: its quote
@@ -706,12 +710,14 @@ function SmallTalkBeats({ session }: { session: SessionRecord }) {
           <p className="mt-1 max-w-[52ch] text-lede">&ldquo;{found.question}&rdquo;</p>
         </div>
       )}
-      {/* How many, as a headline */}
-      <h1 className={`font-display text-3xl font-semibold tracking-tight ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{count === 4 ? "All four beats." : `${count} of 4 beats.`}</h1>
+      {/* How many, as a headline, once reported; until then, the question */}
+      <h1 className={`font-display text-3xl font-semibold tracking-tight ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{!reported ? "Which beats did you hit?" : count === 4 ? "All four beats." : `${count} of 4 beats.`}</h1>
       {/* A dead-end opening, said plainly */}
       {unit === "answering" && deadEndOpening(session.transcript) && <p className="mt-2 text-lede">It stopped at the opening. Even a quiet day has one thing worth telling.</p>}
-      {/* Each beat */}
-      <ul aria-label="The beats" className={`mt-3 ${CARD_LIST}`}>
+      {/* On a fresh answer: the ticks, right under the question */}
+      {askFirst && ticks}
+      {/* Each beat (once there is something to show against them) */}
+      {!askFirst && <ul aria-label="The beats" className={`mt-3 ${CARD_LIST}`}>
         {/* One row per beat */}
         {beatsFor(unit).map((beat) => {
           // Whether it was found
@@ -733,7 +739,7 @@ function SmallTalkBeats({ session }: { session: SessionRecord }) {
             </li>
           );
         })}
-      </ul>
+      </ul>}
     </>
   );
 }
@@ -959,7 +965,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
   // Draw the page
   return (
     // One column on a phone, two on a computer; the results take their soft green surfaces (decision 69)
-    <main data-area={loaded?.session ? "results" : undefined} className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" data-area={loaded?.session ? "results" : undefined} className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Nothing yet while loading */}
       {loaded && !loaded.session && (
         <>

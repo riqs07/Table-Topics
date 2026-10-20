@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, RepeatIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, RepeatIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
@@ -16,7 +16,7 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 // Load this week's challenge
 import { WeeklyChallenge } from "@/components/screens/WeeklyChallenge";
 // Load the day's pickers, and the drills
-import { PAUSE_DRILLS, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the voice drills' next picks (decision 80)
 import { nextShadowPassage, nextVoiceDrill } from "@/core/voicePicks";
 // Load the lessons
@@ -133,6 +133,8 @@ export function PracticeScreen(props: ScreenProps) {
   const nextLesson = counts ? LESSONS.find((lesson) => lesson.id === nextToPractise(LESSONS.map((item) => item.id), counts)) : undefined;
   // The next pause drill
   const nextPause = counts ? PAUSE_DRILLS.find((drill) => drill.id === nextToPractise(PAUSE_DRILLS.map((item) => item.id), counts)) : undefined;
+  // The next tricky-words list
+  const nextTricky = counts ? TRICKY_WORDS.find((list) => list.id === nextToPractise(TRICKY_WORDS.map((item) => item.id), counts)) : undefined;
   // The next drill of each voice mode (the first of each until counted)
   const nextVoice = (kind: "clear" | "volume" | "pitch" | "tone") => nextVoiceDrill(kind, counts ?? new Map());
   // The next passage to shadow
@@ -145,7 +147,7 @@ export function PracticeScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main className={PAGE}>
+    <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="VoiceLab" section="practice" />
       {/* The page's name, and how it relates to Today */}
@@ -199,6 +201,8 @@ export function PracticeScreen(props: ScreenProps) {
           { name: "Warm-up", detail: "Three moves, one minute, nothing recorded", href: "/voice/warmup", icon: WindIcon },
           // Clear sounds
           { name: "Clear sounds", detail: `Next: ${nextVoice("clear").title}`, href: `/voice/drill?id=${nextVoice("clear").id}`, icon: TextAaIcon },
+          // Tricky words: the word lists, straight into the next one (listed on the Your voice page too, so both lists agree)
+          { name: "Tricky words", detail: nextTricky ? `Next: ${nextTricky.title}` : "Word lists to read aloud, 1 min", href: nextTricky ? `/session?mode=read&prompt=${nextTricky.id}` : "/voice#tricky-words", icon: TextTIcon },
           // Volume
           { name: "Volume", detail: `Next: ${nextVoice("volume").title}`, href: `/voice/drill?id=${nextVoice("volume").id}`, icon: SpeakerHighIcon },
           // Pitch and stress

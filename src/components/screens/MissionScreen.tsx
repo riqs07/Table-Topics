@@ -80,7 +80,7 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
 
   // Draw the page
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Title and a way back to Today */}
       <Masthead title="Mission" nav={false} close={{ href: origin.href, label: `Close, back to ${origin.name}` }}>{mission?.move ?? ""}</Masthead>
       {/* Missing */}
@@ -104,8 +104,8 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
             </section>
           ) : (
             <>
-              {/* What they expected */}
-              <p className="mt-3 text-footnote text-ink-muted">You expected it to go {SCALE_WORDS[record.predicted ?? 3]?.toLowerCase()} ({record.predicted ?? 3} of 5).</p>
+              {/* What they expected, when they guessed (the guess is optional) */}
+              {record.predicted !== null && <p className="mt-3 text-footnote text-ink-muted">You expected it to go {SCALE_WORDS[record.predicted]?.toLowerCase()} ({record.predicted} of 5).</p>}
               {/* Did you try it */}
               <p className="mt-6 font-medium">Did you try it?</p>
               {/* The answers */}

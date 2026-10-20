@@ -13,6 +13,8 @@ import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the saving helpers
 import { acceptMission, debriefMission } from "@/data/missions";
+// Load the comparison sentence
+import { compareLine } from "@/core/missions";
 // Load the recording contracts
 import type { LiveText, RecordingServices } from "@/audio/services";
 
@@ -51,7 +53,7 @@ describe("missions", () => {
     expect([!!within(card).getByText(/Ask one follow-up question/), within(card).getByRole("link", { name: "Take it on in Learn" }).getAttribute("href"), within(card).queryByRole("group"), within(card).queryByRole("button", { name: "I’ll try it" })]).toEqual([true, "/learn#missions", null, null]);
   });
 
-  // Learn offers the first mission with a habit to drop; accepting needs a prediction, then it waits for its debrief
+  // Learn offers the first mission with a habit to drop; a prediction can be picked, then it waits for its debrief
   it("offers a mission on Learn and accepts it with a prediction", async () => {
     // A repository
     const repository = createRepository(new MemoryStore());
@@ -59,14 +61,36 @@ describe("missions", () => {
     render(<LearnScreen repository={repository} now={NOW} />);
     // The card
     const card = await screen.findByRole("region", { name: "Today’s mission" });
-    // Accepting is closed until a prediction is chosen
-    const closed = (within(card).getByRole("button", { name: "I’ll try it" }) as HTMLButtonElement).disabled;
     // Predict "Awkward"
     fireEvent.click(within(card).getByRole("button", { name: /^2/ }));
     // Accept
     fireEvent.click(within(card).getByRole("button", { name: "I’ll try it" }));
-    // Confirm it was closed, the habit to drop was shown, the debrief is offered, and the try saved
-    expect([closed, !!within(card).getByText(/Don't plan your next line/, { ignore: "summary" }), (await screen.findByRole("link", { name: "How did it go?" })).getAttribute("href")?.startsWith("/mission?id="), (await repository.getSettings(NOW)).missions?.map((item) => [item.missionId, item.status, item.predicted])]).toEqual([true, true, true, [["m01", "accepted", 2]]]);
+    // Confirm the habit to drop was shown, the debrief is offered, and the try saved with its prediction
+    expect([!!within(card).getByText(/Don't plan your next line/, { ignore: "summary" }), (await screen.findByRole("link", { name: "How did it go?" })).getAttribute("href")?.startsWith("/mission?id="), (await repository.getSettings(NOW)).missions?.map((item) => [item.missionId, item.status, item.predicted])]).toEqual([true, true, [["m01", "accepted", 2]]]);
+  });
+
+  // The prediction is optional: "I'll try it" works without one, and the comparison afterwards leaves it out (round 4; it was a disabled button with no hint)
+  it("accepts a mission without a prediction and compares without one", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // Draw Learn
+    render(<LearnScreen repository={repository} now={NOW} />);
+    // The card
+    const card = await screen.findByRole("region", { name: "Today’s mission" });
+    // The accept button, before any number is picked
+    const accept = within(card).getByRole("button", { name: "I’ll try it" }) as HTMLButtonElement;
+    // Whether it could be pressed
+    const open = !accept.disabled;
+    // Accept straight away
+    fireEvent.click(accept);
+    // Wait for it to be saved
+    await screen.findByRole("link", { name: "How did it go?" });
+    // The saved try
+    const [saved] = (await repository.getSettings(NOW)).missions ?? [];
+    // Debrief it: tried, went 4 of 5
+    const [debriefed] = await debriefMission(repository, saved!, { tried: true, outcome: 4, note: "", tooMuch: false }, NOW);
+    // Confirm it was open, saved with no prediction, and the comparison says how it went alone
+    expect([open, saved?.predicted, compareLine(debriefed!)]).toEqual([true, null, "It went 4 of 5."]);
   });
 
   // The debrief: tried, how it went, a note said aloud, then the comparison
@@ -90,7 +114,7 @@ describe("missions", () => {
     // Save
     fireEvent.click(screen.getByRole("button", { name: "Save and compare" }));
     // Confirm the comparison and the saved try
-    expect([(await screen.findByRole("status")).textContent?.startsWith("You expected 2 of 5. It went 4 of 5. Better than you feared"), (await repository.getSettings(NOW)).missions?.[0]?.note]).toEqual([true, "she lit up talking about her garden"]);
+    expect([(await screen.findByText(/^You expected 2 of 5\. It went 4 of 5\. Better than you feared/)).closest("[role=status]") !== null, (await repository.getSettings(NOW)).missions?.[0]?.note]).toEqual([true, "she lit up talking about her garden"]);
   });
 
   // Not getting a chance keeps the mission for another day; "too much" steps back

@@ -212,11 +212,15 @@ export function HomeScreen(props: ScreenProps) {
   const runLines = data && !data.showWelcome && !data.hideStreak ? streakLines(data.run) : [];
   // The next step, in words for the action band ("Step 1 · a Learn card")
   const nextStep = plan && nextIndex !== -1 ? plan.steps[nextIndex] : undefined;
+  // This week's focus, once there is practice it can be about (with none yet, "This week: strong opening." read as a verdict on nothing; round 4)
+  const showFocus = !!data && !data.showWelcome && data.run.any;
+  // Whether the margin has anything in it; with nothing, the page is one centred column instead of an empty left column on a computer
+  const margin = !!data && !data.showWelcome && (runLines.length > 0 || (!data.hideStreak && data.run.any) || showFocus || !!data.anchor || !!data.week);
 
   // Draw the page
   return (
     // Full-height page: one column on a phone, margin plus main column on a computer
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Name and links */}
       <Masthead title="VoiceLab" section="today" nav={!data?.showWelcome} />
 
@@ -239,9 +243,9 @@ export function HomeScreen(props: ScreenProps) {
         </section>
       )}
       {/* Two columns on a computer */}
-      {data && <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
-        {/* Context: streak and focus (above the step on a phone, in the margin on a computer) */}
-        <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
+      {data && <div className={`flex flex-1 flex-col md:pt-8 ${margin ? "md:grid md:grid-cols-[240px_1fr] md:gap-14" : "md:mx-auto md:w-full md:max-w-2xl"}`}>
+        {/* Context: streak and focus (above the step on a phone, in the margin on a computer; left out when there is nothing to say yet) */}
+        {margin && <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
           {/* Where practice stands: days in the last seven, and the run from a week of practice; never a broken run (decision 78) */}
           {runLines.map((line) => <p key={line}>{line}</p>)}
           {/* The last seven days as squares, filled where there was practice */}
@@ -258,12 +262,12 @@ export function HomeScreen(props: ScreenProps) {
             </ul>
           )}
           {/* This week's focus, in a few words (held back during the welcome, which asks one thing only) */}
-          {data && !data.showWelcome && <p className="md:mt-3">This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
+          {showFocus && <p className="md:mt-3">This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
           {/* When the user practises, in their words (decision 78) */}
           {data && !data.showWelcome && data.anchor && <p className="mt-1">Your time: <em className="text-ink">{data.anchor}</em>.</p>}
           {/* On a computer, the week's summary in this column */}
           {data && !data.showWelcome && data.week && <div className="mt-8 hidden md:block"><YourWeekCard week={data.week} /></div>}
-        </aside>
+        </aside>}
 
         {/* Main column */}
         <div className="flex flex-1 flex-col">

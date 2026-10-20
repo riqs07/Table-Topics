@@ -114,7 +114,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   if (!card) {
     // Say so, with a way back
     return (
-      <main data-area="learn" className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main id="main" data-area="learn" className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Heading */}
         <Masthead title="Learn" section="learn" />
         {/* Explanation */}
@@ -225,7 +225,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
 
   // Draw the page
   return (
-    <main data-area="learn" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" data-area="learn" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* The set's name, with a way out instead of the tab bar */}
       <Masthead title={set?.name ?? "Learn"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: `/learn/set?id=${card.set}`, label: `Close, back to ${set?.name ?? "Learn"}` }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
       {/* The screens */}
