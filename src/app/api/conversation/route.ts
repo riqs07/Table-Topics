@@ -1,25 +1,34 @@
-// POST /api/conversation: real wiring for the conversation handler (logic and tests live in server/conversationHandler.ts; decision 83)
+// POST /api/conversation: real wiring for the conversation handler (logic and tests live in server/conversationHandler.ts; decisions 83 and 84)
 
 // Load the call limits
 import { CONVERSATION_LIMITS } from "@/config/limits";
-// Load the Claude partner
-import { createClaudePartner } from "@/server/conversationPartner";
-// Load the settings reader
-import { readServerEnv } from "@/server/env";
+// Load the Claude writer
+import { createClaudeWriter } from "@/server/conversationWriter";
+// Load the settings readers
+import { readElevenLabsKey, readServerEnv } from "@/server/env";
 // Load the handler builder
 import { createConversationHandler } from "@/server/conversationHandler";
 // Load the counter stores
 import { MemoryCounterStore, UpstashCounterStore } from "@/server/rateLimit";
+// Load the ElevenLabs voice for conversation lines
+import { createPersonaVoice } from "@/server/voice";
 
 // Counters for local development only; production requires the shared store (checked in readServerEnv)
 const developmentCounters = new MemoryCounterStore();
 
-// Handle POST requests with the real settings, partner, and counter store
+// Handle POST requests with the real settings, writer, voice, and counter store
 export const POST = createConversationHandler({
   // Read settings from the server environment
   readEnv: () => readServerEnv(process.env),
-  // Use Claude to choose lines
-  makePartner: (env) => createClaudePartner(env.anthropicApiKey),
+  // Use Claude to write lines
+  makeWriter: (env) => createClaudeWriter(env.anthropicApiKey),
+  // Use ElevenLabs to speak them, when its key is set
+  makeVoice: () => {
+    // The key, if set
+    const key = readElevenLabsKey(process.env);
+    // The voice, or none
+    return key ? createPersonaVoice(key) : null;
+  },
   // Use the shared store when configured, otherwise the development counters
   makeCounterStore: (env) => (env.counterStore ? new UpstashCounterStore(env.counterStore) : developmentCounters),
   // The configured limits

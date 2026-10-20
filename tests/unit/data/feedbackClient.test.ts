@@ -41,10 +41,10 @@ describe("requestFeedback", () => {
     expect(JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)).question).toBe("What does it cost?");
   });
 
-  // A conversation sends your words and their line ids, never their words, and no voice numbers (decision 83)
-  it("sends a conversation's turns", async () => {
+  // A conversation sends its situation and every turn's words (a recorded line also by its id), and no voice numbers (decisions 83 and 84)
+  it("sends a conversation's situation and turns", async () => {
     // A conversation with Theo
-    const repository = await repositoryWith(makeSession({ id: "c1", mode: "conversation", promptId: "theo", conversation: { turns: [{ who: "them", text: "Well… I fix up old radios.", lineId: "theo-14", seconds: 3 }, { who: "you", text: "what kind of radios", seconds: 2 }] }, ...voiceReadings("rising") }));
+    const repository = await repositoryWith(makeSession({ id: "c1", mode: "conversation", promptId: "theo", conversation: { scenarioId: "class", twist: 0, turns: [{ who: "them", text: "Well… I fix up old radios.", lineId: "theo-14", seconds: 3 }, { who: "you", text: "what kind of radios", seconds: 2 }, { who: "them", text: "Oh, the fifties ones mostly.", seconds: 0 }] }, ...voiceReadings("rising") }));
     // A network that answers
     const network = answer(200, { feedback: FEEDBACK });
     // Ask for feedback
@@ -52,7 +52,7 @@ describe("requestFeedback", () => {
     // What was sent
     const body = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { conversation?: unknown; voice?: unknown };
     // The turns, and no voice numbers
-    expect([body.conversation, body.voice]).toEqual([{ characterId: "theo", turns: [{ who: "them", lineId: "theo-14" }, { who: "you", text: "what kind of radios" }] }, undefined]);
+    expect([body.conversation, body.voice]).toEqual([{ characterId: "theo", scenarioId: "class", turns: [{ who: "them", text: "Well… I fix up old radios.", lineId: "theo-14" }, { who: "you", text: "what kind of radios" }, { who: "them", text: "Oh, the fifties ones mostly." }] }, undefined]);
   });
 
   // When the server says which setting is wrong, that reason is passed on (it names the setting, never its value)

@@ -62,5 +62,5 @@ The biggest research-backed gap. In the week-long talk-to-strangers study, peopl
 | 2. Feedback rules | Built (decision 53) |
 | 3. Learn set and scenarios | Built (decision 54) |
 | 4. Responding to news | Built (decision 55) |
-| 5. Live partner | First stage built (decision 83): four characters with recorded lines picked by Claude Haiku, notes afterwards |
+| 5. Live partner | Built in two stages (decisions 83 and 84): four personas in eight situations, each line written by Claude Haiku for the situation and spoken in their voice, with recorded lines without the coach; notes afterwards |
 | 6. Measuring transfer | Later (part comes with stage 1) |

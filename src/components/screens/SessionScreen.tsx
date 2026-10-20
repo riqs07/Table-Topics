@@ -949,7 +949,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       {/* A retry with its first try */}
       {/* A voice drill or shadowing: its saved lines (decision 80) */}
       {loaded?.session?.mode === "voice" && today && <VoiceSessionView session={loaded.session} now={today} plan={plan} />}
-      {/* A conversation with a character: the share, the change and the turns (decision 83) */}
+      {/* A conversation with a persona: where, the share, the change and the turns (decisions 83 and 84) */}
       {loaded?.session?.mode === "conversation" && today && <ConversationSessionView session={loaded.session} now={today} note={note} plan={plan} />}
       {loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation" && loaded.original && loaded.session.mode !== "smalltalk" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} view={view} />}
       {/* A first try (or a retry whose first try is missing) */}

@@ -78,3 +78,9 @@ export function readVoiceSettings(source: EnvSource = process.env): VoiceSetting
   // Both are needed
   return apiKey && voiceId ? { apiKey, voiceId } : null;
 }
+
+// The ElevenLabs key alone, for speaking a conversation persona's written lines in their own voice (decision 84); null when not set, so the phone's own voice says them
+export function readElevenLabsKey(source: EnvSource = process.env): string | null {
+  // The key, if set
+  return source.ELEVENLABS_API_KEY?.trim() || null;
+}

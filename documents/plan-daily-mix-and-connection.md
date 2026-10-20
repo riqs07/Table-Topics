@@ -82,9 +82,9 @@ Each card links to the practice that uses it ("Try it: a follow-up drill"). Earl
 
 The "coached session":
 - **Characters with a situation:** a new coworker at a party, a friend having a rough week, someone quiet who gives short answers. Unit by unit they ask more of you.
-- **Hold to talk:** no guessing when you have finished. Claude answers in character; ElevenLabs speaks it (the faster Flash model, for short gaps). *As built (decision 83): tap Done when you have finished (the user found tapping better than holding), and Claude picks from lines recorded in advance instead of writing new ones, which keeps the cost near nothing and the voice expressive.*
+- **Hold to talk:** no guessing when you have finished. Claude answers in character; ElevenLabs speaks it (the faster Flash model, for short gaps). *As built: tap Done when you have finished (the user found tapping better than holding). Decision 83 had Claude pick from recorded lines; since decision 84 Claude writes each line and ElevenLabs speaks it with delivery directions, so no two conversations are the same.*
 - **No corrections mid-conversation:** after 3 to 5 minutes, the transcript and notes. Talk share, questions asked and how many were follow-ups, boomerasking, shifts versus support, and whether you came back to something they said. Then one change, and try again.
-- **Privacy:** the conversation is sent to the AI as it happens; this is opt-in and said plainly. *As built: only your words (as text) and the ids of the character's lines are sent, and only when the passphrase is set; no audio.*
+- **Privacy:** the conversation is sent to the AI as it happens; this is opt-in and said plainly. *As built: only the conversation's words (as text) are sent, and only when the passphrase is set; no audio of you leaves the device.*
 
 ## Where things live (to decide)
 
@@ -97,7 +97,7 @@ Five tabs is the most Apple and Google suggest. One option: **Today · Practice 
 3. **Missions and debriefs.** Built (decision 52): predict, try, debrief by taps or voice, compare.
 4. **Learn:** the card format, recall questions, and the first sets (body language myths, charisma, conversation).
 5. **Units 4 to 6** and their missions. A "Responding to news" unit came first (decision 55), from the 2026-10 research; the missions ladder (decision 52) covers their real-world tries.
-6. **The live conversation partner.** First stage built (decision 83): four characters (a new coworker at a party, someone quiet at work, a friend having a rough week, a friend with big news) with recorded lines that Claude Haiku picks turn by turn, a set script without it, tap Done to end each turn, about 3 minutes, and the coach's notes on the whole conversation afterwards. Still to come: lines made on the fly for what the bank lacks, harder versions unit by unit, and a conversation in the daily mix.
+6. **The live conversation partner.** First stage built (decision 83): four characters with recorded lines, tap Done to end each turn, about 3 minutes, and the coach's notes on the whole conversation afterwards. Second stage built (decision 84): the four are personas with a fixed personality and life, in eight situations (two per skill) with a different twist each time, and with the coach every line is written for the situation by Claude and spoken in their voice by ElevenLabs; the recordings remain for use without the coach. Still to come: harder versions unit by unit, and a conversation in the daily mix.
 
 ## Open questions
 

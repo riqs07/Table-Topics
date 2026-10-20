@@ -1,4 +1,4 @@
-// Saves a finished conversation with a character: every turn, yours and theirs, counted for the run and today's practice, waiting for the coach, with no audio kept (decision 83)
+// Saves a finished conversation with a persona: the situation, every turn, yours and theirs, counted for the run and today's practice, waiting for the coach, with no audio kept (decision 83)
 
 // Load the weekly focus rules
 import { currentFocus } from "@/core/focus";
@@ -15,6 +15,10 @@ export interface FinishedConversation {
   id: string;
   // Who it was with
   characterId: string;
+  // The situation it was in
+  scenarioId: string;
+  // What was going on for them this time
+  twist: number;
   // Every turn, in order
   turns: ReadonlyArray<ConversationTurn>;
   // How long the whole conversation took, in seconds
@@ -50,7 +54,7 @@ export async function saveConversationSession(repository: Repository, conversati
     // Waiting for the coach, with no audio kept
     feedback: null, feedbackStatus: "pending", audioKey: null,
     // Every turn
-    conversation: { turns: [...conversation.turns] },
+    conversation: { turns: [...conversation.turns], scenarioId: conversation.scenarioId, twist: conversation.twist },
   };
   // Save it
   await repository.saveSession(session);

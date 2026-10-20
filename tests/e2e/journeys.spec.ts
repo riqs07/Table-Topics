@@ -1,5 +1,7 @@
 // Whole journeys with the stand-in microphone: record, save, and read the result (rules T1, T3, T11)
 import { expect, test, useStandIns } from "./support/fixtures";
+// Load Node's file reader, for a real recording to stand in for a written line's audio
+import { readFileSync } from "node:fs";
 
 // The welcome leads straight into today's first step, a Learn card; then a Table Topic from Practice, to the saved session
 test("Table Topic: from the welcome through Practice, countdown, recording, saved session", async ({ page }) => {
@@ -473,6 +475,63 @@ test("Conversation: talk with Maya, then see the conversation", async ({ page })
   await expect(page.getByRole("list", { name: "The conversation" })).toContainText("I went climbing");
   // Talk again
   await expect(page.locator("[data-action-band]")).toContainText("Talk again");
+});
+
+// A conversation with the coach set up (decision 84): a new situation, each line written for it and played in the persona's voice (the route stood in, with a real recording as the audio), and the situation on the results
+test("Conversation with the coach: Theo in a new situation, written lines", async ({ page }) => {
+  // The stand-in speech answers him
+  await useStandIns(page, "what do you do outside of work");
+  // The passphrase is saved, so lines are written
+  await page.addInitScript(() => localStorage.setItem("voicelab-passphrase", "a long passphrase for testing"));
+  // A real recording, as the route would send it
+  const audio = readFileSync("public/clips/theo-14.mp3").toString("base64");
+  // The lines the route writes, in turn
+  const lines = ["Oh. Hey. Early too?", "Well… I fix up old radios.", "Anyway, good talking."];
+  // What the browser sent
+  const sent: Array<{ scenarioId: string; stage: string }> = [];
+  // The conversation route, stood in
+  await page.route("**/api/conversation", async (route) => {
+    // Noted
+    sent.push(JSON.parse(route.request().postData() ?? "{}") as { scenarioId: string; stage: string });
+    // The next line, with its audio
+    await route.fulfill({ json: { text: lines.shift() ?? "Bye!", audio, goodbye: false } });
+  });
+  // The coach, stood in
+  await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You asked an open question.", change: "Follow up on the radios.", retryCue: "Ask about his last detail.", conversation: { yours: "what do you do outside of work", better: "What do you get up to outside work?" } } } }));
+  // Theo, from the list
+  await page.goto("/conversations");
+  // His row
+  await page.getByRole("link", { name: /^Theo/ }).click();
+  // His own situation first, with another on offer
+  await expect(page.getByText("Early for a meeting", { exact: true })).toBeVisible();
+  // Another situation
+  await page.getByRole("button", { name: "Another situation" }).click();
+  // The next one
+  await expect(page.getByText("Before an evening class", { exact: true })).toBeVisible();
+  // Start
+  await page.getByRole("button", { name: "Start" }).click();
+  // His written opening
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Oh. Hey. Early too?", { timeout: 20_000 });
+  // Your turn
+  const done = page.getByRole("button", { name: "Done" });
+  // After his line plays
+  await expect(done).toBeVisible({ timeout: 20_000 });
+  // Answer for a moment
+  await page.waitForTimeout(2_000);
+  // Done
+  await done.click();
+  // His reply
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Well… I fix up old radios.", { timeout: 20_000 });
+  // Your turn again
+  await expect(done).toBeVisible({ timeout: 20_000 });
+  // End it
+  await page.getByRole("button", { name: "End conversation" }).click();
+  // Saved, and opened on its results with the situation and the coach's line
+  await expect(page.getByText("It could sound like")).toBeVisible({ timeout: 15_000 });
+  // The situation on the results, and what was asked for
+  await expect(page.getByText(/With Theo · Before an evening class/)).toBeVisible();
+  // Every request was for the class, starting with the opening
+  expect([sent.map((request) => request.scenarioId), sent[0]?.stage]).toEqual([["class", "class"], "open"]);
 });
 
 // Learn: from its tab, a myth-or-fact card screen by screen, then on to the next card (no quiz since decision 67)

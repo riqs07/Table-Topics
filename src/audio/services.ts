@@ -61,6 +61,10 @@ export interface RecordingServices {
   speak?(text: string, promptId: string): Promise<number | null>;
   // Stop a line being said, finishing it quietly (optional; a conversation left part-way; decision 83)
   stopSpeaking?(): void;
+  // Let lines that arrive later play without a tap: called inside a tap (optional; a conversation's written lines; decision 84)
+  unlockSpeech?(): void;
+  // Say a written line: its audio when there is some, otherwise the phone's own voice (optional; decision 84)
+  speakAudio?(audio: Blob | null, text: string): Promise<void>;
   // Make a live transcriber
   createTranscriber(): LiveTranscriber;
   // Start recording audio from the microphone

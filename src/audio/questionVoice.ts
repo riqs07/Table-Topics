@@ -108,6 +108,36 @@ export function play(url: string, seconds: number | null): Promise<void> {
   });
 }
 
+// A tenth of a second of silence, played from a tap so the phone lets the shared player sound later (decision 84)
+const SILENCE = "data:audio/wav;base64,UklGRnQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==";
+
+// Let the shared player sound later without a tap: call it inside a tap, before a line that arrives over the network (a conversation's written lines; decision 84)
+export function unlockQuestionVoice(): void {
+  // No player in this browser (or on the server): nothing to unlock
+  if (typeof Audio === "undefined") return;
+  // The shared player, played silently within the tap; a refusal changes nothing
+  void play(SILENCE, 1).catch(() => undefined);
+}
+
+// Say a written line (decision 84): its audio in the persona's voice when there is some, otherwise (or if it will not play) the phone's own voice
+export async function speakAudio(audio: Blob | null, text: string, player: typeof play = play): Promise<void> {
+  // No audio: the phone's voice
+  if (!audio) return speakWithPhone(text);
+  // An address for the audio
+  const url = URL.createObjectURL(audio);
+  // Play it, falling back to the phone's voice
+  try {
+    // The line in the persona's voice
+    await player(url, null);
+  } catch {
+    // The phone's own voice instead
+    await speakWithPhone(text);
+  } finally {
+    // Let the audio go
+    URL.revokeObjectURL(url);
+  }
+}
+
 // Stop whatever line is playing, finishing it quietly (leaving a conversation part-way; decision 83)
 export function stopQuestionVoice(): void {
   // Silence the player

@@ -37,7 +37,7 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
   return {
     // Get feedback for one session
     async getFeedback(input) {
-      // A conversation with a character goes to the conversation coach (decision 83)
+      // A conversation with a persona goes to the conversation coach (decisions 83 and 84)
       if (input.mode === "conversation") {
         // Ask Claude, requiring the reply to match the conversation schema
         const response = await client.messages.parse({
@@ -47,7 +47,7 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
           max_tokens: MAX_TOKENS,
           // The conversation instructions, cached between conversations
           system: [{ type: "text", text: CONVERSATION_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-          // The character, numbers and conversation
+          // The persona, situation, numbers and conversation
           messages: [{ role: "user", content: buildConversationMessage(input) }],
           // Thinking depth and the required JSON shape
           output_config: { effort: COACH_EFFORT, format: zodOutputFormat(ConversationFeedbackSchema) },

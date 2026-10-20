@@ -1,20 +1,20 @@
 {
-  "id": "msg_test_pick",
+  "id": "msg_test_write",
   "type": "message",
   "role": "assistant",
   "model": "claude-haiku-5-5",
   "content": [
     {
       "type": "text",
-      "text": "{\"first\": \"theo-20\", \"second\": \"theo-15\"}"
+      "text": "{\"line\": \"[softly] Oh… um, the radios? Mostly ones from the fifties. [laughs softly] I find them broken at flea markets.\", \"goodbye\": false}"
     }
   ],
   "stop_reason": "end_turn",
   "stop_sequence": null,
   "stop_details": null,
   "usage": {
-    "input_tokens": 1800,
-    "output_tokens": 20,
+    "input_tokens": 1300,
+    "output_tokens": 40,
     "cache_creation_input_tokens": 0,
     "cache_read_input_tokens": 0
   }

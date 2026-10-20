@@ -9,7 +9,7 @@ import { ASKING_DRILLS, LISTENING_STORIES, NEWS_DRILLS, SMALL_TALK_LESSONS, SMAL
 // Load the passages to shadow and their steps
 import { SHADOW_PASSAGES, shadowSteps } from "@/content/voice";
 // Load the conversation characters (decision 83)
-import { CHARACTERS } from "@/content/conversations";
+import { PERSONAS } from "@/content/conversations";
 
 // Where the recordings are kept
 const FOLDER = "public/clips";
@@ -23,7 +23,7 @@ const LINES: ReadonlyArray<{ id: string; text: string }> = [
   // Shadowing: each phrase, then each whole passage
   ...SHADOW_PASSAGES.flatMap((passage) => shadowSteps(passage).map((step) => ({ id: step.voiceId, text: step.text }))),
   // Conversations: every line each character can say
-  ...CHARACTERS.flatMap((character) => character.lines.map((line) => ({ id: line.id, text: line.text }))),
+  ...PERSONAS.flatMap((character) => character.lines.map((line) => ({ id: line.id, text: line.text }))),
 ];
 
 // Group the checks about the saved recordings (decision 82)

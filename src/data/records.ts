@@ -133,17 +133,17 @@ export interface SessionRecord {
   audioKey: string | null;
   // For a voice drill or shadowing (mode "voice"): what kind, the headline, and one line per take; the takes' audio is kept only while on the page (decision 80)
   voice?: VoiceSummary;
-  // For a conversation with a character (mode "conversation"): every turn, yours and theirs; no audio is kept (decision 83)
-  conversation?: { turns: ConversationTurn[] };
+  // For a conversation (mode "conversation"): every turn, yours and theirs, and the situation and twist it was in (missing on conversations from before decision 84, which were in the persona's own situation); no audio is kept (decisions 83 and 84)
+  conversation?: { turns: ConversationTurn[]; scenarioId?: string; twist?: number };
 }
 
 // One turn of a conversation with a character (decision 83)
 export interface ConversationTurn {
   // Who spoke
   who: "you" | "them";
-  // What was said: the words heard from you, or their line's words
+  // What was said: the words heard from you, or their line's words (recorded or written)
   text: string;
-  // For their turn, the id of the line they said
+  // For their turn from a recording, the id of the line they said (missing on written lines)
   lineId?: string;
   // How long it took, in seconds (your take, or their recording)
   seconds: number;

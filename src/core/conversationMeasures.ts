@@ -1,7 +1,7 @@
-// What a conversation showed, from its turns alone (decision 83): how much of the talking was yours, how many questions you asked, and how many picked up something the character said. Speech recognition adds no punctuation, so questions are spotted by how they start; the coach reads the conversation itself for anything finer
+// What a conversation showed, from its turns alone (decision 83): how much of the talking was yours, how many questions you asked, and how many picked up something the other person said. Speech recognition adds no punctuation, so questions are spotted by how they start; the coach reads the conversation itself for anything finer
 
-// Load the character type
-import type { ConversationCharacter } from "@/content/conversations";
+// Load the small-talk unit type, for the skill a situation practises
+import type { UnitId } from "@/content/smallTalk";
 // Load the saved turn type
 import type { ConversationTurn } from "@/data/records";
 
@@ -13,6 +13,8 @@ const HELD_BACK = 0.3;
 const QUESTION_STARTS = ["what", "how", "why", "where", "when", "who", "which", "do", "did", "does", "are", "is", "was", "were", "have", "has", "can", "could", "would", "will", "any", "anything", "tell"];
 // Small words set aside before looking at how a question starts
 const LEAD_INS = new Set(["so", "and", "but", "oh", "wow", "okay", "ok", "well", "wait", "really", "no", "way", "yeah", "hmm"]);
+// A question word followed by a helping verb, anywhere in a turn: how a question sounds after a reaction ("wow what was it like")
+const MID_QUESTION = /\b(what|how|why|where|when|who|which) (did|do|does|was|were|is|are|has|have|had|will|would|could|can|made|makes)\b/;
 // Common words that do not count as picking up a detail
 const COMMON = new Set(["that", "this", "with", "have", "what", "your", "about", "just", "been", "really", "they", "them", "there", "were", "from", "when", "would", "could", "like", "know", "then", "than", "into", "it's", "i've", "i'm", "don't", "didn't", "that's", "much", "some", "very", "good", "nice", "yeah", "okay", "well", "time", "think", "feel", "made", "make", "going", "doing", "thing", "things"]);
 
@@ -22,7 +24,7 @@ export interface ConversationMeasures {
   share: number | null;
   // Your turns that asked a question
   questions: number;
-  // Of those, the ones that picked up a word the character had just said
+  // Of those, the ones that picked up a word the other person had just said
   followUps: number;
   // Your turns
   turns: number;
@@ -44,6 +46,8 @@ export function asksQuestion(text: string): boolean {
     const all = words(clause);
     // Hands a question back ("and you", "what about you")
     if (/\b(what|how) about you\b|\band you$/.test(all.join(" "))) return true;
+    // A question after a reaction, with no punctuation to split them ("no way congratulations how did you find out")
+    if (MID_QUESTION.test(all.join(" "))) return true;
     // Past any lead-in words
     const rest = [...all];
     // Skip the lead-ins
@@ -53,9 +57,9 @@ export function asksQuestion(text: string): boolean {
   });
 }
 
-// Whether a question picks up a word the character had just said (four letters or more, and not a common word)
+// Whether a question picks up a word the other person had just said (four letters or more, and not a common word)
 function picksUp(question: string, theirs: string): boolean {
-  // The character's words worth picking up
+  // Their words worth picking up
   const said = new Set(words(theirs).filter((word) => word.length >= 4 && !COMMON.has(word)));
   // Any of them in the question
   return words(question).some((word) => said.has(word));
@@ -95,19 +99,19 @@ export function measureConversation(turns: ReadonlyArray<ConversationTurn>): Con
 }
 
 // One change and a cue from the numbers alone, for when the coach is not set up or cannot be reached
-export function localConversationNote(character: ConversationCharacter, measures: ConversationMeasures): { change: string; retryCue: string } {
+export function localConversationNote(name: string, unit: UnitId, measures: ConversationMeasures): { change: string; retryCue: string } {
   // Your share as a percentage
   const percent = measures.share === null ? 0 : Math.round(measures.share * 100);
   // Most of the talking
-  if (measures.share !== null && measures.share > MOST_OF_IT) return { change: `You did ${percent}% of the talking. Leave more room for ${character.name}: ask one question, then listen.`, retryCue: `After you answer, ask ${character.name} something back.` };
+  if (measures.share !== null && measures.share > MOST_OF_IT) return { change: `You did ${percent}% of the talking. Leave more room for ${name}: ask one question, then listen.`, retryCue: `After you answer, ask ${name} something back.` };
   // No questions where asking is the skill
-  if (measures.questions === 0 && character.unit !== "answering") return { change: `You did not ask ${character.name} anything. Try one open question: what, how or why.`, retryCue: `Ask ${character.name} one question that starts with what or how.` };
+  if (measures.questions === 0 && unit !== "answering") return { change: `You did not ask ${name} anything. Try one open question: what, how or why.`, retryCue: `Ask ${name} one question that starts with what or how.` };
   // Questions, but none picked up what was said
-  if (measures.questions > 0 && measures.followUps === 0 && character.unit !== "answering") return { change: `Your questions did not pick up anything ${character.name} said. Use a detail from their last line.`, retryCue: `Listen for one detail, then ask about it.` };
+  if (measures.questions > 0 && measures.followUps === 0 && unit !== "answering") return { change: `Your questions did not pick up anything ${name} said. Use a detail from their last line.`, retryCue: `Listen for one detail, then ask about it.` };
   // Holding back
-  if (measures.share !== null && measures.share < HELD_BACK) return { change: `You did ${percent}% of the talking. Give a little more of yourself: one detail ${character.name} could ask about.`, retryCue: "Add one detail to each answer." };
+  if (measures.share !== null && measures.share < HELD_BACK) return { change: `You did ${percent}% of the talking. Give a little more of yourself: one detail ${name} could ask about.`, retryCue: "Add one detail to each answer." };
   // A good balance
-  return { change: `A good balance: you did ${percent}% of the talking and asked ${measures.questions} ${measures.questions === 1 ? "question" : "questions"}.`, retryCue: `Try it again with ${character.name}, and go one step deeper.` };
+  return { change: `A good balance: you did ${percent}% of the talking and asked ${measures.questions} ${measures.questions === 1 ? "question" : "questions"}.`, retryCue: `Try it again with ${name}, and go one step deeper.` };
 }
 
 // The results headline: how much of the talking was yours and how many questions you asked, or that nothing was heard

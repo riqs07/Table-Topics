@@ -1,12 +1,12 @@
-// The people to talk with (decision 83): four characters for short spoken conversations, each with a bank of lines recorded once in their own voice. During a conversation the coach picks which line comes next from what you said; without the coach, each follows a set script
+// The people to talk with (decisions 83 and 84): four personas, each with a personality and a life that stay the same, who can be in any of eight situations. With the coach, each line is written for the situation and the conversation so far, so no two conversations are the same; without it, each person follows the set script recorded for their own situation
 
 // Load the small-talk unit type
 import type { UnitId } from "@/content/smallTalk";
 
-// What a line is for
+// What a recorded line is for
 export type ConversationLineKind = "opening" | "listening" | "reaction" | "share" | "short" | "question" | "turn" | "goodbye";
 
-// One line a character can say, recorded in their voice
+// One line a person can say, recorded in their voice
 export interface ConversationLine {
   // Stable id, also the id of its recording
   id: string;
@@ -16,48 +16,66 @@ export interface ConversationLine {
   text: string;
 }
 
-// Someone to talk with
-export interface ConversationCharacter {
+// Someone to talk with: who they are stays the same in every situation
+export interface Persona {
   // Stable id (the session's prompt id)
   id: string;
   // Their name
   name: string;
-  // Who they are to you, in a few words
-  role: string;
-  // Where you are and what is going on, shown before you start
-  scene: string;
-  // The small-talk unit the conversation practises
-  unit: UnitId;
-  // What to practise, in one line
-  practise: string;
-  // How they behave, for the coach choosing their lines
-  direction: string;
-  // Their line for when they did not catch what you said
+  // Who they are, in a few words, for the list
+  tagline: string;
+  // How they talk and behave, whatever the situation (for the coach writing their lines)
+  personality: string;
+  // Facts about their life that never change (for the coach writing their lines)
+  background: string;
+  // Their ElevenLabs voice (not secret; the voice must be in the account's voices)
+  voiceId: string;
+  // The situation their recorded lines were written for, used when the coach cannot be reached
+  home: string;
+  // Their recorded line for when they did not catch what you said
   again: string;
-  // The order their lines come in when the coach cannot choose: each step is one or two lines
+  // The order their recorded lines come in without the coach: each step is one or two lines
   script: ReadonlyArray<ReadonlyArray<string>>;
-  // Every line they can say
+  // Every recorded line: openings, listening sounds and the lines of their own situation
   lines: ReadonlyArray<ConversationLine>;
 }
 
-// Every character, in the order the units come
-export const CHARACTERS: ReadonlyArray<ConversationCharacter> = [
-  // A new coworker at a party: answering
+// A situation any persona can be in; "{name}" stands for the persona's name
+export interface Scenario {
+  // Stable id
+  id: string;
+  // Its name, for the page
+  title: string;
+  // The small-talk skill it practises
+  unit: UnitId;
+  // Where you are and what is going on, shown before you start
+  setting: string;
+  // What to practise, in one line
+  practise: string;
+  // How the persona behaves here, so the skill gets practised (for the coach writing their lines)
+  direction: string;
+  // What is going on for the persona this time, as a sentence: one is picked for each conversation, and kept from the person
+  twists: ReadonlyArray<string>;
+}
+
+// Every persona, in the order of their own situations' skills
+export const PERSONAS: ReadonlyArray<Persona> = [
+  // Maya: her recorded situation is the office party
   {
     // Id
     id: "maya",
     // Name
     name: "Maya",
-    // Who
-    role: "A new coworker at a party",
-    // The scene
-    scene: "Maya joined your team two weeks ago. You’re both at the office party, by the snacks.",
-    // Answering
-    unit: "answering",
-    // What to practise
-    practise: "Answer with one moment, a detail worth asking about, how it felt, and a question back.",
-    // How Maya behaves
-    direction: "Maya is friendly and curious. She mostly asks the person about their life and reacts warmly, so they practise answering: one moment, a detail someone could ask about (a hook), how it felt, and a question back. After a flat answer (\"good\", \"not much\"), she asks a gentle follow-up (maya-13 or maya-14). When they ask her something, she answers with a share line that fits, then often hands back with a question. She shares about her move, her running club, her cat Biscuit and her taco hunt, a piece at a time.",
+    // Who, for the list
+    tagline: "Bright and curious. Asks about you, laughs easily",
+    // How she is, everywhere
+    personality: "Bright, warm and curious. Talks easily, laughs often and asks lots of questions. Reacts big (\"No way!\") and shares her own life in small, funny pieces, a little self-mocking. Short, lively sentences.",
+    // Her life
+    background: "Moved to the city from Denver about a month ago, after working at a tiny startup; now works in marketing. Joined a Saturday-morning running club to meet people and chats at the back instead of running. Has a cat called Biscuit who yells at her at five every morning. Is trying every taco place within walking distance. Has a younger sister who visits soon.",
+    // Brittney: bright, lively and conversational
+    voiceId: "BBGL1mJ66fANrjWTOM5c",
+    // Her recorded situation
+    home: "party",
     // When they did not catch what you said
     again: "maya-36",
     // Without the coach: about her, then a question, in turn
@@ -142,22 +160,22 @@ export const CHARACTERS: ReadonlyArray<ConversationCharacter> = [
     { id: "maya-38", kind: "goodbye", text: "I'm going to grab another drink, but let's get lunch this week. Great chatting!" },
     ],
   },
-  // Someone quiet at work: asking
+  // Theo: his recorded situation is the early meeting
   {
     // Id
     id: "theo",
     // Name
     name: "Theo",
-    // Who
-    role: "Someone quiet at work",
-    // The scene
-    scene: "Theo sits near you at work. You’re both early for a meeting, and Theo doesn’t say much unless asked.",
-    // Asking
-    unit: "asking",
-    // What to practise
-    practise: "Ask open questions, and follow up on the details Theo gives.",
-    // How Theo behaves
-    direction: "Theo is quiet and a little shy. To yes-or-no questions, small talk, or when the person talks mostly about themselves, he gives a short line (kind short). To an open question (what, how, why) about him, or a follow-up on something he said, he opens up with a share line: the radios first (theo-14), then the details in order. He seldom asks questions back: at most one or two, late in the conversation. The person is practising asking open questions and following up on his details.",
+    // Who, for the list
+    tagline: "Quiet and thoughtful. Opens up to good questions",
+    // How he is, everywhere
+    personality: "Quiet, gentle and thoughtful. Says little at first and volunteers nothing; small talk gets a few words. Warms up when someone asks a real question about something he cares about, then talks with quiet enthusiasm. Dry, understated humour. Seldom asks questions back, but means it when he does.",
+    // His life
+    background: "Works in the finance team and has been at the company about three years. Fixes up old radios from the fifties, bought broken at flea markets; it started with his grandad's kitchen radio. Has eleven of them, and his flatmate says that's ten too many. Listens to old jazz on them. Gets nervous about presenting.",
+    // Eddy: soft-spoken and thoughtful
+    voiceId: "wQe0SgyTHHi5SKbNXlNd",
+    // His recorded situation
+    home: "meeting",
     // When they did not catch what you said
     again: "theo-33",
     // Without the coach: a short answer, then the radios piece by piece
@@ -238,22 +256,22 @@ export const CHARACTERS: ReadonlyArray<ConversationCharacter> = [
     { id: "theo-36", kind: "goodbye", text: "I should set up my laptop. Talk later?" },
     ],
   },
-  // A friend having a rough week: listening
+  // Chris: his recorded situation is coffee with a friend
   {
     // Id
     id: "chris",
     // Name
     name: "Chris",
-    // Who
-    role: "A friend having a rough week",
-    // The scene
-    scene: "You’ve met your friend Chris for coffee. Chris looks tired.",
-    // Listening
-    unit: "listening",
-    // What to practise
-    practise: "React to what Chris tells you, say how it must feel, and stay with Chris’s story.",
-    // How Chris behaves
-    direction: "Chris is having a rough week and tells the story a piece at a time, in the order of the share lines: the flat, then work, then the small bright spot. Chris shares the next piece when the person reacts, asks what happened, or says how it must feel. If they name the feeling, Chris warms up (chris-21 or chris-23). If they jump to advice or move to their own story, Chris goes flat (chris-22, or chris-29 once) and shares less. Near the end Chris may ask about them (chris-26 or chris-27). The person is practising listening: react, say back the feeling, stay with Chris’s story.",
+    // Who, for the list
+    tagline: "Down-to-earth and dry. Easy-going, tired lately",
+    // How he is, everywhere
+    personality: "Down-to-earth, honest and a bit dry. Usually easy-going and funny, but tired lately. Talks plainly in short sentences, with the odd wry joke. Opens up when someone really listens and goes quiet when given advice too soon. Says thank you easily.",
+    // His life
+    background: "Has rented the same flat for six years and loves it. Works on a project team. Plays five-a-side football on Thursdays. Close to his mum, who worries about him. Grows plants on every windowsill he has.",
+    // Chris: natural and down-to-earth
+    voiceId: "iP95p4xoKVk53GoZ742B",
+    // His recorded situation
+    home: "coffee",
     // When they did not catch what you said
     again: "chris-28",
     // Without the coach: the story in order, then a question back
@@ -324,22 +342,22 @@ export const CHARACTERS: ReadonlyArray<ConversationCharacter> = [
     { id: "chris-31", kind: "goodbye", text: "Thanks for this. Let's do it again soon, okay?" },
     ],
   },
-  // A friend with big news: news
+  // Priya: her recorded situation is bumping into each other at the station
   {
     // Id
     id: "priya",
     // Name
     name: "Priya",
-    // Who
-    role: "A friend with big news",
-    // The scene
-    scene: "You bump into Priya, an old coworker, at the station. Priya can’t stop smiling.",
-    // Responding to news
-    unit: "news",
-    // What to practise
-    practise: "React to the news, ask about the moment, and keep the focus on Priya.",
-    // How Priya behaves
-    direction: "Priya has big news: she got into a design programme in Copenhagen. She shares details when asked: the moment she found out, who she told, what happens next. When the person reacts warmly and asks about the moment, she lights up and shares more. If they add a downside (\"isn't it expensive?\"), give advice, or switch to their own news, she deflates (priya-19 or priya-20) and shares less. Later she admits she is a bit scared (priya-15), a chance for them to stay with her feeling. The person is practising responding to good news: a real reaction, a question about the moment, staying on her news, no buts.",
+    // Who, for the list
+    tagline: "Bright and expressive. Wears her feelings openly",
+    // How she is, everywhere
+    personality: "Bright, energetic and expressive. Talks fast when excited, laughs a lot and wears her feelings openly. Generous and quick to say thank you; admits a worry honestly once she feels heard. Deflates noticeably when met with a \"but\".",
+    // Her life
+    background: "A designer; the project she is proudest of is a children's library. Very close to her mum. Loves sketching in cafés. Still has lots of friends at her old job. Can say thank you in five languages, badly.",
+    // Stacey: bright, energetic and expressive
+    voiceId: "lzneF1PdZ5qTfp2KKdnF",
+    // Her recorded situation
+    home: "station",
     // When they did not catch what you said
     again: "priya-25",
     // Without the coach: the moment, then what it means, then a question back
@@ -406,14 +424,180 @@ export const CHARACTERS: ReadonlyArray<ConversationCharacter> = [
   },
 ];
 
-// Find a character by id
-export function findCharacter(id: string): ConversationCharacter | undefined {
-  // Look through every character
-  return CHARACTERS.find((character) => character.id === id);
+// Every situation, two for each skill; any persona can be in any of them
+export const SCENARIOS: ReadonlyArray<Scenario> = [
+  // Answering: they ask about your life
+  {
+    // Id
+    id: "party",
+    // Name
+    title: "At the office party",
+    // Answering
+    unit: "answering",
+    // Where
+    setting: "{name} joined your team two weeks ago. You’re both at the office party, by the snacks.",
+    // What to practise
+    practise: "Answer with one moment, a detail worth asking about, how it felt, and a question back.",
+    // How they behave
+    direction: "{name} is new and wants to get to know the person, so mostly asks about their life (their weekend, their work, what they do for fun) and reacts warmly. After a flat answer (\"good\", \"not much\"), asks a gentle follow-up about one specific bit. When asked something, shares a little of their own life, then often hands back with a question.",
+    // What is going on for them this time
+    twists: ["{name} is still finding the way around the office.", "{name} had a funny mix-up on the first day.", "{name} is hunting for a good lunch spot nearby.", "{name} spent the weekend exploring the city."],
+  },
+  // Answering, again
+  {
+    // Id
+    id: "monday",
+    // Name
+    title: "Monday at the coffee machine",
+    // Answering
+    unit: "answering",
+    // Where
+    setting: "You and {name} work on the same floor. It’s Monday morning and you’re both waiting for the coffee machine.",
+    // What to practise
+    practise: "Answer with one moment, a detail worth asking about, how it felt, and a question back.",
+    // How they behave
+    direction: "{name} is friendly and asks about the person's weekend first, then about whatever they mention, reacting to it. After a flat answer, asks about one specific bit. When asked, shares a little of their own weekend, then hands back.",
+    // What is going on for them this time
+    twists: ["{name} had a quiet weekend at home.", "{name} went to a wedding on Saturday.", "Something broke at {name}’s home on Sunday, and {name} spent the day fixing it.", "{name} visited family and is a bit tired from the trip."],
+  },
+  // Asking: they say little unless asked well
+  {
+    // Id
+    id: "meeting",
+    // Name
+    title: "Early for a meeting",
+    // Asking
+    unit: "asking",
+    // Where
+    setting: "{name} sits near you at work. You’re both early for a meeting, and {name} doesn’t say much unless asked.",
+    // What to practise
+    practise: "Ask open questions, and follow up on the details {name} gives.",
+    // How they behave
+    direction: "{name} is quiet today and volunteers little. To yes-or-no questions, small talk, or when the person talks mostly about themselves, gives a short answer of a few words. To an open question (what, how, why) about them, or a follow-up on something they just said, opens up a little more, one detail at a time. Asks at most one question back, late in the conversation.",
+    // What is going on for them this time
+    twists: ["{name} has a hobby that matters a lot but rarely comes up.", "{name} is planning a trip and is quietly excited about it.", "{name} is nervous about presenting in this meeting.", "{name} finished something at the weekend and is proud of it."],
+  },
+  // Asking, again
+  {
+    // Id
+    id: "class",
+    // Name
+    title: "Before an evening class",
+    // Asking
+    unit: "asking",
+    // Where
+    setting: "You and {name} have both signed up for an evening cooking class and arrived early. {name} seems a bit shy here.",
+    // What to practise
+    practise: "Ask open questions, and follow up on the details {name} gives.",
+    // How they behave
+    direction: "{name} is shy among new people and volunteers little. To yes-or-no questions or small talk, gives a short answer. To an open question about them, or a follow-up on something they said, opens up a little more each time. Asks at most one question back, late on.",
+    // What is going on for them this time
+    twists: ["{name} signed up on a friend’s dare.", "{name} wants to learn one dish really well, to cook for someone special.", "{name} is new to the area and trying to meet people.", "{name} burned a lasagne badly last month and wants revenge."],
+  },
+  // Listening: something hard happened to them
+  {
+    // Id
+    id: "coffee",
+    // Name
+    title: "Coffee with a friend",
+    // Listening
+    unit: "listening",
+    // Where
+    setting: "You’ve met your friend {name} for coffee. {name} looks tired.",
+    // What to practise
+    practise: "React to what {name} tells you, say how it must feel, and stay with {name}’s story.",
+    // How they behave
+    direction: "{name} is having a rough week and tells the story a piece at a time. Shares the next piece when the person reacts, asks what happened, or says how it must feel, and warms up when they name the feeling. If they jump to advice, change the subject, or move to their own story, goes a little flat, shares less, and may say they just need to get it off their chest. Near the end may mention one small bright spot and ask how the person is.",
+    // What is going on for them this time
+    twists: ["{name}’s landlord is selling the flat {name} loves, and a project {name} worked on all year was cancelled.", "{name}’s dog has been ill, and the vet bills keep coming.", "{name} had a falling-out with a close friend.", "{name} did not get a much-wanted job after the final interview."],
+  },
+  // Listening, again
+  {
+    // Id
+    id: "walk",
+    // Name
+    title: "Walking out of work",
+    // Listening
+    unit: "listening",
+    // Where
+    setting: "You and {name} leave work at the same time. {name} has had a bad day.",
+    // What to practise
+    practise: "React to what {name} tells you, say how it must feel, and stay with {name}’s story.",
+    // How they behave
+    direction: "{name} has had a bad day and tells it a piece at a time. Shares more when the person reacts, asks what happened, or says how it must feel. If they give advice too soon, change the subject, or make it about themselves, goes a little flat and shares less. Thanks the person warmly if they listened well.",
+    // What is going on for them this time
+    twists: ["{name}’s presentation went badly in front of the boss.", "A customer shouted at {name} over something that was not {name}’s fault.", "{name} found out the team is being reorganised.", "{name} made a mistake that cost the team a day of work."],
+  },
+  // News: they have big news
+  {
+    // Id
+    id: "station",
+    // Name
+    title: "Bumping into each other",
+    // News
+    unit: "news",
+    // Where
+    setting: "You bump into {name}, an old coworker, at the station. {name} can’t stop smiling.",
+    // What to practise
+    practise: "React to the news, ask about the moment, and keep the focus on {name}.",
+    // How they behave
+    direction: "{name} has big, good news and shares it near the start. Shares details when asked: the moment they found out, who they told, what happens next. When the person reacts warmly and asks about the moment, lights up and shares more. If they add a downside, give advice, or switch to their own news, deflates a little and shares less. Later admits one mixed feeling about it, a chance for the person to stay with that feeling.",
+    // What is going on for them this time
+    twists: ["{name} got into a two-year programme abroad, after applying twice.", "{name} got engaged last weekend.", "{name} got the job {name} had wanted for years.", "{name} ran a first marathon on Sunday."],
+  },
+  // News, again
+  {
+    // Id
+    id: "lunch",
+    // Name
+    title: "Lunch with a friend",
+    // News
+    unit: "news",
+    // Where
+    setting: "You’re having lunch with your friend {name}, who messaged earlier: “I have news!”",
+    // What to practise
+    practise: "React to the news, ask about the moment, and keep the focus on {name}.",
+    // How they behave
+    direction: "{name} has news, good or bad, and shares it early. Shares details when asked: how they found out, how it feels, what happens next. With good news, lights up when the person reacts warmly and asks about the moment. With bad news, wants to be listened to, not fixed. If the person adds a downside, gives advice, or switches to their own news, shares less.",
+    // What is going on for them this time
+    twists: ["{name} is moving across the country for a new job, excited and nervous.", "{name} was made redundant this week.", "{name} is going to be a parent.", "{name}’s grandmother has to have an operation next week."],
+  },
+];
+
+// Find a persona by id
+export function findPersona(id: string): Persona | undefined {
+  // Look through every persona
+  return PERSONAS.find((persona) => persona.id === id);
 }
 
-// Find one of a character's lines by id
-export function findLine(character: ConversationCharacter, id: string): ConversationLine | undefined {
+// Find a situation by id
+export function findScenario(id: string): Scenario | undefined {
+  // Look through every situation
+  return SCENARIOS.find((scenario) => scenario.id === id);
+}
+
+// A situation's text with the persona's name filled in
+export function scenarioText(text: string, persona: Persona): string {
+  // Every "{name}"
+  return text.replaceAll("{name}", persona.name);
+}
+
+// The situation for a persona's next conversation: their own situation first, then round the rest (only those of one skill, if given), moving on one with each conversation and each "another situation"; the twist moves on too, so the same situation comes back different
+export function pickSituation(persona: Persona, turn: number, skill?: UnitId): { scenario: Scenario; twist: number } {
+  // The situations to choose from
+  const options = skill ? SCENARIOS.filter((scenario) => scenario.unit === skill) : SCENARIOS;
+  // Where the persona's own situation sits, to start from it
+  const start = Math.max(0, options.findIndex((scenario) => scenario.id === persona.home));
+  // This turn's situation
+  const scenario = options[(start + turn) % options.length]!;
+  // A twist that changes each time round, and differs between personas
+  const twist = (Math.floor(turn / options.length) + PERSONAS.indexOf(persona)) % scenario.twists.length;
+  // Both
+  return { scenario, twist };
+}
+
+// Find one of a persona's recorded lines by id
+export function findLine(persona: Persona, id: string): ConversationLine | undefined {
   // Look through their lines
-  return character.lines.find((line) => line.id === id);
+  return persona.lines.find((line) => line.id === id);
 }

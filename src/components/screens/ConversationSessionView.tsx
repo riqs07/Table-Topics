@@ -1,4 +1,4 @@
-// A saved conversation with a character (decision 83): the share of the talking and the questions, one change (the coach's, or from the numbers until it arrives), one of your lines and how it could sound, and the whole conversation as text (no audio is kept)
+// A saved conversation with a persona (decisions 83 and 84): who and where, the share of the talking and the questions, one change (the coach's, or from the numbers until it arrives), one of your lines and how it could sound, and the whole conversation as text (no audio is kept)
 
 // Load the masthead
 import { Masthead } from "@/components/script/Masthead";
@@ -6,8 +6,8 @@ import { Masthead } from "@/components/script/Masthead";
 import { ActionBand } from "@/components/script/ActionBand";
 // Load the shared card look
 import { CARD } from "@/components/script/textStyles";
-// Load the characters
-import { findCharacter } from "@/content/conversations";
+// Load the personas and situations
+import { findPersona, findScenario } from "@/content/conversations";
 // Load the conversation measures and the note from them
 import { conversationHeadline, localConversationNote, measureConversation } from "@/core/conversationMeasures";
 // Load the clock formatter
@@ -24,15 +24,17 @@ import type { SessionRecord } from "@/data/records";
 // Draw a saved conversation
 export function ConversationSessionView({ session, now, note, plan }: { session: SessionRecord; now: Date; note: string; plan: PlanNav | null }) {
   // Who it was with
-  const character = findCharacter(session.promptId);
+  const persona = findPersona(session.promptId);
   // Their name
-  const name = character?.name ?? "them";
+  const name = persona?.name ?? "them";
+  // The situation: the one saved, or their own for conversations from before situations
+  const scenario = findScenario(session.conversation?.scenarioId ?? persona?.home ?? "");
   // Every turn
   const turns = session.conversation?.turns ?? [];
   // The numbers
   const measures = measureConversation(turns);
   // The change from the numbers, until the coach's arrives
-  const own = character ? localConversationNote(character, measures) : { change: "Ask one open question, then listen.", retryCue: "Ask one open question." };
+  const own = localConversationNote(name, scenario?.unit ?? "answering", measures);
   // The change and cue to show
   const shown = session.feedback ?? own;
   // Where the session belongs
@@ -45,7 +47,7 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
       {/* The results */}
       <section aria-labelledby="conversation-heading" className="mt-8 md:max-w-2xl">
         {/* Who, and how long */}
-        <p className="text-footnote font-semibold text-accent">With {name} · {formatClock(session.durationSec)}</p>
+        <p className="text-footnote font-semibold text-accent">With {name}{scenario ? ` · ${scenario.title}` : ""} · {formatClock(session.durationSec)}</p>
         {/* The share and the questions */}
         <h1 id="conversation-heading" className="mt-1 font-display text-3xl font-semibold tracking-tight">{conversationHeadline(measures)}</h1>
         {/* The one change */}

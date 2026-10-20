@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Load the line voice being checked
-import { speakQuestion, stopQuestionVoice } from "@/audio/questionVoice";
+import { speakAudio, speakQuestion, stopQuestionVoice, unlockQuestionVoice } from "@/audio/questionVoice";
 // Load the saved recordings, for their lengths
 import { VOICE_CLIPS } from "@/content/voiceClips";
 
@@ -149,5 +149,40 @@ describe("speakQuestion", () => {
     const seconds = await speakQuestion("Something new", "zz01");
     // No player, the phone said it
     expect([played, spoken, seconds]).toEqual([[], ["Something new"], null]);
+  });
+});
+
+// Group the checks about written lines (decision 84)
+describe("speakAudio", () => {
+  // Stand-in addresses for audio, which the test browser lacks
+  const addresses = { made: 0, freed: 0 };
+  // Swap them in
+  beforeEach(() => {
+    // Counted
+    [addresses.made, addresses.freed] = [0, 0];
+    // Make one
+    Object.assign(URL, { createObjectURL: () => `blob:line-${(addresses.made += 1)}`, revokeObjectURL: () => void (addresses.freed += 1) });
+  });
+
+  // The line's audio plays on the shared player, then its address is let go; without audio, or if it will not play, the phone says it
+  it("plays the audio, or has the phone say the line", async () => {
+    // With audio
+    await speakAudio(new Blob([new Uint8Array([1])], { type: "audio/mpeg" }), "Hi there.");
+    // Without audio
+    await speakAudio(null, "No audio here.");
+    // Audio the phone refuses
+    behaviour = "refused";
+    // Said by the phone instead
+    await speakAudio(new Blob([new Uint8Array([1])], { type: "audio/mpeg" }), "Refused line.");
+    // Two played, both let go, and the phone said the other two
+    expect([played, addresses.freed, spoken]).toEqual([["blob:line-1", "blob:line-2"], 2, ["No audio here.", "Refused line."]]);
+  });
+
+  // Unlocking plays a moment of silence on the shared player, so a line that arrives later may play without a tap
+  it("unlocks the shared player with silence", () => {
+    // Inside a tap
+    unlockQuestionVoice();
+    // The silence was played
+    expect(played.map((url) => url.slice(0, 22))).toEqual(["data:audio/wav;base64,"]);
   });
 });

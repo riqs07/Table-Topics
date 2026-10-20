@@ -52,10 +52,12 @@ const RequestSchema = z.object({
     // The last third's volume
     lastThird: z.enum(["louder", "same", "quieter"]).nullable(),
   }).optional(),
-  // For a conversation with a character: your words and their line ids, bounded like the conversation route (decision 83)
+  // For a conversation: the persona, the situation, and every turn's words (a recorded line also by its id), bounded like the conversation route (decisions 83 and 84)
   conversation: z.object({
-    // The character's id
+    // The persona's id
     characterId: z.string().max(16),
+    // The situation's id (missing on conversations from before situations)
+    scenarioId: z.string().max(16).optional(),
     // The turns
     turns: z.array(z.object({ who: z.enum(["you", "them"]), text: z.string().max(1_000).optional(), lineId: z.string().max(16).optional() })).max(60),
   }).optional(),

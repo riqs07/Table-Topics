@@ -22,8 +22,8 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 import { ASKING_DRILLS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, findUnit, lessonsFor, unitOf, type UnitId } from "@/content/smallTalk";
 // Load the units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
-// Load the conversation characters, for this unit's person to talk with (decision 83)
-import { CHARACTERS } from "@/content/conversations";
+// Load the conversation personas and situations, for this unit's person to talk with (decisions 83 and 84)
+import { PERSONAS, findScenario } from "@/content/conversations";
 // Load the beat counter
 import { beatCount } from "@/core/smallTalk";
 // Load the done and next marks for a path of lessons
@@ -85,7 +85,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
   // The unit
   const unit = findUnit(unitId);
   // The person to practise this skill with in a whole conversation
-  const partner = CHARACTERS.find((character) => character.unit === unitId);
+  const partner = PERSONAS.find((persona) => findScenario(persona.home)?.unit === unitId);
   // The showing unit's next lesson (none once its lessons are done)
   const nextLesson = lessonsFor(unit.id).find((lesson) => !counts.has(lesson.id));
   // Its lessons
@@ -139,7 +139,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           {/* The person */}
           <ul className={`mt-2 ${CARD_LIST}`}>
             {/* One row */}
-            <li><RowLink href={`/conversations/talk?id=${partner.id}`} meta="3 min"><span className="block font-semibold">Talk with {partner.name}</span><span className="block text-footnote text-ink-muted">{partner.role}</span></RowLink></li>
+            <li><RowLink href={`/conversations/talk?id=${partner.id}&skill=${unitId}`} meta="3 min"><span className="block font-semibold">Talk with {partner.name}</span><span className="block text-footnote text-ink-muted">{partner.tagline}</span></RowLink></li>
           </ul>
         </section>
       )}

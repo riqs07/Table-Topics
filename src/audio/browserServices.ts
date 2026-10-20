@@ -7,7 +7,7 @@ import { TranscriptAssembler, type RecognitionResult } from "@/audio/transcriptA
 // Load the contracts these pieces fulfil
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the line voice (the saved ElevenLabs recording, otherwise the phone's own; decision 82)
-import { prepareQuestionVoice, speakQuestion, stopQuestionVoice } from "@/audio/questionVoice";
+import { prepareQuestionVoice, speakAudio, speakQuestion, stopQuestionVoice, unlockQuestionVoice } from "@/audio/questionVoice";
 // Load the timing tone player
 import { createCuePlayer } from "@/audio/timingTones";
 
@@ -293,6 +293,10 @@ export const browserRecordingServices: RecordingServices = {
   speak: (text, promptId) => speakQuestion(text, promptId),
   // Stop a line part-way
   stopSpeaking: () => stopQuestionVoice(),
+  // Let later lines play without a tap
+  unlockSpeech: () => unlockQuestionVoice(),
+  // Say a written line in its audio, or the phone's own voice
+  speakAudio: (audio, text) => speakAudio(audio, text),
   // Live transcription
   createTranscriber: () => new WebSpeechTranscriber(),
   // Audio recording and level
