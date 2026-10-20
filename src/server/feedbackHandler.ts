@@ -39,6 +39,19 @@ const RequestSchema = z.object({
   notes: z.object({ worked: z.string().max(500), change: z.string().max(500), tags: z.array(z.string().max(40)).max(12) }).optional(),
   // The speaker stammers, so the coach leaves fluency alone (decision 79)
   stammer: z.boolean().optional(),
+  // The voice numbers measured on the device (decision 81), each bounded so nothing else can ride along
+  voice: z.object({
+    // The pitch range in semitones
+    rangeSteps: z.number().int().min(0).max(48).nullable(),
+    // The speaker's usual range
+    usualRange: z.number().int().min(0).max(48).nullable(),
+    // How the phrases ended
+    ends: z.object({ fall: z.number().int().min(0).max(1_000), level: z.number().int().min(0).max(1_000), rise: z.number().int().min(0).max(1_000) }).nullable(),
+    // Phrases that faded at the end
+    faded: z.object({ count: z.number().int().min(0).max(1_000), of: z.number().int().min(0).max(1_000) }).nullable(),
+    // The last third's volume
+    lastThird: z.enum(["louder", "same", "quieter"]).nullable(),
+  }).optional(),
 });
 
 // Build the handler for POST /api/feedback

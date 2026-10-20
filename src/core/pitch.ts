@@ -145,3 +145,22 @@ export function summarizePitch(readings: ReadonlyArray<number | null>, usual: nu
   // Falling, rising, or level
   return { voiced: steps.length, rangeSteps, end: change <= -END_STEPS ? "fall" : change >= END_STEPS ? "rise" : "level" };
 }
+
+// Fewer readings for drawing a long take: each group's middle voiced reading, or null when under a third of the group was voiced
+export function thinReadings(readings: ReadonlyArray<number | null>, most: number): (number | null)[] {
+  // Short enough already
+  if (readings.length <= most) return [...readings];
+  // Readings per group
+  const size = Math.ceil(readings.length / most);
+  // The thinned readings
+  const thinned: (number | null)[] = [];
+  // Each group
+  for (let start = 0; start < readings.length; start += size) {
+    // Its voiced readings
+    const voiced = readings.slice(start, start + size).filter((reading): reading is number => reading !== null);
+    // Their middle, when enough were voiced
+    thinned.push(voiced.length * 3 >= size ? median(voiced) : null);
+  }
+  // Hand them back
+  return thinned;
+}

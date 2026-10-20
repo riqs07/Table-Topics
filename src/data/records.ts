@@ -97,8 +97,14 @@ export interface SessionRecord {
   feedback: Feedback | null;
   // Whether feedback is pending, done, or failed
   feedbackStatus: FeedbackStatus;
-  // Loudness readings taken every tenth of a second while recording (0 to 1, two decimals), for finding pauses; missing on older sessions
+  // Loudness readings taken every tenth of a second while recording (0 to 1, two decimals), for finding pauses; missing on older sessions. A recording made without the browser's levelling is scaled by one factor (loudnessScale) so its typical speech reads about 0.2 (decision 81)
   loudness?: number[];
+  // The factor the loudness readings were scaled by, for a recording made without the browser's levelling; also sets how much playback is boosted (decision 81)
+  loudnessScale?: number;
+  // Whether the browser's automatic levelling was on while recording: false means loudness changes across the take are real; missing when the browser could not say, and on older sessions (decision 81)
+  autoGain?: boolean;
+  // Pitch readings taken with the loudness, in whole hertz, or null where there was no voice; missing on older sessions (decision 81)
+  pitch?: (number | null)[];
   // Seconds from the start when each word of the transcript was first heard (a tenth of a second, approximate); missing on older sessions
   spokenTimes?: number[];
   // For a session with text on screen: seconds when each word of that text was first read, or null if it never was; missing on older sessions

@@ -93,6 +93,18 @@ describe("saveRecording", () => {
     expect(session.loudness).toEqual([0.12, 0.5, 0]);
   });
 
+  // A recording the browser did not level is scaled by one factor, which is kept with the pitch and the levelling flag (decision 81)
+  it("evens out an unlevelled recording by one factor and keeps its pitch", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // A quiet recording without the levelling: typical speech at 0.02, a quieter phrase at 0.01
+    const quiet = await saveRecording(repository, { ...RECORDING, id: "q", loudness: [0.02, 0.02, 0.02, 0.02, 0.01], pitch: [180.4, null, 175.6], autoGain: false }, NOW);
+    // The same recording with the levelling on
+    const levelled = await saveRecording(repository, { ...RECORDING, id: "l", loudness: [0.02, 0.02, 0.01], autoGain: true }, NOW);
+    // Scaled ten times, keeping the quieter phrase at half; pitch in whole hertz; the levelled one left as it was
+    expect([quiet.loudness, quiet.loudnessScale, quiet.autoGain, quiet.pitch, levelled.loudness, levelled.loudnessScale, levelled.autoGain]).toEqual([[0.2, 0.2, 0.2, 0.2, 0.1], 10, false, [180, null, 176], [0.02, 0.02, 0.01], undefined, true]);
+  });
+
   // A first try waits for the user's notes; a retry skips that step
   it("asks for notes on a first try only", async () => {
     // A repository

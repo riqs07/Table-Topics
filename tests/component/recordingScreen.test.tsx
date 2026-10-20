@@ -186,6 +186,39 @@ describe("RecordingScreen", () => {
     expect([(saved!.loudness?.length ?? 0) >= 20, saved!.loudness?.[0]]).toEqual([true, 0.5]);
   });
 
+  // Every recording asks for the microphone without the browser's levelling, and saves pitch with the loudness (decision 81)
+  it("asks for the microphone without levelling and saves the pitch", async () => {
+    // The options the microphone was asked with
+    const asked: unknown[] = [];
+    // Fake services with a capture that reads a pitch, and a microphone that notes how it was asked
+    const fake = fakeServices();
+    // The services
+    const services: RecordingServices = { ...fake.services, openMicrophone: async (options) => { asked.push(options); return fake.services.openMicrophone(options); }, createCapture: () => ({ level: () => 0.5, pitch: () => 182.4, stop: async () => new Blob(["voice"]) }) };
+    // Use fake timers that still let promises run
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Draw the screen with them
+    const { repository, clock, navigate } = draw({ services });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Ten seconds in ticks
+    for (let tick = 0; tick < 10; tick++) {
+      // Move the clock a second
+      clock.advance(1_000);
+      // Let the timer run
+      await act(async () => vi.advanceTimersByTime(100));
+    }
+    // Stop
+    fireEvent.click(stop);
+    // Wait for the page change
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // The saved session
+    const [saved] = await repository.listSessions();
+    // Asked without levelling; pitch kept in whole hertz, one per loudness reading; the fake stream cannot say what the browser did
+    expect([asked[0], saved!.pitch?.[0], saved!.pitch?.length === saved!.loudness?.length, saved!.autoGain]).toEqual([{ autoGain: false }, 182, true, undefined]);
+  });
+
   // A retry shows last time's cue and saves the link to the first try
   it("shows the retry cue and links the retry to its first try", async () => {
     // A repository with a first try that has feedback

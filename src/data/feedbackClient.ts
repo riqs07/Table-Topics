@@ -4,6 +4,10 @@
 import { PASSPHRASE_HEADER } from "@/config/headers";
 // Load the repository type
 import type { Repository } from "@/data/repository";
+// Load the voice numbers and the usual range (decision 81)
+import { coachVoice, usualRange } from "@/core/voiceFeedback";
+// Load the small-talk unit lookup, to leave out few-second replies
+import { unitOf } from "@/content/smallTalk";
 
 // What happened when feedback was requested
 export type FeedbackOutcome =
@@ -81,6 +85,8 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   const review = shareNotes && session.selfReview && !session.selfReview.skipped && (session.selfReview.worked || session.selfReview.change || session.selfReview.tags.length > 0) ? session.selfReview : null;
   // On a retry, find the fix given last time
   const original = session.retryOf ? await repository.getSession(session.retryOf) : undefined;
+  // The voice numbers, against the speaker's usual range from their latest earlier recordings (decision 81; not for a few-second reply)
+  const voice = session.mode === "smalltalk" && unitOf(session.promptId) !== "answering" ? null : coachVoice(session, usualRange((await repository.listSessions()).filter((other) => other.id !== session.id && other.createdAt < session.createdAt && other.pitch).slice(0, 20)));
   // Send the request, treating a network failure as "try later"
   let response: Response;
   // Try the network
@@ -92,7 +98,7 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
       // JSON body and the passphrase header
       headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase },
       // The session details the coach needs
-      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}) }),
+      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}), ...(voice ? { voice } : {}) }),
     });
   } catch {
     // Offline or unreachable: the session waits

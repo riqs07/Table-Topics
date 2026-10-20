@@ -1,9 +1,11 @@
 // Saves a finished recording as a session: measured numbers, the week's focus, the baseline rule, and the audio
 
 // Load the weekly focus rules
+import { currentFocus } from "@/core/focus";
 // Load the short-speech plan type
 import type { Outline } from "@/core/outline";
-import { currentFocus } from "@/core/focus";
+// Load the even-out rule for recordings the browser did not level (decision 81)
+import { levelScale } from "@/core/voiceLevels";
 // Load the measurements
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the baseline rule
@@ -33,6 +35,10 @@ export interface FinishedRecording {
   retryOf: string | null;
   // Loudness readings taken while recording, if any
   loudness?: number[];
+  // Pitch readings taken with them, in hertz or null (decision 81)
+  pitch?: (number | null)[];
+  // Whether the browser's automatic levelling was on, or null when it could not say (decision 81)
+  autoGain?: boolean | null;
   // For a reading, a lesson or a rehearsal: the text being read, so words in it are not counted as fillers
   script?: string;
   // Seconds when each word of the transcript was first heard, if noted
@@ -58,6 +64,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
   const settings = await repository.getSettings(now);
   // Work out the focus active now
   const focus = currentFocus({ focusIndex: settings.focusIndex, focusStartedOn: new Date(settings.focusStartedOn) }, now).focus;
+  // The factor for the loudness readings: one for the whole take when the browser did not level them, otherwise none
+  const scale = recording.loudness && recording.autoGain === false ? levelScale(recording.loudness) : 1;
   // Build the session record
   const session: SessionRecord = {
     // Identity
@@ -79,8 +87,14 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     feedback: null, feedbackStatus: recording.mode === "moment" ? "done" : "pending",
     // The audio is saved under the session id
     audioKey: recording.id,
-    // The loudness readings, rounded to two decimals to keep the record small
-    ...(recording.loudness ? { loudness: recording.loudness.map((level) => Math.round(level * 100) / 100) } : {}),
+    // The loudness readings, rounded to two decimals to keep the record small (scaled by one factor first when the browser did not level them; decision 81)
+    ...(recording.loudness ? { loudness: recording.loudness.map((level) => Math.round(level * scale * 100) / 100) } : {}),
+    // The factor, when one was used
+    ...(recording.loudness && recording.autoGain === false ? { loudnessScale: scale } : {}),
+    // Whether the browser levelled the volume, when it could say
+    ...(typeof recording.autoGain === "boolean" ? { autoGain: recording.autoGain } : {}),
+    // The pitch readings, in whole hertz
+    ...(recording.pitch ? { pitch: recording.pitch.map((reading) => (reading === null ? null : Math.round(reading))) } : {}),
     // Word times, rounded to a tenth of a second (they are only approximate anyway)
     ...(recording.spokenTimes ? { spokenTimes: recording.spokenTimes.map(tenth) } : {}),
     // Script word times, rounded the same way, keeping the words never read as null

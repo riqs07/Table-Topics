@@ -53,8 +53,8 @@ export interface RecordingServices {
   speechSupported(): boolean;
   // Whether the microphone is already allowed, without asking (optional: without it, no explanation is shown first)
   micPermission?(): Promise<MicPermission>;
-  // Ask for the microphone (throws if refused or missing); raw turns off the browser's automatic levelling and clean-up, so loud and soft stay different (volume and pitch drills; decision 80)
-  openMicrophone(options?: { raw?: boolean }): Promise<MediaStream>;
+  // Ask for the microphone (throws if refused or missing); raw turns off the browser's automatic levelling and clean-up, so loud and soft stay different (volume and pitch drills; decision 80); autoGain false turns off only the levelling, keeping noise suppression (every recording; decision 81)
+  openMicrophone(options?: { raw?: boolean; autoGain?: boolean }): Promise<MediaStream>;
   // Get a small-talk question's voice ready ahead of time (optional)
   prepareSpeech?(promptId: string): void;
   // Say a question aloud, finishing when it has been said (optional: without it, recording starts straight away)

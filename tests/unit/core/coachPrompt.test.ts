@@ -14,10 +14,20 @@ describe("COACH_SYSTEM_PROMPT", () => {
     for (const part of ["keep", "change", "retry cue"]) expect(COACH_SYSTEM_PROMPT.toLowerCase()).toContain(part);
   });
 
-  // The coach cannot hear the voice, so it must not judge tone (PRD section 5)
-  it("forbids guesses about tone, pitch, or energy", () => {
-    // Confirm the rule is stated
-    expect(COACH_SYSTEM_PROMPT).toMatch(/tone, pitch, volume, or energy/);
+  // The coach cannot hear the voice: pitch and volume only through measured numbers, never tone or emotion (PRD section 5; decision 81)
+  it("keeps the coach to measured voice numbers, never tone or emotion", () => {
+    // Confirm the rule is stated in both coaches that get voice numbers
+    expect([COACH_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT].every((prompt) => /pitch or volume only through the voice numbers/.test(prompt) && /never on tone, emotion or energy/.test(prompt))).toBe(true);
+  });
+
+  // The measured voice numbers go in the message, with fading left out for a speaker who stammers (decision 81)
+  it("adds the voice numbers to the message", () => {
+    // Voice numbers for a take
+    const voice = { rangeSteps: 2, usualRange: 4, ends: { fall: 1, level: 1, rise: 4 }, faded: { count: 3, of: 6 }, lastThird: "quieter" as const };
+    // The message, and the same for a speaker who stammers
+    const [message, stammer] = [buildCoachMessage({ ...SESSION, voice }), buildCoachMessage({ ...SESSION, voice, stammer: true })];
+    // Each number, in plain words; no fading line for the stammer
+    expect([message.includes("Pitch range: 2 semitones across most of the take (under 3 sounds fairly flat, 6 or more lively); this speaker usually has 4."), message.includes("Phrase endings: 1 fell, 1 stayed level, 4 rose"), message.includes("Phrases that faded at the end: 3 of 6."), message.includes("Volume in the last third: quieter than the rest."), stammer.includes("faded at the end"), buildCoachMessage(SESSION).includes("Pitch range")]).toEqual([true, true, true, true, false, false]);
   });
 
   // VoiceLab is for public speaking (decision 22), not for becoming more outgoing

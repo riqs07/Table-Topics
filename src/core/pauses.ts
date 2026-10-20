@@ -51,47 +51,69 @@ export function leadingSilenceSeconds(levels: ReadonlyArray<number>, tickMs: num
   return round2(((first === -1 ? levels.length : first) * tickMs) / 1000);
 }
 
-// Stretches of speech (between pauses) whose last 0.3 seconds are much quieter than the stretch as a whole
-export function fadingEnds(levels: ReadonlyArray<number>, tickMs: number): { stretches: number; faded: number } {
+// One stretch of speech between pauses: where it starts and ends (reading positions, the end included) and its speech readings
+export interface SpeechStretch {
+  // The first speech reading
+  start: number;
+  // The last speech reading
+  end: number;
+  // The speech readings in it (short silences inside left out)
+  levels: number[];
+}
+
+// The stretches of speech between pauses of at least PAUSE_MIN_SECONDS (used for fading ends and, with pitch, for how each phrase ended; decision 81)
+export function speechStretches(levels: ReadonlyArray<number>, tickMs: number): SpeechStretch[] {
   // Which readings are speech
   const speaking = speechMask(levels);
   // Readings that make a pause
   const pauseTicks = Math.round((PAUSE_MIN_SECONDS * 1000) / tickMs);
-  // Readings at the end of a stretch that are compared
-  const endTicks = Math.max(1, Math.round(300 / tickMs));
-  // Shortest stretch worth judging: one second
-  const minTicks = Math.round(1000 / tickMs);
-  // Speech readings of each stretch
-  const stretches: number[][] = [];
+  // The stretches found
+  const stretches: SpeechStretch[] = [];
   // The stretch being collected
-  let current: number[] = [];
+  let current: SpeechStretch | null = null;
   // Silent readings since the last speech
   let silent = 0;
   // Walk every reading
   levels.forEach((level, index) => {
-    // Speech joins the current stretch
-    if (speaking[index]) {
-      // A long enough silence before it starts a new stretch
-      if (silent >= pauseTicks && current.length) {
-        // Close the previous stretch
-        stretches.push(current);
-        // Start a new one
-        current = [];
-      }
-      // Add the reading
-      current.push(level);
-      // Reset the silence count
-      silent = 0;
-    }
     // Silence is counted
-    else silent += 1;
+    if (!speaking[index]) {
+      // One more silent reading
+      silent += 1;
+      // Next reading
+      return;
+    }
+    // A long enough silence before this speech closes the previous stretch
+    if (silent >= pauseTicks && current) {
+      // Keep it
+      stretches.push(current);
+      // Start afresh
+      current = null;
+    }
+    // The stretch this reading joins
+    current ??= { start: index, end: index, levels: [] };
+    // Add the reading
+    current.levels.push(level);
+    // It now ends here
+    current.end = index;
+    // Reset the silence count
+    silent = 0;
   });
   // Close the last stretch
-  if (current.length) stretches.push(current);
+  if (current) stretches.push(current);
+  // Hand them back
+  return stretches;
+}
+
+// Stretches of speech (between pauses) whose last 0.3 seconds are much quieter than the stretch as a whole
+export function fadingEnds(levels: ReadonlyArray<number>, tickMs: number): { stretches: number; faded: number } {
+  // Readings at the end of a stretch that are compared
+  const endTicks = Math.max(1, Math.round(300 / tickMs));
+  // Shortest stretch worth judging: one second
+  const minTicks = Math.round(1000 / tickMs);
   // Average of a list of readings
   const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
   // Only stretches long enough to judge
-  const judged = stretches.filter((stretch) => stretch.length >= minTicks);
+  const judged = speechStretches(levels, tickMs).map((stretch) => stretch.levels).filter((stretch) => stretch.length >= minTicks);
   // A stretch fades when its end is under 60% of its own average
   const faded = judged.filter((stretch) => mean(stretch.slice(-endTicks)) < 0.6 * mean(stretch)).length;
   // Hand back the counts

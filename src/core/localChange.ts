@@ -10,6 +10,8 @@ import { formatRate } from "@/core/copy";
 import { findFocus } from "@/core/focus";
 // Load the timing rules
 import { LOUDNESS_TICK_MS, formatClock, speakingWindow } from "@/core/recordingRules";
+// Load the voice report (decision 81)
+import { voiceReport, type VoiceLineKind } from "@/core/voiceFeedback";
 // Load the small-talk change, for answers to everyday questions
 import { smallTalkChange } from "@/core/smallTalk";
 // Load the record type
@@ -21,12 +23,17 @@ export interface LocalChange {
   change: string;
   // A short thing to do just before trying again
   retryCue: string;
+  // When the change is about the voice, which voice line it repeats (so the page does not say it twice; decision 81)
+  voiceKind?: VoiceLineKind;
 }
+
+// The cue to carry into the next try for each voice change (fading has its own above; a very even volume is left to the voice section)
+const VOICE_CUES: Partial<Record<VoiceLineKind, string>> = { ends: "End each statement low, as if it were a full stop.", range: "Lift the most important word in each sentence.", drop: "Make your last line as strong as your first." };
 
 // Sessions at least this long are expected to have a few pauses
 const PAUSES_EXPECTED_AFTER = 30;
 
-// Pick the biggest gap in the numbers, in order: timing, pause words, pace, trailing off, pauses; otherwise the week's focus. Pause words are skipped when hidden, and slow pace and fading phrases when fluency is not judged ("I stammer"; decision 79)
+// Pick the biggest gap in the numbers, in order: timing, pause words, pace, trailing off, pauses, then the voice (endings, a flat pitch, volume dropping at the end); otherwise the week's focus. Pause words are skipped when hidden, and slow pace and fading phrases when fluency is not judged ("I stammer"; decision 79)
 export function localChange(session: SessionRecord, options: { pauseWords?: boolean; fluency?: boolean } = {}): LocalChange {
   // A small-talk answer has its own order: dead end, length, feeling, hand-back
   if (session.mode === "smalltalk") return smallTalkChange(session);
@@ -49,11 +56,15 @@ export function localChange(session: SessionRecord, options: { pauseWords?: bool
   // Phrases that faded at the end
   const endings = levels ? fadingEnds(levels, LOUDNESS_TICK_MS) : null;
   // Trailing off
-  if (options.fluency !== false && endings && endings.stretches >= MIN_ENDINGS && endings.faded / endings.stretches >= FADING) return { change: `Finish your sentences at full strength: ${endings.faded} of ${endings.stretches} phrases faded at the end.`, retryCue: "Land the last word of each sentence." };
+  if (options.fluency !== false && endings && endings.stretches >= MIN_ENDINGS && endings.faded / endings.stretches >= FADING) return { change: `Finish your sentences at full strength: ${endings.faded} of ${endings.stretches} phrases faded at the end.`, retryCue: "Land the last word of each sentence.", voiceKind: "fading" };
   // Pauses longer than 0.6 seconds
   const pauses = levels ? findPauses(levels, LOUDNESS_TICK_MS) : null;
   // Too few pauses in a longer session
   if (pauses && session.durationSec >= PAUSES_EXPECTED_AFTER && pauses.count <= 1) return { change: `Give the listener a moment: there ${pauses.count === 1 ? "was only one pause" : "were no pauses"} longer than 0.6 seconds.`, retryCue: "Pause for a full second after each main point." };
+  // The voice: phrases ending rising, a flat pitch, or the volume dropping at the end (decision 81)
+  const voice = voiceReport(session, null, options).lines.find((line) => line.tone === "work" && line.kind in VOICE_CUES);
+  // The first of those to work on
+  if (voice) return { change: voice.text, retryCue: VOICE_CUES[voice.kind]!, voiceKind: voice.kind };
   // Nothing stands out: the week's focus
   const focus = findFocus(session.focus);
   // Keep at it

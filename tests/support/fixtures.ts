@@ -58,3 +58,15 @@ export function makeTalk(overrides: Partial<TalkRecord> = {}): TalkRecord {
     ...overrides,
   };
 }
+
+// Loudness and pitch readings for a take of five two-second phrases with 0.8-second silences between them (decision 81): rising phrases end higher than they start, lively ones move across a wide range
+export function voiceReadings(shape: "rising" | "lively"): { loudness: number[]; pitch: (number | null)[] } {
+  // One phrase's pitch readings
+  const phrase = Array.from({ length: 20 }, (_, index) => (shape === "rising" ? (index >= 17 ? 240 : 200) : [150, 200, 260, 300, 180][index % 5]!));
+  // The silence between phrases
+  const gap = Array(8).fill(null) as null[];
+  // Five phrases with gaps
+  const pitch = [phrase, gap, phrase, gap, phrase, gap, phrase, gap, phrase].flat();
+  // Speech where there is pitch, quiet between
+  return { loudness: pitch.map((reading) => (reading === null ? 0.01 : 0.2)), pitch };
+}

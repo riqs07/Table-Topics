@@ -95,6 +95,22 @@ describe("feedback handler", () => {
     expect([response.status, (seen[0] as { stammer?: unknown }).stammer]).toEqual([200, true]);
   });
 
+  // The voice numbers reach the coach, and anything out of bounds is refused (decision 81)
+  it("passes on the voice numbers and refuses odd ones", async () => {
+    // A coach that remembers what it was given
+    const seen: unknown[] = [];
+    // The coach
+    const coach: Coach = { async getFeedback(input) { seen.push(input); return { status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } }; } };
+    // The handler
+    const handle = createFeedbackHandler(deps({ coach }));
+    // Sensible numbers
+    const voice = { rangeSteps: 4, usualRange: null, ends: { fall: 3, level: 1, rise: 0 }, faded: null, lastThird: null };
+    // A request with them, and one with a range far too wide
+    const [ok, odd] = [await handle(request({ ...BODY, voice })), await handle(request({ ...BODY, voice: { ...voice, rangeSteps: 400 } }))];
+    // The first arrived; the second was refused
+    expect([ok.status, (seen[0] as { voice?: unknown }).voice, odd.status]).toEqual([200, voice, 400]);
+  });
+
   // A missing setting fails clearly, naming what to fix
   it("explains a missing server setting", async () => {
     // Make the settings reader fail as it would with a missing key

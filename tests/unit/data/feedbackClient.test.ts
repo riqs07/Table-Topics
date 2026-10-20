@@ -6,7 +6,7 @@ import { createRepository } from "@/data/repository";
 // Load the feedback client being checked
 import { requestFeedback, requestFeedbackDetail, sendPendingFeedback } from "@/data/feedbackClient";
 // Load a sample session builder
-import { makeSession } from "../../support/fixtures";
+import { makeSession, voiceReadings } from "../../support/fixtures";
 
 // Sample feedback the route returns
 const FEEDBACK = { keep: "k", change: "c", retryCue: "r" };
@@ -111,6 +111,22 @@ describe("requestFeedback", () => {
     const body = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { stammer?: unknown };
     // Confirm the flag
     expect(body.stammer).toBe(true);
+  });
+
+  // The voice numbers measured on the device go with the request (decision 81)
+  it("sends the voice numbers when pitch was recorded", async () => {
+    // A session with rising phrase ends, and one without pitch
+    const repository = await repositoryWith(makeSession({ id: "s1", ...voiceReadings("rising"), durationSec: 13 }), makeSession({ id: "s2" }));
+    // The network
+    const network = answer(200, { feedback: FEEDBACK });
+    // Ask for both
+    await requestFeedback(repository, "s1", { passphrase: "pass", fetchFn: network });
+    // The second
+    await requestFeedback(repository, "s2", { passphrase: "pass", fetchFn: network });
+    // What was sent each time
+    const [first, second] = network.mock.calls.map((call) => JSON.parse(String((call as unknown as [string, RequestInit])[1].body)) as { voice?: { rangeSteps: number | null; ends: unknown } });
+    // The endings went with the first; nothing with the second
+    expect([first?.voice?.ends, second?.voice]).toEqual([{ fall: 0, level: 0, rise: 5 }, undefined]);
   });
 
   // Notes saved while the coach is thinking are kept when the feedback arrives

@@ -76,9 +76,11 @@ We only show numbers we can compute reliably from a transcript.
 | Session length | Timer | Yes |
 | Pauses (count, length, time spent speaking) | Loudness readings, on the device | Yes (added 2026-10-15) |
 | Exactly where each pause falls | Needs word timestamps (Whisper) | Later |
-| Pitch, tone, energy | Needs audio analysis | Later |
+| Pitch range and how phrases end | Pitch readings, on the device, against the speaker's own usual pitch | Yes (added 2026-10-20, decision 81) |
+| Volume across the take (phrases fading, the last third, how even) | Loudness readings without the browser's levelling, against the speaker's own phrases | Yes where the browser allows (decision 81) |
+| Tone, emotion, energy | Cannot be measured reliably | No |
 
-We do **not** present guesses about tone or vocal variety as fact. A transcript cannot support them.
+We do **not** present guesses about tone, emotion or vocal variety as fact. Pitch and volume are shown only as measured, against the speaker's own voice, never as "too quiet" or a score.
 
 The headline number follows the weekly focus (decided 2026-10-14, focuses changed 2026-10-15): fillers a minute in filler week, pauses a minute in pausing week. Weeks with no measure yet (opening, structure, close) show the focus name and say the notes are what count, as do sessions saved before loudness was kept; the retry screen then says "Your second try is in." instead of comparing numbers. The other number stays visible in smaller type.
 

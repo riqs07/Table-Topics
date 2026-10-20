@@ -2,7 +2,7 @@
 // A player for a saved recording: one large play button, a bar to move through it, and the time
 
 // Load React's state and reference tools
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 // Load the play and pause icons
 import { PauseIcon, PlayIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the clock formatter
@@ -24,12 +24,16 @@ interface PlayerProps {
   onTime?: (seconds: number, playing: boolean) => void;
   // Offer a button to play at 1.5 times the speed
   speeds?: boolean;
+  // How much louder to play it (above 1 for a quiet recording made without the browser's levelling; decision 81)
+  gain?: number;
 }
 
 // Draw the player
-export function Player({ src, label, name, durationSec, onAudio, onTime, speeds = false }: PlayerProps) {
+export function Player({ src, label, name, durationSec, onAudio, onTime, speeds = false, gain = 1 }: PlayerProps) {
   // The audio element, for playing and moving through it
   const audio = useRef<HTMLAudioElement | null>(null);
+  // The sound graph that boosts a quiet recording, made on the first press of play
+  const boost = useRef<AudioContext | null>(null);
   // Whether it is playing
   const [playing, setPlaying] = useState(false);
   // How far through it is, in seconds
@@ -47,6 +51,30 @@ export function Player({ src, label, name, durationSec, onAudio, onTime, speeds 
     setFast(next);
   }
 
+  // Let the boost go when the player closes
+  useEffect(() => () => {
+    // Close the sound graph, if one was made
+    void boost.current?.close().catch(() => undefined);
+  }, []);
+
+  // Route the recording through a gain stage, once, from a press (browsers only start sound from a tap); a recording the browser levelled is left alone
+  function startBoost(element: HTMLAudioElement) {
+    // Not needed, already made, or no sound graph in this browser
+    if (gain <= 1.01 || boost.current || typeof AudioContext === "undefined") return;
+    // The graph
+    const context = new AudioContext();
+    // The gain stage
+    const stage = context.createGain();
+    // At the boost
+    stage.gain.value = gain;
+    // The recording into it, and on to the speakers
+    context.createMediaElementSource(element).connect(stage).connect(context.destination);
+    // Keep it
+    boost.current = context;
+    // Start the graph within the tap
+    void context.resume().catch(() => undefined);
+  }
+
   // Play or pause
   function toggle() {
     // The element
@@ -55,8 +83,13 @@ export function Player({ src, label, name, durationSec, onAudio, onTime, speeds 
     if (!element) return;
     // Pause if playing
     if (playing) element.pause();
-    // Otherwise play (the browser may refuse, which is fine)
-    else void element.play().catch(() => setPlaying(false));
+    // Otherwise play, boosted if the recording is quiet (the browser may refuse, which is fine)
+    else {
+      // The boost, made on the first press
+      startBoost(element);
+      // Play
+      void element.play().catch(() => setPlaying(false));
+    }
     // Show the new state at once
     setPlaying(!playing);
   }
@@ -87,7 +120,12 @@ export function Player({ src, label, name, durationSec, onAudio, onTime, speeds 
         src={src}
         aria-label={label}
         preload="metadata"
-        onPlay={() => setPlaying(true)}
+        onPlay={() => {
+          // Wake the boost if the phone paused it (after a call, say)
+          if (boost.current && boost.current.state !== "running") void boost.current.resume().catch(() => undefined);
+          // Show it playing
+          setPlaying(true);
+        }}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
         onTimeUpdate={(event) => {

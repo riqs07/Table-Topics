@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the browser pieces being checked
-import { WebSpeechTranscriber, browserRecordingServices, rmsLevel, speechRecognitionSupported } from "@/audio/browserServices";
+import { WebSpeechTranscriber, browserRecordingServices, rmsFloatLevel, speechRecognitionSupported } from "@/audio/browserServices";
 
 
 // A fake of the browser's speech recognizer, with just what the app uses
@@ -118,21 +118,27 @@ describe("WebSpeechTranscriber", () => {
 });
 
 // Group the checks about the level meter's reading
-describe("rmsLevel", () => {
+describe("rmsFloatLevel", () => {
   // Silence reads as zero
   it("reads silence as zero", () => {
-    // Samples at the midpoint (128) are silence
-    expect(rmsLevel(new Uint8Array(64).fill(128))).toBe(0);
+    // Samples at zero are silence
+    expect(rmsFloatLevel(new Float32Array(64))).toBe(0);
   });
 
   // A loud signal reads high, and never above one
   it("reads a loud signal near one, never above", () => {
     // Samples swinging fully between the extremes
-    const loud = new Uint8Array(64).map((_, index) => (index % 2 ? 255 : 0));
+    const loud = new Float32Array(64).map((_, index) => (index % 2 ? 1 : -1));
     // Confirm it is high and capped
-    expect(rmsLevel(loud)).toBeGreaterThan(0.9);
-    // Confirm the cap
-    expect(rmsLevel(loud)).toBeLessThanOrEqual(1);
+    expect([rmsFloatLevel(loud) > 0.9, rmsFloatLevel(loud) <= 1]).toEqual([true, true]);
+  });
+
+  // A quiet voice still measures, where the old byte reading rounded it to almost nothing (decision 81)
+  it("measures a quiet signal finely", () => {
+    // A soft wave at a hundredth of full scale
+    const soft = new Float32Array(256).map((_, index) => 0.01 * Math.sin((index / 256) * 2 * Math.PI * 8));
+    // About 0.007, the wave's root-mean-square
+    expect(Math.round(rmsFloatLevel(soft) * 1000)).toBe(7);
   });
 });
 

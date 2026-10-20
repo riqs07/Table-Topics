@@ -149,12 +149,12 @@ export class WebSpeechTranscriber implements LiveTranscriber {
   }
 }
 
-// Loudness from a block of audio samples (0-255, silence at 128), as a number from 0 to 1
-export function rmsLevel(samples: Uint8Array): number {
-  // Add up the squared distance of each sample from silence
+// Root-mean-square level of a waveform slice read as decimals from -1 to 1: finer than the byte reading, so a quiet voice recorded without the browser's levelling still measures (decision 81)
+export function rmsFloatLevel(samples: Float32Array): number {
+  // Add up the squared samples
   let total = 0;
   // Visit every sample
-  for (const sample of samples) total += ((sample - 128) / 128) ** 2;
+  for (const sample of samples) total += sample * sample;
   // Root mean square, capped at 1
   return Math.min(1, Math.sqrt(total / Math.max(1, samples.length)));
 }
@@ -173,7 +173,7 @@ class MediaCapture implements AudioCapture {
   // Reads the waveform
   private readonly analyser: AnalyserNode;
   // A reusable buffer for waveform samples
-  private readonly samples: Uint8Array<ArrayBuffer>;
+  private readonly samples: Float32Array<ArrayBuffer>;
   // Reads a longer slice for pitch (long enough for a deep voice; decision 80)
   private readonly pitchAnalyser: AnalyserNode;
   // A reusable buffer for that slice
@@ -201,7 +201,7 @@ class MediaCapture implements AudioCapture {
     // Feed it into the reader
     source.connect(this.analyser);
     // Make the sample buffer
-    this.samples = new Uint8Array(this.analyser.fftSize);
+    this.samples = new Float32Array(this.analyser.fftSize);
     // Make the pitch reader, with a slice of about 40 milliseconds
     this.pitchAnalyser = this.context.createAnalyser();
     // The slice's size
@@ -222,10 +222,10 @@ class MediaCapture implements AudioCapture {
 
   // Current loudness
   level(): number {
-    // Read the latest waveform
-    this.analyser.getByteTimeDomainData(this.samples);
+    // Read the latest waveform as decimals
+    this.analyser.getFloatTimeDomainData(this.samples);
     // Turn it into a level
-    return rmsLevel(this.samples);
+    return rmsFloatLevel(this.samples);
   }
 
   // Pause the recording (the level reader keeps running, but nothing is kept)
@@ -286,7 +286,7 @@ export const browserRecordingServices: RecordingServices = {
     }
   },
   // Ask for the microphone
-  openMicrophone: (options) => navigator.mediaDevices.getUserMedia({ audio: options?.raw ? { autoGainControl: false, noiseSuppression: false, echoCancellation: false } : true }),
+  openMicrophone: (options) => navigator.mediaDevices.getUserMedia({ audio: options?.raw ? { autoGainControl: false, noiseSuppression: false, echoCancellation: false } : options?.autoGain === false ? { autoGainControl: false, noiseSuppression: true, echoCancellation: true } : true }),
   // Get a question's ElevenLabs audio ready
   prepareSpeech: (promptId) => prepareQuestionVoice(promptId),
   // Say a question: the ElevenLabs audio when ready, otherwise the phone's own voice

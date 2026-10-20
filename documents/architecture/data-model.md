@@ -28,7 +28,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | focus | The weekly focus active at the time. Ids of focuses retired on 2026-10-15 (`start-and-finish`, `pace`, `structure`, `warmth-and-energy`) stay valid; `findFocus` in `core/focus.ts` still knows their names |
 | feedback | Keep / change / retry cue, or empty if not yet received. A small-talk answer's feedback also has `smallTalk`: the moment, up to three hooks, the feeling and the question back, quoted from the speaker (empty when missing), and a livelier version using only what they said. A follow-up question or a reply to a story (asking and listening, decision 47) has `connection` instead: `found`, the beats the coach heard, each `{ beat, quote }`, and `better`, a better question or response |
 | feedbackStatus | pending, done, or failed |
-| loudness | Loudness readings every tenth of a second while recording (0 to 1, two decimals), used to find pauses; missing on older sessions |
+| loudness | Loudness readings every tenth of a second while recording (0 to 1, two decimals), used to find pauses and for the volume lines (decision 81); missing on older sessions |
 | spokenTimes | Seconds from the start when each word of the transcript was first heard (a tenth of a second, approximate; decision 28). Missing on older sessions |
 | scriptTimes | With text on screen: seconds when each word of that text was first read, or empty if never read. Missing on older sessions and sessions without text |
 | selfReview | The user's notes after listening back (decision 30): what worked, what to change, quick tags, whether they skipped, and when. Empty while a new first try waits for notes; missing on older sessions and retries |
@@ -36,6 +36,9 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | question | On a Q&A answer (`mode` `qa`, whose `promptId` is the session the question came from): the question it answered |
 | outline | On a short speech (`mode` `outline`): `{ topic, points, goalMinutes }`, the topic (up to 140 characters), one to four points and the length chosen (1, 2, 3 or 5 minutes). Sent to the coach fenced as data; a retry reads it from the first try. The last plan is also kept in this browser under `voicelab-outline-draft` (not exported) so the planning page can bring it back (decision 73) |
 | sectionIndex | For a rehearsal of one section of a talk: which section (counted from 0). Missing or empty for a whole run and for every other mode |
+| pitch | Pitch readings taken with the loudness readings, in whole hertz, or empty where there was no voice (decision 81). Missing on older sessions |
+| autoGain | Whether the browser's automatic levelling was on while recording (decision 81): false means changes in volume across the take are real. Missing when the browser could not say, and on older sessions |
+| loudnessScale | For a recording made without the levelling: the one factor its loudness readings were multiplied by so typical speech reads 0.2 (decision 81). Playback is boosted by half of it, up to six times. Missing otherwise |
 | voice | On a voice session (`mode` `voice`, decision 80): `{ kind, headline, takes }`, the kind (`clear`, `volume`, `pitch`, `tone` or `shadow`), the results headline, and one `{ label, line }` per take, such as "Meeting room" and "A clear step up from the last take." The takes' audio, loudness and pitch readings are not kept |
 | audioKey | Link to the saved audio, or empty if pruned. Also empty when the user did not keep the recording after listening back (decision 32) |
 
@@ -110,5 +113,6 @@ Prompts ship inside the app as fixed content. They are not user data.
 | Data | Sent to | When |
 |------|---------|------|
 | Transcript text | AI coach (via our server route) | After each session |
+| Voice numbers (pitch range, how phrases ended, phrases that faded, the last third's volume; decision 81) | AI coach (via our server route) | With the transcript, when pitch or loudness was recorded. The pitch and loudness readings themselves never leave the device |
 | Audio | The browser maker's speech service | During live transcription in most browsers; the user is told |
 | Audio | Whisper (via our server route) | Only if browser transcription is unavailable, and the user is told |

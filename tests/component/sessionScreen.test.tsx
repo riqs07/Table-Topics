@@ -13,13 +13,15 @@ import { createRepository } from "@/data/repository";
 // Load the plan loader, for where the next step leads
 import { loadDailyPlan } from "@/data/dailyPlan";
 // Load a sample session builder
-import { makeSession, makeTalk } from "../support/fixtures";
+import { makeSession, makeTalk, voiceReadings } from "../support/fixtures";
 // Load the passphrase storage
 import { savePassphrase } from "@/data/passphrase";
 // Load the daily prompt picker and the pause drills
 import { PAUSE_DRILLS, TABLE_TOPICS, promptForDay } from "@/content/prompts";
 // Load the script splitter
 import { readingTokens, scriptWords } from "@/core/liveReading";
+// Load the pitch range, for the retry comparison
+import { rangeOf } from "@/core/voiceFeedback";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 13, 18);
@@ -241,6 +243,20 @@ describe("SessionScreen", () => {
     const fillers = within(screen.getByRole("table", { name: "First and second try" })).getByRole("row", { name: /pause words a minute/ });
     // Confirm both numbers, and that "Done" leads back to where the session started (decision 67)
     expect([within(fillers).getAllByRole("cell").map((cell) => cell.textContent), screen.getByRole("link", { name: /^Done/ }).getAttribute("href")]).toEqual([["4.2", "1.8"], "/practice"]);
+  });
+
+  // A retry shows the pitch range on both tries, when both were measured (decision 81)
+  it("compares the pitch range on a retry", async () => {
+    // A flat-ending first try and a lively retry
+    const first = makeSession({ id: "s1", ...voiceReadings("rising"), feedback: FEEDBACK, feedbackStatus: "done" });
+    // The retry
+    const retry = makeSession({ id: "s2", retryOf: "s1", ...voiceReadings("lively"), feedback: FEEDBACK, feedbackStatus: "done", createdAt: "2026-10-12T16:00:00.000Z" });
+    // Draw the retry's page
+    render(<SessionScreen sessionId="s2" repository={await repositoryWith(first, retry)} now={NOW} />);
+    // The pitch row
+    const row = within(await screen.findByRole("table", { name: "First and second try" })).getByRole("row", { name: /pitch range/ });
+    // From the first try's range to the retry's
+    expect(within(row).getAllByRole("cell").map((cell) => cell.textContent)).toEqual([String(rangeOf(first)), String(rangeOf(retry))]);
   });
 
   // Even when the week's focus has no number, a retry shows both tries' numbers (decision 67)
@@ -553,6 +569,42 @@ describe("SessionScreen", () => {
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm none of the marks had a pause
     expect(await screen.findByText(/^You paused at 0 of the \d+ marks\. No pause after /)).toBeTruthy();
+  });
+
+  // "Your voice": the pitch line and plain lines on the range, the endings and the volume (decision 81)
+  it("shows how the voice sounded", async () => {
+    // A take whose phrases end rising, with the coach's note
+    const session = makeSession({ id: "s1", ...voiceReadings("rising"), durationSec: 13, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // The section
+    const section = await screen.findByRole("region", { name: "Your voice" });
+    // The pitch line and the lines, things to work on first
+    expect([!!within(section).getByRole("img", { name: /Your pitch across the take/ }), within(section).getAllByRole("listitem").map((item) => item.textContent)[0]]).toEqual([true, "5 of 5 phrases ended rising, which can sound unsure. Land your statements low."]);
+  });
+
+  // Without the coach's note, a voice change becomes the one change, and the section does not repeat it
+  it("does not repeat the one change in the voice section", async () => {
+    // The same take, without feedback
+    const session = makeSession({ id: "s1", ...voiceReadings("rising"), durationSec: 13, wordsPerMinute: 140, fillersPerMinute: 0, feedback: null, feedbackStatus: "failed" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // The section
+    const section = await screen.findByRole("region", { name: "Your voice" });
+    // The endings are the one change, and are not said again below
+    expect([!!screen.getAllByText("5 of 5 phrases ended rising, which can sound unsure. Land your statements low.").length, within(section).queryByText(/ended rising/)]).toEqual([true, null]);
+  });
+
+  // An older recording without pitch shows no voice section
+  it("leaves the voice section out without pitch readings", async () => {
+    // A recording from before pitch was saved
+    const session = makeSession({ id: "s1", feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Wait for the page
+    await screen.findByText("Take a breath before you start.");
+    // No section
+    expect(screen.queryByRole("region", { name: "Your voice" })).toBeNull();
   });
 
   // A pause drill with word times shows how long each pause was, against the one-to-two-second target (decision 80)

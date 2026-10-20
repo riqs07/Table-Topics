@@ -62,6 +62,9 @@ import { nextStepIndex, planHref, stepKey } from "@/core/dailyPlan";
 import { QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the plain explanations of microphone and speech problems
 import { ALLOW_STEPS, PROBLEM_TEXT } from "@/components/script/microphoneHelp";
+// Load the check for what the browser did with the microphone, and the even-out factor (decision 81)
+import { autoGainApplied } from "@/audio/microphoneSettings";
+import { levelScale } from "@/core/voiceLevels";
 // Load the voice shape in its forms
 import { StartBlob, StatusBlob, TakeControls, VoiceBlob } from "@/components/script/VoiceShapes";
 // Load the screen hold
@@ -324,7 +327,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Whether the retry cue is the coach's (otherwise it was picked from the numbers)
   const [cueFromCoach, setCueFromCoach] = useState(true);
   // The live transcriber, audio capture, start time, and timer, kept between renders
-  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; spokenTimes: number[]; scriptTimes: (number | null)[]; pausedAt: Date | null; earlier: string; tick: () => void; onWords: (latest: LiveText) => void } | null>(null);
+  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; pitches: (number | null)[]; autoGain: boolean | null; spokenTimes: number[]; scriptTimes: (number | null)[]; pausedAt: Date | null; earlier: string; tick: () => void; onWords: (latest: LiveText) => void } | null>(null);
   // Whether the recording is paused (decision 77)
   const [paused, setPaused] = useState(false);
   // Timing tones, when switched on in Settings: made during the start tap, since browsers only let sound start from one (decision 77)
@@ -332,7 +335,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The timing light at the last cue check, to hear when it changes
   const lastSignal = useRef<TimeSignal>("none");
   // A take that was just discarded, kept for a few seconds so it can be undone (decision 77)
-  const discarded = useRef<{ transcript: string; audio: Blob; durationSec: number; loudness: number[]; spokenTimes: number[]; scriptTimes: (number | null)[] | null } | null>(null);
+  const discarded = useRef<{ transcript: string; audio: Blob; durationSec: number; loudness: number[]; pitch: (number | null)[]; autoGain: boolean | null; spokenTimes: number[]; scriptTimes: (number | null)[] | null } | null>(null);
   // Inside today's practice, how many steps it has (loaded below)
   const [plan, setPlan] = useState<LoadedPlan | null>(null);
   // While reading, the number of the next word to read (every word before it is lit up)
@@ -551,7 +554,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // One time per word of the final transcript: the noted times, filled with the end time where the final words ran past them
     const spokenTimes = stampSpoken(current.spokenTimes, transcript.split(/\s+/).filter((word) => word !== "").length, durationSec).slice(0, transcript.split(/\s+/).filter((word) => word !== "").length);
     // Hand back the results, with the loudness readings for finding pauses and the word times
-    return { transcript, audio, durationSec, loudness: current.readings, spokenTimes, scriptTimes: current.scriptTimes.length > 0 ? current.scriptTimes : null };
+    return { transcript, audio, durationSec, loudness: current.readings, pitch: current.pitches, autoGain: current.autoGain, spokenTimes, scriptTimes: current.scriptTimes.length > 0 ? current.scriptTimes : null };
   }, [clock, limit]);
 
   // Save a finished take and open it (or explain that nothing was heard); used on stop and on undoing a discard
@@ -586,7 +589,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}) }, clock());
       // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
       void requestPersistentStorage();
       // A moment note goes straight back to the Small talk page, where it is listed; anything else opens its page (feedback is requested there)
@@ -654,8 +657,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     let stream: MediaStream;
     // The browser may refuse
     try {
-      // Request access
-      stream = await services.openMicrophone();
+      // Request access, without the browser's automatic levelling so loud and soft stay different (decision 81)
+      stream = await services.openMicrophone({ autoGain: false });
     } catch (error) {
       // A missing microphone, or a refusal
       setStage({ problem: (error as DOMException).name === "NotFoundError" ? "no-microphone" : "microphone-blocked" });
@@ -672,10 +675,16 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const startedAt = clock();
     // Loudness readings for the whole recording, kept for finding pauses afterwards
     const readings: number[] = [];
+    // Pitch readings taken with them (decision 81)
+    const pitches: (number | null)[] = [];
+    // Whether the browser kept its levelling anyway (some do), or null when it cannot say
+    const autoGain = autoGainApplied(stream);
+    // Without the levelling, the factor that evens out the meter and the reading pace, refreshed once a second
+    const evenOut = { scale: 1 };
     // The words to listen for in the text on screen (none without text)
     const expected = wordsToHear.current;
     // Keep the running pieces, with no word times yet (the clock, tick and word handler are filled in below)
-    const pieces: NonNullable<typeof live.current> = { transcriber, capture, startedAt, timer: 0 as unknown as ReturnType<typeof setInterval>, readings, spokenTimes: [], scriptTimes: expected.map((): number | null => null), pausedAt: null, earlier: "", tick: () => {}, onWords: () => {} };
+    const pieces: NonNullable<typeof live.current> = { transcriber, capture, startedAt, timer: 0 as unknown as ReturnType<typeof setInterval>, readings, pitches, autoGain, spokenTimes: [], scriptTimes: expected.map((): number | null => null), pausedAt: null, earlier: "", tick: () => {}, onWords: () => {} };
     // For scrolling at the reader's pace: the matched place, seconds spoken since it last moved, and the loudness below which it is silence
     const pace = { place: 0, voiced: 0, threshold: speechThreshold([]) };
     // Tick: update the timer and meter, and stop at the limit
@@ -685,15 +694,21 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Show the time
       setElapsed(seconds);
       // Read the loudness once
-      const level = capture.level();
-      // Keep it
-      readings.push(level);
+      const raw = capture.level();
+      // Keep it as measured
+      readings.push(raw);
+      // And the pitch with it
+      pitches.push(capture.pitch?.() ?? null);
+      // Without the browser's levelling, refresh the evening-out factor once a second
+      if (autoGain === false && readings.length % PACE_REFRESH_TICKS === 0) evenOut.scale = levelScale(readings);
+      // The level as the meter and the reading pace see it
+      const level = raw * evenOut.scale;
       // Add it to the meter, dropping the oldest
       setLevels((previous) => [...previous.slice(1), level]);
       // With text on screen: update the silence level once a second, count speaking time, and keep the text moving at a reading pace
       if (wordsToHear.current.length > 0) {
         // Once a second
-        if (readings.length % PACE_REFRESH_TICKS === 0) pace.threshold = speechThreshold(readings);
+        if (readings.length % PACE_REFRESH_TICKS === 0) pace.threshold = speechThreshold(evenOut.scale === 1 ? readings : readings.map((reading) => reading * evenOut.scale));
         // Speaking now
         if (level >= pace.threshold) pace.voiced += LOUDNESS_TICK_MS / 1000;
         // The word to keep in view

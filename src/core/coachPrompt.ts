@@ -22,6 +22,8 @@ import type { ConnectionFeedback, Feedback, SessionMode, SmallTalkFeedback } fro
 import { ASKING_BEATS, BEATS, LISTENING_BEATS, NEWS_BEATS, beatsFor, findSmallTalk } from "@/content/smallTalk";
 // Load the quick tags, to put the speaker's tags into words
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
+// Load the voice numbers' type (decision 81)
+import type { CoachVoice } from "@/core/voiceFeedback";
 
 // Feedback rules shared by every coach (decision 53): about the task, never the person, and the move behind any example (feedback aimed at the self often makes performance worse; rules transfer better than scripts)
 export const FEEDBACK_RULES = `- Talk about what was said and done, never about the person: do not judge their personality, confidence, nerves, or how they "come across".
@@ -41,7 +43,7 @@ Reply with exactly three parts:
 Style:
 - Direct and kind. Speak to them as "you", in plain words.
 - No empty praise, no lists, and never more than one fix. Each part is at most two sentences.
-- Base everything on the transcript and the numbers. You cannot hear their voice, so do not comment on tone, pitch, volume, or energy.
+- Base everything on the transcript and the numbers. You cannot hear their voice: comment on pitch or volume only through the voice numbers, when they are given, and never on tone, emotion or energy.
 - Speech recognition sometimes drops filler words and mishears words. Do not criticize likely recognition errors.
 - On a retry, say whether last time's fix showed up.
 - If the transcript is very short or empty, the keep is that they showed up, and the change is to say a little more next time.
@@ -71,6 +73,25 @@ export interface CoachInput {
   notes?: { worked: string; change: string; tags: string[] };
   // The speaker stammers ("I stammer" in Settings): no comments on fluency (decision 79)
   stammer?: boolean;
+  // The voice numbers measured on the device, when there were some (decision 81)
+  voice?: CoachVoice;
+}
+
+// The voice numbers as lines for the coach (fading is left out for a speaker who stammers, as trailing off is judged with fluency; decision 79)
+export function voiceNumbers(voice: CoachVoice, stammer = false): string[] {
+  // The lines
+  return [
+    // The pitch range, with what it means and the speaker's usual
+    ...(voice.rangeSteps !== null ? [`Pitch range: ${voice.rangeSteps} semitones across most of the take (under 3 sounds fairly flat, 6 or more lively)${voice.usualRange !== null ? `; this speaker usually has ${voice.usualRange}` : ""}.`] : []),
+    // How the phrases ended
+    ...(voice.ends && voice.ends.fall + voice.ends.level + voice.ends.rise > 0 ? [`Phrase endings: ${voice.ends.fall} fell, ${voice.ends.level} stayed level, ${voice.ends.rise} rose (statements that rise can sound unsure).`] : []),
+    // Fading phrase ends
+    ...(voice.faded && !stammer ? [`Phrases that faded at the end: ${voice.faded.count} of ${voice.faded.of}.`] : []),
+    // The last third's volume
+    ...(voice.lastThird ? [`Volume in the last third: ${voice.lastThird === "same" ? "about the same as" : `${voice.lastThird} than`} the rest.`] : []),
+    // How to use them
+    "These voice numbers are measured against the speaker's own voice. Mention one only when it is the most useful fix or a real strength.",
+  ];
 }
 
 // For a speaker who stammers, the line that keeps the coach off fluency (decision 79)
@@ -110,6 +131,8 @@ export function buildCoachMessage(input: CoachInput): string {
     `Words per minute: ${Math.round(wordsPerMinute(input.transcript, input.durationSec))}`,
     // Pause-word rate, to one decimal place (left out for a speaker who stammers)
     ...(input.stammer ? [STAMMER_LINE] : [`Pause words (um, uh, like) per minute: ${fillersPerMinute(input.transcript, input.durationSec, passage?.body ?? lesson?.body).toFixed(1)}`]),
+    // The voice numbers, when measured (decision 81)
+    ...(input.voice ? voiceNumbers(input.voice, input.stammer) : []),
     // On a warm-up, keep it brief and light
     ...(input.mode === "warmup" ? ["This is a 30-second warm-up. Keep every part to one short sentence, and keep it light."] : []),
     // On a Table Topic, its rules and how long it ran, so the coach looks at the whole answer
@@ -196,7 +219,7 @@ Style:
 - Warm, light and direct. Speak to them as "you", in plain words.
 - Small talk with a coworker suits one pleasant moment, not a confession. Do not push them to share more than fits.
 - No empty praise and never more than one change. Keep, change and retry cue are at most two sentences each.
-- Base everything on the transcript. You cannot hear their voice, so do not comment on tone or energy.
+- Base everything on the transcript. You cannot hear their voice: comment on pitch or volume only through the voice numbers, when they are given and matter for a lively answer, and never on tone, emotion or energy.
 - Speech recognition drops filler words, mishears words and adds no punctuation, so a question may not end in a question mark. Do not criticise likely recognition errors.
 - On a retry, say whether last time's change showed up.
 ${FEEDBACK_RULES}
@@ -217,6 +240,8 @@ export function buildSmallTalkMessage(input: CoachInput): string {
     `Length: ${Math.round(input.durationSec)} seconds (the aim is 20 to 45)`,
     // For a speaker who stammers, no comments on fluency
     ...(input.stammer ? [STAMMER_LINE] : []),
+    // The voice numbers, when measured (decision 81)
+    ...(input.voice ? voiceNumbers(input.voice, input.stammer) : []),
     // In a lesson, what it teaches
     ...(found?.lesson ? [`This was lesson ${found.lesson.number}, "${found.lesson.title}": ${found.lesson.idea}${beat ? ` Pay most attention to the ${beat.name.toLowerCase()} beat.` : ""}`] : []),
     // On a retry, the change to check for
