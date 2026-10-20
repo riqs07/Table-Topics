@@ -16,6 +16,16 @@ export interface Feedback {
   smallTalk?: SmallTalkFeedback;
   // For a follow-up question or a reply to a story: the beats the coach heard, and a better version
   connection?: ConnectionFeedback;
+  // For a conversation with a character: one of your lines, and how it could sound (decision 83)
+  conversation?: ConversationFeedback;
+}
+
+// The coach's notes on a conversation: one of your lines as you said it, and a better version
+export interface ConversationFeedback {
+  // Your words, quoted exactly
+  yours: string;
+  // How they could sound, in your voice, using only what was said
+  better: string;
 }
 
 // The coach's notes on a follow-up question or a reply to a story
@@ -40,8 +50,8 @@ export interface SmallTalkFeedback {
   livelier: string;
 }
 
-// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment"), or free talk about anything ("free") and a short speech the user planned themselves ("outline", decision 73), or a voice drill or shadowing, recorded take by take ("voice", decision 80)
-export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment", "free", "outline", "voice"] as const;
+// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment"), or free talk about anything ("free") and a short speech the user planned themselves ("outline", decision 73), or a voice drill or shadowing, recorded take by take ("voice", decision 80), or a spoken conversation with a character ("conversation", decision 83)
+export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment", "free", "outline", "voice", "conversation"] as const;
 
 // One kind of session (bookend: an openings and closings drill; qa: an answer to a likely audience question; both added 2026-10-15)
 export type SessionMode = (typeof SESSION_MODES)[number];
@@ -123,6 +133,20 @@ export interface SessionRecord {
   audioKey: string | null;
   // For a voice drill or shadowing (mode "voice"): what kind, the headline, and one line per take; the takes' audio is kept only while on the page (decision 80)
   voice?: VoiceSummary;
+  // For a conversation with a character (mode "conversation"): every turn, yours and theirs; no audio is kept (decision 83)
+  conversation?: { turns: ConversationTurn[] };
+}
+
+// One turn of a conversation with a character (decision 83)
+export interface ConversationTurn {
+  // Who spoke
+  who: "you" | "them";
+  // What was said: the words heard from you, or their line's words
+  text: string;
+  // For their turn, the id of the line they said
+  lineId?: string;
+  // How long it took, in seconds (your take, or their recording)
+  seconds: number;
 }
 
 // What a voice drill or a shadowing session showed, kept with the session (decision 80)

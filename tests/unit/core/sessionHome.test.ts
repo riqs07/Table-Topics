@@ -25,6 +25,12 @@ describe("sessionHome", () => {
     expect(homes).toEqual(["/voice", "/voice", "/voice"]);
   });
 
+  // A conversation closes back to the list of people (decision 83)
+  it("leads a conversation back to Conversations", () => {
+    // Outside and inside today's practice
+    expect([sessionHome("conversation", "maya", false).href, sessionHome("conversation", "maya", true).href]).toEqual(["/conversations", "/"]);
+  });
+
   // Small talk and moment notes are kept apart from the speech practice
   it("leaves out only private moment notes, and closes small talk back to its page", () => {
     // One of each

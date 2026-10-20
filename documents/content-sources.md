@@ -30,14 +30,18 @@ Still from memory, to check against a published source before relying on them: t
 
 The generator that cleans and splits the texts lives outside the repository; the result is `src/content/speeches.ts`. Parts are split at paragraph breaks into about a minute or less (140 words at 140 words a minute), so reading, listening back and trying again fits in about three minutes. A paragraph too long for one part is split between sentences, and a sentence too long for one part after a semicolon or comma; a very short part is joined to a neighbour when the two stay near a minute.
 
-## The recorded voices (decision 82)
+## The recorded voices (decisions 82 and 83)
 
-Every line the app says aloud is a recording made once with ElevenLabs and kept in `public/clips/`: the 72 small-talk lines and the 27 shadowing steps (94 files, since five lessons share an everyday question's file). They were made on 2026-10-20 through the ElevenLabs connector, in the flow "VoiceLab clips".
+Every line the app says aloud is a recording made once with ElevenLabs and kept in `public/clips/`: the 72 small-talk lines and the 27 shadowing steps (94 files, since five lessons share an everyday question's file), and the 133 lines of the four conversation characters (decision 83; their words are in `src/content/conversations.ts`). They were made on 2026-10-20 through the ElevenLabs connector, in the flow "VoiceLab clips". The characters' lines were written for the app; the characters and their situations come from the conversation plan (`plan-daily-mix-and-connection.md`) and the research it cites.
 
 | Lines | Voice | Model | Direction |
 |---|---|---|---|
 | Small talk: questions, remarks, news and stories | Jessica (an ElevenLabs default voice: warm, conversational) | `eleven_v4` | A feeling tag where the line carries one: [excited] for good news, [disappointed] or [sad] for bad, [laughs softly] or [warmly] for stories. Questions and plain remarks are read as written |
 | Shadowing: each phrase, then each whole passage | Graham (a voice-library voice: resonant, steady broadcaster) | `eleven_v4` | Tags for the delivery the passage teaches ([slowly], [calm and firm], [warmly], [excited]), capitals for a stressed word, "…" for a held pause |
+| Maya, a new coworker at a party (38 lines; decision 83) | Brittney (a voice-library voice: bright, lively, conversational) | `eleven_v4` | Half read as written; [laughs] and [curious] most often, [cheerfully], [warmly] and [sympathetic] where the line needs it |
+| Theo, someone quiet at work (36 lines) | Eddy (a voice-library voice: soft-spoken and thoughtful, a gentle young voice) | `eleven_v4` | [softly] for most short answers, [hesitantly] or [nervous] at times, [laughs softly] and [a little excited] as he opens up about his radios |
+| Chris, a friend having a rough week (31 lines) | Chris (an ElevenLabs default voice: natural, down-to-earth) | `eleven_v4` | [tired] and [sighs] for the hard parts, [flatly] when advice lands badly, [warmly] and [a little brighter] when he feels heard |
+| Priya, a friend with big news (28 lines) | Stacey (a voice-library voice: bright, energetic, expressive) | `eleven_v4` | [excited], [happy] and [laughs] for the news, [nervous] where she admits she is scared, [deflated] when it goes wrong |
 
 How each line was read is in the comment above it in `src/content/voiceClips.ts`. To make one again: generate the same words with the same voice, model and direction; trim the silent ends; even the loudness to −16 LUFS; save it as 64 kbps mono MP3 under the same name; update its length in `voiceClips.ts`; and bump `VOICE_CACHE` in `src/data/voiceClient.ts` so phones drop the old copy. The checks in `tests/unit/content/voiceClips.test.ts` say which lines need a new recording when their words change.
 

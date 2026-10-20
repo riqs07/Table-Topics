@@ -41,17 +41,17 @@ function shapePlace(compact: boolean, size: string): string {
   return compact ? "fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 size-20 drop-shadow-lg md:right-10 md:size-28" : `relative mx-auto my-6 md:mx-0 ${size}`;
 }
 
-// The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69); it is the stop button (decisions 74 and 75)
-export function VoiceBlob({ levels, signal, clock, onStop, compact, paused = false }: { levels: number[]; signal: TimeSignal; clock: string; onStop: () => void; compact: boolean; paused?: boolean }) {
+// The live voice: a soft shape that breathes, grows with how loud you are, and takes the timing light's colour, with the clock inside (decision 69); it is the stop button (decisions 74 and 75), or in a conversation the "Done" button that ends your turn (decision 83)
+export function VoiceBlob({ levels, signal, clock, onStop, compact, paused = false, action = "Stop" }: { levels: number[]; signal: TimeSignal; clock: string; onStop: () => void; compact: boolean; paused?: boolean; action?: "Stop" | "Done" }) {
   // The latest few readings, averaged so the shape does not jitter
   const recent = levels.slice(-4);
   // How loud, from 0 to 1
   const level = Math.min(1, (recent.reduce((sum, value) => sum + value, 0) / Math.max(1, recent.length)) * 4);
   // The shape's size: bigger as the voice gets louder
   const scale = 0.82 + level * 0.3;
-  // A round button holding the halo, the shape, the clock and "Stop" (the level stays named for screen readers)
+  // A round button holding the halo, the shape, the clock and its action (the level stays named for screen readers)
   return (
-    <button type="button" onClick={onStop} aria-label="Stop" data-variant="stop" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-72")}`}>
+    <button type="button" onClick={onStop} aria-label={action} data-variant="stop" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-72")}`}>
       {/* The level, named for screen readers */}
       <span role="img" aria-label="Microphone level" className="absolute inset-0" />
       {/* The dashed halo, turning slowly */}
@@ -60,10 +60,10 @@ export function VoiceBlob({ levels, signal, clock, onStop, compact, paused = fal
       <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-6"} rounded-full transition-[transform,background-color,opacity] duration-150 ease-out ${paused ? "opacity-60" : "motion-safe:animate-morph"} ${BLOB_FILL[signal]}`} style={{ transform: `scale(${paused ? 0.82 : scale})` }} />
       {/* The clock, and the action */}
       <span className="relative flex flex-col items-center text-on-warm">
-        {/* The clock (the button is named "Stop" alone) */}
+        {/* The clock (the button is named by its action alone) */}
         <span aria-hidden="true" className={`font-display font-semibold tabular-nums tracking-tight ${compact ? "text-xl" : "text-prompt-xl"}`}>{clock}</span>
         {/* The action */}
-        <span className="text-footnote font-semibold">Stop</span>
+        <span className="text-footnote font-semibold">{action}</span>
       </span>
     </button>
   );

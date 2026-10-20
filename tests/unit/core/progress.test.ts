@@ -107,6 +107,12 @@ describe("warm-ups and progress", () => {
     expect([shouldBeBaseline([], "bookend"), shouldBeBaseline([], "qa"), trendSeries([...WITH_WARMUP, makeSession({ id: "b1", createdAt: oct(10), fillersPerMinute: 0.1, mode: "bookend", promptId: "b001" }), makeSession({ id: "q1", createdAt: oct(10, 13), fillersPerMinute: 0.1, mode: "qa", promptId: "r1" })])]).toEqual([false, false, [6, 4.2, 3.1]]);
   });
 
+  // A conversation with a character is mostly listening, so it never becomes the starting point or joins the trend (decision 83)
+  it("keeps conversations out of the baseline and the trend", () => {
+    // Confirm the baseline rule and the trend
+    expect([shouldBeBaseline([], "conversation"), trendSeries([...WITH_WARMUP, makeSession({ id: "c1", createdAt: oct(10), fillersPerMinute: 0.1, mode: "conversation", promptId: "maya" })])]).toEqual([false, [6, 4.2, 3.1]]);
+  });
+
   // The first Record Response becomes the starting point; a Table Topic never does
   it("makes the first Table Topic or prepared speech the baseline, never a reading", () => {
     // Confirm all three

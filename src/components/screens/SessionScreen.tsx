@@ -44,6 +44,8 @@ import { VoiceSection } from "@/components/script/VoiceSection";
 import { rangeOf, usualRange } from "@/core/voiceFeedback";
 // Load the saved voice drill's view (decision 80)
 import { VoiceSessionView } from "@/components/screens/VoiceSessionView";
+// Load the saved conversation view (decision 83)
+import { ConversationSessionView } from "@/components/screens/ConversationSessionView";
 // Load the script splitter, to place the pause marks among the timed words
 import { readingTokens } from "@/core/liveReading";
 // Load the compact row of numbers
@@ -947,9 +949,11 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       {/* A retry with its first try */}
       {/* A voice drill or shadowing: its saved lines (decision 80) */}
       {loaded?.session?.mode === "voice" && today && <VoiceSessionView session={loaded.session} now={today} plan={plan} />}
-      {loaded?.session && loaded.session.mode !== "voice" && loaded.original && loaded.session.mode !== "smalltalk" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} view={view} />}
+      {/* A conversation with a character: the share, the change and the turns (decision 83) */}
+      {loaded?.session?.mode === "conversation" && today && <ConversationSessionView session={loaded.session} now={today} note={note} plan={plan} />}
+      {loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation" && loaded.original && loaded.session.mode !== "smalltalk" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} view={view} />}
       {/* A first try (or a retry whose first try is missing) */}
-      {loaded?.session && loaded.session.mode !== "voice" && (!loaded.original || loaded.session.mode === "smalltalk") && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} view={view} usual={loaded.usual} onReviewed={(updated) => {
+      {loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation" && (!loaded.original || loaded.session.mode === "smalltalk") && today && <FeedbackView repo={repo} session={loaded.session} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} view={view} usual={loaded.usual} onReviewed={(updated) => {
         // Show the notes and the feedback
         setLoaded((previous) => (previous ? { ...previous, session: updated } : previous));
         // If the coach was waiting for the notes, ask it now

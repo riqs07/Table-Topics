@@ -76,6 +76,8 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   { id: "voice-drills", job: "skill", name: "Your voice", subtitle: "warm-ups, volume, pitch, tone, shadowing", length: "1 to 3 min", youDo: "Short drills for how you sound: say a line a few ways, or copy a speaker phrase by phrase.", youGet: "What changed between your takes: level, pitch, length and the words that came through." },
   // Small talk
   { id: "small-talk", job: "connect", name: "Small talk", subtitle: "everyday questions", length: "under a minute", youDo: "Hear an everyday question, like \u201cHow was your weekend?\u201d, and answer with one short story: a moment, a hook, how it felt, and a question back.", youGet: "Which of the four you heard yourself do, and one change." },
+  // A conversation with a character (decision 83)
+  { id: "conversations", job: "connect", name: "Talk with someone", subtitle: "one of four people, out loud", length: "about 3 min", youDo: "Talk out loud with a character who answers in a recorded voice. Tap Done at the end of each turn.", youGet: "How much of the talking was yours, your questions, and one of your lines made better." },
   // One moment a day
   { id: "moments", job: "connect", name: "One moment a day", subtitle: "a short private voice note", length: "under a minute", youDo: "Say one thing from today worth telling, while you still remember it.", youGet: "A list of your own stories to draw on when someone asks what you have been up to." },
 ];
@@ -108,6 +110,8 @@ const SESSION_TO_MODE: Readonly<Partial<Record<SessionMode, string>>> = {
   outline: "short-speech",
   // A voice drill or shadowing
   voice: "voice-drills",
+  // A conversation with a character
+  conversation: "conversations",
 };
 
 // The catalogue entry that explains a kind of session, if it has one

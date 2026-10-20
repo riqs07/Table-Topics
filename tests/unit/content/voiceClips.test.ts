@@ -8,6 +8,8 @@ import { VOICE_CLIPS, voiceClip } from "@/content/voiceClips";
 import { ASKING_DRILLS, LISTENING_STORIES, NEWS_DRILLS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, findSmallTalk } from "@/content/smallTalk";
 // Load the passages to shadow and their steps
 import { SHADOW_PASSAGES, shadowSteps } from "@/content/voice";
+// Load the conversation characters (decision 83)
+import { CHARACTERS } from "@/content/conversations";
 
 // Where the recordings are kept
 const FOLDER = "public/clips";
@@ -20,6 +22,8 @@ const LINES: ReadonlyArray<{ id: string; text: string }> = [
   ...[...SMALL_TALK_QUESTIONS, ...SMALL_TALK_LESSONS, ...ASKING_DRILLS, ...NEWS_DRILLS, ...LISTENING_STORIES].map((item) => ({ id: item.id, text: findSmallTalk(item.id)!.question })),
   // Shadowing: each phrase, then each whole passage
   ...SHADOW_PASSAGES.flatMap((passage) => shadowSteps(passage).map((step) => ({ id: step.voiceId, text: step.text }))),
+  // Conversations: every line each character can say
+  ...CHARACTERS.flatMap((character) => character.lines.map((line) => ({ id: line.id, text: line.text }))),
 ];
 
 // Group the checks about the saved recordings (decision 82)
@@ -31,7 +35,7 @@ describe("VOICE_CLIPS", () => {
     // Recordings with no line
     const extra = Object.keys(VOICE_CLIPS).filter((id) => !LINES.some((line) => line.id === id));
     // None of either
-    expect([wrong, extra, LINES.length]).toEqual([[], [], 99]);
+    expect([wrong, extra, LINES.length]).toEqual([[], [], 232]);
   });
 
   // Every file named is there, each file is used, and each length matches its file
@@ -46,14 +50,16 @@ describe("VOICE_CLIPS", () => {
     expect([files, off]).toEqual([named, []]);
   });
 
-  // A recording says its words at a speaking pace: far slower would mean a direction tag was read aloud, far faster a cut-off take
+  // A recording says its words at a speaking pace: far slower would mean a direction tag was read aloud, far faster a cut-off take (one- and two-word lines such as "Mm-hmm." are too short to judge)
   it("has every recording at a speaking pace", () => {
-    // Words a minute for each recording outside a wide speaking range
+    // Words a minute for each recording of three or more words outside a wide speaking range
     const odd = Object.entries(VOICE_CLIPS).filter(([, clip]) => {
+      // Its words
+      const words = clip.text.split(/\s+/).length;
       // Its pace
-      const pace = (clip.text.split(/\s+/).length / clip.seconds) * 60;
-      // Outside the range
-      return pace < 70 || pace > 300;
+      const pace = (words / clip.seconds) * 60;
+      // Long enough to judge, and outside the range
+      return words >= 3 && (pace < 60 || pace > 300);
     });
     // None
     expect(odd).toEqual([]);

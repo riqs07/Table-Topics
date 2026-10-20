@@ -176,6 +176,20 @@ describe("parseExport", () => {
     expect([file.sessions.find((session) => session.id === "r1")?.questions, file.sessions.find((session) => session.id === "q1")?.question, (() => { try { parseExport(damaged); return "accepted"; } catch { return "refused"; } })()]).toEqual([["A?", "B?"], "A?", "refused"]);
   });
 
+  // A conversation keeps its turns and the coach's line; a turn said by nobody is refused (decision 83)
+  it("carries a conversation's turns, and refuses a broken turn", () => {
+    // A conversation with Maya
+    const turns = [{ who: "them" as const, text: "Hi! I'm Maya.", lineId: "maya-01", seconds: 3 }, { who: "you" as const, text: "Hi, I'm Sam", seconds: 2 }];
+    // Its session, with the coach's notes
+    const session = makeSession({ id: "c1", mode: "conversation", promptId: "maya", conversation: { turns }, feedbackStatus: "done", feedback: { keep: "k", change: "c", retryCue: "r", conversation: { yours: "Hi", better: "Hi, I'm Sam. And you?" } } });
+    // The file around it
+    const file = (sessions: unknown[]) => JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions, challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
+    // The same session with a turn said by nobody
+    const broken = { ...session, conversation: { turns: [{ who: "nobody", text: "?", seconds: 1 }] } };
+    // Kept, and refused
+    expect([parseExport(file([session])).sessions[0]?.conversation?.turns, (() => { try { parseExport(file([broken])); return "accepted"; } catch { return "refused"; } })()]).toEqual([turns, "refused"]);
+  });
+
   // A damaged file with a broken session
   it("rejects a file with a damaged record", () => {
     // Build a file whose session is missing its transcript

@@ -2,7 +2,7 @@
 
 **Version:** 3.0 (refocused on public speaking, 2026-10-15)
 **Status:** Draft for review
-**Last updated:** 2026-10-15
+**Last updated:** 2026-10-20
 
 ## 1. Summary
 
@@ -55,6 +55,7 @@ Once a week: complete one **real-world challenge** and mark it done.
 | Q&A practice (added 2026-10-15, plan step B3; **removed 2026-10-18, decision 61**) | Removed at the user's request. Old Q&A answers stay in History and still open with their question. |
 | Skill path (added 2026-10-15; six lessons added the same day for public speaking, plan step B4) | Sixteen short lessons, all open, each one practical public-speaking tip with a practice text built for it: pause before you start, crisp consonants, slow down for numbers and names, pause before the point, land the ending, stress the key word, signposting, the rule of three, a tongue-twister warm-up, a strong close, open with a hook, tell a short story, bridges between points, answer with point, reason, example, recover from a blank, and vocal variety. The tip stays in view while practising; afterwards each lesson has its own check (opening silence, clear words, pace, pauses at the marks, endings that fade, fillers in the close, a deliberate stop and restart for recovering from a blank) or, for judgement skills, the coach. Square-bracketed instructions in a text ("[Stop here and count to three]") show in italics and are not counted as words to read. Lessons can be repeated any time |
 | Practice library (added 2026-10-15) | Every speech, practice passage, pause drill and tricky-word list in one place, picked freely and repeated as often as wanted; replaces the daily read-aloud option on the home screen |
+| Talk with someone (added 2026-10-20, decision 83) | A short spoken conversation, about 3 minutes, with one of four characters (a new coworker at a party, someone quiet at work, a friend having a rough week, a friend with big news), each practising one everyday-conversation skill. They speak recorded lines; you answer out loud and tap Done; Claude picks their next lines, or a set script runs without it. Afterwards: how much of the talking was yours, your questions, one change, and one of your lines as it could sound |
 | Live transcript | Lets the user see their words as they speak |
 | Three-part feedback (keep / change / retry cue) | Gives a single next step instead of a critique |
 | Retry flow with before/after numbers | Proves the fix worked within minutes |
@@ -122,7 +123,7 @@ In v1 the focus changes every 7 calendar days, cycling through 1 to 5 and then s
 | Accounts and cloud sync | Later | Local-first protects privacy |
 | Push reminders | Later | Needed once habit data shows drop-off |
 | Freestyle mode, debate mode | Later | Not core to this user |
-| Small-talk and social conversation practice | Cut (2026-10-15) | Belongs to the old target user; VoiceLab is for speaking to an audience |
+| Small-talk and social conversation practice | Cut (2026-10-15); **back since 2026-10-17** (decision 42 onwards: small talk, connection units, and since decision 83 conversations with characters) | Cut as belonging to the old target user; the user brought it back as everyday conversation practice beside the speaking practice |
 | Video (eye contact, gestures) | Later | A big step in work and privacy; see plan-public-speaking.md |
 
 ## 9. Success metrics

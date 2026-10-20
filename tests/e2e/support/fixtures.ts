@@ -36,6 +36,10 @@ export const ROUTES: ReadonlyArray<string> = [
   "/session?mode=smalltalk&prompt=sn01",
   // A moment note
   "/session?mode=moment&prompt=moment",
+  // Talk with someone, a conversation, and a person who does not exist (decision 83)
+  "/conversations",
+  "/conversations/talk?id=maya",
+  "/conversations/talk?id=missing",
   // Learn, a card, and the review
   "/learn",
   "/learn/card?id=body-93",
@@ -92,6 +96,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/rehearse", current: "Practice" },
   // A small-talk unit belongs to Practice (Connect folded into Learn and Practice, decision 66)
   { path: "/small-talk/unit?id=answering", current: "Practice" },
+  // Talk with someone belongs to Practice (decision 83)
+  { path: "/conversations", current: "Practice" },
   // Learn marks Learn
   { path: "/learn", current: "Learn" },
   // History lives in Settings, so no tab is marked

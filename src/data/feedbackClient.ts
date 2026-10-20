@@ -86,7 +86,7 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   // On a retry, find the fix given last time
   const original = session.retryOf ? await repository.getSession(session.retryOf) : undefined;
   // The voice numbers, against the speaker's usual range from their latest earlier recordings (decision 81; not for a few-second reply)
-  const voice = session.mode === "smalltalk" && unitOf(session.promptId) !== "answering" ? null : coachVoice(session, usualRange((await repository.listSessions()).filter((other) => other.id !== session.id && other.createdAt < session.createdAt && other.pitch).slice(0, 20)));
+  const voice = session.mode === "conversation" || (session.mode === "smalltalk" && unitOf(session.promptId) !== "answering") ? null : coachVoice(session, usualRange((await repository.listSessions()).filter((other) => other.id !== session.id && other.createdAt < session.createdAt && other.pitch).slice(0, 20)));
   // Send the request, treating a network failure as "try later"
   let response: Response;
   // Try the network
@@ -98,7 +98,7 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
       // JSON body and the passphrase header
       headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase },
       // The session details the coach needs
-      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}), ...(voice ? { voice } : {}) }),
+      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}), ...(voice ? { voice } : {}), ...(session.conversation ? { conversation: { characterId: session.promptId, turns: session.conversation.turns.map((turn) => (turn.who === "you" ? { who: "you", text: turn.text } : { who: "them", lineId: turn.lineId })) } } : {}) }),
     });
   } catch {
     // Offline or unreachable: the session waits

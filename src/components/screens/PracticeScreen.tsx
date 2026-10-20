@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, RepeatIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, RepeatIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
@@ -174,6 +174,8 @@ export function PracticeScreen(props: ScreenProps) {
         id="conversation"
         title="Everyday conversation"
         ways={[
+          // A whole conversation with one of four people (decision 83)
+          { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon },
           // Answering
           { name: "Answering", detail: "“How was your weekend?” with a short story", href: "/small-talk/unit?id=answering", icon: ChatTeardropTextIcon },
           // Asking

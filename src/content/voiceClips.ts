@@ -1,4 +1,4 @@
-// Saved recordings of the app's fixed lines (decision 82): every small-talk line and shadowing phrase, read once by an ElevenLabs voice and kept in public/clips, so playing one needs no request, no key and no connection after the first time
+// Saved recordings of the app's fixed lines (decisions 82 and 83): every small-talk line, shadowing phrase and conversation character's line, read once by an ElevenLabs voice and kept in public/clips, so playing one needs no request, no key and no connection after the first time
 
 // One saved recording
 export interface VoiceClip {
@@ -10,7 +10,7 @@ export interface VoiceClip {
   text: string;
 }
 
-// The saved recordings, by line id: small talk in Jessica's voice, shadowing in Graham's (how each was read is in documents/content-sources.md)
+// The saved recordings, by line id: small talk in Jessica's voice, shadowing in Graham's, and each conversation character in their own (how each was read is in the comment above it)
 export const VOICE_CLIPS: Readonly<Record<string, VoiceClip>> = {
   // Everyday questions
   // Jessica, read as written
@@ -219,6 +219,276 @@ export const VOICE_CLIPS: Readonly<Record<string, VoiceClip>> = {
   "s06-4": { file: "s06-4", seconds: 2.7, text: "And we will get it right together." },
   // Graham, read as: [calm and firm] Let me be clear about one thing. We will not rush this decision. We will get it RIGHT. And we will get it right… together.
   "s06-all": { file: "s06-all", seconds: 8.5, text: "Let me be clear about one thing. We will not rush this decision. We will get it right. And we will get it right together." },
+  // Conversations: Maya, a new coworker at a party
+  // Brittney, [cheerfully]
+  "maya-01": { file: "maya-01", seconds: 4.9, text: "Hi! I don't think we've properly met. I'm Maya, I just joined your team." },
+  // Brittney, [cheerfully]
+  "maya-02": { file: "maya-02", seconds: 5.4, text: "Oh, hey! You're on my team, right? I'm Maya. I'm still learning everyone's names." },
+  // Brittney, read as written
+  "maya-03": { file: "maya-03", seconds: 1.0, text: "Mm-hmm." },
+  // Brittney, [curious]
+  "maya-04": { file: "maya-04", seconds: 1.0, text: "Yeah?" },
+  // Brittney, read as written
+  "maya-05": { file: "maya-05", seconds: 0.9, text: "Right." },
+  // Brittney, [curious]
+  "maya-06": { file: "maya-06", seconds: 0.8, text: "Oh?" },
+  // Brittney, [curious]
+  "maya-07": { file: "maya-07", seconds: 2.1, text: "So how was your weekend?" },
+  // Brittney, read as written
+  "maya-08": { file: "maya-08", seconds: 1.9, text: "How long have you been on the team?" },
+  // Brittney, read as written
+  "maya-09": { file: "maya-09", seconds: 2.0, text: "What do you get up to outside work?" },
+  // Brittney, read as written
+  "maya-10": { file: "maya-10", seconds: 1.5, text: "Been anywhere good lately?" },
+  // Brittney, [playfully]
+  "maya-11": { file: "maya-11", seconds: 4.0, text: "Okay, honestly, what's the best thing about working here?" },
+  // Brittney, read as written
+  "maya-12": { file: "maya-12", seconds: 2.4, text: "So what's keeping you busy these days?" },
+  // Brittney, [curious]
+  "maya-13": { file: "maya-13", seconds: 2.7, text: "Ooh. And how was it?" },
+  // Brittney, [laughs]
+  "maya-14": { file: "maya-14", seconds: 5.0, text: "Come on, there must be one good bit. What was the best part?" },
+  // Brittney, read as written
+  "maya-15": { file: "maya-15", seconds: 2.4, text: "Wait, how did you get into that?" },
+  // Brittney, [laughs]
+  "maya-16": { file: "maya-16", seconds: 1.7, text: "No way!" },
+  // Brittney, read as written
+  "maya-17": { file: "maya-17", seconds: 2.2, text: "Oh, that sounds amazing." },
+  // Brittney, [laughs]
+  "maya-18": { file: "maya-18", seconds: 2.5, text: "Ha! I love that." },
+  // Brittney, [sympathetic]
+  "maya-19": { file: "maya-19", seconds: 2.8, text: "Oh no, that sounds rough." },
+  // Brittney, [surprised]
+  "maya-20": { file: "maya-20", seconds: 1.4, text: "Wait, really?" },
+  // Brittney, read as written
+  "maya-21": { file: "maya-21", seconds: 1.7, text: "That's so cool." },
+  // Brittney, [laughs]
+  "maya-22": { file: "maya-22", seconds: 2.5, text: "Okay, fair enough." },
+  // Brittney, read as written
+  "maya-23": { file: "maya-23", seconds: 3.1, text: "Oh nice, I've always wanted to try that." },
+  // Brittney, read as written
+  "maya-24": { file: "maya-24", seconds: 4.4, text: "I moved here from Denver about a month ago, so everything's still new." },
+  // Brittney, read as written
+  "maya-25": { file: "maya-25", seconds: 4.5, text: "Honestly, the hardest part has been finding good coffee near the office." },
+  // Brittney, [laughs]
+  "maya-26": { file: "maya-26", seconds: 6.3, text: "My weekend? I finally unpacked the last box. It only took me four weeks." },
+  // Brittney, read as written
+  "maya-27": { file: "maya-27", seconds: 5.5, text: "I joined a running club on Saturday mornings. Mostly so I'd meet people, if I'm honest." },
+  // Brittney, [laughs]
+  "maya-28": { file: "maya-28", seconds: 4.6, text: "I'm always the one at the back, chatting instead of running." },
+  // Brittney, read as written
+  "maya-29": { file: "maya-29", seconds: 4.4, text: "I have a cat called Biscuit who yells at me at five every morning." },
+  // Brittney, [laughs]
+  "maya-30": { file: "maya-30", seconds: 6.7, text: "Biscuit figured out how to open the cupboard last week. I came home to cereal everywhere." },
+  // Brittney, read as written
+  "maya-31": { file: "maya-31", seconds: 5.1, text: "I used to work at a tiny startup, so a big team is a bit of a change." },
+  // Brittney, read as written
+  "maya-32": { file: "maya-32", seconds: 4.6, text: "I'm trying every taco place within walking distance. I'm on number six." },
+  // Brittney, read as written
+  "maya-33": { file: "maya-33", seconds: 4.4, text: "My sister visits next weekend, so I need somewhere fun to take her." },
+  // Brittney, read as written
+  "maya-34": { file: "maya-34", seconds: 1.1, text: "What about you?" },
+  // Brittney, [laughs]
+  "maya-35": { file: "maya-35", seconds: 4.3, text: "Anyway, enough about me. How's your week been?" },
+  // Brittney, read as written
+  "maya-36": { file: "maya-36", seconds: 4.0, text: "Sorry, I didn't quite catch that. It's so loud in here!" },
+  // Brittney, read as: Oh, I think they're starting the toast. [warmly] It was really nice to talk to you!
+  "maya-37": { file: "maya-37", seconds: 4.9, text: "Oh, I think they're starting the toast. It was really nice to talk to you!" },
+  // Brittney, read as: I'm going to grab another drink, but let's get lunch this week. [warmly] Great chatting!
+  "maya-38": { file: "maya-38", seconds: 4.8, text: "I'm going to grab another drink, but let's get lunch this week. Great chatting!" },
+  // Conversations: Theo, someone quiet at work
+  // Eddy, [softly]
+  "theo-01": { file: "theo-01", seconds: 3.3, text: "Oh, hi. Are you here for the ten o'clock too?" },
+  // Eddy, [softly]
+  "theo-02": { file: "theo-02", seconds: 2.2, text: "Hey. Looks like we're early." },
+  // Eddy, [softly]
+  "theo-03": { file: "theo-03", seconds: 0.9, text: "Mm." },
+  // Eddy, [softly]
+  "theo-04": { file: "theo-04", seconds: 0.9, text: "Yeah." },
+  // Eddy, [softly]
+  "theo-05": { file: "theo-05", seconds: 0.9, text: "Mm-hmm." },
+  // Eddy, [softly]
+  "theo-06": { file: "theo-06", seconds: 1.0, text: "Right." },
+  // Eddy, read as written
+  "theo-07": { file: "theo-07", seconds: 1.6, text: "Yeah, it was fine." },
+  // Eddy, read as written
+  "theo-08": { file: "theo-08", seconds: 1.6, text: "Not much, really." },
+  // Eddy, read as written
+  "theo-09": { file: "theo-09", seconds: 1.1, text: "Pretty quiet." },
+  // Eddy, [quietly]
+  "theo-10": { file: "theo-10", seconds: 0.8, text: "Yeah." },
+  // Eddy, read as written
+  "theo-11": { file: "theo-11", seconds: 1.7, text: "Mm, it's okay." },
+  // Eddy, [hesitantly]
+  "theo-12": { file: "theo-12", seconds: 2.0, text: "I guess." },
+  // Eddy, read as written
+  "theo-13": { file: "theo-13", seconds: 1.8, text: "No, not really." },
+  // Eddy, read as: [hesitantly] Well… I fix up old radios. [laughs softly] It's a bit of a strange hobby.
+  "theo-14": { file: "theo-14", seconds: 6.3, text: "Well… I fix up old radios. It's a bit of a strange hobby." },
+  // Eddy, read as written
+  "theo-15": { file: "theo-15", seconds: 5.1, text: "Mostly ones from the fifties. You find them broken at flea markets for almost nothing." },
+  // Eddy, [warmly]
+  "theo-16": { file: "theo-16", seconds: 6.2, text: "The best bit is when one crackles back to life for the first time. That sound gets me every time." },
+  // Eddy, read as written
+  "theo-17": { file: "theo-17", seconds: 4.0, text: "My grandad had one in his kitchen. I think that's where it started." },
+  // Eddy, read as written
+  "theo-18": { file: "theo-18", seconds: 5.3, text: "Last weekend I finished one that took me three months. It actually picks up stations now." },
+  // Eddy, [laughs softly]
+  "theo-19": { file: "theo-19", seconds: 4.9, text: "I've got eleven of them. My flatmate says that's ten too many." },
+  // Eddy, read as written
+  "theo-20": { file: "theo-20", seconds: 4.8, text: "Sometimes I just sit and listen to old jazz on them. It's really calming." },
+  // Eddy, [a little excited]
+  "theo-21": { file: "theo-21", seconds: 5.3, text: "There's a radio fair this weekend, two hours away. I've been looking forward to it for weeks." },
+  // Eddy, read as written
+  "theo-22": { file: "theo-22", seconds: 4.2, text: "I've been here about three years. I like our corner. It's quiet." },
+  // Eddy, [nervous]
+  "theo-23": { file: "theo-23", seconds: 5.3, text: "Honestly, I'm a bit nervous about this meeting. I have to present the numbers." },
+  // Eddy, [laughs softly]
+  "theo-24": { file: "theo-24", seconds: 2.6, text: "Yeah, exactly." },
+  // Eddy, read as written
+  "theo-25": { file: "theo-25", seconds: 1.2, text: "Oh, cool." },
+  // Eddy, read as written
+  "theo-26": { file: "theo-26", seconds: 1.9, text: "Huh. That's interesting." },
+  // Eddy, [softly]
+  "theo-27": { file: "theo-27", seconds: 1.4, text: "Oh no." },
+  // Eddy, [softly]
+  "theo-28": { file: "theo-28", seconds: 1.2, text: "That's nice." },
+  // Eddy, [laughs softly]
+  "theo-29": { file: "theo-29", seconds: 2.4, text: "Ha. Yeah." },
+  // Eddy, read as written
+  "theo-30": { file: "theo-30", seconds: 2.2, text: "What about you? Do you have a hobby?" },
+  // Eddy, read as written
+  "theo-31": { file: "theo-31", seconds: 1.6, text: "How long have you been here?" },
+  // Eddy, [curious]
+  "theo-32": { file: "theo-32", seconds: 2.1, text: "Are you presenting anything today?" },
+  // Eddy, read as written
+  "theo-33": { file: "theo-33", seconds: 1.5, text: "Sorry, what was that?" },
+  // Eddy, [awkward]
+  "theo-34": { file: "theo-34", seconds: 2.1, text: "Um… yeah." },
+  // Eddy, read as: Oh, people are coming in. [softly] Thanks for chatting. That was nice.
+  "theo-35": { file: "theo-35", seconds: 4.3, text: "Oh, people are coming in. Thanks for chatting. That was nice." },
+  // Eddy, read as: I should set up my laptop. [softly] Talk later?
+  "theo-36": { file: "theo-36", seconds: 2.9, text: "I should set up my laptop. Talk later?" },
+  // Conversations: Chris, a friend having a rough week
+  // Chris, [sighs]
+  "chris-01": { file: "chris-01", seconds: 4.7, text: "Hey. Sorry I'm late. It's been… a week." },
+  // Chris, [tired]
+  "chris-02": { file: "chris-02", seconds: 3.9, text: "Hi. Thanks for meeting up. I really needed this." },
+  // Chris, [tired]
+  "chris-03": { file: "chris-03", seconds: 1.1, text: "Mm." },
+  // Chris, [tired]
+  "chris-04": { file: "chris-04", seconds: 1.1, text: "Yeah." },
+  // Chris, [tired]
+  "chris-05": { file: "chris-05", seconds: 1.3, text: "Mm-hmm." },
+  // Chris, [tired]
+  "chris-06": { file: "chris-06", seconds: 1.2, text: "Right." },
+  // Chris, read as written
+  "chris-07": { file: "chris-07", seconds: 5.5, text: "My landlord's selling the flat. I found out on Monday. I've got two months to move out." },
+  // Chris, read as written
+  "chris-08": { file: "chris-08", seconds: 3.6, text: "And I really love that place. I've been there six years." },
+  // Chris, [sighs]
+  "chris-09": { file: "chris-09", seconds: 3.6, text: "Everything I can afford is miles from work." },
+  // Chris, [sighs]
+  "chris-10": { file: "chris-10", seconds: 5.5, text: "Then on Wednesday, the project I've been on all year got cancelled." },
+  // Chris, read as written
+  "chris-11": { file: "chris-11", seconds: 4.1, text: "Nobody even told us why. Just… stop, it's done." },
+  // Chris, read as written
+  "chris-12": { file: "chris-12", seconds: 4.0, text: "The worst bit is I didn't get to say goodbye to the team properly." },
+  // Chris, [tired]
+  "chris-13": { file: "chris-13", seconds: 5.4, text: "I haven't been sleeping much. I keep doing sums in my head at three in the morning." },
+  // Chris, [laughs softly]
+  "chris-14": { file: "chris-14", seconds: 5.3, text: "My mum keeps sending me flat listings. Most of them are in her town." },
+  // Chris, read as written
+  "chris-15": { file: "chris-15", seconds: 4.0, text: "My boss says there might be another project. Might." },
+  // Chris, [a little brighter]
+  "chris-16": { file: "chris-16", seconds: 3.5, text: "There is one good thing, though. A friend might have a room going." },
+  // Chris, [laughs softly]
+  "chris-17": { file: "chris-17", seconds: 5.6, text: "It's near the river, with a tiny balcony. I've already planned the plants." },
+  // Chris, read as written
+  "chris-18": { file: "chris-18", seconds: 3.8, text: "I nearly cancelled today, honestly. I'm glad I didn't." },
+  // Chris, [sighs]
+  "chris-19": { file: "chris-19", seconds: 2.5, text: "Yeah. Exactly." },
+  // Chris, read as written
+  "chris-20": { file: "chris-20", seconds: 2.0, text: "Thanks. It really is." },
+  // Chris, [warmly]
+  "chris-21": { file: "chris-21", seconds: 3.0, text: "Yeah. That's exactly how it feels." },
+  // Chris, [flatly]
+  "chris-22": { file: "chris-22", seconds: 1.5, text: "Yeah, maybe." },
+  // Chris, [laughs softly]
+  "chris-23": { file: "chris-23", seconds: 3.2, text: "Thanks. I needed to hear that." },
+  // Chris, read as written
+  "chris-24": { file: "chris-24", seconds: 2.7, text: "It's just a lot at once, you know?" },
+  // Chris, read as written
+  "chris-25": { file: "chris-25", seconds: 2.8, text: "Honestly, it helps just saying it out loud." },
+  // Chris, read as written
+  "chris-26": { file: "chris-26", seconds: 3.1, text: "Anyway, how are you? I've been going on." },
+  // Chris, read as written
+  "chris-27": { file: "chris-27", seconds: 4.0, text: "Sorry, I've been talking about me this whole time. What's new with you?" },
+  // Chris, read as written
+  "chris-28": { file: "chris-28", seconds: 1.6, text: "Sorry, what did you say?" },
+  // Chris, [softly]
+  "chris-29": { file: "chris-29", seconds: 4.1, text: "I don't think I want advice right now. I just needed to say it." },
+  // Chris, read as: I should head off. [warmly] Thanks for listening. Honestly, I feel a bit better.
+  "chris-30": { file: "chris-30", seconds: 4.7, text: "I should head off. Thanks for listening. Honestly, I feel a bit better." },
+  // Chris, read as: Thanks for this. [warmly] Let's do it again soon, okay?
+  "chris-31": { file: "chris-31", seconds: 3.1, text: "Thanks for this. Let's do it again soon, okay?" },
+  // Conversations: Priya, a friend with big news
+  // Stacey, [excited]
+  "priya-01": { file: "priya-01", seconds: 6.1, text: "Oh my gosh, hi! You won't believe this. I got into the design programme in Copenhagen!" },
+  // Stacey, [excited]
+  "priya-02": { file: "priya-02", seconds: 5.4, text: "Hey! Okay, I have to tell someone. I got in! The Copenhagen programme!" },
+  // Stacey, [happy]
+  "priya-03": { file: "priya-03", seconds: 0.9, text: "Mm-hmm!" },
+  // Stacey, [excited]
+  "priya-04": { file: "priya-04", seconds: 1.0, text: "Yeah?" },
+  // Stacey, [laughs]
+  "priya-05": { file: "priya-05", seconds: 1.7, text: "I know!" },
+  // Stacey, [happy]
+  "priya-06": { file: "priya-06", seconds: 1.0, text: "Right?" },
+  // Stacey, read as: [excited] They emailed this morning while I was on the bus, and I actually screamed. [laughs] Everyone stared.
+  "priya-07": { file: "priya-07", seconds: 6.5, text: "They emailed this morning while I was on the bus, and I actually screamed. Everyone stared." },
+  // Stacey, read as written
+  "priya-08": { file: "priya-08", seconds: 4.8, text: "I applied last year too and didn't get in, so this feels huge." },
+  // Stacey, [warmly]
+  "priya-09": { file: "priya-09", seconds: 5.4, text: "The first person I called was my mum. She cried. Then I cried." },
+  // Stacey, read as written
+  "priya-10": { file: "priya-10", seconds: 6.0, text: "It starts in January. Two years, working on real projects with real companies." },
+  // Stacey, [laughs]
+  "priya-11": { file: "priya-11", seconds: 4.7, text: "I've already looked at flats. Way too many flats." },
+  // Stacey, read as written
+  "priya-12": { file: "priya-12", seconds: 5.3, text: "I need to learn some Danish. So far I can say thank you, and that's it." },
+  // Stacey, read as written
+  "priya-13": { file: "priya-13", seconds: 4.6, text: "They said it was my portfolio that got me in. The project with the kids' library." },
+  // Stacey, [laughs]
+  "priya-14": { file: "priya-14", seconds: 3.7, text: "I keep rereading the email to check it's real." },
+  // Stacey, [nervous]
+  "priya-15": { file: "priya-15", seconds: 4.8, text: "Honestly, I'm also a bit scared. It's a whole new country." },
+  // Stacey, [softly]
+  "priya-16": { file: "priya-16", seconds: 3.3, text: "I'll miss everyone here. That part's hard." },
+  // Stacey, [laughs]
+  "priya-17": { file: "priya-17", seconds: 3.2, text: "I know! I still can't believe it." },
+  // Stacey, read as written
+  "priya-18": { file: "priya-18", seconds: 3.4, text: "Thank you! It means a lot that you're excited too." },
+  // Stacey, [deflated]
+  "priya-19": { file: "priya-19", seconds: 2.8, text: "Oh. Yeah, I guess." },
+  // Stacey, read as written
+  "priya-20": { file: "priya-20", seconds: 3.3, text: "Oh. Right. Yeah, that's nice." },
+  // Stacey, [warmly]
+  "priya-21": { file: "priya-21", seconds: 3.1, text: "Yeah. Exactly. Thank you." },
+  // Stacey, [excited]
+  "priya-22": { file: "priya-22", seconds: 1.0, text: "Right?!" },
+  // Stacey, read as written
+  "priya-23": { file: "priya-23", seconds: 2.1, text: "Anyway, what's new with you?" },
+  // Stacey, read as written
+  "priya-24": { file: "priya-24", seconds: 1.8, text: "Have you ever lived abroad?" },
+  // Stacey, read as written
+  "priya-25": { file: "priya-25", seconds: 3.6, text: "Sorry, it's so loud here. What did you say?" },
+  // Stacey, [laughs]
+  "priya-26": { file: "priya-26", seconds: 3.6, text: "Okay, I'm talking way too much about me." },
+  // Stacey, read as: Oh, that's my train! [excited] Let's celebrate properly soon, okay?
+  "priya-27": { file: "priya-27", seconds: 4.2, text: "Oh, that's my train! Let's celebrate properly soon, okay?" },
+  // Stacey, read as: I have to run, but thank you. Seriously. [warmly] That made my day.
+  "priya-28": { file: "priya-28", seconds: 5.1, text: "I have to run, but thank you. Seriously. That made my day." },
 };
 
 // A line's saved recording: its address and length, or null when it has none

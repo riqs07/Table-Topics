@@ -20,7 +20,7 @@ describe("mode catalogue", () => {
       ["talk", ["talks"]],
       ["spot", ["table-topic", "prepared", "openings", "free-talk", "short-speech", "qa"]],
       ["skill", ["lessons", "readings", "pause-drills", "tricky-words", "voice-drills"]],
-      ["connect", ["small-talk", "moments"]],
+      ["connect", ["small-talk", "conversations", "moments"]],
     ]);
   });
 

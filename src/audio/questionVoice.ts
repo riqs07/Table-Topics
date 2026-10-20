@@ -56,23 +56,42 @@ export function prepareQuestionVoice(promptId: string): void {
 // How long to wait for audio of unknown length before carrying on, in milliseconds (some browsers never report the end)
 const UNKNOWN_LENGTH_WAIT = 30_000;
 
-// Play an address, finishing when it ends (or after a fair time); failing when the phone will not play it or it cannot load, so the phone's own voice can say it instead
+// The one player every line uses, made on first use: a phone that let it play once, from a tap, lets it play later lines without one, which a conversation needs (decision 83)
+let shared: HTMLAudioElement | null = null;
+// Finishes the line now playing, when another starts or speaking is stopped
+let finishCurrent: (() => void) | null = null;
+
+// Play an address, finishing when it ends (or after a fair time); failing when the phone will not play it or it cannot load, so the phone's own voice can say it instead. A line still playing finishes quietly when the next starts
 export function play(url: string, seconds: number | null): Promise<void> {
   // Finish once
   return new Promise((resolve, reject) => {
-    // The player
-    const audio = new Audio(url);
+    // Finish the line still playing, as if it had ended
+    finishCurrent?.();
+    // The shared player
+    const audio = (shared ??= new Audio());
     // Whether sound has started
     let started = false;
+    // Whether this line has finished
+    let settled = false;
     // A fair time: the recording's length with room to start, or a generous wait when unknown
-    const guard = setTimeout(() => resolve(), seconds === null ? UNKNOWN_LENGTH_WAIT : seconds * 1000 + 5000);
-    // Stop waiting
-    const settle = (finish: () => void) => {
+    const guard = setTimeout(() => settle(resolve), seconds === null ? UNKNOWN_LENGTH_WAIT : seconds * 1000 + 5000);
+    // Stop waiting, once
+    function settle(finish: () => void) {
+      // Already finished (a late event or refusal from a line that was replaced)
+      if (settled) return;
+      // Finished now
+      settled = true;
       // Stop the guard
       clearTimeout(guard);
+      // No longer the line playing
+      if (finishCurrent === finishEarly) finishCurrent = null;
       // Finish
       finish();
-    };
+    }
+    // Finishing early, when replaced or stopped
+    const finishEarly = () => settle(resolve);
+    // This is the line playing now
+    finishCurrent = finishEarly;
     // Sound has started
     audio.onplaying = () => {
       // Noted, so a later failure does not say it twice
@@ -82,9 +101,21 @@ export function play(url: string, seconds: number | null): Promise<void> {
     audio.onended = () => settle(resolve);
     // When it fails: before any sound, the phone's voice takes over; part-way, carry on
     audio.onerror = () => settle(started ? resolve : () => reject(new Error("The audio could not be played.")));
+    // The line to play
+    audio.src = url;
     // Start it now, while the tap still counts
     audio.play().catch((error: unknown) => settle(() => reject(error)));
   });
+}
+
+// Stop whatever line is playing, finishing it quietly (leaving a conversation part-way; decision 83)
+export function stopQuestionVoice(): void {
+  // Silence the player
+  shared?.pause();
+  // Finish the line, as if it had ended
+  finishCurrent?.();
+  // Silence the phone's own voice too
+  if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
 // Say a line: its prepared audio, else its saved recording from its address, else (or if the audio will not play) the phone's own voice. Hands back the saved recording's length in seconds when that is what played, otherwise null

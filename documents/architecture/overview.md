@@ -1,7 +1,7 @@
 # Architecture Overview
 
 **Purpose:** Show how VoiceLab is built and how data moves.
-**Last updated:** 2026-10-12
+**Last updated:** 2026-10-20
 
 ## In one paragraph
 
@@ -66,6 +66,10 @@ Rule: logic goes in `core/` with no browser dependencies, so it can be tested qu
 `POST /api/feedback` with header `x-voicelab-passphrase` and body `{ transcript, durationSec, focusId, previousChange, mode?, promptId?, question? }`. Checks run in this order, so nothing costs money until the last step: settings present (500 naming the missing variable), passphrase (401), body shape and size (400), shared rate limit (429 with `Retry-After`; 503 if the counter store is down), then the coach (200 `{ feedback }`, 422 if declined, 502 on failure). Logic: `src/server/feedbackHandler.ts`; prompt: `src/core/coachPrompt.ts`.
 
 `POST /api/questions` was removed with Q&A practice (decision 61).
+
+## Conversation route (decision 83)
+
+`POST /api/conversation` with the same header and body `{ characterId, turns: [{ who, text?, lineId? }], wrapUp }`: your words, and the ids of the character's lines so far. It runs the same checks (`src/server/guard.ts`; 30 a minute, 400 a day), rebuilds the character's words from their own lines on the server, then asks Claude Haiku (`src/server/conversationPartner.ts`, prompt and checks in `src/core/conversationTurn.ts`) for the next one or two line ids. The pick is checked against the bank (`checkPick`) and comes back as 200 `{ lineIds }`; a decline comes back as the set script with `scripted: true`; a failure is 502, and the app then uses the script itself. Logic: `src/server/conversationHandler.ts`; the app's side: `src/data/conversationClient.ts` and `src/components/screens/ConversationScreen.tsx`. After the conversation, the feedback route takes an optional `conversation` (the same turns) and sends it to its own coach prompt (`CONVERSATION_SYSTEM_PROMPT`).
 
 ## Recording (desktop first)
 

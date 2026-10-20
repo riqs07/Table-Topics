@@ -70,7 +70,13 @@ const isTextOrNull = (value: unknown) => value === null || isText(value);
 // Check that a value has the shape of coach feedback
 function isFeedback(value: unknown): boolean {
   // Feedback must be an object with three text parts
-  return isObject(value) && isText(value.keep) && isText(value.change) && isText(value.retryCue) && (value.smallTalk === undefined || isObject(value.smallTalk)) && (value.connection === undefined || isObject(value.connection));
+  return isObject(value) && isText(value.keep) && isText(value.change) && isText(value.retryCue) && (value.smallTalk === undefined || isObject(value.smallTalk)) && (value.connection === undefined || isObject(value.connection)) && (value.conversation === undefined || isObject(value.conversation));
+}
+
+// Check that a value has the shape of one turn of a conversation
+function isTurn(value: unknown): boolean {
+  // Said by you or them, with the words, how long it took, and for their turns the line said
+  return isObject(value) && (value.who === "you" || value.who === "them") && isText(value.text) && isNumber(value.seconds) && (value.lineId === undefined || isText(value.lineId));
 }
 
 // Check that a value has the shape of a session record
@@ -93,6 +99,8 @@ function isSession(value: unknown): value is SessionRecord {
     (value.questions === undefined || (Array.isArray(value.questions) && value.questions.every(isText))) && (value.question === undefined || isText(value.question)) &&
     // A short speech's plan (usually missing)
     (value.outline === undefined || (typeof value.outline === "object" && value.outline !== null && isText((value.outline as Record<string, unknown>).topic) && Array.isArray((value.outline as Record<string, unknown>).points) && ((value.outline as Record<string, unknown>).points as unknown[]).every(isText) && typeof (value.outline as Record<string, unknown>).goalMinutes === "number")) &&
+    // A conversation's turns, each said by you or them (only on conversations, decision 83)
+    (value.conversation === undefined || (isObject(value.conversation) && Array.isArray(value.conversation.turns) && value.conversation.turns.every(isTurn))) &&
     // Section of a rehearsal (missing on most sessions)
     (value.sectionIndex === undefined || value.sectionIndex === null || isNumber(value.sectionIndex)) &&
     // Feedback and its status

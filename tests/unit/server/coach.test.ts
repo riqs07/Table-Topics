@@ -77,6 +77,20 @@ describe("createClaudeCoach", () => {
     expect([JSON.stringify(sent.system).includes("VoiceLab's conversation coach"), JSON.stringify(sent.messages).includes("I just got back from a week in Lisbon."), result.status === "ok" ? result.feedback.connection?.found.map((item) => item.beat) : null, result.status === "ok" ? result.feedback.connection?.better : null]).toEqual([true, true, ["open", "their-detail"], "Lisbon! What was the best thing you ate there?"]);
   });
 
+  // A conversation with a character goes to the conversation coach with the character's own words, and comes back with a turn and a better version (decision 83)
+  it("sends a conversation to the conversation coach with the character's words", async () => {
+    // Make a fake network that remembers the request
+    const network = fakeNetwork(recorded("conversation-response"));
+    // Theo opened, you asked about radios, Theo answered, you changed the subject
+    const conversation = { characterId: "theo", turns: [{ who: "them" as const, lineId: "theo-14" }, { who: "you" as const, text: "oh what kind of radios" }, { who: "them" as const, lineId: "theo-15" }, { who: "you" as const, text: "do you like your job" }] };
+    // Ask for feedback
+    const result = await createClaudeCoach("sk-test", network).getFeedback({ ...INPUT, mode: "conversation", promptId: "theo", transcript: "oh what kind of radios do you like your job", durationSec: 40, conversation });
+    // Read the request body that was sent
+    const sent = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    // Confirm the instructions, Theo's words looked up on the server, and the trimmed better version
+    expect([JSON.stringify(sent.system).includes("two or three minutes"), JSON.stringify(sent.messages).includes("Theo: Mostly ones from the fifties."), result.status === "ok" ? result.feedback.conversation : null]).toEqual([true, true, { yours: "do you like your job", better: "What do you look for at the flea markets?" }]);
+  });
+
   // A safety decline is reported as such, not as a crash
   it("reports a decline when the model refuses", async () => {
     // Make a coach whose network returns a refusal

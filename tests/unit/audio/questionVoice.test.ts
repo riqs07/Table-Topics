@@ -2,17 +2,21 @@
 // Load the test helpers from the test runner
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Load the line voice being checked
-import { speakQuestion } from "@/audio/questionVoice";
+import { speakQuestion, stopQuestionVoice } from "@/audio/questionVoice";
 // Load the saved recordings, for their lengths
 import { VOICE_CLIPS } from "@/content/voiceClips";
 
 // What the stand-in audio player does once asked to play
-type Behaviour = "plays" | "load-fails" | "refused" | "fails-part-way";
+type Behaviour = "plays" | "load-fails" | "refused" | "fails-part-way" | "keeps-playing";
 
 // How the next players behave
 let behaviour: Behaviour = "plays";
-// The addresses players were made for
+// The addresses played
 let played: string[] = [];
+// How many players were made
+let made = 0;
+// How many times sound was paused
+let paused = 0;
 // What the phone's own voice said
 let spoken: string[] = [];
 
@@ -24,17 +28,28 @@ class FakeAudio {
   onended: (() => void) | null = null;
   // Loading or playing failed
   onerror: (() => void) | null = null;
-  // Note the address
-  constructor(url: string) {
-    // Noted
-    played.push(url);
+  // The address to play
+  src = "";
+  // Count the players made
+  constructor() {
+    // Counted
+    made += 1;
+  }
+  // Note a pause
+  pause(): void {
+    // Counted
+    paused += 1;
   }
   // Play as the check asks
   play(): Promise<void> {
+    // Note the address
+    played.push(this.src);
     // The phone refuses outright (no tap, or the format is not supported)
     if (behaviour === "refused") return Promise.reject(new DOMException("not allowed", "NotAllowedError"));
     // Otherwise things happen just after
     setTimeout(() => {
+      // Sound starts and carries on until replaced
+      if (behaviour === "keeps-playing") return this.onplaying?.();
       // The file never loads: an error before any sound
       if (behaviour === "load-fails") return this.onerror?.();
       // Sound starts
@@ -64,7 +79,7 @@ class FakeUtterance {
 // Swap in the stand-ins before each check
 beforeEach(() => {
   // Start clean
-  [behaviour, played, spoken] = ["plays", [], []];
+  [behaviour, played, spoken, made, paused] = ["plays", [], [], 0, 0];
   // The audio player
   vi.stubGlobal("Audio", FakeAudio);
   // The phone's voice parts
@@ -108,6 +123,24 @@ describe("speakQuestion", () => {
     const seconds = await speakQuestion("How was your weekend?", "st01");
     // Nothing from the phone
     expect([seconds, spoken]).toEqual([VOICE_CLIPS.st01!.seconds, []]);
+  });
+
+  // One player for every line, so a phone that allowed it once allows the rest; a line still playing finishes when the next starts, or when stopped (decision 83)
+  it("uses one player, and finishes a line when replaced or stopped", async () => {
+    // Lines that keep playing
+    behaviour = "keeps-playing";
+    // The first line starts
+    const first = speakQuestion("Hi! I'm Maya.", "maya-01");
+    // The second starts over it
+    const second = speakQuestion("Oh nice!", "maya-16");
+    // The first finishes
+    const firstSeconds = await first;
+    // Stopped, so the second finishes too
+    stopQuestionVoice();
+    // Its length
+    const secondSeconds = await second;
+    // At most one player, both lines played, both finished as recordings, and the player paused once
+    expect([made <= 1, played, firstSeconds, secondSeconds, paused, spoken]).toEqual([true, ["/clips/maya-01.mp3", "/clips/maya-16.mp3"], VOICE_CLIPS["maya-01"]!.seconds, VOICE_CLIPS["maya-16"]!.seconds, 1, []]);
   });
 
   // A line with no recording and nothing prepared goes straight to the phone

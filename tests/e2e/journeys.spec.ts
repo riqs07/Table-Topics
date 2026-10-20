@@ -437,6 +437,44 @@ test("Your voice: warm up, then a volume drill", async ({ page }) => {
   await expect(page.getByRole("link", { name: /^Next drill/ })).toHaveAttribute("href", "/voice/drill?id=v02");
 });
 
+// A conversation (decision 83): from Practice to Maya, her recorded opening, your turn ended with Done, her scripted reply (no passphrase, so no coach), then End and the saved conversation
+test("Conversation: talk with Maya, then see the conversation", async ({ page }) => {
+  // The stand-in speech answers her
+  await useStandIns(page, "I went climbing on Saturday it was great what about you");
+  // Start at Practice
+  await page.goto("/practice");
+  // Talk with someone
+  await page.getByRole("link", { name: /^Talk with someone/ }).click();
+  // Maya
+  await page.getByRole("link", { name: /^Maya/ }).click();
+  // The scene first
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Talk with Maya");
+  // Start: she says her opening, then it is your turn
+  await page.getByRole("button", { name: "Start" }).click();
+  // Your turn
+  const done = page.getByRole("button", { name: "Done" });
+  // After her opening line
+  await expect(done).toBeVisible({ timeout: 20_000 });
+  // Answer for a moment
+  await page.waitForTimeout(2_000);
+  // Done
+  await done.click();
+  // Her reply from the script ends on a question
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("So how was your weekend?", { timeout: 20_000 });
+  // Your turn again
+  await expect(done).toBeVisible({ timeout: 20_000 });
+  // Answer for a moment
+  await page.waitForTimeout(1_500);
+  // End it
+  await page.getByRole("button", { name: "End conversation" }).click();
+  // Saved, and opened on its results
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+  // The conversation, with your words
+  await expect(page.getByRole("list", { name: "The conversation" })).toContainText("I went climbing");
+  // Talk again
+  await expect(page.locator("[data-action-band]")).toContainText("Talk again");
+});
+
 // Learn: from its tab, a myth-or-fact card screen by screen, then on to the next card (no quiz since decision 67)
 test("Learn: read a card one screen at a time", async ({ page }) => {
   // Start at Learn

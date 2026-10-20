@@ -52,6 +52,13 @@ const RequestSchema = z.object({
     // The last third's volume
     lastThird: z.enum(["louder", "same", "quieter"]).nullable(),
   }).optional(),
+  // For a conversation with a character: your words and their line ids, bounded like the conversation route (decision 83)
+  conversation: z.object({
+    // The character's id
+    characterId: z.string().max(16),
+    // The turns
+    turns: z.array(z.object({ who: z.enum(["you", "them"]), text: z.string().max(1_000).optional(), lineId: z.string().max(16).optional() })).max(60),
+  }).optional(),
 });
 
 // Build the handler for POST /api/feedback

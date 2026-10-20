@@ -1,7 +1,7 @@
 # Roadmap
 
 **Purpose:** The order VoiceLab is built in. Every milestone starts with tests, and every milestone lists where you step in.
-**Last updated:** 2026-10-15
+**Last updated:** 2026-10-20
 
 Checkpoint IDs (C#) are defined in [checkpoints.md](checkpoints.md). The riskiest assumptions are tested first (milestone 1), because their answers can reshape later milestones, especially 5 and 10.
 
@@ -72,7 +72,7 @@ Ideas agreed for later, in order. Each sends audio or text to ElevenLabs, so eac
 | # | Feature | What it does | Cost and notes |
 |---|---------|--------------|----------------|
 | V1 | **The coach speaks** | The coach reads the one fix and the retry cue aloud in a calm voice; "Hear it smoothly" reads the user's own sentence back without the fillers, so they hear the target before retrying. Optional later: the user's own cloned voice, opt-in only | ElevenLabs text-to-speech, priced per character. Text leaves the device, not audio (unless the voice is cloned) |
-| V2 | **Live conversation practice** | A new mode: a real-time voice partner for small talk, interviews, or ordering coffee, with Claude as its brain and feedback afterwards | ElevenLabs Agents: plans from about $99 a month plus about $0.08 a minute plus AI usage (third-party figures, to be confirmed). Audio leaves the device during the call |
+| V2 | **Live conversation practice** | A new mode: a real-time voice partner for small talk, interviews, or ordering coffee, with Claude as its brain and feedback afterwards | ElevenLabs Agents: plans from about $99 a month plus about $0.08 a minute plus AI usage (third-party figures, to be confirmed). Audio leaves the device during the call. **A cheaper first stage is built instead (decision 83):** four characters whose recorded lines Claude Haiku picks turn by turn, under $0.002 a conversation, with no audio leaving the device |
 
 Not chosen for now: ElevenLabs Scribe as the transcriber (would keep filler words and time every word, but sends audio to ElevenLabs). Revisit if browser transcription drops too many fillers (risk R1).
 

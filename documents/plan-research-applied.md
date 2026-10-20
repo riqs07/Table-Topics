@@ -43,7 +43,7 @@ The biggest research-backed gap. In the week-long talk-to-strangers study, peopl
 - Three lessons and a bank of news (good and bad); the phone checks the beats; the conversation coach covers the unit.
 - Later units (reading the room, starting and ending, going deeper) follow the research: notice changes and pay attention rather than copy body language; a depth ladder (fact → opinion → feeling → meaning, up one rung at most); remember one name and use it when you say goodbye.
 
-## Stage 5 (later): the live conversation partner
+## Stage 5: the live conversation partner (first stage built, decision 83)
 
 - A partner that talks and a separate coach afterwards (personalised feedback after role-play beat practice alone in a 2026 trial).
 - The partner shares too, so you practise the back-and-forth, not an interview; it varies, remembers, and does not interrupt or always agree (the common complaints about current AI partners).
@@ -62,5 +62,5 @@ The biggest research-backed gap. In the week-long talk-to-strangers study, peopl
 | 2. Feedback rules | Built (decision 53) |
 | 3. Learn set and scenarios | Built (decision 54) |
 | 4. Responding to news | Built (decision 55) |
-| 5. Live partner | Later |
+| 5. Live partner | First stage built (decision 83): four characters with recorded lines picked by Claude Haiku, notes afterwards |
 | 6. Measuring transfer | Later (part comes with stage 1) |

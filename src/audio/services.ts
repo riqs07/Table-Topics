@@ -59,6 +59,8 @@ export interface RecordingServices {
   prepareSpeech?(promptId: string): void;
   // Say a line aloud, finishing when it has been said, and hand back the saved recording's length in seconds when one played (null for the phone's own voice; optional: without it, recording starts straight away)
   speak?(text: string, promptId: string): Promise<number | null>;
+  // Stop a line being said, finishing it quietly (optional; a conversation left part-way; decision 83)
+  stopSpeaking?(): void;
   // Make a live transcriber
   createTranscriber(): LiveTranscriber;
   // Start recording audio from the microphone
