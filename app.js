@@ -1,4 +1,4 @@
-// Table Topics - Main Application
+// Rapid Fire - Main Application
 // Initializes and wires up all components
 
 const Palette = {

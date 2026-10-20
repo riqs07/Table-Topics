@@ -1,2 +1,2 @@
-# Table-Topics
-Utilizing vanilla Javascript and local storage as the 'database'Table topics to help improve impromptu speaking ability.
+# Rapid Fire
+Utilizing vanilla JavaScript and local storage as the 'database', Rapid Fire helps improve impromptu speaking ability.

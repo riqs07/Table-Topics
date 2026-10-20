@@ -1,4 +1,4 @@
-// Table Topics - Game Manager
+// Rapid Fire - Game Manager
 // Handles game flow, timer, and session management
 
 // Current session tracking

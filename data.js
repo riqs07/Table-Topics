@@ -1,4 +1,4 @@
-// Table Topics - Questions and Words of the Day Database
+// Rapid Fire - Questions and Words of the Day Database
 // Categories: Impromptu, Persuasive, Storytelling, Debate, Self-Reflection, Professional, Creative
 
 questions = [

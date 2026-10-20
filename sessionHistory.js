@@ -378,7 +378,7 @@ function exportHistory() {
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = `table-topics-history-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `rapid-fire-history-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
