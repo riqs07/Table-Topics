@@ -304,13 +304,13 @@ describe("SessionScreen", () => {
   });
 
   // A Table Topic says whether it would qualify, and its retry is another Table Topic
-  it("shows the timing of a Table Topic and retries as one", async () => {
+  it("shows the timing of a Rapid Fire answer and retries as one", async () => {
     // A Table Topic in the grace period
     const session = makeSession({ id: "t1", mode: "talk", durationSec: 132, promptId: "p001", feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="t1" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the masthead names the kind of session
-    expect(await screen.findByText("Table Topic")).toBeTruthy();
+    expect(await screen.findByText("Rapid Fire")).toBeTruthy();
     // Confirm the timing line
     expect(screen.getByText("2:12, past 2:00 but inside the 30-second grace.")).toBeTruthy();
     // Confirm the retry is another talk

@@ -217,11 +217,11 @@ describe("checkFeedback", () => {
   });
 
   // A Table Topic is flagged with its rules, so the coach looks at the whole answer and the timing
-  it("tells the coach when a session is a Table Topic", () => {
+  it("tells the coach when a session is a Rapid Fire answer", () => {
     // Build a Table Topic message in the grace period
     const message = buildCoachMessage({ ...SESSION, durationSec: 132, mode: "talk" });
     // Confirm the note
-    expect(message).toContain("This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under 1:00 or over 2:30 would not qualify in a contest. It came after a 10-second countdown on a light question and ran 132 seconds. Judge it as a quick, unprepared speech.");
+    expect(message).toContain("This is a Rapid Fire answer (a Toastmasters-style Table Topic; call it Rapid Fire in your notes), timed by Toastmasters rules: 1 to 2 minutes, and under 1:00 or over 2:30 would not qualify in a contest. It came after a 10-second countdown on a light question and ran 132 seconds. Judge it as a quick, unprepared speech.");
   });
 
   // A small-talk answer gets its own coach: the question, the lesson's beat, and the notes as beat names

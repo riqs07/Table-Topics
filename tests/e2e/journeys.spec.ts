@@ -3,8 +3,8 @@ import { expect, test, useStandIns } from "./support/fixtures";
 // Load Node's file reader, for a real recording to stand in for a written line's audio
 import { readFileSync } from "node:fs";
 
-// The welcome leads straight into today's first step, a Learn card; then a Table Topic from Practice, to the saved session
-test("Table Topic: from the welcome through Practice, countdown, recording, saved session", async ({ page }) => {
+// The welcome leads straight into today's first step, a Learn card; then Rapid Fire (once Table Topic) from Practice, to the saved session
+test("Rapid Fire: from the welcome through Practice, countdown, recording, saved session", async ({ page }) => {
   // Use the stand-in microphone and speech
   await useStandIns(page);
   // Start at home
@@ -19,8 +19,8 @@ test("Table Topic: from the welcome through Practice, countdown, recording, save
   await page.getByRole("link", { name: "Close, back to Today" }).click();
   // Go to Practice instead
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Practice", exact: true }).click();
-  // Start a Table Topic from its row
-  await page.getByRole("link", { name: /^Table Topic/ }).click();
+  // Start Rapid Fire from its row
+  await page.getByRole("link", { name: /^Rapid Fire/ }).click();
   // The topic page opens
   await expect(page).toHaveURL(/mode=talk/);
   // Reveal the topic and start the countdown

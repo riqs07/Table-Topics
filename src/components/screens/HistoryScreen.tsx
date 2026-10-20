@@ -101,8 +101,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.mode === "outline") return `Short speech: ${session.outline?.topic ?? "your topic"}`;
   // Mark warm-ups so they read differently from full sessions
   if (session.mode === "warmup") return `Warm-up: ${text}`;
-  // Mark Table Topics the same way
-  if (session.mode === "talk") return `Table Topic: ${text}`;
+  // Mark Rapid Fire answers the same way (once called Table Topics; decision 85)
+  if (session.mode === "talk") return `Rapid Fire: ${text}`;
   // And readings, by their title (a part of a full speech says which part)
   if (session.mode === "read") return `Read aloud: ${findReading(session.promptId)?.title ?? text}`;
   // And pause drills

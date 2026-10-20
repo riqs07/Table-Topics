@@ -52,8 +52,8 @@ export interface ModeInfo {
 export const MODES: ReadonlyArray<ModeInfo> = [
   // Your own talks
   { id: "talks", job: "talk", name: "Your talks", subtitle: "a plan to the day of your talk", length: "5 to 20 min a day", youDo: "Paste your talk, set its date, and rehearse it section by section with less and less text.", youGet: "Each day's step, how much of your script you covered, and how long each run took." },
-  // A Table Topic
-  { id: "table-topic", job: "spot", name: "Table Topic", subtitle: "surprise question", length: "1 to 2 min", youDo: "A light question appears, you get 10 seconds, then you speak.", youGet: "Your time against the 1:00 to 2:00 window, your fillers and pauses, and one fix." },
+  // Rapid Fire (once called Table Topic; the id stays; decision 85)
+  { id: "table-topic", job: "spot", name: "Rapid Fire", subtitle: "surprise question", length: "1 to 2 min", youDo: "A light question appears, you get 10 seconds, then you speak.", youGet: "Your time against the 1:00 to 2:00 window, your fillers and pauses, and one fix." },
   // A prepared speech
   { id: "prepared", job: "spot", name: "Prepared speech", subtitle: "2 minutes to plan, then speak for 2 to 4", length: "about 6 min", youDo: "Read a speaking task, plan it for up to 2 minutes with a hint, then speak for 2 to 4 minutes, with green, yellow and red lights.", youGet: "Your time against the 2:00 to 4:00 window, this week's number, and one fix." },
   // Openings and closings
@@ -84,7 +84,7 @@ export const MODES: ReadonlyArray<ModeInfo> = [
 
 // How each kind of session is explained before recording ("rehearse" is a run of your talk)
 const SESSION_TO_MODE: Readonly<Partial<Record<SessionMode, string>>> = {
-  // A Table Topic
+  // A Rapid Fire answer
   talk: "table-topic",
   // A prepared speech
   response: "prepared",

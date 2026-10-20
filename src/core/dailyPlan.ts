@@ -230,10 +230,10 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
     // The step
     return { lane, kind: "session", label: "Small talk", title: question.text, mode: "smalltalk", promptId: question.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${question.id}` };
   }
-  // A Table Topic
+  // A Rapid Fire question (once called Table Topic; decision 85)
   const topic = tableTopicForDay(input.day);
-  // The step (the question stays hidden until the countdown, as in a real Table Topic)
-  return { lane, kind: "session", label: "Table Topic", title: "A surprise question, answered on the spot", mode: "talk", promptId: topic.id, minutes: 2, href: `/session?mode=talk&prompt=${topic.id}` };
+  // The step (the question stays hidden until the countdown, as in a Toastmasters Table Topic)
+  return { lane, kind: "session", label: "Rapid Fire", title: "A surprise question, answered on the spot", mode: "talk", promptId: topic.id, minutes: 2, href: `/session?mode=talk&prompt=${topic.id}` };
 }
 
 // The voice drill: the voice modes taken in turn by how many were done before today (a warm-up counts by its day, since it records nothing), each mode's next drill the one done least (decision 80)

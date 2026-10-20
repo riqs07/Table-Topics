@@ -98,7 +98,7 @@ describe("HistoryScreen", () => {
   });
 
   // Both modes are marked in the list
-  it("marks Table Topics and Record Responses in the list", async () => {
+  it("marks Rapid Fire answers and Record Responses in the list", async () => {
     // Make a repository with the sample sessions
     const repository = await sampleRepository();
     // Save one of each
@@ -118,7 +118,7 @@ describe("HistoryScreen", () => {
     // Draw the screen
     render(<HistoryScreen repository={repository} now={NOW} />);
     // Confirm all three labels, plus a pause drill
-    expect([!!(await screen.findByText(/^Table Topic: /)), !!screen.getByText(/^Prepared speech: /), !!screen.getByText("Read aloud: The Gettysburg Address"), !!screen.getByText(/^Pause drill: /), !!(await screen.findByText("Rehearsal: Team update")), !!screen.getByText("Lesson 2: Crisp consonants")]).toEqual([true, true, true, true, true, true]);
+    expect([!!(await screen.findByText(/^Rapid Fire: /)), !!screen.getByText(/^Prepared speech: /), !!screen.getByText("Read aloud: The Gettysburg Address"), !!screen.getByText(/^Pause drill: /), !!(await screen.findByText("Rehearsal: Team update")), !!screen.getByText("Lesson 2: Crisp consonants")]).toEqual([true, true, true, true, true, true]);
   });
 
   // The first recording is labeled as such

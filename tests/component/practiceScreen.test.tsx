@@ -36,7 +36,7 @@ describe("PracticeScreen", () => {
       [["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["Asking", "/small-talk/unit?id=asking"], ["Listening", "/small-talk/unit?id=listening"], ["Responding to news", "/small-talk/unit?id=news"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
       [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Volume", "/voice/drill?id=v01"], ["Pitch and stress", "/voice/drill?id=p01"], ["Tone", "/voice/drill?id=t01"], ["Pausing", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Shadowing", "/voice/shadow?id=s01"]],
       [[undefined, "/skills"], ["Lessons", `/session?mode=lesson&prompt=${LESSONS[0]?.id}`], ["Read aloud", "/skills#readings"]],
-      [["Table Topic", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Openings and closings", "/bookends"]],
+      [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Openings and closings", "/bookends"]],
     ]);
   });
 
@@ -49,7 +49,7 @@ describe("PracticeScreen", () => {
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
     // Wait for the page to draw
-    await screen.findByRole("link", { name: /^Table Topic/ });
+    await screen.findByRole("link", { name: /^Rapid Fire/ });
     // Confirm there is no Q&A row
     expect(screen.queryByText(/Q&A/)).toBeNull();
   });

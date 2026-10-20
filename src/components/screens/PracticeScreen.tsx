@@ -138,7 +138,7 @@ export function PracticeScreen(props: ScreenProps) {
   // The next passage to shadow
   const nextShadow = nextShadowPassage(counts ?? new Map());
 
-  // Today's Table Topic and prepared-speech task (one along from today's practice, so they differ from its steps)
+  // Today's Rapid Fire question and prepared-speech task (one along from today's practice, so they differ from its steps)
   const topic = today ? tableTopicForDay(today, 1) : null;
   // The task
   const prompt = today ? promptForDay(today, 1) : null;
@@ -156,8 +156,8 @@ export function PracticeScreen(props: ScreenProps) {
         id="on-the-spot"
         title="Speak on the spot"
         ways={[
-          // A Table Topic
-          { name: "Table Topic", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon },
+          // Rapid Fire (once called Table Topic; decision 85)
+          { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon },
           // A prepared speech
           { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
           // Openings and closings

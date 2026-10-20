@@ -141,8 +141,8 @@ export function buildCoachMessage(input: CoachInput): string {
     ...(input.voice ? voiceNumbers(input.voice, input.stammer) : []),
     // On a warm-up, keep it brief and light
     ...(input.mode === "warmup" ? ["This is a 30-second warm-up. Keep every part to one short sentence, and keep it light."] : []),
-    // On a Table Topic, its rules and how long it ran, so the coach looks at the whole answer
-    ...(input.mode === "talk" ? [`This is a Table Topics answer, timed by Toastmasters rules: 1 to 2 minutes, and under ${formatClock(TOPIC_WINDOW_START)} or over ${formatClock(TOPIC_LIMIT)} would not qualify in a contest. It came after a ${thinkSeconds("talk")}-second countdown on a light question and ran ${Math.round(input.durationSec)} seconds. Judge it as a quick, unprepared speech.`] : []),
+    // On a Rapid Fire answer, its rules and how long it ran, so the coach looks at the whole answer (the app calls it Rapid Fire, so the coach does too; decision 85)
+    ...(input.mode === "talk" ? [`This is a Rapid Fire answer (a Toastmasters-style Table Topic; call it Rapid Fire in your notes), timed by Toastmasters rules: 1 to 2 minutes, and under ${formatClock(TOPIC_WINDOW_START)} or over ${formatClock(TOPIC_LIMIT)} would not qualify in a contest. It came after a ${thinkSeconds("talk")}-second countdown on a light question and ran ${Math.round(input.durationSec)} seconds. Judge it as a quick, unprepared speech.`] : []),
     // On a Record Response, its preparation and goal, so the coach looks at the whole answer
     ...(input.mode === "response" ? [`This is a prepared speech: up to ${thinkSeconds("response")} seconds to plan with hints, then 2 to 4 minutes of speaking (green light at ${formatClock(SPEECH_WINDOW.start)}, red at ${formatClock(SPEECH_WINDOW.end)}). It ran ${Math.round(input.durationSec)} seconds. Comment on how the speech was organised across the whole time.`] : []),
     // On a reading, ask about delivery only
