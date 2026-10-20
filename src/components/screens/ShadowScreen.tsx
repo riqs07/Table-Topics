@@ -1,5 +1,5 @@
 "use client";
-// Shadowing (decision 80): listen to a phrase in the model voice, say it back the same way, and compare (your length against the model's, the words that were hard to catch, your pitch line); then the whole passage. The model voice is the phone's own for now; recorded reads come later. Only the lines are saved, never the audio
+// Shadowing (decision 80): listen to a phrase in the model voice, say it back the same way, and compare (your length against the model's, the words that were hard to catch, your pitch line); then the whole passage. The model voice is a saved ElevenLabs recording, or the phone's own when it cannot play (decision 82). Only the lines are saved, never the audio
 
 // Load React's state, memo, callback, effect and external-store tools
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
@@ -30,7 +30,7 @@ import { useTakeRecorder, type TakeResult } from "@/components/screens/useTakeRe
 // Load the take player
 import { useTakePlayback } from "@/components/screens/useTakePlayback";
 // Load the passages
-import { findShadowPassage, type ShadowPassage } from "@/content/voice";
+import { findShadowPassage, shadowSteps, type ShadowPassage, type ShadowStep } from "@/content/voice";
 // Load the shadowing findings
 import { measureTake, paceMatch, shadowHeadline, shadowLine } from "@/core/voiceFindings";
 // Load the usual-pitch rule, for the pitch lines
@@ -50,26 +50,6 @@ const MAX_TAKE_SECONDS = 45;
 const MIN_TAKE_SECONDS = 0.5;
 // Below this loudness all through, nothing was heard
 const SILENT_LEVEL = 0.01;
-
-// One step's words, id for the model voice, and name
-interface ShadowStep {
-  // What is said
-  text: string;
-  // What to copy
-  copy: string;
-  // The id the model voice is asked for
-  voiceId: string;
-  // Its name in the results
-  label: string;
-}
-
-// The steps of a passage: each phrase, then the whole passage
-function stepsOf(passage: ShadowPassage): ShadowStep[] {
-  // Each phrase
-  const phrases = passage.phrases.map((phrase, index) => ({ text: phrase.text, copy: phrase.copy, voiceId: `${passage.id}-${index + 1}`, label: `Phrase ${index + 1}` }));
-  // Then the whole passage
-  return [...phrases, { text: passage.phrases.map((phrase) => phrase.text).join(" "), copy: "All of it now, phrase after phrase, with the same pauses.", voiceId: `${passage.id}-all`, label: "Whole passage" }];
-}
 
 // What the shadowing page is given
 interface ShadowScreenProps extends ScreenProps {
@@ -92,7 +72,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
   // The passage
   const passage = findShadowPassage(passageId);
   // Its steps
-  const steps = useMemo(() => (passage ? stepsOf(passage) : []), [passage]);
+  const steps = useMemo(() => (passage ? shadowSteps(passage) : []), [passage]);
   // Where this sits in today's practice
   const plan = usePlanNav(repo, today, planStep);
   // Whether this browser can turn speech into text, for checking the words (worked out in the browser only)
@@ -130,7 +110,13 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
   // Done
   const done = steps.length > 0 && step >= steps.length;
 
-  // Say the step in the model voice, timing it
+  // Get every step's recording ready once the passage is known, so Listen plays at once (and offline next time)
+  useEffect(() => {
+    // Each step
+    for (const item of steps) services.prepareSpeech?.(item.voiceId);
+  }, [services, steps]);
+
+  // Say the step in the model voice, keeping how long it took
   const listen = useCallback(async () => {
     // Nothing to say, no voice, or busy
     if (!current || !services.speak || speaking || recording) return;
@@ -138,12 +124,12 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
     setSpeaking(true);
     // When it began
     const began = clock();
-    // Say it, finishing when it ends
-    await services.speak(current.text, current.voiceId);
-    // How long it took
+    // Say it, finishing when it ends (with the recording's own length when one played)
+    const recorded = await services.speak(current.text, current.voiceId).catch(() => null);
+    // How long it took, for the phone's own voice
     const took = (clock().getTime() - began.getTime()) / 1000;
-    // Keep it (a voice that finished at once did not say how long it took)
-    setModel((previous) => Object.assign([...previous], { [step]: took >= MIN_TAKE_SECONDS ? Math.round(took * 10) / 10 : null }));
+    // Keep it: the recording's length, or the time taken (a voice that finished at once did not say how long it took)
+    setModel((previous) => Object.assign([...previous], { [step]: recorded ?? (took >= MIN_TAKE_SECONDS ? Math.round(took * 10) / 10 : null) }));
     // Done speaking
     setSpeaking(false);
   }, [clock, current, recording, services, speaking, step]);
@@ -300,7 +286,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
             ))}
           </ol>
           {/* The model voice, plainly */}
-          <p className="mt-4 text-footnote text-ink-muted">The model voice is your phone’s own for now.</p>
+          <p className="mt-4 text-footnote text-ink-muted">The model voice is an AI reading by ElevenLabs, not the original speaker.</p>
           {/* Start */}
           <p className="mt-6"><button type="button" onClick={next} className={PRIMARY}>Start</button></p>
         </section>

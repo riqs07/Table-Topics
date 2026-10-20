@@ -1,9 +1,11 @@
-// Says a small-talk question: the ElevenLabs audio when it is ready on the phone, otherwise the phone's own voice
+// Says a fixed line aloud (decision 82): its saved ElevenLabs recording, or for a small-talk line without one, the voice route's audio when ready; the phone's own voice whenever neither can play
 
 // Load the audio fetcher
 import { questionAudio } from "@/data/voiceClient";
 // Load the saved passphrase
 import { readPassphrase } from "@/data/passphrase";
+// Load the saved recordings
+import { voiceClip } from "@/content/voiceClips";
 
 // Say a text with the phone's own voice, finishing when it ends (or after a fair time, since some browsers never report the end)
 export function speakWithPhone(text: string): Promise<void> {
@@ -35,10 +37,10 @@ export function speakWithPhone(text: string): Promise<void> {
   });
 }
 
-// Audio ready to play, by question id (an address for each piece of audio)
+// Audio ready to play, by line id (an address for each piece of audio)
 const ready = new Map<string, string>();
 
-// Fetch a question's audio ahead of time, so tapping "Hear the question" can play it straight away (phones only allow sound that starts from a tap)
+// Fetch a line's audio ahead of time and keep it on the phone, so tapping can play it straight away, even offline next time (phones only allow sound that starts from a tap)
 export function prepareQuestionVoice(promptId: string): void {
   // Already ready
   if (ready.has(promptId)) return;
@@ -51,47 +53,63 @@ export function prepareQuestionVoice(promptId: string): void {
     .catch(() => undefined);
 }
 
-// Play an address, finishing when it ends (or after a fair time), or failing if the phone will not play it
-function play(url: string): Promise<void> {
+// How long to wait for audio of unknown length before carrying on, in milliseconds (some browsers never report the end)
+const UNKNOWN_LENGTH_WAIT = 30_000;
+
+// Play an address, finishing when it ends (or after a fair time); failing when the phone will not play it or it cannot load, so the phone's own voice can say it instead
+export function play(url: string, seconds: number | null): Promise<void> {
   // Finish once
   return new Promise((resolve, reject) => {
     // The player
     const audio = new Audio(url);
-    // A question is at most a few seconds
-    const guard = setTimeout(() => resolve(), 15_000);
-    // Finish when it ends or fails part-way
-    const done = () => {
+    // Whether sound has started
+    let started = false;
+    // A fair time: the recording's length with room to start, or a generous wait when unknown
+    const guard = setTimeout(() => resolve(), seconds === null ? UNKNOWN_LENGTH_WAIT : seconds * 1000 + 5000);
+    // Stop waiting
+    const settle = (finish: () => void) => {
       // Stop the guard
       clearTimeout(guard);
       // Finish
-      resolve();
+      finish();
+    };
+    // Sound has started
+    audio.onplaying = () => {
+      // Noted, so a later failure does not say it twice
+      started = true;
     };
     // When it ends
-    audio.onended = done;
-    // When it fails
-    audio.onerror = done;
-    // Start it now, while the tap still counts; a refusal falls back to the phone's voice
-    audio.play().catch((error: unknown) => {
-      // Stop the guard
-      clearTimeout(guard);
-      // Report it
-      reject(error);
-    });
+    audio.onended = () => settle(resolve);
+    // When it fails: before any sound, the phone's voice takes over; part-way, carry on
+    audio.onerror = () => settle(started ? resolve : () => reject(new Error("The audio could not be played.")));
+    // Start it now, while the tap still counts
+    audio.play().catch((error: unknown) => settle(() => reject(error)));
   });
 }
 
-// Say a question: the prepared audio if there is some, otherwise (or if it will not play) the phone's own voice
-export async function speakQuestion(text: string, promptId: string): Promise<void> {
-  // The prepared audio
-  const url = ready.get(promptId);
+// Say a line: its prepared audio, else its saved recording from its address, else (or if the audio will not play) the phone's own voice. Hands back the saved recording's length in seconds when that is what played, otherwise null
+export async function speakQuestion(text: string, promptId: string, player: typeof play = play): Promise<number | null> {
+  // The saved recording, when the line has one
+  const clip = voiceClip(promptId);
+  // The audio to play: prepared on the phone, or the recording's own address
+  const url = ready.get(promptId) ?? clip?.url;
   // None: the phone's voice
-  if (!url) return speakWithPhone(text);
+  if (!url) {
+    // Say it
+    await speakWithPhone(text);
+    // Not a recording
+    return null;
+  }
   // Play it, falling back to the phone's voice
   try {
-    // The question in the chosen voice
-    await play(url);
+    // The line in the recorded voice
+    await player(url, clip?.seconds ?? null);
+    // Its length, when it was a saved recording
+    return clip?.seconds ?? null;
   } catch {
     // The phone's own voice instead
     await speakWithPhone(text);
+    // Not a recording
+    return null;
   }
 }

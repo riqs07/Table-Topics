@@ -29,3 +29,18 @@ The short readings written earlier from memory were compared with these texts. T
 Still from memory, to check against a published source before relying on them: the Gettysburg Address, Susan B. Anthony's speech, Chief Joseph's surrender, "The Strenuous Life", Kennedy at Rice University, and the short readings with no full speech above.
 
 The generator that cleans and splits the texts lives outside the repository; the result is `src/content/speeches.ts`. Parts are split at paragraph breaks into about a minute or less (140 words at 140 words a minute), so reading, listening back and trying again fits in about three minutes. A paragraph too long for one part is split between sentences, and a sentence too long for one part after a semicolon or comma; a very short part is joined to a neighbour when the two stay near a minute.
+
+## The recorded voices (decision 82)
+
+Every line the app says aloud is a recording made once with ElevenLabs and kept in `public/clips/`: the 72 small-talk lines and the 27 shadowing steps (94 files, since five lessons share an everyday question's file). They were made on 2026-10-20 through the ElevenLabs connector, in the flow "VoiceLab clips".
+
+| Lines | Voice | Model | Direction |
+|---|---|---|---|
+| Small talk: questions, remarks, news and stories | Jessica (an ElevenLabs default voice: warm, conversational) | `eleven_v4` | A feeling tag where the line carries one: [excited] for good news, [disappointed] or [sad] for bad, [laughs softly] or [warmly] for stories. Questions and plain remarks are read as written |
+| Shadowing: each phrase, then each whole passage | Graham (a voice-library voice: resonant, steady broadcaster) | `eleven_v4` | Tags for the delivery the passage teaches ([slowly], [calm and firm], [warmly], [excited]), capitals for a stressed word, "…" for a held pause |
+
+How each line was read is in the comment above it in `src/content/voiceClips.ts`. To make one again: generate the same words with the same voice, model and direction; trim the silent ends; even the loudness to −16 LUFS; save it as 64 kbps mono MP3 under the same name; update its length in `voiceClips.ts`; and bump `VOICE_CACHE` in `src/data/voiceClient.ts` so phones drop the old copy. The checks in `tests/unit/content/voiceClips.test.ts` say which lines need a new recording when their words change.
+
+The shadowing passages from Kennedy, Lincoln and Franklin Roosevelt are read by Graham, not by the original speakers, and the shadowing page says so. ElevenLabs does not allow voices that imitate public figures. Archive recordings of the originals could not be reached from the build environment.
+
+ElevenLabs' terms depend on the plan: paid plans include a commercial licence; the free plan asks for credit to ElevenLabs and allows non-commercial use only. Check the plan in use before sharing the app.

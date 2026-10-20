@@ -20,7 +20,7 @@
 | 7 | **Small shared store** for rate limits: **Upstash Redis**, added through the Vercel Marketplace | M6 (needed before deploying) | Free tier | Add the integration in Vercel; it sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Not needed for local use |
 | 8 | **Vercel account**, connected to GitHub | M11 | Free tier | Create the project and enter the variables below |
 | 9 | **Domain name** | M11, optional | About $10 to $15 per year | Only if you want a custom address |
-| 11 | **ElevenLabs account, API key and a voice** | Small talk's question voice (built 2026-10-17); later the conversation voice | Your ElevenLabs plan (about 30 short questions use a tiny share of its monthly characters) | Create an API key limited to **text to speech**, with a credit limit if you like. Put it in `ELEVENLABS_API_KEY`. Pick a voice in the voice library and put its ID in `ELEVENLABS_VOICE_ID` (not secret). Without them, the phone's own voice reads the questions |
+| 11 | **ElevenLabs account, API key and a voice** | Not needed for the app's fixed lines, which ship as saved recordings (decision 82). Needed later for lines made on the fly (dynamic feedback, the conversation voice) | Your ElevenLabs plan (the saved recordings used about 6,000 credits once) | When dynamic lines arrive: create an API key limited to **text to speech**, with a credit limit if you like. Put it in `ELEVENLABS_API_KEY`. Pick a voice in the voice library and put its ID in `ELEVENLABS_VOICE_ID` (not secret). Without them, lines with no saved recording use the phone's own voice |
 | 10 | **App icon and name approval** | M2 and M11 | Free | You choose a direction; I can draft options |
 
 ## Environment variables
@@ -31,8 +31,8 @@
 | `OPENAI_API_KEY` | Whisper fallback (only if chosen) | Yes | `.env.local` and Vercel |
 | `APP_ACCESS_SECRET` | Gate on AI routes | Yes | `.env.local` and Vercel |
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `_TOKEN`) | Rate-limit counters | Yes | Vercel (optional in `.env.local`) |
-| `ELEVENLABS_API_KEY` | The small-talk question voice | Yes | `.env.local` and Vercel |
-| `ELEVENLABS_VOICE_ID` | Which ElevenLabs voice asks the questions | No | `.env.local` and Vercel |
+| `ELEVENLABS_API_KEY` | Lines with no saved recording (none today; later, dynamic lines) | Yes | `.env.local` and Vercel |
+| `ELEVENLABS_VOICE_ID` | Which ElevenLabs voice says those lines | No | `.env.local` and Vercel |
 
 Rules:
 

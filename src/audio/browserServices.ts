@@ -6,7 +6,7 @@ import { detectPitch } from "@/core/pitch";
 import { TranscriptAssembler, type RecognitionResult } from "@/audio/transcriptAssembler";
 // Load the contracts these pieces fulfil
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
-// Load the question voice (ElevenLabs when ready, otherwise the phone's own)
+// Load the line voice (the saved ElevenLabs recording, otherwise the phone's own; decision 82)
 import { prepareQuestionVoice, speakQuestion } from "@/audio/questionVoice";
 // Load the timing tone player
 import { createCuePlayer } from "@/audio/timingTones";
@@ -287,9 +287,9 @@ export const browserRecordingServices: RecordingServices = {
   },
   // Ask for the microphone
   openMicrophone: (options) => navigator.mediaDevices.getUserMedia({ audio: options?.raw ? { autoGainControl: false, noiseSuppression: false, echoCancellation: false } : options?.autoGain === false ? { autoGainControl: false, noiseSuppression: true, echoCancellation: true } : true }),
-  // Get a question's ElevenLabs audio ready
+  // Get a line's saved recording ready
   prepareSpeech: (promptId) => prepareQuestionVoice(promptId),
-  // Say a question: the ElevenLabs audio when ready, otherwise the phone's own voice
+  // Say a line: its saved recording, otherwise the phone's own voice
   speak: (text, promptId) => speakQuestion(text, promptId),
   // Live transcription
   createTranscriber: () => new WebSpeechTranscriber(),

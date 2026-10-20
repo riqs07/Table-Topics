@@ -111,12 +111,14 @@ describe("ShadowScreen", () => {
       speechSupported: () => true,
       // A stand-in stream
       openMicrophone: async () => ({ getTracks: () => [], getAudioTracks: () => [] }) as unknown as MediaStream,
-      // The model voice, two seconds a phrase
+      // The phone's own voice (no recording played), two seconds a phrase
       speak: async (text, id) => {
         // Note it
         said.push(`${id}: ${text}`);
         // Time passes
         clock.advance(2000);
+        // Not a recording
+        return null;
       },
       // A listener handing back the next words
       createTranscriber: () => ({ start: () => {}, stop: async () => heard.shift() ?? "" }),
@@ -147,6 +149,47 @@ describe("ShadowScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next phrase" }));
     // The second phrase is shown
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe(SHADOW_PASSAGES[0]!.phrases[1]!.text);
+  });
+
+  // A saved recording's own length is the model's (decision 82), and every step's recording is got ready when the passage opens
+  it("uses the recording's length and gets every step ready", async () => {
+    // The clock, which the recording does not move
+    const clock = fakeClock();
+    // The steps asked to get ready
+    const prepared: string[] = [];
+    // Fake services: a recording 3.4 seconds long; a steady level
+    const services: RecordingServices = {
+      // Speech support on
+      speechSupported: () => true,
+      // A stand-in stream
+      openMicrophone: async () => ({ getTracks: () => [], getAudioTracks: () => [] }) as unknown as MediaStream,
+      // Note each step got ready
+      prepareSpeech: (id) => void prepared.push(id),
+      // A recording played, with its length
+      speak: async () => 3.4,
+      // A listener hearing every word
+      createTranscriber: () => ({ start: () => {}, stop: async () => "And so, my fellow Americans" }),
+      // A steady level
+      createCapture: () => ({ level: () => 0.5, stop: async () => new Blob(["voice"]) }),
+    };
+    // Draw the first passage
+    render(<ShadowScreen passageId="s01" services={services} repository={createRepository(new MemoryStore())} now={NOW} clock={clock.now} />);
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: "Start" }));
+    // Listen to the first phrase
+    await act(async () => void fireEvent.click(screen.getByRole("button", { name: "Listen" })));
+    // Say it back
+    fireEvent.click(await screen.findByRole("button", { name: /Say it back/ }));
+    // Wait for the stop shape
+    const stop = await screen.findByRole("button", { name: "Stop" });
+    // A few readings
+    await act(() => new Promise((resolve) => setTimeout(resolve, 250)));
+    // About the recording's length
+    clock.advance(3500);
+    // Stop
+    await act(async () => void fireEvent.click(stop));
+    // Every step got ready once, and the take is compared with the recording's 3.4 seconds
+    expect([[...new Set(prepared)], (await screen.findByText(/model’s pace/)).textContent]).toEqual([["s01-1", "s01-2", "s01-3", "s01-all"], "About the model’s pace (3.5 s against 3.4 s). Every word caught."]);
   });
 
   // An unknown passage says so

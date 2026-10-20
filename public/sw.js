@@ -88,12 +88,21 @@ self.addEventListener("install", (event) => {
   event.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
+// Whether a cache is an older version of this worker's own (the app's other stores, such as the saved voice recordings, are left alone)
+function isOldVersion(name) {
+  // Named like this worker's cache, but not this version
+  return /^voicelab-v\d+$/.test(name) && name !== CACHE;
+}
+
+// Expose the cleanup rule so it can be tested
+self.voicelabIsOldVersion = isOldVersion;
+
 // On activate, delete caches from older versions and take control of open pages
 self.addEventListener("activate", (event) => {
   // Keep activating until cleanup is done
   event.waitUntil(
-    // List every cache, delete the old ones, then take control
-    caches.keys().then((names) => Promise.all(names.filter((name) => name !== CACHE).map((name) => caches.delete(name)))).then(() => self.clients.claim()),
+    // List every cache, delete the old versions, then take control
+    caches.keys().then((names) => Promise.all(names.filter(isOldVersion).map((name) => caches.delete(name)))).then(() => self.clients.claim()),
   );
 });
 

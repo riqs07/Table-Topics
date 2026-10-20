@@ -59,7 +59,7 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
       return { getTracks: () => [], getAudioTracks: () => [track] } as unknown as MediaStream;
     },
     // A voice that notes what it said, only when the check asks for one
-    ...(options.voice ? { speak: async (text: string) => void said.push(text) } : {}),
+    ...(options.voice ? { speak: async (text: string) => (said.push(text), null) } : {}),
     // The permission check, only when the check gives one (like a browser that can say)
     ...(options.permission ? { micPermission: async () => options.permission ?? "unknown" } : {}),
     // A transcriber the check can drive

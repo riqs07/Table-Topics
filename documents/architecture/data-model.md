@@ -90,6 +90,8 @@ Talks are stored in their own collection (added to existing databases by raising
 
 Prompts ship inside the app as fixed content. They are not user data.
 
+The recordings of the fixed lines (small talk and shadowing; decision 82) ship as files in `public/clips/`. Once played, each is kept in the browser's cache store `voicelab-voice-v1` under its address, so it plays offline. That store also keeps any line fetched from `/api/voice`. It is not user data, is not exported, and the service worker leaves it alone when it updates.
+
 ## Derived, not stored
 
 - **Practice days and the run:** calculated from session and mission dates (decision 78: days in the last seven, and a run that two rest days a week never break), so they can never get out of sync.

@@ -1,6 +1,6 @@
 # Plan: voice modes (warm-ups, clear sounds, volume, pitch, tone, pausing, shadowing)
 
-**Status: built 2026-10-19 (decision 80)**, except the recorded model voices: shadowing and tone use the phone's own voice until the ElevenLabs reads and the user's YouTube picks are added. Pause drills and tricky words moved into "Your voice" as proposed below (that question was not answered; moving them back is a small change).
+**Status: built 2026-10-19 (decision 80)**. Shadowing plays saved ElevenLabs reads since 2026-10-20 (decision 82). Still to come: model reads for the tone drills, and the user's YouTube picks. Pause drills and tricky words moved into "Your voice" as proposed below (that question was not answered; moving them back is a small change).
 
 Proposed 2026-10-19 and updated the same day with the user's answers. The user asked for pronunciation drills, rhythm, pitch and volume drills, tone and pausing drills, and shadowing ("copy a speaker you admire: their pace, their energy, the way they land a point"), each with a daily minute of speaking. This plan fleshes out the modes; how to build them comes later.
 

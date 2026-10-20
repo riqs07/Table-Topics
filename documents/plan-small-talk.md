@@ -109,6 +109,8 @@ A short voice note on the Small talk page: "What's one thing from today worth te
 
 ## The voice (ElevenLabs)
 
+**Since 2026-10-20 (decision 82)** every small-talk line plays from a recording made once and shipped with the app, in the voice Jessica, with no request and no key. The phone's own voice takes over whenever a recording cannot play. The route below stays for lines made on the fly later.
+
 - **How it works:** a server route `/api/voice?prompt=<id>` looks up the question's text **on the server**, so it only ever speaks the app's own prompts, never text sent from outside. It asks ElevenLabs for the audio (`POST /v1/text-to-speech/{voice_id}`, high-quality model `eleven_multilingual_v2`; latency does not matter for fixed prompts). The route is gated by the passphrase, like the coach.
 - **Caching:** each question's audio is cached on the phone after the first play. About 30 short questions use a tiny share of a plan's monthly characters.
 - **Fallback:** when there is no key, no connection or no passphrase, the phone's own voice reads the question (robotic on iPhone, but it works). The question is always written on screen too.

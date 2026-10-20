@@ -55,10 +55,10 @@ export interface RecordingServices {
   micPermission?(): Promise<MicPermission>;
   // Ask for the microphone (throws if refused or missing); raw turns off the browser's automatic levelling and clean-up, so loud and soft stay different (volume and pitch drills; decision 80); autoGain false turns off only the levelling, keeping noise suppression (every recording; decision 81)
   openMicrophone(options?: { raw?: boolean; autoGain?: boolean }): Promise<MediaStream>;
-  // Get a small-talk question's voice ready ahead of time (optional)
+  // Get a fixed line's voice ready ahead of time: a small-talk line or a shadowing step (optional)
   prepareSpeech?(promptId: string): void;
-  // Say a question aloud, finishing when it has been said (optional: without it, recording starts straight away)
-  speak?(text: string, promptId: string): Promise<void>;
+  // Say a line aloud, finishing when it has been said, and hand back the saved recording's length in seconds when one played (null for the phone's own voice; optional: without it, recording starts straight away)
+  speak?(text: string, promptId: string): Promise<number | null>;
   // Make a live transcriber
   createTranscriber(): LiveTranscriber;
   // Start recording audio from the microphone

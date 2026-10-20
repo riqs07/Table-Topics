@@ -13,6 +13,8 @@ const ORIGIN = "https://voicelab.example";
 interface Worker {
   // The routing decision for a request
   strategyFor(url: URL, mode: string): string;
+  // Whether a cache is an older version to delete
+  isOldVersion(name: string): boolean;
   // Event handlers the worker registered, by event name
   handlers: Record<string, (event: unknown) => void>;
   // Files the install step stored
@@ -48,7 +50,7 @@ function loadWorker(): Worker {
   // Run the worker's code with the fakes
   runInNewContext(SOURCE, { self, caches, fetch: vi.fn(async () => { throw new TypeError("offline"); }), Response, URL, Promise });
   // Hand back what the worker exposed
-  return { strategyFor: self.voicelabStrategyFor as Worker["strategyFor"], handlers, precached };
+  return { strategyFor: self.voicelabStrategyFor as Worker["strategyFor"], isOldVersion: self.voicelabIsOldVersion as Worker["isOldVersion"], handlers, precached };
 }
 
 // The worker under test
@@ -85,6 +87,15 @@ describe("service worker routing", () => {
   it("leaves other sites alone", () => {
     // Confirm another origin goes straight to the network
     expect(worker.strategyFor(new URL("https://fonts.example/font.woff2"), "no-cors")).toBe("network");
+  });
+});
+
+// Group the checks about clearing old caches
+describe("service worker cleanup", () => {
+  // Only older versions of the worker's own cache go; the saved voice recordings and anything else stay (decision 82)
+  it("deletes only older versions of its own cache", () => {
+    // An old version, this version, the voice store, and another store
+    expect(["voicelab-v2", "voicelab-v3", "voicelab-voice-v1", "other"].map(worker.isOldVersion)).toEqual([true, false, false, false]);
   });
 });
 

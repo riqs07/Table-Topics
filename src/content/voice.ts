@@ -244,7 +244,7 @@ export interface ShadowPhrase {
   copy: string;
 }
 
-// A passage to shadow, phrase by phrase (the model voice is the phone's own until the recorded library arrives; decision 80)
+// A passage to shadow, phrase by phrase (the model voice is a saved ElevenLabs recording of each step, with the phone's own voice when it cannot play; decisions 80 and 82)
 export interface ShadowPassage {
   // Stable id (the session's prompt id)
   id: string;
@@ -330,4 +330,24 @@ export function findVoiceDrill(id: string): VoiceDrill | undefined {
 export function findShadowPassage(id: string): ShadowPassage | undefined {
   // Look through every passage
   return SHADOW_PASSAGES.find((passage) => passage.id === id);
+}
+
+// One step of shadowing: a phrase, or the whole passage at the end
+export interface ShadowStep {
+  // What is said
+  text: string;
+  // What to copy
+  copy: string;
+  // The id of its saved recording
+  voiceId: string;
+  // Its name in the results
+  label: string;
+}
+
+// The steps of a passage: each phrase, then the whole passage
+export function shadowSteps(passage: ShadowPassage): ShadowStep[] {
+  // Each phrase
+  const phrases = passage.phrases.map((phrase, index) => ({ text: phrase.text, copy: phrase.copy, voiceId: `${passage.id}-${index + 1}`, label: `Phrase ${index + 1}` }));
+  // Then the whole passage
+  return [...phrases, { text: passage.phrases.map((phrase) => phrase.text).join(" "), copy: "All of it now, phrase after phrase, with the same pauses.", voiceId: `${passage.id}-all`, label: "Whole passage" }];
 }
