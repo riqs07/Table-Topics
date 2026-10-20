@@ -180,9 +180,53 @@ describe("SettingsScreen", () => {
     // Choose the file
     await userEvent.upload(await screen.findByLabelText("Import a file"), new File([text], "voicelab.json", { type: "application/json" }));
     // Confirm the message
-    expect(await screen.findByText("Imported 1 session and 0 challenges.")).toBeTruthy();
+    expect(await screen.findByText("Imported 1 new session.")).toBeTruthy();
     // Confirm the session is saved
     expect(await repository.listSessions()).toHaveLength(1);
+  });
+
+  // Regression (decision 86): after an import or a delete, a switch must not write back the settings shown before it
+  it("never writes back old settings after an import or a delete", async () => {
+    // A file whose settings say "I stammer"
+    const source = await repositoryWithOneSession();
+    // Saved there
+    await source.saveSettings({ ...(await source.getSettings(NOW)), stammer: true });
+    // The file
+    const text = JSON.stringify(await buildExport(source, NOW));
+    // A repository to import into
+    const repository = createRepository(new MemoryStore());
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // Import the file
+    await userEvent.upload(await screen.findByLabelText("Import a file"), new File([text], "voicelab.json", { type: "application/json" }));
+    // Wait for it
+    await screen.findByText("Imported 1 new session.");
+    // Then switch the practice days off
+    await userEvent.click(screen.getByRole("checkbox", { name: /Show my practice days/ }));
+    // The imported choice survives the switch
+    const afterImport = await repository.getSettings(NOW);
+    // Delete everything
+    await userEvent.click(screen.getByRole("button", { name: "Delete all my data" }));
+    // Confirm
+    await userEvent.click(screen.getByRole("button", { name: "Yes, delete everything" }));
+    // Wait for it
+    await screen.findByText(/Everything is deleted/);
+    // The switch is back to its fresh state (shown); switch it off again
+    await userEvent.click(screen.getByRole("checkbox", { name: /Show my practice days/ }));
+    // The deleted choices stay deleted
+    const afterDelete = await repository.getSettings(NOW);
+    // Stammer kept with the switch, then gone after the delete, with the switch acting on fresh settings
+    expect([afterImport.stammer, afterImport.hideStreak, afterDelete.stammer, afterDelete.hideStreak]).toEqual([true, true, undefined, true]);
+  });
+
+  // Settings that cannot be read say why, instead of leaving the page half empty
+  it("explains when the settings cannot be loaded", async () => {
+    // A repository whose settings cannot be read
+    const repository = { ...createRepository(new MemoryStore()), getSettings: async () => { throw new Error("The database connection is closing."); } };
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // The reason and the way forward
+    expect(await screen.findByText("Your settings could not be loaded (The database connection is closing.). Reload the page to try again.")).toBeTruthy();
   });
 
   // A wrong file is refused with the plain message

@@ -4,6 +4,8 @@
 import { z } from "zod";
 // Load the list of session kinds
 import { SESSION_MODES } from "@/data/records";
+// Load the size limits shared with the app (decision 86)
+import { LONGEST_RECORDING_SECONDS, MAX_TURNS, NOTE_MAX_CHARS, TRANSCRIPT_MAX_CHARS, TURN_MAX_CHARS } from "@/core/requestLimits";
 // Load the coach type
 import type { Coach } from "@/server/coach";
 // Load the settings type
@@ -19,10 +21,10 @@ export interface FeedbackDeps extends GuardDeps {
 
 // The request body the app sends
 const RequestSchema = z.object({
-  // What was said; capped so a runaway transcript cannot run up the bill
-  transcript: z.string().max(20_000),
-  // Recording length in seconds: more than zero, at most 15 minutes
-  durationSec: z.number().positive().max(900),
+  // What was said; capped so a runaway transcript cannot run up the bill (enough for a fast 30-minute rehearsal)
+  transcript: z.string().max(TRANSCRIPT_MAX_CHARS),
+  // Recording length in seconds: more than zero, at most the longest any session runs (a rehearsal's 30 minutes)
+  durationSec: z.number().positive().max(LONGEST_RECORDING_SECONDS),
   // Id of the weekly focus
   focusId: z.string().max(64),
   // The previous fix on a retry, or null
@@ -36,7 +38,7 @@ const RequestSchema = z.object({
   // For a short speech: the topic, points and length the speaker planned (decision 73)
   outline: z.object({ topic: z.string().max(140), points: z.array(z.string().max(140)).max(4), goalMinutes: z.number().int().min(1).max(10) }).optional(),
   // The user's own notes after listening back, only when they let the coach read them
-  notes: z.object({ worked: z.string().max(500), change: z.string().max(500), tags: z.array(z.string().max(40)).max(12) }).optional(),
+  notes: z.object({ worked: z.string().max(NOTE_MAX_CHARS), change: z.string().max(NOTE_MAX_CHARS), tags: z.array(z.string().max(40)).max(12) }).optional(),
   // The speaker stammers, so the coach leaves fluency alone (decision 79)
   stammer: z.boolean().optional(),
   // The voice numbers measured on the device (decision 81), each bounded so nothing else can ride along
@@ -59,7 +61,7 @@ const RequestSchema = z.object({
     // The situation's id (missing on conversations from before situations)
     scenarioId: z.string().max(16).optional(),
     // The turns
-    turns: z.array(z.object({ who: z.enum(["you", "them"]), text: z.string().max(1_000).optional(), lineId: z.string().max(16).optional() })).max(60),
+    turns: z.array(z.object({ who: z.enum(["you", "them"]), text: z.string().max(TURN_MAX_CHARS).optional(), lineId: z.string().max(16).optional() })).max(MAX_TURNS),
   }).optional(),
 });
 

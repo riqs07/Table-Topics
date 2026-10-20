@@ -6,6 +6,8 @@ import { PASSPHRASE_HEADER } from "@/config/headers";
 import type { ConversationStage } from "@/core/conversationTurn";
 // Load the saved turn type
 import type { ConversationTurn } from "@/data/records";
+// Load the size limits the route checks (decision 86)
+import { MAX_TURNS, TURN_MAX_CHARS, withinLimit } from "@/core/requestLimits";
 
 // What asking needs
 export interface ConversationClientOptions {
@@ -55,8 +57,8 @@ export async function nextLine(request: LineRequest, { passphrase, fetchFn = fet
   if (!passphrase) return null;
   // The network can fail
   try {
-    // The words of each turn only, never audio
-    const response = await fetchFn("/api/conversation", { method: "POST", headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase }, body: JSON.stringify({ ...request, turns: request.turns.map((turn) => ({ who: turn.who, text: turn.text })) }) });
+    // The words of each turn only, never audio, each within the route's limits (the latest turns, each cut to size; the full words stay saved on the device)
+    const response = await fetchFn("/api/conversation", { method: "POST", headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase }, body: JSON.stringify({ ...request, turns: request.turns.slice(-MAX_TURNS).map((turn) => ({ who: turn.who, text: withinLimit(turn.text, TURN_MAX_CHARS) })) }) });
     // Refused or failed
     if (!response.ok) return null;
     // The reply

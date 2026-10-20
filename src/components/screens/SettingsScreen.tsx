@@ -180,6 +180,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     repo.getSettings(today).then((loaded) => {
       // Keep them only if the screen is still open
       if (!cancelled) setSettings(loaded);
+    }).catch((error: unknown) => {
+      // Say why, with the way forward (the choices that need them stay hidden)
+      if (!cancelled) setMessage(`Your settings could not be loaded (${error instanceof Error ? error.message : String(error)}). Reload the page to try again.`);
     });
     // Read how safe the data is from the browser clearing it
     void readSafetyFacts(0, today).then((facts) => {
@@ -190,6 +193,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     repo.listSessions().then((sessions) => {
       // Keep the count only if the screen is still open
       if (!cancelled) setPendingCount(sessions.filter((session) => session.feedbackStatus === "pending").length);
+    }).catch(() => {
+      // The count stays at none; a storage problem is explained by the settings message above
     });
     // Mark as closed when leaving
     return () => {
@@ -273,9 +278,13 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     // Try to read and import it
     try {
       // Check the file fully, then import
-      const counts = await importExport(repo, parseExport(await file.text()));
-      // Say what came in
-      setMessage(`Imported ${count(counts.sessions, "session")} and ${count(counts.challenges, "challenge")}.`);
+      const counts = await importExport(repo, parseExport(await file.text()), today ?? new Date());
+      // Show the joined settings, so a later change here never writes back the old copy (decision 86)
+      setSettings(await repo.getSettings(today ?? new Date()));
+      // And the new waiting count
+      setPendingCount((await repo.listSessions()).filter((session) => session.feedbackStatus === "pending").length);
+      // Say what came in, and that what was here was kept
+      setMessage(`Imported ${count(counts.added, "new session")}.${counts.kept > 0 ? ` ${count(counts.kept, "session")} already here kept ${counts.kept === 1 ? "its" : "their"} recordings and notes.` : ""}`);
     } catch (error) {
       // Show the plain reason it was refused
       setMessage((error as Error).message);
@@ -310,12 +319,22 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
 
   // Delete everything after the second tap
   async function deleteEverything() {
-    // Remove every record and recording
-    await repo.deleteAllData();
     // Hide the confirmation
     setConfirmingDelete(false);
-    // Say what happened
-    setMessage("Everything is deleted.");
+    // The browser database can refuse
+    try {
+      // Remove every record and recording
+      await repo.deleteAllData();
+      // Show fresh settings, so a later change here never writes the deleted ones back (decision 86)
+      setSettings(await repo.getSettings(today ?? new Date()));
+      // Nothing waits for the coach now
+      setPendingCount(0);
+      // Say what happened
+      setMessage("Everything is deleted.");
+    } catch (error) {
+      // Say why, with the way forward
+      setMessage(`Not everything could be deleted (${error instanceof Error ? error.message : String(error)}). Try again.`);
+    }
   }
 
   // Fill the app with sample sessions to preview the screens (development only)

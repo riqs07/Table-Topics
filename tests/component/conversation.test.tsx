@@ -180,6 +180,72 @@ describe("ConversationScreen", () => {
     expect([asked.map((request) => request.heard), said, session?.conversation?.turns.map((turn) => turn.text)]).toEqual([[true, false, true], ["(unlocked)", "Oh. Hey.", "Sorry, what was that?", "theo-04"], ["Oh. Hey.", "Hi, I'm Sam"]]);
   });
 
+  // A turn that starts after time is up ends itself at once; with nothing caught it must say goodbye and save, not ask again forever (each ask a paid line)
+  it("says goodbye and saves when a turn starts after time is up, with written lines", async () => {
+    // The clock
+    const clock = fakeClock();
+    // What was asked
+    const asked: LineRequest[] = [];
+    // Where it went next
+    const navigate = vi.fn();
+    // An empty repository
+    const repository = createRepository(new MemoryStore());
+    // A writer with spare lines, so the old loop would run until they ran out
+    const writer = fakeWriter(["Oh. Hey.", "Cool.", "Bye then!", "Sorry?", "Pardon?"], asked);
+    // The reply to your first turn takes past the time limit
+    const slowReply: WriteLine = async (request) => {
+      // Time passes while it is written
+      if (request.stage === "talk") clock.advance(200_000);
+      // The line
+      return writer(request);
+    };
+    // Draw it: your first turn is caught, then nothing more
+    render(<ConversationScreen characterId="theo" services={fakeServices(clock, ["Hi, I'm Sam"], [])} navigate={navigate} writeLine={slowReply} coachReady={() => true} repository={repository} now={NOW} clock={clock.now} />);
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: "Start" }));
+    // Done, with words
+    fireEvent.click(await screen.findByRole("button", { name: "Done" }));
+    // Saved and opened, with no Done tap
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // The saved session
+    const [session] = await repository.listSessions();
+    // One goodbye asked for (heard, at the end), never "say that again"; the goodbye saved
+    expect([asked.map((request) => `${request.stage}:${request.heard}`), session?.conversation?.turns.map((turn) => turn.text)]).toEqual([["open:true", "talk:true", "end:true"], ["Oh. Hey.", "Hi, I'm Sam", "Cool.", "Bye then!"]]);
+  });
+
+  // The same with recorded lines: a goodbye line, then saved
+  it("says goodbye and saves when a turn starts after time is up, with recorded lines", async () => {
+    // The clock
+    const clock = fakeClock();
+    // What was said
+    const said: string[] = [];
+    // Where it went next
+    const navigate = vi.fn();
+    // An empty repository
+    const repository = createRepository(new MemoryStore());
+    // The usual services
+    const services = fakeServices(clock, ["Hi, I'm Sam"], said);
+    // Her first scripted line runs past the time limit
+    const slowSpeak: RecordingServices["speak"] = async (text, id) => {
+      // Time passes
+      if (id === "maya-24") clock.advance(200_000);
+      // Said as usual
+      return services.speak!(text, id);
+    };
+    // Draw it without the coach
+    render(<ConversationScreen characterId="maya" services={{ ...services, speak: slowSpeak }} navigate={navigate} coachReady={() => false} repository={repository} now={NOW} clock={clock.now} />);
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: "Start" }));
+    // Done, with words
+    fireEvent.click(await screen.findByRole("button", { name: "Done" }));
+    // Saved and opened, with no Done tap
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // The saved session
+    const [session] = await repository.listSessions();
+    // Her lines: no "say that again", one goodbye, and it saved
+    expect([said, session?.conversation?.turns.map((turn) => turn.lineId ?? turn.text)]).toEqual([["maya-01", "maya-24", "maya-07", "maya-37"], ["maya-01", "Hi, I'm Sam", "maya-24", "maya-07", "maya-37"]]);
+  });
+
   // Without the coach: the persona's own situation, recorded lines in the set script, and their recorded line for a turn not caught; End saves what was said
   it("follows the recorded script without the coach", async () => {
     // The clock

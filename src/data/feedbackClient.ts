@@ -8,6 +8,8 @@ import type { Repository } from "@/data/repository";
 import { coachVoice, usualRange } from "@/core/voiceFeedback";
 // Load the small-talk unit lookup, to leave out few-second replies
 import { unitOf } from "@/content/smallTalk";
+// Load the size limits the route checks, so a long session is never refused (decision 86)
+import { MAX_TURNS, NOTE_MAX_CHARS, TRANSCRIPT_MAX_CHARS, TURN_MAX_CHARS, withinDuration, withinLimit } from "@/core/requestLimits";
 
 // What happened when feedback was requested
 export type FeedbackOutcome =
@@ -97,8 +99,8 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
       method: "POST",
       // JSON body and the passphrase header
       headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase },
-      // The session details the coach needs
-      body: JSON.stringify({ transcript: session.transcript, durationSec: session.durationSec, focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: review.worked, change: review.change, tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}), ...(voice ? { voice } : {}), ...(session.conversation ? { conversation: { characterId: session.promptId, ...(session.conversation.scenarioId ? { scenarioId: session.conversation.scenarioId } : {}), turns: session.conversation.turns.map((turn) => ({ who: turn.who, text: turn.text, ...(turn.lineId ? { lineId: turn.lineId } : {}) })) } } : {}) }),
+      // The session details the coach needs, each within the route's limits (the saved session keeps everything)
+      body: JSON.stringify({ transcript: withinLimit(session.transcript, TRANSCRIPT_MAX_CHARS), durationSec: withinDuration(session.durationSec), focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: withinLimit(review.worked, NOTE_MAX_CHARS), change: withinLimit(review.change, NOTE_MAX_CHARS), tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}), ...(voice ? { voice } : {}), ...(session.conversation ? { conversation: { characterId: session.promptId, ...(session.conversation.scenarioId ? { scenarioId: session.conversation.scenarioId } : {}), turns: session.conversation.turns.slice(0, MAX_TURNS).map((turn) => ({ who: turn.who, text: withinLimit(turn.text, TURN_MAX_CHARS), ...(turn.lineId ? { lineId: turn.lineId } : {}) })) } } : {}) }),
     });
   } catch {
     // Offline or unreachable: the session waits

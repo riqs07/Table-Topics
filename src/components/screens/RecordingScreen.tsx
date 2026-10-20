@@ -121,7 +121,7 @@ const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
 ];
 
 // Where the screen is in the flow
-type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | { problem: RecordingProblem };
+type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | "speech-dropped" | { problem: RecordingProblem };
 
 // How many recent moment notes to show beside a question about what you have been up to
 const RECENT_MOMENTS = 3;
@@ -327,7 +327,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Whether the retry cue is the coach's (otherwise it was picked from the numbers)
   const [cueFromCoach, setCueFromCoach] = useState(true);
   // The live transcriber, audio capture, start time, and timer, kept between renders
-  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; pitches: (number | null)[]; autoGain: boolean | null; spokenTimes: number[]; scriptTimes: (number | null)[]; pausedAt: Date | null; earlier: string; tick: () => void; onWords: (latest: LiveText) => void } | null>(null);
+  const live = useRef<{ transcriber: LiveTranscriber; capture: AudioCapture; startedAt: Date; timer: ReturnType<typeof setInterval>; readings: number[]; pitches: (number | null)[]; autoGain: boolean | null; spokenTimes: number[]; scriptTimes: (number | null)[]; pausedAt: Date | null; earlier: string; held: Promise<void>; tick: () => void; onWords: (latest: LiveText) => void } | null>(null);
   // Whether the recording is paused (decision 77)
   const [paused, setPaused] = useState(false);
   // Timing tones, when switched on in Settings: made during the start tap, since browsers only let sound start from one (decision 77)
@@ -352,6 +352,22 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const thinkTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   // The browser's reason when saving failed, shown so the problem can be pinned down
   const [saveError, setSaveError] = useState("");
+  // Where a take saved after the speech service dropped can be seen (shown with the explanation instead of going there at once)
+  const [droppedHref, setDroppedHref] = useState("");
+  // Whether the screen is still open, so a start that was waiting (the question being said, the microphone being allowed) stops if the page closes
+  const mounted = useRef(true);
+  // Open while drawn, closed when the screen goes
+  useEffect(() => {
+    // Open
+    mounted.current = true;
+    // Closed when leaving
+    return () => {
+      // No longer open
+      mounted.current = false;
+      // Stop a question being said
+      services.stopSpeaking?.();
+    };
+  }, [services]);
 
   // For a Q&A answer, the question (loaded from the session it belongs to, below)
   const [qaQuestion, setQaQuestion] = useState<string | null>(null);
@@ -547,6 +563,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const durationSec = Math.min(limit, Math.round(((current.pausedAt ?? clock()).getTime() - current.startedAt.getTime()) / 1000));
     // Stop transcribing and recording together
     const [latestWords, audio] = await Promise.all([current.transcriber.stop(), current.capture.stop()]);
+    // Wait for the words from before a pause, if the pause is still collecting them (a quick Pause then Stop)
+    await current.held;
     // Everything said, including before any pause
     const transcript = joinWords(current.earlier, latestWords);
     // No longer paused
@@ -557,8 +575,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     return { transcript, audio, durationSec, loudness: current.readings, pitch: current.pitches, autoGain: current.autoGain, spokenTimes, scriptTimes: current.scriptTimes.length > 0 ? current.scriptTimes : null };
   }, [clock, limit]);
 
-  // Save a finished take and open it (or explain that nothing was heard); used on stop and on undoing a discard
-  const keep = useCallback(async (result: Awaited<ReturnType<typeof finishCapture>>) => {
+  // Save a finished take and open it (or explain that nothing was heard); used on stop and on undoing a discard. After the speech service dropped, it stays to explain, with a link to the take
+  const keep = useCallback(async (result: Awaited<ReturnType<typeof finishCapture>>, dropped = false) => {
     // Any step below can fail (the browser database can refuse a write), so never leave the screen on "Saving…"
     try {
       // Nothing was running (it was already stopped elsewhere): back to the start
@@ -593,7 +611,18 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
       void requestPersistentStorage();
       // A moment note goes straight back to the Small talk page, where it is listed; anything else opens its page (feedback is requested there)
-      navigate(mode === "moment" ? "/small-talk/unit?id=answering#moments" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`);
+      const next = mode === "moment" ? "/small-talk/unit?id=answering#moments" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`;
+      // The speech service dropped: say so first, with the way to the take
+      if (dropped) {
+        // Where it is
+        setDroppedHref(next);
+        // Explain
+        setStage("speech-dropped");
+        // Done
+        return;
+      }
+      // Go there
+      navigate(next);
     } catch (error) {
       // Keep the details in the browser console for debugging
       console.error("Saving the recording failed", error);
@@ -618,15 +647,32 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     await keep(await finishCapture());
   }, [finishCapture, keep]);
 
-  // Stop because of a problem, saving nothing
+  // Stop because of a problem: the speech service dropping mid-take keeps what was heard and the audio (decision 76); anything else saves nothing
   const fail = useCallback(
     async (problem: RecordingProblem) => {
+      // The speech service dropped while a take was under way (and not already stopping)
+      if (problem === "speech-offline" && live.current && !stopping.current) {
+        // Only stop once
+        stopping.current = true;
+        // Show that saving is under way
+        setStage("saving");
+        // Stop everything, keeping what was heard
+        const result = await finishCapture();
+        // Words heard and long enough to measure: save them, then explain
+        if (result && result.transcript.trim() && result.durationSec >= shortest) return keep(result, true);
+        // Nothing worth keeping: allow another attempt
+        stopping.current = false;
+        // Explain the problem
+        setStage({ problem });
+        // Done
+        return;
+      }
       // Stop everything without saving
       await finishCapture();
       // Explain
       setStage({ problem });
     },
-    [finishCapture],
+    [finishCapture, keep, shortest],
   );
 
   // Stop the thinking countdown, if one is running
@@ -660,8 +706,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Request access, without the browser's automatic levelling so loud and soft stay different (decision 81)
       stream = await services.openMicrophone({ autoGain: false });
     } catch (error) {
+      // The screen closed while asking: nothing to show
+      if (!mounted.current) return;
       // A missing microphone, or a refusal
       setStage({ problem: (error as DOMException).name === "NotFoundError" ? "no-microphone" : "microphone-blocked" });
+      // Stop here
+      return;
+    }
+    // The screen closed while the microphone was being allowed: let it go and record nothing
+    if (!mounted.current) {
+      // Release the microphone
+      stream.getTracks().forEach((track) => track.stop());
       // Stop here
       return;
     }
@@ -684,7 +739,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // The words to listen for in the text on screen (none without text)
     const expected = wordsToHear.current;
     // Keep the running pieces, with no word times yet (the clock, tick and word handler are filled in below)
-    const pieces: NonNullable<typeof live.current> = { transcriber, capture, startedAt, timer: 0 as unknown as ReturnType<typeof setInterval>, readings, pitches, autoGain, spokenTimes: [], scriptTimes: expected.map((): number | null => null), pausedAt: null, earlier: "", tick: () => {}, onWords: () => {} };
+    const pieces: NonNullable<typeof live.current> = { transcriber, capture, startedAt, timer: 0 as unknown as ReturnType<typeof setInterval>, readings, pitches, autoGain, spokenTimes: [], scriptTimes: expected.map((): number | null => null), pausedAt: null, earlier: "", held: Promise.resolve(), tick: () => {}, onWords: () => {} };
     // For scrolling at the reader's pace: the matched place, seconds spoken since it last moved, and the loudness below which it is silence
     const pace = { place: 0, voiced: 0, threshold: speechThreshold([]) };
     // Tick: update the timer and meter, and stop at the limit
@@ -762,6 +817,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       setStage("asking");
       // Say it, carrying on even if the voice fails
       await services.speak?.(question, promptId).catch(() => undefined);
+      // The screen closed while it was said: record nothing
+      if (!mounted.current) return;
       // Then record
       await start();
     },
@@ -859,12 +916,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const listener = current.transcriber;
     // Swap in a silent stand-in, so a stop while paused does not stop it twice
     current.transcriber = { start: () => {}, stop: async () => "" };
+    // Keep its words once it hands them back; a stop meanwhile waits for this, so nothing said before the pause is lost
+    current.held = current.held.then(() => listener.stop().catch(() => "")).then((words) => {
+      // Added to the earlier words
+      current.earlier = joinWords(current.earlier, words);
+    });
     // Shown as paused straight away
     setPaused(true);
-    // Keep its words
-    current.earlier = joinWords(current.earlier, await listener.stop());
-    // Show them as settled
-    setText({ final: current.earlier, interim: "" });
+    // Wait for the words
+    await current.held;
+    // Show them as settled, if the take is still under way
+    if (live.current === current) setText({ final: current.earlier, interim: "" });
   }, [clock]);
 
   // Resume: carry on from where it paused
@@ -971,11 +1033,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Let it go again; recording opens it afresh
       stream.getTracks().forEach((track) => track.stop());
     } catch (error) {
+      // The screen closed while asking: nothing to show
+      if (!mounted.current) return;
       // A missing microphone, or a refusal
       setStage({ problem: (error as DOMException).name === "NotFoundError" ? "no-microphone" : "microphone-blocked" });
       // Stop here
       return;
     }
+    // The screen closed while asking: start nothing
+    if (!mounted.current) return;
     // The start that was waiting
     const go = afterPrimer.current;
     // Forget it
@@ -1361,6 +1427,16 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {stage === "nothing-heard" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">I did not catch any words. Check that the right microphone is selected, then try again.</p>}
           {/* Too short */}
           {stage === "too-short" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">That was under {shortest} seconds, too short to measure, so it was not saved. Take your time and keep going a little longer.</p>}
+
+          {/* The speech service dropped mid-take: what was heard is saved, with the way to it */}
+          {stage === "speech-dropped" && (
+            <div role="alert" className="mt-6 max-w-[48ch] text-lede">
+              {/* What happened */}
+              <p>The browser’s speech service dropped, so recording stopped there. Everything heard up to then is saved, with the audio.</p>
+              {/* The way to the take */}
+              <p className="mt-4"><Link href={droppedHref} className={SECONDARY}>See your take</Link></p>
+            </div>
+          )}
 
           {/* Saving failed */}
           {stage === "save-failed" && <p role="alert" className="mt-6 max-w-[48ch] text-lede">This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}

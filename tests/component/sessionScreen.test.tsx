@@ -43,6 +43,16 @@ async function repositoryWith(...sessions: ReturnType<typeof makeSession>[]) {
 
 // Group the checks about the session page
 describe("SessionScreen", () => {
+  // A store that cannot be read is explained, instead of an empty page forever
+  it("explains when the session cannot be loaded", async () => {
+    // A repository whose sessions cannot be read
+    const repository = { ...createRepository(new MemoryStore()), getSession: async () => { throw new Error("The database connection is closing."); } };
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // The reason, and the way back
+    expect([(await screen.findByRole("alert")).textContent?.includes("The database connection is closing."), screen.getByRole("link", { name: "Back to history" }).getAttribute("href")]).toEqual([true, "/history"]);
+  });
+
   // A first try shows the feedback and offers a retry
   it("shows feedback for a first try", async () => {
     // A finished first try
@@ -695,6 +705,8 @@ describe("SessionScreen", () => {
       await userEvent.click(await screen.findByText("Add your notes"));
       // Tap a tag
       await userEvent.click(screen.getByRole("button", { name: "Pause words" }));
+      // The box takes no more than the coach does (decision 86)
+      expect(screen.getByLabelText("Anything else? (optional)").getAttribute("maxlength")).toBe("500");
       // Write a line
       await userEvent.type(screen.getByLabelText("Anything else? (optional)"), "Breathe first");
       // Save

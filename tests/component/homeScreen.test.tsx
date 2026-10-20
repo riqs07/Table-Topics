@@ -47,6 +47,36 @@ describe("HomeScreen", () => {
   // Each check starts with a fresh browser, as far as the welcome is concerned
   beforeEach(() => localStorage.clear());
 
+  // Regression: a store that throws left Today on its placeholder forever; now it says why, and Try again loads afresh
+  it("explains when saved data cannot be read, and tries again", async () => {
+    // A repository that fails once, as a closing browser database does
+    const working = emptyRepository();
+    // Whether it has failed yet
+    let failed = false;
+    // The failing copy
+    const repository = { ...working, listSessions: async () => {
+      // Fail the first time only
+      if (!failed) {
+        // Failed now
+        failed = true;
+        // The browser's reason
+        throw new Error("The database connection is closing.");
+      }
+      // Then work
+      return working.listSessions();
+    } };
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The explanation
+    const alert = await screen.findByRole("alert");
+    // The heading, the reason, and the way to practise anyway
+    expect([within(alert).getByRole("heading").textContent, !!within(alert).getByText(/The database connection is closing\./), within(alert).getByRole("link", { name: "Go to Practice" }).getAttribute("href")]).toEqual(["Your practice could not be loaded.", true, "/practice"]);
+    // Try again
+    await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+    // The welcome loads this time, and the explanation is gone
+    expect([!!(await screen.findByRole("link", { name: "Start" })), screen.queryByRole("alert")]).toEqual([true, null]);
+  });
+
   // A brand-new user gets a greeting and one Start, straight into today's first step (decision 67), and the welcome does not come back
   it("welcomes a new user with one Start, once", async () => {
     // Draw the screen

@@ -14,6 +14,8 @@ import type { SessionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the shared button looks
 import { QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+// Load the longest note the coach takes (decision 86)
+import { NOTE_MAX_CHARS } from "@/core/requestLimits";
 
 // A row of quick tags that can each be switched on or off
 function TagRow({ tags, chosen, onToggle, label }: { tags: ReadonlyArray<ReviewTag>; chosen: ReadonlySet<string>; onToggle: (id: string) => void; label: string }) {
@@ -120,7 +122,7 @@ export function NotesFold({ repo, session, onSaved, coachWaiting = false }: Note
       {/* One optional line */}
       <label htmlFor="notes-change" className="mt-4 block text-footnote text-ink-muted">Anything else? (optional)</label>
       {/* The box */}
-      <textarea id="notes-change" value={change} onChange={(event) => setChange(event.target.value)} rows={2} className="mt-1 w-full border border-rule bg-paper p-3 text-lede" />
+      <textarea id="notes-change" value={change} onChange={(event) => setChange(event.target.value)} rows={2} maxLength={NOTE_MAX_CHARS} className="mt-1 w-full border border-rule bg-paper p-3 text-lede" />
       {/* A saving problem */}
       {problem && <p role="alert" className="mt-2">{problem}</p>}
       {/* Save, or go on without notes when the coach is waiting for them */}

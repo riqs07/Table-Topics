@@ -108,10 +108,12 @@ The recordings of the fixed lines (small talk and shadowing, decision 82; the fo
 ## Export file
 
 - A JSON file with every session, challenge, and the settings. **Audio is not included** (keeps the file small); sessions in the file have no audio link.
-- Importing adds to what is on the device; a record with the same id is replaced, and the file's settings are used.
+- Importing adds to what is on the device without losing anything there (decision 86). A session, challenge or talk already on the device is kept and only gains what it lacks from the file (coach feedback with its status, your notes, any empty field); its recording link is never touched, and a challenge marked done stays done. Settings take the file's choices but keep any the file does not have; Learn cards, scenario answers, missions, words to watch and warm-up days are joined, keeping the further-on entry for each (the more recently used card or answer, the mission try that got further, the higher count). The message says how many sessions were new.
 - A file that is not a VoiceLab export, is from a newer version, or has a damaged record is refused before anything is saved, with a plain message.
 
 ## What leaves the device
+
+Every request stays within limits the server checks, kept in one place (`src/core/requestLimits.ts`, decision 86): a length up to the longest any session records (1,800 seconds), a transcript up to 40,000 characters, notes up to 500 characters each (the notes box takes no more), and up to 60 conversation turns of up to 1,000 characters each. The app cuts what it sends to fit (at a whole word); what is saved on the device keeps every word and the real length.
 
 | Data | Sent to | When |
 |------|---------|------|

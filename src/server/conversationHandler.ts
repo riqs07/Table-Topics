@@ -6,6 +6,8 @@ import { z } from "zod";
 import { findPersona, findScenario } from "@/content/conversations";
 // Load the line tidier
 import { cleanLine } from "@/core/conversationTurn";
+// Load the size limits shared with the app (decision 86)
+import { MAX_TURNS, TURN_MAX_CHARS } from "@/core/requestLimits";
 // Load the shared checks
 import { admit, reply, type GuardDeps } from "@/server/guard";
 // Load the settings type
@@ -30,7 +32,7 @@ const TurnSchema = z.object({
   // Who spoke
   who: z.enum(["you", "them"]),
   // What was said
-  text: z.string().max(1_000),
+  text: z.string().max(TURN_MAX_CHARS),
 });
 
 // The request: who, where, what is going on, the conversation so far, how far in, and whether the last turn was caught
@@ -42,7 +44,7 @@ const RequestSchema = z.object({
   // What is going on for them this time
   twist: z.number().int().min(0).max(9),
   // The conversation so far
-  turns: z.array(TurnSchema).max(60),
+  turns: z.array(TurnSchema).max(MAX_TURNS),
   // Starting, under way, winding down, or over
   stage: z.enum(["open", "talk", "wrap", "end"]),
   // False when the person's last turn was not caught

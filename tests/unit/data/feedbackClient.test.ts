@@ -7,6 +7,9 @@ import { createRepository } from "@/data/repository";
 import { requestFeedback, requestFeedbackDetail, sendPendingFeedback } from "@/data/feedbackClient";
 // Load a sample session builder
 import { makeSession, voiceReadings } from "../../support/fixtures";
+// Load the real feedback route's logic and an in-memory counter store, to check what the app sends is what the server takes
+import { createFeedbackHandler } from "@/server/feedbackHandler";
+import { MemoryCounterStore } from "@/server/rateLimit";
 
 // Sample feedback the route returns
 const FEEDBACK = { keep: "k", change: "c", retryCue: "r" };
@@ -53,6 +56,26 @@ describe("requestFeedback", () => {
     const body = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { conversation?: unknown; voice?: unknown };
     // The turns, and no voice numbers
     expect([body.conversation, body.voice]).toEqual([{ characterId: "theo", scenarioId: "class", turns: [{ who: "them", text: "Well… I fix up old radios.", lineId: "theo-14" }, { who: "you", text: "what kind of radios" }, { who: "them", text: "Oh, the fifties ones mostly." }] }, undefined]);
+  });
+
+  // Regression (decision 86): the longest sessions the app can make (a 30-minute rehearsal, a long note, a fast minute's turn, a conversation left running) are taken by the real route, not refused for good
+  it("sends the longest sessions within what the server takes", async () => {
+    // A 30-minute rehearsal of about 6,000 words, with a note longer than the box allows (saved before it had a limit)
+    const rehearsal = makeSession({ id: "r1", mode: "rehearse", durationSec: 1800, transcript: Array(6000).fill("words").join(" "), selfReview: { worked: "", change: "x ".repeat(400), tags: [], skipped: false, savedAt: "2026-10-16T10:00:00.000Z" } });
+    // A conversation of 20 minutes on the clock, with one very fast turn of yours
+    const conversation = makeSession({ id: "c1", mode: "conversation", promptId: "theo", durationSec: 1200, conversation: { scenarioId: "class", twist: 0, turns: [{ who: "them", text: "Hey.", seconds: 1 }, { who: "you", text: "word ".repeat(300), seconds: 60 }] } });
+    // Both saved
+    const repository = await repositoryWith(rehearsal, conversation);
+    // Sharing notes is on
+    await repository.saveSettings({ ...(await repository.getSettings(new Date())), shareNotes: true });
+    // The real route, with a coach that always answers
+    const handle = createFeedbackHandler({ readEnv: () => ({ anthropicApiKey: "sk-test", accessSecret: "a long passphrase for testing", counterStore: null }), makeCoach: () => ({ getFeedback: async () => ({ status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } }) }), makeCounterStore: () => new MemoryCounterStore(), limits: { perMinute: 10, perDay: 100 }, now: () => new Date() });
+    // The network passes each request to it
+    const network = async (_url: RequestInfo | URL, init?: RequestInit) => handle(new Request("http://localhost/api/feedback", init));
+    // Ask for both
+    const outcomes = [await requestFeedback(repository, "r1", { passphrase: "a long passphrase for testing", fetchFn: network }), await requestFeedback(repository, "c1", { passphrase: "a long passphrase for testing", fetchFn: network })];
+    // Both reviewed
+    expect(outcomes).toEqual(["done", "done"]);
   });
 
   // When the server says which setting is wrong, that reason is passed on (it names the setting, never its value)

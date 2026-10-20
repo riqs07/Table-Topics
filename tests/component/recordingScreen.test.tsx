@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 // Fake recording services that a check can drive by hand
-function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string | string[]; permission?: MicPermission; voice?: boolean } = {}) {
+function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string | string[]; permission?: MicPermission; voice?: boolean; stopDelayMs?: number } = {}) {
   // What the voice was asked to say
   const said: string[] = [];
   // How many times the microphone was asked for
@@ -71,8 +71,15 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
         // Keep the problem callback
         onProblem = problem;
       },
-      // Stopping returns the next final words
-      stop: async () => (finals.length > 1 ? finals.shift() : finals[0]) ?? "",
+      // Stopping returns the next final words, after a moment when asked (as the browser's speech service takes)
+      stop: async () => {
+        // The words, taken now
+        const words = (finals.length > 1 ? finals.shift() : finals[0]) ?? "";
+        // Wait, when asked
+        if (options.stopDelayMs) await new Promise((resolve) => setTimeout(resolve, options.stopDelayMs));
+        // Hand them back
+        return words;
+      },
     }),
     // A capture with a steady level and fixed audio
     createCapture: () => ({ level: () => 0.5, stop: async () => new Blob(["voice"]) }),
@@ -1016,6 +1023,100 @@ describe("RecordingScreen", () => {
     const [saved] = await repository.listSessions();
     // Confirm 30 seconds, not 90, and both parts of the words
     expect([saved?.durationSec, saved?.transcript]).toEqual([30, "So I went home and then I slept"]);
+  });
+
+  // Regression: Stop straight after Pause, while the listener is still handing back its words, kept nothing said before the pause
+  it("keeps the words from before a pause when stopped straight after pausing", async () => {
+    // Draw with a listener that takes a moment to stop
+    const { repository, clock, fake, navigate } = draw({}, { finalText: "So I went home", stopDelayMs: 30 });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Words arrive
+    await fake.say({ final: "So I went home", interim: "" });
+    // Speak for 20 seconds
+    clock.advance(20_000);
+    // Pause, then Stop at once
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    // Stop
+    fireEvent.click(screen.getByRole("button", { name: /Stop/ }));
+    // Wait for the save
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // Read the saved session
+    const [saved] = await repository.listSessions();
+    // The words from before the pause, and the length up to it
+    expect([saved?.transcript, saved?.durationSec]).toEqual(["So I went home", 20]);
+  });
+
+  // The speech service dropping mid-take keeps what was heard and the audio, and says why it stopped (decision 76)
+  it("saves what was heard when the speech service drops mid-take", async () => {
+    // Draw the screen
+    const { repository, clock, fake, navigate } = draw();
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Words arrive
+    await fake.say({ final: "Um, the best part of my week", interim: "" });
+    // Speak for 20 seconds
+    clock.advance(20_000);
+    // The speech service drops out
+    await fake.fail("speech-offline");
+    // The explanation, and the way to the take
+    const link = await screen.findByRole("link", { name: "See your take" });
+    // The saved session
+    const [saved] = await repository.listSessions();
+    // Saved with its words and audio, explained, linked, and the page not changed by itself
+    expect([saved?.transcript, saved?.durationSec, !!(await repository.getAudio(saved!.id)), !!screen.getByText(/speech service dropped/), link.getAttribute("href"), navigate.mock.calls.length]).toEqual(["Um, the best part of my week was the dog.", 20, true, true, `/sessions?id=${saved?.id}`, 0]);
+  });
+
+  // Leaving while a small-talk question is said must not open the microphone afterwards
+  it("opens nothing if the page closes while the question is said", async () => {
+    // Fake services with a voice
+    const fake = fakeServices({ voice: true });
+    // Finish saying the question when the check says
+    let finish: (value: null) => void = () => {};
+    // A voice that waits
+    const speak = () => new Promise<null>((resolve) => (finish = resolve));
+    // Draw an everyday question
+    draw({ mode: "smalltalk", promptId: "st01", services: { ...fake.services, speak } });
+    // Hear the question
+    fireEvent.click(await screen.findByRole("button", { name: /Hear the question/ }));
+    // Leave the page while it is said
+    cleanup();
+    // The question finishes
+    finish(null);
+    // Let the waiting steps run
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    // The microphone was never asked for
+    expect(fake.micAsks()).toBe(0);
+  });
+
+  // Leaving while the microphone is being allowed must let it go and start no listening
+  it("releases the microphone if the page closes while it is being allowed", async () => {
+    // Fake services
+    const fake = fakeServices();
+    // The microphone's track, noting when it is stopped
+    const stopTrack = vi.fn();
+    // Allow the microphone when the check says
+    let allow: (stream: MediaStream) => void = () => {};
+    // A microphone that waits
+    const openMicrophone = () => new Promise<MediaStream>((resolve) => (allow = resolve));
+    // Listeners made
+    const createTranscriber = vi.fn(fake.services.createTranscriber);
+    // Draw it
+    draw({ services: { ...fake.services, openMicrophone, createTranscriber } });
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Leave the page while the browser asks
+    cleanup();
+    // The microphone is allowed
+    allow({ getTracks: () => [{ stop: stopTrack }], getAudioTracks: () => [] } as unknown as MediaStream);
+    // Let the waiting steps run
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    // Let go, and no listening started
+    expect([stopTrack.mock.calls.length, createTranscriber.mock.calls.length]).toEqual([1, 0]);
   });
 
   // Regression: without a clock passed in (as in the real app), recording must keep running across redraws

@@ -23,6 +23,14 @@ describe("reminderCalendar", () => {
     expect([text.includes("DTSTART:20261013T183000"), text.includes("work\\, before"), text.split("\r\n").every((line) => line.length <= 75)]).toEqual([true, true, true]);
   });
 
+  // Regression: a semicolon in the anchor was left bare (the escape was written as "\;", which is just ";"), which calendars read as a separator
+  it("escapes a semicolon", () => {
+    // A semicolon in the anchor
+    const text = reminderCalendar({ time: "18:30", anchor: "tea; then practice", url: "https://example.test", now: new Date(2026, 9, 13, 7) });
+    // Escaped with a backslash
+    expect([text.includes("Tea\\; then"), text.includes("Tea; then")]).toEqual([true, false]);
+  });
+
   // Only real times count
   it("checks times", () => {
     // Confirm

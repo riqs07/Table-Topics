@@ -66,7 +66,7 @@ describe("export and import", () => {
     // Read and import the file
     const counts = await importExport(fresh, parseExport(text));
     // Confirm the counts reported to the user
-    expect(counts).toEqual({ sessions: 2, challenges: 1 });
+    expect(counts).toEqual({ added: 2, kept: 0 });
     // Export again from the fresh repository
     const again = await buildExport(fresh, NOW);
     // Confirm everything matches the original export
@@ -83,6 +83,67 @@ describe("export and import", () => {
     await importExport(repo, parseExport(JSON.stringify(await buildExport(await seededRepository(), NOW))));
     // Confirm all three sessions are present
     expect((await repo.listSessions()).map((s) => s.id).sort()).toEqual(["other", "s1", "s2"]);
+  });
+});
+
+// Group the checks about importing onto a device that already has data (decision 86)
+describe("importing over existing data", () => {
+  // Regression: re-importing a backup unlinked recordings (the file has no audio) and replaced newer feedback and notes
+  it("keeps recordings linked and newer feedback and notes", async () => {
+    // The backup, made before anything below happened
+    const file = parseExport(JSON.stringify(await buildExport(await seededRepository(), NOW)));
+    // The device now: s1 still has its recording and gained notes; s2 is as it was
+    const repo = await seededRepository();
+    // Notes saved after the backup
+    await repo.saveSession({ ...(await repo.getSession("s1"))!, selfReview: { worked: "", change: "Slow down", tags: [], skipped: false, savedAt: "2026-10-13T10:00:00.000Z" } });
+    // Import the older backup
+    const counts = await importExport(repo, file, NOW);
+    // The session as it is now
+    const s1 = await repo.getSession("s1");
+    // Still linked to its recording, which is still there, notes kept, and both counted as already here
+    expect([s1?.audioKey, !!(await repo.getAudio("a1")), s1?.selfReview?.change, counts]).toEqual(["a1", true, "Slow down", { added: 0, kept: 2 }]);
+  });
+
+  // A copy here that lacks something the file has gains it: feedback that arrived on another device comes in with its status
+  it("fills in feedback the copy here lacks", async () => {
+    // A device where s2 is still waiting for the coach
+    const repo = createRepository(new MemoryStore());
+    // Waiting
+    await repo.saveSession(makeSession({ id: "s2", feedbackStatus: "pending", feedback: null, audioKey: "a2" }));
+    // Import a file where it was reviewed
+    await importExport(repo, parseExport(JSON.stringify(await buildExport(await seededRepository(), NOW))), NOW);
+    // The session as it is now
+    const s2 = await repo.getSession("s2");
+    // The feedback and its status from the file, the recording link from here
+    expect([s2?.feedback?.keep, s2?.feedbackStatus, s2?.audioKey]).toEqual(["k", "done", "a2"]);
+  });
+
+  // Settings: the file's choices, this device's where the file has none, and progress from both
+  it("joins settings and progress instead of replacing them", async () => {
+    // A device with its own progress and a choice the file lacks
+    const repo = createRepository(new MemoryStore());
+    // Saved here
+    await repo.saveSettings({ focusIndex: 3, focusStartedOn: "2026-10-12T04:00:00.000Z", audioRetention: 60, stammer: true, learn: { a: { readAt: "2026-10-12T10:00:00.000Z", box: 2, dueAt: "2026-10-20T10:00:00.000Z", lastResult: "right", recalledAt: "2026-10-12T10:00:00.000Z" } }, scenarios: { s: { firstTier: "good", lastTier: "best", firstAt: "2026-10-01", lastAt: "2026-10-12" } }, warmupDays: ["2026-10-12"], missions: [{ id: "m1", missionId: "x", day: "2026-10-12", status: "done", predicted: 3, tried: true, outcome: 4, note: "", tooMuch: false, debriefedAt: "2026-10-12T20:00:00.000Z" }] });
+    // A backup with its own progress, an older copy of card a, and an earlier copy of the mission
+    const file = parseExport(JSON.stringify({ ...(await buildExport(await seededRepository(), NOW)), settings: { focusIndex: 1, focusStartedOn: "2026-10-05T04:00:00.000Z", audioRetention: 30, learn: { a: { readAt: "2026-10-01T10:00:00.000Z", box: 0, dueAt: "2026-10-02T10:00:00.000Z", lastResult: null }, b: { readAt: "2026-10-02T10:00:00.000Z", box: 1, dueAt: "2026-10-04T10:00:00.000Z", lastResult: "right" } }, warmupDays: ["2026-10-01"], missions: [{ id: "m1", missionId: "x", day: "2026-10-12", status: "accepted", predicted: 3, tried: null, outcome: null, note: "", tooMuch: false, debriefedAt: null }, { id: "m0", missionId: "y", day: "2026-10-01", status: "skipped", predicted: null, tried: null, outcome: null, note: "", tooMuch: false, debriefedAt: null }] } }));
+    // Import it
+    await importExport(repo, file, NOW);
+    // The settings now
+    const settings = await repo.getSettings(NOW);
+    // The file's focus, this device's stammer, both cards with this device's newer card a, both scenario and warm-up days, both missions with this device's finished one
+    expect([settings.focusIndex, settings.stammer, Object.keys(settings.learn ?? {}).sort(), settings.learn?.a?.box, Object.keys(settings.scenarios ?? {}), settings.warmupDays, settings.missions?.map((mission) => `${mission.id}:${mission.status}`)]).toEqual([1, true, ["a", "b"], 2, ["s"], ["2026-10-01", "2026-10-12"], ["m0:skipped", "m1:done"]]);
+  });
+
+  // A challenge done here stays done when an older file says it is not
+  it("keeps a challenge marked done", async () => {
+    // A device where the challenge is done
+    const repo = createRepository(new MemoryStore());
+    // Done
+    await repo.saveChallenge({ id: "c1", weekStart: "2026-10-12", text: "Say hi to a neighbor", completedAt: "2026-10-13T09:00:00.000Z" });
+    // Import a file where it is not
+    await importExport(repo, parseExport(JSON.stringify(await buildExport(await seededRepository(), NOW))), NOW);
+    // Still done
+    expect((await repo.listChallenges())[0]?.completedAt).toBe("2026-10-13T09:00:00.000Z");
   });
 });
 

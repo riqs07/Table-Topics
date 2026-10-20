@@ -834,6 +834,8 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
   const [askAgain, setAskAgain] = useState(0);
   // Whether pause words show and fluency is judged, from Settings (decision 79; shown until read)
   const [view, setView] = useState<ResultView>({ pauseWords: true, fluency: true });
+  // The browser's reason when the session could not be read, so the page explains instead of staying empty
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Read the two settings once the date is known
   useEffect(() => {
@@ -845,6 +847,8 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
     repo.getSettings(today).then((settings) => {
       // Keep them if still open
       if (!cancelled) setView({ pauseWords: pauseWordsShown(settings), fluency: fluencyJudged(settings) });
+    }).catch(() => {
+      // Keep showing pause words and fluency, as before Settings is read; the session's own load explains a storage problem
     });
     // Mark as closed
     return () => {
@@ -883,6 +887,8 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       // Hand them back
       return { session, original, earlier, talk, qaIndex: qaIndex >= 0 ? qaIndex : null, usual };
     };
+    // Whether the session is on screen yet, so a later problem is explained beside it instead
+    let shown = false;
     // Load, then ask the coach if feedback is still waiting
     (async () => {
       // Load the session
@@ -891,6 +897,8 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       if (cancelled) return;
       // Show what was loaded
       setLoaded(first);
+      // On screen now
+      shown = true;
       // Nothing more to do unless feedback is waiting
       if (first.session?.feedbackStatus !== "pending") return;
       // Say the coach is being asked
@@ -903,7 +911,16 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       setNote(outcome === "not-set-up" && reason ? `Feedback is paused. ${reason} Your session is saved.` : outcome === "retry-later" && reason ? `The coach could not be reached. Reason: ${reason}. Your session is saved.` : FEEDBACK_NOTES[outcome]);
       // Reload to show the feedback (or the new status)
       setLoaded(await load());
-    })();
+    })().catch((error: unknown) => {
+      // Nothing to do once closed
+      if (cancelled) return;
+      // The browser's reason
+      const reason = error instanceof Error ? error.message : String(error);
+      // Shown already: the feedback step failed, so say so beside the session
+      if (shown) setNote(`Feedback could not be saved on this device (${reason}). Your session is saved; reload the page to try again.`);
+      // Not shown: explain on the page
+      else setLoadError(reason);
+    });
     // Mark as closed when leaving
     return () => {
       // Stop the pending update
@@ -925,6 +942,8 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       const next = loadedPlan.steps[planStep];
       // Keep where this step sits
       setPlan({ step: planStep, total: loadedPlan.steps.length, next: next ? { href: planHref(next, planStep + 1), label: next.label } : null });
+    }).catch(() => {
+      // Without the plan, the page offers its usual way back instead of the next step
     });
     // Mark as closed when leaving
     return () => {
@@ -944,6 +963,15 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
           <Masthead title="Session" />
           {/* Explanation and a way back */}
           <p data-inline className="mt-6 text-lede text-ink-muted">This session is not on this device. <Link href="/history" className={TEXT_LINK}>Back to history</Link></p>
+        </>
+      )}
+      {/* The session could not be read: why, and the way back */}
+      {!loaded && loadError !== null && (
+        <>
+          {/* Title */}
+          <Masthead title="Session" />
+          {/* What happened */}
+          <p role="alert" data-inline className="mt-6 max-w-[48ch] text-lede">This session could not be loaded. The browser said: “{loadError}” Reload the page to try again. <Link href="/history" className={TEXT_LINK}>Back to history</Link></p>
         </>
       )}
       {/* A retry with its first try */}

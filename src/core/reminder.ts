@@ -24,7 +24,7 @@ function pad(value: number): string {
 // Text made safe for a calendar field (backslashes, commas, semicolons and line breaks escaped)
 function escapeText(text: string): string {
   // Escape each special character
-  return text.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 }
 
 // Fold a long line at 75 characters, as calendars expect (continuations start with a space)

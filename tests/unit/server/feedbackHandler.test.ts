@@ -81,6 +81,14 @@ describe("feedback handler", () => {
     expect([ok.status, (seen[0] as { notes?: unknown }).notes, tooLong.status]).toEqual([200, { worked: "w", change: "c", tags: ["fillers"] }, 400]);
   });
 
+  // A 30-minute rehearsal, the longest session the app makes, is taken (decision 86)
+  it("accepts the longest rehearsal the app can record", async () => {
+    // Thirty minutes of a fast talker
+    const response = await createFeedbackHandler(deps())(request({ ...BODY, mode: "rehearse", durationSec: 1800, transcript: Array(6000).fill("words").join(" ") }));
+    // Taken
+    expect(response.status).toBe(200);
+  });
+
   // The stammer flag reaches the coach (decision 79)
   it("passes on that the speaker stammers", async () => {
     // A coach that remembers what it was given
@@ -211,8 +219,10 @@ describe("feedback handler", () => {
     ["missing transcript", { ...BODY, transcript: undefined }],
     // A zero-length recording
     ["zero duration", { ...BODY, durationSec: 0 }],
-    // An absurdly long transcript
-    ["transcript too long", { ...BODY, transcript: "word ".repeat(5000) }],
+    // An absurdly long transcript (past what a fast 30-minute rehearsal needs)
+    ["transcript too long", { ...BODY, transcript: "word ".repeat(9000) }],
+    // Longer than any session can run
+    ["duration too long", { ...BODY, durationSec: 1801 }],
   ])("rejects a bad request: %s", async (_name, body) => {
     // Call the handler
     const response = await createFeedbackHandler(deps())(request(body));

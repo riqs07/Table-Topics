@@ -20,6 +20,20 @@ describe("nextLine", () => {
     expect([body, line?.text, new Uint8Array(await line!.audio!.arrayBuffer()), line?.audio?.type, line?.goodbye]).toEqual([{ personaId: "theo", scenarioId: "meeting", twist: 1, stage: "talk", heard: true, turns: [{ who: "them", text: "Hey." }, { who: "you", text: "Hi, I'm Sam" }] }, "Oh, hi.", new Uint8Array([1, 2, 3]), "audio/mpeg", false]);
   });
 
+  // Regression (decision 86): a fast minute can run past the route's 1,000 characters a turn, so each turn is cut to size before sending (the saved turn keeps every word)
+  it("cuts a very long turn to the route's limit", async () => {
+    // A network answering with a line
+    const network = vi.fn(async () => Response.json({ text: "Oh, hi.", audio: null, goodbye: false }));
+    // A turn of about 1,500 characters
+    const long = "word ".repeat(300).trim();
+    // Ask
+    await nextLine({ ...REQUEST, turns: [{ who: "you", text: long, seconds: 60 }] }, { passphrase: "secret", fetchFn: network });
+    // What was sent
+    const body = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { turns: Array<{ text: string }> };
+    // Within the limit, cut at a whole word
+    expect([body.turns[0]!.text.length <= 1_000, body.turns[0]!.text.endsWith("word"), long.length > 1_000]).toEqual([true, true, true]);
+  });
+
   // Words without audio come back with no audio, so the phone's own voice says them
   it("hands back the words alone when there is no audio", async () => {
     // No audio

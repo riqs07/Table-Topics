@@ -1,7 +1,7 @@
 // Make a simulated IndexedDB available in Node, as the browser would have
 import "fake-indexeddb/auto";
 // Load the test helpers from the test runner
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Load the in-memory store used by fast tests
 import { MemoryStore } from "@/data/memoryStore";
 // Load the real browser store
@@ -195,5 +195,64 @@ describe("IndexedDbStore with an existing database", () => {
     await store.put("talks", "t1", { id: "t1", title: "Toast", body: "Words.", goalMinutes: null, createdAt: "2026-10-12T15:00:00.000Z" });
     // Confirm it loads back
     expect((await store.get("talks", "t1"))?.title).toBe("Toast");
+  });
+});
+
+// Group the checks about a connection the browser closes by itself (decision 86)
+describe("IndexedDbStore after the browser closes its connection", () => {
+  // Put the real opener back after each check
+  afterEach(() => vi.restoreAllMocks());
+
+  // Every connection the store opens, caught as it opens
+  function catchConnections(): IDBOpenDBRequest[] {
+    // The requests
+    const requests: IDBOpenDBRequest[] = [];
+    // The real opener
+    const open = indexedDB.open.bind(indexedDB);
+    // Note each request on its way through
+    vi.spyOn(indexedDB, "open").mockImplementation((name: string, version?: number) => {
+      // Open as usual
+      const request = version === undefined ? open(name) : open(name, version);
+      // Noted
+      requests.push(request);
+      // Handed back
+      return request;
+    });
+    // The list, filled as the store opens
+    return requests;
+  }
+
+  // Regression: Safari closes idle connections; every later save then failed until the page was reloaded
+  it("opens afresh and saves when the connection was closed under it", async () => {
+    // Catch the connections
+    const requests = catchConnections();
+    // A store
+    const store = new IndexedDbStore(`voicelab-closed-${databaseNumber++}`);
+    // A first save opens it
+    await store.put("sessions", "s1", makeSession({ id: "s1" }));
+    // The connection is closed under the store, as the browser does
+    requests.at(-1)!.result.close();
+    // A later save still works
+    await store.put("sessions", "s2", makeSession({ id: "s2" }));
+    // Both saved, on a second connection
+    expect([(await store.getAll("sessions")).map((session) => session.id).sort(), requests.length]).toEqual([["s1", "s2"], 2]);
+  });
+
+  // When the browser says it closed the connection, the next use opens a new one without a failed try first
+  it("forgets a connection the browser reports closed", async () => {
+    // Catch the connections
+    const requests = catchConnections();
+    // A store
+    const store = new IndexedDbStore(`voicelab-closed-${databaseNumber++}`);
+    // A first save opens it
+    await store.put("sessions", "s1", makeSession({ id: "s1" }));
+    // The connection
+    const connection = requests.at(-1)!.result;
+    // The browser reports it closed
+    connection.onclose?.call(connection, new Event("close"));
+    // A read
+    const loaded = await store.get("sessions", "s1");
+    // Read back, on a second connection
+    expect([loaded?.id, requests.length]).toEqual(["s1", 2]);
   });
 });

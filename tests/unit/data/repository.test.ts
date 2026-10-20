@@ -147,6 +147,30 @@ describe("pruneAudio", () => {
     expect(await repo.pruneAudio()).toBe(2);
   });
 
+  // Regression: feedback saved while pruning (the coach answering meanwhile) must not be overwritten by the copy read before
+  it("keeps feedback saved while pruning", async () => {
+    // Save three sessions with audio
+    await seed(3);
+    // Keep no audio beyond the baseline and first takes
+    await repo.saveSettings({ ...(await repo.getSettings(NOW)), audioRetention: 0 });
+    // A store where the coach's answer for s2 lands as its recording is deleted
+    const racing = Object.assign(Object.create(store) as MemoryStore, {
+      // Deleting a recording
+      delete: async (collection: Parameters<MemoryStore["delete"]>[0], key: string) => {
+        // Delete it as usual
+        await store.delete(collection, key);
+        // Meanwhile, the coach's feedback for s2 is saved
+        if (key === "audio-2") await store.put("sessions", "s2", { ...(await store.get("sessions", "s2"))!, feedback: { keep: "k", change: "c", retryCue: "r" }, feedbackStatus: "done" });
+      },
+    });
+    // Prune through it
+    await createRepository(racing).pruneAudio();
+    // The session now
+    const s2 = await repo.getSession("s2");
+    // Audio unlinked, feedback kept
+    expect([s2?.audioKey, s2?.feedbackStatus, s2?.feedback?.keep]).toEqual([null, "done", "k"]);
+  });
+
   // Pruning twice does nothing the second time
   it("does nothing when there is nothing to prune", async () => {
     // Save three sessions with audio

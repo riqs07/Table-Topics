@@ -5,6 +5,8 @@
 import { isSessionMode, type ChallengeRecord, type SessionRecord, type SettingsRecord, type TalkRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
+// Load the rules for joining a backup with what is already here (decision 86)
+import { mergeRecord, mergeSession, mergeSettings } from "@/core/importMerge";
 
 // Label that identifies a VoiceLab export file
 const FORMAT = "voicelab-export";
@@ -37,18 +39,29 @@ export async function buildExport(repo: Repository, now: Date): Promise<ExportFi
   return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions, challenges: await repo.listChallenges(), settings: await repo.getSettings(now), talks: await repo.listTalks() };
 }
 
-// Save everything from an export file, adding to existing data; returns what was imported
-export async function importExport(repo: Repository, file: ExportFile): Promise<{ sessions: number; challenges: number }> {
-  // Save each session (one with the same id is replaced)
-  for (const session of file.sessions) await repo.saveSession(session);
-  // Save each challenge (one with the same id is replaced)
-  for (const challenge of file.challenges) await repo.saveChallenge(challenge);
-  // Save each talk (one with the same id is replaced)
-  for (const talk of file.talks) await repo.saveTalk(talk);
-  // Use the file's settings
-  await repo.saveSettings(file.settings);
+// Save everything from an export file, joined with what is already here (decision 86): a record already on this device is kept and only gains what it lacks (so recordings stay linked and newer feedback or notes are not lost), and settings and progress are joined; returns how many sessions were new and how many already here
+export async function importExport(repo: Repository, file: ExportFile, now: Date = new Date()): Promise<{ added: number; kept: number }> {
+  // Sessions new to this device
+  let added = 0;
+  // Each session in the file
+  for (const session of file.sessions) {
+    // The copy already here, if any
+    const existing = await repo.getSession(session.id);
+    // Count it
+    if (!existing) added += 1;
+    // Saved, joined with the copy here
+    await repo.saveSession(mergeSession(existing, session));
+  }
+  // The challenges already here, by id
+  const challenges = new Map((await repo.listChallenges()).map((challenge) => [challenge.id, challenge]));
+  // Each challenge, joined with the copy here
+  for (const challenge of file.challenges) await repo.saveChallenge(mergeRecord(challenges.get(challenge.id), challenge));
+  // Each talk, joined with the copy here
+  for (const talk of file.talks) await repo.saveTalk(mergeRecord(await repo.getTalk(talk.id), talk));
+  // The settings, joined with those here
+  await repo.saveSettings(mergeSettings(await repo.getSettings(now), file.settings));
   // Report the counts to show the user
-  return { sessions: file.sessions.length, challenges: file.challenges.length };
+  return { added, kept: file.sessions.length - added };
 }
 
 // Messages shown to the user when a file cannot be imported

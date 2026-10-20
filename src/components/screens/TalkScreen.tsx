@@ -54,6 +54,8 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   // The date being typed in
   const [dateInput, setDateInput] = useState("");
+  // The browser's reason when the talk could not be read, so the page explains instead of staying empty
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Load the talk and its rehearsals
   useEffect(() => {
@@ -67,6 +69,9 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
       setLoaded({ talk: talk ?? null, sessions: sessions.filter((session) => session.mode === "rehearse" && session.promptId === talkId) });
       // Start the date field at the saved date
       setDateInput(talk?.eventDate ?? "");
+    }).catch((error: unknown) => {
+      // Keep the reason to show, if still open
+      if (!cancelled) setLoadError(error instanceof Error ? error.message : String(error));
     });
     // Mark as closed when leaving
     return () => {
@@ -87,6 +92,21 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
     await repo.saveTalk(talk);
     // Show it
     setLoaded({ ...loaded, talk });
+  }
+
+  // The talk could not be read: why, and the way back
+  if (!loaded && loadError !== null) {
+    // Say so
+    return (
+      <main className={PAGE}>
+        {/* Heading and navigation */}
+        <Masthead title="Your talk" section="practice" />
+        {/* What happened */}
+        <p role="alert" className="mt-6 max-w-[48ch] text-lede">This talk could not be loaded. The browser said: “{loadError}” Reload the page to try again.</p>
+        {/* The way back */}
+        <Link href="/rehearse" className={`${TEXT_LINK} mt-4`}>Back to your talks</Link>
+      </main>
+    );
   }
 
   // Still loading, or not yet in the browser

@@ -24,6 +24,14 @@ describe("daySummary", () => {
     expect(spokenSentence(today)).toBe("You spoke for 3 minutes 20 today.");
   });
 
+  // Regression (decision 86): a conversation's length includes the persona talking, so only your own turns count as time you spoke
+  it("counts only your own turns in a conversation", () => {
+    // A three-minute conversation where you spoke for 50 seconds, and a 30-second take
+    const today = [makeSession({ id: "c", mode: "conversation", durationSec: 180, conversation: { scenarioId: "party", twist: 0, turns: [{ who: "them", text: "Hi!", seconds: 40 }, { who: "you", text: "Hello", seconds: 20 }, { who: "them", text: "And you?", seconds: 90 }, { who: "you", text: "Me too", seconds: 30 }] } }), makeSession({ id: "t", durationSec: 30 })];
+    // The day's line and the conversation's step line
+    expect([spokenSentence(today), stepNote(today[0]!)]).toEqual(["You spoke for 1 minute 20 today.", "You spoke for 50 seconds."]);
+  });
+
   // A step's line is the user's own note, or a neutral fact, never a filler count
   it("uses the user's note, or how long they spoke", () => {
     // A note on what to change, a note on what worked, and no notes

@@ -100,4 +100,14 @@ describe("TalkScreen", () => {
     // Confirm the note and the way back
     await waitFor(() => expect([!!screen.getByText(/not on this device/), screen.getByRole("link", { name: "Back to your talks" }).getAttribute("href")]).toEqual([true, "/rehearse"]));
   });
+
+  // A store that cannot be read is explained, instead of an empty page forever
+  it("explains when the talk cannot be loaded", async () => {
+    // A repository whose sessions cannot be read
+    const repository = { ...createRepository(new MemoryStore()), listSessions: async () => { throw new Error("The database connection is closing."); } };
+    // Draw the page
+    render(<TalkScreen talkId="t1" repository={repository} now={NOW} />);
+    // The reason, and the way back
+    expect([(await screen.findByRole("alert")).textContent?.includes("The database connection is closing."), screen.getByRole("link", { name: "Back to your talks" }).getAttribute("href")]).toEqual([true, "/rehearse"]);
+  });
 });

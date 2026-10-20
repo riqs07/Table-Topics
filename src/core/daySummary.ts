@@ -22,10 +22,16 @@ export function spokenTime(seconds: number): string {
   return `${minutes} ${minutes === 1 ? "minute" : "minutes"}${rest > 0 ? ` ${rest}` : ""}`;
 }
 
+// How long the user spoke in a session: a conversation counts only their own turns (its length includes the persona speaking and thinking), anything else its length
+function spokenSeconds(session: SessionRecord): number {
+  // A conversation's own turns, added up; any other session's length
+  return session.conversation ? session.conversation.turns.filter((turn) => turn.who === "you").reduce((total, turn) => total + turn.seconds, 0) : session.durationSec;
+}
+
 // The day's opening line: how long the user spoke today
 export function spokenSentence(today: ReadonlyArray<SessionRecord>): string {
-  // Every session's length added up
-  const seconds = today.reduce((total, session) => total + session.durationSec, 0);
+  // Every session's speaking time added up
+  const seconds = today.reduce((total, session) => total + spokenSeconds(session), 0);
   // The sentence
   return `You spoke for ${spokenTime(seconds)} today.`;
 }
@@ -33,7 +39,7 @@ export function spokenSentence(today: ReadonlyArray<SessionRecord>): string {
 // A done step's line: the user's own note, or how long they spoke
 export function stepNote(session: SessionRecord): string {
   // Their note on what to change, or else on what worked, or else the length
-  return session.selfReview?.change || session.selfReview?.worked || `You spoke for ${spokenTime(session.durationSec)}.`;
+  return session.selfReview?.change || session.selfReview?.worked || `You spoke for ${spokenTime(spokenSeconds(session))}.`;
 }
 
 // Which day of this week (from Monday) today's practice is: "Fourth day this week."

@@ -8,6 +8,12 @@ import type { Store } from "@/data/store";
 // The app's own database name: distinctive, so it cannot collide with another app run on the same address (one user had a "voicelab" database from another project on localhost)
 const DATABASE_NAME = "voicelab-practice-journal";
 
+// Whether an error means the connection was closed under us (Safari closes idle ones), so a fresh one may work
+function connectionClosed(error: unknown): boolean {
+  // The browser reports a closed or closing connection as an invalid state
+  return error instanceof DOMException && error.name === "InvalidStateError";
+}
+
 // Turn an IndexedDB request into a promise that settles when it finishes
 function settle<T>(request: IDBRequest<T>): Promise<T> {
   // Wrap the request's success and error events
@@ -86,7 +92,7 @@ export class IndexedDbStore implements Store {
     throw new Error(`The browser database "${this.name}" belongs to something else on this address (its ${foreign.join(", ")} collection is laid out differently), so VoiceLab will not write to it.`);
   }
 
-  // Close and forget the database when another tab needs to upgrade it, so neither tab gets stuck
+  // Close and forget the database when another tab needs to upgrade it, or when the browser closes it (decision 86), so the next use opens it afresh instead of failing until a reload
   private watch(database: IDBDatabase): IDBDatabase {
     // Another tab asks for a newer version
     database.onversionchange = () => {
@@ -95,16 +101,39 @@ export class IndexedDbStore implements Store {
       // Reopen on next use
       this.database = null;
     };
+    // The browser closed it by itself (Safari does this to idle or backgrounded pages)
+    database.onclose = () => {
+      // Reopen on next use
+      this.database = null;
+    };
     // Hand it back
     return database;
   }
 
-  // Run one operation on a collection inside a transaction and wait for it to finish
+  // Run one operation on a collection, opening the database afresh once if the connection was closed under us
   private async run<T>(collection: CollectionName, mode: IDBTransactionMode, operation: (area: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-    // Get the open database
+    // The open database
     const database = await this.open();
     // Start a transaction on the collection
-    const transaction = database.transaction(collection, mode);
+    let transaction: IDBTransaction;
+    // Starting one fails at once if the connection is closed or closing
+    try {
+      // Start it
+      transaction = database.transaction(collection, mode);
+    } catch (error) {
+      // Any other problem is reported as it is
+      if (!connectionClosed(error)) throw error;
+      // Forget the closed connection, if it is still the one kept
+      if (this.database && (await this.database.catch(() => null)) === database) this.database = null;
+      // Nothing was started, so trying once more on a fresh connection is safe
+      return this.transact((await this.open()).transaction(collection, mode), collection, operation);
+    }
+    // Run it
+    return this.transact(transaction, collection, operation);
+  }
+
+  // Run one operation inside a started transaction and wait for it to finish
+  private async transact<T>(transaction: IDBTransaction, collection: CollectionName, operation: (area: IDBObjectStore) => IDBRequest<T>): Promise<T> {
     // Start the operation
     const result = settle(operation(transaction.objectStore(collection)));
     // Wait until the transaction is fully committed, so the data is really saved

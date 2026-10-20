@@ -295,6 +295,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     if (!take || !alive.current) return;
     // What you said
     const text = take.transcript.trim();
+    // Nothing caught after time is up: never ask again (the turn would end itself at once, over and over), so say goodbye and save
+    if (!text && stageAt(secondsIn()) === "end") return farewell();
     // Nothing caught: they ask you to say it again, then it is your turn again
     if (!text) {
       // Say why on screen
@@ -305,8 +307,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
         const again = await ask(stageAt(secondsIn()), false);
         // The connection dropped
         if (!again) return lose();
-        // Said
-        await sayWritten(again, false);
+        // Said, kept in the conversation only if it says goodbye; a goodbye ends it
+        if (await sayWritten(again, again.goodbye)) return save();
       } else {
         // Their recorded line for it, kept out of the conversation
         await sayRecorded([persona.again], false);
@@ -382,6 +384,26 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     await sayWritten(opening);
     // Your turn
     await yourTurn();
+  }
+
+  // Time is up and your last turn was not caught: their goodbye, then save
+  async function farewell() {
+    // Nothing missed to show
+    setMissed(false);
+    // Written: ask for a goodbye
+    if (written) {
+      // Asked for
+      const goodbye = await ask("end", true);
+      // The connection dropped: save what was said
+      if (!goodbye) return lose();
+      // Said
+      await sayWritten(goodbye);
+    } else {
+      // Recorded: a goodbye line
+      await sayRecorded(scriptedNext(persona, turns.current, true));
+    }
+    // Save (stopped by the page closing, the goodbye still ends it)
+    return save();
   }
 
   // The connection dropped mid-conversation: save what was said

@@ -106,8 +106,10 @@ export function createRepository(store: Store): Repository {
       for (const session of toPrune) {
         // Delete the recording
         await store.delete("audio", session.audioKey as string);
+        // The session as it is now (feedback or notes may have been saved since the list was read)
+        const latest = (await store.get("sessions", session.id)) ?? session;
         // Keep the session but mark its audio as gone
-        await store.put("sessions", session.id, { ...session, audioKey: null });
+        await store.put("sessions", session.id, { ...latest, audioKey: null });
       }
       // Report how many recordings were removed
       return toPrune.length;

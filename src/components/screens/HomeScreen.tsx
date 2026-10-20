@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { PRESS, PRIMARY, RowLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load the streak sentence
 import { streakLines } from "@/core/copy";
@@ -152,6 +152,10 @@ export function HomeScreen(props: ScreenProps) {
   const { repo, today } = useScreenBasics(props);
   // Saved data, once loaded
   const [data, setData] = useState<HomeData | null>(null);
+  // The browser's reason when saved data could not be read, so the page explains instead of waiting forever
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // How many times loading was tried, so "Try again" loads afresh
+  const [attempt, setAttempt] = useState(0);
 
   // Load saved data once the time is known
   useEffect(() => {
@@ -163,13 +167,24 @@ export function HomeScreen(props: ScreenProps) {
     loadHome(repo, today).then((loaded) => {
       // Keep it only if the screen is still open
       if (!cancelled) setData(loaded);
+    }).catch((error: unknown) => {
+      // Keep the reason to show, if still open
+      if (!cancelled) setLoadError(error instanceof Error ? error.message : String(error));
     });
     // Mark as closed when leaving
     return () => {
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo, today]);
+  }, [repo, today, attempt]);
+
+  // Try loading again after a problem
+  function retryLoad() {
+    // Clear the problem, back to the placeholder
+    setLoadError(null);
+    // Load afresh
+    setAttempt(attempt + 1);
+  }
 
   // Answer or skip the welcome, so it does not come back
   function finishWelcome() {
@@ -202,7 +217,23 @@ export function HomeScreen(props: ScreenProps) {
       <Masthead title="VoiceLab" section="today" nav={!data?.showWelcome} />
 
       {/* Until saved data is read, a quiet placeholder, so the page appears in one piece (decision 76) */}
-      {!data && <Skeleton blocks={["h-24", "h-96"]} />}
+      {!data && !loadError && <Skeleton blocks={["h-24", "h-96"]} />}
+      {/* Saved data could not be read: why, and the ways forward */}
+      {!data && loadError !== null && (
+        <section role="alert" className="mt-8 max-w-[48ch] text-lede">
+          {/* What happened */}
+          <h1 className="font-display text-statement font-semibold tracking-tight">Your practice could not be loaded.</h1>
+          {/* The browser's reason, so the problem can be pinned down */}
+          <p className="mt-3">The browser said: “{loadError}” Try again; if it keeps happening, reload the page or check that this site may store data on this device.</p>
+          {/* Try again, or practise anyway */}
+          <p className="mt-6 flex flex-wrap gap-3">
+            {/* Try again */}
+            <button type="button" onClick={retryLoad} className={SECONDARY}>Try again</button>
+            {/* Practise anyway */}
+            <Link href="/practice" className={TEXT_LINK}>Go to Practice</Link>
+          </p>
+        </section>
+      )}
       {/* Two columns on a computer */}
       {data && <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
         {/* Context: streak and focus (above the step on a phone, in the margin on a computer) */}
