@@ -72,8 +72,8 @@ async function waitForApp(url) {
 
 // Start the app
 console.log("\n→ Starting the app (this can take a little while the first time)");
-// The development server, with its output shown under an [app] label
-const app = spawn("pnpm", ["dev"], { shell: windows, stdio: ["ignore", "pipe", "pipe"] });
+// The development server, with its output shown under an [app] label; it accepts Cloudflare quick tunnels only while this script runs (plain `pnpm dev` accepts none unless DEV_TUNNEL_HOST names one; decision 87)
+const app = spawn("pnpm", ["dev"], { shell: windows, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, DEV_TUNNEL_HOST: process.env.DEV_TUNNEL_HOST || "*.trycloudflare.com" } });
 // Keep it to stop later
 children.push(app);
 // The address the app reports (it picks another port if 3000 is busy)

@@ -30,6 +30,8 @@ function deps(overrides: Partial<FeedbackDeps> & { coach?: Coach; store?: Counte
   const store = overrides.store ?? new MemoryCounterStore();
   // Put the dependencies together
   return {
+    // The passphrase setting
+    readAccessSecret: () => SECRET,
     // Settings with every value present
     readEnv: () => ({ anthropicApiKey: "sk-test", accessSecret: SECRET, counterStore: null }),
     // Always the fake coach
@@ -45,10 +47,10 @@ function deps(overrides: Partial<FeedbackDeps> & { coach?: Coach; store?: Counte
   };
 }
 
-// Build a request to the feedback route
-function request(body: unknown, passphrase: string | null = SECRET): Request {
-  // Set the content type and, if given, the passphrase
-  const headers: Record<string, string> = { "content-type": "application/json", ...(passphrase ? { "x-voicelab-passphrase": passphrase } : {}) };
+// Build a request to the feedback route, from a given network address
+function request(body: unknown, passphrase: string | null = SECRET, address = "203.0.113.5"): Request {
+  // Set the content type, the caller's address as the hosting platform forwards it, and, if given, the passphrase
+  const headers: Record<string, string> = { "content-type": "application/json", "x-forwarded-for": `${address}, 10.0.0.1`, ...(passphrase ? { "x-voicelab-passphrase": passphrase } : {}) };
   // Make a POST request with the body as JSON
   return new Request("http://localhost/api/feedback", { method: "POST", headers, body: typeof body === "string" ? body : JSON.stringify(body) });
 }
@@ -143,6 +145,72 @@ describe("feedback handler", () => {
     expect(response.status).toBe(500);
     // Confirm the message names the variable
     expect((await response.json()).error).toContain("ANTHROPIC_API_KEY is not set.");
+  });
+
+  // Someone without the passphrase learns nothing about the setup; the owner still gets the reason (decision 87)
+  it("explains setup problems only to someone with the passphrase", async () => {
+    // Settings that fail as they would with a missing key
+    const broken = deps({ readEnv: () => { throw new Error("ANTHROPIC_API_KEY is not set."); } });
+    // A stranger with a wrong passphrase is refused as any stranger is, without the reason
+    const stranger = await createFeedbackHandler(broken)(request(BODY, "not the passphrase"));
+    // Confirm the plain refusal
+    expect([stranger.status, JSON.stringify(await stranger.json()).includes("ANTHROPIC")]).toEqual([401, false]);
+  });
+
+  // With no passphrase set at all, nobody can get in; only a developer's own machine says which setting is missing
+  it("gives a plain answer when the passphrase setting is missing, with details only while developing", async () => {
+    // No passphrase setting, and the settings reader says why
+    const missing = { readAccessSecret: () => null, readEnv: () => { throw new Error("APP_ACCESS_SECRET is not set. Add it to .env.local."); } };
+    // In production
+    const live = await createFeedbackHandler({ ...deps(missing), development: false })(request(BODY, null));
+    // While developing
+    const developing = await createFeedbackHandler({ ...deps(missing), development: true })(request(BODY, null));
+    // Confirm only the developer sees the variable named
+    expect([live.status, await live.json(), developing.status, (await developing.json()).error]).toEqual([500, { error: "The server is not set up." }, 500, "The server is not set up: APP_ACCESS_SECRET is not set. Add it to .env.local."]);
+  });
+
+  // Wrong passphrases are counted by address; past the hour's limit even the right one is refused from there, so guessing stops (decision 87)
+  it("stops a caller after too many wrong passphrases in an hour", async () => {
+    // A coach that counts calls
+    const coach = fakeCoach({ status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } });
+    // One shared store
+    const store = new MemoryCounterStore();
+    // The handler
+    const handle = createFeedbackHandler(deps({ coach, store }));
+    // Twenty wrong guesses from one address
+    const guesses = [];
+    // Send them one by one
+    for (let index = 0; index < 20; index += 1) guesses.push((await handle(request(BODY, `guess number ${index}`))).status);
+    // The next try from that address, even with the right passphrase
+    const locked = await handle(request(BODY));
+    // The right passphrase from another address
+    const other = await handle(request(BODY, SECRET, "198.51.100.7"));
+    // Confirm twenty refusals, then a wait until the next hour (the clock reads 10:00:30), while the other address is served
+    expect([new Set(guesses), locked.status, locked.headers.get("retry-after"), other.status, coach.calls]).toEqual([new Set([401]), 429, "3570", 200, 1]);
+  });
+
+  // If the counter store is down, the passphrase is still checked (the owner is not locked out by an outage) and the paid call is still refused
+  it("checks the passphrase without counting when the store is down", async () => {
+    // A store that always fails
+    const broken: CounterStore = { increment: vi.fn(async () => { throw new Error("down"); }), read: vi.fn(async () => { throw new Error("down"); }) };
+    // A wrong passphrase, and the right one
+    const [wrong, right] = [await createFeedbackHandler(deps({ store: broken }))(request(BODY, "not the passphrase")), await createFeedbackHandler(deps({ store: broken }))(request(BODY))];
+    // Confirm the stranger is told the passphrase is wrong, and the owner that the call is paused, as before
+    expect([wrong.status, right.status]).toEqual([401, 503]);
+  });
+
+  // The fields' own caps cannot stack: the request's text in all is capped too (decision 87)
+  it("refuses a request whose text in all is over the total cap", async () => {
+    // Close to the transcript's own cap
+    const transcript = "word ".repeat(7_900);
+    // Ten turns of the most a turn may be
+    const conversation = { characterId: "theo", turns: Array.from({ length: 10 }, () => ({ who: "you", text: "x".repeat(1_000) })) };
+    // Each field within its own cap, but 49,500 characters in all
+    const over = await createFeedbackHandler(deps())(request({ ...BODY, mode: "conversation", promptId: "theo", transcript, conversation }));
+    // The same with two turns, 41,500 in all
+    const under = await createFeedbackHandler(deps())(request({ ...BODY, mode: "conversation", promptId: "theo", transcript, conversation: { ...conversation, turns: conversation.turns.slice(0, 2) } }));
+    // Confirm the first is refused and the second taken
+    expect([over.status, under.status]).toEqual([400, 200]);
   });
 
   // Without the passphrase nothing happens, and the AI is never called
@@ -251,7 +319,7 @@ describe("feedback handler", () => {
   // If the counter store is down, refuse rather than run without limits
   it("fails closed when the counter store is unavailable", async () => {
     // A store that always fails
-    const broken: CounterStore = { increment: vi.fn(async () => { throw new Error("down"); }) };
+    const broken: CounterStore = { increment: vi.fn(async () => { throw new Error("down"); }), read: vi.fn(async () => { throw new Error("down"); }) };
     // Make a coach that counts calls
     const coach = fakeCoach({ status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } });
     // Call the handler

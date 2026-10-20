@@ -91,6 +91,16 @@ describe("createClaudeCoach", () => {
     expect([JSON.stringify(sent.system).includes("two or three minutes"), JSON.stringify(sent.messages).includes("Theo: Mostly ones from the fifties."), result.status === "ok" ? result.feedback.conversation : null]).toEqual([true, true, { yours: "do you like your job", better: "What do you look for at the flea markets?" }]);
   });
 
+  // A failed call is not retried inside the call, since each retry is billed again; the app asks again later (decision 87)
+  it("does not retry a failed call", async () => {
+    // A network that always answers with a temporary server error
+    const network = vi.fn(async () => new Response(JSON.stringify({ type: "error", error: { type: "api_error", message: "overloaded" } }), { status: 500, headers: { "content-type": "application/json" } }));
+    // Ask for feedback and expect the failure
+    await expect(createClaudeCoach("sk-test", network).getFeedback(INPUT)).rejects.toThrow();
+    // Confirm only one call went out
+    expect(network).toHaveBeenCalledTimes(1);
+  });
+
   // A safety decline is reported as such, not as a crash
   it("reports a decline when the model refuses", async () => {
     // Make a coach whose network returns a refusal

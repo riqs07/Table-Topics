@@ -20,6 +20,52 @@ export const TURN_MAX_CHARS = 1_000;
 // The most conversation turns sent at once
 export const MAX_TURNS = 60;
 
+// The most text one feedback request may carry in all, in characters, so the caps above cannot stack into one very costly call: a fast 30-minute rehearsal (about 36,000) with full notes and a previous change still fits
+export const REQUEST_TEXT_MAX_CHARS = 45_000;
+
+// The parts of a feedback request that carry text, as both the app and the server see them
+export interface RequestText {
+  // What was said
+  transcript: string;
+  // The change given last time, on a retry
+  previousChange?: string | null;
+  // A Q&A question
+  question?: string;
+  // A short speech's plan
+  outline?: { topic: string; points: string[] };
+  // The speaker's own notes
+  notes?: { worked: string; change: string; tags: string[] };
+  // A conversation's turns (a recorded line may carry no text)
+  conversation?: { turns: { text?: string }[] };
+}
+
+// How many characters of text a feedback request carries in all
+export function requestTextLength(body: RequestText): number {
+  // Every piece of text, missing ones as empty
+  const pieces = [
+    // The transcript
+    body.transcript,
+    // The previous change
+    body.previousChange ?? "",
+    // The question
+    body.question ?? "",
+    // The plan's topic and points
+    body.outline?.topic ?? "", ...(body.outline?.points ?? []),
+    // The notes and their tags
+    body.notes?.worked ?? "", body.notes?.change ?? "", ...(body.notes?.tags ?? []),
+    // Each turn's words
+    ...(body.conversation?.turns ?? []).map((turn) => turn.text ?? ""),
+  ];
+  // Their lengths added up
+  return pieces.reduce((total, piece) => total + piece.length, 0);
+}
+
+// How long the transcript may be once everything else in the request is counted, so the app never sends more than the server takes
+export function transcriptRoom(rest: Omit<RequestText, "transcript">): number {
+  // What is left of the total after the rest, never below nothing and never over the transcript's own cap
+  return Math.min(TRANSCRIPT_MAX_CHARS, Math.max(0, REQUEST_TEXT_MAX_CHARS - requestTextLength({ ...rest, transcript: "" })));
+}
+
 // Text cut to a limit, at the last whole word that fits when it is too long
 export function withinLimit(text: string, max: number): string {
   // Short enough already

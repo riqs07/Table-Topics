@@ -69,13 +69,27 @@ describe("requestFeedback", () => {
     // Sharing notes is on
     await repository.saveSettings({ ...(await repository.getSettings(new Date())), shareNotes: true });
     // The real route, with a coach that always answers
-    const handle = createFeedbackHandler({ readEnv: () => ({ anthropicApiKey: "sk-test", accessSecret: "a long passphrase for testing", counterStore: null }), makeCoach: () => ({ getFeedback: async () => ({ status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } }) }), makeCounterStore: () => new MemoryCounterStore(), limits: { perMinute: 10, perDay: 100 }, now: () => new Date() });
+    const handle = createFeedbackHandler({ readAccessSecret: () => "a long passphrase for testing", readEnv: () => ({ anthropicApiKey: "sk-test", accessSecret: "a long passphrase for testing", counterStore: null }), makeCoach: () => ({ getFeedback: async () => ({ status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } }) }), makeCounterStore: () => new MemoryCounterStore(), limits: { perMinute: 10, perDay: 100 }, now: () => new Date() });
     // The network passes each request to it
     const network = async (_url: RequestInfo | URL, init?: RequestInit) => handle(new Request("http://localhost/api/feedback", init));
     // Ask for both
     const outcomes = [await requestFeedback(repository, "r1", { passphrase: "a long passphrase for testing", fetchFn: network }), await requestFeedback(repository, "c1", { passphrase: "a long passphrase for testing", fetchFn: network })];
     // Both reviewed
     expect(outcomes).toEqual(["done", "done"]);
+  });
+
+  // A conversation whose words come twice (transcript and turns) is cut to the route's total, not refused for good (decision 87)
+  it("cuts the transcript so the whole request fits the route's total", async () => {
+    // A long conversation: 40,000 characters of transcript and 20 full turns of 1,000
+    const conversation = makeSession({ id: "c2", mode: "conversation", promptId: "theo", durationSec: 1200, transcript: "word ".repeat(8_000), conversation: { scenarioId: "class", twist: 0, turns: Array.from({ length: 20 }, () => ({ who: "you" as const, text: "y".repeat(1_000), seconds: 60 })) } });
+    // Saved
+    const repository = await repositoryWith(conversation);
+    // The real route, with a coach that always answers
+    const handle = createFeedbackHandler({ readAccessSecret: () => "a long passphrase for testing", readEnv: () => ({ anthropicApiKey: "sk-test", accessSecret: "a long passphrase for testing", counterStore: null }), makeCoach: () => ({ getFeedback: async () => ({ status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } }) }), makeCounterStore: () => new MemoryCounterStore(), limits: { perMinute: 10, perDay: 100 }, now: () => new Date() });
+    // The network passes each request to it
+    const network = async (_url: RequestInfo | URL, init?: RequestInit) => handle(new Request("http://localhost/api/feedback", init));
+    // Confirm it was reviewed
+    expect(await requestFeedback(repository, "c2", { passphrase: "a long passphrase for testing", fetchFn: network })).toBe("done");
   });
 
   // When the server says which setting is wrong, that reason is passed on (it names the setting, never its value)

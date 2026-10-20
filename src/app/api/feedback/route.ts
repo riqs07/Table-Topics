@@ -5,7 +5,7 @@ import { FEEDBACK_LIMITS } from "@/config/limits";
 // Load the Claude coach
 import { createClaudeCoach } from "@/server/coach";
 // Load the settings reader
-import { readServerEnv } from "@/server/env";
+import { readAccessSecret, readCounterStore, readServerEnv } from "@/server/env";
 // Load the handler builder
 import { createFeedbackHandler } from "@/server/feedbackHandler";
 // Load the counter stores
@@ -16,12 +16,19 @@ const developmentCounters = new MemoryCounterStore();
 
 // Handle POST requests with the real settings, coach, and counter store
 export const POST = createFeedbackHandler({
+  // Read the passphrase on its own, so it is checked before the other settings
+  readAccessSecret: () => readAccessSecret(process.env),
   // Read settings from the server environment
   readEnv: () => readServerEnv(process.env),
   // Use Claude for feedback
   makeCoach: (env) => createClaudeCoach(env.anthropicApiKey),
   // Use the shared store when configured, otherwise the development counters
-  makeCounterStore: (env) => (env.counterStore ? new UpstashCounterStore(env.counterStore) : developmentCounters),
+  makeCounterStore: () => {
+    // The shared store's settings, if set
+    const settings = readCounterStore(process.env);
+    // The store, or the local counters
+    return settings ? new UpstashCounterStore(settings) : developmentCounters;
+  },
   // The configured limits
   limits: FEEDBACK_LIMITS,
   // The real clock

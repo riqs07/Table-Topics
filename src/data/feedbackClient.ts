@@ -9,7 +9,7 @@ import { coachVoice, usualRange } from "@/core/voiceFeedback";
 // Load the small-talk unit lookup, to leave out few-second replies
 import { unitOf } from "@/content/smallTalk";
 // Load the size limits the route checks, so a long session is never refused (decision 86)
-import { MAX_TURNS, NOTE_MAX_CHARS, TRANSCRIPT_MAX_CHARS, TURN_MAX_CHARS, withinDuration, withinLimit } from "@/core/requestLimits";
+import { MAX_TURNS, NOTE_MAX_CHARS, TURN_MAX_CHARS, transcriptRoom, withinDuration, withinLimit } from "@/core/requestLimits";
 
 // What happened when feedback was requested
 export type FeedbackOutcome =
@@ -89,6 +89,10 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   const original = session.retryOf ? await repository.getSession(session.retryOf) : undefined;
   // The voice numbers, against the speaker's usual range from their latest earlier recordings (decision 81; not for a few-second reply)
   const voice = session.mode === "conversation" || (session.mode === "smalltalk" && unitOf(session.promptId) !== "answering") ? null : coachVoice(session, usualRange((await repository.listSessions()).filter((other) => other.id !== session.id && other.createdAt < session.createdAt && other.pitch).slice(0, 20)));
+  // The session details the coach needs, each within the route's limits (the saved session keeps everything)
+  const details = { durationSec: withinDuration(session.durationSec), focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: withinLimit(review.worked, NOTE_MAX_CHARS), change: withinLimit(review.change, NOTE_MAX_CHARS), tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}), ...(voice ? { voice } : {}), ...(session.conversation ? { conversation: { characterId: session.promptId, ...(session.conversation.scenarioId ? { scenarioId: session.conversation.scenarioId } : {}), turns: session.conversation.turns.slice(0, MAX_TURNS).map((turn) => ({ who: turn.who, text: withinLimit(turn.text, TURN_MAX_CHARS), ...(turn.lineId ? { lineId: turn.lineId } : {}) })) } } : {}) };
+  // The transcript, cut to what is left of the route's total once everything else is counted
+  const transcript = withinLimit(session.transcript, transcriptRoom(details));
   // Send the request, treating a network failure as "try later"
   let response: Response;
   // Try the network
@@ -99,8 +103,8 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
       method: "POST",
       // JSON body and the passphrase header
       headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase },
-      // The session details the coach needs, each within the route's limits (the saved session keeps everything)
-      body: JSON.stringify({ transcript: withinLimit(session.transcript, TRANSCRIPT_MAX_CHARS), durationSec: withinDuration(session.durationSec), focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(review ? { notes: { worked: withinLimit(review.worked, NOTE_MAX_CHARS), change: withinLimit(review.change, NOTE_MAX_CHARS), tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}), ...(voice ? { voice } : {}), ...(session.conversation ? { conversation: { characterId: session.promptId, ...(session.conversation.scenarioId ? { scenarioId: session.conversation.scenarioId } : {}), turns: session.conversation.turns.slice(0, MAX_TURNS).map((turn) => ({ who: turn.who, text: withinLimit(turn.text, TURN_MAX_CHARS), ...(turn.lineId ? { lineId: turn.lineId } : {}) })) } } : {}) }),
+      // The transcript and the other details
+      body: JSON.stringify({ transcript, ...details }),
     });
   } catch {
     // Offline or unreachable: the session waits

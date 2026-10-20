@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the environment reader being checked
-import { readServerEnv } from "@/server/env";
+import { readAccessSecret, readCounterStore, readServerEnv } from "@/server/env";
 
 // Every variable set, for checks that remove one at a time
 const FULL = { ANTHROPIC_API_KEY: "sk-test", APP_ACCESS_SECRET: "a long passphrase for testing", NODE_ENV: "test" };
@@ -54,5 +54,20 @@ describe("readServerEnv", () => {
   it("allows a missing store outside production", () => {
     // Confirm no store is configured in development
     expect(readServerEnv(FULL).counterStore).toBeNull();
+  });
+});
+
+// The passphrase and the counter store are read on their own, so a caller is checked before the other settings are explained (decision 87)
+describe("readAccessSecret and readCounterStore", () => {
+  // The passphrase alone, trimmed, or null; even with the AI key missing
+  it("reads the passphrase without the other settings", () => {
+    // Set with spaces, missing, and blank
+    expect([readAccessSecret({ APP_ACCESS_SECRET: "  short  " }), readAccessSecret({}), readAccessSecret({ APP_ACCESS_SECRET: "   " })]).toEqual(["short", null, null]);
+  });
+
+  // The store's settings under either name, or null
+  it("reads the counter store under either name", () => {
+    // The Vercel names, the Upstash names, and none
+    expect([readCounterStore({ KV_REST_API_URL: "u", KV_REST_API_TOKEN: "t" }), readCounterStore({ UPSTASH_REDIS_REST_URL: "u", UPSTASH_REDIS_REST_TOKEN: "t" }), readCounterStore({})]).toEqual([{ url: "u", token: "t" }, { url: "u", token: "t" }, null]);
   });
 });

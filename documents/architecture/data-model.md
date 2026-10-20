@@ -113,13 +113,19 @@ The recordings of the fixed lines (small talk and shadowing, decision 82; the fo
 
 ## What leaves the device
 
-Every request stays within limits the server checks, kept in one place (`src/core/requestLimits.ts`, decision 86): a length up to the longest any session records (1,800 seconds), a transcript up to 40,000 characters, notes up to 500 characters each (the notes box takes no more), and up to 60 conversation turns of up to 1,000 characters each. The app cuts what it sends to fit (at a whole word); what is saved on the device keeps every word and the real length.
+Every request stays within limits the server checks, kept in one place (`src/core/requestLimits.ts`, decision 86): a length up to the longest any session records (1,800 seconds), a transcript up to 40,000 characters, notes up to 500 characters each (the notes box takes no more), and up to 60 conversation turns of up to 1,000 characters each, with no more than 45,000 characters of text in one feedback request in all (decision 87; the app shortens the transcript to fit). The app cuts what it sends to fit (at a whole word); what is saved on the device keeps every word and the real length.
 
 | Data | Sent to | When |
 |------|---------|------|
 | Transcript text | AI coach (via our server route) | After each session |
-| The words of a conversation so far (yours and the persona's), with the persona, situation and twist (decision 84) | Claude Haiku (via our server route `/api/conversation`), to write the persona's next line; that line's words then go to ElevenLabs to be spoken in the persona's voice | After each of your turns, when the passphrase is set. Without it, the recorded script is used and nothing is sent. Your own words never go to ElevenLabs, and no audio of you leaves the device |
+| The words of a conversation so far (yours and the persona's), with the persona, situation and twist (decision 84) | Claude Haiku (via our server route `/api/conversation`), to write the persona's next line; that line's words then go to ElevenLabs to be spoken in the persona's voice | After each of your turns, when the passphrase is set. Without it, the recorded script is used and nothing is sent. What goes to ElevenLabs is the line Claude wrote, which may repeat or reword something you said (a persona answering you often does). No audio of you leaves the device |
 | A whole conversation: every turn's words and its situation (decisions 83 and 84) | AI coach (via our server route) | After the conversation, instead of a single transcript. No voice numbers are sent for a conversation |
 | Voice numbers (pitch range, how phrases ended, phrases that faded, the last third's volume; decision 81) | AI coach (via our server route) | With the transcript, when pitch or loudness was recorded. The pitch and loudness readings themselves never leave the device |
+| The session's details: its length, its kind, the prompt or passage id, and the id of this week's focus | AI coach (via our server route) | With every transcript |
+| That you stammer (decision 79) | AI coach (via our server route) | With every transcript, only when you turned it on in Settings, so the coach leaves fluency alone |
+| Your own notes after listening back (what worked, what you would change, and your tags) | AI coach (via our server route) | Only when "Let the coach read my notes" is on in Settings, and only notes you wrote |
+| The question you answered in a Q&A session (written by the coach or typed by you) | AI coach (via our server route) | With that answer's transcript |
+| The plan of a short speech: its topic, points and length (decision 73) | AI coach (via our server route) | With that speech's transcript |
+| The change the coach gave last time | AI coach (via our server route) | With a retry's transcript, so the coach can say whether it showed up |
 | Audio | The browser maker's speech service | During live transcription in most browsers; the user is told |
 | Audio | Whisper (via our server route) | Only if browser transcription is unavailable, and the user is told |

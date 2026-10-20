@@ -36,13 +36,19 @@ function required(source: EnvSource, name: string): string {
 }
 
 // Read the counter store settings; the Upstash integration may name them either way
-function counterStore(source: EnvSource): CounterStoreSettings | null {
+export function readCounterStore(source: EnvSource = process.env): CounterStoreSettings | null {
   // Take the address under either name
   const url = source.KV_REST_API_URL ?? source.UPSTASH_REDIS_REST_URL;
   // Take the token under either name
   const token = source.KV_REST_API_TOKEN ?? source.UPSTASH_REDIS_REST_TOKEN;
   // Use the store only when both are present
   return url && token ? { url, token } : null;
+}
+
+// Read only the passphrase, or null when it is not set, so a caller's passphrase can be checked before any other setting is read and explained (the length rule is checked in readServerEnv)
+export function readAccessSecret(source: EnvSource = process.env): string | null {
+  // The value without surrounding spaces, or null when empty
+  return source.APP_ACCESS_SECRET?.trim() || null;
 }
 
 // Read and check every server setting
@@ -54,7 +60,7 @@ export function readServerEnv(source: EnvSource = process.env): ServerEnv {
   // The passphrase must be long enough to resist guessing
   if (accessSecret.length < MIN_PASSPHRASE_LENGTH) throw new Error(`APP_ACCESS_SECRET must be at least ${MIN_PASSPHRASE_LENGTH} characters long.`);
   // Read the shared counter store
-  const store = counterStore(source);
+  const store = readCounterStore(source);
   // In production, counters in server memory do not hold up, so the store is required (risk R4)
   if (!store && source.NODE_ENV === "production") throw new Error("The rate-limit store is not set up. Add the Upstash Redis integration in Vercel (it sets KV_REST_API_URL and KV_REST_API_TOKEN).");
   // Hand back the checked settings

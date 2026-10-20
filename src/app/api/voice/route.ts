@@ -3,7 +3,7 @@
 // Load the voice limits
 import { VOICE_LIMITS } from "@/config/limits";
 // Load the settings readers
-import { readServerEnv, readVoiceSettings } from "@/server/env";
+import { readAccessSecret, readCounterStore, readServerEnv, readVoiceSettings } from "@/server/env";
 // Load the ElevenLabs voice
 import { createElevenLabsVoice } from "@/server/voice";
 // Load the handler
@@ -16,6 +16,8 @@ const developmentCounters = new MemoryCounterStore();
 
 // Handle POST requests
 export const POST = createVoiceHandler({
+  // Read the passphrase on its own, so it is checked before the other settings
+  readAccessSecret: () => readAccessSecret(process.env),
   // The shared server settings (the passphrase and the counter store)
   readEnv: () => readServerEnv(process.env),
   // The voice settings
@@ -23,7 +25,12 @@ export const POST = createVoiceHandler({
   // The ElevenLabs voice
   makeVoice: (settings) => createElevenLabsVoice(settings),
   // The shared counter store, or local counters in development
-  makeCounterStore: (env) => (env.counterStore ? new UpstashCounterStore(env.counterStore) : developmentCounters),
+  makeCounterStore: () => {
+    // The shared store's settings, if set
+    const settings = readCounterStore(process.env);
+    // The store, or the local counters
+    return settings ? new UpstashCounterStore(settings) : developmentCounters;
+  },
   // The voice's own limits
   limits: VOICE_LIMITS,
   // The clock

@@ -5,7 +5,7 @@ import { z } from "zod";
 // Load the list of session kinds
 import { SESSION_MODES } from "@/data/records";
 // Load the size limits shared with the app (decision 86)
-import { LONGEST_RECORDING_SECONDS, MAX_TURNS, NOTE_MAX_CHARS, TRANSCRIPT_MAX_CHARS, TURN_MAX_CHARS } from "@/core/requestLimits";
+import { LONGEST_RECORDING_SECONDS, MAX_TURNS, NOTE_MAX_CHARS, REQUEST_TEXT_MAX_CHARS, TRANSCRIPT_MAX_CHARS, TURN_MAX_CHARS, requestTextLength } from "@/core/requestLimits";
 // Load the coach type
 import type { Coach } from "@/server/coach";
 // Load the settings type
@@ -63,7 +63,8 @@ const RequestSchema = z.object({
     // The turns
     turns: z.array(z.object({ who: z.enum(["you", "them"]), text: z.string().max(TURN_MAX_CHARS).optional(), lineId: z.string().max(16).optional() })).max(MAX_TURNS),
   }).optional(),
-});
+  // All the text together within one cap, so the per-field caps cannot stack into one very costly call
+}).refine((body) => requestTextLength(body) <= REQUEST_TEXT_MAX_CHARS);
 
 // Build the handler for POST /api/feedback
 export function createFeedbackHandler(deps: FeedbackDeps) {

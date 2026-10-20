@@ -7,6 +7,8 @@ import type { CounterStoreSettings } from "@/server/env";
 export interface CounterStore {
   // Add one to a counter and return the new total; the counter disappears after the window
   increment(key: string, windowSec: number): Promise<number>;
+  // Read a counter without changing it (zero when it does not exist)
+  read(key: string): Promise<number>;
 }
 
 // How many calls are allowed
@@ -61,12 +63,18 @@ export class MemoryCounterStore implements CounterStore {
     // Hand it back
     return next;
   }
+
+  // Read a counter without changing it
+  async read(key: string): Promise<number> {
+    // The total, or zero when it was never counted
+    return this.counts.get(key) ?? 0;
+  }
 }
 
 // Shape of a reply from the Upstash REST API
 interface UpstashReply {
-  // The command's result, when it worked
-  result?: number;
+  // The command's result, when it worked (a number from a count, text or nothing from a read)
+  result?: number | string | null;
   // An error message, when it failed
   error?: string;
 }
@@ -81,16 +89,40 @@ export class UpstashCounterStore implements CounterStore {
     private readonly fetchFn: typeof fetch = fetch,
   ) {}
 
-  // Send one command to the store and return its numeric result
-  private async command(path: string): Promise<number> {
+  // Send one command to the store and return its result as it came
+  private async send(path: string): Promise<UpstashReply["result"]> {
     // Call the store's REST API
     const response = await this.fetchFn(`${this.settings.url}/${path}`, { method: "POST", headers: { Authorization: `Bearer ${this.settings.token}` } });
     // Read the reply
     const reply = (await response.json()) as UpstashReply;
     // Treat any failure as an error, so an outage cannot quietly lift the limits
-    if (!response.ok || typeof reply.result !== "number") throw new Error(`The rate-limit store failed: ${reply.error ?? response.status}`);
+    if (!response.ok || reply.error !== undefined || reply.result === undefined) throw new Error(`The rate-limit store failed: ${reply.error ?? response.status}`);
     // Hand back the result
     return reply.result;
+  }
+
+  // Send one command to the store and return its numeric result
+  private async command(path: string): Promise<number> {
+    // Send it
+    const result = await this.send(path);
+    // A count must come back as a number
+    if (typeof result !== "number") throw new Error("The rate-limit store failed: the reply was not a number");
+    // Hand back the result
+    return result;
+  }
+
+  // Read a counter without changing it (the store answers with its text, or nothing when it does not exist)
+  async read(key: string): Promise<number> {
+    // Ask for the value
+    const result = await this.send(`get/${encodeURIComponent(key)}`);
+    // Nothing stored counts as zero
+    if (result === null) return 0;
+    // The stored count as a number
+    const count = Number(result);
+    // Anything else is a failure
+    if (!Number.isFinite(count)) throw new Error("The rate-limit store failed: the reply was not a count");
+    // Hand back the count
+    return count;
   }
 
   // Add one to a counter, starting its expiry window on first use

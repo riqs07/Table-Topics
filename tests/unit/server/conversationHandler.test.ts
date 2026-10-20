@@ -33,6 +33,8 @@ function fakeVoice(fails = false): PersonaVoice & { said: string[][] } {
 function deps(writer: ConversationWriter, voice: PersonaVoice | null, logs: string[] = []): ConversationDeps {
   // Everything the handler needs
   return {
+    // The passphrase setting
+    readAccessSecret: () => SECRET,
     // Server settings
     readEnv: () => ({ anthropicApiKey: "sk-test", accessSecret: SECRET, counterStore: null }),
     // The writer

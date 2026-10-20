@@ -111,4 +111,37 @@ describe("UpstashCounterStore", () => {
     // Confirm the failure is raised
     await expect(store.increment("k", 60)).rejects.toThrow(/rate-limit store/);
   });
+
+  // Reading a counter does not change it, and a missing one is zero (the failed-passphrase check reads before it compares)
+  it("reads a counter, missing as zero, and throws on an outage", async () => {
+    // Fake network: a stored count, then nothing stored, then an error
+    const fetchFake = vi.fn()
+      // A stored count comes back as text
+      .mockResolvedValueOnce(new Response(JSON.stringify({ result: "7" }), { status: 200 }))
+      // A missing key comes back as nothing
+      .mockResolvedValueOnce(new Response(JSON.stringify({ result: null }), { status: 200 }))
+      // An outage
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "bad token" }), { status: 401 }));
+    // Make the adapter with the fake network
+    const store = new UpstashCounterStore({ url: "https://kv.example", token: "t" }, fetchFake);
+    // Read twice
+    const counts = [await store.read("k"), await store.read("other")];
+    // Confirm the counts, the read command, and the failure
+    expect([counts, (fetchFake.mock.calls[0] as unknown as [string])[0]]).toEqual([[7, 0], "https://kv.example/get/k"]);
+    // The outage is raised, not read as zero
+    await expect(store.read("k")).rejects.toThrow(/rate-limit store/);
+  });
+});
+
+// Group the checks about the in-memory counters' reads
+describe("MemoryCounterStore.read", () => {
+  // Reads see the count without adding to it
+  it("reads without counting", async () => {
+    // A fresh store
+    const store = new MemoryCounterStore();
+    // Count once
+    await store.increment("k");
+    // Confirm two reads both see one
+    expect([await store.read("k"), await store.read("k"), await store.read("missing")]).toEqual([1, 1, 0]);
+  });
 });

@@ -13,7 +13,7 @@ import { unitOf } from "@/content/smallTalk";
 // Load the feedback record type
 import type { Feedback } from "@/data/records";
 
-// Room for the model's thinking (always on for the coach model) plus a short JSON reply; too small a cap cuts the reply off and no feedback arrives
+// Room for the model's thinking (always on for the coach model) plus a short JSON reply; too small a cap cuts the reply off and no feedback arrives (4,000 did; kept at 16,000 until real usage on long rehearsals is measured, since a cut-off reply is billed and gives nothing)
 const MAX_TOKENS = 16000;
 
 // What asking the coach can produce
@@ -31,8 +31,8 @@ export interface Coach {
 
 // Build a coach that calls Claude; the network function can be replaced in tests
 export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach {
-  // Make the API client (one retry on temporary failures, a 60-second timeout)
-  const client = new Anthropic({ apiKey, maxRetries: 1, timeout: 60_000, ...(fetchFn ? { fetch: fetchFn } : {}) });
+  // Make the API client with no retries inside a call (each retry is billed again; the app already asks again later for a session still waiting) and a 60-second timeout
+  const client = new Anthropic({ apiKey, maxRetries: 0, timeout: 60_000, ...(fetchFn ? { fetch: fetchFn } : {}) });
   // Hand back the coach
   return {
     // Get feedback for one session

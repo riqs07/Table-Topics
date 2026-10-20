@@ -5,7 +5,7 @@ import { CONVERSATION_LIMITS } from "@/config/limits";
 // Load the Claude writer
 import { createClaudeWriter } from "@/server/conversationWriter";
 // Load the settings readers
-import { readElevenLabsKey, readServerEnv } from "@/server/env";
+import { readAccessSecret, readCounterStore, readElevenLabsKey, readServerEnv } from "@/server/env";
 // Load the handler builder
 import { createConversationHandler } from "@/server/conversationHandler";
 // Load the counter stores
@@ -18,6 +18,8 @@ const developmentCounters = new MemoryCounterStore();
 
 // Handle POST requests with the real settings, writer, voice, and counter store
 export const POST = createConversationHandler({
+  // Read the passphrase on its own, so it is checked before the other settings
+  readAccessSecret: () => readAccessSecret(process.env),
   // Read settings from the server environment
   readEnv: () => readServerEnv(process.env),
   // Use Claude to write lines
@@ -30,7 +32,12 @@ export const POST = createConversationHandler({
     return key ? createPersonaVoice(key) : null;
   },
   // Use the shared store when configured, otherwise the development counters
-  makeCounterStore: (env) => (env.counterStore ? new UpstashCounterStore(env.counterStore) : developmentCounters),
+  makeCounterStore: () => {
+    // The shared store's settings, if set
+    const settings = readCounterStore(process.env);
+    // The store, or the local counters
+    return settings ? new UpstashCounterStore(settings) : developmentCounters;
+  },
   // The configured limits
   limits: CONVERSATION_LIMITS,
   // The real clock

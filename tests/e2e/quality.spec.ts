@@ -56,3 +56,37 @@ test("sends the recording page with a frame to show while it loads", async ({ re
   // The loading frame is in it
   expect(html).toContain("Loading");
 });
+
+// Pages carry the content policy and HTTPS-only, and sound still plays from memory and from a data address under it (decision 87)
+test("sends the security headers and still plays sound from blob and data addresses", async ({ page }) => {
+  // Open Today
+  const response = await page.goto("/");
+  // Its headers
+  const headers = response?.headers() ?? {};
+  // Confirm the policy limits network requests to this site, and HTTPS-only is set
+  expect([headers["content-security-policy"]?.includes("connect-src 'self'"), headers["strict-transport-security"]]).toEqual([true, "max-age=63072000; includeSubDomains"]);
+  // Load a short silence from a data address and the same bytes from memory, as the app does to unlock and play sound
+  const loaded = await page.evaluate(async () => {
+    // The silence the app plays on a tap (a tiny WAV file)
+    const silence = "data:audio/wav;base64,UklGRnQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==";
+    // Whether an address loads as audio, or fails (a blocked address fails)
+    const loads = (url: string) => new Promise<boolean>((resolve) => {
+      // A fresh audio element
+      const audio = new Audio();
+      // Loaded enough to play
+      audio.addEventListener("canplaythrough", () => resolve(true), { once: true });
+      // Refused or broken
+      audio.addEventListener("error", () => resolve(false), { once: true });
+      // Start loading
+      audio.src = url;
+      // Load it
+      audio.load();
+    });
+    // The same bytes, from memory (decoded here, since fetching a data address is not a request to this site)
+    const blobUrl = URL.createObjectURL(new Blob([Uint8Array.from(atob(silence.split(",")[1] ?? ""), (character) => character.charCodeAt(0))], { type: "audio/wav" }));
+    // Both results
+    return [await loads(silence), await loads(blobUrl)];
+  });
+  // Confirm both load
+  expect(loaded).toEqual([true, true]);
+});

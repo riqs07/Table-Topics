@@ -24,6 +24,8 @@ function deps(overrides: Partial<VoiceDeps> & { voice?: Voice } = {}): VoiceDeps
   const voice = overrides.voice ?? fakeVoice();
   // Everything the handler needs
   return {
+    // The passphrase setting
+    readAccessSecret: () => SECRET,
     // Server settings
     readEnv: () => ({ anthropicApiKey: "sk-test", accessSecret: SECRET, counterStore: null }),
     // Voice settings
