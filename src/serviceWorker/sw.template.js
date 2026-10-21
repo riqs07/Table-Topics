@@ -28,8 +28,8 @@ const SHELL = [
   "/conversations", "/conversations/talk",
   // Your voice and its drills
   "/voice", "/voice/drill", "/voice/shadow", "/voice/warmup",
-  // Skills, whole speeches, openings and closings, every small-talk unit and one unit (decision 95)
-  "/skills", "/speech", "/bookends", "/small-talk", "/small-talk/unit",
+  // Skills, whole speeches, every small-talk unit and one unit (decision 95)
+  "/skills", "/speech", "/small-talk", "/small-talk/unit",
   // Your own talks
   "/rehearse", "/talk",
   // Recording, a saved session, history and settings

@@ -23,7 +23,7 @@ export const JOBS: ReadonlyArray<Job> = [
   // A talk with a date or an audience
   { id: "talk", name: "Prepare a talk", blurb: "Your own talk: a plan to the day, section by section.", href: "/rehearse" },
   // Speaking without a script
-  { id: "spot", name: "Speak on the spot", blurb: "Surprise questions, prepared speeches, openings and closings.", href: "/practice" },
+  { id: "spot", name: "Speak on the spot", blurb: "Surprise questions, prepared speeches and short speeches.", href: "/practice" },
   // Telling stories, and telling them again better (decision 92)
   { id: "story", name: "Tell stories", blurb: "Your own stories, told and told again, a little better each time.", href: "/stories" },
   // One skill at a time
@@ -58,8 +58,6 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   { id: "table-topic", job: "spot", name: "Rapid Fire", subtitle: "surprise question", length: "1 to 2 min", youDo: "A light question appears, you get 10 seconds, then you speak.", youGet: "Your time against the 1:00 to 2:00 window, your fillers and pauses, and one fix." },
   // A prepared speech
   { id: "prepared", job: "spot", name: "Prepared speech", subtitle: "2 minutes to plan, then speak for 2 to 4", length: "about 6 min", youDo: "Read a speaking task, plan it for up to 2 minutes with a hint, then speak for 2 to 4 minutes, with green, yellow and red lights.", youGet: "Your time against the 2:00 to 4:00 window, this week's number, and one fix." },
-  // Openings and closings
-  { id: "openings", job: "spot", name: "Openings and closings", subtitle: "the first or last 45 seconds", length: "1 min", youDo: "Practise only how a talk starts or how it ends.", youGet: "The pause before your first word, or how cleanly you finished." },
   // Free talk (decision 73)
   { id: "free-talk", job: "spot", name: "Free talk", subtitle: "anything, as long as you like", length: "up to 10 min", youDo: "Talk about whatever you like, with no question and no clock to beat.", youGet: "Your pace, fillers and pauses, and one change." },
   // A short speech the user plans (decision 73)
@@ -92,8 +90,6 @@ const SESSION_TO_MODE: Readonly<Partial<Record<SessionMode, string>>> = {
   talk: "table-topic",
   // A prepared speech
   response: "prepared",
-  // An opening or closing drill
-  bookend: "openings",
   // An answer to a likely question
   qa: "qa",
   // A run of your own talk

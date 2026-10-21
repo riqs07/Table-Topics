@@ -1,7 +1,7 @@
 // What an openings and closings drill measured, as two sentences (plan step B2)
 
-// Load the content type for which end of a talk was practised
-import type { BookendPart } from "@/content/prompts";
+// Load the drill prompts, and the type for which end of a talk was practised
+import { BOOKENDS, type BookendPart } from "@/content/prompts";
 // Load the filler finder
 import { markFillers } from "@/core/fillers";
 // Load the shared opening-pause sentence and the length of a closing
@@ -72,4 +72,12 @@ export function bookendResult(part: BookendPart, session: FullSession, options: 
   const ending = !loudness.length ? "Loudness was not recorded, so endings could not be checked." : faded === 0 ? "None of your sentences faded at the end." : `${faded} of ${stretches} stretches faded at the end. Keep your voice up to the last word.`;
   // Both sentences (without pause words, the endings lead and nothing follows)
   return pauseWords ? { headline: closingFillers(session.transcript), detail: ending } : { headline: ending, detail: "" };
+}
+
+// The lesson an old openings and closings drill leads to now the drill is retired (decision 106): "A strong close" for a closing drill, "Pause before you start" for an opening (or an unknown prompt)
+export function retiredDrillLesson(promptId: string): string {
+  // The drill's end of a talk
+  const part = BOOKENDS.find((item) => item.id === promptId)?.part;
+  // Its lesson
+  return part === "close" ? "l010" : "l001";
 }

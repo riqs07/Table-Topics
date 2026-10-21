@@ -3,6 +3,8 @@
 
 // Load Next.js's tools for reading the address and changing page
 import { useRouter, useSearchParams } from "next/navigation";
+// Load React's effect tool, to send a retired kind of session elsewhere
+import { useEffect } from "react";
 // Load the in-app link
 import Link from "next/link";
 // Load the real browser recording pieces
@@ -47,6 +49,15 @@ export function RecordingFromAddress() {
   const checkIn = checkInId && checkInDayOf(checkInId) && isCheckInPart(part) ? { id: checkInId, part } : null;
   // The text to read, when reading aloud or doing a pause drill (a speech part's text loads first)
   const reading = useReading(mode === "read" || mode === "pause" ? promptId : null);
+  // The openings and closings drill was retired (decision 106): its old addresses lead to Practice, so no new one is recorded
+  const retired = named === "bookend";
+  // Move there once in the browser
+  useEffect(() => {
+    // Only for the retired drill
+    if (retired) router.replace("/practice");
+  }, [retired, router]);
+  // While moving, the page's frame
+  if (retired) return <PageFallback />;
   // While a speech's text loads, the page's frame
   if (reading.status === "loading") return <PageFallback />;
   // If it could not load (offline before it was ever saved), say so with a way to try again

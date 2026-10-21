@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the openings and closings checks being checked
-import { bookendResult } from "@/core/bookend";
+import { bookendResult, retiredDrillLesson } from "@/core/bookend";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -51,5 +51,14 @@ describe("bookendResult for a close", () => {
     const session = makeSession({ mode: "bookend", transcript: "And that is the plan, so, yeah, that's it I guess.", loudness: [] });
     // Confirm
     expect(bookendResult("close", session, { pauseWords: false })).toEqual({ headline: "Loudness was not recorded, so endings could not be checked.", detail: "" });
+  });
+});
+
+// Decision 106: the drill is retired, and an old drill's "Try it again" leads to the lesson on the same end of a talk
+describe("retiredDrillLesson", () => {
+  // Openings lead to the opening lesson, closings to the closing one, anything else to the opening one
+  it("leads an old drill to the lesson on the same end", () => {
+    // Confirm an opening, a close and an unknown prompt
+    expect([retiredDrillLesson("b001"), retiredDrillLesson("b011"), retiredDrillLesson("missing")]).toEqual(["l001", "l010", "l001"]);
   });
 });

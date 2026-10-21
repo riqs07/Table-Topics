@@ -167,3 +167,27 @@ test("upgrades an older database and History, the profile and a take still work"
   // (no error shown; Next.js keeps an empty alert of its own for announcing page changes)
   await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveCount(0);
 });
+
+// An opening drill saved before the drill was retired (decision 106) still shows in History, on its own page and in the profile
+test("an old openings and closings drill still shows everywhere", async ({ page }) => {
+  // Now
+  const now = Date.now();
+  // An old opening drill and an ordinary take
+  const sessions = [oldTake("old-drill", 3, now, { mode: "bookend", promptId: "b001", transcript: "Um, so, today I want to talk about tools.", durationSec: 38 }), oldTake("plain", 4, now, { isBaseline: true })];
+  // Saved as the older app laid them out
+  await seedOldDatabase(page, sessions, sessions.map((session) => buildAnalysis(session, new Date(session.createdAt))));
+  // History names it as an opening drill with its task
+  await page.goto("/history");
+  // (its row)
+  await expect(page.getByRole("list", { name: "Sessions" }).getByRole("link", { name: /Opening drill: Open a talk on why your team needs a new tool/ })).toBeVisible();
+  // Its page shows the drill's findings, and trying again leads to the opening lesson
+  await page.goto("/sessions?id=old-drill");
+  // (the findings)
+  await expect(page.getByText("You opened with “Um, so”. Start on your first real word instead.")).toBeVisible();
+  // (the lesson)
+  await expect(page.getByRole("link", { name: /Try it again/ }).first()).toHaveAttribute("href", "/session?mode=lesson&prompt=l001");
+  // The profile counts it with speaking on the spot
+  await page.goto("/profile");
+  // (two takes measured)
+  await expect(page.getByText(/^2 takes measured/)).toBeVisible({ timeout: 20_000 });
+});

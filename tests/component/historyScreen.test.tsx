@@ -115,10 +115,12 @@ describe("HistoryScreen", () => {
     await repository.saveSession(makeSession({ id: "rh", createdAt: new Date(2026, 9, 13, 11).toISOString(), mode: "rehearse", promptId: "talk-1" }));
     // A lesson
     await repository.saveSession(makeSession({ id: "ls", createdAt: new Date(2026, 9, 13, 12).toISOString(), mode: "lesson", promptId: "l002" }));
+    // An old closing drill, from before the drill was retired (decision 106)
+    await repository.saveSession(makeSession({ id: "bk", createdAt: new Date(2026, 9, 13, 13).toISOString(), mode: "bookend", promptId: "b011" }));
     // Draw the screen
     render(<HistoryScreen repository={repository} now={NOW} />);
     // Confirm all three labels, plus a pause drill
-    expect([!!(await screen.findByText(/^Rapid Fire: /)), !!screen.getByText(/^Prepared speech: /), !!screen.getByText("Read aloud: The Gettysburg Address"), !!screen.getByText(/^Pause drill: /), !!(await screen.findByText("Rehearsal: Team update")), !!screen.getByText("Lesson 2: Crisp consonants")]).toEqual([true, true, true, true, true, true]);
+    expect([!!(await screen.findByText(/^Rapid Fire: /)), !!screen.getByText(/^Prepared speech: /), !!screen.getByText("Read aloud: The Gettysburg Address"), !!screen.getByText(/^Pause drill: /), !!(await screen.findByText("Rehearsal: Team update")), !!screen.getByText("Lesson 2: Crisp consonants"), !!screen.getByText("Closing drill: Close a talk asking your team to try a new tool.")]).toEqual([true, true, true, true, true, true, true]);
   });
 
   // The first recording is labeled as such

@@ -319,6 +319,20 @@ describe("parseExport", () => {
     expect(parseExport(text).sessions.map((session) => session.mode)).toEqual(["talk", "response", "pause", "rehearse", "lesson"]);
   });
 
+  // A retired openings and closings drill (decision 106) still comes in from an older file, and goes out again
+  it("accepts an old openings and closings drill", async () => {
+    // A file with one old opening drill
+    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "b1", mode: "bookend", promptId: "b001" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30 } });
+    // Imported into an empty repository
+    const repository = createRepository(new MemoryStore());
+    // (all of it)
+    await importExport(repository, parseExport(text), NOW);
+    // Exported again
+    const again = parseExport(JSON.stringify(await buildExport(repository, NOW)));
+    // Confirm it reads, is stored, and goes out as the same drill
+    expect([parseExport(text).sessions[0]?.mode, (await repository.getSession("b1"))?.promptId, again.sessions.map((session) => [session.id, session.mode])]).toEqual(["bookend", "b001", [["b1", "bookend"]]]);
+  });
+
   // Saved talks go into the file and come back; files from before talks existed still import
   it("carries saved talks, and accepts files without them", async () => {
     // A repository with a talk

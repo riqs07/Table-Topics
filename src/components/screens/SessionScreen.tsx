@@ -90,7 +90,7 @@ import { findLesson } from "@/content/lessons";
 // Load the lesson checks
 import { lessonResult } from "@/core/lessonCheck";
 // Load the openings and closings drill check
-import { bookendResult } from "@/core/bookend";
+import { bookendResult, retiredDrillLesson } from "@/core/bookend";
 // Load the session record type
 import type { FullSession, TalkRecord } from "@/data/records";
 // Load the star toggle (decision 98)
@@ -443,8 +443,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const next = quick ? nextInUnit(session.promptId) : null;
   // Whether this is an answer to an audience question
   const qa = session.mode === "qa";
-  // Where "try it again" leads: the same question for an old Q&A answer (or the session it came from, if the question was replaced; Q&A practice is gone, decision 61), otherwise the same prompt
-  const retryHref = qa && qaIndex === null ? `/sessions?id=${session.promptId}` : `/session?${timed || reading || session.mode === "free" || session.mode === "outline" ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}${plan ? `&plan=${plan.step}` : ""}`;
+  // Where "try it again" leads: for an old openings and closings drill (retired, decision 106), the lesson on the same end of a talk; the same question for an old Q&A answer (or the session it came from, if the question was replaced; Q&A practice is gone, decision 61), otherwise the same prompt
+  const retryHref = session.mode === "bookend" ? `/session?mode=lesson&prompt=${retiredDrillLesson(session.promptId)}` : qa && qaIndex === null ? `/sessions?id=${session.promptId}` : `/session?${timed || reading || session.mode === "free" || session.mode === "outline" ? `mode=${session.mode}&` : ""}prompt=${session.promptId}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}${qa ? `&question=${qaIndex}` : ""}&retryOf=${session.id}${plan ? `&plan=${plan.step}` : ""}`;
   // An openings and closings drill's prompt, and what it measured
   const bookend = session.mode === "bookend" ? BOOKENDS.find((item) => item.id === session.promptId) : undefined;
   // The drill's two findings
@@ -689,7 +689,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           ) : warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (
-            <ActionBand action={story ? "Tell it again" : "Try it again"} aside={story ? "same story, same shape" : rehearsed ? "same part of the talk" : qa || (smallTalk && findSmallTalk(session.promptId)?.unit === "answering") ? "same question" : smallTalk ? "same one" : "same prompt"} href={retryHref} />
+            <ActionBand action={story ? "Tell it again" : "Try it again"} aside={story ? "same story, same shape" : rehearsed ? "same part of the talk" : session.mode === "bookend" ? "a lesson on the same end of a talk" : qa || (smallTalk && findSmallTalk(session.promptId)?.unit === "answering") ? "same question" : smallTalk ? "same one" : "same prompt"} href={retryHref} />
           )}
         </aside>
       </div>

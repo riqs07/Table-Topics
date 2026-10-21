@@ -1,7 +1,7 @@
 // Today's practice: four steps, a Learn card, the warm-up reading, then two kinds of practice picked from the bank, taken in turn by day (decision 51; see documents/plan-daily-mix-and-connection.md); day one opens with free talk instead (decision 78); with a focus, the card and the first pick come from it (decision 97)
 
 // Load the day pickers and lookups for the spoken prompts and texts
-import { PAUSE_DRILLS, PASSAGES, bookendForDay, findPrompt, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, PASSAGES, findPrompt, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the lessons
 import { findLesson } from "@/content/lessons";
 // Load the speeches' index and the reading names (not the speeches' text, which is most of the app's download; decision 88)
@@ -139,8 +139,8 @@ function skill(focusId: string, day: Date): PlanStep {
 
 // The bank in three groups, each with its lane: speaking on the spot, delivery skills, and conversation
 const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> = [
-  // On the spot: a Table Topic, an open story, an opening or closing, a guided story, a prepared speech; a story is two turns in five, so about twice a week, never twice in a row, open and guided in turn (decisions 92 and 93)
-  { lane: "spot", kinds: ["talk", "story", "bookend", "guided", "response"] },
+  // On the spot: Rapid Fire, an open story, Rapid Fire again (in the place the retired opening or closing drill had; decision 106), a guided story, a prepared speech; a story is two turns in five, so about twice a week, never twice in a row, open and guided in turn (decisions 92 and 93)
+  { lane: "spot", kinds: ["talk", "story", "talk", "guided", "response"] },
   // Delivery: the week's focus drill, a voice drill (the voice modes in turn; decision 80), a pause drill
   { lane: "delivery", kinds: ["skill", "voice", "pause"] },
   // Conversation: the next Connect lesson or drill, a round of quick scenarios, an everyday question (decision 72)
@@ -213,15 +213,6 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
     const guided = guidedStoryForDay(input.day);
     // The step: a minute to plan and about a minute to tell
     return { lane, kind: "session", label: "Guided story", title: guided.title, mode: "story", promptId: guided.id, minutes: 2, href: `/stories/tell?prompt=${guided.id}` };
-  }
-  // An opening or a closing drill (the week's focus decides which, if it is one of them)
-  if (kind === "bookend") {
-    // Opening or close, alternating by week otherwise
-    const part = input.focusId === "strong-close" ? "close" : input.focusId === "strong-opening" ? "opening" : Math.floor(dayNumber(input.day) / 7) % 2 === 0 ? "opening" : "close";
-    // Today's prompt for it
-    const item = bookendForDay(input.day, part);
-    // The step
-    return { lane, kind: "session", label: part === "opening" ? "Opening drill" : "Closing drill", title: item.text, mode: "bookend", promptId: item.id, minutes: 1, href: `/session?mode=bookend&prompt=${item.id}` };
   }
   // The week's focus drill
   if (kind === "skill") return { ...skill(input.focusId, input.day), lane };

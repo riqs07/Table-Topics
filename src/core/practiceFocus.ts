@@ -10,7 +10,7 @@ export type FocusAreaId = "stories" | "conversation" | "spot" | "voice" | "work"
 export type PracticeGroupId = "on-the-spot" | "stories" | "conversation" | "voice" | "skills";
 
 // One kind of practice the daily plan can pick (the bank's kinds, plus a lesson or a prepared speech from an area's own list)
-export type PickKind = "talk" | "response" | "bookend" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios" | "focus-lesson" | "focus-speech";
+export type PickKind = "talk" | "response" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios" | "focus-lesson" | "focus-speech";
 
 // One area: what it is called, what it steers, and the one next thing to suggest
 export interface FocusArea {
@@ -47,10 +47,10 @@ export const FOCUS_AREAS: ReadonlyArray<FocusArea> = [
   { id: "spot", name: "Thinking on my feet", detail: "Rapid Fire and prepared speeches", phrase: "thinking on my feet", learnSets: ["point", "nerves"], practiceGroup: "on-the-spot", picks: ["talk", "response", "focus-lesson"], lessons: ["l014", "l015"], speeches: [] },
   // How I sound: voice drills, pausing and reading aloud
   { id: "voice", name: "How I sound", detail: "Voice drills, reading aloud and pausing", phrase: "how I sound", learnSets: ["voice"], practiceGroup: "voice", picks: ["voice", "pause", "skill"], lessons: [], speeches: [] },
-  // Speaking at work: short updates, persuading the team, the structure lessons
-  { id: "work", name: "Speaking at work", detail: "Updates, meetings and short speeches", phrase: "speaking at work", learnSets: ["work", "point"], practiceGroup: "on-the-spot", picks: ["focus-lesson", "focus-speech", "bookend"], lessons: ["l014", "l007", "l013"], speeches: ["p048", "p040", "p037", "p043", "p045", "p046", "p050"] },
-  // A talk coming up: openings and closings, a prepared speech, and the lessons for the start, the end and a blank (a dated talk of your own takes this pick, as before)
-  { id: "talk", name: "A talk coming up", detail: "Prepare it, open strong, end well", phrase: "a talk coming up", learnSets: ["nerves", "point"], practiceGroup: "on-the-spot", picks: ["bookend", "focus-lesson", "response"], lessons: ["l001", "l011", "l010", "l015"], speeches: [] },
+  // Speaking at work: short updates, persuading the team, the structure lessons, and Rapid Fire for speaking up in a meeting (in place of the retired closing drill; decision 106)
+  { id: "work", name: "Speaking at work", detail: "Updates, meetings and short speeches", phrase: "speaking at work", learnSets: ["work", "point"], practiceGroup: "on-the-spot", picks: ["focus-lesson", "focus-speech", "talk"], lessons: ["l014", "l007", "l013"], speeches: ["p048", "p040", "p037", "p043", "p045", "p046", "p050"] },
+  // A talk coming up: a prepared speech, and the lessons for the start, the end and a blank (the openings and closings drill was retired, decision 106; a dated talk of your own takes this pick, as before)
+  { id: "talk", name: "A talk coming up", detail: "Prepare it, open strong, end well", phrase: "a talk coming up", learnSets: ["nerves", "point"], practiceGroup: "on-the-spot", picks: ["response", "focus-lesson"], lessons: ["l001", "l011", "l010", "l015"], speeches: [] },
 ];
 
 // Whether a value is a known area id

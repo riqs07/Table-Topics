@@ -94,7 +94,7 @@ export interface SmallTalkFeedback {
 // Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment"), or free talk about anything ("free") and a short speech the user planned themselves ("outline", decision 73), or a voice drill or shadowing, recorded take by take ("voice", decision 80), or a spoken conversation with a character ("conversation", decision 83), or a told story ("story", decision 92)
 export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment", "free", "outline", "voice", "conversation", "story"] as const;
 
-// One kind of session (bookend: an openings and closings drill; qa: an answer to a likely audience question; both added 2026-10-15)
+// One kind of session (bookend: an openings and closings drill; qa: an answer to a likely audience question; both added 2026-10-15, both since retired, decisions 61 and 106, and kept so older sessions still read and import)
 export type SessionMode = (typeof SESSION_MODES)[number];
 
 // Whether a value names a kind of session

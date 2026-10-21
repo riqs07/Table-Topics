@@ -18,7 +18,7 @@ describe("mode catalogue", () => {
     // Confirm the jobs and their modes
     expect(JOBS.map((job) => [job.id, MODES.filter((mode) => mode.job === job.id).map((mode) => mode.id)])).toEqual([
       ["talk", ["talks"]],
-      ["spot", ["table-topic", "prepared", "openings", "free-talk", "short-speech", "qa"]],
+      ["spot", ["table-topic", "prepared", "free-talk", "short-speech", "qa"]],
       ["story", ["storytelling"]],
       ["skill", ["lessons", "readings", "pause-drills", "tricky-words", "voice-drills"]],
       ["connect", ["small-talk", "conversations", "moments"]],
@@ -35,9 +35,9 @@ describe("mode catalogue", () => {
 
   // Every kind of session that can still be recorded has a "how this works" entry
   it("explains every kind of session that can still be recorded", () => {
-    // The retired kinds have none
-    const live = SESSION_MODES.filter((mode) => mode !== "standard" && mode !== "warmup");
-    // Confirm each has one
-    expect(live.map((mode) => [mode, Boolean(modeForSession(mode))])).toEqual(live.map((mode) => [mode, true]));
+    // The retired kinds have none (the openings and closings drill was retired in decision 106)
+    const live = SESSION_MODES.filter((mode) => mode !== "standard" && mode !== "warmup" && mode !== "bookend");
+    // Confirm each has one, and the retired drill has none
+    expect([live.map((mode) => [mode, Boolean(modeForSession(mode))]), modeForSession("bookend")]).toEqual([live.map((mode) => [mode, true]), undefined]);
   });
 });

@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt library and picker
-import { BOOKENDS, PASSAGES, PAUSE_DRILLS, PROMPTS, STRUCTURE_HINT, bookendForDay, TABLE_TOPICS, WARMUP_PROMPTS, drillForDay, findPassage, findPrompt, passageForDay, promptForDay, tableTopicForDay, warmupPromptForDay } from "@/content/prompts";
+import { BOOKENDS, PASSAGES, PAUSE_DRILLS, PROMPTS, STRUCTURE_HINT, TABLE_TOPICS, WARMUP_PROMPTS, drillForDay, findPassage, findPrompt, passageForDay, promptForDay, tableTopicForDay, warmupPromptForDay } from "@/content/prompts";
 // Load the challenge list and picker
 import { CHALLENGES, challengeForWeek } from "@/content/challenges";
 
@@ -218,7 +218,7 @@ describe("warm-up prompts", () => {
   });
 });
 
-// Group the checks about the openings and closings prompts
+// Group the checks about the openings and closings prompts (kept for older drills; decision 106)
 describe("openings and closings", () => {
   // Ten of each, with their own ids, short enough to read at a glance
   it("has ten opening and ten closing prompts with their own ids", () => {
@@ -226,11 +226,9 @@ describe("openings and closings", () => {
     expect([BOOKENDS.filter((item) => item.part === "opening").length, BOOKENDS.filter((item) => item.part === "close").length, BOOKENDS.every((item) => /^b\d{3}$/.test(item.id) && /^.{10,80}\.$/.test(item.text)), new Set([...PROMPTS, ...TABLE_TOPICS, ...BOOKENDS].map((item) => item.id)).size]).toEqual([10, 10, true, PROMPTS.length + TABLE_TOPICS.length + BOOKENDS.length]);
   });
 
-  // One of each a day, found again by id
-  it("picks an opening and a close for the day, and finds them by id", () => {
-    // Today's pair
-    const [opening, close] = [bookendForDay(oct(12), "opening"), bookendForDay(oct(12), "close")];
-    // Confirm their parts and that they can be found again
-    expect([opening.part, close.part, findPrompt(opening.id)?.text]).toEqual(["opening", "close", opening.text]);
+  // The drill is retired (decision 106), but an old drill's task is still found by its id, for History and its page
+  it("still finds an old drill's task by its id", () => {
+    // Confirm an opening and a close are found
+    expect([findPrompt("b001")?.text, findPrompt("b011")?.text]).toEqual([BOOKENDS[0]?.text, BOOKENDS.find((item) => item.id === "b011")?.text]);
   });
 });

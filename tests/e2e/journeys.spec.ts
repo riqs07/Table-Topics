@@ -172,30 +172,20 @@ test("Event prep: date a talk, follow today's step, see progress", async ({ page
   await expect(page.getByRole("list", { name: "Today" }).getByRole("listitem").first()).toContainText("1 of 2");
 });
 
-// Openings and closings: off the Practice menu since decision 93 (Today's plan still reaches it), so opened by its address; an opening drill with its light, then its findings
-test("Openings and closings: an opening drill from its page to its findings", async ({ page }) => {
-  // Use the stand-in microphone and speech
-  await useStandIns(page);
+// Openings and closings were retired (decision 106): the old page and an old drill's address both lead to Practice, so no new drill is recorded
+test("Openings and closings: the old addresses lead to Practice", async ({ page }) => {
   // Past the welcome, which has no tabs (decision 78)
   await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
-  // Its page, by its address
+  // The old page
   await page.goto("/bookends");
-  // Pick today's opening (the first prompt link under "Today")
-  await page.locator("section", { hasText: "Today" }).getByRole("link").first().click();
-  // The drill opens with its tip
-  await expect(page.getByText(/Stand still, breathe in, look up/)).toBeVisible();
-  // Start speaking
-  await page.getByRole("button", { name: /Start speaking/ }).click();
-  // Recording is under way, with a timing light
-  await expect(page.locator("[role=status][data-signal]")).toBeVisible({ timeout: 10_000 });
-  // Speak past the 10-second minimum
-  await page.waitForTimeout(11_500);
-  // Stop recording
-  await page.getByRole("button", { name: /Stop/ }).click();
-  // The results open at once
-  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
-  // The saved session shows the drill's findings
-  await expect(page.getByText(/You opened with “Um so”/)).toBeVisible();
+  // Lands on Practice
+  await expect(page).toHaveURL(/\/practice$/);
+  // An old drill's address
+  await page.goto("/session?mode=bookend&prompt=b001");
+  // Lands on Practice too, with no recording offered
+  await expect(page).toHaveURL(/\/practice$/);
+  // (Practice's heading)
+  await expect(page.getByRole("heading", { level: 1, name: "Practice" })).toBeVisible();
 });
 
 // Reading aloud: the words light up as they are read, and the reading is saved

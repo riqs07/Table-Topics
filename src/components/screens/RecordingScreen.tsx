@@ -14,7 +14,7 @@ import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
-import { BOOKENDS, STRUCTURE_HINT, findPrompt } from "@/content/prompts";
+import { STRUCTURE_HINT, findPrompt } from "@/content/prompts";
 // Load the text to read by id (a full speech's text loads only when a part of one is asked for)
 import { useReading } from "@/components/screens/useReading";
 // Load the lesson lookup
@@ -131,14 +131,6 @@ function storyPromptText(promptId: string, momentText: string | null): { id: str
   // A moment note, once read (an empty note still has its story to tell)
   return momentText === null ? undefined : { id: promptId, text: momentText || "Your moment" };
 }
-
-// One tip for each end of a talk, shown before an openings and closings drill
-const BOOKEND_TIPS = {
-  // Openings
-  opening: "Stand still, breathe in, look up, and only then speak. Start on your first real word, not “so” or “um”.",
-  // Closes
-  close: "End on your point, say your last line a little slower, then stop. No “so, yeah, that’s it”.",
-} as const;
 
 // The rungs of the memory ladder, with their button names
 const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
@@ -436,8 +428,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [earlierAnswers, setEarlierAnswers] = useState<SessionRecord[]>([]);
   // For a question about what you have been up to, your moment notes from the last week (newest first)
   const [recentMoments, setRecentMoments] = useState<SessionRecord[]>([]);
-  // The openings and closings drill prompt, with which end of a talk it practises
-  const bookend = mode === "bookend" ? BOOKENDS.find((item) => item.id === promptId) : undefined;
   // The text on screen: a passage, a lesson's practice text, or the talk being rehearsed
   const script = passage ? { title: passage.title, source: passage.source, body: passage.body } : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, source: "", body: lesson.body } : talk ? { title: talk.title, source: section !== null ? `Your talk · section ${section + 1} of ${sections.length}` : "Your talk", body: talkText } : null;
   // The text on screen as pieces that can be lit up, and the words to listen for
@@ -1164,11 +1154,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId, storyTake.length) ? `${formatClock(speakingWindow(mode, promptId, storyTake.length)!.start)} to ${formatClock(speakingWindow(mode, promptId, storyTake.length)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : mode === "free" ? "as long as you like" : "about a minute";
+  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId, storyTake.length) ? `${formatClock(speakingWindow(mode, promptId, storyTake.length)!.start)} to ${formatClock(speakingWindow(mode, promptId, storyTake.length)!.end)}` : mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : mode === "free" ? "as long as you like" : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // Whether this kind of session has a timing light
-  const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "story" || mode === "bookend" || mode === "qa" || ((mode === "rehearse" || mode === "outline") && !!goalSeconds);
+  const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "story" || mode === "qa" || ((mode === "rehearse" || mode === "outline") && !!goalSeconds);
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
   const busy = recording || thinking || stage === "asking" || stage === "starting" || stage === "saving";
   // Where this kind of session belongs, for the close button (practising hides the tab bar); a check-in part goes back to the check-in (decision 100)
@@ -1182,7 +1172,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Whether the drill is a described moment or situation rather than words someone says (decision 95)
   const described = !!smallTalk && findUnit(smallTalk.unit).drill === "situation";
   // The page title for this kind of session (a check-in part by its own name, decision 100)
-  const title = checkIn ? CHECK_IN_PART_INFO[checkIn.part].name : retryOf ? (mode === "story" ? "Tell it again" : "Second try") : mode === "story" ? "Story" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Rapid Fire" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
+  const title = checkIn ? CHECK_IN_PART_INFO[checkIn.part].name : retryOf ? (mode === "story" ? "Tell it again" : "Second try") : mode === "story" ? "Story" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Rapid Fire" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
   // Name the tab after it
   usePageTitle(title);
   // The timing light now, while recording (off otherwise)
@@ -1510,8 +1500,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               </h1>
             </>
           )}
-          {/* An openings and closings drill: one tip for that end of a talk */}
-          {showPrompt && bookend && <p className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4 text-lede">{BOOKEND_TIPS[bookend.part]}</p>}
           {/* Free talk, before starting: what it is (decision 73) */}
           {mode === "free" && !recording && (
             <>

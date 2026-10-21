@@ -52,8 +52,8 @@ describe("dailyPlan", () => {
     const repeats = (items: ReadonlyArray<string | undefined>) => items.some((item, index) => index > 0 && item === items[index - 1]);
     // Every kind that came up
     const kinds = new Set(days.flatMap((picks) => picks.map((step) => step.mode)));
-    // Confirm two groups a day, no repeats within a group, and every kind of practice comes up (in pausing week the pause pick is a practice reading)
-    expect([days.every((picks) => picks.length === 2 && picks[0]?.lane !== picks[1]?.lane), repeats(byGroup("spot")), repeats(byGroup("delivery")), repeats(byGroup("connection")), ["talk", "bookend", "response", "story", "pause", "read", "smalltalk"].filter((kind) => !kinds.has(kind as never))]).toEqual([true, false, false, false, []]);
+    // Confirm two groups a day, no repeats within a group, every kind of practice comes up (in pausing week the pause pick is a practice reading), and never the retired openings and closings drill (decision 106)
+    expect([days.every((picks) => picks.length === 2 && picks[0]?.lane !== picks[1]?.lane), repeats(byGroup("spot")), repeats(byGroup("delivery")), repeats(byGroup("connection")), ["talk", "response", "story", "pause", "read", "smalltalk"].filter((kind) => !kinds.has(kind as never)), kinds.has("bookend")]).toEqual([true, false, false, false, [], false]);
   });
 
   // A story comes up about twice a week, in the on-the-spot pick, open and guided in turn, set up on its own page and done by a telling of its prompt today (decisions 92 and 93)
@@ -343,8 +343,8 @@ describe("the plan with a focus", () => {
     const [first, second] = [focused(dayAfter(0), ["stories", "work"]), focused(dayAfter(1), ["stories", "work"])];
     // Which area each card and pick came from
     const cardSet = (plan: ReturnType<typeof focused>) => LEARN_CARDS.find((card) => card.id === plan[0]?.promptId)?.set;
-    // A work pick is a work lesson, a work speech or an opening drill
-    const isWork = (label: string | undefined) => label === "Lesson" || label === "Prepared speech" || label === "Opening drill" || label === "Closing drill";
+    // A work pick is a work lesson, a work speech or Rapid Fire (in place of the retired closing drill; decision 106)
+    const isWork = (label: string | undefined) => label === "Lesson" || label === "Prepared speech" || label === "Rapid Fire";
     // The two days' roles
     const roles = [first, second].map((plan) => (storyStep(plan[2]?.label) ? `story pick, ${cardSet(plan)} card` : isWork(plan[2]?.label) ? `work pick, ${cardSet(plan)} card` : "other"));
     // Confirm they swap, and each card comes from the other area's sets

@@ -221,7 +221,7 @@ export interface Bookend extends Prompt {
   part: BookendPart;
 }
 
-// Openings and closings drill prompts: the first or last 30 to 45 seconds of a talk (plan step B2). DRAFT: approved at checkpoint C13
+// Openings and closings drill prompts: the first or last 30 to 45 seconds of a talk (plan step B2). The drill was retired in decision 106; the prompts stay so older drills still show their task in History and on their page
 export const BOOKENDS: ReadonlyArray<Bookend> = [
   // Opening 1
   { id: "b001", part: "opening", text: "Open a talk on why your team needs a new tool." },
@@ -496,12 +496,6 @@ export function passageForDay(day: Date, offset = 0): Passage {
 export function drillForDay(day: Date, offset = 0): Passage {
   // Pick from the pause drills
   return pickForDay(PAUSE_DRILLS, day, offset) as Passage;
-}
-
-// The opening or closing drill prompt for a given day
-export function bookendForDay(day: Date, part: BookendPart, offset = 0): Bookend {
-  // Pick from that part's prompts
-  return pickForDay(BOOKENDS.filter((item) => item.part === part), day, offset) as Bookend;
 }
 
 // Find a passage, pause drill, or word list by its saved id

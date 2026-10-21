@@ -12,8 +12,8 @@ import { findLesson } from "@/content/lessons";
 import { isStoryFocus, isStoryShape, seedText } from "@/content/stories";
 // Load the small-talk lessons, drills, units and the moment prompt, to check the cards' links to them
 import { MOMENT_PROMPT, UNITS, findSmallTalk } from "@/content/smallTalk";
-// Load the spoken prompts and texts, to check links to Rapid Fire, prepared speeches, openings, pause drills and readings
-import { BOOKENDS, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, findPassage } from "@/content/prompts";
+// Load the spoken prompts and texts, to check links to Rapid Fire, prepared speeches, pause drills and readings
+import { PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, findPassage } from "@/content/prompts";
 // Load the voice drills and shadowing passages, to check links to them
 import { findShadowPassage, findVoiceDrill } from "@/content/voice";
 // Load the conversation people, to check links to a conversation
@@ -117,7 +117,9 @@ describe("learn content (decision 94)", () => {
         // A small-talk link names a real small-talk lesson or drill
         mode === "smalltalk" && !findSmallTalk(prompt) ? "no small-talk lesson or drill" : null,
         // A Rapid Fire, prepared speech or opening and closing link names a real prompt of that kind
-        (mode === "talk" && !TABLE_TOPICS.some((item) => item.id === prompt)) || (mode === "response" && !PROMPTS.some((item) => item.id === prompt)) || (mode === "bookend" && !BOOKENDS.some((item) => item.id === prompt)) ? "no such prompt" : null,
+        (mode === "talk" && !TABLE_TOPICS.some((item) => item.id === prompt)) || (mode === "response" && !PROMPTS.some((item) => item.id === prompt)) ? "no such prompt" : null,
+        // The openings and closings drill was retired (decision 106): no card may open it
+        mode === "bookend" ? "retired drill" : null,
         // A pause drill or reading names a real text
         (mode === "pause" && !PAUSE_DRILLS.some((item) => item.id === prompt)) || (mode === "read" && !findPassage(prompt)) ? "no such text" : null,
         // A moment note or free talk uses its fixed prompt

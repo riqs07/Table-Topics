@@ -17,7 +17,7 @@ Proposed 2026-10-18; the user chose its own tab, one screen at a time with swipe
 | **1. The question** | A question or a common belief, set like a headline | "Everyone can see how nervous I am." |
 | **2. What the research found** | One study or review in two or three plain sentences | "Speakers rated their own nervousness much higher than their audiences did. When speakers were told about this, they felt calmer and their speeches were rated better." |
 | **3. What it means** | Why it matters, in one or two lines | "Your racing heart is mostly invisible. The audience sees far less than you feel." |
-| **4. What to do** | One or two practical lines, then "Try it" | "Before you start, remind yourself: they can't see most of this. Then pause and say your first line." **Try it:** an opening drill |
+| **4. What to do** | One or two practical lines, then "Try it" | "Before you start, remind yourself: they can't see most of this. Then pause and say your first line." **Try it:** the lesson "Pause before you start" (an opening drill until decision 106) |
 | **5. Remember it** | One recall question (tap an answer), then the evidence label and source | "Compared with how nervous you feel, how nervous do you look? Much less / About the same / More." *Evidence: moderate (one study). Source: Savitsky & Gilovich 2003.* |
 
 **Card types:**
@@ -46,7 +46,7 @@ Each label is shown in words, never as a colour alone.
 
 | Card | Type | Key point | What to do / Try it | Evidence |
 |------|------|-----------|---------------------|----------|
-| Do people notice your nerves? | Explainer | Speakers think their nerves show far more than they do | Remind yourself before you start; an opening drill | Moderate (Savitsky & Gilovich 2003) |
+| Do people notice your nerves? | Explainer | Speakers think their nerves show far more than they do | Remind yourself before you start; the lesson "Pause before you start" | Moderate (Savitsky & Gilovich 2003) |
 | Nobody is watching that closely | Explainer | The spotlight effect: we overestimate how much others notice us, roughly double | Let a stumble go and carry on; a Table Topic | Strong (Gilovich et al. 2000) |
 | "I'm excited" vs "I'm calm" | Myth or fact | Saying "I'm excited" may change how you feel; a 2025 replication found no change in how speeches were rated | Try it if it helps you; don't expect miracles | Mixed (Brooks 2014; Poynter & Pasqualini 2025) |
 | Are "um" and "uh" mistakes? | Myth or fact | They are words that signal a short delay; listeners even use "uh". A few are normal, many distract | Swap some for a silent pause; a pause drill | Moderate (Clark & Fox Tree 2002) |
@@ -164,7 +164,7 @@ The user asked that "at the end of each card" there is a link "to a practice ses
 
 How each link was chosen:
 
-- **The specific session, never a menu.** A lesson, a small-talk lesson or drill, a Rapid Fire question, a prepared-speech task, an opening or closing drill, a pause drill, a voice drill, a story prompt with the shape or focus the card teaches, a guided story, a person to talk with, the short speech, the warm-up, the moment note, quick scenarios or today's mission. No card links to a bare Practice, Small talk, Stories, Your voice, Skills or Learn page; a test holds that.
+- **The specific session, never a menu.** A lesson, a small-talk lesson or drill, a Rapid Fire question, a prepared-speech task, a pause drill, a voice drill, a story prompt with the shape or focus the card teaches, a guided story, a person to talk with, the short speech, the warm-up, the moment note, quick scenarios or today's mission. No card links to a bare Practice, Small talk, Stories, Your voice, Skills or Learn page; a test holds that.
 - **The task fits the advice.** "Louder, with variety" opens the Three rooms volume drill whose takes are the card's exercise; "Ask before advice" opens News lesson 2; "Ask what only they know" opens a conversation with Theo, who is quiet at work; "Name the thing" opens the Lisbon asking drill, where using their words back is the move.
 - **Understanding cards** link to where the measure is seen: four go to `/profile` (`profile-trends`, `profile-variety`, `voice-phone-mic`, `words-variety`); the other profile cards open a drill that produces their measure (pause drills, a clear-sounds drill).
 - **Q&A** was removed (decision 61), so "In Q&A, say the question back first" opens a Rapid Fire question with "say the question back first".
@@ -174,13 +174,13 @@ Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, an
 
 | Set | Card | Practice | Link |
 |-----|------|----------|------|
-| Nerves and presence | `nerves-show` | Opening drill: pause, then your first line | `/session?mode=bookend&prompt=b010` |
+| Nerves and presence | `nerves-show` | Lesson: Pause before you start | `/session?mode=lesson&prompt=l001` |
 | Nerves and presence | `nerves-spotlight` | Rapid Fire: keep going after a stumble | `/session?mode=talk&prompt=t006` |
 | Nerves and presence | `nerves-excited` | Prepared speech: try it as you plan | `/session?mode=response&prompt=p052` |
 | Nerves and presence | `nerves-um` | Pause drill: Before the point | `/session?mode=pause&prompt=d001` |
 | Nerves and presence | `nerves-silence` | Lesson: Pause before the point | `/session?mode=lesson&prompt=l004` |
 | Nerves and presence | `nerves-power-pose` | Warm-up: breathe, then speak | `/voice/warmup` |
-| Nerves and presence | `nerves-own-name` | Opening drill: a wedding toast | `/session?mode=bookend&prompt=b002` |
+| Nerves and presence | `nerves-own-name` | Prepared speech: a birthday toast | `/session?mode=response&prompt=p044` |
 | Charisma | `charisma-two-parts` | Talk with Maya: interest before expertise | `/conversations/talk?id=maya` |
 | Charisma | `charisma-learnable` | Prepared speech: try one story or contrast | `/session?mode=response&prompt=p053` |
 | Charisma | `charisma-tactics` | Lesson: The rule of three | `/session?mode=lesson&prompt=l008` |
@@ -203,7 +203,7 @@ Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, an
 | Body language: myth or fact | `body-stillness` | Prepared speech: keep them with you | `/session?mode=response&prompt=p049` |
 | Body language: myth or fact | `body-not-face` | News drill: big news, whole person | `/session?mode=smalltalk&prompt=sn01` |
 | Body language: myth or fact | `body-voice-feelings` | Listening drill: hear the feeling | `/session?mode=smalltalk&prompt=sls02` |
-| Body language: myth or fact | `body-read-room` | Opening drill: scan, then speak | `/session?mode=bookend&prompt=b008` |
+| Body language: myth or fact | `body-read-room` | Lesson: look up, then start | `/session?mode=lesson&prompt=l001` |
 | Conversation | `talk-liking-gap` | Going deeper, lesson 1 | `/session?mode=smalltalk&prompt=sdl1` |
 | Conversation | `talk-follow-ups` | Asking, lesson 1: Ask about what they said | `/session?mode=smalltalk&prompt=sal1` |
 | Conversation | `talk-free-info` | Asking drill: ask about the detail | `/session?mode=smalltalk&prompt=sa11` |
@@ -262,11 +262,11 @@ Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, an
 | Changing minds | `minds-two-sided` | Prepared speech: answer the objection | `/session?mode=response&prompt=p043` |
 | Changing minds | `minds-their-values` | Prepared speech: persuade a friend | `/session?mode=response&prompt=p041` |
 | Changing minds | `minds-swap-stories` | Talk with Theo: ask, then share | `/conversations/talk?id=theo` |
-| Changing minds | `minds-free-to-say-no` | Closing drill: a clear ask | `/session?mode=bookend&prompt=b014` |
+| Changing minds | `minds-free-to-say-no` | Prepared speech: make the case, then ask | `/session?mode=response&prompt=p042` |
 | Changing minds | `minds-three-claims` | Lesson: The rule of three | `/session?mode=lesson&prompt=l008` |
 | Hard conversations | `hard-disagree` | Prepared speech: their side, then yours | `/session?mode=response&prompt=p054` |
 | Hard conversations | `hard-apology` | Tone drill: I’m sorry, my mistake | `/voice/drill?id=t06` |
-| Hard conversations | `hard-ask-help` | Closing drill: ask for what you need | `/session?mode=bookend&prompt=b019` |
+| Hard conversations | `hard-ask-help` | Lesson: A strong close | `/session?mode=lesson&prompt=l010` |
 | Hard conversations | `hard-ask-advice` | Asking, lesson 2: Open, not yes-or-no | `/session?mode=smalltalk&prompt=sal2` |
 | Hard conversations | `hard-humblebrag` | Tell a story: a small win, said straight | `/stories/tell?prompt=sp06&focus=point` |
 | Word choice | `words-plain` | Rapid Fire: short, plain words | `/session?mode=talk&prompt=t019` |
@@ -274,7 +274,7 @@ Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, an
 | Word choice | `words-name-it` | Asking drill: use their words | `/session?mode=smalltalk&prompt=sa01` |
 | Word choice | `words-hedges` | Lesson: Point, reason, example | `/session?mode=lesson&prompt=l014` |
 | Word choice | `words-intensifiers` | Rapid Fire: one sharp word | `/session?mode=talk&prompt=t002` |
-| Word choice | `words-just` | Closing drill: ask, without “just” | `/session?mode=bookend&prompt=b011` |
+| Word choice | `words-just` | Prepared speech: ask your team, without “just” | `/session?mode=response&prompt=p040` |
 | Word choice | `words-variety` | See your word variety | `/profile` |
 | Reading your profile | `profile-pause-place` | Pause drill: Between points | `/session?mode=pause&prompt=d008` |
 | Reading your profile | `profile-fillers` | Pause drill: Three steps | `/session?mode=pause&prompt=d002` |
@@ -292,7 +292,7 @@ Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, an
 | Speaking at work | `work-interrupt` | Talk with Chris: support, don’t steer | `/conversations/talk?id=chris` |
 | Speaking at work | `work-update` | Prepared speech: a 30-second update | `/session?mode=response&prompt=p048` |
 | Speaking at work | `work-video-lag` | Talk with Priya: hand over clearly | `/conversations/talk?id=priya` |
-| Speaking at work | `work-camera` | Closing drill: your key line | `/session?mode=bookend&prompt=b016` |
+| Speaking at work | `work-camera` | Prepared speech: news, to the camera | `/session?mode=response&prompt=p050` |
 | Speaking at work | `work-questions` | Talk with Theo: ask what only he knows | `/conversations/talk?id=theo` |
 
 ## Open questions

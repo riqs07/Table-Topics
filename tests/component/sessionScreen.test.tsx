@@ -545,14 +545,14 @@ describe("SessionScreen", () => {
     expect([!!(await screen.findByText("Lesson 2: Crisp consonants")), /^You read \d+% of the words clearly\.$/.test(screen.getByTestId("reading-headline").textContent ?? ""), !!screen.getByText(/^Remember: /), screen.getAllByText(/You read \d+% of the words/).length]).toEqual([true, true, true, 1]);
   });
 
-  // An openings drill shows its own two findings and a retry of the same drill
-  it("shows an opening drill's findings and retries the same drill", async () => {
+  // An old openings drill still shows its own two findings; the drill is retired (decision 106), so trying again opens the lesson on openings
+  it("shows an old opening drill's findings and leads to the opening lesson", async () => {
     // An opening that started with fillers
     const session = makeSession({ id: "b", mode: "bookend", promptId: "b001", transcript: "Um, so, today I want to talk about tools.", durationSec: 38, feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="b" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the title, the opening-words finding, the timing, and the retry link
-    expect([!!(await screen.findByText("Opening drill")), !!screen.getByText("You opened with “Um, so”. Start on your first real word instead."), !!screen.getByText("0:38 against a 0:45 goal, 7 seconds to spare."), screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, true, true, "/session?mode=bookend&prompt=b001&retryOf=b"]);
+    expect([!!(await screen.findByText("Opening drill")), !!screen.getByText("You opened with “Um, so”. Start on your first real word instead."), !!screen.getByText("0:38 against a 0:45 goal, 7 seconds to spare."), screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, true, true, "/session?mode=lesson&prompt=l001"]);
   });
 
   // Q&A practice is removed (decision 61): a rehearsal no longer leads to it, but an old Q&A answer still shows its question

@@ -136,10 +136,6 @@ export const ROUTES: ReadonlyArray<string> = [
   "/sessions?id=missing",
   // A talk's page for a talk that does not exist
   "/talk?id=missing",
-  // Openings and closings
-  "/bookends",
-  // An opening drill
-  "/session?mode=bookend&prompt=b001",
   // A full speech's page
   "/speech?id=jfk-inaugural",
   // A speech that does not exist
@@ -191,8 +187,6 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/sessions?id=missing", current: null },
   // A talk's page belongs to Practice
   { path: "/talk?id=missing", current: "Practice" },
-  // Openings and closings belong to Practice
-  { path: "/bookends", current: "Practice" },
   // Stories belong to Practice (decision 92)
   { path: "/stories", current: "Practice" },
   // Your check-ins and their comparison belong to Today (decision 100)

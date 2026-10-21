@@ -14,8 +14,6 @@ import { PracticeScreen } from "@/components/screens/PracticeScreen";
 import { SkillsScreen } from "@/components/screens/SkillsScreen";
 // Load the talk page
 import { TalkScreen } from "@/components/screens/TalkScreen";
-// Load the openings and closings page
-import { BookendsScreen } from "@/components/screens/BookendsScreen";
 // Load the Stories page (decision 92)
 import { StoriesScreen } from "@/components/screens/StoriesScreen";
 import { RehearseScreen } from "@/components/screens/RehearseScreen";
@@ -75,8 +73,6 @@ describe("main navigation", () => {
     ["Talks", "Practice", async () => <RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // So does a talk's page
     ["a talk's page", "Practice", async () => <TalkScreen talkId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
-    // Openings and closings belong to Practice
-    ["Openings and closings", "Practice", async () => <BookendsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Stories belong to Practice (decision 92)
     ["Stories", "Practice", async () => <StoriesScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Your check-ins and their comparison belong to Today (decision 100)
