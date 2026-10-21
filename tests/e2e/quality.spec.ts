@@ -39,7 +39,7 @@ test("keeps Learn still while it loads", async ({ page }) => {
   expect(await page.evaluate(() => (window as unknown as { shift: number }).shift)).toBeLessThan(0.1);
 });
 
-// Only the fonts every page uses are fetched up front (two others are for the style page)
+// Only the fonts every page uses are fetched up front (two others are for the other themes)
 test("preloads only the two fonts the app uses", async ({ page }) => {
   // Open Today
   await page.goto("/");

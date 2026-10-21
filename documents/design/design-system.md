@@ -2,7 +2,7 @@
 
 **Purpose:** How you control colors, fonts, and feel, and the rules that keep the look in one place.
 **Last updated:** 2026-10-21
-**Status:** Built in milestone 2. **Calm studio with a forest green accent was chosen at C6 (2026-10-12).** All three themes stay on the style page (`/style`) for comparison.
+**Status:** Built in milestone 2. **Calm studio with a forest green accent was chosen at C6 (2026-10-12).** The other two themes stay in `src/theme/themes.ts`; the style and wireframe pages that showed them side by side were removed in decision 105.
 
 ## Warm and lively (decision 69, 2026-10-19)
 
@@ -148,4 +148,4 @@ Dark mode follows the phone's setting automatically.
 - Every theme defines every role.
 - Every text/background pair in every theme passes WCAG AA contrast (risk R13).
 - No file in `src/` outside `src/theme/` contains a raw color, a color function, a built-in Tailwind color class, an arbitrary color or font value, or an inline font.
-- Page-wide defaults read theme variables directly, so a themed area inside another (like the style page previews) gets its own colors.
+- Page-wide defaults read theme variables directly, so a themed area inside another (as the removed style page's previews did) gets its own colors.

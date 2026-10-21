@@ -8,9 +8,9 @@ export type Palette = Record<Role, string>;
 
 // One complete theme
 export interface Theme {
-  // Name shown on the style page
+  // The theme's name
   name: string;
-  // One-line description shown on the style page
+  // One line on what the theme is
   description: string;
   // Colors for light and dark mode
   colors: { light: Palette; dark: Palette };
@@ -32,7 +32,7 @@ const SYSTEM_SERIF = "Georgia, 'Times New Roman', serif";
 export const THEMES = {
   // Warm paper and ink with a terracotta accent (recommended direction)
   notebook: {
-    // Name shown on the style page
+    // The theme's name
     name: "Notebook",
     // What the theme is going for
     description: "Warm paper, ink text, one terracotta accent. A private practice journal.",
@@ -131,7 +131,7 @@ export const THEMES = {
   },
   // Cool stone grays with a forest green accent (chosen at C6)
   "calm-studio": {
-    // Name shown on the style page
+    // The theme's name
     name: "Calm studio",
     // What the theme is going for
     description: "Warm cream, forest green and apricot, Fraunces headlines over Atkinson Hyperlegible text. Chosen at C6, warmed up in decision 69.",
@@ -242,7 +242,7 @@ export const THEMES = {
   },
   // Neutral grayscale for building screens before a palette is chosen
   gray: {
-    // Name shown on the style page
+    // The theme's name
     name: "Gray",
     // What the theme is going for
     description: "Neutral grayscale. Kept for comparison.",

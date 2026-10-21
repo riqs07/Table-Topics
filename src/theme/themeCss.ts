@@ -25,7 +25,7 @@ function themeBlocks(id: string, theme: Theme): string {
   return [
     // Light colors and fonts by default
     `${base} {\n${paletteVariables(theme.colors.light)}\n--vl-font-body: ${theme.fonts.body};\n--vl-font-display: ${theme.fonts.display};\ncolor-scheme: light;\n}`,
-    // Dark colors when dark mode is forced (used by the style page)
+    // Dark colors when dark mode is forced (for a themed panel that must stay dark)
     `${base}[data-mode="dark"] {\n${paletteVariables(theme.colors.dark)}\ncolor-scheme: dark;\n}`,
     // Dark colors when the user chose to follow the device and it prefers dark (light is the default, decision 70)
     `@media (prefers-color-scheme: dark) {\n${base}[data-mode="system"] {\n${paletteVariables(theme.colors.dark)}\ncolor-scheme: dark;\n}\n}`,

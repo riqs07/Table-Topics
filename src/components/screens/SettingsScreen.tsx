@@ -3,8 +3,6 @@
 
 // Load React's state and effect tools
 import { useEffect, useState, type ChangeEvent } from "react";
-// Load Next.js's link component
-import Link from "next/link";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
@@ -760,12 +758,6 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         <Section title="While building (not in the released app)">
           {/* Fill with sample sessions */}
           <button type="button" onClick={loadSamples} className={SECONDARY}>Fill with sample sessions</button>
-          {/* Links to design pages */}
-          <p className="mt-3 text-ink-muted">
-            <Link href="/style" className={TEXT_LINK}>Style page</Link>
-            {" · "}
-            <Link href="/wireframes" className={TEXT_LINK}>Wireframes</Link>
-          </p>
         </Section>
       )}
     </main>

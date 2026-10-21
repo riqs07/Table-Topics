@@ -34,7 +34,7 @@ describe("themeCss", () => {
     expect(css).toContain(`--vl-paper: ${THEMES.notebook.colors.dark.paper};`);
   });
 
-  // The style page needs to show dark mode regardless of the phone's setting
+  // A forced-dark panel needs to show dark mode regardless of the phone's setting
   it("can force dark mode with a data-mode attribute", () => {
     // Confirm the forced-dark selector exists
     expect(css).toContain(`[data-theme="notebook"][data-mode="dark"] {`);
@@ -74,7 +74,7 @@ describe("globals.css", () => {
     expect(globals).toContain("--font-*: initial;");
   });
 
-  // Nested themed areas (like the style page previews) must get their own colors, not the page's
+  // Nested themed areas (a themed panel inside the page) must get their own colors, not the page's
   it("reads theme variables directly in page-wide defaults, not the Tailwind aliases", () => {
     // Take only the base-layer defaults
     const base = globals.slice(globals.indexOf("@layer base"));

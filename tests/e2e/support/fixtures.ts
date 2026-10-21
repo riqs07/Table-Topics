@@ -68,9 +68,6 @@ export const ROUTES: ReadonlyArray<string> = [
   "/voice/drill?id=p04",
   "/voice/shadow?id=s01",
   "/voice/drill?id=missing",
-  // The old Lessons and Library addresses, which now lead to Skills
-  "/lessons",
-  "/library",
   // Skills
   "/skills",
   // Talks
@@ -164,10 +161,6 @@ export const ROUTES: ReadonlyArray<string> = [
   "/check-in/compare?a=ci-1999-01-01&b=missing",
   // A check-in part, opened directly
   "/session?mode=outline&prompt=ci-pitch&checkin=ci-2026-10-13&part=pitch",
-  // The design style tile
-  "/style",
-  // The wireframes
-  "/wireframes",
 ];
 
 // Pages that carry the main navigation, with the section each one marks as current
