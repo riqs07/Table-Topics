@@ -373,6 +373,23 @@ describe("SettingsScreen", () => {
     await waitFor(async () => expect([before, (await repository.getSettings(NOW)).shareNotes]).toEqual([false, true]));
   });
 
+  // Settings in a few groups (decision 110): your progress, practice, recordings and data, coach and services, appearance; the rarely changed practice options folded
+  it("groups the settings under a few headings, with the rare ones folded", async () => {
+    // Draw Settings
+    const { container } = render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Wait for the settings to load
+    await screen.findByRole("group", { name: "What you want to get better at" });
+    // The group of a section, by its heading
+    const groupOf = (name: string) => screen.getByRole("heading", { level: 3, name }).closest("section[aria-labelledby]")?.querySelector("h2")?.textContent;
+    // Confirm the groups in order, where a few sections sit, and the fold closed with pause words inside
+    expect([
+      screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
+      ["What you want to get better at", "Weekly check-in", "Conversation turns", "Your recordings", "Your data", "Coach (advanced)", "Deeper analysis (advanced)", "Light or dark"].map(groupOf),
+      (screen.getByRole("heading", { level: 3, name: "Pause words" }).closest("details") as HTMLDetailsElement | null)?.open,
+      container.querySelectorAll("details > summary").length >= 2,
+    ]).toEqual([["Your progress", "Practice", "Recordings and data", "Coach and services", "Appearance"], ["Practice", "Practice", "Practice", "Recordings and data", "Recordings and data", "Coach and services", "Coach and services", "Appearance"], false, true]);
+  });
+
   // How you are doing has one way in from Settings: the profile, which leads on to History (decision 109)
   it("links to your progress once, and not to History directly", async () => {
     // Draw Settings

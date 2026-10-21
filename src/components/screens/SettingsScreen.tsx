@@ -255,14 +255,27 @@ function ConversationMinutesLine({ fetchFn }: { fetchFn?: typeof fetch }) {
 }
 
 // A section of the settings page: a section heading and its content
-function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
-  // Ruled block with a run-in heading
+function Section({ title, id, flat = false, children }: { title: string; id?: string; flat?: boolean; children: React.ReactNode }) {
+  // A card with a run-in heading, or (inside a fold) a ruled block
   return (
-    <section id={id} className={`mt-4 scroll-mt-6 p-5 text-lede ${CARD}`}>
+    <section id={id} className={flat ? "scroll-mt-6 border-t border-rule py-4 text-lede" : `mt-4 scroll-mt-6 p-5 text-lede ${CARD}`}>
       {/* Heading */}
-      <h2 className={SECTION_HEADING}>{title}</h2>
+      <h3 className={SECTION_HEADING}>{title}</h3>
       {/* Content */}
       <div className="mt-2">{children}</div>
+    </section>
+  );
+}
+
+// A group of sections under one of the page's few headings (decision 110)
+function Group({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  // The heading, then its sections
+  return (
+    <section aria-labelledby={id} className="mt-10">
+      {/* The group's heading */}
+      <h2 id={id} className="font-display text-2xl font-semibold tracking-tight">{title}</h2>
+      {/* Its sections */}
+      {children}
     </section>
   );
 }
@@ -565,13 +578,17 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       <p role="status" className={message ? "mt-4 text-accent" : "sr-only"}>{message}</p>
 
       {/* How you are doing: one way in, the profile, which holds the coach summary, check-ins, measures and the way to History (decisions 90 and 109) */}
-      <Section title="Your progress">
-        <RowLink href="/profile">Your speaking profile and history</RowLink>
-      </Section>
+      <Group id="group-progress" title="Your progress">
+        {/* The one row */}
+        <div className={`mt-4 px-5 ${CARD}`}><RowLink href="/profile">Your speaking profile and history</RowLink></div>
+      </Group>
 
-      {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}
-      {today && <Section title="Appearance">
-        <ColorModeChoice />
+      {/* Practice: what to work on, when, the check-in day and conversation turns, with the rarely changed options folded (decision 110) */}
+      <Group id="group-practice" title="Practice">
+      {/* What the user wants to get better at most, changed at any time (decision 97) */}
+      {settings && <Section title="What you want to get better at" id="focus">
+        <p className="text-footnote text-ink-muted">Pick one or two. About half of each day’s practice comes from them, and Practice and Learn show them first.</p>
+        <FocusPicker value={readPracticeFocus(settings.practiceFocus) ?? []} onChange={(next) => void saveSettingsWith({ ...settings, practiceFocus: next }, next.length ? "Saved. Today’s practice follows it." : "Saved. Today’s practice is the usual mix.")} label="What you want to get better at" />
       </Section>}
 
       {/* When the user practises, and a daily reminder (decision 78) */}
@@ -594,19 +611,22 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         <p className="mt-2 text-footnote text-ink-muted">About 6 minutes: the same passage, the same pitch, a story and a surprise question. Missed? It stays open two more days.</p>
       </Section>}
 
-      {/* What the user wants to get better at most, changed at any time (decision 97) */}
-      {settings && <Section title="What you want to get better at" id="focus">
-        <p className="text-footnote text-ink-muted">Pick one or two. About half of each day’s practice comes from them, and Practice and Learn show them first.</p>
-        <FocusPicker value={readPracticeFocus(settings.practiceFocus) ?? []} onChange={(next) => void saveSettingsWith({ ...settings, practiceFocus: next }, next.length ? "Saved. Today’s practice follows it." : "Saved. Today’s practice is the usual mix.")} label="What you want to get better at" />
+      {/* Conversations: how a turn ends (decision 101) */}
+      {settings && <Section title="Conversation turns" id="conversations">
+        <TurnEndingChoice settings={settings} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
       </Section>}
 
+        {/* Rarely changed: practice days on Today, pause words, and cues while speaking, folded (decision 110) */}
+        <details className={`mt-4 px-5 ${CARD}`}>
+          {/* The fold's row */}
+          <summary className={`flex min-h-14 cursor-pointer items-center font-semibold ${PRESS}`}>More: practice days, pause words, cues while speaking</summary>
       {/* Whether Today shows the run (decision 78; named for what it holds, so it is not mistaken for the Today tab) */}
-      {settings && <Section title="Practice days">
+      {settings && <Section flat title="Practice days">
         <CheckRow checked={settings.hideStreak !== true} onChange={(event) => void saveSettingsWith({ ...settings, hideStreak: !event.target.checked }, "Saved.")} detail="Days practised in the last week, and your run. Two rest days a week never break a run, and two days in a row after a longer break win it back.">Show my practice days</CheckRow>
       </Section>}
 
       {/* Pause words and fluency (decision 79) */}
-      {settings && <Section title="Pause words">
+      {settings && <Section flat title="Pause words">
         <p className="text-footnote text-ink-muted">Um, uh, like and the rest. A few are normal; listeners hear them as a sign you are thinking.</p>
         <div className="mt-3 flex flex-col gap-2">
           {/* Counts on or off */}
@@ -617,7 +637,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       </Section>}
 
       {/* Cues while speaking (drawn in the browser only, where the saved choice can be read) */}
-      {today && <Section title="While speaking">
+      {today && <Section flat title="While speaking">
         <div className="flex flex-col gap-2">
           {/* Tones */}
           <TimingTonesChoice />
@@ -625,13 +645,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           <div data-keyboard-only className="hidden keyboard:block"><SpaceShortcutChoice /></div>
         </div>
       </Section>}
+        </details>
+      </Group>
 
-      {/* Conversations: how a turn ends (decision 101) */}
-      {settings && <Section title="Talk with someone" id="conversations">
-        <TurnEndingChoice settings={settings} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
-        <ConversationMinutesLine fetchFn={fetchFn} />
-      </Section>}
-
+      {/* Recordings and data: how long recordings are kept, export and import, and starting over (decision 110) */}
+      <Group id="group-data" title="Recordings and data">
       {/* How long recordings are kept */}
       <Section title="Your recordings">
         {/* The limit as a sentence with a choice in it (decision 98) */}
@@ -662,43 +680,6 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {/* How much the device holds, where the browser can say */}
         {storageUsedText(storageUsed) && <p className="mt-2 text-footnote text-ink-muted">{storageUsedText(storageUsed)}</p>}
       </Section>
-
-      {/* Coach feedback (drawn in the browser only, where the saved passphrase can be read) */}
-      {today && <Section title="Coach (advanced)">
-        {/* What works without it */}
-        <p className="text-ink-muted">Adds a written note to each session. Needs a passphrase set up on the server.</p>
-        {/* The setup, folded away until wanted */}
-        <details className="mt-3">
-          {/* Open it */}
-          <summary className={`${TEXT_LINK} cursor-pointer`}>Set up the coach</summary>
-          {/* What the passphrase is for */}
-          <p className="mt-2 text-ink-muted">Feedback needs the passphrase you set on the server. It is kept on this device only and is not in exports.</p>
-          {/* Passphrase field and save */}
-          <p className="mt-3 flex flex-wrap items-baseline gap-3">
-            {/* The field */}
-            <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 rounded-xl border-2 border-rule bg-card px-3 py-1" />
-            {/* Save */}
-            <button type="button" onClick={storePassphrase} className={SECONDARY}>Save passphrase</button>
-          </p>
-          {/* The saved passphrase's fingerprint, to compare with the one pnpm live-check prints for APP_ACCESS_SECRET */}
-          {fingerprint && <p className="mt-2 text-footnote text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
-          {/* Waiting sessions, with a way to send them now */}
-          {pendingCount > 0 && (
-            <p className="mt-3">
-              {pendingCount} {pendingCount === 1 ? "session is" : "sessions are"} waiting for feedback.{" "}
-              {/* Send now */}
-              <button type="button" onClick={sendNow} className={SECONDARY}>Send now</button>
-            </p>
-          )}
-          {/* Whether the coach may read the user's own notes */}
-          <div className="mt-4"><CheckRow checked={settings?.shareNotes === true} onChange={changeShareNotes} detail="Your notes are sent with the transcript, and the coach answers them. Feedback then waits until you have saved your notes. Off by default.">Let the coach read my notes after I listen back.</CheckRow></div>
-        </details>
-      </Section>}
-
-      {/* Deeper analysis of each take on the server (decision 91; drawn once the settings are loaded) */}
-      {today && settings && <Section title="Deeper analysis (advanced)">
-        <DeepAnalysisChoice settings={settings} fetchFn={fetchFn} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
-      </Section>}
 
       {/* Export and import */}
       <Section title="Your data" id="your-data">
@@ -750,6 +731,57 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           </div>
         )}
       </Section>
+      </Group>
+
+      {/* Coach and services: the coach's passphrase and the conversation minutes left, and deeper analysis (decision 110) */}
+      <Group id="group-services" title="Coach and services">
+      {/* Coach feedback (drawn in the browser only, where the saved passphrase can be read) */}
+      {today && <Section title="Coach (advanced)">
+        {/* What works without it */}
+        <p className="text-ink-muted">Adds a written note to each session. Needs a passphrase set up on the server.</p>
+        {/* The setup, folded away until wanted */}
+        <details className="mt-3">
+          {/* Open it */}
+          <summary className={`${TEXT_LINK} cursor-pointer`}>Set up the coach</summary>
+          {/* What the passphrase is for */}
+          <p className="mt-2 text-ink-muted">Feedback needs the passphrase you set on the server. It is kept on this device only and is not in exports.</p>
+          {/* Passphrase field and save */}
+          <p className="mt-3 flex flex-wrap items-baseline gap-3">
+            {/* The field */}
+            <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 rounded-xl border-2 border-rule bg-card px-3 py-1" />
+            {/* Save */}
+            <button type="button" onClick={storePassphrase} className={SECONDARY}>Save passphrase</button>
+          </p>
+          {/* The saved passphrase's fingerprint, to compare with the one pnpm live-check prints for APP_ACCESS_SECRET */}
+          {fingerprint && <p className="mt-2 text-footnote text-ink-muted">Fingerprint: {fingerprint}. It should match the fingerprint pnpm live-check shows for APP_ACCESS_SECRET.</p>}
+          {/* Waiting sessions, with a way to send them now */}
+          {pendingCount > 0 && (
+            <p className="mt-3">
+              {pendingCount} {pendingCount === 1 ? "session is" : "sessions are"} waiting for feedback.{" "}
+              {/* Send now */}
+              <button type="button" onClick={sendNow} className={SECONDARY}>Send now</button>
+            </p>
+          )}
+          {/* Whether the coach may read the user's own notes */}
+          <div className="mt-4"><CheckRow checked={settings?.shareNotes === true} onChange={changeShareNotes} detail="Your notes are sent with the transcript, and the coach answers them. Feedback then waits until you have saved your notes. Off by default.">Let the coach read my notes after I listen back.</CheckRow></div>
+        </details>
+        {/* This month's conversation minutes left, when a passphrase is saved (decision 102; moved here from the conversation section, decision 110) */}
+        <ConversationMinutesLine fetchFn={fetchFn} />
+      </Section>}
+
+      {/* Deeper analysis of each take on the server (decision 91; drawn once the settings are loaded) */}
+      {today && settings && <Section title="Deeper analysis (advanced)">
+        <DeepAnalysisChoice settings={settings} fetchFn={fetchFn} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
+      </Section>}
+      </Group>
+
+      {/* Appearance (decision 110) */}
+      <Group id="group-appearance" title="Appearance">
+      {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}
+      {today && <Section title="Light or dark">
+        <ColorModeChoice />
+      </Section>}
+      </Group>
 
       {/* Development-only tools */}
       {DEVELOPMENT && (

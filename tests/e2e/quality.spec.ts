@@ -182,6 +182,8 @@ test("shows keyboard hints only on a device with a keyboard", async ({ page, bro
   await expect(touch.locator("[data-keyboard-hint]")).toBeHidden();
   // And Settings leaves out the space bar switch
   await touch.goto(new URL("/settings", page.url()).toString());
+  // Open the fold of rarely changed options (decision 110)
+  await touch.getByText("More: practice days, pause words, cues while speaking").click();
   // Wait for the section
   await expect(touch.getByRole("heading", { name: "While speaking" })).toBeVisible();
   // The switch is hidden
