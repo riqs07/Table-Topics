@@ -12,7 +12,7 @@ The idea in one line: **the loop is right; smooth the edges.** The first minutes
 - Evidence: reach the first moment of value fast; Speeko's whole routine is about 5 minutes.
 
 **2. Explain the microphone before the browser asks (S).** Built (decision 38).
-- One screen before the first ever recording: "VoiceLab listens through your microphone. Recordings stay on this phone. Your browser will ask next." Then the browser prompt.
+- One screen before the first ever recording: "VoiceLab listens through your microphone. Recordings stay on this phone. Your browser will ask next." Then the browser prompt. *(Wording changed 2026-10-21, decision 97: it now says VoiceLab keeps your recordings on this device and that the browser's speech recognition, on most phones Apple's or Google's, turns your words into text on their servers.)*
 - If the user says no, a screen with the two taps it takes to allow it in their browser, and "Try again". Never a dead end.
 - Evidence: Google Meet cut friction this way; Babbel asks at the first speaking exercise.
 

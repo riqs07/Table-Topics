@@ -1,7 +1,7 @@
-// Today's practice: four steps, a Learn card, the warm-up reading, then two kinds of practice picked from the bank, taken in turn by day (decision 51; see documents/plan-daily-mix-and-connection.md); day one opens with free talk instead (decision 78)
+// Today's practice: four steps, a Learn card, the warm-up reading, then two kinds of practice picked from the bank, taken in turn by day (decision 51; see documents/plan-daily-mix-and-connection.md); day one opens with free talk instead (decision 78); with a focus, the card and the first pick come from it (decision 97)
 
 // Load the day pickers and lookups for the spoken prompts and texts
-import { PAUSE_DRILLS, PASSAGES, bookendForDay, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { PAUSE_DRILLS, PASSAGES, bookendForDay, findPrompt, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the lessons
 import { findLesson } from "@/content/lessons";
 // Load the speeches' index and the reading names (not the speeches' text, which is most of the app's download; decision 88)
@@ -25,6 +25,8 @@ import { QUICK_COUNT } from "@/core/scenarios";
 import { stepKey, type PlanLane, type PlanStep } from "@/core/planSteps";
 // The step type and rules, for code that already loads the plan
 export { nextStepIndex, planHref, planMinutes, stepKey, type PlanLane, type PlanStep } from "@/core/planSteps";
+// Load the user's focus: which area leads today, and its kinds of practice (decision 97)
+import { focusForDay, type FocusArea, type FocusAreaId, type PickKind } from "@/core/practiceFocus";
 // Load the voice picks and names (decision 80)
 import { VOICE_ROTATION, nextShadowPassage, nextVoiceDrill, warmupRoutine } from "@/core/voicePicks";
 import { VOICE_MODE_NAMES } from "@/content/voice";
@@ -43,6 +45,8 @@ export interface PlanInput {
   learn?: LearnProgress;
   // Days a warm-up routine was finished (only those before today are used)
   warmupDays?: ReadonlyArray<string>;
+  // What the user wants to get better at most, one or two areas (decision 97; none or missing means the usual mix)
+  practiceFocus?: ReadonlyArray<FocusAreaId>;
 }
 
 // The order speeches are offered in when none is under way: short and familiar first
@@ -131,9 +135,6 @@ function skill(focusId: string, day: Date): PlanStep {
   return { lane: "delivery", kind: "session", label: "Skill", title, mode: drill.mode, promptId: drill.promptId, minutes: drill.mode === "lesson" ? 2 : 1, href: `/session?mode=${drill.mode}&prompt=${drill.promptId}` };
 }
 
-// One kind of practice the day can pick
-type PickKind = "talk" | "response" | "bookend" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios";
-
 // The bank in three groups, each with its lane: speaking on the spot, delivery skills, and conversation
 const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> = [
   // On the spot: a Table Topic, an open story, an opening or closing, a guided story, a prepared speech; a story is two turns in five, so about twice a week, never twice in a row, open and guided in turn (decisions 92 and 93)
@@ -147,8 +148,14 @@ const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> 
 // The two groups the day picks from, taken in turn by day, so each group comes up two days in three
 const GROUP_PAIRS: ReadonlyArray<readonly [number, number]> = [[0, 2], [1, 0], [2, 1]];
 
-// Kinds kept out of the first days (a prepared speech is long)
-const NOT_FIRST_DAYS: ReadonlyArray<PickKind> = ["response"];
+// Kinds kept out of the first days (a prepared speech is long, the focus's own too)
+const NOT_FIRST_DAYS: ReadonlyArray<PickKind> = ["response", "focus-speech"];
+
+// The lane each kind belongs to: its bank group's, and on the spot for a focus's own lessons and speeches (they work on structure and speaking up)
+function laneOf(kind: PickKind): PlanLane {
+  // The bank group holding it, or on the spot
+  return GROUPS.find((group) => group.kinds.includes(kind))?.lane ?? "spot";
+}
 
 // The kind a group offers on a day: the group's kinds taken in turn by how often the group has come up, so it never repeats on consecutive appearances (plus an offset for "keep going" suggestions)
 function kindFor(group: number, day: Date, firstDays: boolean, offset = 0): PickKind {
@@ -168,8 +175,22 @@ function kindFor(group: number, day: Date, firstDays: boolean, offset = 0): Pick
   return kinds[((appearance % kinds.length) + kinds.length) % kinds.length]!;
 }
 
-// The step for a kind of practice on a day
-function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: ReadonlyArray<SessionRecord>): PlanStep {
+// The step for a kind of practice on a day (a focus's own lesson or speech is taken from its lists, in turn)
+function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: ReadonlyArray<SessionRecord>, area: FocusArea | null = null, turn = 0): PlanStep {
+  // A lesson from the focus's list, in turn
+  if (kind === "focus-lesson" && area && area.lessons.length > 0) {
+    // Today's lesson
+    const lesson = findLesson(area.lessons[((turn % area.lessons.length) + area.lessons.length) % area.lessons.length]!);
+    // The step (a missing lesson cannot happen with the fixed lists; the week's skill drill stands in)
+    return lesson ? { lane, kind: "session", label: "Lesson", title: `Lesson ${lesson.number}: ${lesson.title}`, mode: "lesson", promptId: lesson.id, minutes: 2, href: `/session?mode=lesson&prompt=${lesson.id}` } : { ...skill(input.focusId, input.day), lane };
+  }
+  // A prepared speech from the focus's list, in turn
+  if (kind === "focus-speech" && area && area.speeches.length > 0) {
+    // Today's task
+    const prompt = findPrompt(area.speeches[((turn % area.speeches.length) + area.speeches.length) % area.speeches.length]!) ?? promptForDay(input.day);
+    // The step
+    return { lane, kind: "session", label: "Prepared speech", title: prompt.text, mode: "response", promptId: prompt.id, minutes: 3, href: `/session?mode=response&prompt=${prompt.id}` };
+  }
   // A prepared speech
   if (kind === "response") {
     // Today's task
@@ -262,14 +283,49 @@ function voiceStep(input: PlanInput, before: ReadonlyArray<SessionRecord>): Plan
   return { lane: "delivery", kind: "session", label: VOICE_MODE_NAMES[pick], title: drill.title, mode: "voice", promptId: drill.id, minutes: 1, href: `/voice/drill?id=${drill.id}` };
 }
 
-// The day's two picks from the bank (a talk coming up takes the first)
+// The step for a talk coming up, in a pick's place
+function talkStep(talk: NonNullable<PlanInput["nextTalk"]>, lane: PlanLane): PlanStep {
+  // A rehearsal of today's part of it
+  return { lane, kind: "session", label: "Your talk", title: talk.headline, mode: "rehearse", promptId: talk.id, minutes: 3, href: `/session?mode=rehearse&prompt=${talk.id}` };
+}
+
+// The focus's pick for today: the leading area's kinds in turn on its own days (gentler in the first days), or nothing without a focus (decision 97)
+function focusPick(input: PlanInput, before: ReadonlyArray<SessionRecord>, firstDays: boolean, offset = 0): { step: PlanStep; area: FocusArea } | null {
+  // Today's roles for the areas
+  const today = focusForDay(input.practiceFocus, dayNumber(input.day));
+  // No focus
+  if (!today) return null;
+  // The leading area's kinds (without the long ones in the first days; never empty, as every area has a short kind)
+  const kinds = today.pick.picks.filter((kind) => !firstDays || !NOT_FIRST_DAYS.includes(kind));
+  // Its kind today, taking turns by how often it has led
+  const kind = kinds[(((today.turn + offset) % kinds.length) + kinds.length) % kinds.length]!;
+  // The step, in the kind's own lane
+  return { step: pickStep(kind, laneOf(kind), input, before, today.pick, today.turn + offset), area: today.pick };
+}
+
+// The day's two picks from the bank (a talk coming up takes the first). With a focus, the first is the focus's and the second comes from whichever of today's two groups is not the focus pick's lane, so the rest stays mixed (decision 97)
 function picks(input: PlanInput, before: ReadonlyArray<SessionRecord>, firstDays: boolean): PlanStep[] {
   // Today's two groups
   const pair = inTurn(GROUP_PAIRS, input.day);
-  // One step from each
-  const steps = pair.map((group) => pickStep(kindFor(group, input.day, firstDays), GROUPS[group]!.lane, input, before));
-  // A talk coming up comes first
-  if (input.nextTalk) steps[0] = { lane: steps[0]!.lane, kind: "session", label: "Your talk", title: input.nextTalk.headline, mode: "rehearse", promptId: input.nextTalk.id, minutes: 3, href: `/session?mode=rehearse&prompt=${input.nextTalk.id}` };
+  // The focus's pick, if there is a focus
+  const focused = focusPick(input, before, firstDays);
+  // No focus: one step from each of today's groups, as always
+  if (!focused) {
+    // One step from each
+    const steps = pair.map((group) => pickStep(kindFor(group, input.day, firstDays), GROUPS[group]!.lane, input, before));
+    // A talk coming up comes first
+    if (input.nextTalk) steps[0] = talkStep(input.nextTalk, steps[0]!.lane);
+    // The two
+    return steps;
+  }
+  // Today's group that is not the focus pick's lane (the pair is two different groups, so one always differs)
+  const group = pair.find((index) => GROUPS[index]!.lane !== focused.step.lane) ?? pair[0];
+  // Its kind today, or the next one if it would repeat the focus's step
+  const mixed = [0, 1].map((offset) => pickStep(kindFor(group, input.day, firstDays, offset), GROUPS[group]!.lane, input, before)).find((step) => step.mode !== focused.step.mode || step.promptId !== focused.step.promptId)!;
+  // The focus first, then the mixed pick
+  const steps = [focused.step, mixed];
+  // A talk coming up takes the focus's place when the focus is that talk, otherwise the mixed pick's
+  if (input.nextTalk) steps[focused.area.id === "talk" ? 0 : 1] = talkStep(input.nextTalk, steps[focused.area.id === "talk" ? 0 : 1]!.lane);
   // The two
   return steps;
 }
@@ -306,8 +362,10 @@ function learnStep(input: PlanInput): PlanStep | null {
   const progress = input.learn ?? {};
   // Cards read before today
   const learned = Object.fromEntries(Object.entries(progress).filter(([, item]) => new Date(item.readAt) < start));
-  // The next card not yet read
-  const card = nextCard(learned);
+  // The focus that gives today's card, if any (decision 97)
+  const focus = focusForDay(input.practiceFocus, dayNumber(input.day));
+  // The next card not yet read, from the focus's sets first
+  const card = nextCard(learned, focus?.card.learnSets ?? []);
   // A new card
   if (card) return { lane: "learn", kind: "card", label: "Learn", title: card.title, mode: null, promptId: card.id, minutes: 1, href: `/learn/card?id=${card.id}` };
   // Every card read: no Learn step (cards have no review since decision 67)
@@ -349,10 +407,12 @@ export function moreToDo(input: PlanInput, plan: ReadonlyArray<PlanStep>): PlanS
   const firstDays = inFirstDays(before);
   // Whether a step is already in the plan
   const inPlan = (step: PlanStep) => plan.some((item) => item.mode === step.mode && item.promptId === step.promptId);
+  // With a focus, its next kind first (decision 97)
+  const focused = focusPick(input, before, firstDays, 1);
   // One suggestion from each group, one along from today's kind
-  const practice = GROUPS.map((group, index) => pickStep(kindFor(index, input.day, firstDays, 1), group.lane, input, before)).filter((step) => !inPlan(step));
-  // The next card not yet read, counting today's reading
-  const card = nextCard(input.learn ?? {});
+  const practice = [...(focused ? [focused.step] : []), ...GROUPS.map((group, index) => pickStep(kindFor(index, input.day, firstDays, 1), group.lane, input, before))].filter((step, index, all) => !inPlan(step) && all.findIndex((other) => other.mode === step.mode && other.promptId === step.promptId) === index);
+  // The next card not yet read, counting today's reading, from the focus's sets first
+  const card = nextCard(input.learn ?? {}, focusForDay(input.practiceFocus, dayNumber(input.day))?.card.learnSets ?? []);
   // Another card, when there is one not in the plan
   const learn: PlanStep[] = card && !plan.some((item) => item.promptId === card.id) ? [{ lane: "learn", kind: "card", label: "Learn", title: card.title, mode: null, promptId: card.id, minutes: 1, href: `/learn/card?id=${card.id}` }] : [];
   // At most four
@@ -384,4 +444,37 @@ export function planSkipped(plan: ReadonlyArray<PlanStep>, skipped: { day: strin
   const today = skipped && skipped.day === dayKey(day) ? skipped.steps : [];
   // Each step
   return plan.map((step) => today.includes(stepKey(step)));
+}
+
+// The one thing Today suggests once the day's steps are done: a specific session for the area leading today (decision 97)
+export function focusSuggestion(area: FocusArea, day: Date): { action: string; href: string } {
+  // Each area's next thing to do
+  switch (area.id) {
+    // Another story, one along from today's
+    case "stories":
+      return { action: "Tell another story", href: `/stories/tell?prompt=${storyPromptForDay(day, 1).id}` };
+    // A whole conversation with one of the four people
+    case "conversation":
+      return { action: "Talk with someone", href: "/conversations" };
+    // Another Rapid Fire question, two along from today's
+    case "spot":
+      return { action: "One more Rapid Fire", href: `/session?mode=talk&prompt=${tableTopicForDay(day, 2).id}` };
+    // The voice drills
+    case "voice":
+      return { action: "A voice drill", href: "/voice" };
+    // A short speech of your own: an update, a pitch, a plan
+    case "work":
+      return { action: "Plan a short speech", href: "/practice/outline" };
+    // Your own talk, rehearsed section by section (the talk pages hidden by decision 49 still work)
+    case "talk":
+      return { action: "Rehearse your talk", href: "/rehearse" };
+  }
+}
+
+// Today's suggestion for the focus leading today, or nothing without a focus
+export function todaysFocusSuggestion(input: PlanInput): { action: string; href: string; phrase: string } | null {
+  // Today's roles for the areas
+  const today = focusForDay(input.practiceFocus, dayNumber(input.day));
+  // The leading area's suggestion, with its name for the band
+  return today ? { ...focusSuggestion(today.pick, input.day), phrase: today.pick.phrase } : null;
 }

@@ -4,6 +4,8 @@
 // The coach's three-part feedback for one session
 // Load the short-speech plan type
 import type { Outline } from "@/core/outline";
+// Load the focus area type (decision 97)
+import type { FocusAreaId } from "@/core/practiceFocus";
 
 export interface Feedback {
   // One thing done well, quoting the user
@@ -312,6 +314,8 @@ export interface SettingsRecord {
   wordsToWatch?: Record<string, number>;
   // "Send my recordings for deeper analysis": each saved take's audio goes once to the server for transcription and voice analysis (decision 91; missing means off)
   deepAnalysis?: boolean;
+  // What the user wants to get better at most: one or two areas, picked at the welcome, on Today or in Settings (decision 97). Missing means never asked; an empty list means asked and left open (the usual mix)
+  practiceFocus?: FocusAreaId[];
 }
 
 // Where a measure came from (decision 90): the phone itself, a transcription service, the voice worker, or the coach's rubric

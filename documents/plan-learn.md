@@ -154,6 +154,10 @@ Each label is shown in words, never as a colour alone.
 
   Stories leads the Speaking group on the Learn page; Speaking holds 7 sets and People 8. Story cards' links open `/stories/tell` on a fitting prompt with the shape or focus the card teaches already chosen (`&shape=`, `&focus=`; a name that does not exist falls back to the usual start). The vocal fry card now says mixed under a new id (`voice-fry-mixed`); the old id is listed in `RETIRED_CARDS`, so old links open the corrected card and old progress for it is kept but counts for nothing. The “one take tells you little” card builds its numbers from the profile's own rules (`src/core/analysis/profileRules.ts`). A content test holds every card to the house word budget (the longest each part had before), checks every link's page, lesson, story, shape and focus, and the browser suite checks every link's `#` place.
 
+## Your focus first (decision 97, 2026-10-21)
+
+With a focus picked ("What do you want to get better at most?"), the Learn page opens its sets as a first group, **For your focus**, and leaves them out of Speaking and People; the next card (the page's band and the daily plan's card) comes from those sets until they are read. Telling stories → Stories you can tell; small talk and conversations → Conversation, Warmth; thinking on my feet → Getting your point across, Nerves; how I sound → Your voice; speaking at work → Speaking at work, Getting your point across; a talk coming up → Nerves, Getting your point across.
+
 ## Every card ends in practice (decision 96, 2026-10-21)
 
 The user asked that "at the end of each card" there is a link "to a practice session that you think is most applicable". Every card now has one (`tryIt` is required in `LearnCard`), shown as the last thing on the card: a full-width "Practise it" row under the last screen's content, after the scenario on cards that have one, with the deck's Next or Finish button below it.

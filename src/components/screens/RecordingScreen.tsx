@@ -1243,8 +1243,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         <section aria-label="Your microphone" className="flex flex-1 flex-col md:max-w-2xl md:pt-8">
           {/* What it is for */}
           <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">VoiceLab listens through your microphone.</h1>
-          {/* Where recordings go */}
-          <p className="mt-4 max-w-[48ch] text-lede">Recordings stay on this device. Your browser turns speech into text (Google in Chrome, Apple in Safari). Choose Allow next.</p>
+          {/* Where recordings go, and who turns speech into text (the browser's speech recognition usually sends the audio to Apple or Google; decision 97) */}
+          <p className="mt-4 max-w-[48ch] text-lede">VoiceLab keeps your recordings on this device. To show your words, your browser’s speech recognition turns them into text; on most phones and in Chrome, Apple or Google does that on their servers. Choose Allow next.</p>
           {/* Back without asking (just under the words, so the action band never covers it) */}
           <p className="mt-4">
             <button type="button" onClick={() => setStage("ready")} className={QUIET}>Not now</button>

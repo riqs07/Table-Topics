@@ -134,6 +134,32 @@ describe("importing over existing data", () => {
     expect([settings.focusIndex, settings.stammer, Object.keys(settings.learn ?? {}).sort(), settings.learn?.a?.box, Object.keys(settings.scenarios ?? {}), settings.warmupDays, settings.missions?.map((mission) => `${mission.id}:${mission.status}`)]).toEqual([1, true, ["a", "b"], 2, ["s"], ["2026-10-01", "2026-10-12"], ["m0:skipped", "m1:done"]]);
   });
 
+  // What to get better at goes into the file and comes back; a file without it keeps this device's, and unknown areas in an edited file are dropped (decision 97)
+  it("exports and imports what you want to get better at", async () => {
+    // A device with a focus
+    const source = await seededRepository();
+    // Stories and voice
+    await source.saveSettings({ ...(await source.getSettings(NOW)), practiceFocus: ["stories", "voice"] });
+    // Its export
+    const file = await buildExport(source, NOW);
+    // A fresh device imports it
+    const fresh = createRepository(new MemoryStore());
+    // Import
+    await importExport(fresh, parseExport(JSON.stringify(file)), NOW);
+    // A device with its own focus imports a file from before the focus existed
+    const kept = createRepository(new MemoryStore());
+    // Its focus
+    await kept.saveSettings({ ...(await kept.getSettings(NOW)), practiceFocus: ["work"] });
+    // The old file has no focus
+    await importExport(kept, parseExport(JSON.stringify({ ...file, settings: { ...file.settings, practiceFocus: undefined } })), NOW);
+    // An edited file names an area that does not exist
+    const edited = createRepository(new MemoryStore());
+    // Import it
+    await importExport(edited, parseExport(JSON.stringify({ ...file, settings: { ...file.settings, practiceFocus: ["nonsense", "talk", "talk"] } })), NOW);
+    // Confirm the file holds it, and each device's result
+    expect([file.settings.practiceFocus, (await fresh.getSettings(NOW)).practiceFocus, (await kept.getSettings(NOW)).practiceFocus, (await edited.getSettings(NOW)).practiceFocus]).toEqual([["stories", "voice"], ["stories", "voice"], ["work"], ["talk"]]);
+  });
+
   // A challenge done here stays done when an older file says it is not
   it("keeps a challenge marked done", async () => {
     // A device where the challenge is done

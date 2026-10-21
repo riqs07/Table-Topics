@@ -73,8 +73,8 @@ export function ConversationsScreen(props: ScreenProps) {
           );
         })}
       </ul>
-      {/* Where the voices come from */}
-      <p className="mt-4 text-footnote text-ink-muted">Their voices are AI recordings by ElevenLabs.</p>
+      {/* Where the voices come from, and where your words go (decision 97) */}
+      <p className="mt-4 text-footnote text-ink-muted">Their voices are AI recordings by ElevenLabs. Your browser’s speech recognition, usually Apple’s or Google’s, turns what you say into text; with the coach, those words go to VoiceLab’s server to write their replies. No audio is kept.</p>
     </main>
   );
 }

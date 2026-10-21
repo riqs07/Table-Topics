@@ -47,6 +47,9 @@ import { PRESS, QUIET, RowLink, SECONDARY, TEXT_LINK } from "@/components/script
 import { CheckRow } from "@/components/script/CheckRow";
 // Load the shared heading look
 import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
+// Load the choice of what to get better at most, and the reader for the saved one (decision 97)
+import { FocusPicker } from "@/components/script/FocusPicker";
+import { readPracticeFocus } from "@/core/practiceFocus";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 // Load the deeper-analysis status check (decision 91)
@@ -444,6 +447,12 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         <PracticeTime settings={settings} onSave={(next, said) => void saveSettingsWith(next, said)} />
       </Section>}
 
+      {/* What the user wants to get better at most, changed at any time (decision 97) */}
+      {settings && <Section title="What you want to get better at" id="focus">
+        <p className="text-footnote text-ink-muted">Pick one or two. About half of each day’s practice comes from them, and Practice and Learn show them first.</p>
+        <FocusPicker value={readPracticeFocus(settings.practiceFocus) ?? []} onChange={(next) => void saveSettingsWith({ ...settings, practiceFocus: next }, next.length ? "Saved. Today’s practice follows it." : "Saved. Today’s practice is the usual mix.")} label="What you want to get better at" />
+      </Section>}
+
       {/* Whether Today shows the run (decision 78; named for what it holds, so it is not mistaken for the Today tab) */}
       {settings && <Section title="Practice days">
         <CheckRow checked={settings.hideStreak !== true} onChange={(event) => void saveSettingsWith({ ...settings, hideStreak: !event.target.checked }, "Saved.")} detail="Days practised in the last week, and your run. Two rest days a week never break a run, and two days in a row after a longer break win it back.">Show my practice days</CheckRow>
@@ -525,7 +534,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Export and import */}
       <Section title="Your data" id="your-data">
         {/* Where it lives */}
-        <p className="text-ink-muted">Everything stays on this device; your browser’s speech service (Google in Chrome, Apple in Safari) turns speech into text.{settings?.deepAnalysis ? " With deeper analysis on, each take’s recording is also sent once for analysis and not kept there." : ""}</p>
+        <p className="text-ink-muted">VoiceLab keeps your recordings, transcripts and settings on this device. Your browser’s speech recognition turns your words into text; in most browsers Apple or Google does that on their servers, so they hear the audio.{settings?.deepAnalysis ? " With deeper analysis on, each take’s recording is also sent once for analysis and not kept there." : ""}</p>
         {/* How safe it is from the browser clearing it, and when a copy was last saved (drawn in the browser only) */}
         {/* Room is kept for this line while it loads, so the sections below do not jump (decision 76) */}
         {!(today && safety) && <p aria-hidden="true" className="mt-2 min-h-12" />}

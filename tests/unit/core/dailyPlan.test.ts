@@ -1,7 +1,9 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the plan rules being checked
-import { dailyPlan, moreToDo, nextStepIndex, planHref, planMinutes, planProgress, planSkipped, stepKey } from "@/core/dailyPlan";
+import { dailyPlan, focusSuggestion, moreToDo, nextStepIndex, planHref, planMinutes, planProgress, planSkipped, stepKey, todaysFocusSuggestion } from "@/core/dailyPlan";
+// Load the focus areas (decision 97)
+import { FOCUS_AREAS, type FocusAreaId } from "@/core/practiceFocus";
 // Load the Learn rules, for a card read
 import { firstRead } from "@/core/learn";
 // Load the cards
@@ -276,3 +278,104 @@ describe("voice drills in the plan", () => {
   });
 });
 
+
+// The user's focus steers about half the day: the Learn card and the first pick come from it, the rest stays mixed (decision 97)
+describe("the plan with a focus", () => {
+  // An area by its id
+  const area = (id: FocusAreaId) => FOCUS_AREAS.find((item) => item.id === id)!;
+  // The plan for a regular user with a focus
+  const focused = (day: Date, practiceFocus: FocusAreaId[], extra: Partial<Parameters<typeof dailyPlan>[0]> = {}) => regularPlan(day, { practiceFocus, ...extra });
+  // The kinds of practice a step is, by its label
+  const storyStep = (label: string | undefined) => label === "Story" || label === "Guided story";
+
+  // No focus, or an empty one, is exactly the plan as it was, every day
+  it("keeps the usual plan without a focus", () => {
+    // Three weeks of days
+    const days = Array.from({ length: 21 }, (_, offset) => dayAfter(offset));
+    // Confirm the plan and "keep going" are the same with no focus as with none given
+    expect(days.every((day) => JSON.stringify(regularPlan(day)) === JSON.stringify(focused(day, [])) && JSON.stringify(moreToDo({ day, sessions: regular, focusId: "pausing", nextTalk: null }, regularPlan(day))) === JSON.stringify(moreToDo({ day, sessions: regular, focusId: "pausing", nextTalk: null, practiceFocus: [] }, regularPlan(day))))).toBe(true);
+  });
+
+  // With one focus: still four steps, card first, warm-up second, two picks in different lanes; the card and the first pick come from the focus every day
+  it("takes the card and the first pick from one focus, keeping the plan's shape", () => {
+    // Three weeks with a stories focus
+    const days = Array.from({ length: 21 }, (_, offset) => focused(dayAfter(offset), ["stories"]));
+    // The story cards
+    const storyCards = new Set(LEARN_CARDS.filter((card) => card.set === "stories").map((card) => card.id));
+    // Confirm the shape, a story card, a story pick, a different lane for the other pick, and that the other pick is not always a story
+    expect([
+      days.every((plan) => plan.length === 4 && plan[0]?.kind === "card" && plan[1]?.label === "Warm up"),
+      days.every((plan) => storyCards.has(plan[0]?.promptId ?? "")),
+      days.every((plan) => storyStep(plan[2]?.label)),
+      days.every((plan) => plan[2]?.lane !== plan[3]?.lane),
+      new Set(days.map((plan) => plan[3]?.lane)).size > 1,
+      days.filter((plan) => storyStep(plan[2]?.label) && plan[2]?.label === "Story").length > 0 && days.some((plan) => plan[2]?.label === "Guided story"),
+    ]).toEqual([true, true, true, true, true, true]);
+  });
+
+  // About half the steps come from the focus over a few weeks, and the rest still reaches every lane
+  it("makes about half the steps the focus's, the rest mixed", () => {
+    // Three weeks with a voice focus
+    const days = Array.from({ length: 21 }, (_, offset) => focused(dayAfter(offset), ["voice"]));
+    // Voice Learn cards
+    const voiceCards = new Set(LEARN_CARDS.filter((card) => card.set === "voice").map((card) => card.id));
+    // Steps that are the focus's: a voice card, or a delivery pick (voice drill, pause drill, skill drill)
+    const fromFocus = days.flatMap((plan) => plan.filter((step) => (step.kind === "card" && voiceCards.has(step.promptId)) || (step.lane === "delivery")));
+    // The other pick's lanes
+    const otherLanes = new Set(days.map((plan) => plan[3]?.lane));
+    // Confirm half of all steps, and that the other pick covers the other two lanes
+    expect([fromFocus.length / days.flatMap((plan) => plan).length, [...otherLanes].sort()]).toEqual([0.5, ["connection", "spot"]]);
+  });
+
+  // The same day gives the same plan, however often it is worked out, and the next day may differ
+  it("is the same all day, and takes the focus's kinds in turn", () => {
+    // Morning and evening of one day
+    const [morning, evening] = [focused(new Date(2026, 9, 16, 7), ["spot"]), focused(new Date(2026, 9, 16, 22), ["spot"])];
+    // The focus pick's labels over a week
+    const week = Array.from({ length: 7 }, (_, offset) => focused(dayAfter(offset), ["spot"])[2]?.label);
+    // Confirm the day is stable and the kinds take turns (Rapid Fire, a prepared speech and a lesson, never the same twice running)
+    expect([JSON.stringify(morning) === JSON.stringify(evening), new Set(week).size, week.some((label, index) => index > 0 && label === week[index - 1])]).toEqual([true, 3, false]);
+  });
+
+  // Two areas swap roles by day: one gives the card, the other the pick
+  it("shares the day between two areas, swapping each day", () => {
+    // Two days with stories and work
+    const [first, second] = [focused(dayAfter(0), ["stories", "work"]), focused(dayAfter(1), ["stories", "work"])];
+    // Which area each card and pick came from
+    const cardSet = (plan: ReturnType<typeof focused>) => LEARN_CARDS.find((card) => card.id === plan[0]?.promptId)?.set;
+    // A work pick is a work lesson, a work speech or an opening drill
+    const isWork = (label: string | undefined) => label === "Lesson" || label === "Prepared speech" || label === "Opening drill" || label === "Closing drill";
+    // The two days' roles
+    const roles = [first, second].map((plan) => (storyStep(plan[2]?.label) ? `story pick, ${cardSet(plan)} card` : isWork(plan[2]?.label) ? `work pick, ${cardSet(plan)} card` : "other"));
+    // Confirm they swap, and each card comes from the other area's sets
+    expect([...roles].sort()).toEqual(["story pick, work card", "work pick, stories card"]);
+  });
+
+  // The first days stay gentle: no prepared speech from a focus either, and the card and pick still come from it
+  it("keeps the first days gentle with a focus", () => {
+    // A new user's first three weeks of picks (no earlier days, so always the first days)
+    const picks = Array.from({ length: 21 }, (_, offset) => dailyPlan({ day: dayAfter(offset), sessions: [], focusId: "pausing", nextTalk: null, practiceFocus: ["work"] }));
+    // Confirm day one starts with free talk and no step is a prepared speech
+    expect([picks.every((plan) => plan[0]?.mode === "free"), picks.some((plan) => plan.some((step) => step.mode === "response"))]).toEqual([true, false]);
+  });
+
+  // A dated talk takes the focus's pick when the focus is that talk, and the other pick otherwise, so the focus is never lost
+  it("fits a talk coming up around the focus", () => {
+    // A talk with today's step
+    const nextTalk = { id: "talk1", title: "Team update", headline: "Rehearse the opening" };
+    // With the talk focus, and with a stories focus
+    const [talkFocus, storyFocus] = [focused(DAY, ["talk"], { nextTalk }), focused(DAY, ["stories"], { nextTalk })];
+    // Confirm where the rehearsal goes, and that the story pick stays
+    expect([talkFocus[2]?.mode, storyFocus[2]?.label && storyStep(storyFocus[2]?.label), storyFocus[3]?.mode]).toEqual(["rehearse", true, "rehearse"]);
+  });
+
+  // "Keep going" leads with the focus's next kind, and the suggestion follows the area leading today
+  it("leads 'keep going' and the suggestion with the focus", () => {
+    // The input and plan for a stories focus
+    const input = { day: DAY, sessions: regular, focusId: "pausing", nextTalk: null, practiceFocus: ["stories"] as FocusAreaId[] };
+    // Its "keep going"
+    const more = moreToDo(input, dailyPlan(input));
+    // Confirm a story first, at most four, and the suggestion
+    expect([storyStep(more[0]?.label), more.length <= 4, todaysFocusSuggestion(input)?.action, todaysFocusSuggestion(input)?.href.startsWith("/stories/tell?prompt="), todaysFocusSuggestion({ ...input, practiceFocus: [] }), focusSuggestion(area("talk"), DAY).href]).toEqual([true, true, "Tell another story", true, null, "/rehearse"]);
+  });
+});

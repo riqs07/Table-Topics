@@ -64,6 +64,20 @@ describe("Learn", () => {
     expect([sets[0]?.getAttribute("aria-label"), nextUp?.getAttribute("aria-label"), nextUp?.getAttribute("href"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([`Stories you can tell, 0 of ${LEARN_CARDS.filter((card) => card.set === "stories").length}`, `Nerves and presence, 0 of ${LEARN_CARDS.filter((card) => card.set === "nerves").length}`, "/learn/set?id=nerves", `/learn/card?id=${LEARN_CARDS[0]?.id}`]);
   });
 
+  // With a focus, its sets come first as their own group, and the next card is from them (decision 97)
+  it("puts the focus sets first, with the next card from them", async () => {
+    // A repository with a work focus
+    const repository = createRepository(new MemoryStore());
+    // The focus
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["work"] });
+    // Draw the page
+    render(<LearnScreen repository={repository} now={NOW} />);
+    // The focus group
+    const focus = await screen.findByRole("list", { name: "For your focus sets" });
+    // Confirm its sets, that it comes first, and that the next card is from it
+    expect([within(focus).getAllByRole("link").map((link) => link.getAttribute("href")), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).slice(1, 4), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([["/learn/set?id=work", "/learn/set?id=point"], ["Practise", "For your focus", "Speaking"], `/learn/card?id=${LEARN_CARDS.find((card) => card.set === "work")?.id}`]);
+  });
+
   // A set's page lists its cards as a path, with the next one marked
   it("opens a set's cards as a path", async () => {
     // A repository with the first card read

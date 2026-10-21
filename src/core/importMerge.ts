@@ -2,6 +2,8 @@
 
 // Load the record types
 import type { ChallengeRecord, LearnCardProgress, MissionRecord, ScenarioProgress, SessionRecord, SettingsRecord, TalkRecord } from "@/data/records";
+// Load the reader that makes a saved focus safe (decision 97)
+import { readPracticeFocus } from "@/core/practiceFocus";
 
 // The most warm-up days kept (the same as when they are saved)
 const WARMUP_DAYS_KEPT = 60;
@@ -93,6 +95,8 @@ export function mergeSettings(existing: SettingsRecord, incoming: SettingsRecord
   const warmupDays = existing.warmupDays || incoming.warmupDays ? [...new Set([...(existing.warmupDays ?? []), ...(incoming.warmupDays ?? [])])].sort().slice(-WARMUP_DAYS_KEPT) : undefined;
   // Steps put off: the later day's list
   const skipped = existing.skipped && incoming.skipped ? (incoming.skipped.day > existing.skipped.day ? incoming.skipped : existing.skipped) : (incoming.skipped ?? existing.skipped);
+  // The focus, made safe: an edited or damaged backup's unknown areas are dropped (decision 97)
+  const practiceFocus = readPracticeFocus(merged.practiceFocus);
   // Each joined part, only where there is one
-  return { ...merged, ...(learn ? { learn } : {}), ...(scenarios ? { scenarios } : {}), ...(wordsToWatch ? { wordsToWatch } : {}), ...(missions ? { missions } : {}), ...(warmupDays ? { warmupDays } : {}), ...(skipped ? { skipped } : {}) };
+  return { ...merged, ...(practiceFocus ? { practiceFocus } : {}), ...(learn ? { learn } : {}), ...(scenarios ? { scenarios } : {}), ...(wordsToWatch ? { wordsToWatch } : {}), ...(missions ? { missions } : {}), ...(warmupDays ? { warmupDays } : {}), ...(skipped ? { skipped } : {}) };
 }

@@ -43,7 +43,7 @@ flowchart LR
 ## Privacy boundaries
 
 - Saved recordings stay on the device.
-- Live transcription uses the browser's speech recognition. In most browsers this sends audio to the browser maker's servers, not ours. The user must be told. The spike confirms what happens on the user's phone (C5).
+- Live transcription uses the browser's speech recognition. In most browsers this sends audio to the browser maker's servers (Google in Chrome, Apple in Safari, Microsoft in Edge), not ours. The user is told before the microphone is first used, in Settings and on the conversation pages (decision 97). Chrome 139 and later can recognise on the device if a page asks (`processLocally`, with a one-time language download); the app does not ask yet.
 - If the Whisper fallback is used, audio goes to OpenAI through our server route. The user is told.
 - Only transcript text is sent to the AI coach, with the measured numbers. The user's own notes after listening back are sent too only if they switch on "Let the coach read my notes" in Settings (off by default; decision 31).
 - No accounts and no server database in v1.

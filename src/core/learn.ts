@@ -25,8 +25,15 @@ export function setProgress(set: LearnSetId, progress: LearnProgress): { read: n
   return { read: cards.filter((card) => progress[card.id]).length, total: cards.length };
 }
 
-// The next card to read: the first unread card, in set order
-export function nextCard(progress: LearnProgress): LearnCard | undefined {
-  // The first without progress
+// The next card to read: the first unread card in the sets asked for first (the user's focus, decision 97), in the order those sets are given, otherwise the first unread card in set order
+export function nextCard(progress: LearnProgress, firstSets: ReadonlyArray<LearnSetId> = []): LearnCard | undefined {
+  // Each preferred set in turn, its first unread card
+  for (const set of firstSets) {
+    // The set's first card without progress
+    const card = LEARN_CARDS.find((item) => item.set === set && !progress[item.id]);
+    // Found one
+    if (card) return card;
+  }
+  // The first without progress, anywhere
   return LEARN_CARDS.find((card) => !progress[card.id]);
 }

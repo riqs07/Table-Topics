@@ -1,5 +1,7 @@
 # Plan: today's practice
 
+**Changed 2026-10-21 (decision 97):** with a focus picked at the welcome or in Settings, the day's Learn card and first pick come from it and the rest stays mixed; the rule is in [plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md#the-daily-mix). The welcome's question is now "What do you want to get better at most?", and Start still opens day one's free talk.
+
 **Changed 2026-10-18 (decision 46):** the steps below are now three lanes, Delivery, On the spot and Connection, taking turns within each lane; see [plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md). The rest of this plan (the flow, retries, listening back) still holds.
 
 Agreed with the user on 2026-10-17. Today stops recommending one next step and serves a short practice the app plans each day: two or three steps, about 5 to 10 minutes including listening back, ready to start with one button. Practice and Skills stay for practising anything on your own.

@@ -284,6 +284,56 @@ test("Today's practice: day one speaks first, then the card, then on to the pick
   await expect(page.locator("[data-action-band]")).toContainText("Continue: step 3");
 });
 
+// The welcome's question steers the app: pick telling stories, still start by speaking, then Today, Practice and Learn follow it (decision 97)
+test("Focus: the welcome's pick steers Today, Practice and Learn", async ({ page }) => {
+  // Start at Today as a new user
+  await page.goto("/");
+  // Pick telling stories
+  await page.getByRole("button", { name: /^Telling stories/ }).click();
+  // Start
+  await page.getByRole("link", { name: "Start", exact: true }).click();
+  // Day one still starts by speaking (decision 78)
+  await expect(page.getByText("Today’s practice · step 1 of 4")).toBeVisible();
+  // Back on Today
+  await page.goto("/");
+  // The focus is named, and the first pick is a story
+  await expect(page.getByText("Getting better at:")).toContainText("telling stories");
+  // (the third step)
+  await expect(page.getByRole("link", { name: /^Step 3: (Story|Guided story)$/ })).toBeVisible();
+  // Practice puts Tell stories first
+  await page.goto("/practice");
+  // (its first heading)
+  await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^Tell stories\s*Your focus$/);
+  // Learn opens with the focus sets
+  await page.goto("/learn");
+  // (its group)
+  await expect(page.getByRole("list", { name: "For your focus sets" })).toBeVisible();
+});
+
+// Someone from before the question is asked once on Today, and the answer sticks (decision 97)
+test("Focus: an existing user answers the card on Today once", async ({ page }) => {
+  // Past the welcome, as someone who used the app before the question
+  await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+  // Today
+  await page.goto("/");
+  // The card under the steps
+  const card = page.getByRole("region", { name: "What do you want to get better at most?" });
+  // Pick how I sound
+  await card.getByRole("button", { name: "How I sound" }).click();
+  // Save
+  await card.getByRole("button", { name: "Save" }).click();
+  // The card goes and the focus is named
+  await expect(card).toHaveCount(0);
+  // (named)
+  await expect(page.getByText("Getting better at:")).toContainText("how I sound");
+  // After a reload, still answered
+  await page.reload();
+  // (no card)
+  await expect(page.getByRole("heading", { name: /short steps|Pick up where/ })).toBeVisible();
+  // (still no card)
+  await expect(page.getByRole("region", { name: "What do you want to get better at most?" })).toHaveCount(0);
+});
+
 // Storage left by another project at the same address (bugs B2 and B4)
 test("works when another app left a database called voicelab", async ({ page }) => {
   // Use the stand-in microphone and speech

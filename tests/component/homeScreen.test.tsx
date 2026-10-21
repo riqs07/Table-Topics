@@ -93,24 +93,123 @@ describe("HomeScreen", () => {
     expect([screen.queryByText(/This week:/), document.querySelector("main aside"), total, stepMinutes.reduce((sum, minutes) => sum + minutes, 0)]).toEqual([null, null, total, total]);
   });
 
-  // A brand-new user gets a greeting and one Start, straight into today's first step (decision 67), and the welcome does not come back
-  it("welcomes a new user with one Start, once", async () => {
+  // A brand-new user gets a greeting, one question (what to get better at most, one or two picks) and one Start, straight into today's first step, which is speaking (decisions 78 and 97); the welcome does not come back
+  it("welcomes a new user with the focus question and one Start, once", async () => {
+    // One repository for both visits
+    const repository = emptyRepository();
     // Draw the screen
-    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
+    render(<HomeScreen repository={repository} now={NOW} />);
     // Start
-    const skip = await screen.findByRole("link", { name: "Start" });
-    // Confirm the heading, the privacy line, what a session gives, no tabs to wander off by, and that Start leads into the first step
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/stay on this device/), !!screen.getByText("Every take ends with one change to try."), screen.queryByRole("navigation", { name: "Main" }), skip.getAttribute("href")]).toEqual(["Welcome to VoiceLab", true, true, null, FIRST_STEP]);
-    // Follow it
-    await userEvent.click(skip);
-    // Confirm today's practice shows behind it
+    const start = await screen.findByRole("link", { name: "Start" });
+    // The choices
+    const choices = within(screen.getByRole("group", { name: "What do you want to get better at most?" })).getAllByRole("button");
+    // Confirm the heading, what VoiceLab keeps, what a session gives, the question with six choices, no tabs, and that Start leads into the first step
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/VoiceLab keeps your recordings on this device/), !!screen.getByText("Every take ends with one change to try."), screen.getByRole("heading", { level: 2, name: "What do you want to get better at most?" }).tagName, choices.map((choice) => choice.firstChild?.textContent), screen.queryByRole("navigation", { name: "Main" }), start.getAttribute("href")]).toEqual(["Welcome to VoiceLab", true, true, "H2", ["Telling stories", "Small talk and conversations", "Thinking on my feet", "How I sound", "Speaking at work", "A talk coming up"], null, FIRST_STEP]);
+    // Pick three: the third replaces the first
+    for (const name of [/^Telling stories/, /^How I sound/, /^Speaking at work/]) await userEvent.click(screen.getByRole("button", { name }));
+    // Confirm two are picked
+    expect(screen.getAllByRole("button", { pressed: true }).map((button) => button.firstChild?.textContent)).toEqual(["How I sound", "Speaking at work"]);
+    // Follow Start
+    await userEvent.click(start);
+    // Confirm today's practice shows behind it, and the picks were saved
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Four short steps.");
+    // (saved)
+    await waitFor(async () => expect((await repository.getSettings(NOW)).practiceFocus).toEqual(["voice", "work"]));
     // Draw again, as on a later visit
     cleanup();
     // The later visit
-    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
-    // Confirm no welcome
-    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Four short steps.");
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // Confirm no welcome and no question card, and the focus named in the margin
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, screen.queryByRole("region", { name: "What do you want to get better at most?" }), !!(await screen.findByText("how I sound and speaking at work"))]).toEqual(["Four short steps.", null, true]);
+  });
+
+  // Start with nothing picked still starts speaking, and records the question as answered so Today does not ask again
+  it("starts without a pick, and does not ask again", async () => {
+    // One repository
+    const repository = emptyRepository();
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // Start at once
+    await userEvent.click(await screen.findByRole("link", { name: "Start" }));
+    // Confirm an empty answer was saved
+    await waitFor(async () => expect((await repository.getSettings(NOW)).practiceFocus).toEqual([]));
+  });
+
+  // Someone who was here before the question is asked once, on a card under the steps: Save keeps the picks, Not now puts it aside, and a failed save says so (decision 97)
+  it("asks an existing user once, gently, on Today", async () => {
+    // Someone with practice, who never saw the question
+    const repository = await pastDayOne();
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The card
+    const card = await screen.findByRole("region", { name: "What do you want to get better at most?" });
+    // Confirm the steps come first, and Save waits for a pick
+    expect([screen.getByRole("region", { name: "Today's practice" }).compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING, within(card).getByRole("button", { name: "Save" }).hasAttribute("disabled")]).toEqual([Node.DOCUMENT_POSITION_FOLLOWING, true]);
+    // Pick stories and save
+    await userEvent.click(within(card).getByRole("button", { name: "Telling stories" }));
+    // Save
+    await userEvent.click(within(card).getByRole("button", { name: "Save" }));
+    // Confirm it is saved, the card goes, and today's first pick is now a story
+    await waitFor(() => expect(screen.queryByRole("region", { name: "What do you want to get better at most?" })).toBeNull());
+    // (saved, and the plan follows)
+    expect([(await repository.getSettings(NOW)).practiceFocus, (await loadDailyPlan(repository, NOW)).steps[2]?.label]).toEqual([["stories"], expect.stringMatching(/^(Story|Guided story)$/)]);
+    // Another existing user puts it aside
+    cleanup();
+    // Their repository
+    const other = await pastDayOne();
+    // Draw it
+    render(<HomeScreen repository={other} now={NOW} />);
+    // Not now
+    await userEvent.click(within(await screen.findByRole("region", { name: "What do you want to get better at most?" })).getByRole("button", { name: "Not now" }));
+    // Confirm it is answered with nothing, and gone
+    await waitFor(async () => expect((await other.getSettings(NOW)).practiceFocus).toEqual([]));
+    // (gone)
+    await waitFor(() => expect(screen.queryByRole("region", { name: "What do you want to get better at most?" })).toBeNull());
+  });
+
+  // A save that fails says why and keeps the card to try again (T1)
+  it("says so when the focus cannot be saved", async () => {
+    // Someone with practice
+    const repository = await pastDayOne();
+    // The store refuses settings writes from now on
+    const saveSettings = repository.saveSettings.bind(repository);
+    // Refuse only the focus answer
+    repository.saveSettings = async (settings) => (settings.practiceFocus ? Promise.reject(new Error("The disk is full.")) : saveSettings(settings));
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The card
+    const card = await screen.findByRole("region", { name: "What do you want to get better at most?" });
+    // Pick and save
+    await userEvent.click(within(card).getByRole("button", { name: "How I sound" }));
+    // Save
+    await userEvent.click(within(card).getByRole("button", { name: "Save" }));
+    // Confirm the reason, and that Save can be pressed again
+    expect([(await within(card).findByRole("alert")).textContent, within(card).getByRole("button", { name: "Save" }).hasAttribute("disabled")]).toEqual(["That could not be saved. The browser said: “The disk is full.” Try again.", false]);
+  });
+
+  // Once the day is done, the main band follows the focus (decision 97)
+  it("suggests the focus's next thing once the day is done", async () => {
+    // Someone with practice and a stories focus
+    const repository = await pastDayOne();
+    // The focus
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["stories"] });
+    // Today's plan
+    const plan = await loadDailyPlan(repository, NOW);
+    // Do every step today: read the card, and record each session step
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), learn: { [plan.steps[0]!.promptId]: firstRead(NOW) } });
+    // Each other step: a round of quick scenarios, a warm-up routine, or a session
+    for (const step of plan.steps.slice(1)) {
+      // Quick scenarios: three answered today
+      if (step.kind === "scenarios") for (const scenario of SCENARIOS.slice(0, 3)) await saveScenarioAnswer(repository, scenario.id, "best", NOW);
+      // A warm-up routine, finished today
+      else if (step.kind === "warmup") await repository.saveSettings({ ...(await repository.getSettings(NOW)), warmupDays: ["2026-10-13"] });
+      // A session
+      else await repository.saveSession(makeSession({ id: `done-${step.promptId}`, mode: step.mode!, promptId: step.promptId, createdAt: new Date(2026, 9, 13, 9).toISOString() }));
+    }
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // Confirm the band
+    expect((await screen.findByRole("link", { name: /^Tell another story/ })).getAttribute("href")).toMatch(/^\/stories\/tell\?prompt=sp\d\d$/);
   });
 
   // Someone who already has sessions never sees the welcome

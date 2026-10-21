@@ -27,6 +27,8 @@ import { loadLearnProgress } from "@/data/learnProgress";
 import { loadScenarioProgress } from "@/data/scenarioProgress";
 // Load the scenario progress type
 import type { ScenarioProgress } from "@/data/records";
+// Load what the user wants to get better at most, and the order it gives the sets (decision 97)
+import { focusAreas, orderLearnGroups, readPracticeFocus, type FocusAreaId } from "@/core/practiceFocus";
 // Load the shared heading look
 import { SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
@@ -47,6 +49,8 @@ export function LearnScreen(props: ScreenProps) {
   const [scenarios, setScenarios] = useState<Record<string, ScenarioProgress> | null>(null);
   // Mission tries, once loaded (read here so the whole page appears at once; decision 76)
   const [missions, setMissions] = useState<MissionRecord[] | null>(null);
+  // What the user wants to get better at most (none until read; decision 97)
+  const [focus, setFocus] = useState<FocusAreaId[]>([]);
 
   // Load progress once in the browser
   useEffect(() => {
@@ -68,6 +72,8 @@ export function LearnScreen(props: ScreenProps) {
     repo.getSettings(today).then((settings) => {
       // Keep them if still open
       if (!cancelled) setMissions(settings.missions ?? []);
+      // And the focus
+      if (!cancelled) setFocus(readPracticeFocus(settings.practiceFocus) ?? []);
     });
     // Mark as closed
     return () => {
@@ -76,8 +82,8 @@ export function LearnScreen(props: ScreenProps) {
     };
   }, [repo, today]);
 
-  // The next card to read
-  const upNext = progress ? nextCard(progress) : undefined;
+  // The next card to read, from the focus's sets first
+  const upNext = progress ? nextCard(progress, focusAreas(focus).flatMap((area) => area.learnSets)) : undefined;
 
   // The set the next card is in
   const nextSet = upNext ? LEARN_SETS.find((set) => set.id === upNext.set) : undefined;
@@ -106,11 +112,11 @@ export function LearnScreen(props: ScreenProps) {
         <CourseCard href="/learn/scenarios" name="Quick scenarios" blurb="Choose the best reply, then say it aloud." icon={CardsIcon} done={scenarios ? Object.keys(scenarios).length : 0} total={SCENARIOS.length} count={`${QUICK_COUNT} at a time, ${SCENARIOS.length} in all`} />
       </div>
 
-      {/* The sets, as cards in two groups (Speaking, People); each opens its own page (decision 79) */}
-      {LEARN_GROUPS.map((group) => (
-        <section key={group.name} aria-labelledby={`group-${group.name}`}>
+      {/* The sets, as cards in two groups (Speaking, People); each opens its own page (decision 79); with a focus, its sets come first as "For your focus" (decision 97) */}
+      {orderLearnGroups(focus, LEARN_GROUPS).map((group) => (
+        <section key={group.name} aria-labelledby={`group-${group.name.replace(/\s+/g, "-")}`}>
           {/* The group's heading */}
-          <h2 id={`group-${group.name}`} className={`${SECTION_HEADING} mt-8`}>{group.name}</h2>
+          <h2 id={`group-${group.name.replace(/\s+/g, "-")}`} className={`${SECTION_HEADING} mt-8`}>{group.name}</h2>
           {/* Its sets */}
           <ul aria-label={`${group.name} sets`} className="mt-2 grid gap-3 md:grid-cols-2">
             {/* Each set */}

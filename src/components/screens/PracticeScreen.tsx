@@ -1,5 +1,5 @@
 "use client";
-// Practice: every kind of practice in one place, grouped (the conversation units as the next one and "See all", decision 95; stories second, decision 92; Read aloud with speaking on the spot and the openings drill reached from Today instead, decision 93), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
+// Practice: every kind of practice in one place, grouped, the groups of what the user wants to get better at first (decision 97; the conversation units as the next one and "See all", decision 95; stories second, decision 92; Read aloud with speaking on the spot and the openings drill reached from Today instead, decision 93), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
 
 // Load Next.js's link component
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MicrophoneStageIcon, CaretRightIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the Connect units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the next Connect unit (decision 95)
@@ -39,6 +39,13 @@ import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 import { TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
+// Load React's fragment, to place the groups in order
+import { Fragment, type ReactNode } from "react";
+// Load what the user wants to get better at most, and the order it gives the groups (decision 97)
+import { focusAreas, orderPracticeGroups, readPracticeFocus, type FocusAreaId, type PracticeGroupId } from "@/core/practiceFocus";
+
+// The groups in their usual order
+const USUAL_ORDER: ReadonlyArray<PracticeGroupId> = ["on-the-spot", "stories", "conversation", "voice", "skills"];
 
 // One kind of practice on the page
 interface Way {
@@ -84,15 +91,15 @@ function WayRow({ way }: { way: Way }) {
   );
 }
 
-// A group of rows under a run-in heading
-function Group({ id, title, ways, more }: { id: string; title: string; ways: ReadonlyArray<Way>; more?: { href: string; label: string } }) {
+// A group of rows under a run-in heading (a focus group says so beside its heading; decision 97)
+function Group({ id, title, ways, more, focus = false }: { id: string; title: string; ways: ReadonlyArray<Way>; more?: { href: string; label: string }; focus?: boolean }) {
   // The heading (with a link to everything, when there is one), then the rows between rules
   return (
     <section aria-labelledby={id} className="mt-8">
       {/* Heading, and the link to everything */}
       <div className="flex items-baseline justify-between gap-4">
         {/* Run-in heading */}
-        <h2 id={id} className={SECTION_HEADING}>{title}</h2>
+        <h2 id={id} className={SECTION_HEADING}>{title}{focus && <span className="ml-2 rounded-full bg-warm-tint px-2 py-0.5 align-middle text-footnote font-normal normal-case tracking-normal text-warm-ink">Your focus</span>}</h2>
         {/* Everything in this group */}
         {more && <Link href={more.href} className={`${TEXT_LINK} text-footnote`}>{more.label}</Link>}
       </div>
@@ -114,6 +121,26 @@ export function PracticeScreen(props: ScreenProps) {
   const [counts, setCounts] = useState<ReadonlyMap<string, number> | null>(null);
   // The Connect unit to suggest next (the first unit until the sessions are read; decision 95)
   const [unit, setUnit] = useState<UnitProgress>(() => nextUnit([]));
+  // What the user wants to get better at most, once read (none until then, so the page starts in its usual order; decision 97)
+  const [focus, setFocus] = useState<FocusAreaId[]>([]);
+
+  // Read the focus once in the browser
+  useEffect(() => {
+    // Wait for the browser
+    if (!today) return;
+    // Ignore the result if the page closes first
+    let cancelled = false;
+    // Read the settings, keeping the usual order if they cannot be read
+    repo.getSettings(today).then((settings) => {
+      // Keep the focus if still open
+      if (!cancelled) setFocus(readPracticeFocus(settings.practiceFocus) ?? []);
+    }, () => undefined);
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [repo, today]);
 
   // Count the lessons, readings and drills practised
   useEffect(() => {
@@ -157,6 +184,127 @@ export function PracticeScreen(props: ScreenProps) {
   // Today's story prompt (decision 92)
   const story = today ? storyPromptForDay(today) : null;
 
+  // The picked areas' groups, to mark them
+  const focusGroups = focusAreas(focus).map((area) => area.practiceGroup);
+  // Each group, by its id, so the focus can put its groups first
+  const groups: Record<PracticeGroupId, ReactNode> = {
+    // The "on-the-spot" group
+    "on-the-spot": (
+      <>
+          {/* Speaking on the spot */}
+          <Group
+            focus={focusGroups.includes("on-the-spot")}
+            id="on-the-spot"
+            title="Speak on the spot"
+            ways={[
+              // With "a talk coming up" as a focus: your own talk, rehearsed (the talk pages hidden from the menu by decision 49 come back for this focus only; decision 97)
+              ...(focus.includes("talk") ? [{ name: "Your talk", detail: "Rehearse a talk you’re giving", href: "/rehearse", icon: PresentationIcon }] : []),
+              // With speaking at work or a talk as a focus, the short speech comes first: an update, a pitch, a plan (decision 97)
+              ...(focus.includes("work") || focus.includes("talk") ? [{ name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon }] : []),
+              // Rapid Fire (once called Table Topic; decision 85)
+              { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon },
+              // A prepared speech
+              { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
+              // Free talk: anything, as long as you like (decision 73)
+              { name: "Free talk", detail: "Talk about anything, as long as you like", href: "/session?mode=free&prompt=free", icon: MicrophoneStageIcon },
+              // A short speech the user plans: topic and points (decision 73), here unless the focus put it first
+              ...(focus.includes("work") || focus.includes("talk") ? [] : [{ name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon }]),
+              // Reading aloud, moved here from Build a skill (decision 93)
+              { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills#readings", icon: BookOpenTextIcon },
+            ]}
+          />
+      </>
+    ),
+    // The "stories" group
+    "stories": (
+      <>
+          {/* Telling stories, and telling them again (decision 92) */}
+          <Group
+            focus={focusGroups.includes("stories")}
+            id="stories"
+            title="Tell stories"
+            more={{ href: "/stories", label: "See all" }}
+            ways={[
+              // Today's story prompt
+              { name: "Today’s story", detail: story ? story.title : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon },
+              // The user's own stories, told again
+              { name: "Tell one again", detail: "Your stories, a little better each time", href: "/stories#your-stories", icon: ArrowCounterClockwiseIcon },
+              // A guided story: the facts are given (decision 93)
+              { name: "Guided stories", detail: "You get the facts, you make it a story", href: "/stories#guided-stories", icon: SignpostIcon },
+              // A moment note, told properly
+              { name: "From your moments", detail: "A one-moment note, told properly", href: "/stories#from-moments", icon: SunHorizonIcon },
+            ]}
+          />
+      </>
+    ),
+    // The "conversation" group
+    "conversation": (
+      <>
+          {/* Everyday conversation: a whole conversation, the next of the seven units (the rest under "See all"), and the moment note (decision 95) */}
+          <Group
+            focus={focusGroups.includes("conversation")}
+            id="conversation"
+            title="Everyday conversation"
+            more={{ href: "/small-talk", label: "See all" }}
+            ways={[
+              // A whole conversation with one of four people (decision 83)
+              { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon },
+              // The next unit, straight to its page, with its next lesson or what you do in it
+              { name: unit.unit.name, detail: unit.nextLesson ? `Next: lesson ${unit.nextLesson.number}, ${unit.nextLesson.title}` : unit.unit.youDo, href: `/small-talk/unit?id=${unit.unit.id}`, icon: UNIT_ICONS[unit.unit.id] },
+              // One moment a day
+              { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon },
+            ]}
+          />
+      </>
+    ),
+    // The "voice" group
+    "voice": (
+      <>
+          {/* How you sound: warm-ups and voice drills, straight into the next of each (decision 80) */}
+          <Group
+            focus={focusGroups.includes("voice")}
+            id="voice"
+            title="Your voice"
+            more={{ href: "/voice", label: "See all" }}
+            ways={[
+              // A warm-up, nothing recorded
+              { name: "Warm-up", detail: "Three moves, one minute, nothing recorded", href: "/voice/warmup", icon: WindIcon },
+              // Clear sounds
+              { name: "Clear sounds", detail: `Next: ${nextVoice("clear").title}`, href: `/voice/drill?id=${nextVoice("clear").id}`, icon: TextAaIcon },
+              // Tricky words: the word lists, straight into the next one (listed on the Your voice page too, so both lists agree)
+              { name: "Tricky words", detail: nextTricky ? `Next: ${nextTricky.title}` : "Word lists to read aloud, 1 min", href: nextTricky ? `/session?mode=read&prompt=${nextTricky.id}` : "/voice#tricky-words", icon: TextTIcon },
+              // Volume
+              { name: "Volume", detail: `Next: ${nextVoice("volume").title}`, href: `/voice/drill?id=${nextVoice("volume").id}`, icon: SpeakerHighIcon },
+              // Pitch and stress
+              { name: "Pitch and stress", detail: `Next: ${nextVoice("pitch").title}`, href: `/voice/drill?id=${nextVoice("pitch").id}`, icon: WaveSineIcon },
+              // Tone
+              { name: "Tone", detail: `Next: ${nextVoice("tone").title}`, href: `/voice/drill?id=${nextVoice("tone").id}`, icon: MaskHappyIcon },
+              // Pausing: the pause drills, straight into the next one
+              { name: "Pausing", detail: nextPause ? `Next: ${nextPause.title}` : "Pause where the text is marked, 1 min", href: nextPause ? `/session?mode=pause&prompt=${nextPause.id}` : "/voice#pausing", icon: PauseIcon },
+              // Shadowing
+              { name: "Shadowing", detail: `Next: ${nextShadow.title}`, href: `/voice/shadow?id=${nextShadow.id}`, icon: RepeatIcon },
+            ]}
+          />
+      </>
+    ),
+    // The "skills" group
+    "skills": (
+      <>
+          {/* Building one skill: the lessons, one path in order (Read aloud moved up to speaking on the spot, decision 93) */}
+          <Group
+            focus={focusGroups.includes("skills")}
+            id="skills"
+            title="Build a skill"
+            more={{ href: "/skills", label: "See all" }}
+            ways={[
+              // Lessons: straight into the next one (decision 67), with where it sits on the path
+              { name: "Lessons", detail: nextLesson ? `Next: ${nextLesson.title} · ${nextLesson.number} of ${LESSONS.length}` : `${LESSONS.length} practical tips, 2 to 3 min each`, href: nextLesson ? `/session?mode=lesson&prompt=${nextLesson.id}` : "/skills#lessons", icon: GraduationCapIcon },
+            ]}
+          />
+      </>
+    ),
+  };
+
   // Draw the page
   return (
     <main id="main" className={PAGE}>
@@ -165,91 +313,8 @@ export function PracticeScreen(props: ScreenProps) {
       {/* The page's name, and how it relates to Today */}
       <PageTitle title="Practice">Anything, in any order. Your steps for the day are on Today.</PageTitle>
 
-      {/* Speaking on the spot */}
-      <Group
-        id="on-the-spot"
-        title="Speak on the spot"
-        ways={[
-          // Rapid Fire (once called Table Topic; decision 85)
-          { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon },
-          // A prepared speech
-          { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
-          // Free talk: anything, as long as you like (decision 73)
-          { name: "Free talk", detail: "Talk about anything, as long as you like", href: "/session?mode=free&prompt=free", icon: MicrophoneStageIcon },
-          // A short speech the user plans: topic and points (decision 73)
-          { name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon },
-          // Reading aloud, moved here from Build a skill (decision 93)
-          { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills#readings", icon: BookOpenTextIcon },
-        ]}
-      />
-
-      {/* Telling stories, and telling them again (decision 92) */}
-      <Group
-        id="stories"
-        title="Tell stories"
-        more={{ href: "/stories", label: "See all" }}
-        ways={[
-          // Today's story prompt
-          { name: "Today’s story", detail: story ? story.title : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon },
-          // The user's own stories, told again
-          { name: "Tell one again", detail: "Your stories, a little better each time", href: "/stories#your-stories", icon: ArrowCounterClockwiseIcon },
-          // A guided story: the facts are given (decision 93)
-          { name: "Guided stories", detail: "You get the facts, you make it a story", href: "/stories#guided-stories", icon: SignpostIcon },
-          // A moment note, told properly
-          { name: "From your moments", detail: "A one-moment note, told properly", href: "/stories#from-moments", icon: SunHorizonIcon },
-        ]}
-      />
-
-      {/* Everyday conversation: a whole conversation, the next of the seven units (the rest under "See all"), and the moment note (decision 95) */}
-      <Group
-        id="conversation"
-        title="Everyday conversation"
-        more={{ href: "/small-talk", label: "See all" }}
-        ways={[
-          // A whole conversation with one of four people (decision 83)
-          { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon },
-          // The next unit, straight to its page, with its next lesson or what you do in it
-          { name: unit.unit.name, detail: unit.nextLesson ? `Next: lesson ${unit.nextLesson.number}, ${unit.nextLesson.title}` : unit.unit.youDo, href: `/small-talk/unit?id=${unit.unit.id}`, icon: UNIT_ICONS[unit.unit.id] },
-          // One moment a day
-          { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon },
-        ]}
-      />
-
-      {/* How you sound: warm-ups and voice drills, straight into the next of each (decision 80) */}
-      <Group
-        id="voice"
-        title="Your voice"
-        more={{ href: "/voice", label: "See all" }}
-        ways={[
-          // A warm-up, nothing recorded
-          { name: "Warm-up", detail: "Three moves, one minute, nothing recorded", href: "/voice/warmup", icon: WindIcon },
-          // Clear sounds
-          { name: "Clear sounds", detail: `Next: ${nextVoice("clear").title}`, href: `/voice/drill?id=${nextVoice("clear").id}`, icon: TextAaIcon },
-          // Tricky words: the word lists, straight into the next one (listed on the Your voice page too, so both lists agree)
-          { name: "Tricky words", detail: nextTricky ? `Next: ${nextTricky.title}` : "Word lists to read aloud, 1 min", href: nextTricky ? `/session?mode=read&prompt=${nextTricky.id}` : "/voice#tricky-words", icon: TextTIcon },
-          // Volume
-          { name: "Volume", detail: `Next: ${nextVoice("volume").title}`, href: `/voice/drill?id=${nextVoice("volume").id}`, icon: SpeakerHighIcon },
-          // Pitch and stress
-          { name: "Pitch and stress", detail: `Next: ${nextVoice("pitch").title}`, href: `/voice/drill?id=${nextVoice("pitch").id}`, icon: WaveSineIcon },
-          // Tone
-          { name: "Tone", detail: `Next: ${nextVoice("tone").title}`, href: `/voice/drill?id=${nextVoice("tone").id}`, icon: MaskHappyIcon },
-          // Pausing: the pause drills, straight into the next one
-          { name: "Pausing", detail: nextPause ? `Next: ${nextPause.title}` : "Pause where the text is marked, 1 min", href: nextPause ? `/session?mode=pause&prompt=${nextPause.id}` : "/voice#pausing", icon: PauseIcon },
-          // Shadowing
-          { name: "Shadowing", detail: `Next: ${nextShadow.title}`, href: `/voice/shadow?id=${nextShadow.id}`, icon: RepeatIcon },
-        ]}
-      />
-
-      {/* Building one skill: the lessons, one path in order (Read aloud moved up to speaking on the spot, decision 93) */}
-      <Group
-        id="skills"
-        title="Build a skill"
-        more={{ href: "/skills", label: "See all" }}
-        ways={[
-          // Lessons: straight into the next one (decision 67), with where it sits on the path
-          { name: "Lessons", detail: nextLesson ? `Next: ${nextLesson.title} · ${nextLesson.number} of ${LESSONS.length}` : `${LESSONS.length} practical tips, 2 to 3 min each`, href: nextLesson ? `/session?mode=lesson&prompt=${nextLesson.id}` : "/skills#lessons", icon: GraduationCapIcon },
-        ]}
-      />
+      {/* The groups, the focus's first (decision 97) */}
+      {orderPracticeGroups(focus, USUAL_ORDER).map((id) => <Fragment key={id}>{groups[id]}</Fragment>)}
 
       {/* This week's challenge off the page */}
       {today && <WeeklyChallenge repo={repo} today={today} />}

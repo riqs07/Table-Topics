@@ -506,7 +506,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           {/* The coach could not be reached */}
           {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">The coach couldn’t be reached, so {persona.name} will use recorded lines here.</p>}
           {/* How it works */}
-          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. Answer out loud, then tap Done. {persona.name}’s voice is AI, by ElevenLabs.</p>
+          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. Answer out loud, then tap Done. {persona.name}’s voice is AI, by ElevenLabs. Your browser turns your words into text, usually through Apple or Google.</p>
           {/* No speech-to-text in this browser */}
           {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
           {/* Start, or another situation */}

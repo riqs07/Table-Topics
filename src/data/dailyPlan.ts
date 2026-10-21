@@ -3,13 +3,15 @@
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
 // Load the plan rules
-import { dailyPlan, moreToDo, planProgress, planSkipped, stepKey, type PlanStep } from "@/core/dailyPlan";
+import { dailyPlan, moreToDo, planProgress, planSkipped, stepKey, todaysFocusSuggestion, type PlanStep } from "@/core/dailyPlan";
 // Load the weekly focus rules
 import { currentFocus } from "@/core/focus";
 // Load the event-prep rules, for a talk coming up
 import { daysUntil, eventPlan, prepHeadline } from "@/core/eventPrep";
 // Load the calendar-day helper
 import { dayKey } from "@/core/dates";
+// Load the reader for the user's focus (decision 97)
+import { readPracticeFocus } from "@/core/practiceFocus";
 // Load the record types
 import type { SessionRecord, TalkRecord } from "@/data/records";
 // Load the repository type
@@ -43,6 +45,8 @@ export interface LoadedPlan {
   today: SessionRecord[];
   // More to do once the steps are done
   more: PlanStep[];
+  // With a focus, the one thing Today suggests once the steps are done (decision 97)
+  suggestion: { action: string; href: string; phrase: string } | null;
 }
 
 // Load today's practice (reads only; the weekly focus is worked out without saving it)
@@ -56,11 +60,11 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   // A talk coming up
   const talk = nextTalkFrom(await repository.listTalks(), now);
   // The steps
-  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [] };
+  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [], practiceFocus: readPracticeFocus(settings.practiceFocus) ?? [] };
   // The steps
   const steps = dailyPlan(input);
   // Hand back the steps, what is done, today's sessions, and more to do afterwards
-  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? []), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps) };
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? []), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps), suggestion: todaysFocusSuggestion(input) };
 }
 
 // Put a step off for today ("Can't speak now?"): it is not done, it is just not offered next; another day's skips are dropped (decision 77)

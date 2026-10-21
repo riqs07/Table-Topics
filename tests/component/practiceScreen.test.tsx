@@ -101,6 +101,24 @@ describe("PracticeScreen", () => {
     expect([screen.queryByRole("region", { name: "Your talks" }), screen.queryByText("Pitch"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/rehearse")]).toEqual([null, null, false]);
   });
 
+  // With a focus, its group comes first and says so; a talk coming up brings back "Your talk" and the short speech first (decision 97)
+  it("puts the focus group first", async () => {
+    // A repository with two areas picked
+    const repository = createRepository(new MemoryStore());
+    // How I sound and a talk coming up
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["voice", "talk"] });
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // Wait for the order to follow the focus
+    await waitFor(() => expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)[0]).toBe("Your voiceYour focus"));
+    // The headings in order
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
+    // The on-the-spot rows' names
+    const spot = within(screen.getByRole("region", { name: /^Speak on the spot/ })).getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent);
+    // Confirm the order, the marks, and the first rows
+    expect([headings.slice(0, 5), spot.slice(0, 3)]).toEqual([["Your voiceYour focus", "Speak on the spotYour focus", "Tell stories", "Everyday conversation", "Build a skill"], ["Your talk", "Short speech", "Rapid Fire"]]);
+  });
+
   // This week's challenge off the page lives here, and ticking it saves it as done
   it("marks the weekly challenge done", async () => {
     // A repository

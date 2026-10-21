@@ -43,6 +43,11 @@ import { firstFinishToday } from "@/data/dayCelebrated";
 import { practiceSessions } from "@/core/sessionHome";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
+// Load what the user wants to get better at most: the reader, the words for it, and saving it (decision 97)
+import { focusPhrase, readPracticeFocus, type FocusAreaId } from "@/core/practiceFocus";
+import { savePracticeFocus } from "@/data/practiceFocus";
+// Load the choice of areas
+import { FocusPicker } from "@/components/script/FocusPicker";
 
 // The number of steps as a word, for the headline ("Four short steps.")
 const STEP_COUNTS: Readonly<Record<number, string>> = { 1: "One", 2: "Two", 3: "Three", 4: "Four" };
@@ -101,6 +106,8 @@ interface HomeData {
   missions: MissionRecord[];
   // The one reminder to keep practice safe, if any (decision 64)
   nudge: SafetyNudge;
+  // What the user wants to get better at most: missing until asked, empty when left open (decision 97)
+  practiceFocus: FocusAreaId[] | undefined;
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
@@ -147,7 +154,56 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     celebrate: plan.done.length > 0 && plan.done.every(Boolean) && firstFinishToday(dayKey(now)),
     // The one reminder to keep practice safe, if any
     nudge: safetyNudge(await readSafetyFacts(sessions.length, now)),
+    // What the user wants to get better at most
+    practiceFocus: readPracticeFocus(settings.practiceFocus),
   };
+}
+
+// The question for someone who was here before it was asked (decision 97): a short card under today's steps, answered or put aside once
+function FocusAsk({ onAnswer }: { onAnswer: (picks: FocusAreaId[]) => Promise<void> }) {
+  // The areas picked so far
+  const [picks, setPicks] = useState<FocusAreaId[]>([]);
+  // Whether an answer is being saved
+  const [saving, setSaving] = useState(false);
+  // What went wrong saving, if anything
+  const [problem, setProblem] = useState<string | null>(null);
+  // Save an answer (an empty one puts the question aside), saying so if it fails
+  async function answer(chosen: FocusAreaId[]) {
+    // Saving
+    setSaving(true);
+    // Clear any earlier problem
+    setProblem(null);
+    // Try to save
+    try {
+      // Save it (the card goes once Today reloads)
+      await onAnswer(chosen);
+    } catch (error: unknown) {
+      // Say why, so it can be tried again
+      setProblem(error instanceof Error ? error.message : String(error));
+      // Ready to try again
+      setSaving(false);
+    }
+  }
+  // The card
+  return (
+    <section aria-labelledby="focus-ask" className={`mt-8 p-5 ${CARD}`}>
+      {/* The question */}
+      <h2 id="focus-ask" className="font-display text-cue font-semibold tracking-tight">What do you want to get better at most?</h2>
+      {/* What it does */}
+      <p className="mt-1 text-footnote text-ink-muted">Pick one or two, and today’s practice leans that way.</p>
+      {/* The choices, names only */}
+      <FocusPicker value={picks} onChange={setPicks} label="What do you want to get better at most?" compact />
+      {/* A save that failed: why, with the buttons still there to try again */}
+      {problem !== null && <p role="alert" className="mt-3 text-footnote">That could not be saved. The browser said: “{problem}” Try again.</p>}
+      {/* Save, or put it aside */}
+      <p className="mt-4 flex flex-wrap gap-3">
+        {/* Save the picks */}
+        <button type="button" disabled={saving || picks.length === 0} onClick={() => void answer(picks)} className={PRIMARY}>Save</button>
+        {/* Not now: answered with nothing, so it does not come back (Settings can still set it) */}
+        <button type="button" disabled={saving} onClick={() => void answer([])} className={SECONDARY}>Not now</button>
+      </p>
+    </section>
+  );
 }
 
 // Draw the Home screen
@@ -190,12 +246,29 @@ export function HomeScreen(props: ScreenProps) {
     setAttempt(attempt + 1);
   }
 
-  // Answer or skip the welcome, so it does not come back
+  // The areas picked at the welcome, before Start
+  const [welcomePicks, setWelcomePicks] = useState<FocusAreaId[]>([]);
+
+  // Answer the welcome with what was picked (or nothing), so it does not come back; Start goes on to the first step at once, and the plan reloads with the focus behind it
   function finishWelcome() {
     // Remember it in this browser
     markWelcomeSeen();
     // Show Today as usual
     if (data) setData({ ...data, showWelcome: false });
+    // Nothing to save before the time is known
+    if (!today) return;
+    // Save the picks (an empty list too, so Today does not ask again), then reload today's plan with them; if saving fails, Today simply asks again next time
+    void savePracticeFocus(repo, welcomePicks, today).then(() => setAttempt((count) => count + 1), () => undefined);
+  }
+
+  // Save the answer from Today's card (or put the question aside with an empty answer), then reload the plan with it
+  async function answerFocus(picks: FocusAreaId[]) {
+    // Nothing to save before the time is known
+    if (!today) return;
+    // Save it
+    await savePracticeFocus(repo, picks, today);
+    // Reload today's plan and the rest with it
+    setAttempt((count) => count + 1);
   }
 
   // Today's practice, once the data is in
@@ -215,7 +288,7 @@ export function HomeScreen(props: ScreenProps) {
   // This week's focus, once there is practice it can be about (with none yet, "This week: strong opening." read as a verdict on nothing; round 4)
   const showFocus = !!data && !data.showWelcome && data.run.any;
   // Whether the margin has anything in it; with nothing, the page is one centred column instead of an empty left column on a computer
-  const margin = !!data && !data.showWelcome && (runLines.length > 0 || (!data.hideStreak && data.run.any) || showFocus || !!data.anchor || !!data.week);
+  const margin = !!data && !data.showWelcome && (runLines.length > 0 || (!data.hideStreak && data.run.any) || showFocus || !!data.anchor || !!data.week || !!data.practiceFocus?.length);
 
   // Draw the page
   return (
@@ -263,6 +336,8 @@ export function HomeScreen(props: ScreenProps) {
           )}
           {/* This week's focus, in a few words (held back during the welcome, which asks one thing only) */}
           {showFocus && <p className="md:mt-3">This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
+          {/* What the user wants to get better at most, once chosen (decision 97) */}
+          {data && !data.showWelcome && !!data.practiceFocus?.length && <p className="mt-1">Getting better at: <em className="text-ink">{focusPhrase(data.practiceFocus)}</em>.</p>}
           {/* When the user practises, in their words (decision 78) */}
           {data && !data.showWelcome && data.anchor && <p className="mt-1">Your time: <em className="text-ink">{data.anchor}</em>.</p>}
           {/* On a computer, the week's summary in this column */}
@@ -276,11 +351,17 @@ export function HomeScreen(props: ScreenProps) {
             <section aria-label="Welcome" className="mt-8 md:mt-0">
               {/* The greeting */}
               <h1 className="font-display text-prompt font-semibold tracking-tight motion-safe:animate-rise md:text-prompt-xl">Welcome to VoiceLab</h1>
-              {/* What it is, and the privacy promise */}
-              <p className="mt-3 max-w-[52ch] text-lede">Practise speaking, privately. Your recordings stay on this device.</p>
+              {/* What it is, and what VoiceLab keeps (the speech recognition is explained before the microphone is first used; decision 97) */}
+              <p className="mt-3 max-w-[52ch] text-lede">Practise speaking, privately. VoiceLab keeps your recordings on this device.</p>
               {/* What a session gives (decision 78) */}
               <p className="mt-2 max-w-[52ch] text-lede">Every take ends with one change to try.</p>
-              {/* One way in: today's first step (the "what brings you here?" question went with decision 67; two of its three answers led to the same place) */}
+              {/* One question: what to get better at most, which steers the day's practice (decision 97) */}
+              <h2 id="focus-question" className="mt-8 font-display text-statement font-semibold tracking-tight">What do you want to get better at most?</h2>
+              {/* How many */}
+              <p className="mt-1 text-ink-muted">Pick one or two. You can change it in Settings.</p>
+              {/* The choices */}
+              <FocusPicker value={welcomePicks} onChange={setWelcomePicks} label="What do you want to get better at most?" />
+              {/* One way in: today's first step, which on day one is speaking (decisions 37 and 78); Start works with nothing picked */}
               <p className="mt-6"><Link href={firstStep} onClick={finishWelcome} className={PRIMARY}>Start</Link></p>
             </section>
           )}
@@ -341,6 +422,9 @@ export function HomeScreen(props: ScreenProps) {
             </section>
           )}
 
+          {/* Someone who was here before the question: asked once, gently, under the steps (decision 97) */}
+          {plan && data && data.practiceFocus === undefined && <FocusAsk onAnswer={answerFocus} />}
+
           {/* A reminder to keep practice safe, when one is due (decision 64) */}
           {data?.nudge && today && (
             <div className="mt-8">
@@ -385,7 +469,8 @@ export function HomeScreen(props: ScreenProps) {
           <div className="flex-1" />
           {/* The main action: start or carry on with today's practice, or practise more once it is done */}
           {plan && (nextIndex === -1 ? (
-            <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />
+            // Once done: with a focus, its one next thing; otherwise everything in Practice (decision 97)
+            plan.suggestion ? <ActionBand action={plan.suggestion.action} aside={`for ${plan.suggestion.phrase}`} href={plan.suggestion.href} /> : <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />
           ) : (
             <ActionBand action={doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={nextStep ? `Step ${nextIndex + 1} · ${stepWords(nextStep)}` : ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
           ))}

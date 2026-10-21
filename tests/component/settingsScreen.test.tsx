@@ -2,7 +2,7 @@
 // Load the test helpers from the test runner
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and finding things on it
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 // Load the tool for acting like a user
 import userEvent from "@testing-library/user-event";
 // Load the screen being checked
@@ -129,6 +129,24 @@ describe("SettingsScreen", () => {
     await userEvent.click(toggle);
     // Confirm on, then saved as hidden
     await waitFor(async () => expect([start, (await repository.getSettings(NOW)).hideStreak]).toEqual([true, true]));
+  });
+
+  // What to get better at can be changed here at any time, one or two areas (decision 97)
+  it("saves what you want to get better at", async () => {
+    // A repository with stories picked at the welcome
+    const repository = createRepository(new MemoryStore());
+    // The earlier answer
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["stories"] });
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // The choices
+    const group = await screen.findByRole("group", { name: "What you want to get better at" });
+    // Add work, then take stories off
+    await userEvent.click(within(group).getByRole("button", { name: /^Speaking at work/ }));
+    // Take stories off
+    await userEvent.click(within(group).getByRole("button", { name: /^Telling stories/ }));
+    // Confirm saved, and what was said
+    await waitFor(async () => expect([(await repository.getSettings(NOW)).practiceFocus, screen.getByRole("status").textContent]).toEqual([["work"], "Saved. Today’s practice follows it."]));
   });
 
   // "I stammer" switches pause-word counts off with it, and both are saved (decision 79)
