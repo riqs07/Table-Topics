@@ -291,7 +291,7 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
               {headline.map((summary) => (
                 <li key={summary.metric.id} data-metric={summary.metric.id} className="py-2">
                   {/* Name and recent value */}
-                  <p className="flex items-baseline justify-between gap-3"><span>{summary.metric.name}</span><span className="font-display text-lg font-semibold">{shown(summary.recent, summary.metric.unit)}</span></p>
+                  <p className="flex items-baseline justify-between gap-3"><span>{summary.metric.name}</span><span className="flex-none whitespace-nowrap font-display text-lg font-semibold">{shown(summary.recent, summary.metric.unit)}</span></p>
                   {/* Against the usual */}
                   <p className="text-footnote text-ink-muted">{trendWords(summary)}</p>
                   {/* A change that held for three takes */}
@@ -308,7 +308,7 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
                   {deeper.map((summary) => (
                     <li key={summary.metric.id} data-metric={summary.metric.id} className="py-2">
                       {/* Name and recent value */}
-                      <p className="flex items-baseline justify-between gap-3"><span>{summary.metric.name}</span><span className="font-display text-lg font-semibold">{shown(summary.recent, summary.metric.unit)}</span></p>
+                      <p className="flex items-baseline justify-between gap-3"><span>{summary.metric.name}</span><span className="flex-none whitespace-nowrap font-display text-lg font-semibold">{shown(summary.recent, summary.metric.unit)}</span></p>
                       {/* What it means */}
                       <p className="text-footnote text-ink-muted">{summary.metric.definition}</p>
                       {/* Against the usual */}
