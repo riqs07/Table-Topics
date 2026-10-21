@@ -58,7 +58,7 @@ describe("weekly summary", () => {
     // The message
     const message = buildSummaryMessage(input);
     // Confirm the heading, a row and last week's focus
-    expect([message.includes("## Speaking on the spot (10 takes, 4 this week)"), /\nSpeaking rate \| words\/min \| /.test(message), message.includes("Last week's focus: Breathe first.")]).toEqual([true, true, true]);
+    expect([message.includes("## Speaking on the spot (10 takes, 4 this week)"), /\nOverall pace \(with pauses\) \| words\/min \| /.test(message), message.includes("Last week's focus: Breathe first.")]).toEqual([true, true, true]);
   });
 
   // A reply is trimmed and must have a headline and a focus

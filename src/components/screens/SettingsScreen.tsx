@@ -564,11 +564,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Result of the last action, read out to screen readers (takes no room until there is one) */}
       <p role="status" className={message ? "mt-4 text-accent" : "sr-only"}>{message}</p>
 
-      {/* History, on its own page (decision 79) */}
-      <Section title="History">
-        <RowLink href="/history">See your practice history</RowLink>
-        {/* Every measure across takes, kept out of the main tabs (decision 90) */}
-        <div className="border-t border-rule"><RowLink href="/profile">Your speaking profile</RowLink></div>
+      {/* How you are doing: one way in, the profile, which holds the coach summary, check-ins, measures and the way to History (decisions 90 and 109) */}
+      <Section title="Your progress">
+        <RowLink href="/profile">Your speaking profile and history</RowLink>
       </Section>
 
       {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}

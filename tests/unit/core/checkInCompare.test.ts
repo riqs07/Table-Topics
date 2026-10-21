@@ -63,7 +63,7 @@ describe("comparing check-ins", () => {
     // Each row's verdict and note
     const rows = read.rows.map((row) => [row.metric.id, row.verdict, row.note]);
     // Confirm the rows, and the lines (biggest first, measured against each measure's usual wobble; "better" only where the measure has a better side)
-    expect([rows, read.lines]).toEqual([[["flu.articulation_rate_wpm", "changed", null], ["lang.fillers_per_min", "better", null], ["flu.pause_rate", "same", null], ["flu.midclause_pause_share", "better", "phone’s measure"], ["pro.f0_range_st", "better", null], ["pro.loudness_cv", "same", null]], ["Pitch range: 5 semitones → 8 semitones, wider, better.", "Pause words: 4/min → 1.5/min, fewer, better.", "Speaking pace: 190 words/min → 160 words/min, slower."]]);
+    expect([rows, read.lines]).toEqual([[["flu.articulation_rate_wpm", "changed", null], ["lang.fillers_per_min", "better", null], ["flu.pause_rate", "same", null], ["flu.midclause_pause_share", "better", "phone’s measure"], ["pro.f0_range_st", "better", null], ["pro.loudness_cv", "same", null]], ["Pitch range: 5 semitones → 8 semitones, wider, better.", "Pause words: 4/min → 1.5/min, fewer, better.", "Pace while talking (pauses left out): 190 words/min → 160 words/min, slower."]]);
   });
 
   // Values from different engines are not judged when the phone's own are not there for both

@@ -373,11 +373,11 @@ describe("SettingsScreen", () => {
     await waitFor(async () => expect([before, (await repository.getSettings(NOW)).shareNotes]).toEqual([false, true]));
   });
 
-  // History has its own page; Settings links to it (decision 79)
-  it("links to the history page", async () => {
+  // How you are doing has one way in from Settings: the profile, which leads on to History (decision 109)
+  it("links to your progress once, and not to History directly", async () => {
     // Draw Settings
     render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the link
-    expect((await screen.findByRole("link", { name: "See your practice history" })).getAttribute("href")).toBe("/history");
+    // Confirm the one link, and none to History or the profile besides
+    expect([(await screen.findByRole("link", { name: "Your speaking profile and history" })).getAttribute("href"), screen.getAllByRole("link").filter((link) => ["/history", "/profile"].includes(link.getAttribute("href") ?? "")).length]).toEqual(["/profile", 1]);
   });
 });

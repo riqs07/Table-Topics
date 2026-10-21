@@ -20,6 +20,8 @@ import { buildAnalysis, withRubric } from "@/core/analysis/analysis";
 import { sampleSessions } from "@/data/sampleData";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
+// Load the check-in id maker
+import { checkInId } from "@/core/checkIn";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 21, 18);
@@ -52,6 +54,39 @@ describe("ProfileScreen", () => {
     expect([(await screen.findByText(/No takes measured yet/)).textContent?.includes("Practice"), screen.getByRole("heading", { level: 1 }).textContent]).toEqual([true, "Your speaking profile"]);
   });
 
+  // The one place for how you are doing (decision 109): named "Your progress" in the masthead, the check-ins in their own section before the measures, every measure folded, and History reached from here
+  it("puts the check-ins before the measures, under Your progress", async () => {
+    // The sample takes, plus two check-ins' reading takes a week apart
+    const repository = await sampleRepository();
+    // Each check-in's reading
+    for (const [week, day] of [[1, new Date(2026, 9, 6, 9)], [2, new Date(2026, 9, 13, 9)]] as const) await repository.saveSession(makeSession({ id: `ci-${week}`, createdAt: day.toISOString(), mode: "read", promptId: "ci-read", marker: true, checkIn: { id: checkInId(day), week, part: "read" } }));
+    // Draw it
+    render(<ProfileScreen repository={repository} now={NOW} />);
+    // The check-ins section
+    const checkIns = await screen.findByRole("region", { name: "Check-ins" });
+    // The first measures group, and the fold of every measure
+    const language = await screen.findByRole("region", { name: "Language" });
+    // Confirm the masthead's name, the order, the latest day and the links, the fold closed, and the way to History
+    expect([
+      screen.getByRole("banner").textContent?.includes("Your progress"),
+      !!(checkIns.compareDocumentPosition(language) & Node.DOCUMENT_POSITION_FOLLOWING),
+      within(checkIns).getByText("Tuesday 13 October") !== null,
+      within(checkIns).getAllByRole("link").map((link) => link.getAttribute("href")),
+      (screen.getByText(/^All measures/).closest("details") as HTMLDetailsElement).open,
+      screen.getByRole("link", { name: "Every session, in History" }).getAttribute("href"),
+    ]).toEqual([true, true, true, ["/check-in/compare", "/check-in"], false, "/history"]);
+  });
+
+  // Before the first check-in, the section says what it is and where to start
+  it("says what a check-in is before the first one", async () => {
+    // Draw it with nothing saved
+    render(<ProfileScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The section
+    const checkIns = await screen.findByRole("region", { name: "Check-ins" });
+    // Confirm the way to start
+    expect(within(checkIns).getByRole("link", { name: "Your first check-in" }).getAttribute("href")).toBe("/check-in");
+  });
+
   // Older takes are measured on opening, then the headline measures and every measure show
   it("measures earlier takes and shows the profile", async () => {
     // The sample takes
@@ -61,7 +96,7 @@ describe("ProfileScreen", () => {
     // The language group appears (the samples have no loudness, so no pause measures)
     const language = await screen.findByRole("region", { name: "Language" });
     // Confirm a headline measure, that every take was analysed, and the folded table lists internal measures too
-    expect([within(language).getByText("Speaking rate") !== null, (await repository.listAnalyses()).length > 0, screen.getByText(/^All measures/).closest("details")!.querySelectorAll("tbody tr").length > 10]).toEqual([true, true, true]);
+    expect([within(language).getByText("Overall pace (with pauses)") !== null, (await repository.listAnalyses()).length > 0, screen.getByText(/^All measures/).closest("details")!.querySelectorAll("tbody tr").length > 10]).toEqual([true, true, true]);
   });
 
   // With the passphrase set and no summary yet, the weekly summary is asked for and shown with its date

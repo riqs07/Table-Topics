@@ -48,7 +48,7 @@ function metric(id: string, name: string, definition: string, unit: string, grou
 // Every measure, grouped as on the profile page
 export const METRICS: ReadonlyArray<MetricDefinition> = [
   // Language: what was said, counted from the transcript
-  metric("lang.wpm", "Speaking rate", "Words per minute over the whole take, pauses included.", "words/min", "language", "device", "strong", true, "neither"),
+  metric("lang.wpm", "Overall pace (with pauses)", "Words per minute over the whole take, pauses included.", "words/min", "language", "device", "strong", true, "neither"),
   metric("lang.fillers_per_min", "Pause words", "Pause words (um, uh, like and similar) per minute, as heard by the speech service, which drops many. With deeper analysis, counted from a verbatim transcript that keeps them.", "/min", "language", "device", "moderate", true, "lower"),
   metric("lang.hedges_per_100w", "Hedges", "Softening phrases (sort of, kind of, I think maybe, just, I guess, probably…) per 100 words; see lexicon.ts for the list.", "/100 words", "language", "device", "moderate", false, "lower"),
   metric("lang.tag_questions_per_100w", "Tag questions", "Statements closed with right, you know, isn't it and similar, per 100 words.", "/100 words", "language", "device", "moderate", false, "lower"),
@@ -69,7 +69,7 @@ export const METRICS: ReadonlyArray<MetricDefinition> = [
   metric("lang.concreteness_mean", "Concreteness", "Average concreteness rating of content words (Brysbaert norms or the coach).", "1–5", "vocabulary", "transcript", "moderate", false, "higher", "B"),
   metric("rub.word_choice", "Word choice", "The coach's score for precise, vivid words, 0 to 3, with a quote.", "0–3", "vocabulary", "rubric", "weak", true, "higher"),
   // Fluency and timing
-  metric("flu.articulation_rate_wpm", "Speaking pace", "Words per minute of actual speaking time, with pauses of 0.25 seconds or more taken out.", "words/min", "fluency", "device", "strong", true, "neither"),
+  metric("flu.articulation_rate_wpm", "Pace while talking (pauses left out)", "Words per minute of actual speaking time, with pauses of 0.25 seconds or more taken out.", "words/min", "fluency", "device", "strong", true, "neither"),
   metric("flu.articulation_rate", "Articulation rate (syllables)", "Syllables per second of sounding time, counted from loudness peaks in the audio (de Jong and Wempe 2009), so it does not depend on the transcript.", "syll/s", "fluency", "voice", "strong", false, "neither", "B"),
   metric("flu.speech_rate", "Speech rate (syllables)", "Syllables per second over the whole take, pauses included, from the same loudness peaks.", "syll/s", "fluency", "voice", "strong", false, "neither", "B"),
   metric("flu.phonation_ratio", "Time speaking", "Share of the time from first word to last spent speaking rather than pausing.", "%", "fluency", "device", "strong", false, "neither"),

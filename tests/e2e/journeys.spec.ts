@@ -117,10 +117,12 @@ test("Rehearse my talk: save, rehearse, saved session, history", async ({ page }
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // It names the talk that was rehearsed
   await expect(page.getByText(/Team update/).first()).toBeVisible();
-  // History, linked from Settings, lists it (decision 79)
+  // History, reached from Settings through your progress (decision 109), lists it
   await page.locator("header").getByRole("link", { name: "Settings" }).click();
+  // Your progress
+  await page.getByRole("link", { name: "Your speaking profile and history" }).click();
   // Open the history page
-  await page.getByRole("link", { name: "See your practice history" }).click();
+  await page.getByRole("link", { name: "Every session, in History" }).click();
   // At least one session row
   await expect(page.getByRole("link", { name: /Team update|Rehearsal/ }).first()).toBeVisible();
 });

@@ -1,7 +1,7 @@
 # Measurements
 
 **Purpose:** Every measure VoiceLab records about a take, where it comes from, how strong the evidence is, and how measures are turned into the speaking profile and the weekly summary.
-**Last updated:** 2026-10-21 (decision 93: guided stories' measures; decision 92: story measures and the story coach's scores; decision 91: stage B, deeper analysis on the server)
+**Last updated:** 2026-10-21 (decision 109: the two pace measures renamed, "Overall pace (with pauses)" and "Pace while talking (pauses left out)"; decision 93: guided stories' measures; decision 92: story measures and the story coach's scores; decision 91: stage B, deeper analysis on the server)
 **Source of truth:** the registry in `src/core/analysis/metrics.ts`. The tables below are generated from it; if they disagree, the code wins and this file is out of date (a unit test, `tests/unit/core/analysis/registryDoc.test.ts`, fails when a row here differs from the registry). The research behind the choices is in [../research/speech-analysis-2026-10.md](../research/speech-analysis-2026-10.md) (sections 3, 5, 6 and 7).
 
 ## How a take is measured
@@ -112,7 +112,7 @@ Stage A measures are computed on the phone or by the coach's rubric. Stage B mea
 
 | id | Name | Definition | Unit | Source | Evidence | Shown | Better | Stage |
 |---|---|---|---|---|---|---|---|---|
-| `flu.articulation_rate_wpm` | Speaking pace | Words per minute of actual speaking time, with pauses of 0.25 seconds or more taken out. | words/min | device | strong | shown | neither | A |
+| `flu.articulation_rate_wpm` | Pace while talking (pauses left out) | Words per minute of actual speaking time, with pauses of 0.25 seconds or more taken out. | words/min | device | strong | shown | neither | A |
 | `flu.articulation_rate` | Articulation rate (syllables) | Syllables per second of sounding time, counted from loudness peaks in the audio (de Jong and Wempe 2009), so it does not depend on the transcript. | syll/s | voice | strong | internal | neither | B |
 | `flu.speech_rate` | Speech rate (syllables) | Syllables per second over the whole take, pauses included, from the same loudness peaks. | syll/s | voice | strong | internal | neither | B |
 | `flu.phonation_ratio` | Time speaking | Share of the time from first word to last spent speaking rather than pausing. | % | device | strong | internal | neither | A |
@@ -158,7 +158,7 @@ Stage A measures are computed on the phone or by the coach's rubric. Stage B mea
 
 | id | Name | Definition | Unit | Source | Evidence | Shown | Better | Stage |
 |---|---|---|---|---|---|---|---|---|
-| `lang.wpm` | Speaking rate | Words per minute over the whole take, pauses included. | words/min | device | strong | shown | neither | A |
+| `lang.wpm` | Overall pace (with pauses) | Words per minute over the whole take, pauses included. | words/min | device | strong | shown | neither | A |
 | `lang.fillers_per_min` | Pause words | Pause words (um, uh, like and similar) per minute, as heard by the speech service, which drops many. With deeper analysis, counted from a verbatim transcript that keeps them. | /min | device | moderate | shown | lower | A |
 | `lang.hedges_per_100w` | Hedges | Softening phrases (sort of, kind of, I think maybe, just, I guess, probably…) per 100 words; see lexicon.ts for the list. | /100 words | device | moderate | internal | lower | A |
 | `lang.tag_questions_per_100w` | Tag questions | Statements closed with right, you know, isn't it and similar, per 100 words. | /100 words | device | moderate | internal | lower | A |

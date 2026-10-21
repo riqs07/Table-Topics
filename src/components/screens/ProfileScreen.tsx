@@ -1,5 +1,5 @@
 "use client";
-// Your speaking profile (decision 90): the latest weekly coach summary, each family of practice with a few headline measures (usual against recent), changes that held, patterns, word habits, and every measure folded away; with ?session=ID, one take's full table of measures
+// Your speaking profile, the one place for how you are doing (decisions 90 and 109): the latest weekly coach summary, then the check-ins (the latest, and the way to compare), then each family of practice with a few headline measures (usual against recent), changes that held, patterns, word habits, and every measure folded away; with ?session=ID, one take's full table of measures
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -36,7 +36,7 @@ import { readPassphrase } from "@/data/passphrase";
 // Load the record types
 import type { AnalysisRecord, SessionRecord, SummaryRecord } from "@/data/records";
 // Load the check-in grouping, worked out from the sessions already read (decision 100)
-import { groupCheckIns, recordedCheckIns, shortDay } from "@/core/checkIn";
+import { dayWords, groupCheckIns, recordedCheckIns, shortDay } from "@/core/checkIn";
 
 // What the screen can be given
 interface ProfileScreenProps extends ScreenProps {
@@ -127,8 +127,8 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
   // Draw the page
   return (
     <main id="main" className={PAGE}>
-      {/* The section it sits in, with the settings gear marked */}
-      <Masthead title="Settings" section="settings" />
+      {/* The area it heads, the one place for how you are doing, reached from Settings with the gear marked (decision 109) */}
+      <Masthead title="Your progress" section="settings" />
       {/* The way back: to the take, or to Settings */}
       <p className="mt-2">{sessionId ? <Link href={`/sessions?id=${encodeURIComponent(sessionId)}`} className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to the take</Link> : <Link href="/settings" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to Settings</Link>}</p>
       {/* The page's name */}
@@ -160,8 +160,8 @@ function WholeProfile({ loaded, now, summaryNote }: { loaded: Loaded; now: Date;
       {latest && <SummaryCard summary={latest} now={now} />}
       {/* Why a summary did not come this time */}
       {summaryNote && <p className="mt-2 text-footnote text-ink-muted">{summaryNote}</p>}
-      {/* The weekly check-ins, from the same read of the sessions (decision 100) */}
-      <CheckInStrip sessions={loaded.sessions} />
+      {/* The weekly check-ins, from the same read of the sessions (decision 100), as their own section (decision 109) */}
+      <CheckIns sessions={loaded.sessions} />
       {/* Nothing measured yet */}
       {!family && <p className="mt-6 max-w-[48ch] text-lede">No takes measured yet. Record one in <Link href="/practice" className={TEXT_LINK} data-inline>Practice</Link> and its measures appear here.</p>}
       {/* The families, when there are several */}
@@ -173,28 +173,55 @@ function WholeProfile({ loaded, now, summaryNote }: { loaded: Loaded; now: Date;
       )}
       {/* The chosen family */}
       {family && <FamilyView family={family} profile={profile} />}
+      {/* Every session, newest first, on its own page (reached from here, decision 109) */}
+      <p className="mt-6"><Link href="/history" className={TEXT_LINK}>Every session, in History</Link></p>
     </>
   );
 }
 
-// The weekly check-ins in a line: how many, each one's day, and the way to compare the first with the latest (decision 100)
-function CheckInStrip({ sessions }: { sessions: ReadonlyArray<SessionRecord> }) {
+// The weekly check-ins as a section (decision 109): the latest one and how many, its day and the days before, and the way to compare; before the first, what it is and where to start
+function CheckIns({ sessions }: { sessions: ReadonlyArray<SessionRecord> }) {
   // The check-ins with takes, oldest first (worked out once per load)
   const [checkIns] = useState(() => recordedCheckIns(groupCheckIns(sessions, undefined)));
-  // None yet: nothing to show
-  if (checkIns.length === 0) return null;
-  // The strip
+  // The latest
+  const latest = checkIns.at(-1);
+  // The section
   return (
-    <section aria-label="Your check-ins" className={`mt-5 p-5 ${CARD}`}>
-      {/* What it is and how many */}
-      <p className={LABEL}>Weekly check-ins · {checkIns.length} so far</p>
-      {/* Each one's day, the latest six */}
-      <ul aria-label="Check-in days" className="mt-2 flex flex-wrap gap-1.5">
-        {/* One pill each */}
-        {checkIns.slice(-6).map((checkIn) => <li key={checkIn.id} className="rounded-full bg-paper px-3 py-1 text-footnote tabular-nums">{shortDay(checkIn.day)}</li>)}
-      </ul>
-      {/* Compare, or see them */}
-      <p className="mt-2"><Link href={checkIns.length >= 2 ? "/check-in/compare" : "/check-in"} className={TEXT_LINK}>{checkIns.length >= 2 ? "Compare first and latest" : "Your check-ins"}</Link></p>
+    <section aria-labelledby="check-ins" className="mt-6">
+      {/* Heading */}
+      <h2 id="check-ins" className={SECTION_HEADING}>Check-ins</h2>
+      {/* The card */}
+      <div className={`mt-2 p-5 ${CARD}`}>
+        {latest ? (
+          <>
+            {/* The latest, and how many */}
+            <p className={LABEL}>Latest · {checkIns.length === 1 ? "your first" : `${checkIns.length} so far`}</p>
+            {/* Its day */}
+            <p className="mt-1 font-display text-cue font-semibold tracking-tight">{dayWords(latest.day)}</p>
+            {/* The days before, the latest six */}
+            {checkIns.length > 1 && (
+              <ul aria-label="Check-in days" className="mt-2 flex flex-wrap gap-1.5">
+                {/* One pill each */}
+                {checkIns.slice(-6).map((checkIn) => <li key={checkIn.id} className="rounded-full bg-paper px-3 py-1 text-footnote tabular-nums">{shortDay(checkIn.day)}</li>)}
+              </ul>
+            )}
+            {/* Compare, then every check-in */}
+            <p className="mt-2 flex flex-wrap gap-x-5">
+              {/* Compare (it needs two) */}
+              {checkIns.length >= 2 && <Link href="/check-in/compare" className={TEXT_LINK}>Compare first and latest</Link>}
+              {/* Every check-in */}
+              <Link href="/check-in" className={TEXT_LINK}>All check-ins</Link>
+            </p>
+          </>
+        ) : (
+          <>
+            {/* What it is */}
+            <p className="text-lede">About 6 minutes once a week: the same four parts, so you can hear how you have changed.</p>
+            {/* Where to start */}
+            <p className="mt-2"><Link href="/check-in" className={TEXT_LINK}>Your first check-in</Link></p>
+          </>
+        )}
+      </div>
     </section>
   );
 }

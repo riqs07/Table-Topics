@@ -168,7 +168,7 @@ function Row({ row, now, talkTitles, pauseWords }: { row: HistoryRow; now: Date;
   );
 }
 
-// The History page on its own (reached from links; its home is a folded section of Settings, decision 56)
+// The History page on its own (reached from your progress, the profile, and from Today; decisions 56 and 109)
 export function HistoryScreen(props: ScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
@@ -176,16 +176,14 @@ export function HistoryScreen(props: ScreenProps) {
   return (
     // One column on a phone, margin plus main column on a computer
     <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
-      {/* The section it sits in, with the settings gear marked */}
-      <Masthead title="Settings" section="settings" />
-      {/* The way back to Settings, where it is reached from */}
-      <p className="mt-2"><Link href="/settings" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to Settings</Link></p>
+      {/* The area it sits in, your progress, with the settings gear marked (decision 109) */}
+      <Masthead title="Your progress" section="settings" />
+      {/* The way back to the profile, where it is reached from (decision 109) */}
+      <p className="mt-2"><Link href="/profile" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to your progress</Link></p>
       {/* The page's name, as its main heading (also in the empty state) */}
       <PageTitle title="History" />
       {/* The history itself */}
       <HistoryContent repo={repo} today={today} />
-      {/* Every measure across takes, in depth (decision 90) */}
-      <p className="mt-6"><Link href="/profile" className={TEXT_LINK}>See your speaking profile</Link></p>
     </main>
   );
 }
