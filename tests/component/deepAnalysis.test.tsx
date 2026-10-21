@@ -136,8 +136,8 @@ describe("Take page: the deeper-analysis note", () => {
 
   // Under way: says so; done: says nothing
   it("says when it is under way, and nothing when it is done", async () => {
-    // Under way
-    render(<SessionScreen sessionId="s1" repository={await takeRepository((analysis) => withDeepStatus(analysis, deepStatus("running", NOW.toISOString())))} now={NOW} />);
+    // Under way, started just now by the real clock (the page judges "under way" against the later of its date and the real time, so a start fixed at NOW read as stale once the real day passed NOW plus ten minutes)
+    render(<SessionScreen sessionId="s1" repository={await takeRepository((analysis) => withDeepStatus(analysis, deepStatus("running", new Date(Math.max(NOW.getTime(), Date.now())).toISOString())))} now={NOW} />);
     // Said
     const running = !!(await screen.findByText(DEEP_NOTES.running));
     // Cleared
