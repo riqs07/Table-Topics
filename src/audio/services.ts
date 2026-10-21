@@ -26,8 +26,8 @@ export interface LiveText {
 export interface LiveTranscriber {
   // Start listening; onText gets every update, onProblem gets a reason recording must stop
   start(onText: (text: LiveText) => void, onProblem: (problem: RecordingProblem) => void): void;
-  // Stop listening and hand back the full transcript
-  stop(): Promise<string>;
+  // Stop listening and hand back the full transcript, waiting at most the given milliseconds for the last words (a turn that ended by itself already waited for them; decision 101)
+  stop(maxWaitMs?: number): Promise<string>;
 }
 
 // Records the audio and reports how loud it is

@@ -15,6 +15,8 @@ export interface ConversationClientOptions {
   passphrase: string;
   // The network (replaced in tests)
   fetchFn?: typeof fetch;
+  // Cancels the request ("I wasn't finished"; decision 101)
+  signal?: AbortSignal;
 }
 
 // What is asked for: who, where, what is going on, the conversation so far, how far in, and whether the last turn was caught
@@ -52,13 +54,13 @@ function audioFrom(base64: string): Blob {
 }
 
 // The next line, or null when there is no passphrase, the route refuses, or it cannot be reached
-export async function nextLine(request: LineRequest, { passphrase, fetchFn = fetch }: ConversationClientOptions): Promise<WrittenLine | null> {
+export async function nextLine(request: LineRequest, { passphrase, fetchFn = fetch, signal }: ConversationClientOptions): Promise<WrittenLine | null> {
   // Without a passphrase the route would refuse
   if (!passphrase) return null;
   // The network can fail
   try {
     // The words of each turn only, never audio, each within the route's limits (the latest turns, each cut to size; the full words stay saved on the device)
-    const response = await fetchFn("/api/conversation", { method: "POST", headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase }, body: JSON.stringify({ ...request, turns: request.turns.slice(-MAX_TURNS).map((turn) => ({ who: turn.who, text: withinLimit(turn.text, TURN_MAX_CHARS) })) }) });
+    const response = await fetchFn("/api/conversation", { method: "POST", headers: { "content-type": "application/json", [PASSPHRASE_HEADER]: passphrase }, body: JSON.stringify({ ...request, turns: request.turns.slice(-MAX_TURNS).map((turn) => ({ who: turn.who, text: withinLimit(turn.text, TURN_MAX_CHARS) })) }), signal });
     // Refused or failed
     if (!response.ok) return null;
     // The reply

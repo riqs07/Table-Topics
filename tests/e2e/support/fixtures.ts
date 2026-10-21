@@ -222,10 +222,16 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Settings", path: "/settings" },
 ];
 
+// How the stand-in microphone sounds: a steady tone throughout (the default), or, for turns that end by themselves (decision 101), quiet, then the tone for speakMs, then quiet again, each time the microphone opens
+export interface StandInMic {
+  // How long the "voice" lasts each time, in milliseconds; left out, the tone never stops
+  speakMs?: number;
+}
+
 // Replace the microphone and speech recognition before any page script runs (the stand-in "hears" the given words, by default SPOKEN)
-export async function useStandIns(page: Page, spoken: string = SPOKEN): Promise<void> {
+export async function useStandIns(page: Page, spoken: string = SPOKEN, mic: StandInMic = {}): Promise<void> {
   // Runs inside the browser on every page load
-  await page.addInitScript((spoken: string) => {
+  await page.addInitScript(({ spoken, speakMs }: { spoken: string; speakMs: number | null }) => {
     // The words, one at a time
     const words = spoken.split(" ");
     // A stand-in for the browser's speech recognition that "hears" one word every quarter second
@@ -283,14 +289,27 @@ export async function useStandIns(page: Page, spoken: string = SPOKEN): Promise<
       const destination = context.createMediaStreamDestination();
       // The tone
       const tone = context.createOscillator();
-      // Connect and start it
-      tone.connect(destination);
+      // Its loudness
+      const gain = context.createGain();
+      // A voice that stops: quiet for the first 0.4 seconds, the tone, then quiet again
+      if (speakMs !== null) {
+        // Quiet now
+        gain.gain.setValueAtTime(0, context.currentTime);
+        // The tone after 0.4 seconds
+        gain.gain.setValueAtTime(1, context.currentTime + 0.4);
+        // Quiet again after the voice
+        gain.gain.setValueAtTime(0, context.currentTime + 0.4 + speakMs / 1000);
+      }
+      // Connect the tone through its loudness
+      tone.connect(gain);
+      // To the stream
+      gain.connect(destination);
       // Start the tone
       tone.start();
       // Hand the stream to the app
       return destination.stream;
     };
-  }, spoken);
+  }, { spoken, speakMs: mic.speakMs ?? null });
 }
 
 // The checks' own "test", which fails any check whose page logged an error (rule T5)

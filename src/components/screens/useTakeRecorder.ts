@@ -12,6 +12,9 @@ import { holdScreenAwake } from "@/audio/wakeLock";
 // Load the take type
 import type { TakeRecording } from "@/core/voiceFindings";
 
+// How long a quick stop waits for the last words, in milliseconds (a turn that ended by itself already waited for them; decision 101)
+const QUICK_STOP_MS = 500;
+
 // A finished take, with its audio
 export interface TakeResult extends TakeRecording {
   // The recorded audio
@@ -28,6 +31,18 @@ interface TakeRecorderOptions {
   raw: boolean;
   // Listen for words too (clear sounds and shadowing)
   words: boolean;
+  // Called with each reading (the time, the level, and the words so far, or null without a speech service), so a conversation can tell when a turn has ended (decision 101)
+  onReading?: (reading: TakeReading) => void;
+}
+
+// One reading handed to onReading
+export interface TakeReading {
+  // When, in milliseconds on the recorder's clock
+  atMs: number;
+  // The level, from 0 to 1
+  level: number;
+  // The words heard so far, or null without a speech service
+  words: string | null;
 }
 
 // What the recorder hands the screen
@@ -44,12 +59,12 @@ export interface TakeRecorder {
   problem: RecordingProblem | null;
   // Start a take (false if it could not start)
   start: () => Promise<boolean>;
-  // Stop the take and hand it back (null if none was under way)
-  stop: () => Promise<TakeResult | null>;
+  // Stop the take and hand it back (null if none was under way); quick waits less for the last words
+  stop: (options?: { quick?: boolean }) => Promise<TakeResult | null>;
 }
 
 // The recorder
-export function useTakeRecorder({ services, clock, raw, words }: TakeRecorderOptions): TakeRecorder {
+export function useTakeRecorder({ services, clock, raw, words, onReading }: TakeRecorderOptions): TakeRecorder {
   // Whether a take is under way
   const [recording, setRecording] = useState(false);
   // Whether a take is being stopped
@@ -60,6 +75,13 @@ export function useTakeRecorder({ services, clock, raw, words }: TakeRecorderOpt
   const [elapsed, setElapsed] = useState(0);
   // A problem, if any
   const [problem, setProblem] = useState<RecordingProblem | null>(null);
+  // The latest reading listener, kept outside the timer so a new one never restarts the take
+  const listener = useRef(onReading);
+  // Keep it current after each draw
+  useEffect(() => {
+    // The newest
+    listener.current = onReading;
+  }, [onReading]);
   // The pieces of the take under way
   const live = useRef<{ capture: AudioCapture; transcriber: LiveTranscriber | null; startedAt: Date; timer: ReturnType<typeof setInterval>; levels: number[]; pitches: (number | null)[] } | null>(null);
 
@@ -85,8 +107,13 @@ export function useTakeRecorder({ services, clock, raw, words }: TakeRecorderOpt
     const capture = services.createCapture(stream);
     // Listen for words, when asked and possible
     const transcriber = words && services.speechSupported() ? services.createTranscriber() : null;
-    // Start listening (problems with the speech service show, but the take goes on)
-    transcriber?.start(() => {}, (trouble) => setProblem(trouble));
+    // The words heard so far (null without a speech service)
+    const heard: { words: string | null } = { words: transcriber ? "" : null };
+    // Start listening, keeping the words (problems with the speech service show, but the take goes on)
+    transcriber?.start((text) => {
+      // Settled words and those still being worked out
+      heard.words = `${text.final} ${text.interim}`.trim();
+    }, (trouble) => setProblem(trouble));
     // The readings so far
     const readings = { levels: [] as number[], pitches: [] as (number | null)[] };
     // When it began
@@ -101,6 +128,8 @@ export function useTakeRecorder({ services, clock, raw, words }: TakeRecorderOpt
       setLevels(readings.levels.slice(-8));
       // Time so far
       setElapsed((clock().getTime() - startedAt.getTime()) / 1000);
+      // Tell the listener, if any
+      listener.current?.({ atMs: clock().getTime(), level: readings.levels.at(-1) ?? 0, words: heard.words });
     }, LOUDNESS_TICK_MS);
     // Keep the pieces
     live.current = { capture, transcriber, startedAt, timer, ...readings };
@@ -115,7 +144,7 @@ export function useTakeRecorder({ services, clock, raw, words }: TakeRecorderOpt
   }, [clock, raw, services, words]);
 
   // Stop the take and hand it back
-  const stop = useCallback(async () => {
+  const stop = useCallback(async (options?: { quick?: boolean }) => {
     // The take under way
     const current = live.current;
     // None
@@ -131,7 +160,7 @@ export function useTakeRecorder({ services, clock, raw, words }: TakeRecorderOpt
     // But still stopping
     setStopping(true);
     // Stop listening and recording together
-    const [transcript, audio] = await Promise.all([current.transcriber ? current.transcriber.stop() : Promise.resolve(""), current.capture.stop()]);
+    const [transcript, audio] = await Promise.all([current.transcriber ? current.transcriber.stop(options?.quick ? QUICK_STOP_MS : undefined) : Promise.resolve(""), current.capture.stop()]);
     // Stopped
     setStopping(false);
     // The take

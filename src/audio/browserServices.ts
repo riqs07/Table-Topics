@@ -127,18 +127,18 @@ export class WebSpeechTranscriber implements LiveTranscriber {
     run();
   }
 
-  // Stop listening and return everything heard
-  async stop(): Promise<string> {
+  // Stop listening and return everything heard, waiting at most the given time for the last words
+  async stop(maxWaitMs = 1500): Promise<string> {
     // Read the words so far, including any still being heard, before the last run ends
     const lastWords = this.assembler.finish();
     // No more restarts
     this.running = false;
-    // Wait for the last run to end (the browser may deliver final words first), at most 1.5 seconds
+    // Wait for the last run to end (the browser may deliver final words first), at most 1.5 seconds unless asked for less
     await new Promise<void>((resolve) => {
       // Finish when the run ends
       this.ended = resolve;
       // Or give up waiting
-      setTimeout(resolve, 1500);
+      setTimeout(resolve, maxWaitMs);
       // Ask the browser to stop
       this.recognizer?.stop();
     });

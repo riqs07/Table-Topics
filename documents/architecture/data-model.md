@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-21 (decision 100)
+**Last updated:** 2026-10-21 (decision 101)
 
 ## Where data lives
 
@@ -140,6 +140,7 @@ Talks are stored in their own collection (added to existing databases by raising
 | deepAnalysis | "Send my recordings for deeper analysis" (decision 91): each saved take's audio is sent once to the server for a verbatim transcript and voice measures. Missing means off |
 | practiceFocus | What the user wants to get better at most (decision 97): one or two of `stories`, `conversation`, `spot` (thinking on my feet), `voice`, `work` and `talk` (a talk coming up), in the order picked. Asked at the welcome; changed in Settings; someone from before the question is asked once on Today. Missing means never asked (Today shows the question); an empty list means asked and left open (the usual daily mix). Read through `readPracticeFocus`, which drops unknown areas, repeats and anything past two. In exports like every setting; an import takes the file's when it has one and keeps this device's when it does not |
 | checkIn | The weekly check-in (decision 100): `day`, the weekday chosen (0 Sunday to 6 Saturday; missing means the weekday of the first check-in); `skipped`, the parts put aside by check-in id (`{ id, parts }`, the latest 60); `seen`, the "Hear how far you've come" reminders put aside or opened, as days after the first check-in (7, 14, 30, 60…); `keep`, `all` (or missing) or `thinned` (the first, the last 12 and the first of each month keep their recordings). Read through `readCheckInSettings`, which drops unknown days, parts and choices. On import the file's day and choice win, and skipped parts and reminders are joined. Missing until first used |
+| turnEnding | How a turn of yours ends in a conversation (decision 101): `"tap"` (tap Done) or `"auto"` (it ends when you stop talking; Done still works). Read through `turnEndingOf`: missing, or anything else, means automatic. Changed in Settings → Talk with someone. In exports like every setting |
 | wordsToWatch | Words the clear-sounds drills could not catch, with a count each (decision 80): a miss adds one, a catch takes one away, and a word goes at nothing; the 30 most-missed are kept. The warm-up's line to say adds the top three. Missing until the first clear-sounds drill |
 
 ### Prompts
@@ -181,7 +182,7 @@ Every request stays within limits the server checks, kept in one place (`src/cor
 | Data | Sent to | When |
 |------|---------|------|
 | Transcript text | AI coach (via our server route) | After each session. The reply now also carries an internal rubric (scores with quotes from your own words, and word swaps), kept on the device (decision 90) |
-| The words of a conversation so far (yours and the persona's), with the persona, situation and twist (decision 84) | Claude Haiku (via our server route `/api/conversation`), to write the persona's next line; that line's words then go to ElevenLabs to be spoken in the persona's voice | After each of your turns, when the passphrase is set. Without it, the recorded script is used and nothing is sent. What goes to ElevenLabs is the line Claude wrote, which may repeat or reword something you said (a persona answering you often does). VoiceLab sends no audio of you; your words reach the page through the browser's speech recognition, which in most browsers hears the audio (the Audio row below; corrected 2026-10-21, decision 97, from "No audio of you leaves the device") |
+| The words of a conversation so far (yours and the persona's), with the persona, situation and twist (decision 84) | Claude Haiku (via our server route `/api/conversation`), to write the persona's next line; that line's words then go to ElevenLabs to be spoken in the persona's voice | After each of your turns, when the passphrase is set. Without it, the recorded script is used and nothing is sent. What goes to ElevenLabs is the line Claude wrote, which may repeat or reword something you said (a persona answering you often does). Whether a turn of yours has ended (decision 101) is worked out on the phone from the microphone level and the words already there; nothing extra is sent. VoiceLab sends no audio of you; your words reach the page through the browser's speech recognition, which in most browsers hears the audio (the Audio row below; corrected 2026-10-21, decision 97, from "No audio of you leaves the device") |
 | A whole conversation: every turn's words and its situation (decisions 83 and 84) | AI coach (via our server route) | After the conversation, instead of a single transcript. No voice numbers are sent for a conversation |
 | Voice numbers (pitch range, how phrases ended, phrases that faded, the last third's volume; decision 81) | AI coach (via our server route) | With the transcript, when pitch or loudness was recorded. The pitch and loudness readings themselves never leave the device |
 | The session's details: its length, its kind, the prompt or passage id, and the id of this week's focus | AI coach (via our server route) | With every transcript |

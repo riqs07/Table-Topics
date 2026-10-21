@@ -1,8 +1,8 @@
 "use client";
 // A spoken conversation with a persona (decisions 83 and 84): they speak, you answer out loud and tap Done, for about three minutes; then it is saved and the coach reviews the whole conversation. With the coach set up, each conversation is in a new situation and every line is written for it and spoken in the persona's voice; without it, the persona says their recorded lines in their own situation
 
-// Load React's state, ref, effect and external-store tools
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+// Load React's state, ref, effect, callback and external-store tools
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the masthead
@@ -20,7 +20,11 @@ import { subscribeToNothing, useScreenBasics, type ScreenProps } from "@/compone
 // Load the tab title
 import { usePageTitle } from "@/components/screens/usePageTitle";
 // Load the take recorder
-import { useTakeRecorder } from "@/components/screens/useTakeRecorder";
+import { useTakeRecorder, type TakeReading } from "@/components/screens/useTakeRecorder";
+// Load the rules for ending a turn by itself (decision 101)
+import { DEFAULT_TURN_ENDING, startTurn, stepTurn, turnEndingOf, type TurnCue, type TurnEnding, type TurnState } from "@/core/endOfTurn";
+// Load the iPhone check, where speech recognition is least reliable (decision 101)
+import { isIosSafari } from "@/data/storageSafety";
 // Load the personas and situations
 import { findLine, findPersona, findScenario, pickSituation, scenarioText, type Persona, type Scenario } from "@/content/conversations";
 // Load the small-talk unit type, for a conversation opened from a unit page
@@ -48,6 +52,14 @@ const MAX_TURN_SECONDS = 60;
 const LIMIT_GRACE_SECONDS = 15;
 // How long to wait for the next line before a listening sound plays, in milliseconds
 const LISTEN_DELAY_MS = 650;
+// How long "I wasn't finished" stays after a turn ends by itself, in milliseconds (decision 101)
+const UNDO_MS = 3_000;
+// How long a key press or a screen reader moving focus holds off ending a turn by itself, in milliseconds
+const HOLD_MS = 5_000;
+// A focus change this soon after a tap came from the tap, not a keyboard or screen reader, in milliseconds
+const POINTER_FOCUS_MS = 800;
+// Steps in the countdown shown while a pause is noticed (redrawn only when a step changes)
+const CUE_STEPS = 5;
 
 // Where the conversation is
 type Phase =
@@ -68,11 +80,11 @@ type Phase =
   // Saving failed
   | "failed";
 
-// Asks for the persona's next written line: the line, or null when it could not be written
-export type WriteLine = (request: LineRequest) => Promise<WrittenLine | null>;
+// Asks for the persona's next written line: the line, or null when it could not be written; a signal cancels it ("I wasn't finished", decision 101)
+export type WriteLine = (request: LineRequest, options?: { signal?: AbortSignal }) => Promise<WrittenLine | null>;
 
 // The real asker: the conversation route with the saved passphrase
-const askRoute: WriteLine = (request) => nextLine(request, { passphrase: readPassphrase() });
+const askRoute: WriteLine = (request, options) => nextLine(request, { passphrase: readPassphrase(), signal: options?.signal });
 
 // Whether the coach is set up on this device (a passphrase is saved)
 const passphraseSaved = () => readPassphrase() !== "";
@@ -95,6 +107,8 @@ interface ConversationScreenProps extends ScreenProps {
   clock?: () => Date;
   // How long to wait before a listening sound, in milliseconds (shorter in checks)
   listenDelayMs?: number;
+  // How long "I wasn't finished" stays, in milliseconds (shorter in checks)
+  undoMs?: number;
 }
 
 // Draw the conversation with the persona named, or say they could not be found
@@ -117,7 +131,7 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
 }
 
 // The conversation itself
-function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
+function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
   // The repository once in the browser
   const { repo } = useScreenBasics(props);
   // The clock
@@ -126,8 +140,53 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const supported = useSyncExternalStore(subscribeToNothing, () => services.speechSupported(), () => true);
   // Whether the coach is set up, so lines can be written (worked out in the browser only)
   const coach = useSyncExternalStore(subscribeToNothing, coachReady, () => false);
+  // How a turn of yours ends, from Settings (automatically until read; decision 101)
+  const [turnEnding, setTurnEnding] = useState<TurnEnding>(DEFAULT_TURN_ENDING);
+  // Whether turns end by themselves
+  const auto = turnEnding === "auto";
+  // The turn's end-of-speech tracker while one is under way (null otherwise)
+  const detector = useRef<TurnState | null>(null);
+  // Whether to use the longer waits (an iPhone)
+  const conservative = useRef(false);
+  // What the countdown shows, and the step last shown
+  const [cue, setCue] = useState<TurnCue | null>(null);
+  // (the step)
+  const cueKey = useRef("");
+  // When a key was last pressed or focus moved without a tap, so a turn never ends under someone mid-action
+  const assistAt = useRef(Number.NEGATIVE_INFINITY);
+  // When the screen was last tapped
+  const pointerAt = useRef(Number.NEGATIVE_INFINITY);
+  // The latest "done", for the readings to call
+  const doneRef = useRef<(how: "tap" | "auto" | "timer") => Promise<void>>(async () => undefined);
+  // Each reading while recording: track the turn and end it when the person has finished
+  const onReading = useCallback((reading: TakeReading) => {
+    // Only while a turn is tracked
+    if (!detector.current) return;
+    // Held for someone using a keyboard or screen reader
+    const held = reading.atMs - assistAt.current < HOLD_MS;
+    // One step
+    const step = stepTurn(detector.current, { ...reading, held }, { conservative: conservative.current });
+    // Kept
+    detector.current = step.state;
+    // The countdown's step
+    const key = `${step.cue.phase}:${Math.floor(step.cue.progress * CUE_STEPS)}`;
+    // Redrawn only when it changes
+    if (key !== cueKey.current) {
+      // Noted
+      cueKey.current = key;
+      // Shown
+      setCue(step.cue);
+    }
+    // Ended: stop tracking and end the turn
+    if (step.end) {
+      // Not again
+      detector.current = null;
+      // End it (a turn at its longest length ends like the timer's)
+      void doneRef.current(step.end === "silence" ? "auto" : "timer");
+    }
+  }, []);
   // The recorder, listening for words (its clock is this turn's; the whole conversation's is in the header)
-  const { recording, stopping, levels, elapsed: turnSeconds, problem, start, stop } = useTakeRecorder({ services, clock, raw: false, words: true });
+  const { recording, stopping, levels, elapsed: turnSeconds, problem, start, stop } = useTakeRecorder({ services, clock, raw: false, words: true, onReading });
   // Where the conversation is
   const [phase, setPhase] = useState<Phase>("intro");
   // Their latest line, shown as they say it
@@ -150,6 +209,20 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const alive = useRef(false);
   // Whether it is being saved, so it is saved once
   const saving = useRef(false);
+  // Which run of turns is current: "I wasn't finished" moves it on, so the steps waiting on the cancelled reply stop
+  const flow = useRef(0);
+  // Whether the persona's line was cut short by a tap
+  const interrupted = useRef(false);
+  // The reply request under way, to cancel
+  const asking = useRef<AbortController | null>(null);
+  // Your words from a turn that was reopened, joined to what you say next
+  const carried = useRef<{ text: string; seconds: number } | null>(null);
+  // Where to go back to if "I wasn't finished" is tapped: the conversation before that turn, and the turn's words
+  const resumePoint = useRef<{ length: number; text: string; seconds: number } | null>(null);
+  // Whether "I wasn't finished" is shown
+  const [canResume, setCanResume] = useState(false);
+  // What a screen reader hears when the turn changes
+  const [announcement, setAnnouncement] = useState("");
   // Name the tab
   usePageTitle(`Talk with ${persona.name}`);
 
@@ -159,6 +232,24 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const situation: { scenario: Scenario; twist: number } = written ? pickSituation(persona, (earlier ?? 0) + skipped, skill) : { scenario: findScenario(persona.home)!, twist: 0 };
   // The situation
   const { scenario, twist } = situation;
+
+  // Read how turns end, from Settings
+  useEffect(() => {
+    // Ignore the result if the page closes first
+    let cancelled = false;
+    // Read the settings
+    repo.getSettings(clock()).then((settings) => {
+      // Keep the choice while the page is open
+      if (!cancelled) setTurnEnding(turnEndingOf(settings));
+    }).catch(() => {
+      // Unreadable: the default stays
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [clock, repo]);
 
   // Count earlier conversations with them, so the situation moves on and the recorded opening changes
   useEffect(() => {
@@ -211,10 +302,16 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
 
   // Say recorded lines in order, adding each to the conversation (or not, for a line that is not part of it); true if one was a goodbye
   async function sayRecorded(ids: ReadonlyArray<string>, keep = true): Promise<boolean> {
+    // Not cut short yet
+    interrupted.current = false;
+    // The lines said (or started)
+    const said: string[] = [];
     // Each line
     for (const id of ids) {
       // Stop if the conversation ended
       if (!alive.current) return false;
+      // Cut short by a tap: skip the rest
+      if (interrupted.current) break;
       // The line
       const line = findLine(persona, id);
       // Unknown: skip it
@@ -225,17 +322,21 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       setCaption(line.text);
       // Part of the conversation, counted as said even if it is cut short
       if (keep) add({ who: "them", text: line.text, lineId: line.id, seconds: voiceClip(line.id)?.seconds ?? 0 });
+      // Said
+      said.push(id);
       // Say it (called straight away, so the first line plays within the Start tap)
       await services.speak?.(line.text, line.id).catch(() => null);
     }
     // Whether it ended the conversation
-    return keep && ids.some((id) => isGoodbye(persona, id));
+    return keep && said.some((id) => isGoodbye(persona, id));
   }
 
   // Say a written line, adding it to the conversation (or not, when asking you to say it again); true if it was a goodbye
   async function sayWritten(line: WrittenLine, keep = true): Promise<boolean> {
     // Stop if the conversation ended
     if (!alive.current) return false;
+    // Not cut short yet
+    interrupted.current = false;
     // They are speaking
     setPhase("them");
     // Their words on screen
@@ -252,8 +353,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   async function ask(stage: ConversationStage, heard: boolean): Promise<WrittenLine | null> {
     // Their next line is on its way
     setPhase("thinking");
+    // A way to cancel it ("I wasn't finished")
+    const controller = new AbortController();
+    // Kept, to cancel
+    asking.current = controller;
     // Ask
-    const asking = writeLine({ personaId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, stage, heard }).catch(() => null);
+    const reply = writeLine({ personaId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, stage, heard }, { signal: controller.signal }).catch(() => null);
     // A listening sound, if it takes a moment
     const sound: { playing: Promise<unknown> | null } = { playing: null };
     // Play it after a short wait (not before their first line, or when asking you to say it again)
@@ -266,7 +371,9 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       sound.playing = services.speak?.(line.text, line.id).catch(() => null) ?? null;
     }, listenDelayMs);
     // The line
-    const line = await asking;
+    const line = await reply;
+    // No longer cancellable
+    if (asking.current === controller) asking.current = null;
     // No sound needed if it came in time
     if (timer) clearTimeout(timer);
     // Let a listening sound finish
@@ -281,20 +388,103 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     if (!alive.current) return;
     // Your turn
     setPhase("you");
+    // Nothing counted down yet
+    setCue(null);
+    // (the step)
+    cueKey.current = "";
     // Open the microphone and record
-    await start();
+    const started = await start();
     // Ended while the microphone opened: let it go
-    if (!alive.current) await stop();
+    if (!alive.current) {
+      // Let it go
+      await stop();
+      // Nothing more
+      return;
+    }
+    // Recording: track the turn when turns end by themselves
+    if (started) detector.current = auto ? startTurn(clock().getTime()) : null;
+    // Say whose turn it is
+    if (started) setAnnouncement(auto ? "Your turn. It ends when you stop talking, or tap Done." : "Your turn. Tap Done when you’ve finished.");
   }
 
-  // Done: end your turn, then let them answer
-  async function done() {
-    // Your take
-    const take = await stop();
+  // Tap while they are talking: stop their line and start your turn (decision 101; no voice barge-in, since echo cancellation is doubtful on phone speakers)
+  function interrupt() {
+    // Cut short
+    interrupted.current = true;
+    // Quiet now; the step waiting on the line carries on to your turn
+    services.stopSpeaking?.();
+  }
+
+  // Offer "I wasn't finished" for a few seconds after a turn ended by itself
+  function offerResume(length: number, text: string, seconds: number) {
+    // Where to go back to
+    resumePoint.current = { length, text, seconds };
+    // Shown
+    setCanResume(true);
+    // Said
+    setAnnouncement("Your turn ended. If you weren’t finished, tap “I wasn’t finished”.");
+    // Taken away after a few seconds
+    setTimeout(() => {
+      // Only this offer
+      if (resumePoint.current?.length === length && resumePoint.current.text === text) {
+        // Gone
+        resumePoint.current = null;
+        // Hidden
+        setCanResume(false);
+      }
+    }, undoMs);
+  }
+
+  // "I wasn't finished": cancel the reply, go back to before that turn, and listen again, keeping the words so far
+  function resume() {
+    // Where to go back to
+    const point = resumePoint.current;
+    // Nothing to go back to
+    if (!point || !alive.current) return;
+    // Used
+    resumePoint.current = null;
+    // Hidden
+    setCanResume(false);
+    // The steps waiting on the reply stop
+    flow.current += 1;
+    // Cancel the reply request
+    asking.current?.abort();
+    // Cut short anything being said
+    interrupted.current = true;
+    // Quiet now
+    services.stopSpeaking?.();
+    // The conversation as it was before that turn
+    turns.current = turns.current.slice(0, point.length);
+    // Their last line back on screen
+    setCaption([...turns.current].reverse().find((turn) => turn.who === "them")?.text ?? "");
+    // Your words so far, joined to what comes next
+    carried.current = { text: point.text, seconds: point.seconds };
+    // Carry on
+    void yourTurn();
+  }
+
+  // Done: end your turn (a tap, by itself when you stopped talking, or the timer), then let them answer
+  async function done(how: "tap" | "auto" | "timer" = "tap") {
+    // This run of turns
+    const mine = flow.current;
+    // Whether "I wasn't finished" has moved things on, or the conversation ended
+    const stale = () => mine !== flow.current || !alive.current;
+    // No longer tracking this turn
+    detector.current = null;
+    // Nothing counted down
+    setCue(null);
+    // Your take (a turn that ended by itself already waited for the last words)
+    const take = await stop({ quick: how === "auto" });
     // Nothing was under way, or the conversation ended
-    if (!take || !alive.current) return;
+    if (!take || stale()) return;
+    // Words from a reopened turn, joined to these
+    const before = carried.current;
+    // Used
+    carried.current = null;
     // What you said
-    const text = take.transcript.trim();
+    const text = [before?.text ?? "", take.transcript.trim()].filter(Boolean).join(" ");
+    // How long you spoke in all
+    const seconds = Math.round(((before?.seconds ?? 0) + take.durationSec) * 10) / 10;
     // Nothing caught after time is up: never ask again (the turn would end itself at once, over and over), so say goodbye and save
     if (!text && stageAt(secondsIn()) === "end") return farewell();
     // Nothing caught: they ask you to say it again, then it is your turn again
@@ -305,6 +495,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       if (written) {
         // Asked for
         const again = await ask(stageAt(secondsIn()), false);
+        // Moved on
+        if (stale()) return;
         // The connection dropped
         if (!again) return lose();
         // Said, kept in the conversation only if it says goodbye; a goodbye ends it
@@ -320,8 +512,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     }
     // Caught
     setMissed(false);
+    // The conversation before this turn, to go back to
+    const length = turns.current.length;
     // Your turn
-    add({ who: "you", text, seconds: take.durationSec });
+    add({ who: "you", text, seconds });
+    // Ended by itself: offer to carry on
+    if (how === "auto") offerResume(length, text, seconds);
     // How far in
     const stage = stageAt(secondsIn());
     // Their reply ends the conversation
@@ -330,6 +526,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     if (written) {
       // Asked for
       const reply = await ask(stage, true);
+      // Moved on ("I wasn't finished")
+      if (stale()) return;
       // The connection dropped: save what was said
       if (!reply) return lose();
       // Said
@@ -338,6 +536,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // Recorded: the next step of the script, or a goodbye near the end
       ended = await sayRecorded(scriptedNext(persona, turns.current, stage !== "talk"));
     }
+    // Moved on ("I wasn't finished")
+    if (stale()) return;
     // A goodbye, or time is up: save
     if (ended || stage === "end") return save();
     // Your turn again
@@ -358,6 +558,16 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     setElapsed(0);
     // Nothing missed yet
     setMissed(false);
+    // Nothing carried over or on offer
+    carried.current = null;
+    // (on offer)
+    resumePoint.current = null;
+    // Hidden
+    setCanResume(false);
+    // A new run of turns
+    flow.current += 1;
+    // The longer waits on an iPhone, where speech recognition stops by itself (decision 101)
+    conservative.current = isIosSafari();
     // Recorded: the opening starts within this tap, which lets phones play the later lines too
     if (!written) {
       // The opening, then your turn
@@ -420,8 +630,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     services.stopSpeaking?.();
     // A take under way
     const take = await stop();
-    // Keep its words, if any
-    if (take && take.transcript.trim()) add({ who: "you", text: take.transcript.trim(), seconds: take.durationSec });
+    // Words from a reopened turn, joined to these
+    const text = [carried.current?.text ?? "", take?.transcript.trim() ?? ""].filter(Boolean).join(" ");
+    // Keep them, if any
+    if (text) add({ who: "you", text, seconds: Math.round(((carried.current?.seconds ?? 0) + (take?.durationSec ?? 0)) * 10) / 10 });
+    // Used
+    carried.current = null;
     // Save
     await save();
   }
@@ -468,15 +682,57 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Seconds left before it ends by itself
     const left = Math.min(MAX_TURN_SECONDS, CONVERSATION_LIMIT_SECONDS + LIMIT_GRACE_SECONDS - (startedAt.current ? (clock().getTime() - startedAt.current.getTime()) / 1000 : 0));
     // End it then
-    const timer = setTimeout(() => void done(), Math.max(0, left) * 1000);
+    const timer = setTimeout(() => void done("timer"), Math.max(0, left) * 1000);
     // Not if it ends first
     return () => clearTimeout(timer);
     // done reads only refs and steady tools, so it need not restart the timer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clock, recording]);
 
+  // Keep the readings' "done" current after each draw
+  useEffect(() => {
+    // The newest
+    doneRef.current = done;
+  });
+
   // Whether the conversation is under way
   const talking = phase === "them" || phase === "thinking" || phase === "you";
+
+  // While talking, note key presses and focus moved without a tap (a keyboard or a screen reader), which hold off ending a turn by itself
+  useEffect(() => {
+    // Only while talking
+    if (!talking) return;
+    // A tap
+    const onPointer = () => {
+      // Noted
+      pointerAt.current = clock().getTime();
+    };
+    // A key
+    const onKey = () => {
+      // Noted
+      assistAt.current = clock().getTime();
+    };
+    // Focus moving, unless a tap just moved it
+    const onFocus = () => {
+      // Not from a tap
+      if (clock().getTime() - pointerAt.current > POINTER_FOCUS_MS) assistAt.current = clock().getTime();
+    };
+    // Listen
+    document.addEventListener("pointerdown", onPointer, true);
+    // (keys)
+    document.addEventListener("keydown", onKey, true);
+    // (focus)
+    document.addEventListener("focusin", onFocus, true);
+    // Stop listening
+    return () => {
+      // Each one
+      document.removeEventListener("pointerdown", onPointer, true);
+      // (keys)
+      document.removeEventListener("keydown", onKey, true);
+      // (focus)
+      document.removeEventListener("focusin", onFocus, true);
+    };
+  }, [clock, talking]);
   // The situation's words, with the name filled in
   const named = (text: string) => scenarioText(text, persona);
 
@@ -506,7 +762,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           {/* The coach could not be reached */}
           {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">The coach couldn’t be reached, so {persona.name} will use recorded lines here.</p>}
           {/* How it works */}
-          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. Answer out loud, then tap Done. {persona.name}’s voice is AI, by ElevenLabs. Your browser turns your words into text, usually through Apple or Google.</p>
+          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. {auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. Your browser turns your words into text, usually through Apple or Google.</p>
           {/* No speech-to-text in this browser */}
           {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
           {/* Start, or another situation */}
@@ -544,7 +800,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           {phase === "saving" ? (
             <StatusBlob compact={false} label="Saving…" detail="one moment" />
           ) : phase === "them" ? (
-            <StatusBlob compact={false} label={persona.name} detail="is talking" />
+            <StartBlob compact={false} label={persona.name} detail="is talking · tap to talk" ariaLabel={`Interrupt ${persona.name} and start your turn`} onStart={interrupt} />
           ) : phase === "thinking" ? (
             <StatusBlob compact={false} label={persona.name} detail={caption ? "is listening" : "is about to speak"} />
           ) : recording ? (
@@ -556,8 +812,13 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           ) : (
             <StatusBlob compact={false} label="Your turn" detail="allow the microphone" />
           )}
-          {/* What to do while recording */}
-          {recording && <p className="text-center text-footnote text-ink-muted md:text-left">Your turn. Tap Done when you’ve finished.</p>}
+          {/* What to do while recording: tap Done, or the countdown when turns end by themselves */}
+          {recording && !auto && <p className="text-center text-footnote text-ink-muted md:text-left">Your turn. Tap Done when you’ve finished.</p>}
+          {recording && auto && <TurnCueLine cue={cue} />}
+          {/* A turn that ended by itself, for a few seconds: carry on */}
+          {canResume && (phase === "thinking" || phase === "them") && <p className="mt-3 text-center md:text-left"><button type="button" onClick={resume} className={SECONDARY}>I wasn’t finished</button></p>}
+          {/* Whose turn it is, for screen readers */}
+          <p role="status" className="sr-only">{talking ? announcement : ""}</p>
           {/* End early, saving what was said */}
           {talking && !stopping && <p className="mt-4 text-center md:text-left"><button type="button" onClick={() => void end()} className={QUIET}>End conversation</button></p>}
         </section>
@@ -583,5 +844,35 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
         </section>
       )}
     </main>
+  );
+}
+
+// What the countdown says, by where the turn is
+function cueText(cue: TurnCue | null): string {
+  // Before any speech
+  if (!cue || cue.phase === "waiting") return "Listening. Your turn ends when you stop talking, or tap Done.";
+  // Speaking
+  if (cue.phase === "speaking") return "Listening…";
+  // Held for a keyboard or screen reader
+  if (cue.phase === "holding") return "Waiting while you use the keyboard. Tap Done when you’ve finished.";
+  // A pause noticed
+  return cue.progress > 0 ? "Pause noticed. Ending your turn unless you carry on…" : "Listening…";
+}
+
+// The countdown while turns end by themselves: five marks that fill as a pause goes on, and words saying what is happening (steps, not movement, so it reads the same with reduced motion; decision 101)
+function TurnCueLine({ cue }: { cue: TurnCue | null }) {
+  // How many marks are filled
+  const filled = cue && (cue.phase === "pausing" || cue.phase === "holding") ? Math.floor(cue.progress * CUE_STEPS) : 0;
+  // The marks and the words
+  return (
+    <div data-turn-cue={cue?.phase ?? "waiting"} data-turn-progress={filled} className="mt-1 flex flex-col items-center gap-1.5 md:items-start">
+      {/* The marks, for sighted people (the words say the same) */}
+      <div aria-hidden="true" className="flex gap-1">
+        {/* Each mark */}
+        {Array.from({ length: CUE_STEPS }, (_, index) => <span key={index} className={`h-1.5 w-7 rounded-full ${index < filled ? "bg-accent" : "bg-rule"}`} />)}
+      </div>
+      {/* The words */}
+      <p className="text-center text-footnote text-ink-muted md:text-left">{cueText(cue)}</p>
+    </div>
   );
 }

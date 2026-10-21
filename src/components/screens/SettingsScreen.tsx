@@ -56,6 +56,8 @@ import { PAGE } from "@/components/script/layout";
 import { checkDeepSetup, type DeepSetup } from "@/data/deepAnalysisClient";
 // Load the check-in's days and the safe reader for its settings (decision 100)
 import { WEEKDAY_NAMES, readCheckInSettings } from "@/core/checkIn";
+// Load the reader for how a conversation turn ends (decision 101)
+import { turnEndingOf, type TurnEnding } from "@/core/endOfTurn";
 
 // How far a long export or import has got, as a whole percentage
 const PROGRESS_PERCENT = (progress: Progress) => (progress.total > 0 ? Math.floor((progress.done / progress.total) * 100) : 100);
@@ -184,6 +186,37 @@ function DeepAnalysisChoice({ settings, onSave, fetchFn }: { settings: SettingsR
       {on && <p role="status" data-deep-setup={setup?.state ?? "checking"} className="mt-2 text-footnote">{setup ? deepSetupText(setup) : "Checking the server…"}</p>}
       {/* What is wrong with the server's settings, by name */}
       {on && setup && "problems" in setup && setup.problems.length > 0 && <ul className="mt-1 list-disc pl-5 text-footnote text-ink-muted">{setup.problems.map((problem) => <li key={problem}>{problem}</li>)}</ul>}
+    </div>
+  );
+}
+
+// The two ways a conversation turn can end, with what each means (decision 101)
+const TURN_ENDINGS: ReadonlyArray<{ id: TurnEnding; name: string; detail: string }> = [
+  // Tap Done
+  { id: "tap", name: "Tap when done", detail: "Your turn lasts until you tap Done." },
+  // By itself
+  { id: "auto", name: "Automatically", detail: "Your turn ends when you stop talking for a moment. Done still works, and “I wasn’t finished” gives the turn back. Worked out on this phone; nothing extra is sent." },
+];
+
+// "Ending your turn" in a conversation: two buttons side by side, the chosen one filled, and what it means
+function TurnEndingChoice({ settings, onSave }: { settings: SettingsRecord; onSave: (next: SettingsRecord) => void }) {
+  // The saved choice
+  const chosen = turnEndingOf(settings);
+  // The buttons and the line about the chosen one
+  return (
+    <div>
+      {/* The choice's name */}
+      <p id="turn-ending-label">Ending your turn</p>
+      {/* The two buttons */}
+      <div role="group" aria-labelledby="turn-ending-label" className="mt-2 grid max-w-md grid-cols-2 gap-1 rounded-2xl bg-paper p-1">
+        {/* One button per choice */}
+        {TURN_ENDINGS.map((choice) => (
+          // One choice, filled when chosen
+          <button key={choice.id} type="button" aria-pressed={chosen === choice.id} onClick={() => onSave({ ...settings, turnEnding: choice.id })} className={`min-h-11 rounded-xl px-3 ${PRESS} ${chosen === choice.id ? "bg-fill font-semibold text-fill-ink" : "text-ink-muted hover:bg-card hover:text-ink"}`}>{choice.name}</button>
+        ))}
+      </div>
+      {/* What the chosen one means */}
+      <p className="mt-2 text-footnote text-ink-muted">{TURN_ENDINGS.find((choice) => choice.id === chosen)?.detail}</p>
     </div>
   );
 }
@@ -560,6 +593,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           {/* The space bar, only on devices with a keyboard and a mouse or trackpad (never on a phone or tablet) */}
           <div data-keyboard-only className="hidden keyboard:block"><SpaceShortcutChoice /></div>
         </div>
+      </Section>}
+
+      {/* Conversations: how a turn ends (decision 101) */}
+      {settings && <Section title="Talk with someone" id="conversations">
+        <TurnEndingChoice settings={settings} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
       </Section>}
 
       {/* How long recordings are kept */}

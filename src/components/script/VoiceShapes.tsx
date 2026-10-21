@@ -93,10 +93,10 @@ export function TakeControls({ paused, onPause, onResume, onDiscard }: { paused:
 }
 
 // Before recording, or to start early: the same shape, still, as a round start button, with what it does and a short detail (decisions 74 and 75)
-export function StartBlob({ label, detail, onStart, compact }: { label: string; detail: string; onStart: () => void; compact: boolean }) {
-  // A round button with a quiet halo, the warm shape, a microphone and the words
+export function StartBlob({ label, detail, onStart, compact, ariaLabel }: { label: string; detail: string; onStart: () => void; compact: boolean; ariaLabel?: string }) {
+  // A round button with a quiet halo, the warm shape, a microphone and the words (named in full when the words alone would not say what it does)
   return (
-    <button type="button" onClick={onStart} data-variant="start" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-56")}`}>
+    <button type="button" onClick={onStart} aria-label={ariaLabel} data-variant="start" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-56")}`}>
       {/* The dashed halo, still */}
       <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-dashed border-warm opacity-60" />
       {/* The shape, breathing slowly when motion is welcome */}

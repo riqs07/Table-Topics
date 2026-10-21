@@ -388,6 +388,8 @@ export interface SettingsRecord {
   practiceFocus?: FocusAreaId[];
   // The weekly check-in's day, skipped parts, reminders seen and which recordings it keeps (decision 100; missing until the first is used)
   checkIn?: CheckInSettings;
+  // How a turn of yours ends in a conversation: "tap" (tap Done) or "auto" (ends when you stop talking; decision 101). Missing means automatically
+  turnEnding?: "tap" | "auto";
 }
 
 // Where a measure came from (decision 90): the phone itself, a transcription service, the voice worker, or the coach's rubric
