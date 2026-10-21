@@ -114,9 +114,9 @@ describe("ConversationScreen", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // The saved session
     const [session] = await repository.listSessions();
-    // Unlocked within the tap, then her lines; the stages, the situation, the turns sent, and what was saved
+    // Unlocked within the tap, then her lines, with a listening sound the moment your first turn ended (none after your question; decision 102); the stages, the situation, the turns sent, and what was saved
     expect([said, asked.map((request) => request.stage), [asked[0]?.personaId, asked[0]?.scenarioId, asked[0]?.twist], asked[1]?.turns.map((turn) => turn.text), session?.conversation?.scenarioId, session?.conversation?.turns.map((turn) => turn.text), navigate.mock.calls[0]?.[0]]).toEqual([
-      ["(unlocked)", "Oh hi! I'm Maya.", "No way! How was it?", "Lovely to meet you!"],
+      ["(unlocked)", "Oh hi! I'm Maya.", "maya-04", "No way! How was it?", "Lovely to meet you!"],
       ["open", "talk", "end"],
       ["maya", "party", 0],
       ["Oh hi! I'm Maya.", "I went climbing on Saturday"],

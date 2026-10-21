@@ -58,6 +58,8 @@ import { checkDeepSetup, type DeepSetup } from "@/data/deepAnalysisClient";
 import { WEEKDAY_NAMES, readCheckInSettings } from "@/core/checkIn";
 // Load the reader for how a conversation turn ends (decision 101)
 import { turnEndingOf, type TurnEnding } from "@/core/endOfTurn";
+// Load the month's conversation minutes check (decision 102)
+import { conversationMinutes, type ConversationMinutes } from "@/data/conversationClient";
 
 // How far a long export or import has got, as a whole percentage
 const PROGRESS_PERCENT = (progress: Progress) => (progress.total > 0 ? Math.floor((progress.done / progress.total) * 100) : 100);
@@ -218,6 +220,39 @@ function TurnEndingChoice({ settings, onSave }: { settings: SettingsRecord; onSa
       {/* What the chosen one means */}
       <p className="mt-2 text-footnote text-ink-muted">{TURN_ENDINGS.find((choice) => choice.id === chosen)?.detail}</p>
     </div>
+  );
+}
+
+// The month's conversation minutes left (decision 102): asked of the server when a passphrase is saved; nothing shown without one, since the people then use their recorded lines, which cost nothing
+function ConversationMinutesLine({ fetchFn }: { fetchFn?: typeof fetch }) {
+  // The passphrase saved on this device
+  const [passphrase] = useState(() => (typeof window === "undefined" ? "" : readPassphrase()));
+  // What the server said: the minutes, "unknown" when it could not say, or null while asking
+  const [minutes, setMinutes] = useState<ConversationMinutes | "unknown" | null>(null);
+  // Ask once
+  useEffect(() => {
+    // Nothing to ask without a passphrase
+    if (!passphrase) return;
+    // Ignore a late answer
+    let cancelled = false;
+    // Ask
+    void conversationMinutes(passphrase, fetchFn).then((result) => {
+      // Shown when still wanted
+      if (!cancelled) setMinutes(result ?? "unknown");
+    });
+    // Stop updating when closed
+    return () => {
+      // Ignore the answer
+      cancelled = true;
+    };
+  }, [passphrase, fetchFn]);
+  // No passphrase: nothing to say
+  if (!passphrase) return null;
+  // The minutes, or why they are not known
+  return (
+    <p role="status" data-conversation-minutes={minutes === null ? "checking" : minutes === "unknown" ? "unknown" : minutes.minutesLeft} className="mt-3 text-footnote text-ink-muted">
+      {minutes === null ? "Checking conversation minutes…" : minutes === "unknown" ? "Couldn’t check this month’s conversation minutes. It is checked again next time you open Settings." : `${minutes.minutesLeft} of ${minutes.minutesPerMonth} conversation minutes left this month. Each minute of a conversation with written lines counts once; with none left, the people use their recorded lines.`}
+    </p>
   );
 }
 
@@ -598,6 +633,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Conversations: how a turn ends (decision 101) */}
       {settings && <Section title="Talk with someone" id="conversations">
         <TurnEndingChoice settings={settings} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
+        <ConversationMinutesLine fetchFn={fetchFn} />
       </Section>}
 
       {/* How long recordings are kept */}

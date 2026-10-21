@@ -38,7 +38,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 23 | [plan-voice-modes.md](plan-voice-modes.md) | What do the voice modes (warm-ups, clear sounds, volume, pitch, tone, pausing, shadowing) do, and where will shadowing audio come from? (Built, decision 80) | 8 min |
 | 24 | [plan-storytelling.md](plan-storytelling.md) | How does the Storytelling mode work (prompts, shapes, telling it again, the story coach), and what research is it built on? (Built, decision 92) | 5 min |
 | 25 | [plan-weekly-check-in.md](plan-weekly-check-in.md) | How does the weekly check-in work (four fixed parts, when it is due, the comparison, the reminders, storage), and what was not built? (Built, decision 100) | 4 min |
-| 26 | [plan-live-conversation.md](plan-live-conversation.md) | How do conversations feel live: turns that end by themselves, faster replies, and what was not approved? (Step 1 built, decision 101) | 3 min |
+| 26 | [plan-live-conversation.md](plan-live-conversation.md) | How do conversations feel live: turns that end by themselves, faster replies, and what was not approved? (Steps 1 and 2 built, decisions 101 and 102) | 4 min |
 
 ## Inspector checklist
 

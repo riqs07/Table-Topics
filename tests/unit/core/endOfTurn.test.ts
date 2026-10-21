@@ -202,3 +202,14 @@ describe("turnEndingOf", () => {
     expect([turnEndingOf(undefined), turnEndingOf({}), turnEndingOf({ turnEnding: "tap" }), turnEndingOf({ turnEnding: "auto" }), turnEndingOf({ turnEnding: 3 })]).toEqual(["auto", "auto", "tap", "auto", "auto"]);
   });
 });
+
+// Group the checks about questions at the end of a turn (decision 102)
+describe("soundsLikeQuestion", () => {
+  // A question mark, or a question opening near the end; statements are not questions
+  it("spots a turn that ends on a question", async () => {
+    // The reader
+    const { soundsLikeQuestion } = await import("@/core/endOfTurn");
+    // Each case
+    expect(["it was great what about you", "where did you go", "did you have a good weekend", "is that right?", "I went climbing on Saturday", "what a day it was. Anyway I went home.", ""].map(soundsLikeQuestion)).toEqual([true, true, true, true, false, false, false]);
+  });
+});

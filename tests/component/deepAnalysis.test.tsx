@@ -67,14 +67,16 @@ describe("Settings: Send my recordings for deeper analysis", () => {
     render(<SettingsScreen repository={repository} now={NOW} fetchFn={fetchFn} />);
     // The switch
     const toggle = await screen.findByRole("checkbox", { name: /Send my recordings for deeper analysis/ });
+    // Calls to anything but the conversation minutes (which Settings also asks for, decision 102)
+    const deepCalls = () => fetchFn.mock.calls.filter((call) => !String(call[0]).includes("/api/conversation"));
     // Off, with what leaves the phone explained, and nothing asked yet
-    const before = [toggle instanceof HTMLInputElement && toggle.checked, !!screen.getByText(/sent once to a transcription service \(AssemblyAI\) and to VoiceLab’s own voice-analysis server/), !!screen.getByText(/Neither keeps your recording or transcript/), fetchFn.mock.calls.length];
+    const before = [toggle instanceof HTMLInputElement && toggle.checked, !!screen.getByText(/sent once to a transcription service \(AssemblyAI\) and to VoiceLab’s own voice-analysis server/), !!screen.getByText(/Neither keeps your recording or transcript/), deepCalls().length];
     // Switch it on
     await userEvent.click(toggle);
     // The server's state
     const ready = await screen.findByText("Ready: transcription and voice analysis are set up on the server.");
     // Saved, asked with the passphrase
-    expect([before, !!ready, (await repository.getSettings(NOW)).deepAnalysis, new Headers((fetchFn.mock.calls[0]![1] as RequestInit).headers).get("x-voicelab-passphrase")]).toEqual([[false, true, true, 0], true, true, PASS]);
+    expect([before, !!ready, (await repository.getSettings(NOW)).deepAnalysis, new Headers((deepCalls()[0]![1] as RequestInit).headers).get("x-voicelab-passphrase")]).toEqual([[false, true, true, 0], true, true, PASS]);
   });
 
   // Not set up: says so, with what is wrong by name

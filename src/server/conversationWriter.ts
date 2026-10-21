@@ -7,7 +7,9 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 // Load the model settings
 import { CONVERSATION_EFFORT, CONVERSATION_MODEL } from "@/config/models";
 // Load the writing instructions, message and reply shape
-import { WRITER_SYSTEM_PROMPT, WriteSchema, writeMessage, type ConversationStage } from "@/core/conversationTurn";
+import { WRITER_STREAM_SYSTEM_PROMPT, WRITER_SYSTEM_PROMPT, WriteSchema, writeMessage, type ConversationStage } from "@/core/conversationTurn";
+// Load the streamed writer's event type
+import type { WriterEvent } from "@/server/conversationStream";
 // Load the persona and situation types
 import type { Persona, Scenario } from "@/content/conversations";
 // Load the saved turn type
@@ -27,6 +29,8 @@ export type WriteResult =
 export interface ConversationWriter {
   // Write what the persona says next; heard is false when the person's last turn was not caught
   write(persona: Persona, scenario: Scenario, twist: number, turns: ReadonlyArray<ConversationTurn>, stage: ConversationStage, heard: boolean): Promise<WriteResult>;
+  // The same, streamed as plain text with a goodbye header first, ending with whether it was declined (decision 102); the signal stops it when the phone stops listening
+  stream(persona: Persona, scenario: Scenario, twist: number, turns: ReadonlyArray<ConversationTurn>, stage: ConversationStage, heard: boolean, signal?: AbortSignal): AsyncIterable<WriterEvent>;
 }
 
 // Build a writer that asks Claude; the network function can be replaced in tests
@@ -58,6 +62,33 @@ export function createClaudeWriter(apiKey: string, fetchFn?: typeof fetch): Conv
       if (!response.parsed_output) throw new Error(`The writer returned no usable line (stop reason: ${response.stop_reason}).`);
       // The line, unchecked (the handler tidies it)
       return { status: "ok", line: response.parsed_output.line, goodbye: response.parsed_output.goodbye };
+    },
+    // Write the next line as a stream of text
+    async *stream(persona, scenario, twist, turns, stage, heard, signal) {
+      // Ask Claude, streaming plain text
+      const stream = client.messages.stream({
+        // The fast model
+        model: CONVERSATION_MODEL,
+        // A short reply
+        max_tokens: MAX_TOKENS,
+        // No thinking, to keep the pause short
+        thinking: { type: "disabled" },
+        // The standing instructions for the streamed format, cached between turns
+        system: [{ type: "text", text: WRITER_STREAM_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+        // The persona, the situation and the conversation so far
+        messages: [{ role: "user", content: writeMessage(persona, scenario, twist, turns, stage, heard) }],
+        // Low effort
+        output_config: { effort: CONVERSATION_EFFORT },
+      }, { signal });
+      // Each piece of text as it arrives
+      for await (const event of stream) {
+        // Only the words
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") yield { type: "text", text: event.delta.text };
+      }
+      // How it ended
+      const final = await stream.finalMessage();
+      // A safety decline is reported, not treated as a crash
+      yield { type: "end", declined: final.stop_reason === "refusal" };
     },
   };
 }

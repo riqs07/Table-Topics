@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-21 (decision 101)
+**Last updated:** 2026-10-21 (decision 102)
 
 ## Where data lives
 
@@ -182,7 +182,7 @@ Every request stays within limits the server checks, kept in one place (`src/cor
 | Data | Sent to | When |
 |------|---------|------|
 | Transcript text | AI coach (via our server route) | After each session. The reply now also carries an internal rubric (scores with quotes from your own words, and word swaps), kept on the device (decision 90) |
-| The words of a conversation so far (yours and the persona's), with the persona, situation and twist (decision 84) | Claude Haiku (via our server route `/api/conversation`), to write the persona's next line; that line's words then go to ElevenLabs to be spoken in the persona's voice | After each of your turns, when the passphrase is set. Without it, the recorded script is used and nothing is sent. What goes to ElevenLabs is the line Claude wrote, which may repeat or reword something you said (a persona answering you often does). Whether a turn of yours has ended (decision 101) is worked out on the phone from the microphone level and the words already there; nothing extra is sent. VoiceLab sends no audio of you; your words reach the page through the browser's speech recognition, which in most browsers hears the audio (the Audio row below; corrected 2026-10-21, decision 97, from "No audio of you leaves the device") |
+| The words of a conversation so far (yours and the persona's), with the persona, situation and twist (decision 84) | Claude Haiku (via our server route `/api/conversation`), to write the persona's next line; that line's words then go to ElevenLabs to be spoken in the persona's voice | After each of your turns, when the passphrase is set. Without it, the recorded script is used and nothing is sent. What goes to ElevenLabs is the line Claude wrote, which may repeat or reword something you said (a persona answering you often does). Each request also carries a random id for the conversation and the seconds since it began, so the server can hold one conversation to five minutes and count the month's conversation minutes (decision 102); the server keeps only those counts, for an hour and a month, never the words. The reply now streams back sentence by sentence; what is sent is unchanged. Whether a turn of yours has ended (decision 101) is worked out on the phone from the microphone level and the words already there; nothing extra is sent. VoiceLab sends no audio of you; your words reach the page through the browser's speech recognition, which in most browsers hears the audio (the Audio row below; corrected 2026-10-21, decision 97, from "No audio of you leaves the device") |
 | A whole conversation: every turn's words and its situation (decisions 83 and 84) | AI coach (via our server route) | After the conversation, instead of a single transcript. No voice numbers are sent for a conversation |
 | Voice numbers (pitch range, how phrases ended, phrases that faded, the last third's volume; decision 81) | AI coach (via our server route) | With the transcript, when pitch or loudness was recorded. The pitch and loudness readings themselves never leave the device |
 | The session's details: its length, its kind, the prompt or passage id, and the id of this week's focus | AI coach (via our server route) | With every transcript |

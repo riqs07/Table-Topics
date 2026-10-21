@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the environment reader being checked
-import { readAccessSecret, readAnalysisSettings, readCounterStore, readServerEnv } from "@/server/env";
+import { readAccessSecret, readAnalysisSettings, readConversationSettings, readCounterStore, readServerEnv } from "@/server/env";
 
 // Every variable set, for checks that remove one at a time
 const FULL = { ANTHROPIC_API_KEY: "sk-test", APP_ACCESS_SECRET: "a long passphrase for testing", NODE_ENV: "test" };
@@ -99,5 +99,31 @@ describe("readAnalysisSettings", () => {
   it("names a half-set or weak worker setting", () => {
     // Address only, secret only, short secret
     expect([readAnalysisSettings({ VOICE_WORKER_URL: "https://w.example" }).problems, readAnalysisSettings({ VOICE_WORKER_SECRET: SECRET }).problems, readAnalysisSettings({ VOICE_WORKER_URL: "https://w.example", VOICE_WORKER_SECRET: "short" })]).toEqual([["VOICE_WORKER_URL is set but VOICE_WORKER_SECRET is not."], ["VOICE_WORKER_SECRET is set but VOICE_WORKER_URL is not."], { assemblyAiKey: null, voiceWorker: null, problems: ["VOICE_WORKER_SECRET must be at least 16 characters long."] }]);
+  });
+});
+
+// Group the checks about the conversation settings (decision 102)
+describe("readConversationSettings", () => {
+  // Defaults when unset; the values when set; a value that cannot be used is named
+  it("reads the month's minutes and the voice model", () => {
+    // Unset, set, and set to v4 in capitals
+    expect([readConversationSettings({}), readConversationSettings({ CONVERSATION_MINUTES_PER_MONTH: " 300 ", CONVERSATION_VOICE_MODEL: "turbo" }), readConversationSettings({ CONVERSATION_VOICE_MODEL: "V4" }, { minutesPerMonth: 90 })]).toEqual([{ minutesPerMonth: 150, voiceModel: "turbo" }, { minutesPerMonth: 300, voiceModel: "turbo" }, { minutesPerMonth: 90, voiceModel: "v4" }]);
+  });
+
+  // Unusable values throw with the setting's name, never its value
+  it("names a setting that cannot be used", () => {
+    // Each bad value
+    expect([() => readConversationSettings({ CONVERSATION_MINUTES_PER_MONTH: "lots" }), () => readConversationSettings({ CONVERSATION_VOICE_MODEL: "flash" })].map((read) => {
+      // The message
+      try {
+        // Read
+        read();
+        // Not thrown
+        return "no error";
+      } catch (error) {
+        // Named
+        return (error as Error).message;
+      }
+    })).toEqual(["CONVERSATION_MINUTES_PER_MONTH must be a whole number of minutes, such as 150.", "CONVERSATION_VOICE_MODEL must be turbo or v4."]);
   });
 });

@@ -851,6 +851,8 @@ test("Deeper analysis: switch it on, record a take, see the voice measures from 
   });
   // The coach, stood in (the take's page asks for feedback once the passphrase is set)
   await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You named the dog.", change: "Start on the dog.", retryCue: "Dog first." } } }));
+  // The month's conversation minutes, stood in (Settings asks once a passphrase is saved; decision 102)
+  await page.route("**/api/conversation", (route) => route.fulfill({ json: { minutesUsed: 0, minutesPerMonth: 150, minutesLeft: 150 } }));
   // Settings, loaded directly
   await page.goto("/settings");
   // Switch deeper analysis on
@@ -892,6 +894,8 @@ test("Deeper analysis: a part that fails leaves a quiet note on the take", async
   await page.route("**/api/analyse", (route) => route.fulfill({ json: route.request().method() === "GET" ? { transcription: true, voice: true, problems: [] } : deepReply(true) }));
   // The coach, stood in
   await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You named the dog.", change: "Start on the dog.", retryCue: "Dog first." } } }));
+  // The month's conversation minutes, stood in (Settings asks once a passphrase is saved; decision 102)
+  await page.route("**/api/conversation", (route) => route.fulfill({ json: { minutesUsed: 0, minutesPerMonth: 150, minutesLeft: 150 } }));
   // Settings, loaded directly
   await page.goto("/settings");
   // Switch deeper analysis on

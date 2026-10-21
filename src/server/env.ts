@@ -91,6 +91,31 @@ export function readElevenLabsKey(source: EnvSource = process.env): string | nul
   return source.ELEVENLABS_API_KEY?.trim() || null;
 }
 
+// Which ElevenLabs model speaks conversation lines (decision 102): the faster, cheaper one, or the expressive one their recordings used
+export type ConversationVoiceChoice = "turbo" | "v4";
+
+// The conversation settings (decision 102): the monthly minutes and the voice model
+export interface ConversationSettings {
+  // Conversation minutes allowed a month
+  minutesPerMonth: number;
+  // Which voice model speaks the lines
+  voiceModel: ConversationVoiceChoice;
+}
+
+// Read the conversation settings, using the defaults when they are not set; a value that cannot be used is an error naming the setting (rule T13)
+export function readConversationSettings(source: EnvSource = process.env, defaults: { minutesPerMonth: number } = { minutesPerMonth: 150 }): ConversationSettings {
+  // The minutes, if set
+  const minutes = source.CONVERSATION_MINUTES_PER_MONTH?.trim();
+  // A whole number from 0 up (0 turns written lines off)
+  if (minutes && !/^\d{1,6}$/.test(minutes)) throw new Error("CONVERSATION_MINUTES_PER_MONTH must be a whole number of minutes, such as 150.");
+  // The model, if set
+  const model = source.CONVERSATION_VOICE_MODEL?.trim().toLowerCase();
+  // Only the two choices
+  if (model && model !== "turbo" && model !== "v4") throw new Error("CONVERSATION_VOICE_MODEL must be turbo or v4.");
+  // The settings
+  return { minutesPerMonth: minutes ? Number(minutes) : defaults.minutesPerMonth, voiceModel: model === "v4" ? "v4" : "turbo" };
+}
+
 // The deeper-analysis services (decision 91): the AssemblyAI key and the voice worker's address and shared secret, each null when not set or not usable, with what is wrong in words (they name settings, never values; rule T13)
 export interface AnalysisSettings {
   // The AssemblyAI key, or null

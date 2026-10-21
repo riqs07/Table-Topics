@@ -2,8 +2,8 @@
 
 // Load the voice settings type
 import type { VoiceSettings } from "@/server/env";
-// Load the model that speaks conversation lines
-import { CONVERSATION_VOICE_MODEL } from "@/config/models";
+// Load the models that speak conversation lines
+import { CONVERSATION_VOICE_MODEL, CONVERSATION_VOICE_MODEL_FAST } from "@/config/models";
 
 // The high-quality model (speed does not matter for fixed questions, which are kept after the first time)
 export const VOICE_MODEL = "eleven_multilingual_v2";
@@ -39,24 +39,32 @@ export function createElevenLabsVoice(settings: VoiceSettings, fetchFn: typeof f
 
 // Speaks a conversation persona's written lines, each in that persona's own voice (decision 84)
 export interface PersonaVoice {
-  // The line as MP3 audio, in the given voice
-  speak(text: string, voiceId: string): Promise<ArrayBuffer>;
+  // The line (or a piece of it) as MP3 audio, in the given voice; streaming asks ElevenLabs' streaming endpoint, which starts sooner (decision 102)
+  speak(text: string, voiceId: string, options?: { streaming?: boolean; signal?: AbortSignal }): Promise<ArrayBuffer>;
 }
 
-// The ElevenLabs voice for conversation lines: the expressive model, at the same small size as the recorded lines
-export function createPersonaVoice(apiKey: string, fetchFn: typeof fetch = fetch): PersonaVoice {
+// The ElevenLabs model id for a choice
+export function voiceModelId(choice: "turbo" | "v4"): string {
+  // Turbo, or the expressive model
+  return choice === "v4" ? CONVERSATION_VOICE_MODEL : CONVERSATION_VOICE_MODEL_FAST;
+}
+
+// The ElevenLabs voice for conversation lines, at the same small size as the recorded lines, with the chosen model (decision 102; the faster one unless chosen otherwise)
+export function createPersonaVoice(apiKey: string, fetchFn: typeof fetch = fetch, model: string = CONVERSATION_VOICE_MODEL_FAST): PersonaVoice {
   // Hand back the voice
   return {
     // Ask ElevenLabs for the audio
-    async speak(text, voiceId) {
-      // The text-to-speech call for the persona's voice, as a 64 kbps MP3
-      const response = await fetchFn(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_64`, {
+    async speak(text, voiceId, options) {
+      // The text-to-speech call for the persona's voice (the streaming one when asked), as a 64 kbps MP3
+      const response = await fetchFn(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}${options?.streaming ? "/stream" : ""}?output_format=mp3_44100_64`, {
         // A new piece of speech
         method: "POST",
         // The key, and what is sent and wanted back
         headers: { "xi-api-key": apiKey, "content-type": "application/json", accept: "audio/mpeg" },
         // The words and the model
-        body: JSON.stringify({ text, model_id: CONVERSATION_VOICE_MODEL }),
+        body: JSON.stringify({ text, model_id: model }),
+        // Stopped when the phone stops listening
+        signal: options?.signal,
       });
       // A refusal or failure is an error, with the status for the log
       if (!response.ok) throw new Error(`ElevenLabs answered ${response.status}.`);

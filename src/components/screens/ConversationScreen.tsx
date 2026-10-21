@@ -22,7 +22,7 @@ import { usePageTitle } from "@/components/screens/usePageTitle";
 // Load the take recorder
 import { useTakeRecorder, type TakeReading } from "@/components/screens/useTakeRecorder";
 // Load the rules for ending a turn by itself (decision 101)
-import { DEFAULT_TURN_ENDING, startTurn, stepTurn, turnEndingOf, type TurnCue, type TurnEnding, type TurnState } from "@/core/endOfTurn";
+import { DEFAULT_TURN_ENDING, soundsLikeQuestion, startTurn, stepTurn, turnEndingOf, type TurnCue, type TurnEnding, type TurnState } from "@/core/endOfTurn";
 // Load the iPhone check, where speech recognition is least reliable (decision 101)
 import { isIosSafari } from "@/data/storageSafety";
 // Load the personas and situations
@@ -36,7 +36,7 @@ import { CONVERSATION_LIMIT_SECONDS, isGoodbye, listeningLine, openingLine, scri
 // Load the clock formatter
 import { formatClock } from "@/core/recordingRules";
 // Load the client that asks for the next line
-import { nextLine, type LineRequest, type WrittenLine } from "@/data/conversationClient";
+import { isRefusal, nextLine, type LineRefusal, type LineRequest, type LineResult, type LineSegment, type WrittenLine } from "@/data/conversationClient";
 // Load the saved passphrase
 import { readPassphrase } from "@/data/passphrase";
 // Load the saver
@@ -50,8 +50,10 @@ import type { RecordingServices } from "@/audio/services";
 const MAX_TURN_SECONDS = 60;
 // How far past the limit a turn of yours may run before it ends by itself, in seconds
 const LIMIT_GRACE_SECONDS = 15;
-// How long to wait for the next line before a listening sound plays, in milliseconds
-const LISTEN_DELAY_MS = 650;
+// How long to wait after your turn before a listening sound plays, in milliseconds: none, so the "mm-hm" covers the wait as a person's would (decision 102)
+const LISTEN_DELAY_MS = 0;
+// Whether development-only readouts are shown (the time from the end of your turn to their first sound; decision 102)
+const DEVELOPMENT = process.env.NODE_ENV !== "production";
 // How long "I wasn't finished" stays after a turn ends by itself, in milliseconds (decision 101)
 const UNDO_MS = 3_000;
 // How long a key press or a screen reader moving focus holds off ending a turn by itself, in milliseconds
@@ -80,11 +82,11 @@ type Phase =
   // Saving failed
   | "failed";
 
-// Asks for the persona's next written line: the line, or null when it could not be written; a signal cancels it ("I wasn't finished", decision 101)
-export type WriteLine = (request: LineRequest, options?: { signal?: AbortSignal }) => Promise<WrittenLine | null>;
+// Asks for the persona's next written line: the line, a refusal with its reason (the month's minutes, the conversation's cap), or null when it could not be written; a signal cancels it ("I wasn't finished", decision 101), and pieces of a streamed line go to onSegment as they arrive (decision 102)
+export type WriteLine = (request: LineRequest, options?: { signal?: AbortSignal; onSegment?: (segment: LineSegment) => void }) => Promise<LineResult>;
 
-// The real asker: the conversation route with the saved passphrase
-const askRoute: WriteLine = (request, options) => nextLine(request, { passphrase: readPassphrase(), signal: options?.signal });
+// The real asker: the conversation route with the saved passphrase, streamed
+const askRoute: WriteLine = (request, options) => nextLine(request, { passphrase: readPassphrase(), signal: options?.signal, onSegment: options?.onSegment });
 
 // Whether the coach is set up on this device (a passphrase is saved)
 const passphraseSaved = () => readPassphrase() !== "";
@@ -223,6 +225,14 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const [canResume, setCanResume] = useState(false);
   // What a screen reader hears when the turn changes
   const [announcement, setAnnouncement] = useState("");
+  // This conversation's random id, for the server's five-minute cap and the month's minutes (decision 102)
+  const conversationId = useRef("");
+  // Why the recorded lines are used instead of written ones: the coach could not be reached, or the month's minutes are used up
+  const [fellBackWhy, setFellBackWhy] = useState<"unreachable" | "budget">("unreachable");
+  // When your last turn ended, until their first sound (development readout)
+  const turnEndedAt = useRef<number | null>(null);
+  // How long their first sound took after your turn, in milliseconds (development readout)
+  const [latency, setLatency] = useState<number | null>(null);
   // Name the tab
   usePageTitle(`Talk with ${persona.name}`);
 
@@ -331,10 +341,29 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     return keep && said.some((id) => isGoodbye(persona, id));
   }
 
-  // Say a written line, adding it to the conversation (or not, when asking you to say it again); true if it was a goodbye
+  // Note the first sound after your turn, for the development readout
+  function noteFirstSound() {
+    // Only once per turn
+    if (turnEndedAt.current === null) return;
+    // How long it took
+    setLatency(clock().getTime() - turnEndedAt.current);
+    // Noted
+    turnEndedAt.current = null;
+  }
+
+  // Say a written line, adding it to the conversation (or not, when asking you to say it again); true if it was a goodbye. A streamed line has already been played piece by piece
   async function sayWritten(line: WrittenLine, keep = true): Promise<boolean> {
     // Stop if the conversation ended
     if (!alive.current) return false;
+    // Streamed: already said; kept, and the whole line shown
+    if (line.streamed) {
+      // The whole line
+      setCaption(line.text);
+      // Part of the conversation
+      if (keep) add({ who: "them", text: line.text, seconds: 0 });
+      // Whether it ended the conversation
+      return keep && line.goodbye;
+    }
     // Not cut short yet
     interrupted.current = false;
     // They are speaking
@@ -343,43 +372,91 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     setCaption(line.text);
     // Part of the conversation, counted as said even if it is cut short
     if (keep) add({ who: "them", text: line.text, seconds: 0 });
+    // Their first sound
+    noteFirstSound();
     // Say it in their voice, or the phone's own
     await services.speakAudio?.(line.audio, line.text).catch(() => undefined);
     // Whether it ended the conversation
     return keep && line.goodbye;
   }
 
-  // Ask for their next written line, with a listening sound if it takes a moment
-  async function ask(stage: ConversationStage, heard: boolean): Promise<WrittenLine | null> {
+  // Ask for their next written line: a listening sound at once (not before their first line, when asking you to say it again, or after you asked a question), and a streamed line's pieces played in order as they arrive (decision 102)
+  async function ask(stage: ConversationStage, heard: boolean): Promise<LineResult> {
     // Their next line is on its way
     setPhase("thinking");
+    // Nothing cut short yet
+    interrupted.current = false;
     // A way to cancel it ("I wasn't finished")
     const controller = new AbortController();
     // Kept, to cancel
     asking.current = controller;
-    // Ask
-    const reply = writeLine({ personaId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, stage, heard }, { signal: controller.signal }).catch(() => null);
-    // A listening sound, if it takes a moment
+    // A listening sound
     const sound: { playing: Promise<unknown> | null } = { playing: null };
-    // Play it after a short wait (not before their first line, or when asking you to say it again)
-    const timer = stage === "open" || !heard ? null : setTimeout(() => {
+    // Your last words
+    const yours = [...turns.current].reverse().find((turn) => turn.who === "you")?.text ?? "";
+    // Wanted: not before their first line, when asking you to say it again, or after a question of yours (they answer it instead)
+    const wanted = stage !== "open" && heard && !soundsLikeQuestion(yours);
+    // Play it, kept out of the conversation
+    const playSound = () => {
       // Only while still running
       if (!alive.current) return;
       // The sound for this turn
       const line = listeningLine(persona, turns.current);
-      // Play it, kept out of the conversation
+      // Played
       sound.playing = services.speak?.(line.text, line.id).catch(() => null) ?? null;
-    }, listenDelayMs);
+    };
+    // At once, or after the given wait
+    const timer = wanted && listenDelayMs > 0 ? setTimeout(playSound, listenDelayMs) : null;
+    // (at once)
+    if (wanted && listenDelayMs <= 0) playSound();
+    // A streamed line's pieces, played one after another on the shared player
+    const pieces: { queue: Promise<void>; shown: string[] } = { queue: Promise.resolve(), shown: [] };
+    // Each piece as it arrives
+    const onSegment = (segment: LineSegment) => {
+      // Queued after the ones before it
+      pieces.queue = pieces.queue.then(async () => {
+        // After the listening sound
+        if (sound.playing) await sound.playing;
+        // Not once cancelled, cut short or ended
+        if (!alive.current || interrupted.current || controller.signal.aborted) return;
+        // Shown so far
+        pieces.shown.push(segment.text);
+        // They are speaking
+        setPhase("them");
+        // Their words so far
+        setCaption(pieces.shown.join(" "));
+        // Their first sound
+        noteFirstSound();
+        // Said in their voice, or the phone's own
+        await services.speakAudio?.(segment.audio, segment.text).catch(() => undefined);
+      });
+    };
+    // Ask
+    const reply = writeLine({ personaId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, stage, heard, conversationId: conversationId.current, elapsedSec: secondsIn() }, { signal: controller.signal, onSegment }).catch(() => null);
     // The line
     const line = await reply;
     // No longer cancellable
     if (asking.current === controller) asking.current = null;
     // No sound needed if it came in time
     if (timer) clearTimeout(timer);
+    // Let the pieces finish playing
+    await pieces.queue;
     // Let a listening sound finish
     if (sound.playing) await sound.playing;
-    // The line, or nothing
+    // Cut short by a tap part-way through a streamed line: what was said stands
+    if (!line && interrupted.current && pieces.shown.length > 0) return { text: pieces.shown.join(" "), audio: null, goodbye: false, streamed: true };
+    // The line, a refusal, or nothing
     return line;
+  }
+
+  // The route said no for the month's minutes or the conversation's cap, part-way: their recorded goodbye, then save
+  async function refused(why: LineRefusal) {
+    // Said
+    setAnnouncement(why.refused === "budget" ? "This month’s conversation minutes are used up, so the conversation ends here." : "This conversation has reached its five-minute limit.");
+    // A recorded goodbye
+    await sayRecorded(scriptedNext(persona, turns.current, true));
+    // Saved
+    return save();
   }
 
   // Your turn: start recording
@@ -411,6 +488,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   function interrupt() {
     // Cut short
     interrupted.current = true;
+    // A streamed line still arriving stops too, so your turn starts at once
+    asking.current?.abort();
     // Quiet now; the step waiting on the line carries on to your turn
     services.stopSpeaking?.();
   }
@@ -473,6 +552,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     detector.current = null;
     // Nothing counted down
     setCue(null);
+    // When your turn ended, for the development readout
+    turnEndedAt.current = clock().getTime();
     // Your take (a turn that ended by itself already waited for the last words)
     const take = await stop({ quick: how === "auto" });
     // Nothing was under way, or the conversation ended
@@ -499,6 +580,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
         if (stale()) return;
         // The connection dropped
         if (!again) return lose();
+        // Out of minutes, or past the cap
+        if (isRefusal(again)) return refused(again);
         // Said, kept in the conversation only if it says goodbye; a goodbye ends it
         if (await sayWritten(again, again.goodbye)) return save();
       } else {
@@ -530,6 +613,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       if (stale()) return;
       // The connection dropped: save what was said
       if (!reply) return lose();
+      // Out of minutes, or past the cap
+      if (isRefusal(reply)) return refused(reply);
       // Said
       ended = await sayWritten(reply);
     } else {
@@ -566,6 +651,10 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     setCanResume(false);
     // A new run of turns
     flow.current += 1;
+    // A new conversation id, for the server's caps
+    conversationId.current = crypto.randomUUID();
+    // No readout yet
+    setLatency(null);
     // The longer waits on an iPhone, where speech recognition stops by itself (decision 101)
     conservative.current = isIosSafari();
     // Recorded: the opening starts within this tap, which lets phones play the later lines too
@@ -579,10 +668,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     services.unlockSpeech?.();
     // The opening
     const opening = await ask("open", true);
-    // The coach could not be reached: back to the start, with their recorded lines instead
-    if (!opening) {
+    // The coach could not be reached, or the month's minutes are used up: back to the start, with their recorded lines instead
+    if (!opening || isRefusal(opening)) {
       // No longer running
       alive.current = false;
+      // Why
+      setFellBackWhy(opening && opening.refused === "budget" ? "budget" : "unreachable");
       // Use the recordings
       setFellBack(true);
       // Back to the start
@@ -606,6 +697,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       const goodbye = await ask("end", true);
       // The connection dropped: save what was said
       if (!goodbye) return lose();
+      // Out of minutes, or past the cap: a recorded goodbye instead
+      if (isRefusal(goodbye)) return refused(goodbye);
       // Said
       await sayWritten(goodbye);
     } else {
@@ -760,7 +853,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
             <p className="mt-1 text-lede">{named(scenario.practise)}</p>
           </div>
           {/* The coach could not be reached */}
-          {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">The coach couldn’t be reached, so {persona.name} will use recorded lines here.</p>}
+          {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
           {/* How it works */}
           <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. {auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. Your browser turns your words into text, usually through Apple or Google.</p>
           {/* No speech-to-text in this browser */}
@@ -817,6 +910,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           {recording && auto && <TurnCueLine cue={cue} />}
           {/* A turn that ended by itself, for a few seconds: carry on */}
           {canResume && (phase === "thinking" || phase === "them") && <p className="mt-3 text-center md:text-left"><button type="button" onClick={resume} className={SECONDARY}>I wasn’t finished</button></p>}
+          {/* While developing: how long their first sound took after your turn ended */}
+          {DEVELOPMENT && latency !== null && <p data-latency={latency} className="mt-2 text-center text-footnote text-ink-muted md:text-left">Reply sound {(latency / 1000).toFixed(1)} s after your turn ended (development only)</p>}
           {/* Whose turn it is, for screen readers */}
           <p role="status" className="sr-only">{talking ? announcement : ""}</p>
           {/* End early, saving what was said */}

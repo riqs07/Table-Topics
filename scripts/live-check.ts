@@ -4,7 +4,9 @@
 
 // Load the coach model settings and prices
 // Load the same settings check the app uses
-import { readServerEnv } from "@/server/env";
+import { readConversationSettings, readServerEnv } from "@/server/env";
+// Load the default conversation minutes (decision 102)
+import { CONVERSATION_MINUTES_PER_MONTH } from "@/config/limits";
 // Load the passphrase fingerprint and warnings
 import { passphraseFingerprint, passphraseWarnings } from "@/core/passphraseCheck";
 import { COACH_EFFORT, COACH_MODEL, COACH_PRICE_PER_MILLION } from "@/config/models";
@@ -35,6 +37,10 @@ async function main() {
   const env = readServerEnv(process.env);
   // Say the settings passed
   console.log("Settings: ANTHROPIC_API_KEY and APP_ACCESS_SECRET look right.");
+  // Check the conversation settings the conversation route reads (decision 102), so a bad value shows here first
+  const conversation = readConversationSettings(process.env, { minutesPerMonth: CONVERSATION_MINUTES_PER_MONTH });
+  // Say what conversations will use
+  console.log(`Conversations: ${conversation.minutesPerMonth} minutes a month, voice model ${conversation.voiceModel} (CONVERSATION_MINUTES_PER_MONTH, CONVERSATION_VOICE_MODEL).`);
   // Make the real coach
   const coach = createClaudeCoach(env.anthropicApiKey);
   // Running total of estimated cost

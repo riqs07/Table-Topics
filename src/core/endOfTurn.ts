@@ -296,3 +296,11 @@ export function turnEndingOf(settings: { turnEnding?: unknown } | null | undefin
   // Tap only when chosen
   return settings?.turnEnding === "tap" ? "tap" : DEFAULT_TURN_ENDING;
 }
+
+// Whether a turn ending with these words asked a question, so no listening sound plays before the answer (decision 102): a question mark, or a question opening near the end (speech recognition rarely adds the mark)
+export function soundsLikeQuestion(words: string): boolean {
+  // The words, lowercased
+  const text = words.trim().toLowerCase();
+  // A question mark, or a question opening in the last few words
+  return text.endsWith("?") || /\b(what|how|why|where|when|who|which|do you|did you|have you|are you|is it|can you|would you|could you|what about you|and you)\b[^.!]{0,40}$/.test(text);
+}

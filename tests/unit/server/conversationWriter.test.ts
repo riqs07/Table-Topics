@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { createClaudeWriter } from "@/server/conversationWriter";
 import { createPersonaVoice } from "@/server/voice";
 // Load the model settings
-import { CONVERSATION_MODEL, CONVERSATION_VOICE_MODEL } from "@/config/models";
+import { CONVERSATION_MODEL, CONVERSATION_VOICE_MODEL, CONVERSATION_VOICE_MODEL_FAST } from "@/config/models";
 // Load the personas and situations
 import { findPersona, findScenario } from "@/content/conversations";
 
@@ -44,9 +44,53 @@ describe("createClaudeWriter", () => {
   });
 });
 
+// A streamed reply from the API, as server-sent events, with the given text pieces and how it stopped
+function sse(pieces: string[], stopReason = "end_turn"): Response {
+  // One event
+  const event = (type: string, data: unknown) => `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
+  // The whole stream
+  const body = [
+    event("message_start", { type: "message_start", message: { id: "msg_1", type: "message", role: "assistant", model: CONVERSATION_MODEL, content: [], stop_reason: null, stop_sequence: null, usage: { input_tokens: 10, output_tokens: 1 } } }),
+    event("content_block_start", { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } }),
+    ...pieces.map((text) => event("content_block_delta", { type: "content_block_delta", index: 0, delta: { type: "text_delta", text } })),
+    event("content_block_stop", { type: "content_block_stop", index: 0 }),
+    event("message_delta", { type: "message_delta", delta: { stop_reason: stopReason, stop_sequence: null }, usage: { output_tokens: 12 } }),
+    event("message_stop", { type: "message_stop" }),
+  ].join("");
+  // As the API sends it
+  return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+}
+
+// Group the checks about the streamed writer (decision 102)
+describe("createClaudeWriter, streamed", () => {
+  // Streamed plain text with the streaming instructions, no JSON shape, each piece handed on, then how it ended
+  it("streams the line as plain text", async () => {
+    // A network answering with a stream
+    const network = vi.fn(async () => sse(["goodbye: no\n", "Oh hi.", " Radios, mostly."]));
+    // The events
+    const events: unknown[] = [];
+    // Read them
+    for await (const event of createClaudeWriter("sk-test", network).stream(theo, meeting, 0, [], "open", true)) events.push(event);
+    // What was sent
+    const sent = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { stream: boolean; output_config: { effort: string; format?: unknown }; system: Array<{ text: string }> };
+    // A stream, low effort, no JSON shape, the header rule in the instructions, and the events in order
+    expect([sent.stream, sent.output_config, sent.system[0]!.text.includes("goodbye: yes or goodbye: no"), events]).toEqual([true, { effort: "low" }, true, [{ type: "text", text: "goodbye: no\n" }, { type: "text", text: "Oh hi." }, { type: "text", text: " Radios, mostly." }, { type: "end", declined: false }]]);
+  });
+
+  // A decline arrives as the end
+  it("reports a streamed decline", async () => {
+    // The events
+    const events: unknown[] = [];
+    // Read them
+    for await (const event of createClaudeWriter("sk-test", vi.fn(async () => sse([], "refusal"))).stream(theo, meeting, 0, [], "open", true)) events.push(event);
+    // Declined
+    expect(events).toEqual([{ type: "end", declined: true }]);
+  });
+});
+
 // Group the checks about speaking a line in the persona's voice
 describe("createPersonaVoice", () => {
-  // The persona's voice, the expressive model, a small MP3, and the key in its header
+  // The persona's voice, the faster model by default (decision 102), a small MP3, and the key in its header
   it("asks ElevenLabs for the line in the persona's voice", async () => {
     // A network answering with audio
     const network = vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 }));
@@ -55,7 +99,19 @@ describe("createPersonaVoice", () => {
     // What was sent
     const [url, init] = network.mock.calls[0] as unknown as [string, RequestInit];
     // The voice, the format, the key, the words and model, and the audio back
-    expect([url, new Headers(init.headers).get("xi-api-key"), JSON.parse(String(init.body)), new Uint8Array(audio)]).toEqual([`https://api.elevenlabs.io/v1/text-to-speech/${theo.voiceId}?output_format=mp3_44100_64`, "xi-test", { text: "[softly] Hi.", model_id: CONVERSATION_VOICE_MODEL }, new Uint8Array([1, 2, 3])]);
+    expect([url, new Headers(init.headers).get("xi-api-key"), JSON.parse(String(init.body)), new Uint8Array(audio)]).toEqual([`https://api.elevenlabs.io/v1/text-to-speech/${theo.voiceId}?output_format=mp3_44100_64`, "xi-test", { text: "[softly] Hi.", model_id: CONVERSATION_VOICE_MODEL_FAST }, new Uint8Array([1, 2, 3])]);
+  });
+
+  // Streaming asks the streaming endpoint, with the model chosen
+  it("asks the streaming endpoint with the chosen model", async () => {
+    // A network answering with audio
+    const network = vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 }));
+    // Speak, streamed, with the expressive model
+    await createPersonaVoice("xi-test", network, CONVERSATION_VOICE_MODEL).speak("Hi.", theo.voiceId, { streaming: true });
+    // What was sent
+    const [url, init] = network.mock.calls[0] as unknown as [string, RequestInit];
+    // The streaming address and the model
+    expect([url, (JSON.parse(String(init.body)) as { model_id: string }).model_id]).toEqual([`https://api.elevenlabs.io/v1/text-to-speech/${theo.voiceId}/stream?output_format=mp3_44100_64`, CONVERSATION_VOICE_MODEL]);
   });
 
   // A refusal is an error, so the phone's voice can take over
