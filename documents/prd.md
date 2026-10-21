@@ -64,7 +64,7 @@ Once a week: complete one **real-world challenge** and mark it done.
 | Weekly real-world challenge | Bridges practice to real speaking moments (speak first in a meeting, give a toast, visit a speaking club) |
 | Showing-up streak (counts any completed session) | Rewards practice, not performance |
 | Session history with transcript, feedback, and the recording to play back | Lets the user review, hear themselves, and see patterns |
-| Recordings and history stay on the device by default | Protects privacy for a vulnerable activity. Browser speech recognition may send audio to the browser maker, so the exact promise is decided at checkpoint C5 |
+| Recordings and history stay on the device by default | Protects privacy for a vulnerable activity. Browser speech recognition may send audio to the browser maker, so the exact promise is decided at checkpoint C5. Deeper analysis (decision 91) sends recordings to AssemblyAI and the app's own voice worker only when the user switches it on; neither keeps them |
 
 ## 5. What we measure (and what we do not)
 

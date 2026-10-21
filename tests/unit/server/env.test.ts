@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the environment reader being checked
-import { readAccessSecret, readCounterStore, readServerEnv } from "@/server/env";
+import { readAccessSecret, readAnalysisSettings, readCounterStore, readServerEnv } from "@/server/env";
 
 // Every variable set, for checks that remove one at a time
 const FULL = { ANTHROPIC_API_KEY: "sk-test", APP_ACCESS_SECRET: "a long passphrase for testing", NODE_ENV: "test" };
@@ -69,5 +69,35 @@ describe("readAccessSecret and readCounterStore", () => {
   it("reads the counter store under either name", () => {
     // The Vercel names, the Upstash names, and none
     expect([readCounterStore({ KV_REST_API_URL: "u", KV_REST_API_TOKEN: "t" }), readCounterStore({ UPSTASH_REDIS_REST_URL: "u", UPSTASH_REDIS_REST_TOKEN: "t" }), readCounterStore({})]).toEqual([{ url: "u", token: "t" }, { url: "u", token: "t" }, null]);
+  });
+});
+
+// Group the checks about the deeper-analysis settings (decision 91)
+describe("readAnalysisSettings", () => {
+  // A made-up secret, long enough
+  const SECRET = "a long worker secret for testing";
+
+  // Nothing set: neither part, nothing wrong
+  it("reads nothing when nothing is set", () => {
+    // Empty
+    expect(readAnalysisSettings({})).toEqual({ assemblyAiKey: null, voiceWorker: null, problems: [] });
+  });
+
+  // Everything set: both parts, the address without a trailing slash
+  it("reads the key and the worker", () => {
+    // Read
+    expect(readAnalysisSettings({ ASSEMBLYAI_API_KEY: " aai-test ", VOICE_WORKER_URL: "https://worker.example.run/", VOICE_WORKER_SECRET: SECRET })).toEqual({ assemblyAiKey: "aai-test", voiceWorker: { url: "https://worker.example.run", secret: SECRET }, problems: [] });
+  });
+
+  // Plain http only on this computer
+  it("takes http only for localhost", () => {
+    // Local, and remote
+    expect([readAnalysisSettings({ VOICE_WORKER_URL: "http://localhost:8080", VOICE_WORKER_SECRET: SECRET }).voiceWorker?.url, readAnalysisSettings({ VOICE_WORKER_URL: "http://worker.example.com", VOICE_WORKER_SECRET: SECRET })]).toEqual(["http://localhost:8080", { assemblyAiKey: null, voiceWorker: null, problems: ["VOICE_WORKER_URL must start with https:// (http:// only for localhost)."] }]);
+  });
+
+  // Half a worker, or a short secret, is named as the problem (rule T13)
+  it("names a half-set or weak worker setting", () => {
+    // Address only, secret only, short secret
+    expect([readAnalysisSettings({ VOICE_WORKER_URL: "https://w.example" }).problems, readAnalysisSettings({ VOICE_WORKER_SECRET: SECRET }).problems, readAnalysisSettings({ VOICE_WORKER_URL: "https://w.example", VOICE_WORKER_SECRET: "short" })]).toEqual([["VOICE_WORKER_URL is set but VOICE_WORKER_SECRET is not."], ["VOICE_WORKER_SECRET is set but VOICE_WORKER_URL is not."], { assemblyAiKey: null, voiceWorker: null, problems: ["VOICE_WORKER_SECRET must be at least 16 characters long."] }]);
   });
 });

@@ -1,0 +1,7 @@
+# Keep the image small: no tests, caches or local environments
+tests/
+__pycache__/
+.pytest_cache/
+.venv/
+*.wav
+bakeoff/

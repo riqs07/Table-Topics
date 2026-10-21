@@ -657,3 +657,115 @@ test("Appearance: choose dark in Settings and it stays dark after a reload", asy
   // Its background is the dark paper, not the light one
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#161917");
 });
+
+// What the deeper-analysis route answers in the browser checks (decision 91): a short verbatim transcript and voice numbers, as the real route shapes them
+function deepReply(voiceFailed = false) {
+  // Words a third of a second apart, the first an "um"
+  const words = ["Um,", "the", "best", "part", "of", "my", "week", "was", "the", "dog."].map((text, index) => ({ text, w: text.toLowerCase().replace(/[^a-z']+/g, ""), s: index * 0.35, e: index * 0.35 + 0.25, conf: 0.9 }));
+  // The reply
+  return {
+    // The transcript
+    transcript: { engine: "assemblyai-universal-3-pro", text: words.map((word) => word.text).join(" "), words, at: "2026-10-21T12:00:00.000Z" },
+    // The voice, unless it failed
+    voice: voiceFailed ? null : { engine: "voice-worker-1", praat: "6.1.38", jitterLocalPct: 1.4, shimmerLocalDb: 0.6, hnrDb: 13.8, alphaRatioDb: -17.2, hammarbergDb: 23.5, creakPct: 4.2, syllables: 14, speechRate: 3.2, articulationRate: 4.1, f0: { medianHz: 128, p10Hz: 101, p90Hz: 176, rangeSt: 9.6, sdSt: 3 }, emotion: null, at: "2026-10-21T12:00:00.000Z" },
+    // Why a part is missing
+    failures: voiceFailed ? { voice: "failed" } : {},
+  };
+}
+
+// Record a Rapid Fire take from its address, ending on its saved page
+async function recordRapidFire(page: import("@playwright/test").Page) {
+  // Open a Rapid Fire topic directly
+  await page.goto("/session?mode=talk&prompt=t001");
+  // Reveal the topic and start the countdown
+  await page.getByRole("button", { name: /Show my topic/ }).click();
+  // Recording starts by itself after the countdown
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // The countdown is 10 seconds
+  await expect(stop).toBeVisible({ timeout: 15_000 });
+  // Speak past the 10-second minimum
+  await page.waitForTimeout(11_500);
+  // Stop recording
+  await stop.click();
+  // The saved session opens
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+}
+
+// Deeper analysis (decision 91): switch it on in Settings, record a take, and its server measures reach the take's table and the profile's voice group
+test("Deeper analysis: switch it on, record a take, see the voice measures from the server", async ({ page }) => {
+  // Use the stand-in microphone and speech
+  await useStandIns(page);
+  // Past the welcome, with the passphrase saved
+  await page.addInitScript(() => {
+    // Welcome seen
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // The passphrase
+    localStorage.setItem("voicelab-passphrase", "a long passphrase for testing");
+  });
+  // The uploads the route received
+  const uploads: Array<{ type: string | undefined; duration: string | undefined; bytes: number }> = [];
+  // The route, stood in: the status check, and the analysis
+  await page.route("**/api/analyse", async (route) => {
+    // The status check
+    if (route.request().method() === "GET") return route.fulfill({ json: { transcription: true, voice: true, problems: [] } });
+    // Noted
+    uploads.push({ type: route.request().headers()["content-type"], duration: route.request().headers()["x-voicelab-duration"], bytes: route.request().postDataBuffer()?.byteLength ?? 0 });
+    // The analysis
+    await route.fulfill({ json: deepReply() });
+  });
+  // The coach, stood in (the take's page asks for feedback once the passphrase is set)
+  await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You named the dog.", change: "Start on the dog.", retryCue: "Dog first." } } }));
+  // Settings, loaded directly
+  await page.goto("/settings");
+  // Switch deeper analysis on
+  await page.getByRole("checkbox", { name: /Send my recordings for deeper analysis/ }).click();
+  // On once saved
+  await expect(page.getByRole("checkbox", { name: /Send my recordings for deeper analysis/ })).toBeChecked();
+  // The server says it is ready
+  await expect(page.getByText("Ready: transcription and voice analysis are set up on the server.")).toBeVisible();
+  // Record a take
+  await recordRapidFire(page);
+  // It was uploaded once, as audio, with its length
+  await expect.poll(() => uploads.length).toBe(1);
+  // (what was sent)
+  expect([uploads[0]!.type?.startsWith("audio/"), Number(uploads[0]!.duration) >= 10, uploads[0]!.bytes > 0]).toEqual([true, true, true]);
+  // Nothing went wrong, so no note shows once it is done
+  await expect(page.locator("[data-deep-note]")).toHaveCount(0);
+  // Every measure of this take
+  await page.getByRole("link", { name: "See all measures for this take" }).click();
+  // The jitter row is there, marked as from deeper analysis
+  await expect(page.locator("tr[data-metric='pro.jitter_local']")).toContainText("deeper analysis");
+  // On to the whole profile
+  await page.getByRole("link", { name: "Your whole speaking profile" }).click();
+  // The voice group lists the server's voice measures with plain names
+  await expect(page.getByRole("region", { name: "Voice" }).getByRole("list", { name: "From deeper analysis" })).toContainText("Pitch steadiness (jitter)");
+});
+
+// Deeper analysis with the voice worker down: the take keeps its phone measures and says so quietly
+test("Deeper analysis: a part that fails leaves a quiet note on the take", async ({ page }) => {
+  // Use the stand-in microphone and speech
+  await useStandIns(page);
+  // Past the welcome, with the passphrase saved
+  await page.addInitScript(() => {
+    // Welcome seen
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // The passphrase
+    localStorage.setItem("voicelab-passphrase", "a long passphrase for testing");
+  });
+  // The route, stood in: ready, but the voice part fails this time
+  await page.route("**/api/analyse", (route) => route.fulfill({ json: route.request().method() === "GET" ? { transcription: true, voice: true, problems: [] } : deepReply(true) }));
+  // The coach, stood in
+  await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You named the dog.", change: "Start on the dog.", retryCue: "Dog first." } } }));
+  // Settings, loaded directly
+  await page.goto("/settings");
+  // Switch deeper analysis on
+  await page.getByRole("checkbox", { name: /Send my recordings for deeper analysis/ }).click();
+  // On once saved
+  await expect(page.getByRole("checkbox", { name: /Send my recordings for deeper analysis/ })).toBeChecked();
+  // Saved
+  await expect(page.getByText("Ready: transcription and voice analysis are set up on the server.")).toBeVisible();
+  // Record a take
+  await recordRapidFire(page);
+  // The quiet note on the take
+  await expect(page.getByText("Deeper analysis transcribed this take, but the voice analysis didn’t work this time.")).toBeVisible({ timeout: 10_000 });
+});

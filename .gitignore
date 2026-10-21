@@ -24,3 +24,10 @@ playwright-report/
 
 # The service worker, written by `pnpm build` from src/serviceWorker/sw.template.js (decision 88)
 public/sw.js
+
+# The voice worker's local Python environment and caches (decision 91)
+voice-worker/.venv/
+__pycache__/
+.pytest_cache/
+# The filler bake-off's local recordings and results (never committed: they are your voice)
+bakeoff/

@@ -49,6 +49,8 @@ import { CheckRow } from "@/components/script/CheckRow";
 import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
+// Load the deeper-analysis status check (decision 91)
+import { checkDeepSetup, type DeepSetup } from "@/data/deepAnalysisClient";
 
 // Choices for how many recent sessions keep their audio
 const RETENTION_CHOICES = [10, 30, 60, 100];
@@ -120,6 +122,65 @@ function SpaceShortcutChoice() {
 
   // A labelled switch
   return <CheckRow checked={on} onChange={change} detail="On a computer keyboard. Switch it off if it gets pressed by accident.">Space bar starts and stops recording</CheckRow>;
+}
+
+// What the server said about deeper analysis, in words (decision 91)
+function deepSetupText(setup: DeepSetup): string {
+  // Each state
+  switch (setup.state) {
+    // Both parts
+    case "ready": return "Ready: transcription and voice analysis are set up on the server.";
+    // One part
+    case "partial": return setup.transcription ? "Partly ready: transcription is set up; voice analysis isn’t, so voice measures won’t come back." : "Partly ready: voice analysis is set up; transcription isn’t, so pause-word and pause measures stay the phone’s.";
+    // Neither
+    case "not-set-up": return "Deeper analysis isn’t set up on the server yet. Until it is, nothing is sent and takes keep the phone’s measures.";
+    // No passphrase
+    case "needs-passphrase": return "Needs the passphrase from “Set up the coach” above. Until then nothing is sent.";
+    // Refused
+    case "wrong-passphrase": return "The server didn’t accept the saved passphrase, so nothing is sent.";
+    // Unreachable
+    case "unreachable": return "Couldn’t reach the server to check. It is checked again next time you open Settings.";
+  }
+}
+
+// "Send my recordings for deeper analysis" (decision 91): off unless chosen; when on, says whether the server is set up
+function DeepAnalysisChoice({ settings, onSave, fetchFn }: { settings: SettingsRecord; onSave: (next: SettingsRecord) => void; fetchFn?: typeof fetch }) {
+  // Whether it is on
+  const on = settings.deepAnalysis === true;
+  // What the server said, or null while checking
+  const [setup, setSetup] = useState<DeepSetup | null>(null);
+  // Ask the server whenever it is switched on (and when the page opens with it on)
+  useEffect(() => {
+    // Nothing to check while off
+    if (!on) return;
+    // Ignore a late answer
+    let cancelled = false;
+    // Ask
+    void checkDeepSetup(readPassphrase(), fetchFn).then((result) => {
+      // Shown when still wanted
+      if (!cancelled) setSetup(result);
+    });
+    // Stop updating when switched off or closed
+    return () => {
+      // Ignore the answer
+      cancelled = true;
+      // Ask again next time
+      setSetup(null);
+    };
+  }, [on, fetchFn]);
+  // The switch, what it means, and the server's state when on
+  return (
+    <div>
+      {/* The switch */}
+      <CheckRow checked={on} onChange={(event) => onSave({ ...settings, deepAnalysis: event.target.checked })} detail="Off unless you switch it on.">Send my recordings for deeper analysis</CheckRow>
+      {/* What leaves the phone */}
+      <p className="mt-2 text-footnote text-ink-muted">Each take you save is sent once to a transcription service (AssemblyAI) and to VoiceLab’s own voice-analysis server. They measure your pause words, where your pauses fall, and how your voice sounds, then send the numbers back to this phone. Neither keeps your recording or transcript. Your phone’s own measures are always kept.</p>
+      {/* The server's state, when on */}
+      {on && <p role="status" data-deep-setup={setup?.state ?? "checking"} className="mt-2 text-footnote">{setup ? deepSetupText(setup) : "Checking the server…"}</p>}
+      {/* What is wrong with the server's settings, by name */}
+      {on && setup && "problems" in setup && setup.problems.length > 0 && <ul className="mt-1 list-disc pl-5 text-footnote text-ink-muted">{setup.problems.map((problem) => <li key={problem}>{problem}</li>)}</ul>}
+    </div>
+  );
 }
 
 // A section of the settings page: a section heading and its content
@@ -456,10 +517,15 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         </details>
       </Section>}
 
+      {/* Deeper analysis of each take on the server (decision 91; drawn once the settings are loaded) */}
+      {today && settings && <Section title="Deeper analysis (advanced)">
+        <DeepAnalysisChoice settings={settings} fetchFn={fetchFn} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
+      </Section>}
+
       {/* Export and import */}
       <Section title="Your data" id="your-data">
         {/* Where it lives */}
-        <p className="text-ink-muted">Everything stays on this device; your browser’s speech service (Google in Chrome, Apple in Safari) turns speech into text.</p>
+        <p className="text-ink-muted">Everything stays on this device; your browser’s speech service (Google in Chrome, Apple in Safari) turns speech into text.{settings?.deepAnalysis ? " With deeper analysis on, each take’s recording is also sent once for analysis and not kept there." : ""}</p>
         {/* How safe it is from the browser clearing it, and when a copy was last saved (drawn in the browser only) */}
         {/* Room is kept for this line while it loads, so the sections below do not jump (decision 76) */}
         {!(today && safety) && <p aria-hidden="true" className="mt-2 min-h-12" />}

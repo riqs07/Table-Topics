@@ -1,0 +1,9 @@
+# The voice worker's packages (decision 91), pinned for repeatable builds.
+# Licences: FastAPI MIT, Uvicorn BSD-3, librosa ISC, numpy BSD-3,
+# praat-parselmouth GPL-3.0 (Praat is GPL; fine as a separate network
+# service, but have a lawyer check before any commercial launch).
+fastapi==0.115.12
+uvicorn==0.34.2
+librosa==0.11.0
+praat-parselmouth==0.4.7
+numpy==2.5.4

@@ -44,6 +44,9 @@ import type { Outline } from "@/core/outline";
 import type { Repository } from "@/data/repository";
 // Load the recording saver
 import { saveRecording } from "@/data/saveRecording";
+// Load the deeper-analysis sender and the saved passphrase (decision 91)
+import { requestDeepAnalysis } from "@/data/deepAnalysisClient";
+import { readPassphrase } from "@/data/passphrase";
 // Load where each kind of session belongs
 import { sessionHome } from "@/core/sessionHome";
 // Load the small-talk content, the strip's level, and the strip
@@ -100,6 +103,8 @@ interface RecordingScreenProps {
   planStep?: number | null;
   // For a short speech: the user's topic, points and length (on a retry, read from the first try instead)
   outline?: Outline | null;
+  // Network function for deeper analysis (replaced in tests; decision 91)
+  fetchFn?: typeof fetch;
 }
 
 // One tip for each end of a talk, shown before an openings and closings drill
@@ -297,7 +302,7 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn }: RecordingScreenProps) {
   // A short speech's plan: from the address, or (on a retry) from the first try
   const [outline, setOutline] = useState<Outline | null>(givenOutline);
   // Use the given repository, or the browser's
@@ -615,6 +620,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}) }, clock());
       // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
       void requestPersistentStorage();
+      // Send the audio for deeper analysis when that setting is on (no wait, and it never fails: its outcome is kept as a quiet note on the take; decision 91)
+      void requestDeepAnalysis(repo, session, { passphrase: readPassphrase(), now: clock(), ...(fetchFn ? { fetchFn } : {}) });
       // A moment note goes straight back to the Small talk page, where it is listed; anything else opens its page (feedback is requested there)
       const next = mode === "moment" ? "/small-talk/unit?id=answering#moments" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`;
       // The speech service dropped: say so first, with the way to the take
@@ -638,7 +645,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [clock, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest]);
+  }, [clock, fetchFn, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest]);
 
   // Stop recording, then keep the take
   const stop = useCallback(async () => {

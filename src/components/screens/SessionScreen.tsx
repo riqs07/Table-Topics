@@ -101,6 +101,8 @@ import { requestFeedbackDetail, type FeedbackOutcome } from "@/data/feedbackClie
 import { readPassphrase } from "@/data/passphrase";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
+// Load the deeper-analysis notes (decision 91)
+import { noteFor } from "@/core/analysis/deep";
 
 // What the screen needs: which session, plus the shared props
 interface SessionScreenProps extends ScreenProps {
@@ -622,6 +624,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
           {/* One word swap from the coach's rubric, when it suggested one (decision 90) */}
           {wordSwap && <p className="mt-2 text-lede"><em>One word swap.</em> <span>“{wordSwap.said}” → “{wordSwap.stronger}”{wordSwap.why ? ` (${wordSwap.why})` : ""}</span></p>}
+          {/* Where the take's deeper analysis stands, said quietly (decision 91) */}
+          <DeepNote repo={repo} sessionId={session.id} now={now} />
           {/* Quieter options, as a short list of rows (no empty space above them) */}
           <ul aria-label="More options" className={`mt-6 mb-6 divide-y divide-rule px-4 ${CARD}`}>
             {/* Open the transcript on a phone */}
@@ -655,6 +659,47 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
       </div>
     </>
   );
+}
+
+// How often the take's page looks again while its deeper analysis is under way
+const DEEP_CHECK_MS = 3_000;
+
+// The quiet note on a take's deeper analysis (decision 91): read from its analysis, and read again every few seconds while it is under way; nothing when there is nothing to say
+function DeepNote({ repo, sessionId, now }: { repo: Repository; sessionId: string; now: Date }) {
+  // The note, once read
+  const [note, setNote] = useState("");
+  // Read it, and again while under way
+  useEffect(() => {
+    // Ignore late answers once the take changes
+    let cancelled = false;
+    // The next check
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // Read once
+    const read = () => {
+      // The analysis (a failure just means no note is shown)
+      repo.getAnalysis(sessionId).then((analysis) => {
+        // The take changed
+        if (cancelled) return;
+        // Its note now
+        setNote(noteFor(analysis?.deep, new Date(Math.max(now.getTime(), Date.now()))));
+        // Look again while it is under way
+        if (analysis?.deep?.status === "running") timer = setTimeout(read, DEEP_CHECK_MS);
+      }, () => {});
+    };
+    // Start
+    read();
+    // Stop once the take changes
+    return () => {
+      // Ignore late answers
+      cancelled = true;
+      // No more checks
+      clearTimeout(timer);
+    };
+  }, [repo, sessionId, now]);
+  // Nothing to say
+  if (!note) return null;
+  // The note, read out politely when it changes
+  return <p role="status" data-deep-note className="mt-4 max-w-[48ch] text-footnote text-ink-muted">{note}</p>;
 }
 
 // The first word swap the coach suggested for a take, read from its analysis, again when its feedback arrives (null when there is none)
@@ -849,6 +894,8 @@ function RetryView({ repo, retry, original, now, plan, view }: { repo: Repositor
           {retry.feedback && <p className="mt-5 max-w-[48ch] text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
           {/* Listen back to the second try */}
           <div className="max-w-[48ch]"><Playback repo={repo} session={retry} /></div>
+          {/* Where the second try's deeper analysis stands, said quietly (decision 91) */}
+          <DeepNote repo={repo} sessionId={retry.id} now={now} />
           {/* Push the action down */}
           <div className="flex-1" />
           {/* Move on: the next step, or back to where it started (decision 67) */}

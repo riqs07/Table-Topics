@@ -1,7 +1,7 @@
 # Setup Requirements: Accounts, Keys, and Tools
 
 **Purpose:** Everything only you can set up, when it is needed, and what it costs.
-**Last updated:** 2026-10-21 (decision 90)
+**Last updated:** 2026-10-21 (decision 91)
 
 ## Rule for keys
 
@@ -21,6 +21,8 @@
 | 8 | **Vercel account**, connected to GitHub | M11 | Free tier | Create the project and enter the variables below |
 | 9 | **Domain name** | M11, optional | About $10 to $15 per year | Only if you want a custom address |
 | 11 | **ElevenLabs account, API key and a voice** | Not needed for the app's fixed lines, which ship as saved recordings (decision 82). Needed for the conversation personas' written lines (decision 84): each line is spoken in that persona's own voice with `eleven_v4`. Without the key their written lines are said by the phone's own voice. The four voices (Brittney, Eddy, Chris, Stacey; ids in `src/content/conversations.ts`) must be in the account's voices for the key to use them; add any that are missing from the Voice Library. Also used later for dynamic feedback | Your ElevenLabs plan (the saved recordings used about 6,000 credits once, and the conversation characters' lines 6,346) | When dynamic lines arrive: create an API key limited to **text to speech**, with a credit limit if you like. Put it in `ELEVENLABS_API_KEY`. Pick a voice in the voice library and put its ID in `ELEVENLABS_VOICE_ID` (not secret). Without them, lines with no saved recording use the phone's own voice |
+| 12 | **AssemblyAI account and API key** (deeper analysis, decision 91; optional) | Only if you switch on "Send my recordings for deeper analysis" | Pay per use: about $0.21 to $0.26 an hour of audio plus about $0.05 an hour for keeping "um"s, so under a cent for a two-minute take; the app's cap (40 a day, at most about 16 minutes each) holds the worst day to about $3.60 | Create an account at assemblyai.com, add billing, **set a spend cap / usage alert in the AssemblyAI dashboard**, and (on a paid plan) opt out of model training and set the shortest data-retention time offered. Create a key and put it in `ASSEMBLYAI_API_KEY`. The app deletes each transcript as soon as it has read it. Run `pnpm bakeoff` with about 10 of your own takes to see how many "um"s it keeps (instructions at the top of `scripts/filler-bakeoff.ts`) |
+| 13 | **Voice worker hosting** (deeper analysis, decision 91; optional) | Only for the voice measures of deeper analysis | Modal or Google Cloud Run: a few seconds of CPU per take, usually inside the free tier; set a budget alert | Deploy `voice-worker/` as its README says (Cloud Run: `gcloud run deploy … --source .`; Modal: `modal deploy modal_app.py`). Make one random secret of at least 16 characters (`openssl rand -base64 32`) and set it as `VOICE_WORKER_SECRET` on **both** the worker and Vercel. Put the worker's https address in `VOICE_WORKER_URL`. Then run `pnpm analysis-check` locally: it reads the same settings as the app, checks the AssemblyAI key with a free request, and sends the worker a test tone. The optional audEERING model (`ENABLE_AUDEERING=1` on the worker) is **personal use only** (CC BY-NC-SA) |
 | 10 | **App icon and name approval** | M2 and M11 | Free | You choose a direction; I can draft options |
 
 ## Environment variables
@@ -33,12 +35,16 @@
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `_TOKEN`) | Rate-limit counters | Yes | Vercel (optional in `.env.local`) |
 | `ELEVENLABS_API_KEY` | The conversation personas' written lines (decision 84), and lines with no saved recording | Yes | `.env.local` and Vercel |
 | `ELEVENLABS_VOICE_ID` | Which ElevenLabs voice says those lines | No | `.env.local` and Vercel |
+| `ASSEMBLYAI_API_KEY` | Deeper analysis: the verbatim transcript (decision 91). Optional; without it the transcript part is "not set up" | Yes | `.env.local` and Vercel |
+| `VOICE_WORKER_URL` | Deeper analysis: the voice worker's address, `https://…` (`http://localhost…` only locally). Optional | No | `.env.local` and Vercel |
+| `VOICE_WORKER_SECRET` | Deeper analysis: the shared secret the worker checks, at least 16 characters; the same value on the worker | Yes | `.env.local`, Vercel and the worker's host |
 | `DEV_TUNNEL_HOST` | Development only: the tunnel host name the development server accepts requests from (for example `my-name.trycloudflare.com`; several separated by commas). Empty means none. `pnpm phone` allows Cloudflare quick tunnels by itself while it runs, since their names change every time (decision 87) | No | `.env.local` only |
 
 Rules:
 
 - None of these may start with `NEXT_PUBLIC_`, because that would expose them in the browser.
-- Set a **monthly spend limit in the Anthropic Console and in ElevenLabs** (a credit limit on the key, or on the plan), not only in our code. The app's own daily caps hold a leaked passphrase to at most about $27 a day, the weekly summary's 3 calls included (worked out in `src/config/limits.ts`); the dashboard limit is the stop that holds if something else goes wrong.
+- Deeper analysis (decision 91) needs neither key to be set: with none, the setting says the server is not set up and nothing is sent. With only one, only that part runs. **Set a spend cap in the AssemblyAI dashboard** and a budget alert on the worker's host before switching it on.
+- Set a **monthly spend limit in the Anthropic Console and in ElevenLabs** (a credit limit on the key, or on the plan), not only in our code. The app's own daily caps hold a leaked passphrase to at most about $31 a day, the weekly summary's 3 calls and deeper analysis's 40 included (worked out in `src/config/limits.ts`); the dashboard limit is the stop that holds if something else goes wrong.
 - Rotate a key at once if it is ever pasted somewhere by mistake.
 
 ## What I cannot do for you

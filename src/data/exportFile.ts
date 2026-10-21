@@ -6,7 +6,9 @@ import { isSessionMode, type AnalysisRecord, type ChallengeRecord, type SessionR
 // Load the rubric reader and the rubric merge (decision 90)
 import { readRubric } from "@/core/analysis/rubric";
 // (merge)
-import { withRubric } from "@/core/analysis/analysis";
+import { withRubric, withServerAnalysis } from "@/core/analysis/analysis";
+// Load the reader for a kept server analysis (decision 91)
+import { readServerAnalysis } from "@/core/analysis/server";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the rules for joining a backup with what is already here (decision 86)
@@ -68,14 +70,27 @@ export async function importExport(repo: Repository, file: ExportFile, now: Date
   for (const talk of file.talks) await repo.saveTalk(mergeRecord(await repo.getTalk(talk.id), talk));
   // The settings, joined with those here
   await repo.saveSettings(mergeSettings(await repo.getSettings(now), file.settings));
-  // Each take's measures: one already here is kept, gaining only a rubric it lacks (decision 90)
+  // Each take's measures: one already here is kept, gaining only a rubric or a deeper analysis it lacks (decisions 90 and 91)
   for (const analysis of file.analyses) {
     // The copy here, if any
-    const here = await repo.getAnalysis(analysis.sessionId);
-    // Saved when new, or when the file adds a rubric
-    if (!here) await repo.saveAnalysis(analysis);
-    // (a rubric the copy here lacks)
-    else if (!here.rubric && analysis.rubric) await repo.saveAnalysis(withRubric(here, analysis.rubric));
+    let here = await repo.getAnalysis(analysis.sessionId);
+    // Saved as it is when new
+    if (!here) {
+      // Saved
+      await repo.saveAnalysis(analysis);
+      // Next
+      continue;
+    }
+    // A rubric the copy here lacks
+    const gainsRubric = !here.rubric && analysis.rubric;
+    // (added)
+    if (gainsRubric) here = withRubric(here, analysis.rubric!);
+    // A deeper analysis the copy here lacks, with its status
+    const gainsServer = !here.server && analysis.server;
+    // (added)
+    if (gainsServer) here = withServerAnalysis(here, analysis.server!, analysis.deep ?? { status: "done", note: "", at: analysis.computedAt });
+    // Saved when anything was gained
+    if (gainsRubric || gainsServer) await repo.saveAnalysis(here);
   }
   // The summaries already here, by id
   const summaries = new Set((await repo.listSummaries()).map((summary) => summary.id));
@@ -166,8 +181,14 @@ function isAnalysis(value: unknown): value is AnalysisRecord {
   const rawOk = Array.isArray(raw.timedWords) && Array.isArray(raw.pauses) && isObject(raw.contentWords) && isNumber(raw.durationSec);
   // A rubric, when present, must read cleanly
   const rubricOk = value.rubric === undefined || readRubric(value.rubric, value.computedAt) !== null;
-  // All three
-  return metricsOk && rawOk && rubricOk;
+  // The server's analysis, when present, must read cleanly (decision 91)
+  const serverOk = value.server === undefined || readServerAnalysis(value.server) !== null;
+  // The replaced phone values, when present, have the same shape as measures
+  const supersededOk = value.superseded === undefined || (isObject(value.superseded) && Object.values(value.superseded).every((metric) => isObject(metric) && (metric.value === null || isNumber(metric.value)) && isText(metric.unit) && isText(metric.engine)));
+  // The status, when present, is one of the known ones with a note and a time
+  const deepOk = value.deep === undefined || (isObject(value.deep) && ["running", "done", "partial", "failed", "skipped"].includes(value.deep.status as string) && isText(value.deep.note) && isText(value.deep.at));
+  // All of them
+  return metricsOk && rawOk && rubricOk && serverOk && supersededOk && deepOk;
 }
 
 // Check that a value has the shape of a weekly summary

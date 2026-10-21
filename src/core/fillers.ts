@@ -88,6 +88,12 @@ function tokenize(transcript: string): Token[] {
   });
 }
 
+// Whether a single cleaned word is a hesitation sound such as "um", "uh" or "erm" (used to read a verbatim transcript; decision 91)
+export function isHesitationSound(word: string): boolean {
+  // One of the sound patterns fits
+  return matchSound(word.toLowerCase()) !== undefined;
+}
+
 // Find which sound filler a single word is, if any
 function matchSound(word: string): string | undefined {
   // Return the standard name of the first sound pattern the word fits

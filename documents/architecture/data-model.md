@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-21
+**Last updated:** 2026-10-21 (decision 91)
 
 ## Where data lives
 
@@ -52,9 +52,12 @@ Each take's measures, in their own collection (`analyses`, keyed by session id) 
 | sessionId | The session it belongs to |
 | schemaVersion | The version of the measure definitions (`ANALYSIS_SCHEMA_VERSION`); an older one is worked out again from the session, keeping the rubric |
 | computedAt | When the measures were last worked out |
-| engines | `{ device, transcript?, voice?, rubric? }`, each `{ name, version, at }`: which engines contributed. Only `device` and `rubric` exist in stage A |
+| engines | `{ device, transcript?, voice?, rubric? }`, each `{ name, version, at }`: which engines contributed. `transcript` and `voice` appear once deeper analysis has run (decision 91), with the transcription engine and the worker's version |
 | metrics | Every measure by id, each `{ value, unit, source, engine }`: the number (or null when it could not be measured), its unit, where it came from (`device`, `transcript`, `voice` or `rubric`) and the exact engine (such as `device-loudness-v1` or `device-heuristic-v1`, or the coach model for rubric scores) |
 | raw | What the phone measures are worked out from, so they can be worked out again without the audio: the mode, length and saved pause-word rate; `timedWords` (each word of the transcript, cleaned, with the time it was first heard and the next word's time, or null without word times); `pauses` (each silence of 0.25 s or more, with the first word heard after it) and where they came from (`loudness`, `word-gaps` or `none`); the span of speech; summaries of loudness (average, coefficient of variation, thirds, whether the browser levelled it) and pitch (usual pitch, range and spread in semitones, phrase endings); fading phrase ends; the first 30 seconds against the rest; up to 300 content words with their counts; and a conversation's measures. The loudness and pitch readings are not copied: they stay on the session |
+| server | Deeper analysis (decision 91), when it ran: `{ transcript, voice }`, either may be null. `transcript` is `{ engine, text, words, at }` with every word as `{ text, w, s, e, conf }` (its written form with punctuation, the cleaned word, start and end in seconds, confidence 0 to 1); `voice` is the worker's numbers (jitter, shimmer, HNR, alpha ratio, Hammarberg, creak, syllables and rates, a pitch summary, the optional audEERING scores or null) with its engine and Praat version. Kept so its measures can be worked out again. Missing until deeper analysis runs |
+| superseded | Phone values that a server value replaced, by measure id, in the same shape as `metrics`, so no phone value is ever lost (decision 91). Missing when none were replaced |
+| deep | Where the take's deeper analysis stands (decision 91): `{ status, note, at }`, the status `running`, `done`, `partial`, `failed` or `skipped`, and the quiet note shown on the take's page. Missing when it was never sent |
 | rubric | The coach's internal rubric, once it arrived: scores of 0 to 3, each with a quote, for point first, answers the question (or null), structure, ending, concrete example and word choice; the devices used; unneeded hedges; up to three word swaps `{ said, stronger, why }`; the model and when. Never shown as scores; the first word swap shows on the results page |
 
 ### Weekly summary (added 2026-10-21, decision 90)
@@ -103,6 +106,7 @@ Talks are stored in their own collection (added to existing databases by raising
 | showPauseWords | Whether pause-word counts, marks and headlines show (decision 79). Missing means shown |
 | stammer | "I stammer" (decision 79): hides pause words, repeats and fluency judgements, and is sent to the coach as `stammer: true` so it leaves fluency alone. Missing means off |
 | warmupDays | The days (YYYY-MM-DD) a one-minute warm-up was finished, the latest 60 (decision 80). Warm-ups record nothing, so this is how today's practice knows the warm-up step is done and how the voice modes take turns. Missing until the first warm-up |
+| deepAnalysis | "Send my recordings for deeper analysis" (decision 91): each saved take's audio is sent once to the server for a verbatim transcript and voice measures. Missing means off |
 | wordsToWatch | Words the clear-sounds drills could not catch, with a count each (decision 80): a miss adds one, a catch takes one away, and a word goes at nothing; the 30 most-missed are kept. The warm-up's line to say adds the top three. Missing until the first clear-sounds drill |
 
 ### Prompts
@@ -128,7 +132,7 @@ The recordings of the fixed lines (small talk and shadowing, decision 82; the fo
 ## Export file
 
 - A JSON file with every session, challenge, saved talk, analysis, weekly summary, and the settings (analyses and summaries since decision 90; older files without them still import). **Audio is not included** (keeps the file small); sessions in the file have no audio link.
-- Importing adds to what is on the device without losing anything there (decision 86). A session, challenge or talk already on the device is kept and only gains what it lacks from the file (coach feedback with its status, your notes, any empty field); its recording link is never touched, and a challenge marked done stays done. An analysis already here is kept and only gains a rubric it lacks; a summary is added when its id is new. Settings take the file's choices but keep any the file does not have; Learn cards, scenario answers, missions, words to watch and warm-up days are joined, keeping the further-on entry for each (the more recently used card or answer, the mission try that got further, the higher count). The message says how many sessions were new.
+- Importing adds to what is on the device without losing anything there (decision 86). A session, challenge or talk already on the device is kept and only gains what it lacks from the file (coach feedback with its status, your notes, any empty field); its recording link is never touched, and a challenge marked done stays done. An analysis already here is kept and only gains a rubric or a deeper analysis it lacks; a summary is added when its id is new. Settings take the file's choices but keep any the file does not have; Learn cards, scenario answers, missions, words to watch and warm-up days are joined, keeping the further-on entry for each (the more recently used card or answer, the mission try that got further, the higher count). The message says how many sessions were new.
 - A file that is not a VoiceLab export, is from a newer version, or has a damaged record is refused before anything is saved, with a plain message.
 
 ## What leaves the device
@@ -150,3 +154,4 @@ Every request stays within limits the server checks, kept in one place (`src/cor
 | The change the coach gave last time | AI coach (via our server route) | With a retry's transcript, so the coach can say whether it showed up |
 | Audio | The browser maker's speech service | During live transcription in most browsers; the user is told |
 | Audio | Whisper (via our server route) | Only if browser transcription is unavailable, and the user is told |
+| Each saved take's recording, as recorded (WebM/Opus or MP4/AAC, at most 4,000,000 bytes, about 16 minutes), with its length in seconds (decision 91) | Our server route `/api/analyse`, which passes it at once to **AssemblyAI** (transcription, US servers by default) and to **our own voice worker** (on Modal or Cloud Run). The route stores nothing; the worker keeps nothing (the audio stays in memory for the request); the app deletes the transcript at AssemblyAI as soon as it has read it (set the shortest data retention and the training opt-out in the AssemblyAI dashboard too). What comes back to the phone: the transcript's words with times and confidence, and voice numbers | Only when "Send my recordings for deeper analysis" is on in Settings (off by default), once per take, right after it is saved; never for conversations (no audio is kept) or voice drills. Offline takes are skipped, not queued. Nothing else about you is sent with it: no transcript from the phone, no notes, no settings |

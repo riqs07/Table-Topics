@@ -1,8 +1,8 @@
 # Measurements
 
 **Purpose:** Every measure VoiceLab records about a take, where it comes from, how strong the evidence is, and how measures are turned into the speaking profile and the weekly summary.
-**Last updated:** 2026-10-21 (decision 90)
-**Source of truth:** the registry in `src/core/analysis/metrics.ts`. The tables below are generated from it; if they disagree, the code wins and this file is out of date. The research behind the choices is in [../research/speech-analysis-2026-10.md](../research/speech-analysis-2026-10.md) (sections 3, 5, 6 and 7).
+**Last updated:** 2026-10-21 (decision 91: stage B, deeper analysis on the server)
+**Source of truth:** the registry in `src/core/analysis/metrics.ts`. The tables below are generated from it; if they disagree, the code wins and this file is out of date (a unit test, `tests/unit/core/analysis/registryDoc.test.ts`, fails when a row here differs from the registry). The research behind the choices is in [../research/speech-analysis-2026-10.md](../research/speech-analysis-2026-10.md) (sections 3, 5, 6 and 7).
 
 ## How a take is measured
 
@@ -10,7 +10,8 @@
 2. **Raw features first** (`extractRaw` in `src/core/analysis/device.ts`): every word of the transcript with the time it was first heard and the next word's time (from `spokenTimes`), every pause of 0.25 seconds or more with the first word heard after it, the span of speech, summaries of loudness (average, coefficient of variation, thirds, whether the browser levelled it) and pitch (usual pitch, 10th-to-90th percentile range and spread in semitones, phrase endings), fading phrase ends, the first 30 seconds against the rest, and up to 300 content words with their counts. The loudness and pitch readings themselves stay on the session and are not copied.
 3. **Measures from raw features only** (`deviceMetrics`): every phone measure can be worked out again from the raw features without the session or audio (`recomputeFromRaw`). Each value is stored as `{ value, unit, source, engine }`, so stage B can replace a value with a better engine's without mixing definitions.
 4. **The coach's rubric** arrives with the feedback (`src/core/coachPrompt.ts`, `RUBRIC_RULES`, `RubricSchema`) and is saved into the analysis before the feedback (`saveRubric`), with the coach model as its engine.
-5. **Older takes** are measured when the profile opens (`backfillAnalyses`), eight at a time with a pause for the page in between. An analysis whose `schemaVersion` is older than `ANALYSIS_SCHEMA_VERSION` is worked out again, keeping its rubric.
+5. **Older takes** are measured when the profile opens (`backfillAnalyses`), eight at a time with a pause for the page in between. An analysis whose `schemaVersion` is older than `ANALYSIS_SCHEMA_VERSION` is worked out again, keeping its rubric and any server analysis.
+6. **Deeper analysis on the server (stage B, decision 91; off unless "Send my recordings for deeper analysis" is on in Settings).** Right after a take is saved, `requestDeepAnalysis` (`src/data/deepAnalysisClient.ts`) uploads its audio once to `POST /api/analyse`. The route sends it, at the same time, to AssemblyAI for a verbatim transcript and to the voice worker (`voice-worker/`) for voice measures; either may fail on its own. What comes back is kept in the analysis as `server` (`ServerAnalysis` in `src/data/records.ts`: every word with its punctuation, start and end in seconds and confidence; the worker's numbers), and `serverMetrics` (`src/core/analysis/server.ts`) turns it into measures. `mergeMetrics` puts the phone's, the rubric's and the server's measures together: a server value replaces a phone value only when it has a number, and the phone value it replaced is kept in `superseded`, so no phone value is ever lost. Because the raw server data is kept, the server's measures are worked out again with everything else. The take's page shows a quiet note when the analysis is under way, failed, was skipped (offline, too long, no passphrase) or came back in part (`src/core/analysis/deep.ts`). Offline takes are skipped, not queued: the simpler option, chosen and documented in decision 91.
 
 ## Engines
 
@@ -24,8 +25,33 @@
 | `device-heuristic-v1` | Pause placement and words between boundary pauses (see below) |
 | `device-browser-transcript-v1` | Pause words per minute as saved on the session, from the browser's transcript, which drops many |
 | the coach model id | Rubric scores |
+| `assemblyai-universal-3-pro` | Stage B, source `transcript`: measures from AssemblyAI's verbatim transcript (Universal-3 Pro, `disfluencies`, punctuation and word times on; model name in `src/config/models.ts`) |
+| `assemblyai-universal-3-pro-punctuation-v1` | Stage B: pause placement, words between boundary pauses and pause-word placement, read from that transcript's punctuation (see below) |
+| `voice-worker-1+praat-6.1.38` | Stage B, source `voice`: the voice worker's measures (its version and the Praat inside parselmouth). Definitions in `voice-worker/README.md` |
+| `audeering-w2v2-msp-dim` | Stage B, optional and **personal use only** (CC BY-NC-SA): arousal, dominance and valence from audEERING's open model, only when the worker runs with `ENABLE_AUDEERING=1` |
 
-Stage B adds `transcript` (AssemblyAI with disfluencies and word times) and `voice` (a Python worker with librosa and Praat through parselmouth, and optionally audEERING's arousal and dominance model, personal use) as sources; their engines will name the vendor model and worker version.
+## Measures the server computes (stage B, decision 91)
+
+| Measure | Engine | How |
+|---|---|---|
+| `lang.fillers_per_min` (replaces the phone's) | `assemblyai-universal-3-pro` | The app's own filler counter (`countFillers`) over the verbatim text, which keeps the "um"s the browser drops. For readings, lessons, pause drills and rehearsals (read from a text), the phone's count plus only the hesitation sounds it missed, since words in the text are never pause words |
+| `lang.filler_source_ratio` | `assemblyai-universal-3-pro` | That count divided by the phone's (risk R1); empty when the phone heard none |
+| `lang.discourse_markers_per_min` | `assemblyai-universal-3-pro` | "Like", "you know", "so" and "I mean" counted as fillers, per minute; empty for takes read from a text |
+| `flu.midclause_pause_share`, `flu.boundary_pause_share`, `lang.mean_clause_words` (replace the phone's) | `assemblyai-universal-3-pro-punctuation-v1` | A pause is a gap of 0.25 s or more from one word's end to the next word's start. It is at a boundary when the last real word before it (hesitation sounds looked through) ends in `. , ; : ? ! …` or a dash; otherwise mid-clause. A trailing hyphen (a word cut off) is not a boundary |
+| `flu.filler_midclause_share` | `assemblyai-universal-3-pro-punctuation-v1` | Hesitation sounds (um, uh, er…) at the start of the take or after a clause ends are at a boundary; others are mid-clause |
+| `pro.articulation_clarity` | `assemblyai-universal-3-pro` | The average confidence of the real words (hesitation sounds left out), as a percentage; empty under five words |
+| `pro.jitter_local`, `pro.shimmer_local_db`, `pro.hnr_db` | `voice-worker-1+praat-…` | Praat's standard settings |
+| `pro.alpha_ratio`, `pro.hammarberg` | `voice-worker-1+praat-…` | Per voiced frame with librosa, averaged |
+| `pro.creak_share` | `voice-worker-1+praat-…` | A documented heuristic (low pitch against the speaker's median, with low harmonics-to-noise) |
+| `flu.articulation_rate`, `flu.speech_rate` | `voice-worker-1+praat-…` | de Jong and Wempe (2009) syllable nuclei from intensity peaks |
+| `pro.arousal`, `pro.dominance`, `pro.valence` | `audeering-w2v2-msp-dim` | Optional, personal use only; missing when the module is off |
+
+The worker also returns its own pitch summary (median, 10th and 90th percentiles, range and spread). It is kept in the analysis's raw server data but does **not** replace the phone's pitch measures, so the shown pitch-range trend stays continuous whether or not deeper analysis is on.
+
+**Not computed yet, and why:**
+- `lang.rare_word_share`: still needs an English frequency list whose licence clearly allows bundling it in the app. The obvious candidates are share-alike (`wordfreq`'s data is CC BY-SA 4.0) or have unclear terms (lists derived from the Google Web corpus, SUBTLEX); none was confirmed as permissive, so nothing is bundled.
+- `conv.reply_latency_median_s`: conversations keep no audio (decision 83), so there is nothing to send.
+- `lang.sentiment_arc`, `lang.concreteness_mean`, `flu.keypoint_pause_s` and the stage-B rubric scores: not part of this stage.
 
 ## How pause placement is approximated
 
@@ -36,7 +62,7 @@ Browser transcripts have no punctuation, so whether a pause falls inside a claus
 - It is also at a boundary when the word before it usually ends a statement (yeah, right, okay, too, anyway, though).
 - Otherwise it is **mid-clause**. A pause before the first word cannot be placed and is left out.
 
-This over-counts boundaries before "I" or "this" used mid-sentence and under-counts boundaries after a sentence that ends on an ordinary word. It is labelled `device-heuristic-v1` so stage B's punctuated, timed transcript (or the coach's clause marks, `rub.clauses` in the research) can replace it.
+This over-counts boundaries before "I" or "this" used mid-sentence and under-counts boundaries after a sentence that ends on an ordinary word. It is labelled `device-heuristic-v1` so stage B's punctuated, timed transcript can replace it: with deeper analysis on, the three placement measures come from the transcript's punctuation instead (engine `assemblyai-universal-3-pro-punctuation-v1`, table above), and the heuristic value is kept in the analysis's `superseded`.
 
 ## Evidence notes that shape the coaching
 
@@ -50,12 +76,13 @@ This over-counts boundaries before "I" or "this" used mid-sentence and under-cou
 - **Per take, on the phone:** word variety (`lang.mattr50`), vague words and intensifiers per 100 words, average word length and share of words of seven letters or more, and the content-word counts kept in the raw features.
 - **Per take, from the coach:** a word-choice score (0 to 3, with a quote) and up to three word swaps `{ said, stronger, why }` that never invent facts. The first swap shows on the results page as "One word swap"; the rest stay internal.
 - **In the profile:** variety, vague-word and intensifier trends per family; words said far more than usual in the last 14 days (at least four times, at three times the usual rate); content words first said in the last 14 days (only once there is history from before); and the coach's recent swaps.
-- **Not computed: less common words** (`lang.rare_word_share`). It needs a frequency list of the most common English words under a licence that allows this use. None was available offline with a clear permissive licence, so the measure is registered for stage B and nothing is bundled.
-- **Articulation clarity** (`pro.articulation_clarity`, the other meaning of diction) is registered for stage B: the share of words the transcription heard with low confidence, checked against the words the clear-sounds drills missed (`wordsToWatch`).
+- **Not computed: less common words** (`lang.rare_word_share`). It needs a frequency list of the most common English words under a licence that allows this use. None was confirmed as permissive in stage B either (see "Not computed yet" above), so nothing is bundled.
+- **Articulation clarity** (`pro.articulation_clarity`, the other meaning of diction) comes with deeper analysis: the average confidence the transcription had in your words, as a percentage. Checking it against the words the clear-sounds drills missed (`wordsToWatch`) is left for later.
 
 ## The profile (`src/core/analysis/profile.ts`, page `/profile`)
 
 - **Families:** speaking on the spot (talk, response, bookend, free, outline, qa, and the retired standard and warm-up), reading aloud (read, pause, lesson), rehearsing (rehearse), small talk, conversations. Voice drills and moment notes are left out. Families are never compared as if they were the same kind of speech.
+- **Like with like** (decision 91): for each measure, only takes whose value came from the same source as the latest take's (phone, transcript or voice) are summed up, so a take measured on the server is never set against phone guesses. Turning deeper analysis on therefore starts a fresh history for the pause-word count and pause placement; the per-take table compares the same way and marks server values "deeper analysis". The voice group lists the server's voice measures under "From deeper analysis", each with its plain meaning.
 - **Usual:** the median of the first five takes. **Recent:** the median of the latest seven. **Spread:** 1.4826 × the median absolute deviation over the family's takes.
 - **Trend** (six takes or more): up or down when recent and usual differ by more than half a spread and by more than 5% of the usual; otherwise steady. The registry's "better" direction turns it into better, worse, or just changed.
 - **Change flag** (eight takes or more): the latest three takes all sit beyond the median ± one spread of the takes before them, on the same side. A flat history uses a tenth of its level as the spread, so tiny wobbles never count.
@@ -69,15 +96,15 @@ When the profile opens, the passphrase is set, the latest summary is seven days 
 
 ## The registry
 
-Stage A measures are computed now (on the phone, or by the coach's rubric). Stage B measures are registered so the registry is the whole specification, and are computed once transcription and the voice worker exist.
+Stage A measures are computed on the phone or by the coach's rubric. Stage B measures come from deeper analysis on the server (decision 91) when it is switched on and set up; those not computed yet are listed above with the reason.
 
 ### Pace and pauses
 
 | id | Name | Definition | Unit | Source | Evidence | Shown | Better | Stage |
 |---|---|---|---|---|---|---|---|---|
 | `flu.articulation_rate_wpm` | Speaking pace | Words per minute of actual speaking time, with pauses of 0.25 seconds or more taken out. | words/min | device | strong | shown | neither | A |
-| `flu.articulation_rate` | Articulation rate (syllables) | Syllables per second of speaking time, from exact word times. | syll/s | transcript | strong | internal | neither | B |
-| `flu.speech_rate` | Speech rate (syllables) | Syllables per second over the whole take. | syll/s | transcript | strong | internal | neither | B |
+| `flu.articulation_rate` | Articulation rate (syllables) | Syllables per second of sounding time, counted from loudness peaks in the audio (de Jong and Wempe 2009), so it does not depend on the transcript. | syll/s | voice | strong | internal | neither | B |
+| `flu.speech_rate` | Speech rate (syllables) | Syllables per second over the whole take, pauses included, from the same loudness peaks. | syll/s | voice | strong | internal | neither | B |
 | `flu.phonation_ratio` | Time speaking | Share of the time from first word to last spent speaking rather than pausing. | % | device | strong | internal | neither | A |
 | `flu.mlr_words` | Words per run | Average words between pauses of 0.25 seconds or more (mean length of run). | words | device | strong | shown | higher | A |
 | `flu.pause_rate` | Pauses a minute | Silences of 0.25 seconds or more per minute. | /min | device | strong | internal | neither | A |
@@ -85,9 +112,9 @@ Stage A measures are computed now (on the phone, or by the coach's rubric). Stag
 | `flu.pause_median_s` | Typical pause | Median length of those pauses. | s | device | strong | internal | neither | A |
 | `flu.pause_p90_s` | Long pause length | The 90th percentile pause length. | s | device | strong | internal | neither | A |
 | `flu.long_pause_share` | Long pauses | Share of pauses that last a second or more. | % | device | moderate | internal | neither | A |
-| `flu.midclause_pause_share` | Pauses mid-sentence | Share of pauses that fall inside a clause rather than at a boundary. Approximated on the phone (see placement.ts) until a punctuated transcript exists. | % | device | strong | shown | lower | A |
+| `flu.midclause_pause_share` | Pauses mid-sentence | Share of pauses that fall inside a clause rather than at a boundary. Approximated on the phone (see placement.ts); with deeper analysis, read from the punctuated transcript. | % | device | strong | shown | lower | A |
 | `flu.boundary_pause_share` | Pauses at boundaries | Share of pauses at a clause or sentence boundary (the rest of the pauses). | % | device | strong | internal | higher | A |
-| `flu.filler_midclause_share` | Pause words mid-sentence | Share of pause words inside a clause rather than at a boundary. | % | transcript | moderate | internal | lower | B |
+| `flu.filler_midclause_share` | Pause words mid-sentence | Share of pause words (um, uh) inside a clause rather than at the start or after a clause ends, from the punctuated transcript. | % | transcript | moderate | internal | lower | B |
 | `flu.rate_cv_thirds` | Pace variation | Spread of the speaking pace across the three thirds of the take, as a share of the average. | ratio | device | weak | internal | neither | A |
 | `flu.pace_end_vs_start` | Pace at the end | Words a minute in the last third divided by the first third (above 1 means you sped up). | ratio | device | weak | internal | neither | A |
 | `flu.repairs_per_min` | Repeats and restarts | Repeated words (“I I”, “the the”), repeated pairs of words and restarts per minute. Rough: the browser drops many. | /min | device | moderate | internal | lower | A |
@@ -106,23 +133,23 @@ Stage A measures are computed now (on the phone, or by the coach's rubric). Stag
 | `pro.energy_drop_db` | Volume at the end | Last third's loudness against the first third, in decibels (below zero means quieter). | dB | device | weak | internal | higher | A |
 | `pro.ends_rise_share` | Rising endings | Share of phrases whose pitch rose at the end. | % | device | moderate | internal | lower | A |
 | `pro.fade_share` | Fading endings | Share of phrases that faded at the end. | % | device | weak | internal | lower | A |
-| `pro.alpha_ratio` | Projection (alpha ratio) | Spectral tilt: energy above 1 kHz against below. | dB | voice | moderate | internal | higher | B |
-| `pro.hammarberg` | Projection (Hammarberg) | Spectral tilt: strongest peak 0–2 kHz against 2–5 kHz. | dB | voice | moderate | internal | neither | B |
-| `pro.jitter_local` | Jitter | Cycle-to-cycle pitch wobble. | % | voice | weak | internal | lower | B |
-| `pro.shimmer_local_db` | Shimmer | Cycle-to-cycle loudness wobble. | dB | voice | weak | internal | lower | B |
-| `pro.hnr_db` | Voice clarity (HNR) | Harmonics-to-noise ratio: higher is a clearer voice. | dB | voice | weak | internal | higher | B |
-| `pro.creak_share` | Creaky voice | Share of voiced time in creak (vocal fry). Disputed as a fault. | % | voice | moderate | internal | neither | B |
-| `pro.arousal` | Vocal energy | audEERING model's arousal score (personal use). | 0–1 | voice | moderate | internal | neither | B |
-| `pro.dominance` | Vocal dominance | audEERING model's dominance score (personal use). | 0–1 | voice | moderate | internal | neither | B |
-| `pro.valence` | Vocal pleasantness | audEERING model's valence score (personal use). | 0–1 | voice | weak | internal | neither | B |
-| `pro.articulation_clarity` | Articulation clarity | Share of words the transcription heard with low confidence, checked against the words the clear-sounds drills missed. | % | transcript | weak | internal | lower | B |
+| `pro.alpha_ratio` | Projection (alpha ratio) | How much of the voice's energy sits above 1 kHz against below it, while voiced; a projected voice has more up high. | dB | voice | moderate | internal | higher | B |
+| `pro.hammarberg` | Projection (Hammarberg) | The strongest peak below 2 kHz against the strongest from 2 to 5 kHz, while voiced; a smaller gap usually means more effort. | dB | voice | moderate | internal | neither | B |
+| `pro.jitter_local` | Pitch steadiness (jitter) | How much the pitch wobbles from one vibration of the vocal folds to the next; lower is steadier. Phone microphones and noise raise it. | % | voice | weak | internal | lower | B |
+| `pro.shimmer_local_db` | Loudness steadiness (shimmer) | How much the loudness wobbles from one vibration to the next; lower is steadier. | dB | voice | weak | internal | lower | B |
+| `pro.hnr_db` | Voice clarity (HNR) | How much of the voice is clear tone rather than breath or rasp (harmonics-to-noise ratio); higher is clearer. | dB | voice | weak | internal | higher | B |
+| `pro.creak_share` | Creaky voice (vocal fry) | Share of voiced time in creak: very low, rough pitch. A rough guide, not a diagnosis (the rule is in voice-worker/README.md), and disputed as a fault. | % | voice | moderate | internal | neither | B |
+| `pro.arousal` | Vocal energy | How energetic the voice sounds, from audEERING's open model (personal use only, optional). | 0–1 | voice | moderate | internal | neither | B |
+| `pro.dominance` | Vocal dominance | How dominant the voice sounds, from audEERING's open model (personal use only, optional). | 0–1 | voice | moderate | internal | neither | B |
+| `pro.valence` | Vocal pleasantness | How pleasant the voice sounds, from audEERING's open model (personal use only, optional). | 0–1 | voice | weak | internal | neither | B |
+| `pro.articulation_clarity` | Articulation clarity | How sure the transcription was of your words, on average (pause words left out); higher usually means clearer speech, though accents, names and noise lower it too. | % | transcript | weak | internal | higher | B |
 
 ### Language
 
 | id | Name | Definition | Unit | Source | Evidence | Shown | Better | Stage |
 |---|---|---|---|---|---|---|---|---|
 | `lang.wpm` | Speaking rate | Words per minute over the whole take, pauses included. | words/min | device | strong | shown | neither | A |
-| `lang.fillers_per_min` | Pause words | Pause words (um, uh, like and similar) per minute, as heard by the speech service, which drops many. | /min | device | moderate | shown | lower | A |
+| `lang.fillers_per_min` | Pause words | Pause words (um, uh, like and similar) per minute, as heard by the speech service, which drops many. With deeper analysis, counted from a verbatim transcript that keeps them. | /min | device | moderate | shown | lower | A |
 | `lang.hedges_per_100w` | Hedges | Softening phrases (sort of, kind of, I think maybe, just, I guess, probably…) per 100 words; see lexicon.ts for the list. | /100 words | device | moderate | internal | lower | A |
 | `lang.tag_questions_per_100w` | Tag questions | Statements closed with right, you know, isn't it and similar, per 100 words. | /100 words | device | moderate | internal | lower | A |
 | `lang.mean_clause_words` | Words between boundary pauses | Average words between pauses that fall at a clause or sentence boundary: a rough sentence length. | words | device | weak | internal | neither | A |

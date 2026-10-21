@@ -213,8 +213,8 @@ function trendWords(summary: MetricSummary): string {
 function FamilyView({ family, profile }: { family: FamilyProfile; profile: SpeakerProfile }) {
   // The patterns for this family
   const patterns = profile.patterns.filter((pattern) => pattern.family === family.id);
-  // The registered measures not computed yet (stage B)
-  const later = METRICS.filter((metric) => metric.stage === "B").length;
+  // The registered stage-B measures this family has no values for yet
+  const later = METRICS.filter((metric) => metric.stage === "B" && !family.metrics.some((summary) => summary.metric.id === metric.id)).length;
   // Draw it
   return (
     <>
@@ -224,8 +224,10 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
       {METRIC_GROUPS.map((group) => {
         // The shown measures in it that have values
         const headline = family.metrics.filter((summary) => summary.metric.group === group.id && summary.metric.shown);
+        // In the voice group, the measures the server's deeper analysis gave too, with what each means (decision 91)
+        const deeper = group.id === "voice" ? family.metrics.filter((summary) => summary.metric.group === "voice" && !summary.metric.shown && (summary.source === "voice" || summary.source === "transcript")) : [];
         // Nothing to show, except word habits in vocabulary
-        if (headline.length === 0 && group.id !== "vocabulary") return null;
+        if (headline.length === 0 && deeper.length === 0 && group.id !== "vocabulary") return null;
         // The group's card
         return (
           <section key={group.id} aria-label={group.name} className={`mt-4 p-5 ${CARD}`}>
@@ -244,6 +246,25 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
                 </li>
               ))}
             </ul>
+            {/* The deeper analysis's voice measures, each with what it means */}
+            {deeper.length > 0 && (
+              <>
+                {/* What they are */}
+                <p className={`mt-3 ${LABEL}`}>From deeper analysis</p>
+                <ul aria-label="From deeper analysis" className="mt-1 divide-y divide-rule">
+                  {deeper.map((summary) => (
+                    <li key={summary.metric.id} data-metric={summary.metric.id} className="py-2">
+                      {/* Name and recent value */}
+                      <p className="flex items-baseline justify-between gap-3"><span>{summary.metric.name}</span><span className="font-display text-lg font-semibold">{shown(summary.recent, summary.metric.unit)}</span></p>
+                      {/* What it means */}
+                      <p className="text-footnote text-ink-muted">{summary.metric.definition}</p>
+                      {/* Against the usual */}
+                      <p className="text-footnote text-ink-muted">{trendWords(summary)}</p>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
             {/* Word habits, in the vocabulary group */}
             {group.id === "vocabulary" && <WordHabits profile={profile} />}
           </section>
@@ -261,9 +282,9 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
         {/* The fold's row */}
         <summary className={`flex min-h-14 cursor-pointer items-center font-semibold ${PRESS}`}>All measures ({family.metrics.length})</summary>
         {/* The table */}
-        <MeasureTable rows={family.metrics.map((summary) => ({ id: summary.metric.id, name: summary.metric.name, value: summary.recent, usual: summary.usual, unit: summary.metric.unit, evidence: summary.metric.evidence, shown: summary.metric.shown }))} valueLabel="Recent" />
+        <MeasureTable rows={family.metrics.map((summary) => ({ id: summary.metric.id, name: summary.metric.name, value: summary.recent, usual: summary.usual, unit: summary.metric.unit, evidence: summary.metric.evidence, shown: summary.metric.shown, deeper: summary.source === "voice" || summary.source === "transcript" }))} valueLabel="Recent" />
         {/* What is still to come */}
-        <p className="pb-4 text-footnote text-ink-muted">{later} more measures arrive with server transcription and voice analysis.</p>
+        {later > 0 && <p className="pb-4 text-footnote text-ink-muted">{later} more measures can come from deeper analysis (Settings) or later stages.</p>}
       </details>
     </>
   );
@@ -303,6 +324,8 @@ interface MeasureRow {
   evidence: string;
   // Shown or internal
   shown: boolean;
+  // Measured by the server's deeper analysis (decision 91)
+  deeper: boolean;
 }
 
 // A table of measures: name, value, usual, evidence (scrolls inside itself on a narrow phone)
@@ -314,7 +337,7 @@ function MeasureTable({ rows, valueLabel }: { rows: MeasureRow[]; valueLabel: st
         {/* Column headings */}
         <thead><tr className="border-b border-rule text-ink-muted"><th scope="col" className="py-2 pr-2 font-normal">Measure</th><th scope="col" className="py-2 pr-2 font-normal">{valueLabel}</th><th scope="col" className="py-2 pr-2 font-normal">Usual</th><th scope="col" className="py-2 font-normal">Evidence</th></tr></thead>
         {/* One row per measure */}
-        <tbody>{rows.map((row) => <tr key={row.id} data-metric={row.id} className="border-b border-rule last:border-0"><th scope="row" className="py-2 pr-2 font-normal">{row.name}{row.shown ? "" : <span className="text-ink-muted"> · internal</span>}</th><td className="py-2 pr-2 whitespace-nowrap">{shown(row.value, row.unit)}</td><td className="py-2 pr-2 whitespace-nowrap">{shown(row.usual, row.unit)}</td><td className="py-2">{row.evidence}</td></tr>)}</tbody>
+        <tbody>{rows.map((row) => <tr key={row.id} data-metric={row.id} className="border-b border-rule last:border-0"><th scope="row" className="py-2 pr-2 font-normal">{row.name}{row.shown ? "" : <span className="text-ink-muted"> · internal</span>}{row.deeper ? <span className="text-ink-muted"> · deeper analysis</span> : ""}</th><td className="py-2 pr-2 whitespace-nowrap">{shown(row.value, row.unit)}</td><td className="py-2 pr-2 whitespace-nowrap">{shown(row.usual, row.unit)}</td><td className="py-2">{row.evidence}</td></tr>)}</tbody>
       </table>
     </div>
   );
@@ -339,7 +362,7 @@ function TakeTable({ sessionId, loaded, now }: { sessionId: string; loaded: Load
       <p className="mt-2 text-footnote text-ink-muted">Recorded {dayLabel(new Date(session.createdAt), now)}. Usual is the middle of your other takes of this kind.</p>
       {/* The table */}
       <div className={`mt-4 px-5 pt-2 ${CARD}`}>
-        <MeasureTable rows={rows.map((row) => ({ id: row.metric.id, name: row.metric.name, value: row.value, usual: row.usual, unit: row.metric.unit, evidence: row.metric.evidence, shown: row.metric.shown }))} valueLabel="This take" />
+        <MeasureTable rows={rows.map((row) => ({ id: row.metric.id, name: row.metric.name, value: row.value, usual: row.usual, unit: row.metric.unit, evidence: row.metric.evidence, shown: row.metric.shown, deeper: row.source === "voice" || row.source === "transcript" }))} valueLabel="This take" />
       </div>
       {/* The coach's word swaps for this take */}
       {analysis.rubric && analysis.rubric.wordSwaps.length > 0 && <p className="mt-4 text-lede"><em>Word swaps.</em> {analysis.rubric.wordSwaps.map((swap) => `“${swap.said}” → “${swap.stronger}”`).join("; ")}</p>}

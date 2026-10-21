@@ -269,6 +269,8 @@ export interface SettingsRecord {
   warmupDays?: string[];
   // Words clear-sounds drills found hard to catch, with how often (decision 80; missing until the first)
   wordsToWatch?: Record<string, number>;
+  // "Send my recordings for deeper analysis": each saved take's audio goes once to the server for transcription and voice analysis (decision 91; missing means off)
+  deepAnalysis?: boolean;
 }
 
 // Where a measure came from (decision 90): the phone itself, a transcription service, the voice worker, or the coach's rubric
@@ -396,6 +398,88 @@ export interface AnalysisRecord {
   raw: AnalysisRaw;
   // The coach's rubric, once it arrived
   rubric?: RubricRecord;
+  // What the server's deeper analysis found, when it ran (decision 91): kept so its measures can be worked out again
+  server?: ServerAnalysis;
+  // Phone values a server engine replaced, kept so no phone value is ever lost (decision 91)
+  superseded?: Record<string, MetricValue>;
+  // Where the deeper analysis of this take stands, with a quiet note for the take's page (decision 91)
+  deep?: DeepStatus;
+}
+
+// One word as the transcription service heard it (decision 91): its text with punctuation, the cleaned word, its start and end in seconds, how sure the service was (0 to 1), and whether it is a hesitation sound such as "um"
+export interface ServerWord {
+  // The word as written, with any punctuation after it ("well," or "home.")
+  text: string;
+  // The same word cleaned to lower-case letters and apostrophes (empty for a piece with no letters)
+  w: string;
+  // When it started, in seconds
+  s: number;
+  // When it ended, in seconds
+  e: number;
+  // How sure the service was, 0 to 1
+  conf: number;
+}
+
+// The transcription service's verbatim transcript of a take (decision 91)
+export interface ServerTranscript {
+  // The engine, such as "assemblyai-universal-3-pro"
+  engine: string;
+  // The whole text, punctuated, with hesitation sounds kept
+  text: string;
+  // Every word with its times and confidence
+  words: ServerWord[];
+  // When it was made (ISO text)
+  at: string;
+}
+
+// The voice worker's findings for a take (decision 91); each number is null when the take had too little voice to measure it
+export interface ServerVoice {
+  // The engine, such as "voice-worker-1"
+  engine: string;
+  // The Praat version inside the worker
+  praat: string;
+  // Jitter (local), as a percentage
+  jitterLocalPct: number | null;
+  // Shimmer (local), in decibels
+  shimmerLocalDb: number | null;
+  // Harmonics-to-noise ratio, in decibels
+  hnrDb: number | null;
+  // Alpha ratio: energy from 1 to 5 kHz against 50 Hz to 1 kHz, in decibels
+  alphaRatioDb: number | null;
+  // Hammarberg index: strongest peak below 2 kHz against 2 to 5 kHz, in decibels
+  hammarbergDb: number | null;
+  // Share of voiced time in creak, as a percentage
+  creakPct: number | null;
+  // Syllables counted from loudness peaks (de Jong and Wempe 2009)
+  syllables: number | null;
+  // Syllables per second over the whole take
+  speechRate: number | null;
+  // Syllables per second of sounding time
+  articulationRate: number | null;
+  // Pitch from Praat: median, 10th and 90th percentiles in hertz, and the range and spread in semitones
+  f0: { medianHz: number; p10Hz: number; p90Hz: number; rangeSt: number; sdSt: number } | null;
+  // The audEERING model's scores (personal use only, decision 91), or null when the module is off
+  emotion: { arousal: number; dominance: number; valence: number; model: string } | null;
+  // When it was measured (ISO text)
+  at: string;
+}
+
+// What the server's deeper analysis returned for a take: either part may be missing when it failed or is not set up
+export interface ServerAnalysis {
+  // The verbatim transcript, or null
+  transcript: ServerTranscript | null;
+  // The voice findings, or null
+  voice: ServerVoice | null;
+}
+
+// Where a take's deeper analysis stands (decision 91)
+export interface DeepStatus {
+  // Sent and waiting, finished, finished in part, failed, or not sent
+  status: "running" | "done" | "partial" | "failed" | "skipped";
+  // A quiet note for the take's page (empty when there is nothing to say)
+  note: string;
+  // When this was last updated (ISO text)
+  at: string;
 }
 
 // One weekly coach summary (decision 90)

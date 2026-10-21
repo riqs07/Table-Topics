@@ -84,6 +84,12 @@ export function withinDuration(seconds: number): number {
   return Math.min(seconds, LONGEST_RECORDING_SECONDS);
 }
 
+// The most audio sent for deeper analysis in one upload, in bytes (decision 91): under the 4.5 MB request limit of Vercel's functions. Recordings are 32 kbit/s (about 240 KB a minute), so takes up to about 16 minutes fit; longer ones keep the phone's measures only and say so
+export const ANALYSE_MAX_BYTES = 4_000_000;
+
+// The kinds of audio the deeper-analysis route takes (what browsers record: WebM or Ogg with Opus in Chrome and Firefox, MP4 with AAC in Safari), without their parameters
+export const ANALYSE_AUDIO_TYPES: ReadonlyArray<string> = ["audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav", "audio/x-wav", "audio/aac"];
+
 // The weekly summary's limits (decision 90): a compact table of numbers and a few short quotes, never whole transcripts
 export const SUMMARY_SIZE = {
   // Families of practice in one request

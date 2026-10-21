@@ -1,0 +1,4 @@
+# For running the tests: the worker's packages plus pytest and the test client's HTTP library.
+-r requirements.txt
+pytest==9.1.1
+httpx==0.28.1

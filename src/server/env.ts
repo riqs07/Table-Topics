@@ -90,3 +90,42 @@ export function readElevenLabsKey(source: EnvSource = process.env): string | nul
   // The key, if set
   return source.ELEVENLABS_API_KEY?.trim() || null;
 }
+
+// The deeper-analysis services (decision 91): the AssemblyAI key and the voice worker's address and shared secret, each null when not set or not usable, with what is wrong in words (they name settings, never values; rule T13)
+export interface AnalysisSettings {
+  // The AssemblyAI key, or null
+  assemblyAiKey: string | null;
+  // The voice worker, or null
+  voiceWorker: { url: string; secret: string } | null;
+  // What is wrong with a half-set setting, one sentence each
+  problems: string[];
+}
+
+// The shortest worker secret allowed (the same rule as the passphrase)
+export const MIN_WORKER_SECRET_LENGTH = MIN_PASSPHRASE_LENGTH;
+
+// Read the deeper-analysis settings; a worker needs both its address and a long enough secret, and the address must be https (or http on this computer, for trying it locally)
+export function readAnalysisSettings(source: EnvSource = process.env): AnalysisSettings {
+  // The key, if set
+  const assemblyAiKey = source.ASSEMBLYAI_API_KEY?.trim() || null;
+  // The worker's address, if set
+  const url = source.VOICE_WORKER_URL?.trim() || "";
+  // Its secret, if set
+  const secret = source.VOICE_WORKER_SECRET?.trim() || "";
+  // What is wrong
+  const problems: string[] = [];
+  // A safe address: https anywhere, or http only on this computer
+  const safe = /^https:\/\//.test(url) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(url);
+  // An address that is not safe
+  if (url && !safe) problems.push("VOICE_WORKER_URL must start with https:// (http:// only for localhost).");
+  // One half without the other
+  if (url && !secret) problems.push("VOICE_WORKER_URL is set but VOICE_WORKER_SECRET is not.");
+  // (the other half)
+  if (secret && !url) problems.push("VOICE_WORKER_SECRET is set but VOICE_WORKER_URL is not.");
+  // A secret too short to resist guessing
+  if (url && secret && secret.length < MIN_WORKER_SECRET_LENGTH) problems.push(`VOICE_WORKER_SECRET must be at least ${MIN_WORKER_SECRET_LENGTH} characters long.`);
+  // The worker, when every part is right
+  const voiceWorker = url && safe && secret.length >= MIN_WORKER_SECRET_LENGTH ? { url: url.replace(/\/+$/, ""), secret } : null;
+  // Everything read
+  return { assemblyAiKey, voiceWorker, problems };
+}

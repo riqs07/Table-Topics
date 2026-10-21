@@ -54,8 +54,8 @@ function notSetUp(error: unknown, detailed: boolean): Response {
   return reply(500, { error: detailed ? `The server is not set up: ${(error as Error).message}` : "The server is not set up." });
 }
 
-// Run every check in order, so nothing costs money until the last step; hand back the settings and the checked body, or the refusal to send
-export async function admit<Schema extends z.ZodType>(request: Request, deps: GuardDeps, schema: Schema, pausedMessage: string): Promise<{ env: ServerEnv; data: z.infer<Schema> } | { refusal: Response }> {
+// Check the passphrase (counting wrong ones) and then every setting; hand back the settings, or the refusal to send. Free: it never counts against the call limits (decision 91 uses it alone for the deeper-analysis status check)
+export async function checkAccess(request: Request, deps: GuardDeps): Promise<{ env: ServerEnv } | { refusal: Response }> {
   // The passphrase the server expects, read on its own
   const secret = deps.readAccessSecret();
   // Without it nobody can get in: say so, with details only while developing
@@ -143,6 +143,36 @@ export async function admit<Schema extends z.ZodType>(request: Request, deps: Gu
     // Tell the owner which setting to fix (messages name variables, never values)
     return { refusal: notSetUp(error, true) };
   }
+  // Everything passed
+  return { env };
+}
+
+// Count one call against the route's limits; hand back the refusal to send when it is over them or the counter cannot be reached, otherwise null
+export async function countCall(deps: GuardDeps, pausedMessage: string, dayMessage = "Today's feedback limit is reached."): Promise<Response | null> {
+  // The outcome
+  let limit;
+  // Try the shared store
+  try {
+    // Check and count
+    limit = await checkRateLimit(deps.makeCounterStore(), deps.limits, deps.now());
+  } catch {
+    // If the store is down, refuse rather than run without limits
+    return reply(503, { error: pausedMessage });
+  }
+  // Refuse over the limit and say when to try again
+  if (!limit.allowed) return reply(429, { error: limit.reason === "day" ? dayMessage : "Too many requests. Wait a moment." }, { "retry-after": String(limit.retryAfterSec) });
+  // Allowed
+  return null;
+}
+
+// Run every check in order, so nothing costs money until the last step; hand back the settings and the checked body, or the refusal to send
+export async function admit<Schema extends z.ZodType>(request: Request, deps: GuardDeps, schema: Schema, pausedMessage: string): Promise<{ env: ServerEnv; data: z.infer<Schema> } | { refusal: Response }> {
+  // The passphrase and the settings first
+  const access = await checkAccess(request, deps);
+  // Refused there
+  if ("refusal" in access) return access;
+  // The checked settings
+  const { env } = access;
 
   // Read the body as JSON
   let body: unknown;
@@ -160,17 +190,9 @@ export async function admit<Schema extends z.ZodType>(request: Request, deps: Gu
   if (!parsed.success) return { refusal: reply(400, { error: "The request was missing a field or had a value out of range." }) };
 
   // Count the call against the limits
-  let limit;
-  // Try the shared store
-  try {
-    // Check and count
-    limit = await checkRateLimit(deps.makeCounterStore(), deps.limits, deps.now());
-  } catch {
-    // If the store is down, refuse rather than run without limits
-    return { refusal: reply(503, { error: pausedMessage }) };
-  }
-  // Refuse over the limit and say when to try again
-  if (!limit.allowed) return { refusal: reply(429, { error: limit.reason === "day" ? "Today's feedback limit is reached." : "Too many requests. Wait a moment." }, { "retry-after": String(limit.retryAfterSec) }) };
+  const over = await countCall(deps, pausedMessage);
+  // Refused there
+  if (over) return { refusal: over };
 
   // Everything passed
   return { env, data: parsed.data };

@@ -5,6 +5,7 @@
 // - Usual: the median of the first five takes in the family. Recent: the median of the latest seven.
 // - Spread: the robust spread, 1.4826 times the median absolute deviation, over every take in the family.
 // - Trend (six takes or more): up or down when recent and usual differ by more than half a spread (and by more than 5% of the usual), otherwise steady.
+// - Only values from the same source as the latest take are compared (phone with phone, server with server; decision 91).
 // - Change flag (eight takes or more): the latest three takes all sit beyond the median plus or minus one spread of the takes before them, on the same side.
 // - Patterns (fifteen takes or more in a family): differences between families, the first 30 seconds against the rest, and early against late in the week, reported only when the gap is larger than the family's usual spread (or holds in at least 70% of takes).
 
@@ -13,7 +14,7 @@ import { METRICS, findMetric, type MetricDefinition } from "@/core/analysis/metr
 // Load the statistics helpers
 import { median, robustSpread, round } from "@/core/analysis/stats";
 // Load the record types
-import type { AnalysisRecord, SessionMode, SessionRecord } from "@/data/records";
+import type { AnalysisRecord, MetricSource, SessionMode, SessionRecord } from "@/data/records";
 
 // A family of practice
 export type FamilyId = "spot" | "reading" | "rehearse" | "smalltalk" | "conversation";
@@ -71,6 +72,8 @@ export interface ProfileTake {
 export interface MetricSummary {
   // The measure's definition
   metric: MetricDefinition;
+  // Where the values summed up came from (the latest take's source; decision 91)
+  source: MetricSource;
   // How many takes measured it
   count: number;
   // The usual level (median of the first five), or null
@@ -153,8 +156,10 @@ function verdictFor(metric: MetricDefinition, side: "up" | "down"): "better" | "
 
 // Sum one measure up over a family's takes, oldest first
 export function summarizeMetric(metric: MetricDefinition, takes: ReadonlyArray<ProfileTake>): MetricSummary | null {
-  // The takes that measured it, with their values
-  const measured = takes.map((take) => ({ take, value: take.analysis.metrics[metric.id]?.value ?? null })).filter((entry): entry is { take: ProfileTake; value: number } => entry.value !== null);
+  // Where the latest value came from: only values from the same kind of engine are compared, so a take measured by the server is never set against phone guesses (decision 91)
+  const source = [...takes].reverse().map((take) => take.analysis.metrics[metric.id]).find((value) => value !== undefined && value.value !== null)?.source;
+  // The takes that measured it from that source, with their values
+  const measured = takes.map((take) => ({ take, value: take.analysis.metrics[metric.id]?.source === source ? (take.analysis.metrics[metric.id]?.value ?? null) : null })).filter((entry): entry is { take: ProfileTake; value: number } => entry.value !== null);
   // Nothing measured
   if (measured.length === 0) return null;
   // The values, oldest first
@@ -178,8 +183,8 @@ export function summarizeMetric(metric: MetricDefinition, takes: ReadonlyArray<P
   const best = metric.better === "neither" ? null : measured.reduce((top, entry) => ((metric.better === "higher" ? entry.value > top.value : entry.value < top.value) ? entry : top), measured[0]!);
   // The summary
   return {
-    // The measure and its counts
-    metric, count: values.length,
+    // The measure, where its values came from, and its counts
+    metric, source: source ?? metric.source, count: values.length,
     // Levels, rounded to two decimals
     usual: usual === null ? null : round(usual, 2), recent: recent === null ? null : round(recent, 2), latest: round(values.at(-1)!, 2), spread: spread === null ? null : round(spread, 2),
     // The trend and its verdict
@@ -337,16 +342,16 @@ export function buildProfile(sessions: ReadonlyArray<SessionRecord>, analyses: R
   return { families: families.map((family) => family.profile), patterns, vocabulary: vocabularyProfile(takes, now) };
 }
 
-// The median of a measure over some takes, or null when none measured it
-function usualOf(id: string, takes: ReadonlyArray<ProfileTake>): number | null {
-  // The values measured
-  const values = takes.map((take) => take.analysis.metrics[id]?.value ?? null).filter((value): value is number => value !== null);
+// The median of a measure over some takes, from one source only (decision 91), or null when none measured it
+function usualOf(id: string, takes: ReadonlyArray<ProfileTake>, source: MetricSource): number | null {
+  // The values measured from that source
+  const values = takes.map((take) => (take.analysis.metrics[id]?.source === source ? (take.analysis.metrics[id]?.value ?? null) : null)).filter((value): value is number => value !== null);
   // Their middle, rounded
   return values.length > 0 ? round(median(values)!, 2) : null;
 }
 
 // One take's every measure with its family's usual level, for the per-take view
-export function takeMeasures(session: SessionRecord, analysis: AnalysisRecord, sessions: ReadonlyArray<SessionRecord>, analyses: ReadonlyArray<AnalysisRecord>): Array<{ metric: MetricDefinition; value: number | null; usual: number | null; engine: string }> {
+export function takeMeasures(session: SessionRecord, analysis: AnalysisRecord, sessions: ReadonlyArray<SessionRecord>, analyses: ReadonlyArray<AnalysisRecord>): Array<{ metric: MetricDefinition; value: number | null; usual: number | null; engine: string; source: MetricSource }> {
   // The family's other takes
   const family = familyOf(session.mode);
   // Their analyses
@@ -357,9 +362,11 @@ export function takeMeasures(session: SessionRecord, analysis: AnalysisRecord, s
     metric,
     // This take's value
     value: analysis.metrics[metric.id]!.value,
-    // The family's usual: the median of its other takes
-    usual: usualOf(metric.id, others),
+    // The family's usual: the median of its other takes measured the same way
+    usual: usualOf(metric.id, others, analysis.metrics[metric.id]!.source),
     // Its engine
     engine: analysis.metrics[metric.id]!.engine,
+    // Where it came from
+    source: analysis.metrics[metric.id]!.source,
   }));
 }

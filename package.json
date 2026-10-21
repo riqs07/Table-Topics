@@ -19,6 +19,8 @@
     "test:watch": "vitest",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "live-check": "tsx --env-file-if-exists=.env.local scripts/live-check.ts",
+    "analysis-check": "tsx --env-file-if-exists=.env.local scripts/analysis-check.ts",
+    "bakeoff": "tsx --env-file-if-exists=.env.local scripts/filler-bakeoff.ts",
     "e2e": "playwright test",
     "speech-index": "tsx scripts/speech-index.ts"
   },

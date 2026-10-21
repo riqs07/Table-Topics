@@ -46,3 +46,25 @@ jobs:
           name: browser-check-traces
           path: test-results/
           retention-days: 7
+
+  # The voice worker's own tests (decision 91), on synthetic voices; the optional audEERING test is skipped
+  voice-worker:
+    # Use a fresh Linux machine provided by GitHub
+    runs-on: ubuntu-latest
+    # Run inside the worker's folder
+    defaults:
+      run:
+        working-directory: voice-worker
+    steps:
+      # Download the repository code
+      - uses: actions/checkout@v5
+      # Install the Python the worker's image uses
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      # ffmpeg reads the recordings
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # Install the worker's packages and pytest
+      - run: pip install -r requirements-dev.txt
+      # Run the tests
+      - run: pytest

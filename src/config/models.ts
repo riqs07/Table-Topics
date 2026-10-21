@@ -16,3 +16,7 @@ export const CONVERSATION_MODEL = "claude-haiku-5-5";
 export const CONVERSATION_EFFORT = "low" as const;
 // The ElevenLabs model that speaks a written line in the persona's voice (decision 84): the same as their recorded lines, and the one that performs directions like [laughs]
 export const CONVERSATION_VOICE_MODEL = "eleven_v4";
+// Deeper analysis (decision 91): AssemblyAI's Universal model for pre-recorded audio, asked to keep hesitation sounds (disfluencies), punctuation and word times. Universal-3 Pro covers English; checked against AssemblyAI's model-selection docs on 2026-10-21. Backups if it disappoints: Deepgram Nova-3 (filler_words) or ElevenLabs Scribe v2
+export const TRANSCRIPTION_MODEL = "universal-3-pro";
+// The engine name stored with every measure read from its transcript
+export const TRANSCRIPTION_ENGINE = `assemblyai-${TRANSCRIPTION_MODEL}`;
