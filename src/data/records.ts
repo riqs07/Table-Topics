@@ -178,6 +178,42 @@ export interface SessionRecord {
   conversation?: { turns: ConversationTurn[]; scenarioId?: string; twist?: number };
   // For a told story (mode "story"): its shape, focus and length; the story is the prompt id (decision 92)
   story?: StoryTake;
+  // For a take in the weekly check-in: which check-in, its number and which of the four parts (decision 100); missing on every other take
+  checkIn?: CheckInTake;
+}
+
+// The four parts of the weekly check-in, in the order they are done (decision 100): the same passage read aloud, the same two-minute pitch, a story and a surprise question from matched pools
+export const CHECK_IN_PARTS = ["read", "pitch", "story", "surprise"] as const;
+
+// One part of the weekly check-in
+export type CheckInPart = (typeof CHECK_IN_PARTS)[number];
+
+// Whether a value names a part of the check-in
+export function isCheckInPart(value: unknown): value is CheckInPart {
+  // One of the four
+  return typeof value === "string" && (CHECK_IN_PARTS as ReadonlyArray<string>).includes(value);
+}
+
+// What a take in the weekly check-in carries, linking the four parts (decision 100)
+export interface CheckInTake {
+  // The check-in's id: "ci-" and the day it was done, such as "ci-2026-10-21"
+  id: string;
+  // Its number: 1 for the first check-in (the baseline), counted in order
+  week: number;
+  // Which part this take is
+  part: CheckInPart;
+}
+
+// The weekly check-in's choices and small history, kept in the settings (decision 100)
+export interface CheckInSettings {
+  // The day of the week it falls on (0 Sunday to 6 Saturday), when chosen; missing means the day of the first check-in
+  day?: number;
+  // Parts put aside with "Skip this part", by check-in id (the latest 60 check-ins)
+  skipped?: Array<{ id: string; parts: CheckInPart[] }>;
+  // The "Hear how far you've come" reminders put aside or opened, as days after the first check-in (7, 14, 30, 60...)
+  seen?: number[];
+  // Which check-in recordings are kept: every one (missing or "all"), or the first, the last 12 and the first of each month ("thinned")
+  keep?: "all" | "thinned";
 }
 
 // A take's detailed readings, kept apart from the session in the "signals" collection so lists of sessions stay small; they are loaded only where they are drawn or measured (decision 98)
@@ -350,6 +386,8 @@ export interface SettingsRecord {
   deepAnalysis?: boolean;
   // What the user wants to get better at most: one or two areas, picked at the welcome, on Today or in Settings (decision 97). Missing means never asked; an empty list means asked and left open (the usual mix)
   practiceFocus?: FocusAreaId[];
+  // The weekly check-in's day, skipped parts, reminders seen and which recordings it keeps (decision 100; missing until the first is used)
+  checkIn?: CheckInSettings;
 }
 
 // Where a measure came from (decision 90): the phone itself, a transcription service, the voice worker, or the coach's rubric

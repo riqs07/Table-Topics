@@ -4,6 +4,8 @@
 import type { ChallengeRecord, LearnCardProgress, MissionRecord, ScenarioProgress, SessionRecord, SettingsRecord, TalkRecord } from "@/data/records";
 // Load the reader that makes a saved focus safe (decision 97)
 import { readPracticeFocus } from "@/core/practiceFocus";
+// Load the check-in settings' reader and join (decision 100)
+import { mergeCheckInSettings, readCheckInSettings } from "@/core/checkIn";
 
 // The most warm-up days kept (the same as when they are saved)
 const WARMUP_DAYS_KEPT = 60;
@@ -101,6 +103,10 @@ export function mergeSettings(existing: SettingsRecord, incoming: SettingsRecord
   const skipped = existing.skipped && incoming.skipped ? (incoming.skipped.day > existing.skipped.day ? incoming.skipped : existing.skipped) : (incoming.skipped ?? existing.skipped);
   // The focus, made safe: an edited or damaged backup's unknown areas are dropped (decision 97)
   const practiceFocus = readPracticeFocus(merged.practiceFocus);
+  // The check-in's day and choice from the file, its skipped parts and reminders seen joined with this device's, each made safe (decision 100)
+  const checkIn = mergeCheckInSettings(readCheckInSettings(existing.checkIn), readCheckInSettings(incoming.checkIn));
+  // (without the file's unchecked copy)
+  delete merged.checkIn;
   // Each joined part, only where there is one
-  return { ...merged, ...(practiceFocus ? { practiceFocus } : {}), ...(learn ? { learn } : {}), ...(scenarios ? { scenarios } : {}), ...(wordsToWatch ? { wordsToWatch } : {}), ...(missions ? { missions } : {}), ...(warmupDays ? { warmupDays } : {}), ...(skipped ? { skipped } : {}) };
+  return { ...merged, ...(checkIn ? { checkIn } : {}), ...(practiceFocus ? { practiceFocus } : {}), ...(learn ? { learn } : {}), ...(scenarios ? { scenarios } : {}), ...(wordsToWatch ? { wordsToWatch } : {}), ...(missions ? { missions } : {}), ...(warmupDays ? { warmupDays } : {}), ...(skipped ? { skipped } : {}) };
 }

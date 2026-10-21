@@ -110,4 +110,6 @@ export const SUMMARY_SIZE = {
   words: 10,
   // All the text in one request, in characters
   totalChars: 12_000,
+  // Measure rows per part of the weekly check-in (decision 100)
+  checkInRows: 14,
 } as const;

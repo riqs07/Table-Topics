@@ -18,7 +18,7 @@ import { PASSAGES, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, WARMUP_PROMPTS } from "@
 // Load the lessons
 import { findLesson } from "@/content/lessons";
 // Load a sample session builder
-import { makeSession, makeTalk } from "../support/fixtures";
+import { checkInSkippedOn, makeSession, makeTalk } from "../support/fixtures";
 // Load today's practice, to put a step off
 import { loadDailyPlan } from "@/data/dailyPlan";
 import { planHref } from "@/core/dailyPlan";
@@ -689,6 +689,8 @@ describe("RecordingScreen", () => {
     const repository = createRepository(new MemoryStore());
     // Yesterday's session
     await repository.saveSession(makeSession({ id: "yesterday", createdAt: new Date(2026, 9, 12, 9).toISOString() }));
+    // A check-in yesterday, so today keeps the usual plan (decision 100)
+    await checkInSkippedOn(repository, new Date(2026, 9, 12, 9), new Date(2026, 9, 13, 10));
     // The plan on the fake clock's day
     const plan = await loadDailyPlan(repository, new Date(2026, 9, 13, 10));
     // The warm-up: step 2
@@ -711,6 +713,8 @@ describe("RecordingScreen", () => {
     const repository = createRepository(new MemoryStore());
     // Yesterday's session
     await repository.saveSession(makeSession({ id: "yesterday", createdAt: new Date(2026, 9, 12, 9).toISOString() }));
+    // A check-in yesterday, so today keeps the usual plan (decision 100)
+    await checkInSkippedOn(repository, new Date(2026, 9, 12, 9), new Date(2026, 9, 13, 10));
     // The plan on the fake clock's day
     const plan = await loadDailyPlan(repository, new Date(2026, 9, 13, 10));
     // The reading: step 2

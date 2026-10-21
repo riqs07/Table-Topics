@@ -13,7 +13,7 @@ import { createRepository } from "@/data/repository";
 // Load the plan loader, for where the next step leads
 import { loadDailyPlan } from "@/data/dailyPlan";
 // Load a sample session builder
-import { makeSession, makeTalk, voiceReadings } from "../support/fixtures";
+import { checkInSkippedOn, makeSession, makeTalk, voiceReadings } from "../support/fixtures";
 // Load the passphrase storage
 import { savePassphrase } from "@/data/passphrase";
 // Load the daily prompt picker and the pause drills
@@ -787,6 +787,8 @@ describe("SessionScreen", () => {
     it("shows the feedback inside today's practice, with the next step as the main action", async () => {
       // The repository
       const repository = await withAudio();
+      // A check-in yesterday, so today keeps the usual plan (decision 100)
+      await checkInSkippedOn(repository, new Date(2026, 9, 12, 9), NOW);
       // Today's plan, for where step 3 is
       const plan = await loadDailyPlan(repository, NOW);
       // Draw step 2 of the plan

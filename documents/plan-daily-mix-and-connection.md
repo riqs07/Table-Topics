@@ -49,6 +49,7 @@ Rules:
   - *Kept rules:* four steps (a card first, the warm-up, two picks in different lanes), day one opens with free talk, the first days leave out prepared speeches (the focus's own too), a dated talk still takes a pick (the focus's when the focus is "a talk coming up", otherwise the second), and without a focus, or with an empty one, the plan is exactly as before (a test compares three weeks of both).
   - *Keep going* leads with the focus's next kind; once every step is done, Today's main band offers the leading area's next thing (another story, a conversation, one more Rapid Fire, a voice drill, a short speech, rehearsing your talk).
   - A change in Settings applies at once, so today's steps can change after it; a step already done stays recorded in History.
+- **Check-in days (added 2026-10-21, decision 100).** On a weekly check-in day (day two to four of use for the first, then the chosen weekday with two days of grace) the plan is the check-in (6 minutes: read, pitch, story, surprise question) and the Learn card; the warm-up and both picks give way, since the check-in already reads aloud, speaks on the spot and tells a story. Worked out from the days before today, so it stays the same all day; never on day one. Details in [plan-weekly-check-in.md](plan-weekly-check-in.md).
 - **Review is mixed in:** about one day in three, a lane offers something you did a week or more ago (a lesson's beat, an earlier question) instead of something new. Spacing and mixing kinds of practice both help retention.
 
 ## The Connection curriculum

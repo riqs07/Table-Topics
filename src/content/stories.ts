@@ -4,6 +4,8 @@
 import type { StoryBeat, StoryFocus, StoryLength, StoryShape } from "@/data/records";
 // Load the guided stories, the second kind of seed (decision 93)
 import { findGuidedStory } from "@/content/guidedStories";
+// Load the weekly check-in's story prompts, a third kind of seed from the app's own content (decision 100)
+import { findCheckInStory } from "@/content/checkIn";
 
 // A group of prompts in the bank
 export type StoryGroupId = "wrong" | "win" | "first" | "person" | "place" | "surprise" | "lesson" | "funny";
@@ -117,8 +119,8 @@ export function momentIdOf(storyId: string): string | null {
 
 // Look up a prompt from the bank by id
 export function findStoryPrompt(id: string): StoryPrompt | undefined {
-  // The matching prompt
-  return STORY_PROMPTS.find((prompt) => prompt.id === id);
+  // The matching prompt from the bank, or one of the check-in's (decision 100)
+  return STORY_PROMPTS.find((prompt) => prompt.id === id) ?? findCheckInStory(id);
 }
 
 // Whether an id names a story seed: a prompt from the bank, a guided story, or a moment note

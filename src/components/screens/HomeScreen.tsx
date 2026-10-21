@@ -71,11 +71,15 @@ import { SafetyNote } from "@/components/script/SafetyNote";
 import { safetyNudge, type SafetyNudge } from "@/core/storageSafety";
 // Load the browser facts behind it, and the way to put it aside
 import { markNudgeDismissed, readSafetyFacts } from "@/data/storageSafety";
+// Load the check-in rules for the reminder to look back (decision 100)
+import { CHECK_IN_MINUTES, CHECK_IN_PARTS, groupCheckIns, readCheckInSettings, resurfaceDue, sinceWords } from "@/core/checkIn";
+// Load the way to put the reminder aside
+import { markReminderSeen } from "@/data/checkIns";
 
 // A step in a few words for the action band, so its side text never reads like a tab name ("a Learn card", "Warm up")
 function stepWords(step: PlanStep): string {
-  // A card, or the step's own name
-  return step.kind === "card" ? "a Learn card" : step.label;
+  // A card, the check-in, or the step's own name
+  return step.kind === "card" ? "a Learn card" : step.kind === "checkin" ? "your check-in" : step.label;
 }
 
 // Everything Home shows that comes from saved data
@@ -108,6 +112,8 @@ interface HomeData {
   nudge: SafetyNudge;
   // What the user wants to get better at most: missing until asked, empty when left open (decision 97)
   practiceFocus: FocusAreaId[] | undefined;
+  // The reminder to hear the first check-in beside the latest, when one is due (decision 100)
+  reminder: { days: number } | null;
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
@@ -156,7 +162,44 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     nudge: safetyNudge(await readSafetyFacts(sessions.length, now)),
     // What the user wants to get better at most
     practiceFocus: readPracticeFocus(settings.practiceFocus),
+    // The reminder to look back, from the sessions already read; held back while today's check-in waits, so Today asks one thing at a time
+    reminder: plan.checkIn && !plan.done[plan.steps.findIndex((step) => step.kind === "checkin")] ? null : resurfaceDue({ today: now, checkIns: groupCheckIns(sessions, readCheckInSettings(settings.checkIn)), settings: readCheckInSettings(settings.checkIn) }),
   };
+}
+
+// The reminder to look back (decision 100): the first check-in beside the latest, at a week, two weeks, a month and then monthly; opening it or "Not now" puts it aside for good
+function ReminderCard({ days, onSeen }: { days: number; onSeen: () => Promise<void> }) {
+  // What went wrong putting it aside, if anything
+  const [problem, setProblem] = useState<string | null>(null);
+  // Put it aside, saying so if that fails
+  async function putAside() {
+    // Try to save
+    try {
+      // Saved, and the card goes
+      await onSeen();
+    } catch (error: unknown) {
+      // Said, so it can be tried again
+      setProblem(error instanceof Error ? error.message : String(error));
+    }
+  }
+  // The card
+  return (
+    <section aria-labelledby="look-back" className={`mt-8 p-5 ${CARD}`}>
+      {/* The invitation */}
+      <h2 id="look-back" className="font-display text-cue font-semibold tracking-tight">Hear how far you’ve come</h2>
+      {/* Why now */}
+      <p className="mt-1 text-footnote text-ink-muted">It’s been {sinceWords(days)} since your first check-in. Hear it beside your latest.</p>
+      {/* A failure to put it aside */}
+      {problem !== null && <p role="alert" className="mt-3 text-footnote">That could not be saved. The browser said: “{problem}” Try again.</p>}
+      {/* Open it, or not now */}
+      <p className="mt-4 flex flex-wrap gap-3">
+        {/* Open the comparison (and put the reminder aside on the way) */}
+        <Link href="/check-in/compare" onClick={() => void onSeen().catch(() => undefined)} className={PRIMARY}>Compare</Link>
+        {/* Not now */}
+        <button type="button" onClick={() => void putAside()} className={SECONDARY}>Not now</button>
+      </p>
+    </section>
+  );
 }
 
 // The question for someone who was here before it was asked (decision 97): a short card under today's steps, answered or put aside once
@@ -285,6 +328,8 @@ export function HomeScreen(props: ScreenProps) {
   const runLines = data && !data.showWelcome && !data.hideStreak ? streakLines(data.run) : [];
   // The next step, in words for the action band ("Step 1 · a Learn card")
   const nextStep = plan && nextIndex !== -1 ? plan.steps[nextIndex] : undefined;
+  // Whether today's check-in is the step waiting, so the card leads with it (decision 100)
+  const checkInWaiting = nextStep?.kind === "checkin";
   // This week's focus, once there is practice it can be about (with none yet, "This week: strong opening." read as a verdict on nothing; round 4)
   const showFocus = !!data && !data.showWelcome && data.run.any;
   // Whether the margin has anything in it; with nothing, the page is one centred column instead of an empty left column on a computer
@@ -374,7 +419,9 @@ export function HomeScreen(props: ScreenProps) {
               {/* What it is and how long, with how far through */}
               <p className="flex justify-between text-footnote text-ink-muted"><span>Today · about {planMinutes(plan.steps)} min</span>{!allDone && doneCount > 0 && <span className="font-semibold text-warm-ink">{doneCount} of {plan.steps.length}</span>}</p>
               {/* Where things stand, set like a headline */}
-              <h1 className="mt-2 font-display text-statement font-semibold tracking-tight md:text-statement-xl">{allDone ? "Done for today." : nextIndex === -1 ? "The rest can wait." : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
+              <h1 className="mt-2 font-display text-statement font-semibold tracking-tight md:text-statement-xl">{allDone ? "Done for today." : nextIndex === -1 ? "The rest can wait." : checkInWaiting ? (plan.checkIn?.baseline ? "Your first check-in." : "Check-in day.") : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
+              {/* On a check-in day, what it is in a line (decision 100) */}
+              {checkInWaiting && <p className="mt-2 max-w-[48ch] text-lede">{plan.checkIn?.baseline ? `Four short parts, about ${CHECK_IN_MINUTES} minutes. Next week you’ll hear the change.` : `The same four parts as last time, about ${CHECK_IN_MINUTES} minutes.${plan.checkIn?.late ? " Still open today." : ""}`}</p>}
               {/* Once done: the time spoken today, and which day of the week this is */}
               {allDone && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)}{data.hideStreak ? "" : ` ${data.weekLine}`}</p>}
               {/* How far through, as a bar that fills in, once a step is done (an empty bar first thing reads as a zero; decision 78) */}
@@ -392,8 +439,10 @@ export function HomeScreen(props: ScreenProps) {
                   const mark = plan.done[index] ? "done" : index === nextIndex ? "next" : "open";
                   // When done, a line from today's session: the user's note, or how long they spoke (never a filler count)
                   const session = plan.done[index] ? plan.today.find((item) => item.mode === step.mode && item.promptId === step.promptId) : undefined;
-                  // That line (or, for a step put off today, saying so)
-                  const result = session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
+                  // How far the check-in has got, in parts (decision 100)
+                  const parts = step.kind === "checkin" && plan.checkIn ? plan.checkIn.parts.filter((part) => part.status !== "open").length : 0;
+                  // That line (or, for a step put off today, saying so; for the check-in, its parts)
+                  const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
                   // One step
                   return (
                     <li key={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
@@ -421,6 +470,9 @@ export function HomeScreen(props: ScreenProps) {
               {allDone && data && !data.anchor && <p><Link href="/settings#practice-time" className={TEXT_LINK}>Choose when you’ll practise tomorrow</Link></p>}
             </section>
           )}
+
+          {/* The reminder to hear the first check-in beside the latest (decision 100) */}
+          {data?.reminder && today && <ReminderCard days={data.reminder.days} onSeen={async () => { await markReminderSeen(repo, data.reminder!.days, today); setData({ ...data, reminder: null }); }} />}
 
           {/* Someone who was here before the question: asked once, gently, under the steps (decision 97) */}
           {plan && data && data.practiceFocus === undefined && <FocusAsk onAnswer={answerFocus} />}
@@ -472,7 +524,7 @@ export function HomeScreen(props: ScreenProps) {
             // Once done: with a focus, its one next thing; otherwise everything in Practice (decision 97)
             plan.suggestion ? <ActionBand action={plan.suggestion.action} aside={`for ${plan.suggestion.phrase}`} href={plan.suggestion.href} /> : <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />
           ) : (
-            <ActionBand action={doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={nextStep ? `Step ${nextIndex + 1} · ${stepWords(nextStep)}` : ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
+            <ActionBand action={checkInWaiting ? (plan.checkIn?.parts.some((part) => part.status !== "open") ? "Continue check-in" : "Start check-in") : doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={nextStep ? (checkInWaiting ? `about ${CHECK_IN_MINUTES} min` : `Step ${nextIndex + 1} · ${stepWords(nextStep)}`) : ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
           ))}
         </div>
       </div>}

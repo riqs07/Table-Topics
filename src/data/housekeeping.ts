@@ -2,6 +2,8 @@
 
 // Load the retention rules
 import { audioToDrop, keptWhole, readingsToDrop, recordingDays } from "@/core/retention";
+// Load the check-in rule for keeping fewer check-in recordings (decision 100)
+import { checkInTakesReleased, readCheckInSettings } from "@/core/checkIn";
 // Load the record types
 import type { SessionRecord } from "@/data/records";
 // Load the repository type
@@ -27,7 +29,7 @@ function nextTurn(): Promise<void> {
 }
 
 // The changes that delete one take's recording, decided again from the session as stored inside the transaction (a take starred meanwhile keeps it)
-function dropAudioOps(session: SessionRecord): StoreOp[] {
+function dropAudioOps(session: SessionRecord, released: ReadonlySet<string>): StoreOp[] {
   // The recording's key as the list saw it
   const key = session.audioKey as string;
   // Whether the session change went ahead, handed to the second change
@@ -38,7 +40,7 @@ function dropAudioOps(session: SessionRecord): StoreOp[] {
     {
       kind: "update", collection: "sessions", key: session.id, change: (stored: SessionRecord | undefined) => {
         // Gone, kept whole, or no longer linked to this recording: left alone
-        if (!stored || keptWhole(stored) || stored.audioKey !== key) return undefined;
+        if (!stored || keptWhole(stored, released) || stored.audioKey !== key) return undefined;
         // Going ahead
         decided.drop = true;
         // Unlinked
@@ -51,7 +53,7 @@ function dropAudioOps(session: SessionRecord): StoreOp[] {
 }
 
 // The changes that drop one take's detailed readings, decided again from the session as stored inside the transaction
-function dropReadingsOps(session: SessionRecord, at: string): StoreOp[] {
+function dropReadingsOps(session: SessionRecord, at: string, released: ReadonlySet<string>): StoreOp[] {
   // Whether the session change went ahead, handed to the second change
   const decided = { drop: false };
   // Two changes, run in order
@@ -60,7 +62,7 @@ function dropReadingsOps(session: SessionRecord, at: string): StoreOp[] {
     {
       kind: "update", collection: "sessions", key: session.id, change: (stored: SessionRecord | undefined) => {
         // Kept whole (starred meanwhile): left alone
-        if (stored && keptWhole(stored)) return undefined;
+        if (stored && keptWhole(stored, released)) return undefined;
         // Going ahead (a session already deleted still loses its leftover readings)
         decided.drop = true;
         // Marked when it is there
@@ -89,22 +91,26 @@ async function inBatches(repository: Repository, sessions: ReadonlyArray<Session
 
 // Delete recordings and readings the retention rule no longer keeps; returns how many takes lost each (counted from the list read at the start)
 export async function tidyRecordings(repository: Repository, now: Date, options: TidyOptions = {}): Promise<{ audio: number; readings: number }> {
+  // The settings
+  const settings = await repository.getSettings(now);
   // How many days of recordings the user keeps
-  const days = recordingDays(await repository.getSettings(now));
+  const days = recordingDays(settings);
   // Every take (shared with the page's own read)
   const sessions = await repository.listSessions();
+  // Check-in takes no longer kept as markers, when the user keeps fewer (decision 100; none otherwise)
+  const released = checkInTakesReleased(sessions, readCheckInSettings(settings.checkIn));
   // The takes whose recording goes
-  const audio = audioToDrop(sessions, now, days);
+  const audio = audioToDrop(sessions, now, days, released);
   // Deleted a batch at a time
-  await inBatches(repository, audio, dropAudioOps, options);
+  await inBatches(repository, audio, (session) => dropAudioOps(session, released), options);
   // The takes that still have readings, by key alone (no records read)
   const withReadings = new Set(await repository.store.keys("signals"));
   // The takes whose readings go
-  const readings = readingsToDrop(sessions, withReadings, now);
+  const readings = readingsToDrop(sessions, withReadings, now, released);
   // When they were dropped
   const at = now.toISOString();
   // Dropped a batch at a time
-  await inBatches(repository, readings, (session) => dropReadingsOps(session, at), options);
+  await inBatches(repository, readings, (session) => dropReadingsOps(session, at, released), options);
   // The counts
   return { audio: audio.length, readings: readings.length };
 }

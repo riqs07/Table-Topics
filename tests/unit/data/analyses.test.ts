@@ -242,6 +242,29 @@ describe("requestWeeklySummary", () => {
     expect([outcomes, network.mock.calls.length]).toEqual([["too-few", "not-due", "needs-passphrase"], 0]);
   });
 
+  // With two check-ins, the first against the latest goes too, as numbers only; with one, nothing (decision 100)
+  it("sends the first check-in against the latest, as numbers only", async () => {
+    // Three ordinary takes this week
+    const repository = await withTakes(3);
+    // Two check-in readings a week apart, with their analyses
+    for (const [index, day] of ["2026-10-07", "2026-10-14"].entries()) {
+      // The reading
+      const session = makeSession({ id: `ci${index}`, mode: "read", promptId: "ci-read", createdAt: `${day}T09:00:00.000Z`, durationSec: 50 + index * 5, transcript: "every saturday i take the same walk to the market", checkIn: { id: `ci-${day}`, week: index + 1, part: "read" } });
+      // Saved with its analysis
+      await repository.saveSession(session);
+      // (analysis)
+      await repository.saveAnalysis(buildAnalysis(session, NOW));
+    }
+    // The route answers
+    const network = answer(200, { summary: { headline: "h", improved: [], pattern: "p", focus: "f", suggestedDrill: null }, model: "weekly-model" });
+    // Ask
+    await requestWeeklySummary(repository, { passphrase: "pass", now: NOW, fetchFn: network });
+    // What was sent
+    const sent = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body)) as { checkIn?: { first: string; latest: string; count: number; parts: Array<{ part: string; firstSec: number | null; latestSec: number | null; rows: unknown[] }> } };
+    // Confirm the two days, the count, the reading's times, the parts not done as empty, and no transcript words
+    expect([sent.checkIn?.first, sent.checkIn?.latest, sent.checkIn?.count, sent.checkIn?.parts.map((part) => [part.part, part.firstSec, part.latestSec]), JSON.stringify(sent.checkIn).includes("saturday")]).toEqual(["2026-10-07", "2026-10-14", 2, [["read", 50, 55], ["pitch", null, null], ["story", null, null], ["surprise", null, null]], false]);
+  });
+
   // A refusal or a network failure says why, and saves nothing
   it("reports a refusal or a network failure and saves nothing", async () => {
     // Three takes

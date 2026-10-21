@@ -38,7 +38,9 @@ import type { CuePlayer } from "@/audio/timingTones";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
-import type { SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
+import type { CheckInPart, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
+// Load the check-in's parts, for a take inside the weekly check-in (decision 100)
+import { CHECK_IN_PARTS, CHECK_IN_PART_INFO } from "@/core/checkIn";
 // Load the story prompts and moment seeds, and the plan card (decision 92)
 import { momentIdOf, seedText } from "@/content/stories";
 import { StoryPlanCard } from "@/components/script/StoryPlanCard";
@@ -113,6 +115,8 @@ interface RecordingScreenProps {
   fetchFn?: typeof fetch;
   // For a told story: its shape, focus and length (on a retelling, read from the telling before instead; decision 92)
   story?: StoryTake | null;
+  // Inside the weekly check-in: which check-in and which part; the take is saved as a marker and the check-in carries on (decision 100)
+  checkIn?: { id: string; part: CheckInPart } | null;
 }
 
 // A story's set-up when none is given: Classic, no focus, full length (decision 92)
@@ -323,7 +327,7 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null, checkIn = null }: RecordingScreenProps) {
   // A told story's set-up: from the address, or (on a retelling) from the telling before (decision 92)
   const [storyTake, setStoryTake] = useState<StoryTake>(givenStory ?? DEFAULT_STORY);
   // A guided story's facts and nudges, when the story is one (decision 93)
@@ -666,13 +670,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}), ...(mode === "story" ? { story: storyTake } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}), ...(mode === "story" ? { story: storyTake } : {}), ...(checkIn ? { checkIn } : {}) }, clock());
       // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
       void requestPersistentStorage();
       // Send the audio for deeper analysis when that setting is on (no wait, and it never fails: its outcome is kept as a quiet note on the take; decision 91)
       void requestDeepAnalysis(repo, session, { passphrase: readPassphrase(), now: clock(), ...(fetchFn ? { fetchFn } : {}) });
-      // A moment note goes straight back to the Small talk page, where it is listed; anything else opens its page (feedback is requested there)
-      const next = mode === "moment" ? "/small-talk/unit?id=answering#moments" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`;
+      // A moment note goes straight back to the Small talk page, where it is listed; a check-in part goes on to the next part (decision 100); anything else opens its page (feedback is requested there)
+      const next = mode === "moment" ? "/small-talk/unit?id=answering#moments" : checkIn ? "/check-in/run" : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`;
       // The speech service dropped: say so first, with the way to the take
       if (dropped) {
         // Where it is
@@ -694,7 +698,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [clock, fetchFn, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
+  }, [checkIn, clock, fetchFn, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
 
   // Stop recording, then keep the take
   const stop = useCallback(async () => {
@@ -1167,8 +1171,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "story" || mode === "bookend" || mode === "qa" || ((mode === "rehearse" || mode === "outline") && !!goalSeconds);
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
   const busy = recording || thinking || stage === "asking" || stage === "starting" || stage === "saving";
-  // Where this kind of session belongs, for the close button (practising hides the tab bar)
-  const home = sessionHome(mode, promptId, planStep !== null);
+  // Where this kind of session belongs, for the close button (practising hides the tab bar); a check-in part goes back to the check-in (decision 100)
+  const home = checkIn ? { section: "today" as const, href: "/check-in/run", label: "Close, back to your check-in" } : sessionHome(mode, promptId, planStep !== null);
   // Asking or listening, in small talk
   const unit = smallTalk && smallTalk.unit !== "answering" ? findUnit(smallTalk.unit) : null;
   // A story to listen to is not shown before answering, except in a lesson (you listen the way you would in person)
@@ -1177,8 +1181,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const cue = smallTalk ? findUnit(smallTalk.unit).words.cue : null;
   // Whether the drill is a described moment or situation rather than words someone says (decision 95)
   const described = !!smallTalk && findUnit(smallTalk.unit).drill === "situation";
-  // The page title for this kind of session
-  const title = retryOf ? (mode === "story" ? "Tell it again" : "Second try") : mode === "story" ? "Story" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Rapid Fire" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
+  // The page title for this kind of session (a check-in part by its own name, decision 100)
+  const title = checkIn ? CHECK_IN_PART_INFO[checkIn.part].name : retryOf ? (mode === "story" ? "Tell it again" : "Second try") : mode === "story" ? "Story" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Rapid Fire" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
   // Name the tab after it
   usePageTitle(title);
   // The timing light now, while recording (off otherwise)
@@ -1291,6 +1295,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         {/* Before reading on a phone: the length, small, in place of the big clock */}
         {(script || smallTalk) && !busy && <span className="keyboard:hidden md:hidden">{lengthText}</span>}
       </Masthead>
+      {/* Inside the weekly check-in, which part this is (decision 100) */}
+      {checkIn && <p className="mt-3 text-footnote font-medium text-accent">Weekly check-in · part {CHECK_IN_PARTS.indexOf(checkIn.part) + 1} of {CHECK_IN_PARTS.length}</p>}
       {/* Inside today's practice, which step this is */}
       {planStep && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 text-footnote">

@@ -6,6 +6,8 @@ import { daysBetween } from "@/core/dates";
 import { LESSONS } from "@/content/lessons";
 // Load the small-talk questions, so they can be found like prompts
 import { SMALL_TALK_PROMPTS } from "@/content/smallTalk";
+// Load the weekly check-in's passage and surprise questions, so they can be found like any text and prompt (decision 100)
+import { CHECK_IN_PASSAGE, CHECK_IN_QUESTIONS } from "@/content/checkIn";
 
 // One daily prompt
 export interface Prompt {
@@ -504,12 +506,12 @@ export function bookendForDay(day: Date, part: BookendPart, offset = 0): Bookend
 
 // Find a passage, pause drill, or word list by its saved id
 export function findPassage(id: string): Passage | undefined {
-  // Look in every list of texts
-  return [...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS].find((passage) => passage.id === id);
+  // Look in every list of texts, and the check-in's passage (decision 100)
+  return [...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, CHECK_IN_PASSAGE].find((passage) => passage.id === id);
 }
 
 // Find any prompt (Record Response, Table Topic, opening or close, warm-up, or the title of a passage, drill, word list, or lesson) by its saved id
 export function findPrompt(id: string): Prompt | undefined {
   // Look in every list
-  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...BOOKENDS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS, ...SMALL_TALK_PROMPTS].find((prompt) => prompt.id === id);
+  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...BOOKENDS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS, ...SMALL_TALK_PROMPTS, CHECK_IN_PASSAGE, ...CHECK_IN_QUESTIONS].find((prompt) => prompt.id === id);
 }

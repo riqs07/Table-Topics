@@ -524,6 +524,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
         </div>
         {/* The notes (first on a phone, the wide left column on a computer) */}
         <aside className="order-first flex flex-1 flex-col md:order-1 md:max-w-xl">
+          {/* A take from the weekly check-in: which one, and the way to the check-ins (decision 100) */}
+          {session.checkIn && <p className="mt-5 text-footnote md:mt-0 md:mb-3"><Link href="/check-in" className={TEXT_LINK}>{session.checkIn.week === 1 ? "Your first check-in" : `Check-in ${session.checkIn.week}`}</Link></p>}
           {/* What it answered: the topic, prompt or question (decision 77) */}
           {asked && (
             <div className="mt-5 md:mt-0 md:mb-5">

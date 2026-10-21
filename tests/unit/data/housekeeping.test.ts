@@ -154,3 +154,45 @@ describe("tidyRecordings", () => {
     expect([await tidyRecordings(createRepository(refusing), NOW, quick).then(() => "ok", (error: Error) => error.message), !!(await repo.getAudio("audio-old")), !!(await repo.getSignals("old"))]).toEqual(["QuotaExceededError", true, true]);
   });
 });
+
+// Keeping fewer check-in recordings (decision 100): with "the first, the last 12 and one a month", the other check-ins' takes lose their marker exemption and follow the usual days; by default every check-in is kept
+describe("check-in recordings kept", () => {
+  // Fifteen weekly check-ins, the latest last week, each with one take
+  async function fifteenCheckIns() {
+    // Each week back from 7 days ago
+    for (let index = 0; index < 15; index += 1) {
+      // Days ago
+      const days = 7 + (14 - index) * 7;
+      // The day
+      const day = daysAgo(days).slice(0, 10);
+      // A marker take tagged with its check-in
+      await take(`ci${index}`, days, { marker: true, checkIn: { id: `ci-${day}`, week: index + 1, part: "read" } });
+    }
+  }
+
+  // Every one kept by default
+  it("keeps every check-in's recording by default", async () => {
+    // The check-ins
+    await fifteenCheckIns();
+    // Tidied
+    const removed = await tidyRecordings(repo, NOW, quick);
+    // Confirm nothing went
+    expect(removed.audio).toBe(0);
+  });
+
+  // Fewer kept: the first, the latest twelve and the first of each month stay; the rest past 14 days go, and the readings with them
+  it("keeps the first, the last twelve and one a month when chosen", async () => {
+    // The check-ins
+    await fifteenCheckIns();
+    // Fewer chosen
+    await repo.saveSettings({ ...(await repo.getSettings(NOW)), checkIn: { keep: "thinned" } });
+    // Tidied
+    const removed = await tidyRecordings(repo, NOW, quick);
+    // Which still have their recording
+    const kept = (await repo.listSessions()).filter((session) => session.audioKey !== null).map((session) => session.id).sort();
+    // Confirm what went: the second and third check-ins, unless either is the first of its month
+    const released = ["ci1", "ci2"].filter((id) => !kept.includes(id));
+    // (checked)
+    expect([removed.audio, released.length > 0, kept.includes("ci0"), kept.includes("ci14"), (await repo.listSessions()).filter((session) => session.trimmedAt).map((session) => session.id).sort()]).toEqual([released.length, true, true, true, released.sort()]);
+  });
+});

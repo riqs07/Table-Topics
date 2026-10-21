@@ -19,6 +19,9 @@ import { BookendsScreen } from "@/components/screens/BookendsScreen";
 // Load the Stories page (decision 92)
 import { StoriesScreen } from "@/components/screens/StoriesScreen";
 import { RehearseScreen } from "@/components/screens/RehearseScreen";
+// Load the check-in pages (decision 100)
+import { CheckInScreen } from "@/components/screens/CheckInScreen";
+import { CheckInCompareScreen } from "@/components/screens/CheckInCompareScreen";
 import { SessionScreen } from "@/components/screens/SessionScreen";
 import { SettingsScreen } from "@/components/screens/SettingsScreen";
 // Load the in-memory store and repository
@@ -76,6 +79,10 @@ describe("main navigation", () => {
     ["Openings and closings", "Practice", async () => <BookendsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Stories belong to Practice (decision 92)
     ["Stories", "Practice", async () => <StoriesScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Your check-ins and their comparison belong to Today (decision 100)
+    ["Your check-ins", "Today", async () => <CheckInScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // (the comparison)
+    ["Compare check-ins", "Today", async () => <CheckInCompareScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Settings
     ["Settings", "Settings", async () => <SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // A session's results belong to where that kind of session lives (here speaking on the spot)

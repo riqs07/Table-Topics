@@ -11,7 +11,9 @@ import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the baseline rule
 import { shouldBeBaseline } from "@/core/progress";
 // Load the record types
-import type { FullSession, SessionMode, StoryTake } from "@/data/records";
+import type { CheckInPart, FullSession, SessionMode, StoryTake } from "@/data/records";
+// Load the check-in grouping, to number a check-in's takes (decision 100)
+import { groupCheckIns, weekFor } from "@/core/checkIn";
 // Load the pitch range rule, to save the take's range with it (decision 98)
 import { rangeOf } from "@/core/voiceFeedback";
 // Load the story record maker (decision 92)
@@ -61,6 +63,8 @@ export interface FinishedRecording {
   story?: StoryTake;
   // A marker take, kept whole however old (the weekly check-in sets it; decision 98)
   marker?: boolean;
+  // A take in the weekly check-in: which check-in and which part; the take is then a marker, numbered with its check-in, and has no listening step (decision 100)
+  checkIn?: { id: string; part: CheckInPart };
 }
 
 // Round seconds to a tenth
@@ -109,8 +113,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.spokenTimes ? { spokenTimes: recording.spokenTimes.map(tenth) } : {}),
     // Script word times, rounded the same way, keeping the words never read as null
     ...(recording.scriptTimes ? { scriptTimes: recording.scriptTimes.map((time) => (time === null ? null : tenth(time))) } : {}),
-    // A first try waits for the user to listen back and write notes before the feedback shows (a moment note, a follow-up question and a reply to a story have no listening step)
-    ...(recording.retryOf === null && recording.mode !== "moment" && !(recording.mode === "smalltalk" && unitOf(recording.promptId) !== "answering") ? { selfReview: null } : {}),
+    // A first try waits for the user to listen back and write notes before the feedback shows (a moment note, a follow-up question, a reply to a story and a check-in take have no listening step: the check-in moves straight on to its next part)
+    ...(recording.retryOf === null && !recording.checkIn && recording.mode !== "moment" && !(recording.mode === "smalltalk" && unitOf(recording.promptId) !== "answering") ? { selfReview: null } : {}),
     // Keep the question a Q&A answer answered
     ...(recording.question ? { question: recording.question } : {}),
     // Keep a short speech's plan
@@ -119,8 +123,10 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.story ? { story: recording.story } : {}),
     // Keep the section of a section rehearsal
     ...(recording.sectionIndex !== undefined && recording.sectionIndex !== null ? { sectionIndex: recording.sectionIndex } : {}),
-    // Mark a marker take (decision 98)
-    ...(recording.marker ? { marker: true } : {}),
+    // Mark a marker take (decision 98); every check-in take is one
+    ...(recording.marker || recording.checkIn ? { marker: true } : {}),
+    // A check-in take: its check-in, numbered after those before it, and its part (decision 100)
+    ...(recording.checkIn ? { checkIn: { id: recording.checkIn.id, week: weekFor(groupCheckIns(existing, settings.checkIn), recording.checkIn.id), part: recording.checkIn.part } } : {}),
   };
   // The take's pitch range, kept on the session so later takes' "usual range" needs no readings (decision 98)
   const range = rangeOf(session);

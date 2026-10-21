@@ -19,7 +19,7 @@ import { saveScenarioAnswer } from "@/data/scenarioProgress";
 // Load the plan loader, to know today's picks
 import { loadDailyPlan } from "@/data/dailyPlan";
 // Load a sample session builder
-import { makeSession, makeTalk } from "../support/fixtures";
+import { checkInSkippedOn, makeSession, makeTalk } from "../support/fixtures";
 
 // A fixed "now": Tuesday 13 October 2026, mid-morning
 const NOW = new Date(2026, 9, 13, 10);
@@ -38,6 +38,8 @@ async function pastDayOne() {
   const repository = emptyRepository();
   // Yesterday (Monday) morning
   await repository.saveSession(makeSession({ id: "yesterday", createdAt: new Date(2026, 9, 12, 9).toISOString() }));
+  // A check-in yesterday, so today keeps the usual plan (decision 100)
+  await checkInSkippedOn(repository, new Date(2026, 9, 12, 9), NOW);
   // Hand it back
   return repository;
 }

@@ -37,6 +37,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 22 | [plan-research-applied.md](plan-research-applied.md) | How does the charisma and connection research change the app: missions, feedback, Learn, Connect? | 5 min |
 | 23 | [plan-voice-modes.md](plan-voice-modes.md) | What do the voice modes (warm-ups, clear sounds, volume, pitch, tone, pausing, shadowing) do, and where will shadowing audio come from? (Built, decision 80) | 8 min |
 | 24 | [plan-storytelling.md](plan-storytelling.md) | How does the Storytelling mode work (prompts, shapes, telling it again, the story coach), and what research is it built on? (Built, decision 92) | 5 min |
+| 25 | [plan-weekly-check-in.md](plan-weekly-check-in.md) | How does the weekly check-in work (four fixed parts, when it is due, the comparison, the reminders, storage), and what was not built? (Built, decision 100) | 4 min |
 
 ## Inspector checklist
 

@@ -54,6 +54,8 @@ import { readPracticeFocus } from "@/core/practiceFocus";
 import { PAGE } from "@/components/script/layout";
 // Load the deeper-analysis status check (decision 91)
 import { checkDeepSetup, type DeepSetup } from "@/data/deepAnalysisClient";
+// Load the check-in's days and the safe reader for its settings (decision 100)
+import { WEEKDAY_NAMES, readCheckInSettings } from "@/core/checkIn";
 
 // How far a long export or import has got, as a whole percentage
 const PROGRESS_PERCENT = (progress: Progress) => (progress.total > 0 ? Math.floor((progress.done / progress.total) * 100) : 100);
@@ -324,6 +326,32 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     }
   }
 
+  // Save which check-in recordings are kept, then tidy at once when fewer are kept (decision 100)
+  async function changeCheckInKeep(event: ChangeEvent<HTMLSelectElement>) {
+    // Nothing to do before settings load
+    if (!settings) return;
+    // The choice
+    const keep = event.target.value === "thinned" ? "thinned" : "all";
+    // Build the new settings
+    const next = { ...settings, checkIn: { ...readCheckInSettings(settings.checkIn), keep } as const };
+    // Saving and tidying can fail
+    try {
+      // Save them
+      await repo.saveSettings(next);
+      // Show the new value
+      setSettings(next);
+      // The upkeep's code, loaded when needed
+      const { tidyRecordings } = await import("@/data/housekeeping");
+      // Remove check-in recordings no longer kept, once past the recording days
+      const removed = await tidyRecordings(repo, today ?? new Date());
+      // Say what happened
+      setMessage(removed.audio > 0 ? `Saved. ${count(removed.audio, "older recording")} removed.` : "Saved.");
+    } catch (error) {
+      // Say why, with the way forward
+      setMessage(`That could not be saved (${error instanceof Error ? error.message : String(error)}). Reload the page and try again.`);
+    }
+  }
+
   // Download everything as a file, written compactly a part at a time with progress shown (decision 99)
   async function exportData() {
     // Nothing to do before the date is known, or while another export or import runs
@@ -487,6 +515,21 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         <PracticeTime settings={settings} onSave={(next, said) => void saveSettingsWith(next, said)} />
       </Section>}
 
+      {/* The weekly check-in's day (decision 100) */}
+      {settings && <Section title="Weekly check-in" id="check-in">
+        <p>
+          Check in every{" "}
+          <select aria-label="Check-in day" value={readCheckInSettings(settings.checkIn)?.day ?? ""} onChange={(event) => void saveSettingsWith({ ...settings, checkIn: { ...readCheckInSettings(settings.checkIn), ...(event.target.value === "" ? { day: undefined } : { day: Number(event.target.value) }) } }, "Saved. Your check-in moves to that day.")} className="min-h-11 max-w-full border-b border-ink bg-transparent">
+            {/* Not chosen: the day of the first check-in */}
+            <option value="">day of my first one</option>
+            {/* One option per day */}
+            {WEEKDAY_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}
+          </select>
+        </p>
+        {/* What it is */}
+        <p className="mt-2 text-footnote text-ink-muted">About 6 minutes: the same passage, the same pitch, a story and a surprise question. Missed? It stays open two more days.</p>
+      </Section>}
+
       {/* What the user wants to get better at most, changed at any time (decision 97) */}
       {settings && <Section title="What you want to get better at" id="focus">
         <p className="text-footnote text-ink-muted">Pick one or two. About half of each day’s practice comes from them, and Practice and Learn show them first.</p>
@@ -532,6 +575,20 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         </p>
         {/* What else is kept, and for how long */}
         <p className="mt-2 text-footnote text-ink-muted">Detailed charts (pitch, volume and word timing) are kept for {READINGS_DAYS} days, and for as long as you keep a take starred. Every transcript, number, note and piece of feedback is always kept.</p>
+        {/* Check-in recordings, which are kept as markers, and what they take (decision 100) */}
+        {settings && (
+          <p className="mt-3">
+            Check-ins:{" "}
+            <select aria-label="Check-in recordings to keep" value={readCheckInSettings(settings.checkIn)?.keep === "thinned" ? "thinned" : "all"} onChange={(event) => void changeCheckInKeep(event)} className="min-h-11 max-w-full border-b border-ink bg-transparent">
+              {/* Every one */}
+              <option value="all">keep every one</option>
+              {/* Fewer */}
+              <option value="thinned">first, last 12, one a month</option>
+            </select>
+          </p>
+        )}
+        {/* What they take */}
+        <p className="mt-2 text-footnote text-ink-muted">A check-in is about 1.4 MB: about 75 MB a year if you keep every one. Keeping fewer is about 30 MB after a year, then 17 MB a year.</p>
         {/* How much the device holds, where the browser can say */}
         {storageUsedText(storageUsed) && <p className="mt-2 text-footnote text-ink-muted">{storageUsedText(storageUsed)}</p>}
       </Section>

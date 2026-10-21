@@ -12,8 +12,10 @@ import { daysUntil, eventPlan, prepHeadline } from "@/core/eventPrep";
 import { dayKey } from "@/core/dates";
 // Load the reader for the user's focus (decision 97)
 import { readPracticeFocus } from "@/core/practiceFocus";
+// Load the check-in rules (decision 100)
+import { checkInId, checkInSchedule, firstUseOf, groupCheckIns, isFinished, partStatuses, readCheckInSettings, weekFor } from "@/core/checkIn";
 // Load the record types
-import type { SessionRecord, TalkRecord } from "@/data/records";
+import type { CheckInPart, SessionRecord, TalkRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -47,6 +49,8 @@ export interface LoadedPlan {
   more: PlanStep[];
   // With a focus, the one thing Today suggests once the steps are done (decision 97)
   suggestion: { action: string; href: string; phrase: string } | null;
+  // On a check-in day: today's check-in, its number, whether it is the first or the day after a missed one, and how each part stands (decision 100)
+  checkIn: { id: string; week: number; baseline: boolean; late: boolean; parts: Array<{ part: CheckInPart; status: "done" | "skipped" | "open" }> } | null;
 }
 
 // Load today's practice (reads only; the weekly focus is worked out without saving it)
@@ -59,12 +63,24 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   const focus = currentFocus({ focusIndex: settings.focusIndex, focusStartedOn: new Date(settings.focusStartedOn) }, now).focus;
   // A talk coming up
   const talk = nextTalkFrom(await repository.listTalks(), now);
+  // The check-ins so far, from the sessions already read (decision 100)
+  const checkInSettings = readCheckInSettings(settings.checkIn);
+  // (grouped)
+  const checkIns = groupCheckIns(sessions, checkInSettings);
+  // Whether today is a check-in day (worked out from the days before today, so it stays the same all day)
+  const schedule = checkInSchedule({ today: now, firstUse: firstUseOf(sessions), checkIns, settings: checkInSettings });
+  // Today's check-in id, and the check-in itself once started
+  const id = checkInId(now);
+  // (started)
+  const started = checkIns.find((checkIn) => checkIn.id === id);
+  // Today's check-in, on a check-in day
+  const checkIn = schedule.due ? { id, week: weekFor(checkIns, id), baseline: schedule.baseline, late: schedule.late, parts: partStatuses(started) } : null;
   // The steps
-  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [], practiceFocus: readPracticeFocus(settings.practiceFocus) ?? [] };
+  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [], practiceFocus: readPracticeFocus(settings.practiceFocus) ?? [], checkIn };
   // The steps
   const steps = dailyPlan(input);
-  // Hand back the steps, what is done, today's sessions, and more to do afterwards
-  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? []), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps), suggestion: todaysFocusSuggestion(input) };
+  // Hand back the steps, what is done, today's sessions, more to do afterwards, and the check-in (only when it is in the steps: never on day one)
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? [], isFinished(started)), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps), suggestion: todaysFocusSuggestion(input), checkIn: steps.some((step) => step.kind === "checkin") ? checkIn : null };
 }
 
 // Put a step off for today ("Can't speak now?"): it is not done, it is just not offered next; another day's skips are dropped (decision 77)

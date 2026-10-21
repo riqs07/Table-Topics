@@ -62,6 +62,15 @@ describe("weekly summary", () => {
   });
 
   // A reply is trimmed and must have a headline and a focus
+  it("writes the check-in's numbers into the table, and accepts a request without them (decision 100)", () => {
+    // The usual input, with a small check-in comparison
+    const input = { ...buildSummaryInput(buildProfile(SESSIONS, ANALYSES, NOW), SESSIONS, ANALYSES, undefined, NOW), checkIn: { first: "2026-10-07", latest: "2026-10-21", count: 3, parts: [{ part: "read" as const, firstSec: 52, latestSec: 49, rows: [{ name: "Pitch range", unit: "semitones", first: 5, latest: 8, verdict: "better" as const }] }] } };
+    // The message
+    const message = buildSummaryMessage(input);
+    // Confirm the schema accepts it, the message carries the rows, and a request without it is still accepted
+    expect([SummaryInputSchema.safeParse(input).success, message.includes("## Weekly check-in: first (2026-10-07) against latest (2026-10-21), 3 so far"), message.includes("Read aloud | Pitch range | semitones | 5 | 8 | better"), message.includes("Read aloud | Time | s | 52 | 49 | -"), SummaryInputSchema.safeParse({ ...input, checkIn: undefined }).success, SummaryInputSchema.safeParse({ ...input, checkIn: { ...input.checkIn, parts: [{ ...input.checkIn.parts[0], part: "dance" }] } }).success]).toEqual([true, true, true, true, true, false]);
+  });
+
   it("checks the coach's reply", () => {
     // A tidy reply
     expect(checkSummary({ headline: " h ", improved: ["a", "", "b", "c", "d"], pattern: "p", focus: " f ", suggestedDrill: " " })).toEqual({ headline: "h", improved: ["a", "b", "c"], pattern: "p", focus: "f", suggestedDrill: null });

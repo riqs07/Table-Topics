@@ -157,6 +157,13 @@ export const ROUTES: ReadonlyArray<string> = [
   // A guided story set up and told (decision 93)
   "/stories/tell?prompt=gs13",
   "/session?mode=story&prompt=gs13&shape=classic&focus=middle&length=short",
+  // The weekly check-in: its page, the check-in itself, the comparison, and a comparison of check-ins that do not exist (decision 100)
+  "/check-in",
+  "/check-in/run",
+  "/check-in/compare",
+  "/check-in/compare?a=ci-1999-01-01&b=missing",
+  // A check-in part, opened directly
+  "/session?mode=outline&prompt=ci-pitch&checkin=ci-2026-10-13&part=pitch",
   // The design style tile
   "/style",
   // The wireframes
@@ -195,6 +202,10 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/bookends", current: "Practice" },
   // Stories belong to Practice (decision 92)
   { path: "/stories", current: "Practice" },
+  // Your check-ins and their comparison belong to Today (decision 100)
+  { path: "/check-in", current: "Today" },
+  // (the comparison)
+  { path: "/check-in/compare", current: "Today" },
   // A full speech belongs to Skills, a page inside Practice
   { path: "/speech?id=jfk-inaugural", current: "Practice" },
 ];

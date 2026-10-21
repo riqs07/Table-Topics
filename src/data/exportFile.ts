@@ -2,7 +2,7 @@
 // Audio is left out to keep the file small; transcripts, numbers and feedback are all included. Since decision 99 the file is written compactly, a part at a time, and read back in batches, with progress shown for big files
 
 // Load the record types
-import { isSessionMode, type AnalysisRecord, type ChallengeRecord, type FullSession, type SessionRecord, type SettingsRecord, type SignalsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
+import { isCheckInPart, isSessionMode, type AnalysisRecord, type ChallengeRecord, type FullSession, type SessionRecord, type SettingsRecord, type SignalsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
 // Load the story merge rule (decision 92)
 import { mergeStory } from "@/core/storyLibrary";
 // Load the story choice checks
@@ -278,6 +278,8 @@ function isSession(value: unknown): value is SessionRecord {
     (value.outline === undefined || (typeof value.outline === "object" && value.outline !== null && isText((value.outline as Record<string, unknown>).topic) && Array.isArray((value.outline as Record<string, unknown>).points) && ((value.outline as Record<string, unknown>).points as unknown[]).every(isText) && typeof (value.outline as Record<string, unknown>).goalMinutes === "number")) &&
     // A conversation's turns, each said by you or them, and its situation (only on conversations, decisions 83 and 84)
     (value.conversation === undefined || (isObject(value.conversation) && Array.isArray(value.conversation.turns) && value.conversation.turns.every(isTurn) && (value.conversation.scenarioId === undefined || isText(value.conversation.scenarioId)) && (value.conversation.twist === undefined || isNumber(value.conversation.twist)))) &&
+    // A check-in take's check-in, number and part (decision 100)
+    (value.checkIn === undefined || (isObject(value.checkIn) && isText(value.checkIn.id) && /^ci-\d{4}-\d{2}-\d{2}$/.test(value.checkIn.id) && isNumber(value.checkIn.week) && value.checkIn.week >= 1 && isCheckInPart(value.checkIn.part))) &&
     // A told story's set-up (only on stories, decision 92)
     (value.story === undefined || (isObject(value.story) && isStoryShape(value.story.shape) && (value.story.focus === null || isStoryFocus(value.story.focus)) && isStoryLength(value.story.length))) &&
     // Section of a rehearsal (missing on most sessions)

@@ -14,6 +14,8 @@ export const DEFAULT_RECORDING_DAYS = 14;
 export const READINGS_DAYS = 30;
 // One day in milliseconds
 const DAY_MS = 24 * 60 * 60 * 1000;
+// No check-in takes released from being kept whole (the default: every check-in is kept)
+const NONE_RELEASED: ReadonlySet<string> = new Set();
 
 // The number of days of recordings the user keeps: their choice when it is one of the offered ones, otherwise the default
 export function recordingDays(settings: Pick<SettingsRecord, "recordingDays"> | null | undefined): number {
@@ -23,10 +25,10 @@ export function recordingDays(settings: Pick<SettingsRecord, "recordingDays"> | 
   return typeof chosen === "number" && RECORDING_DAY_CHOICES.includes(chosen) ? chosen : DEFAULT_RECORDING_DAYS;
 }
 
-// Whether a take is kept whole however old it is: starred by the user, a marker take, or the very first recording
-export function keptWhole(session: SessionRecord): boolean {
+// Whether a take is kept whole however old it is: starred by the user, a marker take, or the very first recording. A check-in take the user no longer keeps (with "keep the first, the last 12 and one a month", decision 100) is named in `released` and is then not a marker
+export function keptWhole(session: SessionRecord, released: ReadonlySet<string> = NONE_RELEASED): boolean {
   // Any of the three
-  return session.starred === true || session.marker === true || session.isBaseline;
+  return session.starred === true || (session.marker === true && !released.has(session.id)) || session.isBaseline;
 }
 
 // Whether a take was made more than a number of days before now
@@ -36,13 +38,13 @@ function olderThan(session: SessionRecord, days: number, now: Date): boolean {
 }
 
 // The takes whose recording should be deleted now: those with a recording, older than the chosen days, and not kept whole
-export function audioToDrop(sessions: ReadonlyArray<SessionRecord>, now: Date, days: number): SessionRecord[] {
+export function audioToDrop(sessions: ReadonlyArray<SessionRecord>, now: Date, days: number, released: ReadonlySet<string> = NONE_RELEASED): SessionRecord[] {
   // Each take checked on its own, so the rule never depends on how many there are
-  return sessions.filter((session) => session.audioKey !== null && !keptWhole(session) && olderThan(session, days, now));
+  return sessions.filter((session) => session.audioKey !== null && !keptWhole(session, released) && olderThan(session, days, now));
 }
 
 // The takes whose detailed readings should be dropped now: those that still have readings, older than 30 days, and not kept whole
-export function readingsToDrop(sessions: ReadonlyArray<SessionRecord>, withReadings: ReadonlySet<string>, now: Date): SessionRecord[] {
+export function readingsToDrop(sessions: ReadonlyArray<SessionRecord>, withReadings: ReadonlySet<string>, now: Date, released: ReadonlySet<string> = NONE_RELEASED): SessionRecord[] {
   // Each take checked on its own; once its readings are gone it is no longer in the list, so running again changes nothing
-  return sessions.filter((session) => withReadings.has(session.id) && !keptWhole(session) && olderThan(session, READINGS_DAYS, now));
+  return sessions.filter((session) => withReadings.has(session.id) && !keptWhole(session, released) && olderThan(session, READINGS_DAYS, now));
 }

@@ -35,6 +35,8 @@ import { requestWeeklySummary } from "@/data/summaryClient";
 import { readPassphrase } from "@/data/passphrase";
 // Load the record types
 import type { AnalysisRecord, SessionRecord, SummaryRecord } from "@/data/records";
+// Load the check-in grouping, worked out from the sessions already read (decision 100)
+import { groupCheckIns, recordedCheckIns, shortDay } from "@/core/checkIn";
 
 // What the screen can be given
 interface ProfileScreenProps extends ScreenProps {
@@ -158,6 +160,8 @@ function WholeProfile({ loaded, now, summaryNote }: { loaded: Loaded; now: Date;
       {latest && <SummaryCard summary={latest} now={now} />}
       {/* Why a summary did not come this time */}
       {summaryNote && <p className="mt-2 text-footnote text-ink-muted">{summaryNote}</p>}
+      {/* The weekly check-ins, from the same read of the sessions (decision 100) */}
+      <CheckInStrip sessions={loaded.sessions} />
       {/* Nothing measured yet */}
       {!family && <p className="mt-6 max-w-[48ch] text-lede">No takes measured yet. Record one in <Link href="/practice" className={TEXT_LINK} data-inline>Practice</Link> and its measures appear here.</p>}
       {/* The families, when there are several */}
@@ -170,6 +174,28 @@ function WholeProfile({ loaded, now, summaryNote }: { loaded: Loaded; now: Date;
       {/* The chosen family */}
       {family && <FamilyView family={family} profile={profile} />}
     </>
+  );
+}
+
+// The weekly check-ins in a line: how many, each one's day, and the way to compare the first with the latest (decision 100)
+function CheckInStrip({ sessions }: { sessions: ReadonlyArray<SessionRecord> }) {
+  // The check-ins with takes, oldest first (worked out once per load)
+  const [checkIns] = useState(() => recordedCheckIns(groupCheckIns(sessions, undefined)));
+  // None yet: nothing to show
+  if (checkIns.length === 0) return null;
+  // The strip
+  return (
+    <section aria-label="Your check-ins" className={`mt-5 p-5 ${CARD}`}>
+      {/* What it is and how many */}
+      <p className={LABEL}>Weekly check-ins · {checkIns.length} so far</p>
+      {/* Each one's day, the latest six */}
+      <ul aria-label="Check-in days" className="mt-2 flex flex-wrap gap-1.5">
+        {/* One pill each */}
+        {checkIns.slice(-6).map((checkIn) => <li key={checkIn.id} className="rounded-full bg-paper px-3 py-1 text-footnote tabular-nums">{shortDay(checkIn.day)}</li>)}
+      </ul>
+      {/* Compare, or see them */}
+      <p className="mt-2"><Link href={checkIns.length >= 2 ? "/check-in/compare" : "/check-in"} className={TEXT_LINK}>{checkIns.length >= 2 ? "Compare first and latest" : "Your check-ins"}</Link></p>
+    </section>
   );
 }
 

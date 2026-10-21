@@ -5,7 +5,12 @@ import { PASSPHRASE_HEADER } from "@/config/headers";
 // Load the profile builder
 import { buildProfile } from "@/core/analysis/profile";
 // Load the weekly summary rules
-import { MIN_TAKES_FOR_SUMMARY, SUMMARY_EVERY_DAYS, buildSummaryInput, summaryDue } from "@/core/weeklySummary";
+import { MIN_TAKES_FOR_SUMMARY, SUMMARY_EVERY_DAYS, buildSummaryInput, checkInSummaryInput, summaryDue } from "@/core/weeklySummary";
+// Load the check-in grouping and comparison (decision 100)
+import { groupCheckIns, readCheckInSettings, recordedCheckIns } from "@/core/checkIn";
+import { compareCheckIns, pickPair } from "@/core/checkInCompare";
+// Load the pause-word setting rule
+import { pauseWordsShown } from "@/core/pauseWords";
 // Load the record type
 import type { SummaryRecord } from "@/data/records";
 // Load the repository type
@@ -46,8 +51,14 @@ export async function requestWeeklySummary(repository: Repository, { passphrase,
   const thisWeek = sessions.filter((session) => analysed.has(session.id) && now.getTime() - new Date(session.createdAt).getTime() < SUMMARY_EVERY_DAYS * 86_400_000).length;
   // Too few to say anything about the week
   if (thisWeek < MIN_TAKES_FOR_SUMMARY) return { status: "too-few" };
-  // The table to send
-  const input = buildSummaryInput(buildProfile(sessions, analyses, now), sessions, analyses, summaries[0], now);
+  // The check-ins so far, and the first against the latest when there are two (decision 100)
+  const settings = await repository.getSettings(now);
+  // (grouped)
+  const checkIns = groupCheckIns(sessions, readCheckInSettings(settings.checkIn));
+  // (the pair)
+  const pair = pickPair(checkIns, null, null);
+  // The table to send, with the check-in's numbers when there are two
+  const input = { ...buildSummaryInput(buildProfile(sessions, analyses, now), sessions, analyses, summaries[0], now), ...(pair ? { checkIn: checkInSummaryInput(compareCheckIns(pair.a, pair.b, new Map(analyses.map((analysis) => [analysis.sessionId, analysis])), { pauseWords: pauseWordsShown(settings) }), recordedCheckIns(checkIns).length) } : {}) };
   // Send it, treating a network failure as a failure to try again later
   let response: Response;
   // Try the network

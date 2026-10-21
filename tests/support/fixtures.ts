@@ -1,7 +1,11 @@
 // Sample records for tests, so each test only spells out what it cares about
 
-// Load the record types
-import type { FullSession, TalkRecord } from "@/data/records";
+// Load the record types and the check-in's parts
+import { CHECK_IN_PARTS, type FullSession, type TalkRecord } from "@/data/records";
+// Load the repository type
+import type { Repository } from "@/data/repository";
+// Load the calendar-day key
+import { dayKey } from "@/core/dates";
 
 // Build a complete session record (with any readings a test gives), overriding any fields a test needs
 export function makeSession(overrides: Partial<FullSession> = {}): FullSession {
@@ -69,4 +73,12 @@ export function voiceReadings(shape: "rising" | "lively"): { loudness: number[];
   const pitch = [phrase, gap, phrase, gap, phrase, gap, phrase, gap, phrase].flat();
   // Speech where there is pitch, quiet between
   return { loudness: pitch.map((reading) => (reading === null ? 0.01 : 0.2)), pitch };
+}
+
+// Note a weekly check-in on a day with every part skipped, so the days after it are not check-in days (decision 100): for checks about the usual daily plan, which a first check-in on day two would otherwise replace
+export async function checkInSkippedOn(repository: Repository, day: Date, now: Date): Promise<void> {
+  // The settings as they would load now
+  const settings = await repository.getSettings(now);
+  // With that day's check-in, every part skipped
+  await repository.saveSettings({ ...settings, checkIn: { skipped: [{ id: `ci-${dayKey(day)}`, parts: [...CHECK_IN_PARTS] }] } });
 }

@@ -7,7 +7,9 @@ import { familyOf, type SpeakerProfile } from "@/core/analysis/profile";
 // Load the size limits shared with the server
 import { SUMMARY_SIZE } from "@/core/requestLimits";
 // Load the record types
-import type { AnalysisRecord, SessionRecord, SummaryRecord } from "@/data/records";
+import { CHECK_IN_PARTS, type AnalysisRecord, type SessionRecord, type SummaryRecord } from "@/data/records";
+// Load the check-in comparison type and part names (decision 100)
+import { partName, type CheckInComparison } from "@/core/checkInCompare";
 
 // Days between summaries
 export const SUMMARY_EVERY_DAYS = 7;
@@ -58,6 +60,17 @@ export const SummaryInputSchema = z.object({
   favouriteWords: z.array(z.string().max(40)).max(SUMMARY_SIZE.words),
   // Last week's focus, for continuity
   previousFocus: z.string().max(300).nullable(),
+  // The first weekly check-in against the latest, as numbers only (decision 100; missing with fewer than two check-ins, and from older copies of the app)
+  checkIn: z.object({
+    // The two days
+    first: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    // (latest)
+    latest: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    // How many check-ins so far
+    count: z.number().int().min(2).max(1_000),
+    // Each part: its length then and now, and its measures
+    parts: z.array(z.object({ part: z.enum(CHECK_IN_PARTS), firstSec: z.number().nullable(), latestSec: z.number().nullable(), rows: z.array(z.object({ name: z.string().max(60), unit: z.string().max(16), first: z.number().nullable(), latest: z.number().nullable(), verdict: z.enum(["better", "worse", "changed", "same"]).nullable() })).max(SUMMARY_SIZE.checkInRows) })).max(CHECK_IN_PARTS.length),
+  }).optional(),
 }).refine((input) => summaryTextLength(input) <= SUMMARY_SIZE.totalChars);
 
 // What the app sends
@@ -69,6 +82,14 @@ export function summaryTextLength(input: { patterns: string[]; quotes: string[];
   const pieces = [...input.patterns, ...input.quotes, ...input.wordSwaps.flatMap((swap) => [swap.said, swap.stronger]), ...input.favouriteWords, input.previousFocus ?? ""];
   // Their lengths added up
   return pieces.reduce((total, piece) => total + piece.length, 0);
+}
+
+// The first check-in against the latest, as numbers only, for the weekly coach (decision 100)
+export function checkInSummaryInput(comparison: CheckInComparison, count: number): NonNullable<SummaryInput["checkIn"]> {
+  // Rounded to two places, so the table stays short
+  const two = (value: number | null) => (value === null ? null : Math.round(value * 100) / 100);
+  // Each part's numbers
+  return { first: comparison.a.day, latest: comparison.b.day, count, parts: comparison.parts.map((part) => ({ part: part.part, firstSec: part.a ? Math.round(part.a.durationSec) : null, latestSec: part.b ? Math.round(part.b.durationSec) : null, rows: part.rows.slice(0, SUMMARY_SIZE.checkInRows).map((row) => ({ name: row.metric.name.slice(0, 60), unit: row.metric.unit.slice(0, 16), first: two(row.a), latest: two(row.b), verdict: row.verdict })) })) };
 }
 
 // Whether a summary is due: none yet, or the latest is a week old or more
@@ -149,6 +170,8 @@ Reply with:
 - focus: the one thing to work on next week, phrased as something to do.
 - suggestedDrill: one practice in the app that fits the focus (such as Rapid Fire, a pause drill, reading aloud, Your voice, or a conversation), or null.
 
+Sometimes you also get the weekly check-in: the same passage read aloud and the same two-minute pitch every week, then a story and a surprise question from matched pools, with the first check-in's numbers against the latest. When it shows a clear change, you may name it in the headline or in improved, with its numbers. Its verdicts already compare like with like; a dash means it was not measured.
+
 Rules:
 - Compare the person only with themselves, never with other people or norms. Phone microphones are not calibrated.
 - Talk about shown measures. Mention an internal measure only when it explains the focus.
@@ -179,6 +202,8 @@ export function buildSummaryMessage(input: SummaryInput): string {
     "", `Word swaps suggested: ${input.wordSwaps.map((swap) => `"${swap.said}" → "${swap.stronger}"`).join("; ") || "none"}`,
     // (favourites)
     `Words used far more than usual lately: ${input.favouriteWords.join(", ") || "none"}`,
+    // The weekly check-in, first against latest, when there are two (decision 100)
+    ...(input.checkIn ? ["", `## Weekly check-in: first (${input.checkIn.first}) against latest (${input.checkIn.latest}), ${input.checkIn.count} so far`, "part | measure | unit | first | latest | verdict", ...input.checkIn.parts.flatMap((part) => [`${partName(part.part)} | Time | s | ${show(part.firstSec)} | ${show(part.latestSec)} | -`, ...part.rows.map((row) => `${partName(part.part)} | ${row.name} | ${row.unit} | ${show(row.first)} | ${show(row.latest)} | ${row.verdict ?? "-"}`)])] : []),
   ].join("\n");
 }
 

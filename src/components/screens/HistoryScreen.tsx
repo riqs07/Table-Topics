@@ -104,6 +104,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.isBaseline) return "Your first recording";
   // Look up the prompt, falling back to a plain label
   const text = findPrompt(session.promptId)?.text ?? "A prompt";
+  // A check-in's pitch, by its part's name (decision 100)
+  if (session.checkIn?.part === "pitch") return "Check-in: elevator pitch";
   // Free talk and a short speech (decision 73)
   if (session.mode === "free") return "Free talk";
   // A short speech, by its topic

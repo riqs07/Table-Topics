@@ -33,7 +33,7 @@ describe("recording retention", () => {
     // Four old takes: starred, a marker, the first recording, and an ordinary one
     const sessions = [makeSession({ id: "starred", createdAt: daysAgo(400), audioKey: "a", starred: true }), makeSession({ id: "marker", createdAt: daysAgo(90), audioKey: "b", marker: true }), makeSession({ id: "first", createdAt: daysAgo(365), audioKey: "c", isBaseline: true }), makeSession({ id: "plain", createdAt: daysAgo(90), audioKey: "d" })];
     // Confirm only the ordinary one goes, and the three are kept whole
-    expect([audioToDrop(sessions, NOW, 7).map((session) => session.id), sessions.map(keptWhole)]).toEqual([["plain"], [true, true, true, false]]);
+    expect([audioToDrop(sessions, NOW, 7).map((session) => session.id), sessions.map((session) => keptWhole(session))]).toEqual([["plain"], [true, true, true, false]]);
   });
 
   // A take whose audio is already gone is not listed again, so running twice changes nothing
