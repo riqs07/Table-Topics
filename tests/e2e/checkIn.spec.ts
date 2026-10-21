@@ -108,10 +108,16 @@ test("Weekly check-in: a first one, a second a week later, then compare and hear
   await expect(page.locator("section[data-part]")).toHaveCount(4);
   // Two recordings each, all playable
   await expect(page.getByRole("button", { name: /^Play (then|now)/ })).toHaveCount(8);
-  // The reading's measures, then and now
-  await expect(page.getByRole("table", { name: "Measures, Read aloud" })).toBeVisible();
-  // What changed, in words
+  // What changed, in words, first
   await expect(page.getByRole("list", { name: "What changed, Read aloud" }).getByRole("listitem")).not.toHaveCount(0);
+  // The reading's measures, folded away under "All numbers" (decision 103)
+  await expect(page.getByRole("table", { name: "Measures, Read aloud" })).toBeHidden();
+  // Opened
+  await page.locator("section[data-part='read']").getByText("All numbers").click();
+  // Then and now, with neutral words (never "Worse")
+  await expect(page.getByRole("table", { name: "Measures, Read aloud" })).toBeVisible();
+  // (no "Worse")
+  await expect(page.getByRole("table", { name: "Measures, Read aloud" })).not.toContainText("Worse");
   // Play the first reading, then switch to the latest with A/B
   await page.getByRole("button", { name: /^Play then/ }).first().click();
   // (switch)

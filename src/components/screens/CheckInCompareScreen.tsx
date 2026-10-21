@@ -1,5 +1,5 @@
 "use client";
-// Two weekly check-ins side by side (decision 100): choose which two (first and latest by default), then for each part both recordings with A/B play, a table of measures compared like with like, and a few plain lines on what changed. A recording that is not on this device (deleted, or imported without audio) is said plainly and the numbers still show
+// Two weekly check-ins side by side (decision 100): choose which two (first and latest by default), then for each part both recordings with A/B play and a few plain lines on what changed, with every measure folded under "All numbers" (decision 103). A recording that is not on this device (deleted, or imported without audio) is said plainly and the numbers still show
 
 // Load React's state, effect and reference tools
 import { useEffect, useRef, useState } from "react";
@@ -51,8 +51,17 @@ interface CheckInCompareProps extends ScreenProps {
 // Where a time sits, in a word or two
 const TIME_WORDS: Readonly<Record<TimeStatus, string>> = { short: "under the window", inside: "inside the window", grace: "just past", long: "over" };
 
-// The change column's words
-const VERDICT_WORDS: Readonly<Record<NonNullable<CompareRow["verdict"]>, string>> = { better: "Better", worse: "Worse", changed: "Changed", same: "About the same" };
+// The change column's words (decision 103): neutral, with "better" only where the measure has a clearly better side
+function changeWords(row: CompareRow): string {
+  // Not judged
+  if (!row.verdict) return "";
+  // Within the usual wobble
+  if (row.verdict === "same") return "About the same";
+  // The word for the change, capitalised
+  const word = row.word ? `${row.word.charAt(0).toUpperCase()}${row.word.slice(1)}` : "Changed";
+  // With "better" when it moved the better way
+  return row.verdict === "better" ? `${word}, better` : word;
+}
 
 // A value for the table: yes/no as words, the rest with its unit, a dash for nothing
 function cell(value: number | null, unit: string): string {
@@ -102,8 +111,8 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
 
   // The pair being compared
   const pair = data ? pickPair(data.checkIns, chosen.a, chosen.b) : null;
-  // Its takes' ids, as one key so the analyses load again only when the pair changes
-  const ids = pair ? takeIds(pair.a, pair.b).join(",") : "";
+  // Every check-in's takes, as one key so the analyses load once (each part's earlier check-ins give its usual wobble, decision 103; four takes a week, so this stays small)
+  const ids = pair && data ? takeIds(...recordedCheckIns(data.checkIns)).join(",") : "";
 
   // Load just the analyses of the two check-ins' takes
   useEffect(() => {
@@ -127,7 +136,7 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
   }, [repo, ids]);
 
   // The comparison, once everything is in
-  const comparison = pair && analyses && data ? compareCheckIns(pair.a, pair.b, analyses, { pauseWords: pauseWordsShown(data.settings) }) : null;
+  const comparison = pair && analyses && data ? compareCheckIns(pair.a, pair.b, analyses, { pauseWords: pauseWordsShown(data.settings), history: recordedCheckIns(data.checkIns) }) : null;
   // The check-ins with takes, oldest first
   const recorded = data ? recordedCheckIns(data.checkIns) : [];
 
@@ -280,52 +289,59 @@ function PartSection({ repo, comparison, part }: { repo: Repository; comparison:
         {/* Each line */}
         {part.lines.map((line) => <li key={line}>{line}</li>)}
       </ul>
-      {/* The measures, when both takes are here */}
+      {/* Every measure, folded away under "All numbers", when both takes are here */}
       {part.rows.length > 0 && (
-        <div className="mt-4 overflow-x-auto">
-          <table aria-label={`Measures, ${partName(part.part)}`} className="w-full text-left text-footnote">
-            {/* The columns */}
-            <thead className="text-ink-muted">
-              <tr>
-                {/* Names */}
-                <th scope="col" className="py-1 pr-2 font-normal">Measure</th>
-                {/* Then */}
-                <th scope="col" className="py-1 pr-2 font-normal">Then</th>
-                {/* Now */}
-                <th scope="col" className="py-1 pr-2 font-normal">Now</th>
-                {/* Change */}
-                <th scope="col" className="py-1 font-normal">Change</th>
-              </tr>
-            </thead>
-            {/* One row per measure */}
-            <tbody className="divide-y divide-rule">
-              {/* The time against the window first */}
-              <tr>
-                {/* Name */}
-                <th scope="row" className="py-1.5 pr-2 font-normal">{windowText ? `Time (${windowText})` : "Time"}</th>
-                {/* Then */}
-                <td className="py-1.5 pr-2 tabular-nums">{part.a ? formatClock(part.a.durationSec) : "–"}</td>
-                {/* Now */}
-                <td className="py-1.5 pr-2 tabular-nums">{part.b ? formatClock(part.b.durationSec) : "–"}</td>
-                {/* Where the latest sits */}
-                <td className="py-1.5">{part.time.b ? TIME_WORDS[part.time.b] : ""}</td>
-              </tr>
-              {/* Each measure */}
-              {part.rows.map((row) => (
-                <tr key={row.metric.id} data-verdict={row.verdict ?? "none"}>
-                  {/* Name */}
-                  <th scope="row" className="py-1.5 pr-2 font-normal">{row.metric.name}</th>
+        <details data-all-numbers className="mt-4">
+          {/* Open it */}
+          <summary className={`${TEXT_LINK} cursor-pointer text-footnote`}>All numbers</summary>
+          {/* What counts as a change */}
+          <p className="mt-2 text-footnote text-ink-muted">A change counts only when it is bigger than your usual take-to-take wobble on that measure (after five check-ins), or a set amount before then.</p>
+          {/* The table, scrolling on its own if it must */}
+          <div className="mt-2 overflow-x-auto">
+            <table aria-label={`Measures, ${partName(part.part)}`} className="w-full text-left text-footnote">
+              {/* The columns */}
+              <thead className="text-ink-muted">
+                <tr>
+                  {/* Names */}
+                  <th scope="col" className="py-1 pr-2 font-normal">Measure</th>
                   {/* Then */}
-                  <td className="py-1.5 pr-2 tabular-nums">{cell(row.a, row.metric.unit)}</td>
+                  <th scope="col" className="py-1 pr-2 font-normal">Then</th>
                   {/* Now */}
-                  <td className="py-1.5 pr-2 tabular-nums">{cell(row.b, row.metric.unit)}</td>
-                  {/* The change, or why it is not judged */}
-                  <td className="py-1.5">{row.verdict ? VERDICT_WORDS[row.verdict] : ""}{row.note ? <span className="block text-ink-muted">{row.note}</span> : null}</td>
+                  <th scope="col" className="py-1 pr-2 font-normal">Now</th>
+                  {/* Change */}
+                  <th scope="col" className="py-1 font-normal">Change</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              {/* One row per measure */}
+              <tbody className="divide-y divide-rule">
+                {/* The time against the window first */}
+                <tr>
+                  {/* Name */}
+                  <th scope="row" className="py-1.5 pr-2 font-normal">{windowText ? `Time (${windowText})` : "Time"}</th>
+                  {/* Then */}
+                  <td className="py-1.5 pr-2 tabular-nums">{part.a ? formatClock(part.a.durationSec) : "–"}</td>
+                  {/* Now */}
+                  <td className="py-1.5 pr-2 tabular-nums">{part.b ? formatClock(part.b.durationSec) : "–"}</td>
+                  {/* Where the latest sits */}
+                  <td className="py-1.5">{part.time.b ? TIME_WORDS[part.time.b] : ""}</td>
+                </tr>
+                {/* Each measure */}
+                {part.rows.map((row) => (
+                  <tr key={row.metric.id} data-verdict={row.verdict ?? "none"}>
+                    {/* Name */}
+                    <th scope="row" className="py-1.5 pr-2 font-normal">{row.metric.name}</th>
+                    {/* Then */}
+                    <td className="py-1.5 pr-2 tabular-nums">{cell(row.a, row.metric.unit)}</td>
+                    {/* Now */}
+                    <td className="py-1.5 pr-2 tabular-nums">{cell(row.b, row.metric.unit)}</td>
+                    {/* The change, or why it is not judged */}
+                    <td className="py-1.5">{changeWords(row)}{row.note ? <span className="block text-ink-muted">{row.note}</span> : null}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       )}
     </section>
   );

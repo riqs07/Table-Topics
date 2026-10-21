@@ -1,4 +1,6 @@
 // Two weekly check-ins side by side (decision 100): for each part, a table of measures and a few plain lines on what changed. Measures are compared like with like, as the profile does: two values from the same kind of engine, or the phone's own values for both when one take had deeper analysis; otherwise the row says they were measured differently and makes no judgement
+//
+// What counts as a change (decision 103): a move bigger than the usual take-to-take wobble of that measure in that part, which is the profile's robust spread (1.4826 times the median absolute deviation) over this part's earlier check-ins once there are five or more, and otherwise a fixed amount per measure (below). Words stay neutral ("more", "fewer", "faster", "about the same"); "better" is said only when the measure has a clearly better direction in the registry, and never "worse"
 
 // Load the measure registry
 import { findMetric, type MetricDefinition } from "@/core/analysis/metrics";
@@ -10,6 +12,8 @@ import { CHECK_IN_PARTS, CHECK_IN_PART_INFO, recordedCheckIns, type CheckIn } fr
 import { STORY_WINDOWS, TOPIC_WINDOW, formatClock, type SpeakingWindow } from "@/core/recordingRules";
 // Load the record types
 import type { AnalysisRecord, CheckInPart, MetricValue, SessionRecord } from "@/data/records";
+// Load the robust spread the profile uses
+import { robustSpread } from "@/core/analysis/stats";
 
 // One measure in a part's comparison, and the words for its two directions
 interface MeasureSpec {
@@ -25,39 +29,44 @@ interface MeasureSpec {
   pauseWords?: boolean;
   // Only fair without the browser's levelling (decision 81)
   levelled?: boolean;
+  // The smallest change that counts without enough history: a share of the earlier value, or a fixed amount, whichever is bigger (decision 103)
+  noise: { share: number; amount: number };
 }
 
 // The measures every part compares: pace, pause words, pauses, pitch range, volume variety, and clarity when deeper analysis ran
 const COMMON: ReadonlyArray<MeasureSpec> = [
-  // Pace while speaking
-  { id: "flu.articulation_rate_wpm", up: "faster", down: "slower" },
-  // Pause words
-  { id: "lang.fillers_per_min", up: "more", down: "fewer", pauseWords: true },
-  // Pauses
-  { id: "flu.pause_rate", up: "more pauses", down: "fewer pauses" },
-  // Pauses in the middle of a sentence
-  { id: "flu.midclause_pause_share", up: "more of them mid-sentence", down: "fewer of them mid-sentence" },
-  // Pitch range
-  { id: "pro.f0_range_st", up: "wider", down: "narrower" },
-  // Volume variety
-  { id: "pro.loudness_cv", up: "more varied", down: "steadier", levelled: true },
-  // Articulation clarity, from deeper analysis
-  { id: "pro.articulation_clarity", up: "clearer", down: "less clear", optional: true },
+  // Pace while speaking: a tenth, or 10 words a minute (pace drifts with the day and the topic)
+  { id: "flu.articulation_rate_wpm", up: "faster", down: "slower", noise: { share: 0.1, amount: 10 } },
+  // Pause words: a quarter, or 1.5 a minute (the speech service drops many, so small moves are noise; 15 to 16 is about the same)
+  { id: "lang.fillers_per_min", up: "more", down: "fewer", pauseWords: true, noise: { share: 0.25, amount: 1.5 } },
+  // Pauses: a fifth, or 2 a minute
+  { id: "flu.pause_rate", up: "more pauses", down: "fewer pauses", noise: { share: 0.2, amount: 2 } },
+  // Pauses in the middle of a sentence: 8 points
+  { id: "flu.midclause_pause_share", up: "more of them mid-sentence", down: "fewer of them mid-sentence", noise: { share: 0, amount: 8 } },
+  // Pitch range: a sixth, or 1 semitone
+  { id: "pro.f0_range_st", up: "wider", down: "narrower", noise: { share: 0.15, amount: 1 } },
+  // Volume variety: a sixth, or 0.03
+  { id: "pro.loudness_cv", up: "more varied", down: "steadier", levelled: true, noise: { share: 0.15, amount: 0.03 } },
+  // Articulation clarity, from deeper analysis: 3 points
+  { id: "pro.articulation_clarity", up: "clearer", down: "less clear", optional: true, noise: { share: 0, amount: 3 } },
 ];
 
 // The story part adds the phone's story checks (decision 92)
 const STORY_CHECKS: ReadonlyArray<MeasureSpec> = [
-  // A start in the action
-  { id: "story.starts_in_action", up: "now there", down: "not this time" },
+  // A start in the action (yes or no: any change counts)
+  { id: "story.starts_in_action", up: "now there", down: "not this time", noise: { share: 0, amount: 0 } },
   // Someone's words
-  { id: "story.dialogue", up: "now there", down: "not this time" },
-  // Details
-  { id: "story.details", up: "more", down: "fewer" },
+  { id: "story.dialogue", up: "now there", down: "not this time", noise: { share: 0, amount: 0 } },
+  // Details: one more or fewer is noise
+  { id: "story.details", up: "more", down: "fewer", noise: { share: 0, amount: 1 } },
   // A turn
-  { id: "story.turn", up: "now there", down: "not this time" },
+  { id: "story.turn", up: "now there", down: "not this time", noise: { share: 0, amount: 0 } },
   // An ending on the point
-  { id: "story.ends_on_point", up: "now there", down: "not this time" },
+  { id: "story.ends_on_point", up: "now there", down: "not this time", noise: { share: 0, amount: 0 } },
 ];
+
+// Earlier check-ins' takes of a part needed before their spread is used as the measure of a real change (fewer give a spread that is mostly chance)
+export const SPREAD_TAKES = 5;
 
 // Where a time sits against a part's window
 export type TimeStatus = "short" | "inside" | "grace" | "long";
@@ -110,8 +119,10 @@ export interface CompareRow {
   a: number | null;
   // (later)
   b: number | null;
-  // Better, worse, changed (no better side), about the same, or null when it cannot be judged
-  verdict: "better" | "worse" | "changed" | "same" | null;
+  // Better (moved the clearly better way, past the usual wobble), changed (moved past it, with no better side, or the other way), about the same (within it), or null when it cannot be judged. Never "worse": a move the other way is said plainly (decision 103)
+  verdict: "better" | "changed" | "same" | null;
+  // The smallest change that counted, and where it came from: this part's spread over earlier check-ins, or the fixed amount (null when not judged)
+  threshold: { value: number; basis: "spread" | "fixed" } | null;
   // Why it cannot be judged, or how it was compared, in a few words (null when there is nothing to say)
   note: string | null;
   // The word for the change ("faster", "now there"), when it changed
@@ -170,16 +181,24 @@ function likeWithLike(a: AnalysisRecord | undefined, b: AnalysisRecord | undefin
   return { a: shownA, b: shownB, note: "measured differently", comparable: false };
 }
 
-// The smallest change that counts for a measure: a twentieth of the earlier value, any change for yes/no and counts
-function enough(metric: MetricDefinition, before: number): number {
-  // Yes/no and counts: any change
-  if (metric.unit === "yes/no" || metric.unit === "count") return 0;
-  // Otherwise a twentieth, never nothing
-  return Math.max(Math.abs(before) * 0.05, 1e-9);
+// The smallest change that counts for a measure (decision 103): the spread of this part's values from the same kind of engine over earlier check-ins, once there are enough, never below half the fixed amount; otherwise the fixed amount
+export function changeThreshold(spec: { noise: { share: number; amount: number } }, before: number, history: ReadonlyArray<number>): { value: number; basis: "spread" | "fixed" } {
+  // The fixed amount: a share of the earlier value, or the amount, whichever is bigger
+  const fixed = Math.max(Math.abs(before) * spec.noise.share, spec.noise.amount);
+  // Enough history: its spread
+  if (history.length >= SPREAD_TAKES) return { value: Math.max(robustSpread(history) ?? 0, spec.noise.amount / 2), basis: "spread" };
+  // Otherwise fixed
+  return { value: fixed, basis: "fixed" };
 }
 
-// Compare one measure between two takes
-function compareMeasure(spec: MeasureSpec, a: { session: SessionRecord; analysis: AnalysisRecord | undefined }, b: { session: SessionRecord; analysis: AnalysisRecord | undefined }): CompareRow | null {
+// This part's earlier values of a measure, from the same kind of engine as the comparison, for its spread
+function historyValues(id: string, source: MetricValue["source"] | undefined, takes: ReadonlyArray<SessionRecord>, analyses: ReadonlyMap<string, AnalysisRecord>): number[] {
+  // Each take's value from that source
+  return takes.map((session) => analyses.get(session.id)?.metrics[id]).filter((value): value is MetricValue => value !== undefined && value.value !== null && value.source === source).map((value) => value.value!);
+}
+
+// Compare one measure between two takes, with this part's earlier takes for the spread
+function compareMeasure(spec: MeasureSpec, a: { session: SessionRecord; analysis: AnalysisRecord | undefined }, b: { session: SessionRecord; analysis: AnalysisRecord | undefined }, earlier: { takes: ReadonlyArray<SessionRecord>; analyses: ReadonlyMap<string, AnalysisRecord> }): CompareRow | null {
   // The measure's definition (always present for the listed ids)
   const metric = findMetric(spec.id);
   // An unknown id cannot be compared
@@ -193,21 +212,23 @@ function compareMeasure(spec: MeasureSpec, a: { session: SessionRecord; analysis
   // Volume variety is only fair when the browser levelled neither take (decision 81)
   const levelled = spec.levelled && (a.session.autoGain !== false || b.session.autoGain !== false);
   // The row without a judgement
-  const plain = { metric, a: valueA, b: valueB, word: null };
+  const plain = { metric, a: valueA, b: valueB, word: null, threshold: null };
   // Levelled: shown, not judged
   if (levelled && valueA !== null && valueB !== null) return { ...plain, verdict: null, note: "levelled by the browser" };
   // Not comparable
   if (!pair.comparable || valueA === null || valueB === null) return { ...plain, verdict: null, note: pair.note };
   // The change
   const moved = valueB - valueA;
+  // The smallest change that counts, from this part's history in the same kind of value
+  const threshold = changeThreshold(spec, valueA, historyValues(spec.id, pair.a?.source, earlier.takes, earlier.analyses));
   // Too small to count
-  if (Math.abs(moved) <= enough(metric, valueA)) return { ...plain, verdict: "same", note: pair.note };
+  if (Math.abs(moved) <= threshold.value) return { ...plain, verdict: "same", note: pair.note, threshold };
   // Its direction
   const up = moved > 0;
-  // Better, worse, or just changed
-  const verdict = metric.better === "neither" ? "changed" : up === (metric.better === "higher") ? "better" : "worse";
+  // Better only when the measure has a clearly better side and it moved that way; otherwise said plainly
+  const verdict = metric.better !== "neither" && up === (metric.better === "higher") ? "better" : "changed";
   // The row
-  return { metric, a: valueA, b: valueB, verdict, note: pair.note, word: up ? spec.up : spec.down };
+  return { metric, a: valueA, b: valueB, verdict, note: pair.note, word: up ? spec.up : spec.down, threshold };
 }
 
 // A value in plain words for a line: yes/no as words, the rest with its unit
@@ -224,16 +245,16 @@ function said(value: number | null, unit: string): string {
 function rowLine(row: CompareRow): string {
   // Yes/no checks read as a sentence
   if (row.metric.unit === "yes/no") return `${row.metric.name}: ${row.word}.`;
-  // The numbers and the word
-  return `${row.metric.name}: ${said(row.a, row.metric.unit)} → ${said(row.b, row.metric.unit)}, ${row.word}.`;
+  // The numbers and the word, with "better" only where the measure has a clearly better side
+  return `${row.metric.name}: ${said(row.a, row.metric.unit)} → ${said(row.b, row.metric.unit)}, ${row.word}${row.verdict === "better" ? ", better" : ""}.`;
 }
 
-// How big a change is, for choosing the lines to show: the share it moved by (yes/no counts as a whole change)
+// How big a change is, for choosing the lines to show: how many times the smallest change that counts it moved by (yes/no counts as a clear change)
 function size(row: CompareRow): number {
-  // Yes/no: a whole change
-  if (row.metric.unit === "yes/no") return 1;
-  // The share of the earlier value (or the change itself from zero)
-  return row.a === null || row.b === null ? 0 : Math.abs(row.b - row.a) / Math.max(Math.abs(row.a), 1e-9);
+  // Yes/no: a clear change
+  if (row.metric.unit === "yes/no") return 2;
+  // Moves past the usual wobble, in wobbles
+  return row.a === null || row.b === null ? 0 : Math.abs(row.b - row.a) / Math.max(row.threshold?.value ?? 0, 1e-9);
 }
 
 // The line about time, when where it sits changed or it moved by more than 15 seconds
@@ -251,7 +272,7 @@ function timeLine(part: CheckInPart, a: SessionRecord, b: SessionRecord): string
 }
 
 // Compare one part of two check-ins
-function comparePart(part: CheckInPart, a: CheckIn, b: CheckIn, analyses: ReadonlyMap<string, AnalysisRecord>, pauseWords: boolean): PartComparison {
+function comparePart(part: CheckInPart, a: CheckIn, b: CheckIn, analyses: ReadonlyMap<string, AnalysisRecord>, pauseWords: boolean, history: ReadonlyArray<CheckIn>): PartComparison {
   // The two takes
   const [takeA, takeB] = [a.takes[part] ?? null, b.takes[part] ?? null];
   // Where each sits against the window
@@ -260,8 +281,10 @@ function comparePart(part: CheckInPart, a: CheckIn, b: CheckIn, analyses: Readon
   if (!takeA || !takeB) return { part, a: takeA, b: takeB, rows: [], time, lines: ["Skipped or not recorded in one of these check-ins, so there is nothing to compare."] };
   // The measures for this part, without pause words when they are hidden
   const specs = [...COMMON, ...(part === "story" ? STORY_CHECKS : [])].filter((spec) => pauseWords || !spec.pauseWords);
+  // This part's takes in the check-ins up to the later one, for the spread (the later one itself left out, so its own change cannot widen the bar)
+  const earlier = { takes: history.filter((checkIn) => checkIn.day < b.day).flatMap((checkIn) => (checkIn.takes[part] ? [checkIn.takes[part]!] : [])), analyses };
   // Each compared
-  const rows = specs.map((spec) => compareMeasure(spec, { session: takeA, analysis: analyses.get(takeA.id) }, { session: takeB, analysis: analyses.get(takeB.id) })).filter((row): row is CompareRow => row !== null);
+  const rows = specs.map((spec) => compareMeasure(spec, { session: takeA, analysis: analyses.get(takeA.id) }, { session: takeB, analysis: analyses.get(takeB.id) }, earlier)).filter((row): row is CompareRow => row !== null);
   // The changes worth a line, biggest first, at most three
   const changed = rows.filter((row) => row.verdict !== null && row.verdict !== "same" && row.word).sort((x, y) => size(y) - size(x)).slice(0, 3);
   // The line about time, first
@@ -272,12 +295,12 @@ function comparePart(part: CheckInPart, a: CheckIn, b: CheckIn, analyses: Readon
   return { part, a: takeA, b: takeB, rows, time, lines: lines.length > 0 ? lines : ["About the same on every measure."] };
 }
 
-// Compare two check-ins, part by part
-export function compareCheckIns(a: CheckIn, b: CheckIn, analyses: ReadonlyMap<string, AnalysisRecord>, options: { pauseWords: boolean }): CheckInComparison {
+// Compare two check-ins, part by part; history is every check-in (with their takes' analyses in the map), for each measure's usual wobble (decision 103)
+export function compareCheckIns(a: CheckIn, b: CheckIn, analyses: ReadonlyMap<string, AnalysisRecord>, options: { pauseWords: boolean; history?: ReadonlyArray<CheckIn> }): CheckInComparison {
   // Days between them
   const days = Math.round((new Date(`${b.day}T12:00:00`).getTime() - new Date(`${a.day}T12:00:00`).getTime()) / 86_400_000);
   // Each part in order
-  return { a, b, days, parts: CHECK_IN_PARTS.map((part) => comparePart(part, a, b, analyses, options.pauseWords)) };
+  return { a, b, days, parts: CHECK_IN_PARTS.map((part) => comparePart(part, a, b, analyses, options.pauseWords, options.history ?? [a, b])) };
 }
 
 // The two check-ins to compare: the ones named, or by default the first and the latest; null with fewer than two

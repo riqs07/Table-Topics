@@ -62,8 +62,8 @@ describe("comparing check-ins", () => {
     const read = compareCheckIns(a, b, analyses, { pauseWords: true }).parts.find((part) => part.part === "read")!;
     // Each row's verdict and note
     const rows = read.rows.map((row) => [row.metric.id, row.verdict, row.note]);
-    // Confirm the rows, and the lines (pause words, the pitch range and the pace, biggest first)
-    expect([rows, read.lines]).toEqual([[["flu.articulation_rate_wpm", "changed", null], ["lang.fillers_per_min", "better", null], ["flu.pause_rate", "same", null], ["flu.midclause_pause_share", "better", "phone’s measure"], ["pro.f0_range_st", "better", null], ["pro.loudness_cv", "same", null]], ["Pause words: 4/min → 1.5/min, fewer.", "Pitch range: 5 semitones → 8 semitones, wider.", "Pauses mid-sentence: 40% → 30%, fewer of them mid-sentence."]]);
+    // Confirm the rows, and the lines (biggest first, measured against each measure's usual wobble; "better" only where the measure has a better side)
+    expect([rows, read.lines]).toEqual([[["flu.articulation_rate_wpm", "changed", null], ["lang.fillers_per_min", "better", null], ["flu.pause_rate", "same", null], ["flu.midclause_pause_share", "better", "phone’s measure"], ["pro.f0_range_st", "better", null], ["pro.loudness_cv", "same", null]], ["Pitch range: 5 semitones → 8 semitones, wider, better.", "Pause words: 4/min → 1.5/min, fewer, better.", "Speaking pace: 190 words/min → 160 words/min, slower."]]);
   });
 
   // Values from different engines are not judged when the phone's own are not there for both
@@ -143,7 +143,7 @@ describe("comparing check-ins", () => {
     // The story part
     const story = compareCheckIns(a!, b!, analyses, { pauseWords: true }).parts.find((part) => part.part === "story")!;
     // Confirm the lines, the bigger change first
-    expect(story.lines).toEqual(["Specific details: 1 → 3, more.", "Someone's words: now there."]);
+    expect(story.lines).toEqual(["Someone's words: now there.", "Specific details: 1 → 3, more, better."]);
   });
 });
 
@@ -170,5 +170,45 @@ describe("picking check-ins and windows", () => {
   it("places each length against its part's window", () => {
     // Confirm the windows and a few lengths
     expect([partWindow("read"), windowWords("pitch"), windowWords("story"), windowWords("surprise"), timeStatus("read", 60), timeStatus("surprise", 59), timeStatus("surprise", 120), timeStatus("surprise", 140), timeStatus("surprise", 151)]).toEqual([null, "1:15 to 2:00", "0:45 to 1:15", "1:00 to 2:00", null, "short", "inside", "grace", "long"]);
+  });
+
+  // Regression for decision 103: 15 to 16 pause words a minute is noise, not "worse"; a real rise is said plainly as "more", never "worse"
+  it("calls small moves about the same and never says worse", () => {
+    // Two readings
+    const takes = [take(FIRST, "read", 50), take(LATER, "read", 52)];
+    // Grouped
+    const [a, b] = groupCheckIns(takes, undefined);
+    // A small rise, then a big one
+    const row = (before: number, after: number) => compareCheckIns(a!, b!, new Map([[takes[0]!.id, analysis(takes[0]!.id, { "lang.fillers_per_min": phone(before) })], [takes[1]!.id, analysis(takes[1]!.id, { "lang.fillers_per_min": phone(after) })]]), { pauseWords: true }).parts[0]!;
+    // Each
+    const [small, big] = [row(15, 16), row(6, 12)];
+    // About the same, then "more" without a judgement, and the threshold's basis
+    // The pause-word rows
+    const [smallRow, bigRow] = [small, big].map((part) => part.rows.find((item) => item.metric.id === "lang.fillers_per_min")!);
+    // (checked)
+    expect([smallRow!.verdict, small.lines, bigRow!.verdict, big.lines, bigRow!.threshold]).toEqual(["same", ["About the same on every measure."], "changed", ["Pause words: 6/min → 12/min, more."], { value: 1.5, basis: "fixed" }]);
+  });
+
+  // With five earlier check-ins, the part's own spread sets what counts: a steady speaker's small move counts, a variable speaker's does not
+  it("uses this part's spread once there are enough check-ins", () => {
+    // Seven weekly readings
+    const days = Array.from({ length: 7 }, (_, index) => addDays(FIRST, index * 7));
+    // Their takes
+    const takes = days.map((day) => take(day, "read", 50));
+    // Grouped
+    const checkIns = groupCheckIns(takes, undefined);
+    // Pace values: steady, or all over the place; the last moves by 9 words a minute
+    const compare = (values: number[]) => {
+      // Each take's pace
+      const analyses = new Map(takes.map((session, index) => [session.id, analysis(session.id, { "flu.articulation_rate_wpm": phone(values[index]!, "words/min") })]));
+      // The first against the last, with the history
+      return compareCheckIns(checkIns[0]!, checkIns[6]!, analyses, { pauseWords: true, history: checkIns }).parts[0]!.rows[0]!;
+    };
+    // Steady: 160 give or take 1, then 169
+    const steady = compare([160, 161, 159, 160, 161, 160, 169]);
+    // Variable: swinging by 20, then the same move
+    const variable = compare([160, 180, 140, 175, 145, 170, 169]);
+    // The steady speaker's move counts (the spread is small, so half the fixed 10 is the floor); the variable one's is within the wobble
+    expect([steady.verdict, steady.threshold?.basis, steady.threshold?.value, variable.verdict, variable.threshold?.basis]).toEqual(["changed", "spread", 5, "same", "spread"]);
   });
 });

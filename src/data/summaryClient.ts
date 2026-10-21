@@ -58,7 +58,7 @@ export async function requestWeeklySummary(repository: Repository, { passphrase,
   // (the pair)
   const pair = pickPair(checkIns, null, null);
   // The table to send, with the check-in's numbers when there are two
-  const input = { ...buildSummaryInput(buildProfile(sessions, analyses, now), sessions, analyses, summaries[0], now), ...(pair ? { checkIn: checkInSummaryInput(compareCheckIns(pair.a, pair.b, new Map(analyses.map((analysis) => [analysis.sessionId, analysis])), { pauseWords: pauseWordsShown(settings) }), recordedCheckIns(checkIns).length) } : {}) };
+  const input = { ...buildSummaryInput(buildProfile(sessions, analyses, now), sessions, analyses, summaries[0], now), ...(pair ? { checkIn: checkInSummaryInput(compareCheckIns(pair.a, pair.b, new Map(analyses.map((analysis) => [analysis.sessionId, analysis])), { pauseWords: pauseWordsShown(settings), history: recordedCheckIns(checkIns) }), recordedCheckIns(checkIns).length) } : {}) };
   // Send it, treating a network failure as a failure to try again later
   let response: Response;
   // Try the network

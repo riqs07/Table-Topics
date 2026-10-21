@@ -235,8 +235,10 @@ describe("the comparison", () => {
     render(<CheckInCompareScreen repository={repository} now={NOW} />);
     // The reading's table
     const table = await screen.findByRole("table", { name: "Measures, Read aloud" });
-    // Confirm the parts, the players (seven), the table's time row, the missing note and A/B for the reading only where both are here
-    expect([document.querySelectorAll("section[data-part]").length, (await screen.findAllByRole("button", { name: /^Play (then|now)/ })).length, within(table).getAllByRole("row")[1]!.textContent, !!screen.getByText(/The recording isn’t on this device/), screen.queryByRole("group", { name: "Switch between then and now, A story" }), !!screen.getByRole("group", { name: "Switch between then and now, Read aloud" })]).toEqual([4, 7, "Time1:101:20", true, null, true]);
+    // The reading's part
+    const read = document.querySelector("section[data-part='read']")!;
+    // Confirm the parts, the players (seven), the table's time row, the missing note and A/B for the reading only where both are here, and the table folded under "All numbers" after what changed (decision 103)
+    expect([document.querySelectorAll("section[data-part]").length, (await screen.findAllByRole("button", { name: /^Play (then|now)/ })).length, within(table).getAllByRole("row")[1]!.textContent, !!screen.getByText(/The recording isn’t on this device/), screen.queryByRole("group", { name: "Switch between then and now, A story" }), !!screen.getByRole("group", { name: "Switch between then and now, Read aloud" }), (table.closest("details") as HTMLDetailsElement | null)?.open, table.closest("details")?.querySelector("summary")?.textContent, Array.from(read.children).map((child) => child.tagName)]).toEqual([4, 7, "Time1:101:20", true, null, true, false, "All numbers", ["H2", "DIV", "DIV", "UL", "DETAILS"]]);
   });
 
   // A/B marks the side playing
