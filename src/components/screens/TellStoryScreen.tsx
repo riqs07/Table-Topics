@@ -30,6 +30,10 @@ interface TellStoryProps extends ScreenProps {
   storyId: string;
   // Inside today's practice: which step this is, or null
   planStep?: number | null;
+  // A shape to start on, from a Learn card's link (decision 94), or null for Classic
+  initialShape?: StoryShape | null;
+  // A focus to start on, from a Learn card's link (decision 94), or null for the story's own
+  initialFocus?: StoryFocus | null;
 }
 
 // The look of a choice button: filled when chosen
@@ -42,7 +46,7 @@ export function tellSessionHref(storyId: string, shape: StoryShape, focus: Story
 }
 
 // Draw the screen
-export function TellStoryScreen({ storyId, planStep = null, ...props }: TellStoryProps) {
+export function TellStoryScreen({ storyId, planStep = null, initialShape = null, initialFocus = null, ...props }: TellStoryProps) {
   // The repository
   const { repo } = useScreenBasics(props);
   // The prompt from the bank, if the story came from one
@@ -54,11 +58,11 @@ export function TellStoryScreen({ storyId, planStep = null, ...props }: TellStor
   // The moment's words (null while loading or when there is none)
   const [moment, setMoment] = useState<{ status: "loading" | "found" | "missing"; text: string }>({ status: momentId ? "loading" : "missing", text: "" });
   // The shape (Classic by default)
-  const [shape, setShape] = useState<StoryShape>("classic");
-  // The focus: none by default, or the one a guided story suits (the user can change it)
-  const [focus, setFocus] = useState<StoryFocus | null>(guided?.focus ?? null);
-  // The length (full by default; short inside today's practice, which keeps to a few minutes)
-  const [length, setLength] = useState<StoryLength>(planStep ? "short" : "full");
+  const [shape, setShape] = useState<StoryShape>(initialShape ?? "classic");
+  // The focus: the one the link asked for, else the one a guided story suits, else none (the user can change it)
+  const [focus, setFocus] = useState<StoryFocus | null>(initialFocus ?? guided?.focus ?? null);
+  // The length (full by default; short inside today's practice, which keeps to a few minutes, or when the link asks for under a minute)
+  const [length, setLength] = useState<StoryLength>(planStep || initialFocus === "minute" ? "short" : "full");
   // Name the tab
   usePageTitle("Tell a story");
 

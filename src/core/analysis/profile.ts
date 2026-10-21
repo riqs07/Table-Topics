@@ -13,6 +13,8 @@
 import { METRICS, findMetric, type MetricDefinition } from "@/core/analysis/metrics";
 // Load the statistics helpers
 import { median, robustSpread, round } from "@/core/analysis/stats";
+// Load the take counts the profile works with
+import { PROFILE_RULES } from "@/core/analysis/profileRules";
 // Load the record types
 import type { AnalysisRecord, MetricSource, SessionMode, SessionRecord } from "@/data/records";
 
@@ -35,18 +37,18 @@ export const FAMILIES: ReadonlyArray<{ id: FamilyId; name: string; modes: Readon
   { id: "story", name: "Stories", modes: ["story"] },
 ];
 
-// Takes for the usual level
-const BASELINE_TAKES = 5;
+// Takes for the usual level (the take counts live in profileRules.ts, which the Learn card also reads)
+const BASELINE_TAKES = PROFILE_RULES.usualTakes;
 // Takes for the recent level
-const RECENT_TAKES = 7;
+const RECENT_TAKES = PROFILE_RULES.recentTakes;
 // Fewest takes before a trend is given
-const MIN_FOR_TREND = 6;
+const MIN_FOR_TREND = PROFILE_RULES.minForTrend;
 // Fewest takes before a change flag is looked for
-const MIN_FOR_FLAG = 8;
+const MIN_FOR_FLAG = PROFILE_RULES.minForFlag;
 // Takes in a row that make a change
-const FLAG_RUN = 3;
+const FLAG_RUN = PROFILE_RULES.flagRun;
 // Fewest takes in a family before patterns are looked for
-export const MIN_FOR_PATTERNS = 15;
+export const MIN_FOR_PATTERNS = PROFILE_RULES.minForPatterns;
 // Fewest takes in the other group of a comparison
 const MIN_GROUP = 5;
 // Share of takes that must agree for an opening pattern

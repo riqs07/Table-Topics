@@ -149,6 +149,14 @@ describe("TellStoryScreen", () => {
     expect([!!screen.getByText(/a plan fell apart/), first, start(), screen.getByRole("button", { name: /Short/ }).getAttribute("aria-pressed"), within(screen.getByRole("region", { name: "Your story's shape" })).getByText("What you wanted").textContent]).toEqual([true, "/session?mode=story&prompt=sp01&shape=classic&length=full", "/session?mode=story&prompt=sp01&shape=but-therefore&focus=minute&length=short", "true", "What you wanted"]);
   });
 
+  // A Learn card's link can start on a shape and a focus (decision 94); "Under a minute" from a link also starts short
+  it("starts on the shape and focus a Learn card's link names", async () => {
+    // Draw it as a link from a card would
+    render(<TellStoryScreen storyId="sp04" initialShape="then-now" initialFocus="minute" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the chosen buttons and the address that starts the telling
+    expect([screen.getByRole("button", { name: /Then and now/ }).getAttribute("aria-pressed"), screen.getByRole("button", { name: "Under a minute" }).getAttribute("aria-pressed"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual(["true", "true", "/session?mode=story&prompt=sp04&shape=then-now&focus=minute&length=short"]);
+  });
+
   // Inside today's practice: short by default, with the step carried on
   it("keeps today's step and starts short inside the plan", async () => {
     // Draw it as step 4

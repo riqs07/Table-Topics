@@ -140,6 +140,20 @@ Each label is shown in words, never as a colour alone.
 
 - **Four new sets and a real-world step** (decision 71, 2026-10-19). *Your voice* (pace, pitch, vocal fry, silent pauses, variety), *Getting your point across* (the curse of knowledge, points not a script, point-reason-example, concrete examples, repeating the question in Q&A), *Changing minds* (answer the objection, argue from their values, listen and swap stories, “free to say no”, three reasons not four) and *Hard conversations* (disagreeing, apologising, asking for help, asking for advice, humblebragging). Body language gained looking away, a still audience, body over face at peaks, listening for feelings and reading the room; Nerves gained talking to yourself by name; Warmth gained thank-you notes. Each new card has an `outThere` line, shown on its last screen as “Try it for real”: one small step to take away from the app. Sources were checked against abstracts and study summaries; where only secondary coverage was found, the card says so through its evidence label (mixed or practical).
 
+- **Four more sets, and more on stories, voice and charisma** (decision 94, 2026-10-21). 46 new cards, 120 in all across 15 sets:
+
+  | Set | Cards | What it added |
+  |-----|-------|---------------|
+  | Stories you can tell | 17 (+14) | Transportation, one true detail, quoting what was said, stakes, “but” and “so”, starting in the middle, the change, ending on the point, present tense (mixed), admitting a mistake (mixed), retelling, a story bank, one case against statistics (mixed), length |
+  | Your voice | 9 (+4, and vocal fry corrected) | Uptalk (mixed), projection, flatness depending on the audience, why a phone's voice-wobble readings move |
+  | Charisma | 10 (+4) | Warmth judged first, gestures, dominance and prestige, comparisons and the TED evidence |
+  | Word choice (new) | 7 | Plain words, concrete words, naming the thing, hedges (mixed), intensifiers (mixed), “just” (mixed), varied words |
+  | Reading your profile (new) | 5 | Where you pause, pause words against pauses, word variety, clarity, why one take tells you little |
+  | Humour (new) | 6 | “To be charismatic, be funny” (moved from Warmth, which now has 9), joking about yourself (mixed), wrong but safe, observation over jokes, callbacks, when it backfires |
+  | Speaking at work (new) | 7 | Ideas not just problems, speaking early, interrupting (mixed), bottom line first, video lag, eye contact on camera (mixed), asking what only they know |
+
+  Stories leads the Speaking group on the Learn page; Speaking holds 7 sets and People 8. Story cards' links open `/stories/tell` on a fitting prompt with the shape or focus the card teaches already chosen (`&shape=`, `&focus=`; a name that does not exist falls back to the usual start). The vocal fry card now says mixed under a new id (`voice-fry-mixed`); the old id is listed in `RETIRED_CARDS`, so old links open the corrected card and old progress for it is kept but counts for nothing. The “one take tells you little” card builds its numbers from the profile's own rules (`src/core/analysis/profileRules.ts`). A content test holds every card to the house word budget (the longest each part had before), checks every link's page, lesson, story, shape and focus, and the browser suite checks every link's `#` place.
+
 ## Open questions
 
 - **Where Learn lives:** its own tab (Today · Practice · Connect · Learn · History), or inside Skills?

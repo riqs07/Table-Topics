@@ -102,6 +102,14 @@ export const ROUTES: ReadonlyArray<string> = [
   "/learn/scenarios",
   // A Learn set
   "/learn/set?id=warmth",
+  // The new sets' pages, the corrected vocal fry card, and the old fry card's address, which opens it (decision 94)
+  "/learn/set?id=stories",
+  "/learn/set?id=words",
+  "/learn/card?id=voice-fry-mixed",
+  "/learn/card?id=voice-fry",
+  "/learn/card?id=profile-trends",
+  // Telling a story, started from a Learn card's link with a shape and a focus
+  "/stories/tell?prompt=sp04&shape=then-now&focus=middle",
   // A small-talk unit
   "/small-talk/unit?id=news",
   "/learn/card?id=warm-good-news",

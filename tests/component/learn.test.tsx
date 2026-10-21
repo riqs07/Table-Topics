@@ -58,8 +58,10 @@ describe("Learn", () => {
     const all = [...sets, ...within(screen.getByRole("list", { name: "People sets" })).getAllByRole("link")].map((link) => link.getAttribute("href"));
     // Confirm each set once
     expect([...all].sort()).toEqual(LEARN_SETS.map((set) => `/learn/set?id=${set.id}`).sort());
-    // Confirm the first card's name, address and note, and the main action
-    expect([sets[0]?.getAttribute("aria-label"), sets[0]?.getAttribute("href"), sets[0]?.textContent?.includes("Next up"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([`Nerves and presence, 0 of ${LEARN_CARDS.filter((card) => card.set === "nerves").length}`, "/learn/set?id=nerves", true, `/learn/card?id=${LEARN_CARDS[0]?.id}`]);
+    // The set marked "Next up"
+    const nextUp = sets.find((link) => link.textContent?.includes("Next up"));
+    // Confirm Stories leads the group (decision 94), the set holding the first card is marked next, and the main action
+    expect([sets[0]?.getAttribute("aria-label"), nextUp?.getAttribute("aria-label"), nextUp?.getAttribute("href"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([`Stories you can tell, 0 of ${LEARN_CARDS.filter((card) => card.set === "stories").length}`, `Nerves and presence, 0 of ${LEARN_CARDS.filter((card) => card.set === "nerves").length}`, "/learn/set?id=nerves", `/learn/card?id=${LEARN_CARDS[0]?.id}`]);
   });
 
   // A set's page lists its cards as a path, with the next one marked
