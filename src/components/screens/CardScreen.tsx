@@ -9,10 +9,10 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 import { SwipeDeck } from "@/components/script/SwipeDeck";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-// Load the icon for the real-world step
-import { GlobeHemisphereWestIcon } from "@phosphor-icons/react/dist/ssr";
-// Load the shared button looks
-import { PRESS, PrimaryLink } from "@/components/script/Buttons";
+// Load the icons for the real-world step and the practice link
+import { ArrowRightIcon, CaretRightIcon, GlobeHemisphereWestIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the shared press effect
+import { PRESS } from "@/components/script/Buttons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the scenarios, their item and progress saving
@@ -58,6 +58,26 @@ const GUESSES: ReadonlyArray<{ verdict: Verdict; label: string }> = [
 function Kicker({ children }: { children: string }) {
   // The heading
   return <p className="mt-6 text-footnote text-ink-muted md:mt-0">{children}</p>;
+}
+
+// The card's last step: a row that starts the practice that fits it best, so every card ends in doing (decision 96)
+function PractiseRow({ label, href }: { label: string; href: string }) {
+  // The whole row is the link: a filled arrow tile, "Practise it" over the session's name, and a chevron
+  return (
+    <Link href={href} data-practise-link className={`mt-6 flex min-h-16 items-center gap-3 rounded-2xl border-2 border-fill bg-card px-4 py-3 ${PRESS} hover:bg-paper`}>
+      {/* The arrow on a filled tile */}
+      <span aria-hidden="true" className="flex size-10 flex-none items-center justify-center rounded-xl bg-fill text-fill-ink"><ArrowRightIcon className="size-6" /></span>
+      {/* What it starts */}
+      <span className="min-w-0 flex-1">
+        {/* Heading */}
+        <span className="block text-footnote font-semibold text-ink-muted">Practise it</span>
+        {/* The session's name */}
+        <span className="block font-semibold leading-snug">{label}</span>
+      </span>
+      {/* The chevron */}
+      <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
+    </Link>
+  );
 }
 
 // Draw a card
@@ -209,8 +229,8 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
           </span>
         </div>
       )}
-      {/* Practise it elsewhere */}
-      {card.tryIt && <p className="mt-6"><PrimaryLink href={card.tryIt.href}>{card.tryIt.label}</PrimaryLink></p>}
+      {/* The practice that fits, last on this screen when no scenario follows */}
+      {!scenario && <PractiseRow label={card.tryIt.label} href={card.tryIt.href} />}
     </div>,
     // A scenario: choose the best reply, then say it (only on cards that have one)
     ...(scenario ? [
@@ -219,6 +239,8 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
         <Kicker>{`Try it: ${scenario.title}`}</Kicker>
         {/* The item */}
         <div className="mt-2"><ScenarioItem scenario={scenario} services={services} onAnswer={(tier) => { if (today) void saveScenarioAnswer(repo, scenario.id, tier, today); }} /></div>
+        {/* The practice that fits, the last thing on the card */}
+        <PractiseRow label={card.tryIt.label} href={card.tryIt.href} />
       </div>,
     ] : []),
   ];

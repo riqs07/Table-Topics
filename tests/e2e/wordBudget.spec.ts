@@ -1,11 +1,13 @@
 // A phone's first screen says what to do in few words: a ceiling on the words in view, so explanations do not creep back (decision 63)
 import { expect, test } from "./support/fixtures";
+// Load the small-talk lessons, so every unit's lesson pages are measured too (decision 96)
+import { SMALL_TALK_LESSONS } from "../../src/content/smallTalk";
 
 // The most words allowed in the first phone screen of a page (text read aloud, such as a passage, is not on these pages)
 const WORD_BUDGET = 100;
 
-// Pages to measure: the tabs, their inside pages, and the start of each kind of practice without a passage
-const PAGES: ReadonlyArray<string> = ["/", "/practice", "/learn", "/skills", "/settings", "/profile", "/bookends", "/small-talk/unit?id=answering", "/small-talk/unit?id=news", "/small-talk", "/small-talk/unit?id=room", "/small-talk/unit?id=starting", "/small-talk/unit?id=deeper", "/session?mode=smalltalk&prompt=sr01", "/session?mode=smalltalk&prompt=se01", "/session?mode=smalltalk&prompt=sd01", "/learn/set?id=warmth", "/learn/scenarios", "/session?mode=talk&prompt=t001", "/session?mode=response&prompt=p001", "/session?mode=smalltalk&prompt=st01", "/session?mode=smalltalk&prompt=sn01", "/session?mode=bookend&prompt=b001", "/session?mode=moment&prompt=moment", "/voice", "/voice/warmup", "/voice/drill?id=v01", "/voice/shadow?id=s01", "/conversations", "/conversations/talk?id=maya", "/stories", "/stories/tell?prompt=sp01", "/session?mode=story&prompt=sp01", "/stories/tell?prompt=gs13", "/session?mode=story&prompt=gs13&focus=middle"];
+// Pages to measure: the tabs, their inside pages, the start of each kind of practice without a passage, and every small-talk lesson page
+const PAGES: ReadonlyArray<string> = ["/", "/practice", "/learn", "/skills", "/settings", "/profile", "/bookends", "/small-talk/unit?id=answering", "/small-talk/unit?id=news", "/small-talk", "/small-talk/unit?id=room", "/small-talk/unit?id=starting", "/small-talk/unit?id=deeper", "/session?mode=smalltalk&prompt=sr01", "/session?mode=smalltalk&prompt=se01", "/session?mode=smalltalk&prompt=sd01", "/learn/set?id=warmth", "/learn/scenarios", "/session?mode=talk&prompt=t001", "/session?mode=response&prompt=p001", "/session?mode=smalltalk&prompt=st01", "/session?mode=smalltalk&prompt=sn01", "/session?mode=bookend&prompt=b001", "/session?mode=moment&prompt=moment", "/voice", "/voice/warmup", "/voice/drill?id=v01", "/voice/shadow?id=s01", "/conversations", "/conversations/talk?id=maya", "/stories", "/stories/tell?prompt=sp01", "/session?mode=story&prompt=sp01", "/stories/tell?prompt=gs13", "/session?mode=story&prompt=gs13&focus=middle", ...SMALL_TALK_LESSONS.map((lesson) => `/session?mode=smalltalk&prompt=${lesson.id}`)];
 
 // One check per page
 for (const path of PAGES) {

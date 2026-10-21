@@ -517,14 +517,30 @@ describe("RecordingScreen", () => {
     expect([!!(await screen.findByText("Start without the um")), !!screen.getByText("From your numbers: Take a breath at every full stop.")]).toEqual([true, true]);
   });
 
-  // A small-talk lesson teaches before you answer: the idea, a flat answer beside a better one, the question, and the recipe with its beat marked
+  // A small-talk lesson teaches before you answer: the idea, a flat answer beside a better one, the question, and the recipe with its beat marked (only that beat keeps its reminder, decision 96)
   it("teaches a small-talk lesson before the question", async () => {
     // Draw lesson 3, "Give a hook"
     draw({ mode: "smalltalk", promptId: "stl3" });
     // The lesson
     const lesson = await screen.findByRole("region", { name: "The lesson" });
     // Confirm the title, the flat and better answers, the question, and the hook marked on the strip
-    expect([within(lesson).getByRole("heading").textContent, !!within(lesson).getByText(/I watched a movie/), !!within(lesson).getByText(/I finally watched Dune/), screen.getByRole("heading", { level: 1 }).textContent, within(screen.getByRole("list", { name: "The recipe" })).getAllByRole("listitem")[1]?.className.includes("border-accent")]).toEqual(["Lesson 3: Give a hook", true, true, "Seen anything good lately?", true]);
+    expect([within(lesson).getByRole("heading").textContent, !!within(lesson).getByText(/I watched a movie/), !!within(lesson).getByText(/I finally watched Dune/), screen.getByRole("heading", { level: 1 }).textContent, within(screen.getByRole("list", { name: "The recipe" })).getAllByRole("listitem")[1]?.className.includes("border-accent"), within(screen.getByRole("list", { name: "The recipe" })).getAllByRole("listitem")[0]?.textContent]).toEqual(["Lesson 3: Give a hook", true, true, "Seen anything good lately?", true, "1. Moment"]);
+  });
+
+  // A drill read on a card has nothing to hear, so its keyboard hint says Space starts speaking; a heard drill still says Space to hear (decision 96)
+  it("hints at starting to speak on a drill read on a card, and at hearing on a heard one", async () => {
+    // Draw a Reading the room moment, read on a card
+    draw({ mode: "smalltalk", promptId: "sr01" });
+    // Its hint
+    const read = (await screen.findByText(/^Space to/, { selector: "[data-keyboard-hint]" })).textContent;
+    // Start again with an asking drill, which is heard
+    cleanup();
+    // Draw it
+    draw({ mode: "smalltalk", promptId: "sa01" });
+    // Its hint
+    const heard = (await screen.findByText(/^Space to/, { selector: "[data-keyboard-hint]" })).textContent;
+    // Confirm both
+    expect([read, heard]).toEqual(["Space to start speaking", "Space to hear them"]);
   });
 
   // The question is said aloud first, then recording starts by itself, and the answer is saved as small talk

@@ -123,6 +123,36 @@ describe("Learn", () => {
     expect(screen.getByText("Try it for real").nextElementSibling?.textContent).toBe("Next time you owe an apology, use: “I [did this]. That was my mistake. Here’s what I’ll do: …”");
   });
 
+  // Decision 96: every card ends with its practice, the last thing on its last screen, with or without a scenario
+  it("ends every card with a link to its practice, after any scenario", async () => {
+    // Draw a card without a scenario, through to its last screen
+    render(<CardScreen cardId="voice-project" repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} />);
+    // Wait for it, then through to "What to do"
+    await screen.findByRole("heading", { name: "Louder, with variety, sounds confident." });
+    // Through the screens
+    next(3);
+    // The last screen in view
+    const plain = screen.getByRole("group", { name: "4 of 4" });
+    // Its links, in order
+    const plainLinks = within(plain).getAllByRole("link");
+    // Confirm the last link is the practice, by name and address
+    expect([plainLinks.at(-1)?.textContent, plainLinks.at(-1)?.getAttribute("href")]).toEqual(["Practise itVolume drill: Three rooms", "/voice/drill?id=v01"]);
+    // Start again with a card that has a scenario
+    cleanup();
+    // Draw the boomerasking card
+    render(<CardScreen cardId="talk-boomerask" repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} />);
+    // Guess, then through to the scenario
+    fireEvent.click(await screen.findByRole("button", { name: "Myth" }));
+    // Through the screens
+    next(4);
+    // The "What to do" screen has no practice link; the scenario screen ends with it
+    const [doScreen, scenarioScreen] = [document.querySelector<HTMLElement>('[aria-label="4 of 5"]')!, screen.getByRole("group", { name: "5 of 5" })];
+    // The scenario screen's links
+    const scenarioLinks = within(scenarioScreen).getAllByRole("link");
+    // Confirm
+    expect([doScreen.querySelectorAll("a").length, scenarioLinks.at(-1)?.getAttribute("href"), scenarioScreen.lastElementChild?.lastElementChild?.getAttribute("href")]).toEqual([0, "/session?mode=smalltalk&prompt=sal3", "/session?mode=smalltalk&prompt=sal3"]);
+  });
+
   // A card with a scenario on its last screen: choose a reply, see every reply's tier and why, the move, then a spoken step; the answer is saved
   it("teaches with a scenario on its last screen", async () => {
     // A repository

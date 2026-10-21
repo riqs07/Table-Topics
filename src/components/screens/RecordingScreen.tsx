@@ -1217,8 +1217,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // And focus it, so it is read out
     notice.current?.focus({ preventScroll: true });
   }, [notKept]);
-  // The keyboard hint for this stage
-  const hint = recording ? "Space to stop · Esc to discard" : thinking ? (mode === "talk" ? "Esc to leave" : "Space to start speaking · Esc to leave") : mode === "talk" ? "Space to see your topic" : mode === "story" ? "Space to start planning" : mode === "smalltalk" ? `Space to hear ${unit ? "them" : "the question"}` : mode === "response" ? "Space to start thinking" : mode === "rehearse" ? "Space to start rehearsing" : passage || lesson ? "Space to start reading" : "Space to start";
+  // The keyboard hint for this stage (a small-talk drill read on a card has nothing to hear, so its tap starts speaking; decision 96)
+  const hint = recording ? "Space to stop · Esc to discard" : thinking ? (mode === "talk" ? "Esc to leave" : "Space to start speaking · Esc to leave") : mode === "talk" ? "Space to see your topic" : mode === "story" ? "Space to start planning" : mode === "smalltalk" ? (unit && unit.drill !== "heard" ? "Space to start speaking" : `Space to hear ${unit ? "them" : "the question"}`) : mode === "response" ? "Space to start thinking" : mode === "rehearse" ? "Space to start rehearsing" : passage || lesson ? "Space to start reading" : "Space to start";
   // After a Rapid Fire take that was not kept, the topic has been seen: it stays in view for the next try instead of hiding again
   const topicSeen = mode === "talk" && (stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded");
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
@@ -1444,20 +1444,20 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {/* In a lesson, before answering: the idea, then a flat answer beside a better one */}
               {smallTalk.lesson && !busy && (
                 <section aria-label="The lesson" className="mt-8 md:mt-0">
-                  {/* Its title */}
-                  <h2 className="font-display text-statement tracking-tight">Lesson {smallTalk.lesson.number}: {smallTalk.lesson.title}</h2>
+                  {/* Its title, as one piece of text so it reads (and is counted) as written */}
+                  <h2 className="font-display text-statement tracking-tight">{`Lesson ${smallTalk.lesson.number}: ${smallTalk.lesson.title}`}</h2>
                   {/* The idea */}
                   <p className="mt-3 max-w-[52ch] text-lede">{smallTalk.lesson.idea}</p>
                   {/* Why it works, from the research, folded so the lesson stays short (decision 95) */}
                   {smallTalk.lesson.why && <details className="mt-2 max-w-[52ch] text-footnote text-ink-muted"><summary className="cursor-pointer">Why it works</summary><p className="mt-1">{smallTalk.lesson.why}</p></details>}
                   {/* What they said, or the moment, situation or flat question, in the example (a described moment is not quoted) */}
-                  {smallTalk.lesson.example && <p className="mt-4 max-w-[52ch] text-lede"><span className="block text-footnote text-ink-muted">{findUnit(smallTalk.unit).words.example}</span>{findUnit(smallTalk.unit).drill === "situation" ? smallTalk.lesson.example : <>&ldquo;{smallTalk.lesson.example}&rdquo;</>}</p>}
+                  {smallTalk.lesson.example && <p className="mt-4 max-w-[52ch] text-lede"><span className="block text-footnote text-ink-muted">{findUnit(smallTalk.unit).words.example}</span>{findUnit(smallTalk.unit).drill === "situation" ? smallTalk.lesson.example : `“${smallTalk.lesson.example}”`}</p>}
                   {/* The flat answer */}
                   {smallTalk.lesson.flat && (
-                    <p className="mt-4 max-w-[52ch] border-l-2 border-rule pl-4 text-lede text-ink-muted"><span className="block text-footnote">Flat</span>&ldquo;{smallTalk.lesson.flat}&rdquo;</p>
+                    <p className="mt-4 max-w-[52ch] border-l-2 border-rule pl-4 text-lede text-ink-muted"><span className="block text-footnote">Flat</span>{`“${smallTalk.lesson.flat}”`}</p>
                   )}
                   {/* The better answer */}
-                  <p className="mt-3 max-w-[52ch] border-l-2 border-accent pl-4 text-lede"><span className="block text-footnote text-ink-muted">{smallTalk.lesson.flat ? "Better" : "For example"}</span>&ldquo;{smallTalk.lesson.good}&rdquo;</p>
+                  <p className="mt-3 max-w-[52ch] border-l-2 border-accent pl-4 text-lede"><span className="block text-footnote text-ink-muted">{smallTalk.lesson.flat ? "Better" : "For example"}</span>{`“${smallTalk.lesson.good}”`}</p>
                   {/* Then */}
                   <p className="mt-6 text-footnote text-ink-muted">Your turn</p>
                 </section>
@@ -1478,7 +1478,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {/* While it is said aloud */}
               {stage === "asking" && <p role="status" className="mt-3 text-ink-muted">{unit ? "Listen. Recording starts when they finish." : "Listen to the question. Recording starts when it ends."}</p>}
               {/* The recipe */}
-              <RecipeStrip level={stripLevel(earlierAnswers, smallTalk.unit)} focus={smallTalk.lesson?.beat ?? null} />
+              <RecipeStrip level={stripLevel(earlierAnswers, smallTalk.unit)} focus={smallTalk.lesson?.beat ?? null} lesson={!!smallTalk.lesson} />
               {/* For a question about what you have been up to: your own moments from this week, as material */}
               {recentMoments.length > 0 && (
                 <section aria-label="Your moments this week" className="mt-5 max-w-[52ch]">

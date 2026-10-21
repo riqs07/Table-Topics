@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the file tools, to check that a link's page exists in the app
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 // Load the rules being checked
 import { firstRead, nextCard, setProgress } from "@/core/learn";
 // Load the cards
@@ -9,9 +9,15 @@ import { EVIDENCE_LABELS, LEARN_CARDS, LEARN_GROUPS, LEARN_SETS, PROFILE_TRENDS_
 // Load the lessons, to check the cards' links to them
 import { findLesson } from "@/content/lessons";
 // Load the story prompts, shapes and focuses, to check the cards' links to telling a story
-import { findStoryPrompt, isStoryFocus, isStoryShape } from "@/content/stories";
-// Load the small-talk lessons and units, to check the cards' links to them
-import { UNITS, findSmallTalk } from "@/content/smallTalk";
+import { isStoryFocus, isStoryShape, seedText } from "@/content/stories";
+// Load the small-talk lessons, drills, units and the moment prompt, to check the cards' links to them
+import { MOMENT_PROMPT, UNITS, findSmallTalk } from "@/content/smallTalk";
+// Load the spoken prompts and texts, to check links to Rapid Fire, prepared speeches, openings, pause drills and readings
+import { BOOKENDS, PAUSE_DRILLS, PROMPTS, TABLE_TOPICS, findPassage } from "@/content/prompts";
+// Load the voice drills and shadowing passages, to check links to them
+import { findShadowPassage, findVoiceDrill } from "@/content/voice";
+// Load the conversation people, to check links to a conversation
+import { findPersona } from "@/content/conversations";
 // Load the daily plan, to check old progress does not upset it
 import { dailyPlan } from "@/core/dailyPlan";
 // Load the profile's take counts and its summary, to check the trends card says what the profile does
@@ -51,7 +57,7 @@ describe("learn", () => {
     // Their cards, plus the ones added to older sets
     const fresh = LEARN_CARDS.filter((card) => added.includes(card.set) || ["nerves-own-name", "warm-thanks-note", "body-look-away", "body-stillness", "body-not-face", "body-voice-feelings", "body-read-room"].includes(card.id));
     // Lesson links that name a lesson that does not exist
-    const broken = LEARN_CARDS.flatMap((card) => (card.tryIt?.href.startsWith("/session?mode=lesson&prompt=") && !findLesson(card.tryIt.href.split("prompt=")[1] ?? "") ? [card.id] : []));
+    const broken = LEARN_CARDS.flatMap((card) => (card.tryIt.href.startsWith("/session?mode=lesson&prompt=") && !findLesson(card.tryIt.href.split("prompt=")[1] ?? "") ? [card.id] : []));
     // Confirm each new set has at least five cards, every new card has its step, and no link is broken (voice has gained four more since, in decision 94)
     expect([added.map((set) => LEARN_CARDS.filter((card) => card.set === set).length >= 5), fresh.length, fresh.filter((card) => !card.outThere).map((card) => card.id), broken]).toEqual([[true, true, true, true], 31, [], []]);
   });
@@ -90,36 +96,68 @@ describe("learn content (decision 94)", () => {
     expect([over, LEARN_CARDS.filter((card) => new Set(card.recall.options).size !== 3 || !Number.isInteger(card.recall.answer) || card.recall.options[card.recall.answer] === undefined).map((card) => card.id)]).toEqual([[], []]);
   });
 
-  // Every "Try it" link leads to a page the app has, with a lesson, story, shape or focus that exists
-  it("links every card to a real page, lesson, story, shape or focus", () => {
+  // Every card's practice link leads to a page the app has, naming a session, drill, story set-up or person that exists (decision 96: every card has one)
+  it("links every card to a real page, lesson, drill, story, shape, focus or person", () => {
     // Links that lead nowhere, with the reason
     const broken = LEARN_CARDS.flatMap((card) => {
-      // No link: nothing to check
-      if (!card.tryIt) return [];
       // The link's parts
       const url = new URL(card.tryIt.href, "https://voicelab.test");
       // Its page's file in the app
       const page = `src/app${url.pathname === "/" ? "" : url.pathname}/page.tsx`;
       // What the link names
       const query = url.searchParams;
+      // The session kind and prompt, on a recording page
+      const [mode, prompt] = [query.get("mode"), query.get("prompt") ?? ""];
       // Problems with it
       const problems = [
         // The page exists
         existsSync(page) ? null : "no page",
         // A lesson link names a real lesson
-        query.get("mode") === "lesson" && !findLesson(query.get("prompt") ?? "") ? "no lesson" : null,
-        // A small-talk link names a real small-talk lesson
-        query.get("mode") === "smalltalk" && !findSmallTalk(query.get("prompt") ?? "") ? "no small-talk lesson" : null,
+        mode === "lesson" && !findLesson(prompt) ? "no lesson" : null,
+        // A small-talk link names a real small-talk lesson or drill
+        mode === "smalltalk" && !findSmallTalk(prompt) ? "no small-talk lesson or drill" : null,
+        // A Rapid Fire, prepared speech or opening and closing link names a real prompt of that kind
+        (mode === "talk" && !TABLE_TOPICS.some((item) => item.id === prompt)) || (mode === "response" && !PROMPTS.some((item) => item.id === prompt)) || (mode === "bookend" && !BOOKENDS.some((item) => item.id === prompt)) ? "no such prompt" : null,
+        // A pause drill or reading names a real text
+        (mode === "pause" && !PAUSE_DRILLS.some((item) => item.id === prompt)) || (mode === "read" && !findPassage(prompt)) ? "no such text" : null,
+        // A moment note or free talk uses its fixed prompt
+        (mode === "moment" && prompt !== MOMENT_PROMPT.id) || (mode === "free" && prompt !== "free") ? "wrong fixed prompt" : null,
+        // A voice drill or shadowing link names a real one
+        (url.pathname === "/voice/drill" && !findVoiceDrill(query.get("id") ?? "")) || (url.pathname === "/voice/shadow" && !findShadowPassage(query.get("id") ?? "")) ? "no such voice drill" : null,
+        // A conversation names a real person
+        url.pathname === "/conversations/talk" && !findPersona(query.get("id") ?? "") ? "no such person" : null,
         // A small-talk unit link names a real unit
         url.pathname === "/small-talk/unit" && !UNITS.some((unit) => unit.id === query.get("id")) ? "no unit" : null,
-        // A story link names a real prompt, and any shape or focus is a real one
-        url.pathname === "/stories/tell" && (!findStoryPrompt(query.get("prompt") ?? "") || (query.has("shape") && !isStoryShape(query.get("shape"))) || (query.has("focus") && !isStoryFocus(query.get("focus")))) ? "no such story set-up" : null,
+        // A story link names a real prompt or guided story, and any shape or focus is a real one
+        url.pathname === "/stories/tell" && (!seedText(query.get("prompt") ?? "") || (query.has("shape") && !isStoryShape(query.get("shape"))) || (query.has("focus") && !isStoryFocus(query.get("focus")))) ? "no such story set-up" : null,
       ].filter((problem) => problem !== null);
       // The card's problems, named
       return problems.map((problem) => `${card.id}: ${problem}`);
     });
     // Confirm none (the anchors after "#" are checked in the browser suite, where the pages are drawn)
     expect(broken).toEqual([]);
+  });
+
+  // Every card has a link that starts something specific, not a menu: no bare Practice, Small talk, Stories or Your voice page (decision 96)
+  it("gives every card a specific practice, never a general page", () => {
+    // Pages that only list practice
+    const general = ["/practice", "/small-talk", "/stories", "/voice", "/skills", "/learn", "/conversations", "/rehearse"];
+    // Cards whose link has a label and leads to a page more specific than a menu (a place on a page counts as specific)
+    const vague = LEARN_CARDS.filter((card) => !card.tryIt.label.trim() || general.includes(card.tryIt.href)).map((card) => card.id);
+    // Cards linking to their own explanation's page rather than a practice: only the profile cards, whose practice is reading the numbers
+    const toProfile = LEARN_CARDS.filter((card) => card.tryIt.href === "/profile").map((card) => card.id).sort();
+    // Confirm: none vague, and only understanding cards go to the profile
+    expect([vague, toProfile]).toEqual([[], ["profile-trends", "profile-variety", "voice-phone-mic", "words-variety"]]);
+  });
+
+  // The card-to-practice table in plan-learn.md matches the cards, so the links stay reviewable in one place (decision 96)
+  it("keeps the plan's card-to-practice table in step with the cards", () => {
+    // The plan's text
+    const plan = readFileSync("documents/plan-learn.md", "utf8");
+    // Each card's row as the table writes it
+    const missing = LEARN_CARDS.filter((card) => !plan.includes(`| \`${card.id}\` | ${card.tryIt.label} | \`${card.tryIt.href}\` |`)).map((card) => card.id);
+    // Confirm every card's row is there as it is now
+    expect(missing).toEqual([]);
   });
 
   // The corrected vocal fry card has a new id; the old id is retired, opens the replacement, and saved progress for it upsets nothing

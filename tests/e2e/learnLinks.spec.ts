@@ -1,10 +1,10 @@
-// Every Learn card's "Try it" link leads somewhere real: the page loads, and the place after "#" is on it (decision 94)
+// Every Learn card's practice link leads somewhere real: the page loads, and the place after "#" is on it (decision 94)
 import { expect, test } from "./support/fixtures";
 // Load the cards, to read their links
 import { LEARN_CARDS } from "../../src/content/learn";
 
-// Each different link once
-const LINKS = [...new Set(LEARN_CARDS.flatMap((card) => (card.tryIt ? [card.tryIt.href] : [])))];
+// Each different link once (every card has one since decision 96)
+const LINKS = [...new Set(LEARN_CARDS.map((card) => card.tryIt.href))];
 
 // One check per link that names a place on its page
 for (const href of LINKS.filter((link) => link.includes("#"))) {
@@ -18,6 +18,29 @@ for (const href of LINKS.filter((link) => link.includes("#"))) {
     const anchor = href.split("#")[1] ?? "";
     // Confirm the place exists on the page
     await expect(page.locator(`[id="${anchor}"]`)).toHaveCount(1);
+  });
+}
+
+// One link of each kind (the page, plus the session kind on a recording page), so every kind of destination is opened at least once (decision 96)
+const KINDS = [...new Map(LINKS.map((link) => {
+  // The link's parts
+  const url = new URL(link, "https://voicelab.test");
+  // Its kind: the page, and the session kind when there is one
+  return [`${url.pathname}:${url.searchParams.get("mode") ?? ""}`, link] as const;
+})).values()];
+
+// Each kind of link opens a page that draws its main column (the shared fixture fails on any console error)
+for (const href of KINDS) {
+  // The page draws
+  test(`a Learn link opens its practice: ${href}`, async ({ page }) => {
+    // Skip the welcome, in case the link is Today
+    await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+    // Open the link as a user would land on it
+    await page.goto(href);
+    // Confirm the page's main column is there and has drawn its content
+    await expect(page.locator("main")).toBeVisible();
+    // (some words in it, not an empty shell)
+    await expect(page.locator("main")).toContainText(/\w{3}/);
   });
 }
 

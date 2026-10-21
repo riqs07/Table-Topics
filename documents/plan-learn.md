@@ -154,6 +154,143 @@ Each label is shown in words, never as a colour alone.
 
   Stories leads the Speaking group on the Learn page; Speaking holds 7 sets and People 8. Story cards' links open `/stories/tell` on a fitting prompt with the shape or focus the card teaches already chosen (`&shape=`, `&focus=`; a name that does not exist falls back to the usual start). The vocal fry card now says mixed under a new id (`voice-fry-mixed`); the old id is listed in `RETIRED_CARDS`, so old links open the corrected card and old progress for it is kept but counts for nothing. The “one take tells you little” card builds its numbers from the profile's own rules (`src/core/analysis/profileRules.ts`). A content test holds every card to the house word budget (the longest each part had before), checks every link's page, lesson, story, shape and focus, and the browser suite checks every link's `#` place.
 
+## Every card ends in practice (decision 96, 2026-10-21)
+
+The user asked that "at the end of each card" there is a link "to a practice session that you think is most applicable". Every card now has one (`tryIt` is required in `LearnCard`), shown as the last thing on the card: a full-width "Practise it" row under the last screen's content, after the scenario on cards that have one, with the deck's Next or Finish button below it.
+
+How each link was chosen:
+
+- **The specific session, never a menu.** A lesson, a small-talk lesson or drill, a Rapid Fire question, a prepared-speech task, an opening or closing drill, a pause drill, a voice drill, a story prompt with the shape or focus the card teaches, a guided story, a person to talk with, the short speech, the warm-up, the moment note, quick scenarios or today's mission. No card links to a bare Practice, Small talk, Stories, Your voice, Skills or Learn page; a test holds that.
+- **The task fits the advice.** "Louder, with variety" opens the Three rooms volume drill whose takes are the card's exercise; "Ask before advice" opens News lesson 2; "Ask what only they know" opens a conversation with Theo, who is quiet at work; "Name the thing" opens the Lisbon asking drill, where using their words back is the move.
+- **Understanding cards** link to where the measure is seen: four go to `/profile` (`profile-trends`, `profile-variety`, `voice-phone-mic`, `words-variety`); the other profile cards open a drill that produces their measure (pause drills, a clear-sounds drill).
+- **Q&A** was removed (decision 61), so "In Q&A, say the question back first" opens a Rapid Fire question with "say the question back first".
+- Weak links were replaced: cards that opened `/practice`, `/small-talk`, `/stories`, `/rehearse`, a whole `/voice` fold or `/profile` for a practice now open one session.
+
+Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, and the lesson, drill, prompt, text, voice drill, person, story prompt or guided story, shape and focus are real) and fails on a general page; it also checks that this table matches the cards. `tests/e2e/learnLinks.spec.ts` opens each kind of link in a browser and every place named after "#".
+
+| Set | Card | Practice | Link |
+|-----|------|----------|------|
+| Nerves and presence | `nerves-show` | Opening drill: pause, then your first line | `/session?mode=bookend&prompt=b010` |
+| Nerves and presence | `nerves-spotlight` | Rapid Fire: keep going after a stumble | `/session?mode=talk&prompt=t006` |
+| Nerves and presence | `nerves-excited` | Prepared speech: try it as you plan | `/session?mode=response&prompt=p052` |
+| Nerves and presence | `nerves-um` | Pause drill: Before the point | `/session?mode=pause&prompt=d001` |
+| Nerves and presence | `nerves-silence` | Lesson: Pause before the point | `/session?mode=lesson&prompt=l004` |
+| Nerves and presence | `nerves-power-pose` | Warm-up: breathe, then speak | `/voice/warmup` |
+| Nerves and presence | `nerves-own-name` | Opening drill: a wedding toast | `/session?mode=bookend&prompt=b002` |
+| Charisma | `charisma-two-parts` | Talk with Maya: interest before expertise | `/conversations/talk?id=maya` |
+| Charisma | `charisma-learnable` | Prepared speech: try one story or contrast | `/session?mode=response&prompt=p053` |
+| Charisma | `charisma-tactics` | Lesson: The rule of three | `/session?mode=lesson&prompt=l008` |
+| Charisma | `charisma-voice` | Pitch drill: Stretch the range | `/voice/drill?id=p03` |
+| Charisma | `charisma-smile` | Tone drill: We did it | `/voice/drill?id=t05` |
+| Charisma | `charisma-stories` | Tell a story: end on the point | `/stories/tell?prompt=sp26&focus=point` |
+| Charisma | `charisma-warmth-first` | Starting and ending, lesson 2: An easy question | `/session?mode=smalltalk&prompt=sel2` |
+| Charisma | `charisma-gestures` | Prepared speech: show how you cook it | `/session?mode=response&prompt=p021` |
+| Charisma | `charisma-status` | Prepared speech: introduce someone you admire | `/session?mode=response&prompt=p047` |
+| Charisma | `charisma-metaphor` | Prepared speech: teach a hobby | `/session?mode=response&prompt=p038` |
+| Body language: myth or fact | `body-93` | Tone drill: same words, new meaning | `/voice/drill?id=t04` |
+| Body language: myth or fact | `body-faces` | Reading the room, lesson 2: Ask, don’t guess | `/session?mode=smalltalk&prompt=srl2` |
+| Body language: myth or fact | `body-lies` | Listening drill: just listen | `/session?mode=smalltalk&prompt=sls03` |
+| Body language: myth or fact | `body-arms` | Reading the room, lesson 1: Notice changes | `/session?mode=smalltalk&prompt=srl1` |
+| Body language: myth or fact | `body-mirroring` | Listening drill: pay attention | `/session?mode=smalltalk&prompt=sls01` |
+| Body language: myth or fact | `body-eyes` | Reading the room, lesson 5: Looking away | `/session?mode=smalltalk&prompt=srl5` |
+| Body language: myth or fact | `body-changes` | Reading the room drill: someone lights up | `/session?mode=smalltalk&prompt=sr02` |
+| Body language: myth or fact | `body-first` | Starting and ending, lesson 1: Open warmly | `/session?mode=smalltalk&prompt=sel1` |
+| Body language: myth or fact | `body-look-away` | Reading the room drill: they go quiet | `/session?mode=smalltalk&prompt=sr04` |
+| Body language: myth or fact | `body-stillness` | Prepared speech: keep them with you | `/session?mode=response&prompt=p049` |
+| Body language: myth or fact | `body-not-face` | News drill: big news, whole person | `/session?mode=smalltalk&prompt=sn01` |
+| Body language: myth or fact | `body-voice-feelings` | Listening drill: hear the feeling | `/session?mode=smalltalk&prompt=sls02` |
+| Body language: myth or fact | `body-read-room` | Opening drill: scan, then speak | `/session?mode=bookend&prompt=b008` |
+| Conversation | `talk-liking-gap` | Going deeper, lesson 1 | `/session?mode=smalltalk&prompt=sdl1` |
+| Conversation | `talk-follow-ups` | Asking, lesson 1: Ask about what they said | `/session?mode=smalltalk&prompt=sal1` |
+| Conversation | `talk-free-info` | Asking drill: ask about the detail | `/session?mode=smalltalk&prompt=sa11` |
+| Conversation | `talk-boomerask` | Asking, lesson 3: Don’t boomerask | `/session?mode=smalltalk&prompt=sal3` |
+| Conversation | `talk-co-narrators` | Listening, lesson 1: React to the story | `/session?mode=smalltalk&prompt=sll1` |
+| Conversation | `talk-support` | Listening, lesson 3: Stay with them | `/session?mode=smalltalk&prompt=sll3` |
+| Conversation | `talk-paraphrase` | Listening, lesson 2: Say back the feeling | `/session?mode=smalltalk&prompt=sll2` |
+| Conversation | `talk-deeper` | Going deeper drill: upgrade a question | `/session?mode=smalltalk&prompt=sd01` |
+| Conversation | `talk-endings` | Practise a warm goodbye | `/session?mode=smalltalk&prompt=sel4` |
+| Conversation | `talk-names` | Practise names | `/session?mode=smalltalk&prompt=sel3` |
+| Warmth and connection | `warm-good-news` | News, lesson 1: a real reaction | `/session?mode=smalltalk&prompt=snl1` |
+| Warmth and connection | `warm-responsive` | Talk with Chris: show you heard | `/conversations/talk?id=chris` |
+| Warmth and connection | `warm-share` | Going deeper, lesson 5: Share a little first | `/session?mode=smalltalk&prompt=sdl5` |
+| Warmth and connection | `warm-compliment` | Prepared speech: someone you admire | `/session?mode=response&prompt=p033` |
+| Warmth and connection | `warm-thanks` | Prepared speech: thank a team | `/session?mode=response&prompt=p045` |
+| Warmth and connection | `warm-advice` | News, lesson 2: understood before advice | `/session?mode=smalltalk&prompt=snl2` |
+| Warmth and connection | `warm-small-talk` | Going deeper, lesson 4 | `/session?mode=smalltalk&prompt=sdl4` |
+| Warmth and connection | `warm-fast-replies` | Talk with Priya: listen, then reply | `/conversations/talk?id=priya` |
+| Warmth and connection | `warm-thanks-note` | Tell a story: a teacher who saw something | `/stories/tell?prompt=sp18&focus=point` |
+| Stories you can tell | `story-small-moments` | Record today’s moment | `/session?mode=moment&prompt=moment` |
+| Stories you can tell | `story-one-thing` | Small-talk lesson 2: One moment | `/session?mode=smalltalk&prompt=stl2` |
+| Stories you can tell | `story-hook` | Small-talk lesson 3: Give a hook | `/session?mode=smalltalk&prompt=stl3` |
+| Stories you can tell | `story-transport` | Tell a story: Classic shape | `/stories/tell?prompt=sp08&shape=classic` |
+| Stories you can tell | `story-detail` | Tell a story: one vivid detail | `/stories/tell?prompt=sp22&focus=detail` |
+| Stories you can tell | `story-dialogue` | Tell a story: add what someone said | `/stories/tell?prompt=sp20&focus=dialogue` |
+| Stories you can tell | `story-stakes` | Guided story: Stuck in the lift | `/stories/tell?prompt=gs17` |
+| Stories you can tell | `story-but-therefore` | Tell a story: But and so | `/stories/tell?prompt=sp03&shape=but-therefore` |
+| Stories you can tell | `story-start-middle` | Tell a story: start in the middle | `/stories/tell?prompt=sp04&focus=middle` |
+| Stories you can tell | `story-turn` | Tell a story: Then and now | `/stories/tell?prompt=sp16&shape=then-now` |
+| Stories you can tell | `story-end-point` | Tell a story: end on the point | `/stories/tell?prompt=sp09&focus=point` |
+| Stories you can tell | `story-present-tense` | Tell a story: One small moment | `/stories/tell?prompt=sp17&shape=small-moment` |
+| Stories you can tell | `story-vulnerable` | Tell a story: a time you were wrong | `/stories/tell?prompt=sp34&shape=classic` |
+| Stories you can tell | `story-retell` | Tell one of your stories again | `/stories#your-stories` |
+| Stories you can tell | `story-bank` | Pick five stories to keep ready | `/stories#prompts` |
+| Stories you can tell | `story-one-case` | Prepared speech: one person, then the number | `/session?mode=response&prompt=p042` |
+| Stories you can tell | `story-length` | Tell a story: under a minute | `/stories/tell?prompt=sp05&focus=minute` |
+| How to practise | `practise-listen-back` | Free talk, then listen back | `/session?mode=free&prompt=free` |
+| How to practise | `practise-mixing` | Today’s practice | `/` |
+| How to practise | `practise-recall` | Quick scenarios: answer before you peek | `/learn/scenarios` |
+| How to practise | `practise-steps` | Missions, easiest first | `/small-talk/unit?id=answering#unit-missions` |
+| How to practise | `practise-doing` | Today’s mission | `/learn#missions` |
+| Your voice | `voice-pace` | Lesson: Slow down for numbers | `/session?mode=lesson&prompt=l003` |
+| Your voice | `voice-pitch` | Pitch drill: Land it low | `/voice/drill?id=p02` |
+| Your voice | `voice-fry-mixed` | Volume drill: To the last word | `/voice/drill?id=v03` |
+| Your voice | `voice-silent-pause` | Pause drill: Pause for effect | `/session?mode=pause&prompt=d006` |
+| Your voice | `voice-variety` | Tone drill: I have some news | `/voice/drill?id=t01` |
+| Your voice | `voice-uptalk` | Pitch drill: Statement or question | `/voice/drill?id=p01` |
+| Your voice | `voice-project` | Volume drill: Three rooms | `/voice/drill?id=v01` |
+| Your voice | `voice-flat-situational` | Prepared speech: a toast to a friend | `/session?mode=response&prompt=p044` |
+| Your voice | `voice-phone-mic` | See it in your profile | `/profile` |
+| Getting your point across | `point-curse` | Prepared speech: explain your work | `/session?mode=response&prompt=p037` |
+| Getting your point across | `point-not-script` | Short speech: speak from your points | `/practice/outline` |
+| Getting your point across | `point-prep` | Lesson: Point, reason, example | `/session?mode=lesson&prompt=l014` |
+| Getting your point across | `point-concrete` | Lesson: Tell a short story | `/session?mode=lesson&prompt=l012` |
+| Getting your point across | `point-repeat-question` | Rapid Fire: say the question back first | `/session?mode=talk&prompt=t035` |
+| Changing minds | `minds-two-sided` | Prepared speech: answer the objection | `/session?mode=response&prompt=p043` |
+| Changing minds | `minds-their-values` | Prepared speech: persuade a friend | `/session?mode=response&prompt=p041` |
+| Changing minds | `minds-swap-stories` | Talk with Theo: ask, then share | `/conversations/talk?id=theo` |
+| Changing minds | `minds-free-to-say-no` | Closing drill: a clear ask | `/session?mode=bookend&prompt=b014` |
+| Changing minds | `minds-three-claims` | Lesson: The rule of three | `/session?mode=lesson&prompt=l008` |
+| Hard conversations | `hard-disagree` | Prepared speech: their side, then yours | `/session?mode=response&prompt=p054` |
+| Hard conversations | `hard-apology` | Tone drill: I’m sorry, my mistake | `/voice/drill?id=t06` |
+| Hard conversations | `hard-ask-help` | Closing drill: ask for what you need | `/session?mode=bookend&prompt=b019` |
+| Hard conversations | `hard-ask-advice` | Asking, lesson 2: Open, not yes-or-no | `/session?mode=smalltalk&prompt=sal2` |
+| Hard conversations | `hard-humblebrag` | Tell a story: a small win, said straight | `/stories/tell?prompt=sp06&focus=point` |
+| Word choice | `words-plain` | Rapid Fire: short, plain words | `/session?mode=talk&prompt=t019` |
+| Word choice | `words-concrete` | Tell a story: one thing to picture | `/stories/tell?prompt=sp24&focus=detail` |
+| Word choice | `words-name-it` | Asking drill: use their words | `/session?mode=smalltalk&prompt=sa01` |
+| Word choice | `words-hedges` | Lesson: Point, reason, example | `/session?mode=lesson&prompt=l014` |
+| Word choice | `words-intensifiers` | Rapid Fire: one sharp word | `/session?mode=talk&prompt=t002` |
+| Word choice | `words-just` | Closing drill: ask, without “just” | `/session?mode=bookend&prompt=b011` |
+| Word choice | `words-variety` | See your word variety | `/profile` |
+| Reading your profile | `profile-pause-place` | Pause drill: Between points | `/session?mode=pause&prompt=d008` |
+| Reading your profile | `profile-fillers` | Pause drill: Three steps | `/session?mode=pause&prompt=d002` |
+| Reading your profile | `profile-variety` | See it in your profile | `/profile` |
+| Reading your profile | `profile-clarity` | Clear-sounds drill: Word endings | `/voice/drill?id=c01` |
+| Reading your profile | `profile-trends` | See your trends | `/profile` |
+| Humour | `warm-funny` | Talk with Maya: keep it light | `/conversations/talk?id=maya` |
+| Humour | `humour-self` | Tell a story: a mix-up | `/stories/tell?prompt=sp37&focus=minute` |
+| Humour | `humour-benign` | Tell a story: an animal steals the show | `/stories/tell?prompt=sp38` |
+| Humour | `humour-observe` | Starting drill: the delayed train | `/session?mode=smalltalk&prompt=se09` |
+| Humour | `humour-callback` | Starting and ending, lesson 5: What you enjoyed | `/session?mode=smalltalk&prompt=sel5` |
+| Humour | `humour-backfire` | Reading the room drill: a joke that missed | `/session?mode=smalltalk&prompt=sr10` |
+| Speaking at work | `work-speak-up` | Prepared speech: one new way of working | `/session?mode=response&prompt=p040` |
+| Speaking at work | `work-early` | Rapid Fire: speak in the first seconds | `/session?mode=talk&prompt=t025` |
+| Speaking at work | `work-interrupt` | Talk with Chris: support, don’t steer | `/conversations/talk?id=chris` |
+| Speaking at work | `work-update` | Prepared speech: a 30-second update | `/session?mode=response&prompt=p048` |
+| Speaking at work | `work-video-lag` | Talk with Priya: hand over clearly | `/conversations/talk?id=priya` |
+| Speaking at work | `work-camera` | Closing drill: your key line | `/session?mode=bookend&prompt=b016` |
+| Speaking at work | `work-questions` | Talk with Theo: ask what only he knows | `/conversations/talk?id=theo` |
+
 ## Open questions
 
 - **Where Learn lives:** its own tab (Today · Practice · Connect · Learn · History), or inside Skills?

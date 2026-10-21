@@ -1,5 +1,5 @@
 "use client";
-// The small-talk recipe under the question (answering, asking or listening): four beats, each with its reminder until it becomes a habit, then just the word, then hidden
+// The small-talk recipe under the question: four beats, each with its reminder until it becomes a habit, then just the word, then hidden; in a lesson, only the lesson's own beat keeps its reminder
 
 // Load React's state tool
 import { useState } from "react";
@@ -11,7 +11,7 @@ import type { StripLevel } from "@/core/smallTalk";
 import { QUIET } from "@/components/script/Buttons";
 
 // Draw the strip
-export function RecipeStrip({ level, focus = null }: { level: StripLevel; focus?: BeatId | null }) {
+export function RecipeStrip({ level, focus = null, lesson = false }: { level: StripLevel; focus?: BeatId | null; lesson?: boolean }) {
   // Whether the user brought a hidden strip back
   const [shown, setShown] = useState(false);
   // Hidden once every beat is a habit, unless brought back
@@ -31,10 +31,10 @@ export function RecipeStrip({ level, focus = null }: { level: StripLevel; focus?
       {beatsFor(level.unit).map((beat, index) => (
         // One beat: the lesson's own beat is marked in the accent
         <li key={beat.id} data-level={level.beats[beat.id]} className={beat.id === focus ? "border-l-2 border-accent pl-2" : "pl-2.5"}>
-          {/* Its number and name */}
-          <span className={`block font-display ${beat.id === focus ? "text-accent" : ""}`}>{index + 1}. {beat.name}</span>
-          {/* Its reminder, until it is a habit (always in a lesson about it) */}
-          {(level.beats[beat.id] === "full" || beat.id === focus) && <span className="block text-footnote leading-snug text-ink-muted">{beat.reminder}</span>}
+          {/* Its number and name, as one piece of text */}
+          <span className={`block font-display ${beat.id === focus ? "text-accent" : ""}`}>{`${index + 1}. ${beat.name}`}</span>
+          {/* Its reminder, until it is a habit (always in a lesson about it); a lesson shows only its own beat's, as the lesson above explains the rest, so the first phone screen stays short (decision 96) */}
+          {(beat.id === focus || (!lesson && level.beats[beat.id] === "full")) && <span className="block text-footnote leading-snug text-ink-muted">{beat.reminder}</span>}
         </li>
       ))}
     </ol>

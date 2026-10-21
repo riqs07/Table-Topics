@@ -141,6 +141,8 @@ A short voice note on the Small talk page: "What's one thing from today worth te
 
 The small-talk page grew into seven units, each with its own recipe of four beats, lessons and drills: Answering (this plan), Asking, Listening, News, and since 2026-10-21 Reading the room, Starting and ending, and Going deeper. The last three are read, not heard: a moment from a conversation, a situation to open and close in, or a flat question to upgrade. The phone checks each beat (`src/core/smallTalk.ts`), the conversation coach reads them with the same notes shape as asking and listening, and every unit is listed at `/small-talk` ("See all" on Practice). Details are in [plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md).
 
+**Lesson pages, shorter (decision 96, 2026-10-21).** Every unit's lesson page now keeps its first phone screen within the 100-word budget the browser suite checks: in a lesson, the recipe under "your turn" keeps only the lesson's own beat's reminder (the other beats show their names), and the longest lessons' ideas and examples were shortened (the recorded "your turn" lines are unchanged). A drill read on a card says "Space to start speaking" on a keyboard, since there is nothing to hear.
+
 ## Open questions
 
 - **Which voice:** pick one in the ElevenLabs voice library.
