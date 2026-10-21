@@ -11,7 +11,7 @@ import { FADING, MIN_ENDINGS } from "@/core/notesCheck";
 // Load the spacing of the readings
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the record type
-import type { SessionRecord } from "@/data/records";
+import type { FullSession } from "@/data/records";
 
 // Fewest voiced readings (three seconds of voice) before the pitch range is judged
 const MIN_VOICED = 30;
@@ -61,24 +61,30 @@ export interface VoiceReport {
   lines: VoiceLine[];
 }
 
-// The pitch range of a recording in steps, or null without enough voice
-export function rangeOf(session: SessionRecord): number | null {
-  // No pitch saved (older recordings)
-  if (!session.pitch || session.pitch.length === 0) return null;
+// The pitch range of a recording in steps, or null without enough voice: worked out from its readings when they are at hand, otherwise the range saved with the take (decision 98)
+export function rangeOf(session: FullSession): number | null {
+  // No readings at hand: the saved range, or none (older recordings, and takes whose readings were dropped before a range was saved)
+  if (!session.pitch || session.pitch.length === 0) return session.pitchRange ?? null;
   // The summary against the recording's own usual pitch
   const summary = summarizePitch(session.pitch);
   // Only with enough voice
   return summary.voiced >= MIN_VOICED ? summary.rangeSteps : null;
 }
 
-// The speaker's usual range: the middle of their earlier recordings' ranges, from three or more (null before then)
-export function usualRange(earlier: ReadonlyArray<SessionRecord>): number | null {
+// The speaker's usual range: the middle of their earlier recordings' ranges, from three or more (null before then); a list of sessions without their readings works, through each take's saved range
+export function usualRange(earlier: ReadonlyArray<FullSession>): number | null {
   // The ranges that could be read
   const ranges = earlier.map(rangeOf).filter((range): range is number => range !== null).sort((a, b) => a - b);
   // Too few to call usual
   if (ranges.length < 3) return null;
   // The middle one
   return ranges[Math.floor(ranges.length / 2)]!;
+}
+
+// The usual range before a take: from the latest 20 earlier takes with a range (the list newest first, as the repository gives it; readings are not needed, decision 98)
+export function usualRangeBefore(sessions: ReadonlyArray<FullSession>, session: FullSession): number | null {
+  // Earlier takes with a range, newest first, the latest 20
+  return usualRange(sessions.filter((other) => other.id !== session.id && other.createdAt < session.createdAt && rangeOf(other) !== null).slice(0, 20));
 }
 
 // How each phrase ended, from the pitch readings within it
@@ -109,7 +115,7 @@ function spreadOf(levels: ReadonlyArray<number>): number | null {
 }
 
 // What a recording's voice showed, against the speaker's usual range (fluency false leaves out fading, as "I stammer" asks; decision 79)
-export function voiceReport(session: SessionRecord, usual: number | null, options: { fluency?: boolean } = {}): VoiceReport {
+export function voiceReport(session: FullSession, usual: number | null, options: { fluency?: boolean } = {}): VoiceReport {
   // The loudness readings, when recorded
   const levels = session.loudness && session.loudness.length > 0 ? session.loudness : null;
   // The pitch readings, when recorded alongside them
@@ -183,7 +189,7 @@ export interface CoachVoice {
 }
 
 // The voice numbers for the coach, or null when nothing was measured
-export function coachVoice(session: SessionRecord, usual: number | null): CoachVoice | null {
+export function coachVoice(session: FullSession, usual: number | null): CoachVoice | null {
   // What the voice showed (fading always measured; whether to mention it is the coach's instructions' call)
   const report = voiceReport(session, usual);
   // The last third, in words

@@ -84,99 +84,134 @@ describe("audio", () => {
   });
 });
 
-// Group the checks about keeping only recent audio
-describe("pruneAudio", () => {
-  // Save n sessions, each with audio, on consecutive days; the first is the baseline
-  async function seed(count: number) {
-    // Create each session and its audio
-    for (let n = 1; n <= count; n++) {
-      // Save the audio
-      await repo.saveAudio(`audio-${n}`, new Blob([`voice ${n}`]));
-      // Save the session pointing at it
-      await repo.saveSession(makeSession({ id: `s${n}`, createdAt: day(n), audioKey: `audio-${n}`, isBaseline: n === 1 }));
-    }
-  }
+// Group the checks about keeping a take's readings apart from its session (decision 98)
+describe("readings kept apart", () => {
+  // The readings of one take
+  const readings = { loudness: [0.1, 0.2], pitch: [120, null], spokenTimes: [0.1, 0.5], scriptTimes: [null, 1.2] };
 
-  // Older audio beyond the limit is deleted and the session no longer points at it
-  it("keeps audio only for the most recent sessions", async () => {
-    // Save five sessions with audio
-    await seed(5);
-    // Keep audio for the latest two
-    await repo.saveSettings({ ...(await repo.getSettings(NOW)), audioRetention: 2 });
-    // Prune
-    const pruned = await repo.pruneAudio();
-    // Confirm two were pruned (s2 and s3; s1 is the baseline)
-    expect(pruned).toBe(2);
-    // Confirm which sessions still point at audio
-    expect((await repo.listSessions()).filter((s) => s.audioKey).map((s) => s.id)).toEqual(["s5", "s4", "s1"]);
-    // Confirm the pruned audio is really gone
-    expect(await repo.getAudio("audio-2")).toBeUndefined();
-    // Confirm the transcript and numbers are kept
-    expect((await repo.getSession("s2"))?.transcript).toBe(makeSession().transcript);
+  // The session list stays small: its readings go to their own record, and come back joined on the take's page
+  it("saves a session's readings apart and joins them back", async () => {
+    // Save a session with readings
+    await repo.saveSession(makeSession({ id: "s1", ...readings }));
+    // The stored session, the stored readings, and the joined take
+    const [stored, signals, full] = [await store.get("sessions", "s1"), await repo.getSignals("s1"), await repo.getFullSession("s1")];
+    // Confirm the session has none, the readings are under its id, and the joined take has them all
+    expect([Object.keys(stored ?? {}).some((key) => key in readings), signals, full]).toEqual([false, { sessionId: "s1", ...readings }, makeSession({ id: "s1", ...readings })]);
   });
 
-  // The first recording is the progress anchor, so its audio is never removed
-  it("never prunes the baseline recording's audio", async () => {
-    // Save five sessions with audio
-    await seed(5);
-    // Keep audio for only the latest one
-    await repo.saveSettings({ ...(await repo.getSettings(NOW)), audioRetention: 1 });
-    // Prune
-    await repo.pruneAudio();
-    // Confirm the baseline audio is still there
-    expect(await repo.getAudio("audio-1")).toBeDefined();
+  // Feedback and notes are saved on a session without its readings; that must never lose them
+  it("keeps saved readings when a session is saved again without them", async () => {
+    // Save a session with readings
+    await repo.saveSession(makeSession({ id: "s1", ...readings }));
+    // Save it again with feedback, as the coach client does, from the small record
+    await repo.saveSession({ ...(await repo.getSession("s1"))!, feedbackStatus: "done", feedback: { keep: "k", change: "c", retryCue: "r" } });
+    // Confirm the readings are still there
+    expect((await repo.getFullSession("s1"))?.loudness).toEqual(readings.loudness);
   });
 
-  // The default limit is 30 sessions
-  it("uses the default limit of 30", async () => {
-    // Save 32 sessions with audio
-    await seed(32);
-    // Prune with default settings
-    const pruned = await repo.pruneAudio();
-    // Confirm only s2 lost audio (s3 to s32 are the latest 30; s1 is the baseline)
-    expect(pruned).toBe(1);
+  // An older record still carrying its readings reads the same way until it is moved
+  it("reads a session saved before the readings were kept apart", async () => {
+    // A record in the old layout, written straight to the store
+    await store.put("sessions", "old", makeSession({ id: "old", ...readings }));
+    // Confirm the take's page gets every reading
+    expect((await repo.getFullSession("old"))?.pitch).toEqual(readings.pitch);
+  });
+});
+
+// Group the checks about shared reads (decision 99: a page read every session two or three times)
+describe("shared reads", () => {
+  // Several reads at once make one read of the store, and a save makes the next read fresh
+  it("reads every session once until something is saved", async () => {
+    // Count the store's full reads
+    let reads = 0;
+    // A store that counts them
+    const counting = Object.assign(Object.create(store) as MemoryStore, { getAll: (collection: Parameters<MemoryStore["getAll"]>[0]) => { reads += 1; return store.getAll(collection); } });
+    // A repository over it
+    const shared = createRepository(counting);
+    // Save one session
+    await shared.saveSession(makeSession({ id: "a", createdAt: day(1) }));
+    // Three reads, as a page and its parts make them
+    await Promise.all([shared.listSessions(), shared.listSessions(), shared.listSessions()]);
+    // Save another
+    await shared.saveSession(makeSession({ id: "b", createdAt: day(2) }));
+    // Read again
+    const after = await shared.listSessions();
+    // Confirm two reads in all, and the fresh list has both, newest first
+    expect([reads, after.map((session) => session.id)]).toEqual([2, ["b", "a"]]);
   });
 
-  // A bad saved limit (negative or not a whole number) must not prune the wrong sessions
-  it("treats a negative limit as zero and rounds fractions down", async () => {
-    // Save three sessions with audio
-    await seed(3);
-    // Save a negative limit
-    await repo.saveSettings({ ...(await repo.getSettings(NOW)), audioRetention: -2 });
-    // Confirm every non-baseline recording is pruned, as with a limit of zero
-    expect(await repo.pruneAudio()).toBe(2);
+  // A caller sorting its copy in place never changes what the next caller sees
+  it("hands each caller its own copy of the list", async () => {
+    // Two sessions
+    await repo.saveSession(makeSession({ id: "a", createdAt: day(1) }));
+    // (the second)
+    await repo.saveSession(makeSession({ id: "b", createdAt: day(2) }));
+    // One caller reverses its list
+    (await repo.listSessions()).reverse();
+    // Confirm the next caller still gets newest first
+    expect((await repo.listSessions()).map((session) => session.id)).toEqual(["b", "a"]);
   });
 
-  // Regression: feedback saved while pruning (the coach answering meanwhile) must not be overwritten by the copy read before
-  it("keeps feedback saved while pruning", async () => {
-    // Save three sessions with audio
-    await seed(3);
-    // Keep no audio beyond the baseline and first takes
-    await repo.saveSettings({ ...(await repo.getSettings(NOW)), audioRetention: 0 });
-    // A store where the coach's answer for s2 lands as its recording is deleted
-    const racing = Object.assign(Object.create(store) as MemoryStore, {
-      // Deleting a recording
-      delete: async (collection: Parameters<MemoryStore["delete"]>[0], key: string) => {
-        // Delete it as usual
-        await store.delete(collection, key);
-        // Meanwhile, the coach's feedback for s2 is saved
-        if (key === "audio-2") await store.put("sessions", "s2", { ...(await store.get("sessions", "s2"))!, feedback: { keep: "k", change: "c", retryCue: "r" }, feedbackStatus: "done" });
-      },
-    });
-    // Prune through it
-    await createRepository(racing).pruneAudio();
-    // The session now
-    const s2 = await repo.getSession("s2");
-    // Audio unlinked, feedback kept
-    expect([s2?.audioKey, s2?.feedbackStatus, s2?.feedback?.keep]).toEqual([null, "done", "k"]);
+  // Another tab's save makes this tab read again (through the channel)
+  it("reads again when another tab says the data changed", async () => {
+    // The listener the repository registers
+    const heard: { listener: (() => void) | null } = { listener: null };
+    // A channel that keeps it
+    const channel = { postMessage: () => undefined, addEventListener: (_type: "message", listener: () => void) => void (heard.listener = listener) };
+    // A repository with the channel
+    const shared = createRepository(store, { channel });
+    // A first read
+    await shared.listSessions();
+    // Another tab saves a session, straight to the store
+    await store.put("sessions", "x", makeSession({ id: "x" }));
+    // Its message arrives
+    heard.listener?.();
+    // Confirm the next read sees it
+    expect((await shared.listSessions()).map((session) => session.id)).toEqual(["x"]);
   });
 
-  // Pruning twice does nothing the second time
-  it("does nothing when there is nothing to prune", async () => {
-    // Save three sessions with audio
-    await seed(3);
-    // Confirm nothing is pruned under the default limit
-    expect(await repo.pruneAudio()).toBe(0);
+  // A failed read is not kept, so the next one tries again
+  it("tries again after a failed read", async () => {
+    // A store whose first full read fails
+    let fail = true;
+    // (failing once)
+    const flaky = Object.assign(Object.create(store) as MemoryStore, { getAll: async (collection: Parameters<MemoryStore["getAll"]>[0]) => { if (fail) { fail = false; throw new Error("closed"); } return store.getAll(collection); } });
+    // A repository over it
+    const shared = createRepository(flaky);
+    // Confirm the first read fails and the second works
+    expect([await shared.listSessions().then(() => "ok", () => "failed"), (await shared.listSessions()).length]).toEqual(["failed", 0]);
+  });
+});
+
+// Group the checks about the waiting list (decision 99: FeedbackSync read every session on every page)
+describe("listPendingSessions", () => {
+  // Only waiting sessions, oldest first
+  it("lists the sessions waiting for feedback, oldest first", async () => {
+    // Three sessions: two waiting, one done
+    await repo.saveSession(makeSession({ id: "new", createdAt: day(3), feedbackStatus: "pending" }));
+    // (done)
+    await repo.saveSession(makeSession({ id: "done", createdAt: day(2), feedbackStatus: "done" }));
+    // (old)
+    await repo.saveSession(makeSession({ id: "old", createdAt: day(1), feedbackStatus: "pending" }));
+    // Confirm the waiting ones, oldest first
+    expect((await repo.listPendingSessions()).map((session) => session.id)).toEqual(["old", "new"]);
+  });
+});
+
+// Group the checks about the star (decision 98)
+describe("setStarred", () => {
+  // Only the star changes; feedback saved meanwhile stays
+  it("stars and unstars a take without touching anything else", async () => {
+    // A take with feedback
+    await repo.saveSession(makeSession({ id: "s1", feedbackStatus: "done", feedback: { keep: "k", change: "c", retryCue: "r" } }));
+    // Starred
+    await repo.setStarred("s1", true);
+    // Read
+    const starred = await repo.getSession("s1");
+    // Unstarred
+    await repo.setStarred("s1", false);
+    // Confirm the star changed and the feedback stayed
+    expect([starred?.starred, starred?.feedback?.keep, (await repo.getSession("s1"))?.starred]).toEqual([true, "k", false]);
   });
 });
 
@@ -232,23 +267,6 @@ describe("deleteAllData", () => {
     expect(await repo.listChallenges()).toEqual([]);
     // Confirm settings are back to defaults
     expect((await repo.getSettings(NOW)).focusIndex).toBe(0);
-  });
-
-  // The first take of a prompt recorded again is kept so "then and now" can play it; a prompt recorded once keeps nothing extra (every prompt's first take used to be kept, without limit; decision 88)
-  it("keeps the first take only of prompts recorded again", async () => {
-    // Five sessions on different prompts, the second one first recorded on day 2
-    for (let n = 1; n <= 5; n++) {
-      // Save the audio
-      await repo.saveAudio(`audio-${n}`, new Blob([`voice ${n}`]));
-      // Day 2 and day 4 share a prompt; the others are each a prompt's first take, except day 5 which repeats day 1's prompt
-      await repo.saveSession(makeSession({ id: `s${n}`, createdAt: day(n), audioKey: `audio-${n}`, promptId: ["p1", "p2", "p3", "p2", "p1"][n - 1] }));
-    }
-    // Keep audio for only the latest one
-    await repo.saveSettings({ ...(await repo.getSettings(NOW)), audioRetention: 1 });
-    // Prune
-    await repo.pruneAudio();
-    // Confirm the first takes of p1 and p2 and the latest session keep their audio, and p3's single take does not
-    expect((await repo.listSessions()).filter((session) => session.audioKey).map((session) => session.id)).toEqual(["s5", "s2", "s1"]);
   });
 });
 

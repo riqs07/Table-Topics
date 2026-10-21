@@ -21,10 +21,12 @@ import { guidedRaw } from "@/core/guidedStory";
 import { voiceReport } from "@/core/voiceFeedback";
 // Load the spacing of the loudness readings
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
+// Load the word splitter, to take the words from the transcript
+import { timedWords } from "@/core/analysis/timedWords";
 // Load the measure registry, for units
 import { findMetric } from "@/core/analysis/metrics";
 // Load the record types
-import type { AnalysisRaw, MetricSource, MetricValue, PauseSpan, SessionRecord, TimedWord } from "@/data/records";
+import type { AnalysisRaw, MetricSource, MetricValue, PauseSpan, FullSession, TimedWord } from "@/data/records";
 
 // The device engine's version, stored with every analysis
 export const DEVICE_ENGINE_VERSION = "1";
@@ -45,13 +47,8 @@ const MIN_VOICED = 30;
 // The opening stretch compared with the rest, in seconds
 const OPENING_SECONDS = 30;
 
-// The transcript's words, split as the word times were (one time per space-separated piece), each cleaned to lower-case letters and apostrophes
-export function timedWords(transcript: string, times: ReadonlyArray<number> | undefined): TimedWord[] {
-  // The pieces
-  const pieces = transcript.split(/\s+/).filter((piece) => piece !== "");
-  // Each with its time and the next word's time
-  return pieces.map((piece, index) => ({ w: piece.toLowerCase().replace(/[’]/g, "'").replace(/[^a-z']+/g, ""), s: times?.[index] ?? null, e: times?.[index + 1] ?? null }));
-}
+// The transcript's words with their times, kept in a small module of its own so storage code can rebuild them without loading the measures (decision 98)
+export { timedWords } from "@/core/analysis/timedWords";
 
 // The pauses of a quarter second or more in the loudness readings, between the first and last speech, with the first word heard after each
 function loudnessPauses(levels: ReadonlyArray<number>, words: ReadonlyArray<TimedWord>): { pauses: PauseSpan[]; speech: { first: number; last: number } | null } {
@@ -103,7 +100,7 @@ function wordGapPauses(words: ReadonlyArray<TimedWord>): PauseSpan[] {
 }
 
 // Pitch summed up: usual pitch, range and spread in semitones (slips dropped), and how phrases ended; null with too little voice
-function pitchSummary(session: SessionRecord): AnalysisRaw["pitch"] {
+function pitchSummary(session: FullSession): AnalysisRaw["pitch"] {
   // The readings
   const readings = session.pitch ?? [];
   // The usual pitch
@@ -171,7 +168,7 @@ function firstPartSummary(words: ReadonlyArray<TimedWord>, pauses: ReadonlyArray
 }
 
 // Take the raw features from a session (the loudness and pitch readings themselves stay on the session)
-export function extractRaw(session: SessionRecord): AnalysisRaw {
+export function extractRaw(session: FullSession): AnalysisRaw & { timedWords: TimedWord[] } {
   // The words, with their times when saved
   const words = timedWords(session.transcript, session.spokenTimes);
   // The loudness readings, when recorded
@@ -208,7 +205,7 @@ export function extractRaw(session: SessionRecord): AnalysisRaw {
 }
 
 // A told story's checks for the analysis, with a guided story's comparison against its facts added (decision 93)
-function storyChecksRaw(session: SessionRecord): NonNullable<AnalysisRaw["story"]> {
+function storyChecksRaw(session: FullSession): NonNullable<AnalysisRaw["story"]> {
   // The guided story it told, if it was one
   const guided = findGuidedStory(session.promptId);
   // The checks, plus the comparison when guided
@@ -229,8 +226,8 @@ function thirdsRates(words: ReadonlyArray<TimedWord>): [number, number, number] 
   return [0, 1, 2].map((part) => rate(times.filter((time) => time >= first + part * third && (part === 2 ? time <= last : time < first + (part + 1) * third)).length, third)) as [number, number, number];
 }
 
-// Work out every phone measure from the raw features alone
-export function deviceMetrics(raw: AnalysisRaw): Record<string, MetricValue> {
+// Work out every phone measure from the raw features alone (with their words, which are rebuilt while a take keeps its readings; decision 98)
+export function deviceMetrics(raw: AnalysisRaw & { timedWords: TimedWord[] }): Record<string, MetricValue> {
   // The measures, with their units
   const metrics: Record<string, MetricValue> = {};
   // Store one measure (rounded to two decimals), with its source and engine

@@ -7,7 +7,7 @@ import { formatRate } from "@/core/copy";
 // Load the loudness reading interval
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the session record type
-import type { SessionRecord } from "@/data/records";
+import type { FullSession } from "@/data/records";
 
 // One comparison: whether the note matched, differed from, or missed what was measured
 export interface NoteCheck {
@@ -34,7 +34,7 @@ export const MIN_ENDINGS = 3;
 const COMFORTABLE = "a comfortable pace is about 120 to 160";
 
 // Compare a session's tags with its numbers
-export function compareNotes(session: SessionRecord): NoteCheck[] {
+export function compareNotes(session: FullSession): NoteCheck[] {
   // The tags the user chose (none if they skipped or there are no notes)
   const tags = new Set(session.selfReview && !session.selfReview.skipped ? session.selfReview.tags : []);
   // No notes, nothing to compare

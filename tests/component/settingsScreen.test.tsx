@@ -51,6 +51,36 @@ describe("SettingsScreen", () => {
     expect([before, !!(await screen.findByText(/Last copy saved today/)), localStorage.getItem("voicelab-last-export")]).toEqual([true, true, "2026-10-13"]);
   });
 
+  // A big export shows how far it has got, and the file is compact JSON in parts (decision 99)
+  it("shows progress while exporting and writes a compact file", async () => {
+    // The file's parts, kept when the page makes the file
+    let parts: BlobPart[] = [];
+    // Stand in for the browser's file pieces, keeping what the file is made of
+    const RealBlob = Blob;
+    // (the stand-in)
+    Object.assign(globalThis, { Blob: class extends RealBlob { constructor(content?: BlobPart[], options?: BlobPropertyBag) { super(content, options); if (options?.type === "application/json") parts = content ?? []; } } });
+    // (download pieces)
+    Object.assign(URL, { createObjectURL: () => "blob:copy", revokeObjectURL: () => undefined });
+    // A repository with 450 sessions
+    const repository = createRepository(new MemoryStore());
+    // (saved)
+    for (let index = 0; index < 450; index += 1) await repository.saveSession(makeSession({ id: `s${index}`, feedbackStatus: "done" }));
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // Export
+    await userEvent.click(await screen.findByRole("button", { name: "Export my data" }));
+    // The progress line while it runs, with its bar
+    const said = (await screen.findByText(/Exporting your data… \d+%/)).textContent ?? "";
+    // Finished
+    await screen.findByText("Exported 450 sessions. Recordings are not included.");
+    // The file's text
+    const text = (parts as string[]).join("");
+    // Put the real file pieces back
+    Object.assign(globalThis, { Blob: RealBlob });
+    // Confirm the progress line, a file in several parts, no pretty-printing, and every session in it
+    expect([/Exporting your data… \d+%/.test(said), parts.length > 5, text.includes("\n"), (JSON.parse(text) as { sessions: unknown[] }).sessions.length]).toEqual([true, true, false, 450]);
+  });
+
   // Light or dark: applied straight away, remembered, and back to the device's choice
   it("switches between light, dark and the device's choice", async () => {
     // Start from nothing saved
@@ -257,16 +287,24 @@ describe("SettingsScreen", () => {
     expect(await screen.findByText("This file is not a VoiceLab export.")).toBeTruthy();
   });
 
-  // The audio limit can be changed and is saved
-  it("saves a new audio limit", async () => {
-    // Make an empty repository
+  // The number of days of recordings can be changed; it is saved and older recordings go at once (decision 98)
+  it("saves a new number of days and removes older recordings", async () => {
+    // A repository with a recording from ten days ago
     const repository = createRepository(new MemoryStore());
+    // (its audio)
+    await repository.saveAudio("a1", new Blob(["voice"]));
+    // (the take)
+    await repository.saveSession(makeSession({ id: "s1", audioKey: "a1", createdAt: new Date(NOW.getTime() - 10 * 86_400_000).toISOString(), feedbackStatus: "done" }));
     // Draw the screen
     render(<SettingsScreen repository={repository} now={NOW} />);
-    // Pick 10 sessions
-    await userEvent.selectOptions(await screen.findByLabelText("Keep recordings from your last"), "10");
-    // Confirm it was saved
-    await waitFor(async () => expect((await repository.getSettings(NOW)).audioRetention).toBe(10));
+    // The choice starts at 14 days
+    const choice = await screen.findByLabelText("Keep recordings from the last");
+    // (its value)
+    const start = (choice as HTMLSelectElement).value;
+    // Pick 7 days
+    await userEvent.selectOptions(choice, "7");
+    // Confirm it started at 14, was saved, and the ten-day-old recording went
+    await waitFor(async () => expect([start, (await repository.getSettings(NOW)).recordingDays, await repository.getAudio("a1"), !!screen.getByText("Saved. 1 older recording removed.")]).toEqual(["14", 7, undefined, true]));
   });
 
   // The recordings section says exactly which recordings are kept, and how much the device holds when the browser can say (decision 88)
@@ -276,7 +314,7 @@ describe("SettingsScreen", () => {
     // Draw the screen
     render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the amount and the rule
-    expect([!!(await screen.findByText("About 12 MB used on this device.")), !!screen.getByText(/the first take of up to 20 prompts you have recorded again on a later day/)]).toEqual([true, true]);
+    expect([!!(await screen.findByText("About 12 MB used on this device.")), !!screen.getByText(/Also kept: your very first recording, takes you star, and your check-ins/), !!screen.getByText(/Detailed charts \(pitch, volume and word timing\) are kept for 30 days/)]).toEqual([true, true, true]);
     // Take the stand-in away
     Reflect.deleteProperty(navigator, "storage");
   });
@@ -288,7 +326,7 @@ describe("SettingsScreen", () => {
     // Draw the screen
     render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Wait for the settings to load
-    await screen.findByLabelText("Keep recordings from your last");
+    await screen.findByLabelText("Keep recordings from the last");
     // Confirm no amount
     expect(screen.queryByText(/used on this device/)).toBeNull();
     // Take the stand-in away

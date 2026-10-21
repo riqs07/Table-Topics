@@ -178,4 +178,30 @@ describe("buildAnalysis", () => {
     // Confirm each case
     expect([isAnalysed("voice"), isAnalysed("moment"), needsAnalysis(SESSION, undefined), needsAnalysis(SESSION, analysis), needsAnalysis(SESSION, { ...analysis, schemaVersion: 0 })]).toEqual([false, false, true, false, true]);
   });
+
+  // A take whose readings were dropped keeps its values through a change of definitions: they cannot be worked out the same way again (decision 98)
+  it("leaves a trimmed take's out-of-date analysis alone", () => {
+    // An old analysis of a trimmed take
+    const old = { ...buildAnalysis(SESSION, new Date()), schemaVersion: 0 };
+    // Confirm it is not redone, while a trimmed take with none at all still gets one
+    expect([needsAnalysis({ ...SESSION, trimmedAt: "2026-10-20T00:00:00.000Z" }, old), needsAnalysis({ ...SESSION, trimmedAt: "2026-10-20T00:00:00.000Z" }, undefined)]).toEqual([false, true]);
+  });
+
+  // Without its words (stored analyses leave them out; a trimmed take cannot rebuild them), a rubric or a recompute keeps the phone's values exactly
+  it("keeps the phone's values when the words are missing", () => {
+    // The analysis, then stored without its words
+    const full = buildAnalysis(SESSION, new Date("2026-10-21T10:00:00.000Z"));
+    // (without words)
+    const { timedWords: _words, ...raw } = full.raw;
+    // (marked as unused on purpose)
+    void _words;
+    // The stored copy
+    const stored = { ...full, raw };
+    // With a rubric, and worked out again
+    const [scored, again] = [withRubric(stored, RUBRIC), recomputeFromRaw(stored, new Date("2026-10-22T10:00:00.000Z"))];
+    // The phone's values in each
+    const phone = (metrics: typeof full.metrics) => Object.fromEntries(Object.entries(metrics).filter(([, metric]) => metric.source === "device"));
+    // Confirm every phone value is unchanged and the rubric's scores were added
+    expect([phone(scored.metrics), phone(again.metrics), scored.metrics["rub.point_first"]?.value]).toEqual([phone(full.metrics), phone(full.metrics), 2]);
+  });
 });

@@ -6,7 +6,9 @@ import { createRepository } from "@/data/repository";
 // Load the saver being checked
 import { saveRecording } from "@/data/saveRecording";
 // Load a sample session builder
-import { makeSession } from "../../support/fixtures";
+import { makeSession, voiceReadings } from "../../support/fixtures";
+// Load the pitch range rule
+import { rangeOf } from "@/core/voiceFeedback";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 13, 10, 0, 0);
@@ -65,22 +67,30 @@ describe("saveRecording", () => {
     expect([warmup.mode, warmup.isBaseline]).toEqual(["warmup", false]);
   });
 
-  // Old audio beyond the limit is cleared after saving
-  it("removes audio beyond the limit after saving", async () => {
-    // A repository keeping audio for one session only
+  // Saving never deletes anything: older recordings go later, when the app is idle (decision 98: pruning was on the save's own path)
+  it("leaves older recordings alone while saving", async () => {
+    // A repository with a month-old take that has audio
     const repository = createRepository(new MemoryStore());
-    // Save the limit
-    await repository.saveSettings({ focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 1 });
-    // An even older take of the same prompt, so the next one is not the prompt's first take (those are always kept)
-    await repository.saveSession(makeSession({ id: "first", createdAt: "2026-09-30T10:00:00.000Z", isBaseline: false }));
-    // Save an older session with audio
-    await repository.saveSession(makeSession({ id: "old", createdAt: "2026-10-01T10:00:00.000Z", audioKey: "old", isBaseline: false }));
-    // Save its audio
+    // (the take)
+    await repository.saveSession(makeSession({ id: "old", createdAt: "2026-09-01T10:00:00.000Z", audioKey: "old", isBaseline: false }));
+    // (its audio)
     await repository.saveAudio("old", new Blob(["old voice"]));
     // Save a new recording
     await saveRecording(repository, RECORDING, NOW);
-    // Confirm the old audio is gone
-    expect(await repository.getAudio("old")).toBeUndefined();
+    // Confirm the old audio is still there
+    expect(await repository.getAudio("old")).toBeDefined();
+  });
+
+  // A marker take (the weekly check-in's) is saved as one, and the take's pitch range is kept on the session so later takes need no readings (decision 98)
+  it("saves a marker and the pitch range", async () => {
+    // A repository
+    const repository = createRepository(new MemoryStore());
+    // A marker take with lively pitch
+    const saved = await saveRecording(repository, { ...RECORDING, id: "m1", marker: true, ...voiceReadings("lively") }, NOW);
+    // The stored session, without readings
+    const stored = await repository.getSession("m1");
+    // Confirm the mark, the range (the same as worked out from the readings), and the readings kept apart
+    expect([stored?.marker, stored?.pitchRange, stored?.pitchRange === rangeOf(saved), "pitch" in (stored ?? {}), (await repository.getSignals("m1"))?.pitch?.length]).toEqual([true, expect.any(Number), true, false, saved.pitch?.length]);
   });
 
   // The loudness readings are kept (rounded) so pauses can be found later

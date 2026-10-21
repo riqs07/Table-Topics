@@ -148,18 +148,18 @@ export interface SessionRecord {
   feedback: Feedback | null;
   // Whether feedback is pending, done, or failed
   feedbackStatus: FeedbackStatus;
-  // Loudness readings taken every tenth of a second while recording (0 to 1, two decimals), for finding pauses; missing on older sessions. A recording made without the browser's levelling is scaled by one factor (loudnessScale) so its typical speech reads about 0.2 (decision 81)
-  loudness?: number[];
   // The factor the loudness readings were scaled by, for a recording made without the browser's levelling; also sets how much playback is boosted (decision 81)
   loudnessScale?: number;
   // Whether the browser's automatic levelling was on while recording: false means loudness changes across the take are real; missing when the browser could not say, and on older sessions (decision 81)
   autoGain?: boolean;
-  // Pitch readings taken with the loudness, in whole hertz, or null where there was no voice; missing on older sessions (decision 81)
-  pitch?: (number | null)[];
-  // Seconds from the start when each word of the transcript was first heard (a tenth of a second, approximate); missing on older sessions
-  spokenTimes?: number[];
-  // For a session with text on screen: seconds when each word of that text was first read, or null if it never was; missing on older sessions
-  scriptTimes?: (number | null)[];
+  // The take's pitch range in semitone steps, saved with the take so the "usual range" needs no readings (decision 98); missing when too little voice was heard, and on takes from before it, which work it out from their readings
+  pitchRange?: number;
+  // Starred by the user on the take's page: its recording and detailed readings are kept however old it is (decision 98)
+  starred?: boolean;
+  // A marker take, such as the weekly check-in's: kept like a starred one, so "how you sounded then" always has something to play (decision 98)
+  marker?: boolean;
+  // When the detailed readings (pitch, loudness and word times) were dropped by the retention rule, so pages say so instead of drawing a chart (decision 98); missing while they are kept
+  trimmedAt?: string;
   // For a rehearsal or a response: likely audience questions for Q&A practice (written by the coach or typed by the user)
   questions?: string[];
   // For a Q&A answer: the question it answered (its prompt id is the session the question came from)
@@ -178,6 +178,38 @@ export interface SessionRecord {
   conversation?: { turns: ConversationTurn[]; scenarioId?: string; twist?: number };
   // For a told story (mode "story"): its shape, focus and length; the story is the prompt id (decision 92)
   story?: StoryTake;
+}
+
+// A take's detailed readings, kept apart from the session in the "signals" collection so lists of sessions stay small; they are loaded only where they are drawn or measured (decision 98)
+export interface SessionSignals {
+  // Loudness readings taken every tenth of a second while recording (0 to 1, two decimals), for finding pauses; missing on older sessions. A recording made without the browser's levelling is scaled by one factor (loudnessScale) so its typical speech reads about 0.2 (decision 81)
+  loudness?: number[];
+  // Pitch readings taken with the loudness, in whole hertz, or null where there was no voice; missing on older sessions (decision 81)
+  pitch?: (number | null)[];
+  // Seconds from the start when each word of the transcript was first heard (a tenth of a second, approximate); missing on older sessions
+  spokenTimes?: number[];
+  // For a session with text on screen: seconds when each word of that text was first read, or null if it never was; missing on older sessions
+  scriptTimes?: (number | null)[];
+}
+
+// The names of the detailed readings, in the order they are listed in the data model
+export const SIGNAL_FIELDS = ["loudness", "pitch", "spokenTimes", "scriptTimes"] as const;
+
+// One take's detailed readings as stored, under its session's id (decision 98)
+export interface SignalsRecord extends SessionSignals {
+  // The session they belong to
+  sessionId: string;
+}
+
+// A session together with its detailed readings, as the take's page, the analysis and the coach request use it
+export type FullSession = SessionRecord & SessionSignals;
+
+// Small facts about the stored data itself, under the key "schema" (decision 98)
+export interface MetaRecord {
+  // The layout version the stored records have been moved to (2 since decision 98: readings apart from sessions)
+  schema: number;
+  // When the last move finished (ISO text)
+  migratedAt: string;
 }
 
 // One turn of a conversation with a character (decision 83)
@@ -286,8 +318,10 @@ export interface SettingsRecord {
   focusIndex: number;
   // The day the current focus began (ISO text)
   focusStartedOn: string;
-  // How many recent sessions keep their audio
+  // How many recent sessions kept their audio before decision 98; still written so older copies of the app can read the settings, but no longer used
   audioRetention: number;
+  // How many days of recordings keep their audio: 7, 14 or 30 (decision 98; missing means 14). Starred takes, marker takes and the very first recording keep theirs regardless
+  recordingDays?: number;
   // Whether the coach may read the user's own notes after listening back (off unless chosen; missing on older settings)
   shareNotes?: boolean;
   // Learn: each card's reading and recall progress, by card id (missing until the first card is read)
@@ -371,8 +405,8 @@ export interface AnalysisRaw {
   durationSec: number;
   // The pause-word rate saved on the session (a reading only counts words added to its text)
   fillersPerMinute: number;
-  // Each word with its time, when word times were saved (empty otherwise)
-  timedWords: TimedWord[];
+  // Each word with its time (null times when word times were not saved). Not stored since decision 98: it is rebuilt from the transcript and the take's word times when the measures are worked out again, and is missing once the take's readings were dropped
+  timedWords?: TimedWord[];
   // Every pause of a quarter second or more
   pauses: PauseSpan[];
   // Where the pauses came from: the loudness readings, gaps between word times, or nowhere
@@ -619,10 +653,20 @@ export interface Collections {
   summaries: SummaryRecord;
   // The user's stories, keyed by their seed's id (decision 92)
   stories: StoryRecord;
+  // Each take's detailed readings, keyed by session id (decision 98)
+  signals: SignalsRecord;
+  // Facts about the stored data itself, such as its layout version (decision 98)
+  meta: MetaRecord;
 }
 
 // One collection name
 export type CollectionName = keyof Collections;
 
 // Every collection name, for creating and clearing storage
-export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio", "talks", "analyses", "summaries", "stories"];
+export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio", "talks", "analyses", "summaries", "stories", "signals", "meta"];
+
+// The collections that hold the user's own data, cleared by "Delete all my data" (the layout facts in "meta" stay, since they describe the database, not the user)
+export const USER_COLLECTIONS: ReadonlyArray<CollectionName> = COLLECTION_NAMES.filter((name) => name !== "meta");
+
+// Lookups kept by the database so a few questions need no full read: the takes still waiting for coach feedback (decision 99)
+export const COLLECTION_INDEXES: Readonly<Partial<Record<CollectionName, ReadonlyArray<string>>>> = { sessions: ["feedbackStatus"] };

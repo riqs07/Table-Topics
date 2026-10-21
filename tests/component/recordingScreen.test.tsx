@@ -187,8 +187,8 @@ describe("RecordingScreen", () => {
     fireEvent.click(stop);
     // Wait for the page change
     await waitFor(() => expect(navigate).toHaveBeenCalled());
-    // Confirm readings were saved (the fake capture reads 0.5)
-    const [saved] = await repository.listSessions();
+    // Confirm readings were saved (the fake capture reads 0.5), apart from the session (decision 98)
+    const saved = await repository.getFullSession((await repository.listSessions())[0]!.id);
     // At least one reading per tick
     expect([(saved!.loudness?.length ?? 0) >= 20, saved!.loudness?.[0]]).toEqual([true, 0.5]);
   });
@@ -220,8 +220,8 @@ describe("RecordingScreen", () => {
     fireEvent.click(stop);
     // Wait for the page change
     await waitFor(() => expect(navigate).toHaveBeenCalled());
-    // The saved session
-    const [saved] = await repository.listSessions();
+    // The saved session, with its readings
+    const saved = await repository.getFullSession((await repository.listSessions())[0]!.id);
     // Asked without levelling; pitch kept in whole hertz, one per loudness reading; the fake stream cannot say what the browser did
     expect([asked[0], saved!.pitch?.[0], saved!.pitch?.length === saved!.loudness?.length, saved!.autoGain]).toEqual([{ autoGain: false }, 182, true, undefined]);
   });
@@ -469,8 +469,8 @@ describe("RecordingScreen", () => {
     fireEvent.click(stop);
     // Wait for the page change
     await waitFor(() => expect(navigate).toHaveBeenCalled());
-    // The saved session
-    const [saved] = await repository.listSessions();
+    // The saved session, with its readings
+    const saved = await repository.getFullSession((await repository.listSessions())[0]!.id);
     // Confirm the spoken times and the first script words' times
     expect([saved!.spokenTimes, saved!.scriptTimes?.slice(0, 5)]).toEqual([[2, 2, 12, 12], [2, 2, 12, 12, null]]);
   });

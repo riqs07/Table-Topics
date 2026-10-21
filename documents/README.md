@@ -16,6 +16,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 2 | [architecture/overview.md](architecture/overview.md) | How is it built and how does data flow? | 3 min |
 | 3 | [architecture/data-model.md](architecture/data-model.md) | What do we store and where? | 2 min |
 | 4 | [architecture/decisions.md](architecture/decisions.md) | Why did we choose each technology? | 2 min |
+| 4a | [architecture/performance.md](architecture/performance.md) | How fast are the pages with a year of practice, before and after decisions 98 and 99? | 3 min |
 | 5 | [design/design-system.md](design/design-system.md) | How do you control colors, fonts, and feel? | 2 min |
 | 6 | [standards/coding-standards.md](standards/coding-standards.md) | How must code be written and tested? | 3 min |
 | 7 | [roadmap.md](roadmap.md) | In what order is it built, and where do you step in? | 3 min |

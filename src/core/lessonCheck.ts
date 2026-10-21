@@ -11,7 +11,7 @@ import { alignReading, countPauseMarks } from "@/core/readAlong";
 // Load the loudness reading interval
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the session record type
-import type { SessionRecord } from "@/data/records";
+import type { FullSession } from "@/data/records";
 
 // The pace to stay under when reading numbers and names, in words a minute
 const SLOW_PACE = 140;
@@ -45,7 +45,7 @@ function plainText(body: string): string {
 }
 
 // The sentence for the lesson's own skill
-function skillSentence(lesson: Lesson, session: SessionRecord, percentRead: number): string {
+function skillSentence(lesson: Lesson, session: FullSession, percentRead: number): string {
   // Loudness readings, if recorded
   const loudness = session.loudness ?? [];
   // Checks that need loudness say so plainly when it is missing
@@ -107,7 +107,7 @@ function skillSentence(lesson: Lesson, session: SessionRecord, percentRead: numb
 }
 
 // The result of a lesson session
-export function lessonResult(lesson: Lesson, session: SessionRecord): LessonResult {
+export function lessonResult(lesson: Lesson, session: FullSession): LessonResult {
   // How much of the text was heard
   const { percentRead } = alignReading(plainText(lesson.body), session.transcript);
   // The headline for the skill, and the reading detail

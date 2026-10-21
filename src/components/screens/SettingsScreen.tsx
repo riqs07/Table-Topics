@@ -13,14 +13,14 @@ import { PageTitle } from "@/components/script/PageTitle";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the day label helper for the export file name
 import { dayKey } from "@/core/dates";
-// Load the export and import tools
-import { buildExport, importExport, parseExport } from "@/data/exportFile";
+// Load the progress type of a long export or import (the tools themselves load when used, decision 99)
+import type { Progress } from "@/data/exportFile";
+// Load the recording-days choices and reader (decision 98)
+import { RECORDING_DAY_CHOICES, READINGS_DAYS, recordingDays } from "@/core/retention";
 // Load the settings record type
 import type { SettingsRecord } from "@/data/records";
 // Load the sample sessions (development only)
 import { sampleSessions } from "@/data/sampleData";
-// Load the waiting-feedback sender
-import { sendPendingFeedback } from "@/data/feedbackClient";
 // Load the passphrase storage
 import { readPassphrase, savePassphrase } from "@/data/passphrase";
 // Load the shortest passphrase allowed
@@ -55,8 +55,8 @@ import { PAGE } from "@/components/script/layout";
 // Load the deeper-analysis status check (decision 91)
 import { checkDeepSetup, type DeepSetup } from "@/data/deepAnalysisClient";
 
-// Choices for how many recent sessions keep their audio
-const RETENTION_CHOICES = [10, 30, 60, 100];
+// How far a long export or import has got, as a whole percentage
+const PROGRESS_PERCENT = (progress: Progress) => (progress.total > 0 ? Math.floor((progress.done / progress.total) * 100) : 100);
 // Whether development-only tools are shown
 const DEVELOPMENT = process.env.NODE_ENV !== "production";
 
@@ -217,6 +217,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   const [settings, setSettings] = useState<SettingsRecord | null>(null);
   // A message to show after an action
   const [message, setMessage] = useState("");
+  // A long export or import under way: what it is doing and how far it has got (decision 99)
+  const [working, setWorking] = useState<{ what: "Exporting" | "Importing"; progress: Progress } | null>(null);
   // Fingerprint of the passphrase saved on this device, to compare with the server's (shown by pnpm live-check)
   const [fingerprint, setFingerprint] = useState("");
 
@@ -260,10 +262,10 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       // Keep it only if the screen is still open
       if (!cancelled) setStorageUsed(bytes);
     });
-    // Count sessions waiting for feedback
-    repo.listSessions().then((sessions) => {
+    // Count sessions waiting for feedback, through the database's lookup (decision 99)
+    repo.listPendingSessions().then((pending) => {
       // Keep the count only if the screen is still open
-      if (!cancelled) setPendingCount(sessions.filter((session) => session.feedbackStatus === "pending").length);
+      if (!cancelled) setPendingCount(pending.length);
     }).catch(() => {
       // The count stays at none; a storage problem is explained by the settings message above
     });
@@ -298,67 +300,103 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     setMessage("Saved.");
   }
 
-  // Save a new audio limit and remove audio beyond it
+  // Save a new number of days of recordings and remove recordings older than that (decision 98)
   async function changeRetention(event: ChangeEvent<HTMLSelectElement>) {
     // Nothing to do before settings load
     if (!settings) return;
     // Build the new settings
-    const next = { ...settings, audioRetention: Number(event.target.value) };
-    // Save them
-    await repo.saveSettings(next);
-    // Remove audio beyond the new limit
-    const removed = await repo.pruneAudio();
-    // Show the new value
-    setSettings(next);
-    // Say what happened
-    setMessage(removed > 0 ? `Saved. ${count(removed, "older recording")} removed.` : "Saved.");
+    const next = { ...settings, recordingDays: Number(event.target.value) };
+    // Saving and tidying can fail
+    try {
+      // Save them
+      await repo.saveSettings(next);
+      // Show the new value
+      setSettings(next);
+      // The upkeep's code, loaded when needed
+      const { tidyRecordings } = await import("@/data/housekeeping");
+      // Remove recordings older than the new choice (and readings past their time)
+      const removed = await tidyRecordings(repo, today ?? new Date());
+      // Say what happened
+      setMessage(removed.audio > 0 ? `Saved. ${count(removed.audio, "older recording")} removed.` : "Saved.");
+    } catch (error) {
+      // Say why, with the way forward
+      setMessage(`That could not be saved (${error instanceof Error ? error.message : String(error)}). Reload the page and try again.`);
+    }
   }
 
-  // Download everything as a file
+  // Download everything as a file, written compactly a part at a time with progress shown (decision 99)
   async function exportData() {
-    // Nothing to do before the date is known
-    if (!today) return;
-    // Build the export
-    const file = await buildExport(repo, today);
+    // Nothing to do before the date is known, or while another export or import runs
+    if (!today || working) return;
+    // Under way
+    setWorking({ what: "Exporting", progress: { done: 0, total: 0 } });
+    // Reading and writing can fail
+    try {
+      // The export's code, loaded when needed
+      const { buildExport, exportParts } = await import("@/data/exportFile");
+      // Gather it
+      const file = await buildExport(repo, today);
+      // Written a part at a time, saying how far it has got
+      const parts = await exportParts(file, { onProgress: (progress) => setWorking({ what: "Exporting", progress }) });
+      // Saved as a file
+      download(parts, today);
+      // Remember when the copy was saved, for the reminder on Today
+      markExported(today);
+      // Show the new date here too
+      setSafety(await readSafetyFacts(0, today));
+      // Say what happened
+      setMessage(`Exported ${count(file.sessions.length, "session")}. Recordings are not included.`);
+    } catch (error) {
+      // Say why, with the way forward
+      setMessage(`The export could not be made (${error instanceof Error ? error.message : String(error)}). Try again.`);
+    } finally {
+      // Done
+      setWorking(null);
+    }
+  }
+
+  // Hand the file's parts to the browser as a download named with today's date
+  function download(parts: string[], day: Date) {
     // Turn it into a downloadable file
-    const url = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: "application/json" }));
+    const url = URL.createObjectURL(new Blob(parts, { type: "application/json" }));
     // Make a temporary download link
     const link = document.createElement("a");
     // Point it at the file
     link.href = url;
     // Name the file with today's date
-    link.download = `voicelab-export-${dayKey(today)}.json`;
+    link.download = `voicelab-export-${dayKey(day)}.json`;
     // Start the download
     link.click();
-    // Free the file's memory
-    URL.revokeObjectURL(url);
-    // Remember when the copy was saved, for the reminder on Today
-    markExported(today);
-    // Show the new date here too
-    setSafety(await readSafetyFacts(0, today));
-    // Say what happened
-    setMessage(`Exported ${count(file.sessions.length, "session")}. Recordings are not included.`);
+    // Free the file's memory once the browser has taken it
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   // Read a chosen export file and add its data
   async function importData(event: ChangeEvent<HTMLInputElement>) {
     // Take the chosen file
     const file = event.target.files?.[0];
-    // Nothing chosen
-    if (!file) return;
+    // Nothing chosen, or another export or import runs
+    if (!file || working) return;
+    // Under way
+    setWorking({ what: "Importing", progress: { done: 0, total: 0 } });
     // Try to read and import it
     try {
-      // Check the file fully, then import
-      const counts = await importExport(repo, parseExport(await file.text()), today ?? new Date());
+      // The import's code, loaded when needed
+      const { importExport, parseExport } = await import("@/data/exportFile");
+      // Check the file fully, then import it a chunk at a time, saying how far it has got
+      const counts = await importExport(repo, parseExport(await file.text()), today ?? new Date(), { onProgress: (progress) => setWorking({ what: "Importing", progress }) });
       // Show the joined settings, so a later change here never writes back the old copy (decision 86)
       setSettings(await repo.getSettings(today ?? new Date()));
       // And the new waiting count
-      setPendingCount((await repo.listSessions()).filter((session) => session.feedbackStatus === "pending").length);
+      setPendingCount((await repo.listPendingSessions()).length);
       // Say what came in, and that what was here was kept
       setMessage(`Imported ${count(counts.added, "new session")}.${counts.kept > 0 ? ` ${count(counts.kept, "session")} already here kept ${counts.kept === 1 ? "its" : "their"} recordings and notes.` : ""}`);
     } catch (error) {
       // Show the plain reason it was refused
       setMessage((error as Error).message);
+    } finally {
+      // Done
+      setWorking(null);
     }
     // Clear the chooser so the same file can be picked again
     event.target.value = "";
@@ -380,10 +418,12 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
 
   // Send every session waiting for feedback now
   async function sendNow() {
+    // The sender's code, loaded when needed (decision 99)
+    const { sendPendingFeedback } = await import("@/data/feedbackClient");
     // Send with the saved passphrase
     const result = await sendPendingFeedback(repo, { passphrase: readPassphrase(), ...(fetchFn ? { fetchFn } : {}) });
     // Update the waiting count
-    setPendingCount((await repo.listSessions()).filter((session) => session.feedbackStatus === "pending").length);
+    setPendingCount((await repo.listPendingSessions()).length);
     // Say what happened
     setMessage(sendResultMessage(result.sent, result.stoppedBy, result.reason));
   }
@@ -481,15 +521,17 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
 
       {/* How long recordings are kept */}
       <Section title="Your recordings">
-        {/* The limit as a sentence with a choice in it */}
+        {/* The limit as a sentence with a choice in it (decision 98) */}
         <p>
-          Keep recordings from your last{" "}
-          <select aria-label="Keep recordings from your last" value={settings?.audioRetention ?? 30} onChange={changeRetention} className="min-h-11 border-b border-ink bg-transparent">
+          Keep recordings from the last{" "}
+          <select aria-label="Keep recordings from the last" value={recordingDays(settings)} onChange={changeRetention} className="min-h-11 border-b border-ink bg-transparent">
             {/* One option per choice */}
-            {RETENTION_CHOICES.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+            {RECORDING_DAY_CHOICES.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
           </select>{" "}
-          sessions. Also kept: your very first recording, and the first take of up to 20 prompts you have recorded again on a later day, so you can hear then and now. Every transcript and note is always kept.
+          days. Also kept: your very first recording, takes you star, and your check-ins.
         </p>
+        {/* What else is kept, and for how long */}
+        <p className="mt-2 text-footnote text-ink-muted">Detailed charts (pitch, volume and word timing) are kept for {READINGS_DAYS} days, and for as long as you keep a take starred. Every transcript, number, note and piece of feedback is always kept.</p>
         {/* How much the device holds, where the browser can say */}
         {storageUsedText(storageUsed) && <p className="mt-2 text-footnote text-ink-muted">{storageUsedText(storageUsed)}</p>}
       </Section>
@@ -534,21 +576,33 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Export and import */}
       <Section title="Your data" id="your-data">
         {/* Where it lives */}
-        <p className="text-ink-muted">VoiceLab keeps your recordings, transcripts and settings on this device. Your browser’s speech recognition turns your words into text; in most browsers Apple or Google does that on their servers, so they hear the audio.{settings?.deepAnalysis ? " With deeper analysis on, each take’s recording is also sent once for analysis and not kept there." : ""}</p>
+        <p className="text-ink-muted">VoiceLab keeps your recordings (for the days you chose above), transcripts and settings on this device. Your browser’s speech recognition turns your words into text; in most browsers Apple or Google does that on their servers, so they hear the audio.{settings?.deepAnalysis ? " With deeper analysis on, each take’s recording is also sent once for analysis and not kept there." : ""}</p>
         {/* How safe it is from the browser clearing it, and when a copy was last saved (drawn in the browser only) */}
         {/* Room is kept for this line while it loads, so the sections below do not jump (decision 76) */}
         {!(today && safety) && <p aria-hidden="true" className="mt-2 min-h-12" />}
         {today && safety && <p className="mt-2 min-h-12 text-footnote text-ink-muted">{safety.persisted ? "Protected from being cleared by the browser." : safety.iosSafari && !safety.installed ? "Safari may clear this if VoiceLab is not used for a while. Add it to your Home Screen to keep it." : "The browser may clear this if space runs low."} {lastCopyText(safety.daysSinceExport)}.</p>}
         {/* Export */}
-        <button type="button" onClick={exportData} className={`${SECONDARY} mt-3`}>Export my data</button>
+        <button type="button" onClick={exportData} disabled={working !== null} className={`${SECONDARY} mt-3`}>Export my data</button>
         {/* Import */}
         <p className="mt-3">
           <label className={`${SECONDARY} cursor-pointer`}>
             Import a file
             {/* The hidden file chooser, opened by the label */}
-            <input type="file" accept="application/json,.json" aria-label="Import a file" onChange={importData} className="sr-only" />
+            <input type="file" accept="application/json,.json" aria-label="Import a file" onChange={importData} disabled={working !== null} className="sr-only" />
           </label>
         </p>
+        {/* A long export or import under way, with how far it has got (decision 99) */}
+        {working && (
+          <div role="status" className="mt-3 max-w-sm">
+            {/* What it is doing */}
+            <p className="text-footnote text-ink-muted">{working.what} your data… {PROGRESS_PERCENT(working.progress)}%</p>
+            {/* The bar, in the theme's colours (a native progress bar draws in the browser's own green) */}
+            <div role="progressbar" aria-label={`${working.what} your data`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={PROGRESS_PERCENT(working.progress)} className="mt-1 h-2 w-full overflow-hidden rounded-full bg-rule">
+              {/* The part done */}
+              <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${PROGRESS_PERCENT(working.progress)}%` }} />
+            </div>
+          </div>
+        )}
       </Section>
 
       {/* Delete everything */}

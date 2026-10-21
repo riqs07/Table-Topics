@@ -5,7 +5,7 @@ import { DEVICE_ENGINE_VERSION, deviceMetrics, extractRaw } from "@/core/analysi
 // Load the server's measures and the merge rule (decision 91)
 import { mergeMetrics, serverMetrics, voiceEngine } from "@/core/analysis/server";
 // Load the record types
-import type { AnalysisRaw, AnalysisRecord, DeepStatus, EngineInfo, MetricValue, RubricRecord, ServerAnalysis, SessionMode, SessionRecord } from "@/data/records";
+import type { AnalysisRaw, AnalysisRecord, DeepStatus, EngineInfo, FullSession, MetricValue, RubricRecord, ServerAnalysis, SessionMode, SessionRecord, TimedWord } from "@/data/records";
 
 // The version of the measure definitions; raising it makes every analysis be worked out again (rule 1 of the research's storage plan)
 export const ANALYSIS_SCHEMA_VERSION = 1;
@@ -19,10 +19,14 @@ export function isAnalysed(mode: SessionMode): boolean {
   return !NOT_ANALYSED.includes(mode);
 }
 
-// Whether a session needs its analysis worked out (none yet, or from an older definition)
+// Whether a session needs its analysis worked out (none yet, or from an older definition); a take whose detailed readings were dropped keeps the values it has, since they can no longer be worked out the same way (decision 98)
 export function needsAnalysis(session: SessionRecord, analysis: AnalysisRecord | undefined): boolean {
-  // Only kinds that are analysed, missing or out of date
-  return isAnalysed(session.mode) && (!analysis || analysis.schemaVersion !== ANALYSIS_SCHEMA_VERSION);
+  // Only kinds that are analysed
+  if (!isAnalysed(session.mode)) return false;
+  // None yet: worked out from what the session still has
+  if (!analysis) return true;
+  // Out of date, unless its readings are gone
+  return analysis.schemaVersion !== ANALYSIS_SCHEMA_VERSION && !session.trimmedAt;
 }
 
 // The rubric's scores as measures (decision 90), with the coach model as their engine
@@ -54,10 +58,26 @@ export function rubricMetrics(rubric: RubricRecord): Record<string, MetricValue>
   };
 }
 
-// Every measure from the three sources (phone, rubric, server), with the phone values a server value replaced; nothing from the phone is lost (decision 91)
-export function composeMetrics(raw: AnalysisRaw, rubric: RubricRecord | undefined, server: ServerAnalysis | undefined): { metrics: Record<string, MetricValue>; superseded: Record<string, MetricValue> } {
+// The phone's own values already in a record: those still shown, plus any a server value replaced (decision 91)
+export function phoneValues(analysis: AnalysisRecord | undefined): Record<string, MetricValue> {
+  // Nothing without a record
+  if (!analysis) return {};
+  // The values the phone measured
+  const phone = Object.fromEntries(Object.entries(analysis.metrics).filter(([, metric]) => metric.source === "device"));
+  // With the replaced ones back in their place
+  return { ...phone, ...(analysis.superseded ?? {}) };
+}
+
+// Whether raw features still have their words, so the phone's measures can be worked out from them
+function hasWords(raw: AnalysisRaw): raw is AnalysisRaw & { timedWords: TimedWord[] } {
+  // The words are rebuilt while the take's readings are kept, and missing once they were dropped (decision 98)
+  return Array.isArray(raw.timedWords);
+}
+
+// Every measure from the three sources (phone, rubric, server), with the phone values a server value replaced; nothing from the phone is lost (decision 91). Without the words (a take whose readings were dropped, decision 98), the phone's earlier values are kept as they were
+export function composeMetrics(raw: AnalysisRaw, rubric: RubricRecord | undefined, server: ServerAnalysis | undefined, earlier?: AnalysisRecord): { metrics: Record<string, MetricValue>; superseded: Record<string, MetricValue> } {
   // Merged in order: phone, rubric, server
-  return mergeMetrics(deviceMetrics(raw), rubric ? rubricMetrics(rubric) : {}, server ? serverMetrics(server, raw) : {});
+  return mergeMetrics(hasWords(raw) ? deviceMetrics(raw) : phoneValues(earlier), rubric ? rubricMetrics(rubric) : {}, server ? serverMetrics(server, raw) : {});
 }
 
 // The server engines that contributed, for the record's engines list
@@ -77,10 +97,10 @@ function kept(existing: AnalysisRecord | undefined): Pick<AnalysisRecord, "rubri
   return { ...(existing?.rubric ? { rubric: existing.rubric } : {}), ...(existing?.server ? { server: existing.server } : {}), ...(existing?.deep ? { deep: existing.deep } : {}) };
 }
 
-// Assemble a record from its raw features and kept parts, working every measure out
-function assemble(sessionId: string, raw: AnalysisRaw, parts: Pick<AnalysisRecord, "rubric" | "server" | "deep">, at: string): AnalysisRecord {
+// Assemble a record from its raw features and kept parts, working every measure out (the earlier record, when there is one, gives the phone's values if the words are gone)
+function assemble(sessionId: string, raw: AnalysisRaw, parts: Pick<AnalysisRecord, "rubric" | "server" | "deep">, at: string, earlier?: AnalysisRecord): AnalysisRecord {
   // The measures and the phone values replaced
-  const { metrics, superseded } = composeMetrics(raw, parts.rubric, parts.server);
+  const { metrics, superseded } = composeMetrics(raw, parts.rubric, parts.server, earlier);
   // The record
   return {
     // Whose analysis
@@ -103,7 +123,7 @@ function assemble(sessionId: string, raw: AnalysisRaw, parts: Pick<AnalysisRecor
 }
 
 // Build a take's analysis from its session, keeping any rubric, server analysis and status already saved (now: when it is worked out)
-export function buildAnalysis(session: SessionRecord, now: Date, existing?: AnalysisRecord): AnalysisRecord {
+export function buildAnalysis(session: FullSession, now: Date, existing?: AnalysisRecord): AnalysisRecord {
   // Built from fresh raw features
   return assemble(session.id, extractRaw(session), kept(existing), now.toISOString());
 }
@@ -111,13 +131,13 @@ export function buildAnalysis(session: SessionRecord, now: Date, existing?: Anal
 // Work the measures out again from the raw features alone (no session or audio needed), keeping the rubric and the server's analysis
 export function recomputeFromRaw(analysis: AnalysisRecord, now: Date): AnalysisRecord {
   // Built from the saved raw features
-  return assemble(analysis.sessionId, analysis.raw, kept(analysis), now.toISOString());
+  return assemble(analysis.sessionId, analysis.raw, kept(analysis), now.toISOString(), analysis);
 }
 
 // Add the coach's rubric to an analysis
 export function withRubric(analysis: AnalysisRecord, rubric: RubricRecord): AnalysisRecord {
   // The rubric, its engine and its measures added, keeping when the measures were worked out
-  return assemble(analysis.sessionId, analysis.raw, { ...kept(analysis), rubric }, analysis.computedAt);
+  return assemble(analysis.sessionId, analysis.raw, { ...kept(analysis), rubric }, analysis.computedAt, analysis);
 }
 
 // Add the server's deeper analysis to an analysis (either part may be missing), with its status; a part already saved is kept when the new result lacks it
@@ -125,7 +145,7 @@ export function withServerAnalysis(analysis: AnalysisRecord, server: ServerAnaly
   // The parts, the new ones first
   const merged: ServerAnalysis = { transcript: server.transcript ?? analysis.server?.transcript ?? null, voice: server.voice ?? analysis.server?.voice ?? null };
   // Rebuilt with them
-  return assemble(analysis.sessionId, analysis.raw, { ...kept(analysis), server: merged, deep }, analysis.computedAt);
+  return assemble(analysis.sessionId, analysis.raw, { ...kept(analysis), server: merged, deep }, analysis.computedAt, analysis);
 }
 
 // Set a take's deeper analysis status without changing its measures

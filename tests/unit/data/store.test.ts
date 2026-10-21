@@ -113,6 +113,68 @@ describe.each([
     // Confirm the content survived
     expect(await loaded?.text()).toBe("fake audio");
   });
+
+  // Several records come back in the order asked, with gaps where there is none (decision 99)
+  it("loads several records by key in order", async () => {
+    // Two sessions
+    await store.put("sessions", "a", makeSession({ id: "a" }));
+    // (the second)
+    await store.put("sessions", "b", makeSession({ id: "b" }));
+    // Confirm the order and the gap
+    expect((await store.getMany("sessions", ["b", "missing", "a"])).map((session) => session?.id ?? null)).toEqual(["b", null, "a"]);
+  });
+
+  // Keys alone, without reading the records, in key order
+  it("lists a collection's keys in order", async () => {
+    // Three readings records
+    for (const id of ["c", "a", "b"]) await store.put("signals", id, { sessionId: id, loudness: [0.1] });
+    // Confirm the keys
+    expect(await store.keys("signals")).toEqual(["a", "b", "c"]);
+  });
+
+  // The waiting takes are found through the lookup, without reading every session
+  it("finds records through a lookup", async () => {
+    // A waiting take and a done one
+    await store.put("sessions", "w", makeSession({ id: "w", feedbackStatus: "pending" }));
+    // (done)
+    await store.put("sessions", "d", makeSession({ id: "d", feedbackStatus: "done" }));
+    // Confirm only the waiting one
+    expect((await store.getAllWhere("sessions", "feedbackStatus", "pending")).map((session) => session.id)).toEqual(["w"]);
+  });
+
+  // A batch saves, changes and removes across collections together; a change returning null removes the record
+  it("applies a batch across collections", async () => {
+    // A session and its readings
+    await store.put("sessions", "s1", makeSession({ id: "s1" }));
+    // (readings)
+    await store.put("signals", "s1", { sessionId: "s1", loudness: [0.2] });
+    // A batch: mark the session, remove its readings, add a challenge
+    await store.batch([
+      // Mark the session from its stored copy
+      { kind: "update", collection: "sessions", key: "s1", change: (stored) => (stored ? { ...stored, trimmedAt: "2026-10-21T00:00:00.000Z" } : undefined) },
+      // Remove the readings
+      { kind: "update", collection: "signals", key: "s1", change: () => null },
+      // Add a challenge
+      { kind: "put", collection: "challenges", key: "c1", value: { id: "c1", weekStart: "2026-10-19", text: "Say hi", completedAt: null } },
+    ]);
+    // Confirm all three happened
+    expect([(await store.get("sessions", "s1"))?.trimmedAt, await store.get("signals", "s1"), (await store.get("challenges", "c1"))?.text]).toEqual(["2026-10-21T00:00:00.000Z", undefined, "Say hi"]);
+  });
+
+  // A batch is all or nothing: one failing change leaves every record as it was
+  it("leaves everything as it was when a change in a batch fails", async () => {
+    // A session
+    await store.put("sessions", "s1", makeSession({ id: "s1", transcript: "before" }));
+    // A batch whose second change fails
+    const attempt = store.batch([
+      // Change the session
+      { kind: "update", collection: "sessions", key: "s1", change: (stored) => (stored ? { ...stored, transcript: "after" } : undefined) },
+      // Fail
+      { kind: "update", collection: "challenges", key: "c1", change: () => { throw new Error("broken change"); } },
+    ]);
+    // Confirm it failed with that reason and the session kept its text
+    expect([await attempt.then(() => "saved", (error: Error) => error.message), (await store.get("sessions", "s1"))?.transcript]).toEqual(["broken change", "before"]);
+  });
 });
 
 // Open a database at a version and give it some collections, the way another app on the same address might have
@@ -183,6 +245,37 @@ describe("IndexedDbStore with an existing database", () => {
     const store = new IndexedDbStore("voicelab-existing-3");
     // Confirm saving is refused with a clear reason
     await expect(store.put("audio", "a1", new Blob(["voice"]))).rejects.toThrow(/belongs to something else/);
+  });
+
+  // A database made before decision 98 gains the readings and layout collections and the waiting-feedback lookup, keeping its records
+  it("adds the new collections and the lookup to an older database", async () => {
+    // A database with the collections the app had before
+    await makeExistingDatabase("voicelab-existing-5", 3, ["sessions", "challenges", "settings", "audio", "talks", "analyses", "summaries", "stories"]);
+    // A waiting session saved in it the old way
+    await new Promise<void>((resolve) => {
+      // Open it as it is
+      const request = indexedDB.open("voicelab-existing-5");
+      // Write one record, then close
+      request.onsuccess = () => {
+        // The write
+        const transaction = request.result.transaction("sessions", "readwrite");
+        // A waiting session
+        transaction.objectStore("sessions").put(makeSession({ id: "old", feedbackStatus: "pending" }), "old");
+        // Close when done
+        transaction.oncomplete = () => {
+          // Release it
+          request.result.close();
+          // Done
+          resolve();
+        };
+      };
+    });
+    // Use it
+    const store = new IndexedDbStore("voicelab-existing-5");
+    // Save readings in the new collection
+    await store.put("signals", "old", { sessionId: "old", pitch: [120] });
+    // Confirm the old record is found through the new lookup, and the readings load back
+    expect([(await store.getAllWhere("sessions", "feedbackStatus", "pending")).map((session) => session.id), (await store.get("signals", "old"))?.pitch]).toEqual([["old"], [120]]);
   });
 
   // A database made before talks existed gains the new collection without losing anything

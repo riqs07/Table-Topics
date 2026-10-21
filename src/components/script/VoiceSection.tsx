@@ -9,7 +9,7 @@ import { thinReadings, usualPitch } from "@/core/pitch";
 // Load the voice report
 import { voiceReport, type VoiceLineKind } from "@/core/voiceFeedback";
 // Load the record type
-import type { SessionRecord } from "@/data/records";
+import type { FullSession } from "@/data/records";
 
 // Most points drawn on the pitch line
 const MOST_POINTS = 240;
@@ -17,7 +17,7 @@ const MOST_POINTS = 240;
 // What the section needs
 interface VoiceSectionProps {
   // The recording
-  session: SessionRecord;
+  session: FullSession;
   // The speaker's usual range from earlier recordings, or null
   usual: number | null;
   // A line the one change above already says, left out here

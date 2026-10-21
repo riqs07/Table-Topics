@@ -7,7 +7,7 @@ import { findPauses } from "@/core/pauses";
 // Load the spacing of loudness readings
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the session record type
-import type { SessionRecord } from "@/data/records";
+import type { FullSession } from "@/data/records";
 // Load the short-take wording and the kinds of result number
 import { countPhrase, fillerPhrase, isShortTake, type ResultKind } from "@/core/resultNumbers";
 
@@ -16,11 +16,11 @@ export interface FocusMeasure {
   // Which result number it is, so the page shows it once (decision 77)
   kind: ResultKind;
   // The number in words for a short take, as a count rather than a rate (decision 77); missing where a rate stays fair
-  short?: (session: SessionRecord) => string | null;
+  short?: (session: FullSession) => string | null;
   // Words that follow the number, like "fillers a minute"
   unit: string;
   // Reads the number from a session, or null when the session cannot give it
-  read: (session: SessionRecord) => number | null;
+  read: (session: FullSession) => number | null;
   // Writes the number for people to read
   format: (value: number) => string;
   // Smallest change worth calling a change
@@ -86,7 +86,7 @@ export function measureFor(focusId: string): FocusMeasure | null {
 }
 
 // The headline sentence on the results: the focus's number, or null when nothing measures it (the focus's bare name read like praise, so the one change leads instead; decision 67)
-export function headlineFor(session: SessionRecord): string | null {
+export function headlineFor(session: FullSession): string | null {
   // Find the focus's number
   const measure = measureFor(session.focus);
   // The number, if there is one
@@ -100,13 +100,13 @@ export function headlineFor(session: SessionRecord): string | null {
 }
 
 // Which result number the headline already gives, so the tiles leave it out (null when there is no headline)
-export function headlineKind(session: SessionRecord): ResultKind | null {
+export function headlineKind(session: FullSession): ResultKind | null {
   // The focus's measure, when it gives a headline
   return headlineFor(session) ? (measureFor(session.focus)?.kind ?? null) : null;
 }
 
 // The headline sentence on the Retry result screen
-export function retryHeadline(retry: SessionRecord, original: SessionRecord): string {
+export function retryHeadline(retry: FullSession, original: FullSession): string {
   // Measure by the focus the first try was made under
   const measure = measureFor(original.focus);
   // Read both numbers

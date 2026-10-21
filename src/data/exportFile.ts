@@ -1,8 +1,8 @@
-// "Export my data": a JSON file of sessions, challenges, settings, saved talks, each take's measures, the weekly summaries and the user's stories that can be imported again (checkpoint C8, decisions 90 and 92)
-// Audio is left out to keep the file small; transcripts, numbers and feedback are all included
+// "Export my data": a JSON file of sessions, their detailed readings, challenges, settings, saved talks, each take's measures, the weekly summaries and the user's stories that can be imported again (checkpoint C8, decisions 90, 92 and 98)
+// Audio is left out to keep the file small; transcripts, numbers and feedback are all included. Since decision 99 the file is written compactly, a part at a time, and read back in batches, with progress shown for big files
 
 // Load the record types
-import { isSessionMode, type AnalysisRecord, type ChallengeRecord, type SessionRecord, type SettingsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
+import { isSessionMode, type AnalysisRecord, type ChallengeRecord, type FullSession, type SessionRecord, type SettingsRecord, type SignalsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
 // Load the story merge rule (decision 92)
 import { mergeStory } from "@/core/storyLibrary";
 // Load the story choice checks
@@ -13,26 +13,32 @@ import { readRubric } from "@/core/analysis/rubric";
 import { withRubric, withServerAnalysis } from "@/core/analysis/analysis";
 // Load the reader for a kept server analysis (decision 91)
 import { readServerAnalysis } from "@/core/analysis/server";
-// Load the repository type
-import type { Repository } from "@/data/repository";
+// Load the rule that splits a session's readings out (decision 98)
+import { splitSignals } from "@/core/sessionSignals";
+// Load the repository type and the stored form of an analysis
+import { storedAnalysis, type Repository } from "@/data/repository";
 // Load the rules for joining a backup with what is already here (decision 86)
 import { mergeRecord, mergeSession, mergeSettings } from "@/core/importMerge";
 
 // Label that identifies a VoiceLab export file
 const FORMAT = "voicelab-export";
-// Version of the file layout; raise it if the layout changes
-const VERSION = 1;
+// Version of the file layout; raise it if the layout changes (2 since decision 98: readings in their own list, analyses without their words; files of version 1 still import)
+const VERSION = 2;
+// Records written or saved in one go before the page gets a turn
+const CHUNK = 200;
 
 // The contents of an export file
 export interface ExportFile {
   // Always "voicelab-export"
   format: typeof FORMAT;
-  // Layout version
-  version: typeof VERSION;
+  // Layout version (a version 1 file read back is turned into this shape)
+  version: number;
   // When the file was made (ISO text)
   exportedAt: string;
-  // Every session, newest first, without audio
-  sessions: SessionRecord[];
+  // Every session, newest first, without audio (a version 1 file's sessions carry their readings inline)
+  sessions: Array<SessionRecord | FullSession>;
+  // Each take's detailed readings that are still kept (missing in files made before decision 98)
+  signals: SignalsRecord[];
   // Every challenge, newest week first
   challenges: ChallengeRecord[];
   // The user's settings
@@ -47,63 +53,177 @@ export interface ExportFile {
   stories: StoryRecord[];
 }
 
-// Gather everything into an export file
-export async function buildExport(repo: Repository, now: Date): Promise<ExportFile> {
-  // Read the sessions and clear their audio pointers, since audio is not in the file
-  const sessions = (await repo.listSessions()).map((session) => ({ ...session, audioKey: null }));
-  // Put the file together
-  return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions, challenges: await repo.listChallenges(), settings: await repo.getSettings(now), talks: await repo.listTalks(), analyses: await repo.listAnalyses(), summaries: await repo.listSummaries(), stories: await repo.listStories() };
+// How far a long export or import has got, for the progress line
+export interface Progress {
+  // Records done
+  done: number;
+  // Records in all
+  total: number;
 }
 
-// Save everything from an export file, joined with what is already here (decision 86): a record already on this device is kept and only gains what it lacks (so recordings stay linked and newer feedback or notes are not lost), and settings and progress are joined; returns how many sessions were new and how many already here
-export async function importExport(repo: Repository, file: ExportFile, now: Date = new Date()): Promise<{ added: number; kept: number }> {
+// What a long export or import can be given: a progress callback and the pause between parts
+export interface ChunkOptions {
+  // Told after each part
+  onProgress?: (progress: Progress) => void;
+  // A pause between parts, so the page stays responsive
+  pause?: () => Promise<void>;
+}
+
+// Give the page a turn between parts
+function nextTurn(): Promise<void> {
+  // After whatever is waiting
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+// Gather everything into an export file
+export async function buildExport(repo: Repository, now: Date): Promise<ExportFile> {
+  // Read the sessions and clear their audio pointers, since audio is not in the file (readings still inline on an older record go to their own list)
+  const parts = (await repo.listSessions()).map((session) => splitSignals({ ...session, audioKey: null }));
+  // The readings kept apart, joined by any still inline
+  const signals = new Map((await repo.store.getAll("signals")).map((record) => [record.sessionId, record]));
+  // (inline ones)
+  for (const part of parts) if (part.signals && !signals.has(part.signals.sessionId)) signals.set(part.signals.sessionId, part.signals);
+  // Put the file together (analyses without their words, which are rebuilt from the transcript)
+  return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions: parts.map((part) => part.session), signals: [...signals.values()], challenges: await repo.listChallenges(), settings: await repo.getSettings(now), talks: await repo.listTalks(), analyses: (await repo.listAnalyses()).map(storedAnalysis), summaries: await repo.listSummaries(), stories: await repo.listStories() };
+}
+
+// The lists of an export file in the order they are written
+const LISTS = ["sessions", "signals", "challenges", "talks", "analyses", "summaries", "stories"] as const;
+
+// Write an export file as compact JSON, a part at a time, so no single step holds the page for long and the whole file never sits in one string (decision 99)
+export async function exportParts(file: ExportFile, options: ChunkOptions = {}): Promise<string[]> {
+  // Records in all
+  const total = LISTS.reduce((sum, list) => sum + file[list].length, 0);
+  // Records written so far
+  let done = 0;
+  // The file's opening: its label, version, time and settings
+  const parts: string[] = [`{"format":${JSON.stringify(file.format)},"version":${file.version},"exportedAt":${JSON.stringify(file.exportedAt)},"settings":${JSON.stringify(file.settings)}`];
+  // Each list in turn
+  for (const list of LISTS) {
+    // Its records
+    const records: ReadonlyArray<unknown> = file[list];
+    // Its opening
+    parts.push(`,${JSON.stringify(list)}:[`);
+    // A chunk at a time
+    for (let start = 0; start < records.length; start += CHUNK) {
+      // The chunk's records, comma-separated, with a comma before it unless it is the first
+      parts.push(`${start > 0 ? "," : ""}${records.slice(start, start + CHUNK).map((record) => JSON.stringify(record)).join(",")}`);
+      // Counted
+      done += Math.min(CHUNK, records.length - start);
+      // Said
+      options.onProgress?.({ done, total });
+      // Let the page breathe
+      await (options.pause ?? nextTurn)();
+    }
+    // Its close
+    parts.push("]");
+  }
+  // The file's close
+  parts.push("}");
+  // The parts, ready to become a file
+  return parts;
+}
+
+// Save a list a chunk at a time, saying how far it got
+async function inChunks<T>(items: ReadonlyArray<T>, save: (chunk: ReadonlyArray<T>) => Promise<void>, progress: { done: number; total: number }, options: ChunkOptions): Promise<void> {
+  // A chunk at a time
+  for (let start = 0; start < items.length; start += CHUNK) {
+    // Saved together
+    await save(items.slice(start, start + CHUNK));
+    // Counted
+    progress.done += Math.min(CHUNK, items.length - start);
+    // Said
+    options.onProgress?.({ ...progress });
+    // Let the page breathe
+    await (options.pause ?? nextTurn)();
+  }
+}
+
+// Save everything from an export file, joined with what is already here (decision 86): a record already on this device is kept and only gains what it lacks (so recordings stay linked and newer feedback or notes are not lost), and settings and progress are joined; returns how many sessions were new and how many already here. Records are read and saved a chunk at a time, each chunk in one transaction (decision 98)
+export async function importExport(repo: Repository, file: ExportFile, now: Date = new Date(), options: ChunkOptions = {}): Promise<{ added: number; kept: number }> {
+  // How far it has got
+  const progress = { done: 0, total: file.sessions.length + file.analyses.length };
   // Sessions new to this device
   let added = 0;
-  // Each session in the file
-  for (const session of file.sessions) {
-    // The copy already here, if any
-    const existing = await repo.getSession(session.id);
-    // Count it
-    if (!existing) added += 1;
-    // Saved, joined with the copy here
-    await repo.saveSession(mergeSession(existing, session));
-  }
+  // The file's readings by session id (a version 1 file has none here: its sessions carry them)
+  const fileSignals = new Map(file.signals.map((record) => [record.sessionId, record]));
+  // Sessions, a chunk at a time
+  await inChunks(file.sessions, async (chunk) => {
+    // The copies already here
+    const existing = await repo.getSessions(chunk.map((session) => session.id));
+    // The readings already here
+    const existingSignals = await repo.store.getMany("signals", chunk.map((session) => session.id));
+    // The sessions to save
+    const sessions: SessionRecord[] = [];
+    // The readings to save
+    const signals: SignalsRecord[] = [];
+    // Each session in the chunk
+    for (const [index, incoming] of chunk.entries()) {
+      // The copy here, if any
+      const here = existing[index];
+      // Count it
+      if (!here) added += 1;
+      // Joined with the copy here, then split from any readings it carries
+      const parts = splitSignals(mergeSession(here, splitSignals(incoming).session));
+      // Saved
+      sessions.push(parts.session);
+      // The file's readings for it: inline (version 1) or in their own list
+      const readings = splitSignals(incoming).signals ?? fileSignals.get(incoming.id) ?? null;
+      // Added only when this device has none for it and has not dropped them on purpose (or keeps them inline on an older record)
+      if (readings && !existingSignals[index] && !parts.signals && !parts.session.trimmedAt) signals.push(readings);
+      // Readings inline on an older record here are kept, in their own record
+      if (parts.signals) signals.push(parts.signals);
+    }
+    // Saved together
+    await repo.saveBatch({ sessions, signals });
+  }, progress, options);
   // The challenges already here, by id
   const challenges = new Map((await repo.listChallenges()).map((challenge) => [challenge.id, challenge]));
-  // Each challenge, joined with the copy here
-  for (const challenge of file.challenges) await repo.saveChallenge(mergeRecord(challenges.get(challenge.id), challenge));
-  // Each talk, joined with the copy here
-  for (const talk of file.talks) await repo.saveTalk(mergeRecord(await repo.getTalk(talk.id), talk));
-  // The settings, joined with those here
-  await repo.saveSettings(mergeSettings(await repo.getSettings(now), file.settings));
-  // Each take's measures: one already here is kept, gaining only a rubric or a deeper analysis it lacks (decisions 90 and 91)
-  for (const analysis of file.analyses) {
-    // The copy here, if any
-    let here = await repo.getAnalysis(analysis.sessionId);
-    // Saved as it is when new
-    if (!here) {
-      // Saved
-      await repo.saveAnalysis(analysis);
-      // Next
-      continue;
-    }
-    // A rubric the copy here lacks
-    const gainsRubric = !here.rubric && analysis.rubric;
-    // (added)
-    if (gainsRubric) here = withRubric(here, analysis.rubric!);
-    // A deeper analysis the copy here lacks, with its status
-    const gainsServer = !here.server && analysis.server;
-    // (added)
-    if (gainsServer) here = withServerAnalysis(here, analysis.server!, analysis.deep ?? { status: "done", note: "", at: analysis.computedAt });
-    // Saved when anything was gained
-    if (gainsRubric || gainsServer) await repo.saveAnalysis(here);
-  }
+  // The talks already here, by id
+  const talks = new Map((await repo.listTalks()).map((talk) => [talk.id, talk]));
   // The summaries already here, by id
   const summaries = new Set((await repo.listSummaries()).map((summary) => summary.id));
-  // Each summary not here yet
-  for (const summary of file.summaries) if (!summaries.has(summary.id)) await repo.saveSummary(summary);
-  // Each story, joined with the copy here: the later title wins (decision 92)
-  for (const story of file.stories) await repo.saveStory(mergeStory(await repo.getStory(story.id), story));
+  // The stories already here, by id
+  const stories = new Map((await repo.listStories()).map((story) => [story.id, story]));
+  // Challenges, talks, summaries and stories joined with the copies here (each list is small), saved together: a challenge or talk gains what it lacks, a summary is added when new, and the later story title wins (decision 92)
+  await repo.saveBatch({ challenges: file.challenges.map((challenge) => mergeRecord(challenges.get(challenge.id), challenge)), talks: file.talks.map((talk) => mergeRecord(talks.get(talk.id), talk)), summaries: file.summaries.filter((summary) => !summaries.has(summary.id)), stories: file.stories.map((story) => mergeStory(stories.get(story.id), story)) });
+  // The settings, joined with those here
+  await repo.saveSettings(mergeSettings(await repo.getSettings(now), file.settings));
+  // Each take's measures, a chunk at a time: one already here is kept, gaining only a rubric or a deeper analysis it lacks (decisions 90 and 91)
+  await inChunks(file.analyses, async (chunk) => {
+    // The copies here
+    const existing = await repo.getAnalyses(chunk.map((analysis) => analysis.sessionId));
+    // The analyses to save
+    const analyses: AnalysisRecord[] = [];
+    // Each in the chunk
+    for (const [index, analysis] of chunk.entries()) {
+      // The copy here, if any
+      const stored = existing[index];
+      // Saved as it is when new
+      if (!stored) {
+        // Saved
+        analyses.push(analysis);
+        // Next
+        continue;
+      }
+      // A rubric the copy here lacks
+      const gainsRubric = !stored.rubric && analysis.rubric;
+      // A deeper analysis the copy here lacks, with its status
+      const gainsServer = !stored.server && analysis.server;
+      // Nothing gained: left as it is
+      if (!gainsRubric && !gainsServer) continue;
+      // The copy here, with its words rebuilt while the take keeps them, so its measures are worked out the same way
+      let here = (await repo.getWorkingAnalysis(analysis.sessionId)) ?? stored;
+      // (rubric added)
+      if (gainsRubric) here = withRubric(here, analysis.rubric!);
+      // (deeper analysis added)
+      if (gainsServer) here = withServerAnalysis(here, analysis.server!, analysis.deep ?? { status: "done", note: "", at: analysis.computedAt });
+      // Saved
+      analyses.push(here);
+    }
+    // Saved together
+    await repo.saveBatch({ analyses });
+  }, progress, options);
   // Report the counts to show the user
   return { added, kept: file.sessions.length - added };
 }
@@ -185,10 +305,10 @@ function isAnalysis(value: unknown): value is AnalysisRecord {
   if (!isObject(value) || !isText(value.sessionId) || !isNumber(value.schemaVersion) || !isText(value.computedAt) || !isObject(value.engines) || !isObject(value.raw)) return false;
   // Every measure: a number or nothing, a unit, a known source and an engine
   const metricsOk = isObject(value.metrics) && Object.values(value.metrics).every((metric) => isObject(metric) && (metric.value === null || isNumber(metric.value)) && isText(metric.unit) && ["device", "transcript", "voice", "rubric"].includes(metric.source as string) && isText(metric.engine));
-  // The raw features' lists and counts
+  // The raw features' lists and counts (the words are missing in files of version 2, decision 98)
   const raw = value.raw;
   // (checked)
-  const rawOk = Array.isArray(raw.timedWords) && Array.isArray(raw.pauses) && isObject(raw.contentWords) && isNumber(raw.durationSec);
+  const rawOk = (raw.timedWords === undefined || Array.isArray(raw.timedWords)) && Array.isArray(raw.pauses) && isObject(raw.contentWords) && isNumber(raw.durationSec);
   // A rubric, when present, must read cleanly
   const rubricOk = value.rubric === undefined || readRubric(value.rubric, value.computedAt) !== null;
   // The server's analysis, when present, must read cleanly (decision 91)
@@ -199,6 +319,15 @@ function isAnalysis(value: unknown): value is AnalysisRecord {
   const deepOk = value.deep === undefined || (isObject(value.deep) && ["running", "done", "partial", "failed", "skipped"].includes(value.deep.status as string) && isText(value.deep.note) && isText(value.deep.at));
   // All of them
   return metricsOk && rawOk && rubricOk && serverOk && supersededOk && deepOk;
+}
+
+// Check that a value is a list of numbers, or of numbers and nulls
+const isReadings = (value: unknown, nullable: boolean) => Array.isArray(value) && value.every((item) => isNumber(item) || (nullable && item === null));
+
+// Check that a value has the shape of one take's detailed readings (decision 98)
+function isSignals(value: unknown): value is SignalsRecord {
+  // Its session's id, and each reading list when present
+  return isObject(value) && isText(value.sessionId) && (value.loudness === undefined || isReadings(value.loudness, false)) && (value.pitch === undefined || isReadings(value.pitch, true)) && (value.spokenTimes === undefined || isReadings(value.spokenTimes, false)) && (value.scriptTimes === undefined || isReadings(value.scriptTimes, true));
 }
 
 // Check that a value has the shape of a weekly summary
@@ -235,14 +364,14 @@ export function parseExport(text: string): ExportFile {
   if (!isObject(data) || data.format !== FORMAT) throw new Error(NOT_AN_EXPORT);
   // Must not be from a newer app version
   if (isNumber(data.version) && data.version > VERSION) throw new Error(TOO_NEW);
-  // Must be this version (anything else is damaged)
-  if (data.version !== VERSION) throw new Error(DAMAGED);
+  // Must be this version or the one before it (anything else is damaged)
+  if (data.version !== VERSION && data.version !== 1) throw new Error(DAMAGED);
   // Every part must have the right shape
-  const valid = isText(data.exportedAt) && Array.isArray(data.sessions) && data.sessions.every(isSession) && Array.isArray(data.challenges) && data.challenges.every(isChallenge) && isSettings(data.settings) && (data.talks === undefined || (Array.isArray(data.talks) && data.talks.every(isTalk))) && (data.analyses === undefined || (Array.isArray(data.analyses) && data.analyses.every(isAnalysis))) && (data.summaries === undefined || (Array.isArray(data.summaries) && data.summaries.every(isSummary))) && (data.stories === undefined || (Array.isArray(data.stories) && data.stories.every(isStory)));
+  const valid = isText(data.exportedAt) && Array.isArray(data.sessions) && data.sessions.every(isSession) && Array.isArray(data.challenges) && data.challenges.every(isChallenge) && isSettings(data.settings) && (data.talks === undefined || (Array.isArray(data.talks) && data.talks.every(isTalk))) && (data.analyses === undefined || (Array.isArray(data.analyses) && data.analyses.every(isAnalysis))) && (data.summaries === undefined || (Array.isArray(data.summaries) && data.summaries.every(isSummary))) && (data.stories === undefined || (Array.isArray(data.stories) && data.stories.every(isStory))) && (data.signals === undefined || (Array.isArray(data.signals) && data.signals.every(isSignals)));
   // Refuse a damaged file
   if (!valid) throw new Error(DAMAGED);
   // The file has been checked, so it can be used as an export
   const file = data as unknown as ExportFile;
   // Sessions from before warm-ups existed are full sessions
-  return { ...file, talks: file.talks ?? [], analyses: file.analyses ?? [], summaries: file.summaries ?? [], stories: file.stories ?? [], sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
+  return { ...file, signals: file.signals ?? [], talks: file.talks ?? [], analyses: file.analyses ?? [], summaries: file.summaries ?? [], stories: file.stories ?? [], sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
 }

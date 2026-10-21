@@ -42,7 +42,7 @@ flowchart LR
 
 ## Privacy boundaries
 
-- Saved recordings stay on the device.
+- Saved recordings stay on the device, and only for a while: the last 14 days (7 or 30 if chosen), plus starred takes, marker takes and the very first recording. Detailed readings (pitch, loudness, word times) are kept 30 days on the same terms; transcripts, numbers, feedback and notes until the user deletes them (decision 98).
 - Live transcription uses the browser's speech recognition. In most browsers this sends audio to the browser maker's servers (Google in Chrome, Apple in Safari, Microsoft in Edge), not ours. The user is told before the microphone is first used, in Settings and on the conversation pages (decision 97). Chrome 139 and later can recognise on the device if a page asks (`processLocally`, with a one-time language download); the app does not ask yet.
 - If the Whisper fallback is used, audio goes to OpenAI through our server route. The user is told.
 - Only transcript text is sent to the AI coach, with the measured numbers. The user's own notes after listening back are sent too only if they switch on "Let the coach read my notes" in Settings (off by default; decision 31).
@@ -92,7 +92,7 @@ Off unless "Send my recordings for deeper analysis" is on. Right after a take is
 
 ## Getting feedback to the device
 
-A saved session starts with feedback `pending`. `src/data/feedbackClient.ts` sends it to the feedback route with the passphrase (kept in this browser's local storage, never in exports) and saves the reply. A background sender (`src/components/FeedbackSync.tsx`) sends waiting sessions oldest first when the app opens and when the device comes back online, stopping at the first problem that would block the rest (no passphrase, server not set up, offline or rate limited). A decline or invalid data marks the session `failed` so it is not sent again. Settings shows how many sessions are waiting and can send them on request.
+A saved session starts with feedback `pending`. `src/data/feedbackClient.ts` sends it to the feedback route with the passphrase (kept in this browser's local storage, never in exports) and saves the reply. A background component (`src/components/FeedbackSync.tsx`) waits until the page is idle, then loads `src/data/backgroundWork.ts` (so the coach request, zod and the analysis engine are not in every page's download; decision 99), which moves older records to the current layout (decision 98), tidies old recordings and readings in small batches (`src/data/housekeeping.ts`), and sends waiting sessions oldest first, found through the database's `feedbackStatus` lookup rather than a read of every session; it sends again when the device comes back online, stopping at the first problem that would block the rest (no passphrase, server not set up, offline or rate limited). A decline or invalid data marks the session `failed` so it is not sent again. Settings shows how many sessions are waiting and can send them on request.
 
 ## Installing and working offline
 

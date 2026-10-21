@@ -5,7 +5,9 @@ import { DURATION_HEADER, PASSPHRASE_HEADER } from "@/config/headers";
 // Load the upload cap shared with the server
 import { ANALYSE_MAX_BYTES } from "@/core/requestLimits";
 // Load the analysis builders
-import { buildAnalysis, isAnalysed, withDeepStatus, withServerAnalysis } from "@/core/analysis/analysis";
+import { isAnalysed, withDeepStatus, withServerAnalysis } from "@/core/analysis/analysis";
+// Load the analysis to add to, with its words rebuilt while the take keeps them (decision 98)
+import { workingAnalysis } from "@/data/analyses";
 // Load the reader for the server's reply
 import { readServerAnalysis } from "@/core/analysis/server";
 // Load the outcomes and their notes
@@ -41,7 +43,7 @@ async function saveStatus(repository: Repository, session: SessionRecord, outcom
   // The status
   const status = deepStatus(outcome, now.toISOString());
   // The latest analysis, or a fresh one
-  const analysis = (await repository.getAnalysis(session.id)) ?? buildAnalysis(session, now);
+  const analysis = await workingAnalysis(repository, session, now);
   // Saved with it
   await repository.saveAnalysis(withDeepStatus(analysis, status));
   // Handed back
@@ -89,7 +91,7 @@ export async function requestDeepAnalysis(repository: Repository, session: Sessi
     // The outcome
     const status = deepStatus(outcomeOfParts({ transcript: server.transcript !== null, voice: server.voice !== null, failures: body.failures ?? {} }), now.toISOString());
     // The latest analysis, read again so nothing saved meanwhile is lost
-    const latest: AnalysisRecord = (await repository.getAnalysis(session.id)) ?? buildAnalysis(session, now);
+    const latest: AnalysisRecord = await workingAnalysis(repository, session, now);
     // Saved with the server's measures merged in
     await repository.saveAnalysis(withServerAnalysis(latest, server, status));
     // Handed back

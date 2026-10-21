@@ -11,7 +11,9 @@ import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the baseline rule
 import { shouldBeBaseline } from "@/core/progress";
 // Load the record types
-import type { SessionMode, SessionRecord, StoryTake } from "@/data/records";
+import type { FullSession, SessionMode, StoryTake } from "@/data/records";
+// Load the pitch range rule, to save the take's range with it (decision 98)
+import { rangeOf } from "@/core/voiceFeedback";
 // Load the story record maker (decision 92)
 import { ensureStory } from "@/data/stories";
 // Load the small-talk unit lookup (a follow-up question or a reply to a story is too short to listen back to first)
@@ -57,13 +59,15 @@ export interface FinishedRecording {
   outline?: Outline;
   // For a told story: its shape, focus and length (decision 92)
   story?: StoryTake;
+  // A marker take, kept whole however old (the weekly check-in sets it; decision 98)
+  marker?: boolean;
 }
 
 // Round seconds to a tenth
 const tenth = (seconds: number) => Math.round(seconds * 10) / 10;
 
-// Save the recording and hand back the new session (now is when recording stopped)
-export async function saveRecording(repository: Repository, recording: FinishedRecording, now: Date): Promise<SessionRecord> {
+// Save the recording and hand back the new session with its readings (now is when recording stopped)
+export async function saveRecording(repository: Repository, recording: FinishedRecording, now: Date): Promise<FullSession> {
   // Read the existing sessions, for the baseline rule
   const existing = await repository.listSessions();
   // Read the settings, for the week's focus
@@ -73,7 +77,7 @@ export async function saveRecording(repository: Repository, recording: FinishedR
   // The factor for the loudness readings: one for the whole take when the browser did not level them, otherwise none
   const scale = recording.loudness && recording.autoGain === false ? levelScale(recording.loudness) : 1;
   // Build the session record
-  const session: SessionRecord = {
+  const session: FullSession = {
     // Identity
     id: recording.id,
     // When it started: when it stopped, minus its length
@@ -115,13 +119,17 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.story ? { story: recording.story } : {}),
     // Keep the section of a section rehearsal
     ...(recording.sectionIndex !== undefined && recording.sectionIndex !== null ? { sectionIndex: recording.sectionIndex } : {}),
+    // Mark a marker take (decision 98)
+    ...(recording.marker ? { marker: true } : {}),
   };
+  // The take's pitch range, kept on the session so later takes' "usual range" needs no readings (decision 98)
+  const range = rangeOf(session);
+  // Added when there was enough voice
+  if (range !== null) session.pitchRange = range;
   // Save the audio first, so the session never points at missing audio
   await repository.saveAudio(recording.id, recording.audio);
-  // Save the session
+  // Save the session (its readings are kept apart; older recordings lose their audio later, when the app is idle, never while saving; decision 98)
   await repository.saveSession(session);
-  // Remove audio beyond the limit
-  await repository.pruneAudio();
   // A told story gets its library record the first time its seed is told (decision 92; a failure here never stops the take being saved, and the library falls back to the starting title)
   if (session.mode === "story") await ensureStory(repository, session.promptId, now).catch((error: unknown) => console.warn(`The story could not be added to your stories: ${error instanceof Error ? error.message : String(error)}`));
   // Work out and save its measures (decision 90; a failure here never stops the take being saved)

@@ -67,7 +67,7 @@ Once a week: complete one **real-world challenge** and mark it done.
 | Weekly focus (one skill at a time) | Prevents overwhelm; keeps feedback consistent |
 | Weekly real-world challenge | Bridges practice to real speaking moments (speak first in a meeting, give a toast, visit a speaking club) |
 | Showing-up streak (counts any completed session) | Rewards practice, not performance |
-| Session history with transcript, feedback, and the recording to play back | Lets the user review, hear themselves, and see patterns |
+| Session history with transcript, feedback, and the recording to play back (recent takes, starred takes and markers; decision 98) | Lets the user review, hear themselves, and see patterns |
 | Recordings and history stay on the device by default | Protects privacy for a vulnerable activity. The live transcript comes from the browser's speech recognition, which in most browsers sends the audio to Apple or Google; the app says so plainly before the microphone is first used, in Settings and on the conversation pages, and promises only that VoiceLab itself keeps recordings on the device (decision 97). Deeper analysis (decision 91) sends recordings to AssemblyAI and the app's own voice worker only when the user switches it on; neither keeps them |
 
 ## 5. What we measure (and what we do not)
@@ -144,7 +144,7 @@ In v1 the focus changes every 7 calendar days, cycling through 1 to 5 and then s
 ## 10. Open questions
 
 1. ~~Confirm the ICP assumption in section 2.~~ Confirmed at C2, then changed to public speakers on 2026-10-15 (decision 22).
-2. How long do we keep audio locally? (Proposed: last 30 sessions.)
+2. How long do we keep audio locally? (Answered 2026-10-21, decision 98: the last 14 days, with 7 or 30 to choose in Settings, plus starred takes, marker takes such as the weekly check-in's, and the very first recording. Detailed readings are kept 30 days on the same terms; words, numbers and feedback always.)
 3. Does the retry flow feel like progress or like repetition? (Test with real users early.)
 4. Is a typed fallback needed for people practicing where they cannot speak aloud?
 5. Privacy promise: what can we honestly promise, given that browser speech recognition may send audio to the browser maker? (Decided at C5; see risks.md R3.)

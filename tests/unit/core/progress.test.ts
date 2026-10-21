@@ -78,6 +78,22 @@ describe("historyRows", () => {
     // Confirm the ids, retry pairing, and order
     expect(rows.map((row) => [row.session.id, row.retry?.id ?? null])).toEqual([["s4", null], ["s2", "s3"], ["s1", null]]);
   });
+
+  // With several retries, the latest is shown; and a long history is grouped quickly (it sorted every session again for each row: about five seconds at 5,000 on a slowed phone; decision 99)
+  it("pairs the latest retry, and handles thousands of sessions quickly", () => {
+    // A first try with two retries, the later one second
+    const tries = [makeSession({ id: "a", createdAt: oct(1) }), makeSession({ id: "a1", retryOf: "a", createdAt: oct(2) }), makeSession({ id: "a2", retryOf: "a", createdAt: oct(3) })];
+    // 5,000 sessions, every fifth a retry of the one before
+    const many = Array.from({ length: 5000 }, (_, index) => makeSession({ id: `m${index}`, createdAt: new Date(Date.UTC(2023, 0, 1) + index * 3_600_000).toISOString(), retryOf: index % 5 === 4 ? `m${index - 1}` : null }));
+    // Timed
+    const started = performance.now();
+    // Grouped
+    const rows = historyRows(many);
+    // How long it took
+    const took = performance.now() - started;
+    // Confirm the latest retry, the row count, and well under a second (the old way took tens of seconds here)
+    expect([historyRows(tries)[0]?.retry?.id, rows.length, took < 1000]).toEqual(["a2", 4000, true]);
+  });
 });
 
 // A warm-up session on the 10th, between full sessions

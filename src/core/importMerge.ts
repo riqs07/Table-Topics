@@ -29,8 +29,12 @@ export function mergeSession(existing: SessionRecord | undefined, incoming: Sess
   const merged = fillGaps(existing, incoming);
   // Feedback only in the file: its status comes with it
   const feedbackStatus = existing.feedback === null && incoming.feedback !== null ? incoming.feedbackStatus : existing.feedbackStatus;
-  // The recording stays linked as it was
-  return { ...merged, feedbackStatus, audioKey: existing.audioKey };
+  // Whether its readings were dropped stays this device's own fact: the file's mark is taken off (decision 98)
+  const { trimmedAt: fileTrimmed, ...rest } = merged;
+  // (the file's mark is not used)
+  void fileTrimmed;
+  // The recording stays linked as it was, and this device's mark is kept when it has one
+  return { ...rest, feedbackStatus, audioKey: existing.audioKey, ...(existing.trimmedAt ? { trimmedAt: existing.trimmedAt } : {}) };
 }
 
 // A challenge or talk from the file joined with the one already here, if any (one marked done stays done)

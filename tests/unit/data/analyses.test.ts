@@ -115,6 +115,57 @@ describe("analyses", () => {
   });
 });
 
+// Group the checks about analyses of takes whose readings were dropped (decision 98)
+describe("analyses of trimmed takes", () => {
+  // A change of definitions skips takes whose readings are gone: they keep their old values
+  it("keeps a trimmed take's values when the definitions change", async () => {
+    // A take with readings, analysed
+    const repository = empty();
+    // (the take)
+    const session = makeSession({ id: "t", mode: "talk", transcript: "so I think um we should start", spokenTimes: [0.1, 0.4, 0.8, 1.1, 1.5, 1.8, 2.1], loudness: Array.from({ length: 40 }, (_, index) => (index % 9 === 0 ? 0.01 : 0.2)) });
+    // Saved and analysed
+    await repository.saveSession(session);
+    // (analysed)
+    await analyseSession(repository, session, NOW);
+    // Its values
+    const before = (await repository.getAnalysis("t"))!;
+    // Its readings dropped and the take marked, then the definitions change
+    await repository.store.delete("signals", "t");
+    // (marked)
+    await repository.saveSession({ ...(await repository.getSession("t"))!, trimmedAt: NOW.toISOString() });
+    // (made old)
+    await repository.saveAnalysis({ ...before, schemaVersion: 0 });
+    // Backfilled
+    const redone = await backfillAnalyses(repository, NOW, { pause: async () => {} });
+    // Confirm nothing was redone and the values are as they were
+    expect([redone, (await repository.getAnalysis("t"))?.metrics]).toEqual([0, before.metrics]);
+  });
+
+  // A rubric arriving for a trimmed take keeps the phone's values
+  it("adds a rubric to a trimmed take without changing its phone values", async () => {
+    // A take analysed with its readings
+    const repository = empty();
+    // (the take)
+    const session = makeSession({ id: "r", mode: "talk", spokenTimes: [0.2, 0.6, 1.0, 1.4, 1.9], loudness: Array.from({ length: 30 }, () => 0.2) });
+    // Saved and analysed
+    await repository.saveSession(session);
+    // (analysed)
+    await analyseSession(repository, session, NOW);
+    // Its values
+    const before = (await repository.getAnalysis("r"))!;
+    // Its readings dropped
+    await repository.store.delete("signals", "r");
+    // (marked)
+    await repository.saveSession({ ...(await repository.getSession("r"))!, trimmedAt: NOW.toISOString() });
+    // The rubric arrives
+    await saveRubric(repository, (await repository.getSession("r"))!, { ...RUBRIC, at: NOW.toISOString() }, NOW);
+    // The phone's values
+    const phone = (metrics: typeof before.metrics) => Object.fromEntries(Object.entries(metrics).filter(([, metric]) => metric.source === "device"));
+    // Confirm they are unchanged and the rubric is in
+    expect([phone((await repository.getAnalysis("r"))!.metrics), (await repository.getAnalysis("r"))?.rubric?.model]).toEqual([phone(before.metrics), RUBRIC.model]);
+  });
+});
+
 // Group the checks about the coach's rubric arriving with feedback
 describe("rubric with feedback", () => {
   // The rubric goes into the analysis; the visible feedback is saved as before

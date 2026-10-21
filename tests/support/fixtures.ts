@@ -1,10 +1,10 @@
 // Sample records for tests, so each test only spells out what it cares about
 
 // Load the record types
-import type { SessionRecord, TalkRecord } from "@/data/records";
+import type { FullSession, TalkRecord } from "@/data/records";
 
-// Build a complete session record, overriding any fields a test needs
-export function makeSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
+// Build a complete session record (with any readings a test gives), overriding any fields a test needs
+export function makeSession(overrides: Partial<FullSession> = {}): FullSession {
   // Start from sensible defaults and apply the overrides
   return {
     // Unique id

@@ -89,11 +89,17 @@ export interface HistoryRow {
   retry: SessionRecord | null;
 }
 
-// Group each first try with its retry, newest first
+// Group each first try with its retry, newest first (in one pass: sorting every session again for each row took about five seconds at 5,000 sessions; decision 99)
 export function historyRows(sessions: ReadonlyArray<SessionRecord>): HistoryRow[] {
-  // Find each first try's retry (the latest one, if there were several)
-  return oldestFirst(sessions)
+  // Every session, oldest first, sorted once
+  const ordered = oldestFirst(sessions);
+  // Each first try's latest retry, by the first try's id (a later retry replaces an earlier one)
+  const latestRetry = new Map<string, SessionRecord>();
+  // Noted in time order
+  for (const session of ordered) if (session.retryOf !== null) latestRetry.set(session.retryOf, session);
+  // The first tries, newest first, each with its latest retry
+  return ordered
     .filter((session) => session.retryOf === null)
     .reverse()
-    .map((session) => ({ session, retry: oldestFirst(sessions).filter((other) => other.retryOf === session.id).at(-1) ?? null }));
+    .map((session) => ({ session, retry: latestRetry.get(session.id) ?? null }));
 }

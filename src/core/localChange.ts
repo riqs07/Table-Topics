@@ -17,7 +17,7 @@ import { smallTalkChange } from "@/core/smallTalk";
 // Load the story change, open or guided (decisions 92 and 93)
 import { tellingChange } from "@/core/guidedStory";
 // Load the record type
-import type { SessionRecord } from "@/data/records";
+import type { FullSession } from "@/data/records";
 
 // One change and the cue to carry into the next try
 export interface LocalChange {
@@ -38,7 +38,7 @@ const VOICE_CUES: Partial<Record<VoiceLineKind, string>> = { ends: "End each sta
 const PAUSES_EXPECTED_AFTER = 30;
 
 // Pick the biggest gap in the numbers, in order: timing, pause words, pace, trailing off, pauses, then the voice (endings, a flat pitch, volume dropping at the end); otherwise the week's focus. Pause words are skipped when hidden, and slow pace and fading phrases when fluency is not judged ("I stammer"; decision 79)
-export function localChange(session: SessionRecord, options: { pauseWords?: boolean; fluency?: boolean } = {}): LocalChange {
+export function localChange(session: FullSession, options: { pauseWords?: boolean; fluency?: boolean } = {}): LocalChange {
   // A small-talk answer has its own order: dead end, length, feeling, hand-back
   if (session.mode === "smalltalk") return smallTalkChange(session);
   // A told story: the timing against its length first when far off, then the story checks (decision 92)

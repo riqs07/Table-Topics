@@ -550,8 +550,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     if (!retryOf) return;
     // Ignore the result if the screen closes first
     let cancelled = false;
-    // Read the first try
-    repo.getSession(retryOf).then((original) => {
+    // Read the first try with its readings, so the cue picked from its numbers is the same as on its page (decision 98)
+    repo.getFullSession(retryOf).then((original) => {
       // Stop if the screen closed
       if (cancelled) return;
       // Keep its cue: the coach's, or else the one picked from its numbers

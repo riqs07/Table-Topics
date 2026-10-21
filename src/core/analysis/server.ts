@@ -107,8 +107,8 @@ export function serverFillerCount(transcript: ServerTranscript, raw: AnalysisRaw
   if (SCRIPTED.includes(raw.mode)) {
     // Sounds the service heard
     const heard = transcript.words.filter(isSound).length;
-    // Sounds in the phone's transcript
-    const phone = raw.timedWords.filter((word) => word.w !== "" && isHesitationSound(word.w)).length;
+    // Sounds in the phone's transcript (none counted when the take's words were dropped with its readings, decision 98; only a backup brought in later can add a server part to such a take)
+    const phone = (raw.timedWords ?? []).filter((word) => word.w !== "" && isHesitationSound(word.w)).length;
     // The phone's count (from its saved rate) and the difference
     return Math.round((raw.fillersPerMinute * raw.durationSec) / 60) + Math.max(0, heard - phone);
   }

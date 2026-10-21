@@ -46,7 +46,7 @@ describe("SessionScreen", () => {
   // A store that cannot be read is explained, instead of an empty page forever
   it("explains when the session cannot be loaded", async () => {
     // A repository whose sessions cannot be read
-    const repository = { ...createRepository(new MemoryStore()), getSession: async () => { throw new Error("The database connection is closing."); } };
+    const repository = { ...createRepository(new MemoryStore()), getSession: async () => { throw new Error("The database connection is closing."); }, getFullSession: async () => { throw new Error("The database connection is closing."); } };
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
     // The reason, and the way back
@@ -834,5 +834,51 @@ describe("SessionScreen", () => {
     const card = await screen.findByRole("region", { name: "Your points" });
     // Confirm the count, each point's state, the timing against one minute, and the retry address
     expect([!!within(card).getByText(/1 of 2 heard/), within(card).getAllByRole("listitem").map((item) => item.textContent), !!screen.getByText(/1:00/), screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, ["It clears my headHeard", "2I met new friendsNot heard"], true, "/session?mode=outline&prompt=outline&retryOf=o1"]);
+  });
+
+  // A take whose detailed readings were dropped says so where the charts would be, and the rest of the page is whole (decision 98)
+  it("shows an older take whose readings were dropped", async () => {
+    // A take marked as trimmed: no readings, but its words, numbers and feedback
+    const session = makeSession({ id: "s1", trimmedAt: "2026-10-01T00:00:00.000Z", fillersPerMinute: 2, wordsPerMinute: 140, feedback: FEEDBACK, feedbackStatus: "done" });
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+    // Confirm the note, the feedback, and no voice section
+    expect([!!(await screen.findByText("Detailed charts aren’t kept for older takes. The words, numbers and feedback are all here.")), !!screen.getByText(FEEDBACK.keep), screen.queryByRole("region", { name: "Your voice" })]).toEqual([true, true, null]);
+  });
+
+  // A take's readings, kept apart from the session, still draw the voice section (decision 98)
+  it("draws charts from readings kept apart", async () => {
+    // A take saved through the repository, which keeps its readings apart
+    const repository = await repositoryWith(makeSession({ id: "s1", ...voiceReadings("rising"), durationSec: 13, feedback: FEEDBACK, feedbackStatus: "done" }));
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // Confirm the pitch line is drawn
+    expect(!!within(await screen.findByRole("region", { name: "Your voice" })).getByRole("img", { name: /Your pitch across the take/ })).toBe(true);
+  });
+
+  // The star: a plain toggle button whose state is said in words and to screen readers, saved on the take
+  it("stars a take and says what a star keeps", async () => {
+    // A take
+    const repository = await repositoryWith(makeSession({ id: "s1", feedback: FEEDBACK, feedbackStatus: "done" }));
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // The toggle
+    const star = await screen.findByRole("button", { name: "Star this take" });
+    // Pressed
+    await userEvent.click(star);
+    // Confirm it is pressed, says so, and was saved
+    await waitFor(async () => expect([screen.getByRole("button", { name: "Starred" }).getAttribute("aria-pressed"), (await repository.getSession("s1"))?.starred, !!screen.getByText(/keeps its recording and charts for good/)]).toEqual(["true", true, true]));
+  });
+
+  // A star that cannot be saved says so, and stays off
+  it("explains when the star cannot be saved", async () => {
+    // A repository that refuses the star
+    const repository = { ...(await repositoryWith(makeSession({ id: "s1", feedback: FEEDBACK, feedbackStatus: "done" }))), setStarred: async () => { throw new Error("QuotaExceededError"); } };
+    // Draw the screen
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // Pressed
+    await userEvent.click(await screen.findByRole("button", { name: "Star this take" }));
+    // Confirm the reason and the unpressed toggle
+    expect([(await screen.findByRole("alert")).textContent?.includes("QuotaExceededError"), screen.getByRole("button", { name: "Star this take" }).getAttribute("aria-pressed")]).toEqual([true, "false"]);
   });
 });

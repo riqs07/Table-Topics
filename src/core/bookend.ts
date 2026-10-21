@@ -11,7 +11,7 @@ import { fadingEnds } from "@/core/pauses";
 // Load the spacing of loudness readings
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the session record type
-import type { SessionRecord } from "@/data/records";
+import type { FullSession } from "@/data/records";
 
 // The two sentences shown after a drill
 export interface BookendResult {
@@ -59,7 +59,7 @@ function closingFillers(transcript: string): string {
 }
 
 // The result of an opening or closing drill
-export function bookendResult(part: BookendPart, session: SessionRecord, options: { pauseWords?: boolean } = {}): BookendResult {
+export function bookendResult(part: BookendPart, session: FullSession, options: { pauseWords?: boolean } = {}): BookendResult {
   // Loudness readings, if recorded
   const loudness = session.loudness ?? [];
   // Whether pause words may be named (decision 79)

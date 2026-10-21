@@ -41,7 +41,7 @@ import { playbackGain } from "@/core/voiceLevels";
 import { PauseLengths } from "@/components/script/PauseLengths";
 // Load the voice section and the usual range (decision 81)
 import { VoiceSection } from "@/components/script/VoiceSection";
-import { rangeOf, usualRange } from "@/core/voiceFeedback";
+import { rangeOf, usualRangeBefore } from "@/core/voiceFeedback";
 // Load the saved voice drill's view (decision 80)
 import { VoiceSessionView } from "@/components/screens/VoiceSessionView";
 // Load the saved conversation view (decision 83)
@@ -92,7 +92,9 @@ import { lessonResult } from "@/core/lessonCheck";
 // Load the openings and closings drill check
 import { bookendResult } from "@/core/bookend";
 // Load the session record type
-import type { SessionRecord, TalkRecord } from "@/data/records";
+import type { FullSession, TalkRecord } from "@/data/records";
+// Load the star toggle (decision 98)
+import { StarToggle } from "@/components/script/StarToggle";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the feedback requester and its outcomes
@@ -144,12 +146,12 @@ const FEEDBACK_NOTES: Record<FeedbackOutcome | "asking", string> = {
 
 // What was loaded: the session (or null if missing) and, for a retry, its first try
 interface Loaded {
-  // The session, or null if it is not on this device
-  session: SessionRecord | null;
-  // The first try, when the session is a retry
-  original: SessionRecord | null;
+  // The session with its detailed readings, or null if it is not on this device
+  session: FullSession | null;
+  // The first try with its readings, when the session is a retry
+  original: FullSession | null;
   // An earlier day's recording of the same prompt, with both practice day numbers, for "then and now"
-  earlier: { then: SessionRecord; thenDay: number; nowDay: number } | null;
+  earlier: { then: FullSession; thenDay: number; nowDay: number } | null;
   // For a rehearsal, the talk it rehearsed (null if deleted or not a rehearsal)
   talk: TalkRecord | null;
   // For a Q&A answer, which of its session's questions it answered (null if that question has since been replaced)
@@ -191,7 +193,7 @@ function Transcript({ text, times = null, onPlay = null, marks = true }: { text:
 }
 
 // A player for a session's saved audio (draws nothing if the audio is gone)
-function Playback({ repo, session, onAudio }: { repo: Repository; session: SessionRecord; onAudio?: (element: HTMLAudioElement | null) => void }) {
+function Playback({ repo, session, onAudio }: { repo: Repository; session: FullSession; onAudio?: (element: HTMLAudioElement | null) => void }) {
   // The audio's address
   const url = useAudioUrl(repo, session.audioKey).url;
   // Nothing to play
@@ -210,13 +212,13 @@ function Playback({ repo, session, onAudio }: { repo: Repository; session: Sessi
 }
 
 // One line of numbers for a take, such as "Day 1: 4.2 fillers a minute, 172 words a minute."
-function takeNumbers(day: number, session: SessionRecord, pauseWords = true): string {
+function takeNumbers(day: number, session: FullSession, pauseWords = true): string {
   // Day, filler rate, and speed
   return `Day ${day}: ${pauseWords ? `${fillerPhrase(session)}, ` : ""}${Math.round(session.wordsPerMinute)} words a minute.`;
 }
 
 // Then and now: an earlier day's recording of the same prompt beside this one, with a button to hear them in turn
-function ThenAndNow({ repo, then, now, thenDay, nowDay, onNowAudio, pauseWords = true }: { repo: Repository; then: SessionRecord; now: SessionRecord; thenDay: number; nowDay: number; onNowAudio?: (element: HTMLAudioElement | null) => void; pauseWords?: boolean }) {
+function ThenAndNow({ repo, then, now, thenDay, nowDay, onNowAudio, pauseWords = true }: { repo: Repository; then: FullSession; now: FullSession; thenDay: number; nowDay: number; onNowAudio?: (element: HTMLAudioElement | null) => void; pauseWords?: boolean }) {
   // The earlier audio's address
   const thenUrl = useAudioUrl(repo, then.audioKey).url;
   // This session's audio address
@@ -295,7 +297,7 @@ function MarkedPassage({ check }: { check: ReadingCheck }) {
 const TILE_COLUMNS: Readonly<Record<number, string>> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-2 min-[400px]:grid-cols-4" };
 
 // The numbers as tiles: fillers, speed, length, and pauses when measured, each counting up into place (decision 69); each number once, counts on a short take, and the fillers tile shows where they were (decision 77)
-function NumbersRow({ session, pauseCount, leaveOut, onShowFillers }: { session: SessionRecord; pauseCount: number | null; leaveOut: ReadonlyArray<ResultKind>; onShowFillers: (() => void) | null }) {
+function NumbersRow({ session, pauseCount, leaveOut, onShowFillers }: { session: FullSession; pauseCount: number | null; leaveOut: ReadonlyArray<ResultKind>; onShowFillers: (() => void) | null }) {
   // How far the count has got
   const progress = useCountUp();
   // The numbers to show
@@ -335,7 +337,7 @@ function NumbersRow({ session, pauseCount, leaveOut, onShowFillers }: { session:
 }
 
 // For a timed session: a ring that draws round to how long you spoke against the window's end, beside how the timing went (decision 69)
-function LengthRing({ session }: { session: SessionRecord }) {
+function LengthRing({ session }: { session: FullSession }) {
   // The window, when this kind of session has one
   const window = speakingWindow(session.mode, session.promptId, session.story?.length);
   // How far round: the length against the window's end (or a full ring without one)
@@ -359,7 +361,7 @@ function LengthRing({ session }: { session: SessionRecord }) {
 }
 
 // For a short speech: each planned point, and whether it was heard in what was said (decision 73)
-function OutlinePoints({ session }: { session: SessionRecord }) {
+function OutlinePoints({ session }: { session: FullSession }) {
   // The plan
   const outline = session.outline;
   // Nothing without one
@@ -399,8 +401,14 @@ function rehearsedText(talk: TalkRecord, sectionIndex: number | null): { title: 
   return section !== undefined ? { title: `${talk.title} · section ${(sectionIndex ?? 0) + 1} of ${sections.length}`, body: section } : { title: talk.title, body: talk.body };
 }
 
+// Where a chart would have been on a take whose detailed readings were dropped (decision 98)
+function TrimmedNote() {
+  // One quiet line
+  return <p data-trimmed className="mt-5 text-footnote text-ink-muted">Detailed charts aren’t kept for older takes. The words, numbers and feedback are all here.</p>;
+}
+
 // The Feedback screen for a first try or a warm-up
-function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed, plan, view, usual, original = null }: { repo: Repository; session: SessionRecord; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: SessionRecord) => void; plan: PlanNav | null; view: ResultView; usual: number | null; original?: SessionRecord | null }) {
+function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, onReviewed, plan, view, usual, original = null }: { repo: Repository; session: FullSession; now: Date; note: string; earlier: Loaded["earlier"]; rehearsed: TalkRecord | null; qaIndex: number | null; onReviewed: (updated: FullSession) => void; plan: PlanNav | null; view: ResultView; usual: number | null; original?: FullSession | null }) {
   // Whether this is a told story (decision 92)
   const story = session.mode === "story";
   // The lesson, on the skill path
@@ -600,6 +608,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this session."}</p>}
           {/* Listen back, right under the change (decision 67) */}
           {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} onNowAudio={(element) => { audio.current = element; }} pauseWords={view.pauseWords} /> : <Playback repo={repo} session={session} onAudio={(element) => { audio.current = element; }} />}
+          {/* Star the take to keep its recording and charts (decision 98; a moment note and a few-second reply are kept apart and need none) */}
+          {!quick && <StarToggle key={session.id} repo={repo} sessionId={session.id} starred={session.starred === true} />}
           {/* The numbers together */}
           {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} leaveOut={[...(headline && shownHeadline ? [shownHeadline] : []), ...(timed ? (["length"] as const) : []), ...(view.pauseWords ? [] : (["fillers"] as const))]} onShowFillers={reading ? null : showFillers} />}
           {/* One quiet line on what the counts are (decision 79) */}
@@ -614,7 +624,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* After a Table Topic or Record Response, how the timing went (left out when the one change above already says it, so it is said once) */}
           {timed && !(!session.feedback && ownChange.aboutTiming) && <LengthRing session={session} />}
           {/* How the voice sounded: pitch and volume (decision 81; not for a few-second reply) */}
-          {!quick && <VoiceSection session={session} usual={usual} hide={session.feedback ? undefined : ownChange.voiceKind} fluency={view.fluency} />}
+          {!quick && (session.trimmedAt ? <TrimmedNote /> : <VoiceSection session={session} usual={usual} hide={session.feedback ? undefined : ownChange.voiceKind} fluency={view.fluency} />)}
           {/* After a short speech, how the timing went against its length, and which points were heard */}
           {session.mode === "outline" && session.outline && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, session.outline.goalMinutes * 60)}</p>}
           {/* After a rehearsal with a goal, how the timing went */}
@@ -727,7 +737,7 @@ function DeepNote({ repo, sessionId, now }: { repo: Repository; sessionId: strin
 }
 
 // The first word swap the coach suggested for a take, read from its analysis, again when its feedback arrives (null when there is none)
-function useWordSwap(repo: Repository, sessionId: string, feedback: SessionRecord["feedback"]): { said: string; stronger: string; why: string } | null {
+function useWordSwap(repo: Repository, sessionId: string, feedback: FullSession["feedback"]): { said: string; stronger: string; why: string } | null {
   // The swap, once read
   const [swap, setSwap] = useState<{ said: string; stronger: string; why: string } | null>(null);
   // Read it when the take or its feedback changes
@@ -776,7 +786,7 @@ function beatTags(promptId: string): Array<{ id: string; label: string }> {
 }
 
 // A small-talk response's beats: what was said to them (for asking and listening), how many beats were found, then each beat with the words that showed it (the coach's quotes, or the phone's checks and the user's own ticks). On a fresh answer, before the user has ticked any and before the coach has reported, there is no count to grade it by: it asks which beats they hit, with the ticks to fill in straight under the question (round 4; "0 of 4 beats." read as a fail)
-function SmallTalkBeats({ session, ticks }: { session: SessionRecord; ticks: ReactNode }) {
+function SmallTalkBeats({ session, ticks }: { session: FullSession; ticks: ReactNode }) {
   // What was said to them, and the unit
   const found = findSmallTalk(session.promptId);
   // The unit
@@ -847,7 +857,7 @@ function SmallTalkBeats({ session, ticks }: { session: SessionRecord; ticks: Rea
 }
 
 // A told story's "What I heard": the phone's checklist, honest about being rough, and once the coach has answered, the beats it heard (decision 92)
-function StoryHeard({ session, original, moment }: { session: SessionRecord; original: SessionRecord | null; moment: boolean }) {
+function StoryHeard({ session, original, moment }: { session: FullSession; original: FullSession | null; moment: boolean }) {
   // The phone's checks
   const checks = storyChecks(session.transcript);
   // As a checklist
@@ -906,7 +916,7 @@ function StoryHeard({ session, original, moment }: { session: SessionRecord; ori
 }
 
 // A guided story's telling set against its facts (decision 93): what was added beyond them, then any facts not heard
-function GuidedAdded({ story, session }: { story: GuidedStory; session: SessionRecord }) {
+function GuidedAdded({ story, session }: { story: GuidedStory; session: FullSession }) {
   // The facts, the twist included
   const facts = factsOf(story);
   // The comparison
@@ -950,7 +960,7 @@ function GuidedAdded({ story, session }: { story: GuidedStory; session: SessionR
 }
 
 // A retold story beside the telling before: what was being worked on, then each check and number on both (decision 92; the same table as a second try's)
-function StoryBeforeAfter({ original, retold, pauseWords }: { original: SessionRecord; retold: SessionRecord; pauseWords: boolean }) {
+function StoryBeforeAfter({ original, retold, pauseWords }: { original: FullSession; retold: FullSession; pauseWords: boolean }) {
   // The cue the telling before gave
   const cue = (original.feedback ?? localChange(original)).retryCue;
   // The checks on both, then the usual numbers
@@ -1020,13 +1030,13 @@ function PlanBand({ plan }: { plan: PlanNav }) {
 }
 
 // The Retry result screen
-function RetryView({ repo, retry, original, now, plan, view }: { repo: Repository; retry: SessionRecord; original: SessionRecord; now: Date; plan: PlanNav | null; view: ResultView }) {
+function RetryView({ repo, retry, original, now, plan, view }: { repo: Repository; retry: FullSession; original: FullSession; now: Date; plan: PlanNav | null; view: ResultView }) {
   // Where the session belongs, and the way back
   const home = sessionHome(retry.mode, retry.promptId, plan !== null);
   // The cue the first try gave
   const cue = (original.feedback ?? localChange(original, view)).retryCue;
   // The pauses on each try, when loudness was recorded
-  const pausesOf = (session: SessionRecord) => (session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS).count : null);
+  const pausesOf = (session: FullSession) => (session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS).count : null);
   // The pitch range on each try, when both were measured (decision 81)
   const ranges = [rangeOf(original), rangeOf(retry)];
   // Both tries' numbers, with the pitch range last
@@ -1107,14 +1117,16 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
     let cancelled = false;
     // Read the session and, if it is a retry, its first try
     const load = async (): Promise<Loaded> => {
-      // Read the session
-      const session = (await repo.getSession(sessionId)) ?? null;
+      // Read the session with its readings (kept apart since decision 98)
+      const session = (await repo.getFullSession(sessionId)) ?? null;
       // Read the first try if this is a retry
-      const original = session?.retryOf ? ((await repo.getSession(session.retryOf)) ?? null) : null;
+      const original = session?.retryOf ? ((await repo.getFullSession(session.retryOf)) ?? null) : null;
       // Every session, to find an earlier take of the same prompt
       const all = session ? await repo.listSessions() : [];
-      // The first earlier day's recording of this prompt
-      const then = session ? earlierTake(all, session) : null;
+      // The first earlier day's recording of this prompt, with its readings
+      const thenTake = session ? earlierTake(all, session) : null;
+      // (joined with its readings)
+      const then = thenTake ? ((await repo.getFullSession(thenTake.id)) ?? thenTake) : null;
       // With its practice day number and this session's
       const earlier = session && then ? { then, thenDay: practiceDay(all, new Date(then.createdAt)), nowDay: practiceDay(all, new Date(session.createdAt)) } : null;
       // For a rehearsal, the talk
@@ -1125,7 +1137,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       const qaIndex = qaSource?.questions && session?.question ? qaSource.questions.indexOf(session.question) : -1;
       // Hand them back
       // The speaker's usual pitch range, from their latest earlier recordings
-      const usual = session ? usualRange(all.filter((other) => other.id !== session.id && other.createdAt < session.createdAt && other.pitch).slice(0, 20)) : null;
+      const usual = session ? usualRangeBefore(all, session) : null;
       // Hand them back
       return { session, original, earlier, talk, qaIndex: qaIndex >= 0 ? qaIndex : null, usual };
     };
@@ -1225,7 +1237,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       {/* A first try (or a retry whose first try is missing) */}
       {loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation" && (!loaded.original || loaded.session.mode === "smalltalk" || loaded.session.mode === "story") && today && <FeedbackView repo={repo} session={loaded.session} original={loaded.session.mode === "story" ? loaded.original : null} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} view={view} usual={loaded.usual} onReviewed={(updated) => {
         // Show the notes and the feedback
-        setLoaded((previous) => (previous ? { ...previous, session: updated } : previous));
+        setLoaded((previous) => (previous?.session ? { ...previous, session: { ...previous.session, ...updated } } : previous));
         // If the coach was waiting for the notes, ask it now
         if (note === FEEDBACK_NOTES["awaiting-notes"]) setAskAgain((count) => count + 1);
       }} />}

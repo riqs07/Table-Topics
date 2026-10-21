@@ -9,7 +9,7 @@ import { readRubric } from "@/core/analysis/rubric";
 // (saver)
 import { saveRubric } from "@/data/analyses";
 // Load the voice numbers and the usual range (decision 81)
-import { coachVoice, usualRange } from "@/core/voiceFeedback";
+import { coachVoice, usualRangeBefore } from "@/core/voiceFeedback";
 // Load the small-talk unit lookup, to leave out few-second replies
 import { unitOf } from "@/content/smallTalkUnit";
 // Load the size limits the route checks, so a long session is never refused (decision 86)
@@ -77,8 +77,8 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   const plain = (outcome: FeedbackOutcome): FeedbackDetail => ({ outcome, reason: null });
   // Without a passphrase, ask for it before sending anything
   if (!passphrase) return plain("needs-passphrase");
-  // Load the session
-  const session = await repository.getSession(sessionId);
+  // Load the session with its readings, for the voice numbers (decision 98)
+  const session = await repository.getFullSession(sessionId);
   // A missing session cannot be sent
   if (!session) return plain("invalid");
   // The settings: whether the coach may read the user's notes, and whether the user stammers
@@ -92,7 +92,7 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   // On a retry, find the fix given last time
   const original = session.retryOf ? await repository.getSession(session.retryOf) : undefined;
   // The voice numbers, against the speaker's usual range from their latest earlier recordings (decision 81; not for a few-second reply)
-  const voice = session.mode === "conversation" || (session.mode === "smalltalk" && unitOf(session.promptId) !== "answering") ? null : coachVoice(session, usualRange((await repository.listSessions()).filter((other) => other.id !== session.id && other.createdAt < session.createdAt && other.pitch).slice(0, 20)));
+  const voice = session.mode === "conversation" || (session.mode === "smalltalk" && unitOf(session.promptId) !== "answering") ? null : coachVoice(session, usualRangeBefore(await repository.listSessions(), session));
   // The session details the coach needs, each within the route's limits (the saved session keeps everything)
   const details = { durationSec: withinDuration(session.durationSec), focusId: session.focus, previousChange: original?.feedback?.change ?? null, mode: session.mode, promptId: session.promptId, ...(session.question ? { question: session.question } : {}), ...(session.outline ? { outline: session.outline } : {}), ...(session.story ? { story: { shape: session.story.shape, focus: session.story.focus, length: session.story.length } } : {}), ...(review ? { notes: { worked: withinLimit(review.worked, NOTE_MAX_CHARS), change: withinLimit(review.change, NOTE_MAX_CHARS), tags: review.tags } } : {}), ...(settings.stammer ? { stammer: true } : {}), ...(voice ? { voice } : {}), ...(session.conversation ? { conversation: { characterId: session.promptId, ...(session.conversation.scenarioId ? { scenarioId: session.conversation.scenarioId } : {}), turns: session.conversation.turns.slice(0, MAX_TURNS).map((turn) => ({ who: turn.who, text: withinLimit(turn.text, TURN_MAX_CHARS), ...(turn.lineId ? { lineId: turn.lineId } : {}) })) } } : {}) };
   // The transcript, cut to what is left of the route's total once everything else is counted
@@ -146,8 +146,8 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
 
 // Send every session still waiting for feedback, oldest first, stopping at the first blocking outcome
 export async function sendPendingFeedback(repository: Repository, options: FeedbackOptions): Promise<{ sent: number; stoppedBy: FeedbackOutcome | null; reason: string | null }> {
-  // Find waiting sessions, oldest first (the list comes newest first)
-  const pending = (await repository.listSessions()).filter((session) => session.feedbackStatus === "pending").reverse();
+  // Find waiting sessions, oldest first, through the database's lookup rather than reading every session (decision 99)
+  const pending = await repository.listPendingSessions();
   // Count successes
   let sent = 0;
   // Send each in turn
