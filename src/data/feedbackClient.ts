@@ -11,7 +11,7 @@ import { saveRubric } from "@/data/analyses";
 // Load the voice numbers and the usual range (decision 81)
 import { coachVoice, usualRange } from "@/core/voiceFeedback";
 // Load the small-talk unit lookup, to leave out few-second replies
-import { unitOf } from "@/content/smallTalk";
+import { unitOf } from "@/content/smallTalkUnit";
 // Load the size limits the route checks, so a long session is never refused (decision 86)
 import { MAX_TURNS, NOTE_MAX_CHARS, TURN_MAX_CHARS, transcriptRoom, withinDuration, withinLimit } from "@/core/requestLimits";
 

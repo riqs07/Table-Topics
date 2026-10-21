@@ -3,7 +3,7 @@
 // Load the session kind and story length types
 import type { SessionMode, StoryLength } from "@/data/records";
 // Load the small-talk unit lookup (asking and listening are shorter than answering)
-import { unitOf, type UnitId } from "@/content/smallTalk";
+import { unitOf, type UnitId } from "@/content/smallTalkUnit";
 
 // The length to aim for, in seconds (for a Table Topic, the top of the 1:00 to 2:00 window)
 export function targetSeconds(mode: SessionMode, promptId = "", storyLength: StoryLength = "full"): number {

@@ -142,5 +142,43 @@ describe("HistoryScreen", () => {
     // Confirm the count, no trend, and lengths in the rows
     expect([!!heading, screen.queryByRole("figure"), within(screen.getByRole("list", { name: "Sessions" })).queryAllByText("long").length > 0]).toEqual([true, null, true]);
   });
+
+  // A long history is drawn 50 rows at a time (drawing thousands at once froze the page; decision 99), and the count still covers every session
+  it("shows sessions a page at a time with Show more", async () => {
+    // 120 first tries, a day apart
+    const repository = createRepository(new MemoryStore());
+    // (saved)
+    for (let index = 0; index < 120; index += 1) await repository.saveSession(makeSession({ id: `s${index}`, mode: "talk", promptId: "t001", createdAt: new Date(2026, 5, 1 + index, 12).toISOString(), isBaseline: index === 0 }));
+    // Draw the screen
+    render(<HistoryScreen repository={repository} now={NOW} />);
+    // The list
+    const list = await screen.findByRole("list", { name: "Sessions" });
+    // Rows at first
+    const first = within(list).getAllByRole("link").length;
+    // One more page
+    await userEvent.click(screen.getByRole("button", { name: "Show more" }));
+    // Rows after
+    const second = within(list).getAllByRole("link").length;
+    // The last page
+    await userEvent.click(screen.getByRole("button", { name: "Show more" }));
+    // Confirm 50, then 100, then all 120 with the button gone, and the line on how many are shown before that
+    expect([first, second, within(list).getAllByRole("link").length, screen.queryByRole("button", { name: "Show more" })]).toEqual([50, 100, 120, null]);
+  });
+
+  // Choosing a kind starts again at one page
+  it("goes back to one page when the kind shown changes", async () => {
+    // 80 first tries
+    const repository = createRepository(new MemoryStore());
+    // (saved)
+    for (let index = 0; index < 80; index += 1) await repository.saveSession(makeSession({ id: `s${index}`, mode: "talk", promptId: "t001", createdAt: new Date(2026, 6, 1 + index, 12).toISOString() }));
+    // Draw the screen
+    render(<HistoryScreen repository={repository} now={NOW} />);
+    // Show them all
+    await userEvent.click(await screen.findByRole("button", { name: "Show more" }));
+    // Choose speaking, then all again
+    await userEvent.click(screen.getByRole("button", { name: "Speaking" }));
+    // Confirm one page again, with the count of how many are shown
+    expect([within(screen.getByRole("list", { name: "Sessions" })).getAllByRole("link").length, !!screen.getByText("Showing 50 of 80")]).toEqual([50, true]);
+  });
 });
 

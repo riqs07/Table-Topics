@@ -17,8 +17,10 @@ export interface Beat {
   question: string;
 }
 
-// The seven units: answering a question, asking a follow-up, listening to a story, responding to news, reading the room, starting and ending, and going deeper (decision 95)
-export type UnitId = "answering" | "asking" | "listening" | "news" | "room" | "starting" | "deeper";
+// The seven units, named in their own small module so code that only needs a prompt's unit loads no questions (decision 99)
+import type { UnitId } from "@/content/smallTalkUnit";
+// (passed on to the places that import it from here)
+export type { UnitId } from "@/content/smallTalkUnit";
 
 // The four beats of an answer
 export type AnsweringBeat = "moment" | "hook" | "feeling" | "hand-back";
@@ -608,7 +610,7 @@ export function responseLabel(promptId: string): string | null {
   return `${findUnit(found.unit).words.history}: ${text}`;
 }
 
-// The unit a prompt belongs to (answering when it is not known)
+// The unit a prompt belongs to (answering when it is not known), looked up in the content; the light version in smallTalkUnit.ts must agree (a test checks)
 export function unitOf(promptId: string): UnitId {
   // Looked up
   return findSmallTalk(promptId)?.unit ?? "answering";

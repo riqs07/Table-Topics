@@ -1,8 +1,8 @@
 "use client";
 // The History screen: progress since the first recording, one trend line, and every session like a contents page
 
-// Load React's state and effect tools
-import { useEffect, useState } from "react";
+// Load React's state, effect and memo tools
+import { useEffect, useMemo, useState } from "react";
 // Load the pause-word setting rule and the clock formatter
 import { pauseWordsShown } from "@/core/pauseWords";
 import { formatClock } from "@/core/recordingRules";
@@ -22,7 +22,7 @@ import { PageTitle } from "@/components/script/PageTitle";
 // Load the back arrow
 import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the filled button link
-import { PRESS, PrimaryLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PrimaryLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the shared screen starting points
@@ -54,6 +54,9 @@ type HistoryFilter = "all" | "speaking" | "reading";
 const HISTORY_FILTERS: ReadonlyArray<{ id: HistoryFilter; name: string }> = [{ id: "all", name: "All" }, { id: "speaking", name: "Speaking" }, { id: "reading", name: "Reading aloud" }];
 // Kinds of session that read a text (a passage, a pause drill, a lesson's text, or the user's own script)
 const READING_MODES: ReadonlyArray<SessionRecord["mode"]> = ["read", "pause", "lesson", "rehearse"];
+
+// Rows shown at first, and added by each "Show more" (decision 99: drawing thousands of rows at once froze the page)
+export const HISTORY_PAGE = 50;
 
 // Size of the trend drawing (it stretches to fit its column)
 const CHART = { width: 300, height: 80 };
@@ -195,6 +198,8 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
   const [missions, setMissions] = useState<MissionRecord[]>([]);
   // Which sessions the list shows: all, speaking, or reading aloud (decision 79)
   const [show, setShow] = useState<HistoryFilter>("all");
+  // How many rows are drawn (more with each "Show more"; back to one page when the filter changes)
+  const [limit, setLimit] = useState(HISTORY_PAGE);
   // Whether pause words are counted (decision 79; counted until Settings is read)
   const [pauseWords, setPauseWords] = useState(true);
 
@@ -228,14 +233,16 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
     };
   }, [repo, today]);
 
-  // Work out progress, the trend, and the rows
-  const progress = sessions ? baselineProgress(sessions) : null;
-  // Trend values
-  const trend = sessions ? trendSeries(sessions) : [];
-  // List rows, filtered
-  const rows = sessions ? historyRows(sessions).filter((row) => show === "all" || (show === "reading") === READING_MODES.includes(row.session.mode)) : [];
+  // Work out progress once per list of sessions (not on every tap of a filter)
+  const progress = useMemo(() => (sessions ? baselineProgress(sessions) : null), [sessions]);
+  // Trend values, the same way
+  const trend = useMemo(() => (sessions ? trendSeries(sessions) : []), [sessions]);
+  // Every row, the same way
+  const allRows = useMemo(() => (sessions ? historyRows(sessions) : []), [sessions]);
+  // The rows of the chosen kind
+  const rows = useMemo(() => allRows.filter((row) => show === "all" || (show === "reading") === READING_MODES.includes(row.session.mode)), [allRows, show]);
   // The first recording, for the listen link
-  const baseline = sessions?.find((session) => session.isBaseline);
+  const baseline = useMemo(() => sessions?.find((session) => session.isBaseline), [sessions]);
 
   // Draw it
   return (
@@ -271,15 +278,24 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
             {/* All, speaking, or reading aloud */}
             <div role="group" aria-label="Show" className="flex max-w-sm gap-1 rounded-2xl bg-paper p-1 text-footnote">
               {/* One button per choice */}
-              {HISTORY_FILTERS.map((choice) => <button key={choice.id} type="button" aria-pressed={show === choice.id} onClick={() => setShow(choice.id)} className={`min-h-11 flex-1 rounded-xl px-3 ${PRESS} ${show === choice.id ? "bg-fill font-semibold text-fill-ink" : "text-ink-muted hover:bg-card hover:text-ink"}`}>{choice.name}</button>)}
+              {HISTORY_FILTERS.map((choice) => <button key={choice.id} type="button" aria-pressed={show === choice.id} onClick={() => { setShow(choice.id); setLimit(HISTORY_PAGE); }} className={`min-h-11 flex-1 rounded-xl px-3 ${PRESS} ${show === choice.id ? "bg-fill font-semibold text-fill-ink" : "text-ink-muted hover:bg-card hover:text-ink"}`}>{choice.name}</button>)}
             </div>
             {/* The contents list */}
             <ul aria-label="Sessions" className={`mt-3 text-lede ${CARD_LIST}`}>
-              {/* One row per first try, newest first */}
-              {rows.map((row) => <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} pauseWords={pauseWords} />)}
+              {/* One row per first try, newest first, a page at a time */}
+              {rows.slice(0, limit).map((row) => <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} pauseWords={pauseWords} />)}
               {/* Nothing of this kind yet */}
               {rows.length === 0 && <li className="py-4 text-ink-muted">Nothing of this kind yet.</li>}
             </ul>
+            {/* More rows, a page at a time, saying how many are shown */}
+            {rows.length > limit && (
+              <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                {/* Add the next page */}
+                <button type="button" onClick={() => setLimit((shown) => shown + HISTORY_PAGE)} className={SECONDARY}>Show more</button>
+                {/* How many are shown */}
+                <span className="text-footnote text-ink-muted">Showing {limit} of {rows.length}</span>
+              </p>
+            )}
           </div>
         </div>
       )}

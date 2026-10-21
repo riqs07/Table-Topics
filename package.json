@@ -22,7 +22,8 @@
     "analysis-check": "tsx --env-file-if-exists=.env.local scripts/analysis-check.ts",
     "bakeoff": "tsx --env-file-if-exists=.env.local scripts/filler-bakeoff.ts",
     "e2e": "playwright test",
-    "speech-index": "tsx scripts/speech-index.ts"
+    "speech-index": "tsx scripts/speech-index.ts",
+    "learn-index": "tsx scripts/learn-index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.133.0",

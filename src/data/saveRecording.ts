@@ -15,7 +15,7 @@ import type { SessionMode, SessionRecord, StoryTake } from "@/data/records";
 // Load the story record maker (decision 92)
 import { ensureStory } from "@/data/stories";
 // Load the small-talk unit lookup (a follow-up question or a reply to a story is too short to listen back to first)
-import { unitOf } from "@/content/smallTalk";
+import { unitOf } from "@/content/smallTalkUnit";
 // Load the analysis saver (decision 90)
 import { analyseSession } from "@/data/analyses";
 // Load the repository type
