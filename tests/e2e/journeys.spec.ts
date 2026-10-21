@@ -728,20 +728,20 @@ test("Learn: read a card one screen at a time", async ({ page }) => {
   await expect(page.getByRole("list", { name: "Cards" })).toContainText("Done");
 });
 
-// A mission: accept it on Today with a prediction, debrief it, and see the outcome against the prediction
-test("Mission: predict, try, debrief, compare", async ({ page }) => {
+// A mission: take it on from Today in Learn (no prediction since decision 104), debrief it, and see how it went
+test("Mission: try, debrief, see how it went", async ({ page }) => {
   // Start at Today
   await page.goto("/");
   // Skip the welcome question
   await page.getByRole("link", { name: "Start", exact: true }).click();
   // Back to Today from the first step
   await page.getByRole("link", { name: "Close, back to Today" }).click();
-  // Today's mission leads to Learn, where the prediction is made
+  // Today's mission leads to Learn, where it is taken on
   await page.getByRole("region", { name: "Today’s mission" }).getByRole("link", { name: "Take it on in Learn" }).click();
   // Learn's mission card
   const card = page.getByRole("region", { name: "Today’s mission" });
-  // Predict "Awkward"
-  await card.getByRole("button", { name: /^2/ }).click();
+  // No 1 to 5 prediction to make
+  await expect(card.getByText("How will it go?")).toHaveCount(0);
   // Accept
   await card.getByRole("button", { name: "I’ll try it" }).click();
   // Debrief
@@ -754,12 +754,12 @@ test("Mission: predict, try, debrief, compare", async ({ page }) => {
   await page.getByLabel(/What did you notice/).fill("She lit up talking about her garden");
   // Save
   await page.getByRole("button", { name: "Save and compare" }).click();
-  // The comparison
-  await expect(page.getByRole("status")).toContainText("You expected 2 of 5. It went 4 of 5.");
+  // How it went
+  await expect(page.getByRole("status")).toContainText("It went 4 of 5.");
   // Back to Learn, where it was opened (decision 67)
   await page.locator("[data-action-band]").click();
   // The card says how it went
-  await expect(page.getByRole("region", { name: "Today’s mission" })).toContainText("Better than you feared");
+  await expect(page.getByRole("region", { name: "Today’s mission" })).toContainText("It went 4 of 5.");
 });
 
 // Light or dark: chosen in Settings, kept after a reload, with no flash of the other mode and a clean console

@@ -1,5 +1,5 @@
 "use client";
-// Today's mission: offered with a prediction ("How will it go?"), then waiting for its debrief, then the outcome against the prediction (decision 52)
+// Today's mission: offered (with no prediction since decision 104), then waiting for its debrief, then how it went (against the prediction for older tries that have one; decision 52)
 
 // Load React's state tool
 import { useState } from "react";
@@ -27,7 +27,7 @@ interface MissionCardProps {
   state: MissionState;
   // Called with every try after one is saved, so the page can update
   onChange: (records: MissionRecord[]) => void;
-  // On Today: the task and a link to Connect only, without the habit, the reason or the 1 to 5 prediction (decision 62)
+  // On Today: the task and a link to Learn only, without the habit or the reason (decision 62)
   compact?: boolean;
 }
 
@@ -52,19 +52,17 @@ export function ScaleChoice({ label, value, onChoose }: { label: string; value: 
 
 // Draw the card
 export function MissionCard({ repo, now, state, onChange, compact = false }: MissionCardProps) {
-  // The prediction chosen so far
-  const [predicted, setPredicted] = useState<number | null>(null);
   // Whether a save is under way
   const [saving, setSaving] = useState(false);
   // The mission
   const mission = state.mission;
 
-  // Accept, with the prediction if one was picked (it is optional: the comparison afterwards simply leaves it out)
+  // Accept, with no prediction (the user asked for the 1 to 5 guess to go; decision 104)
   async function accept() {
     // Saving
     setSaving(true);
     // Save, then update the page
-    onChange(await acceptMission(repo, mission.id, predicted, now));
+    onChange(await acceptMission(repo, mission.id, null, now));
   }
 
   // Skip for today
@@ -99,7 +97,7 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
       <p className="mt-1 font-display text-cue font-semibold tracking-tight">{mission.task}</p>
       {/* Offered, on Today: a way to take it on in Connect */}
       {state.kind === "offer" && compact && <p className="mt-2"><Link href="/learn#missions" className={TEXT_LINK}>Take it on in Learn</Link></p>}
-      {/* Offered: the habit to drop, why, the prediction, and the choice */}
+      {/* Offered: the habit to drop, why, and the choice */}
       {state.kind === "offer" && !compact && (
         <>
           {/* The habit to drop and why, folded away until wanted (decision 63) */}
@@ -113,10 +111,6 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
             {/* The card behind it */}
             {mission.cardId && <p><Link href={`/learn/card?id=${mission.cardId}`} className={`${TEXT_LINK} text-footnote`}>Read the card</Link></p>}
           </details>
-          {/* The prediction (optional) */}
-          <p className="mt-4 font-medium">How will it go? <span className="font-normal text-ink-muted">Optional</span></p>
-          {/* The scale */}
-          <ScaleChoice label="How will it go?" value={predicted} onChoose={setPredicted} />
           {/* Accept, or not today */}
           <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
             {/* Accept */}

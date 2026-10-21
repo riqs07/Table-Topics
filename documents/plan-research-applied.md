@@ -16,10 +16,10 @@ Proposed and started 2026-10-18, at the user's request ("write a plan doc and th
 The biggest research-backed gap. In the week-long talk-to-strangers study, people who did missions became less afraid of rejection; people who only watched did not.
 
 - **Content:** a ladder of real-world missions, easy to harder, each tied to a move (follow-up, listening, good news, compliments, thanks, ending well, deeper questions, names as memory). Each has one **safety behaviour to drop** ("don't rehearse your next line; listen to theirs") and the Learn card behind it.
-- **Morning (accept):** the mission card on Today (after the steps) and on Connect: what to try, the habit to drop, then "How do you think it will go?" (1 to 5) and "I'll try it", or "Not today".
-- **Evening (debrief), by taps and by voice:** Did you try it? How did it go (1 to 5)? What did you notice? (a short voice note or typed line). Then the compare: "You expected 2 of 5. It went 4 of 5."
+- **Morning (accept):** the mission card on Today (after the steps) and on Connect: what to try, the habit to drop, then "How do you think it will go?" (1 to 5) and "I'll try it", or "Not today". **Changed 2026-10-21 (decision 104):** the 1 to 5 prediction was removed at the user's request; the card offers only "I'll try it" or "Not today".
+- **Evening (debrief), by taps and by voice:** Did you try it? How did it go (1 to 5)? What did you notice? (a short voice note or typed line). Then the compare: "You expected 2 of 5. It went 4 of 5." (since decision 104, only for older tries that have a prediction; new ones say "It went 4 of 5.")
 - **Climbing:** the next mission is the first not yet tried. "Too much" on a debrief steps back to an easier one.
-- **Over time:** Connect shows predicted against actual for recent missions, so "it goes better than I fear" becomes visible.
+- **Over time:** Connect shows predicted against actual for recent missions, so "it goes better than I fear" becomes visible (older tries only, since decision 104 removed the prediction).
 - **Counts:** a debriefed mission counts for the streak and the week strip, and is listed in History under "Real conversations".
 - **Storage:** with the settings (`missions`), like Learn progress, so it travels in exports. Debrief notes are text only and never sent anywhere.
 

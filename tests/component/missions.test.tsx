@@ -53,24 +53,24 @@ describe("missions", () => {
     expect([!!within(card).getByText(/Ask one follow-up question/), within(card).getByRole("link", { name: "Take it on in Learn" }).getAttribute("href"), within(card).queryByRole("group"), within(card).queryByRole("button", { name: "I’ll try it" })]).toEqual([true, "/learn#missions", null, null]);
   });
 
-  // Learn offers the first mission with a habit to drop; a prediction can be picked, then it waits for its debrief
-  it("offers a mission on Learn and accepts it with a prediction", async () => {
+  // Learn offers the first mission with a habit to drop and no 1 to 5 prediction (decision 104); accepted, it waits for its debrief
+  it("offers a mission on Learn without a prediction and accepts it", async () => {
     // A repository
     const repository = createRepository(new MemoryStore());
     // Draw Learn
     render(<LearnScreen repository={repository} now={NOW} />);
     // The card
     const card = await screen.findByRole("region", { name: "Today’s mission" });
-    // Predict "Awkward"
-    fireEvent.click(within(card).getByRole("button", { name: /^2/ }));
+    // No scale to predict with
+    const scale = within(card).queryByRole("group", { name: "How will it go?" });
     // Accept
     fireEvent.click(within(card).getByRole("button", { name: "I’ll try it" }));
-    // Confirm the habit to drop was shown, the debrief is offered, and the try saved with its prediction
-    expect([!!within(card).getByText(/Don't plan your next line/, { ignore: "summary" }), (await screen.findByRole("link", { name: "How did it go?" })).getAttribute("href")?.startsWith("/mission?id="), (await repository.getSettings(NOW)).missions?.map((item) => [item.missionId, item.status, item.predicted])]).toEqual([true, true, [["m01", "accepted", 2]]]);
+    // Confirm no prediction was offered, the habit to drop was shown, the debrief is offered, and the try saved without a prediction
+    expect([scale, !!within(card).getByText(/Don't plan your next line/, { ignore: "summary" }), (await screen.findByRole("link", { name: "How did it go?" })).getAttribute("href")?.startsWith("/mission?id="), (await repository.getSettings(NOW)).missions?.map((item) => [item.missionId, item.status, item.predicted])]).toEqual([null, true, true, [["m01", "accepted", null]]]);
   });
 
-  // The prediction is optional: "I'll try it" works without one, and the comparison afterwards leaves it out (round 4; it was a disabled button with no hint)
-  it("accepts a mission without a prediction and compares without one", async () => {
+  // "I'll try it" works at once, and the debrief says how it went without a comparison (decision 104; round 4 made it never disabled)
+  it("accepts a mission at once and says how it went", async () => {
     // A repository
     const repository = createRepository(new MemoryStore());
     // Draw Learn

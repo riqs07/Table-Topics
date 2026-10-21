@@ -1,5 +1,5 @@
 "use client";
-// A mission's debrief, by taps and by voice: did you try it, how it went (1 to 5), what you noticed, then the outcome against the prediction (decision 52)
+// A mission's debrief, by taps and by voice: did you try it, how it went (1 to 5), what you noticed, then how it went, against the prediction for older tries that have one (decision 52; new tries have none since decision 104)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
