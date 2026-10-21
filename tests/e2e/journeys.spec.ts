@@ -1,5 +1,5 @@
 // Whole journeys with the stand-in microphone: record, save, and read the result (rules T1, T3, T11)
-import { STORY_SPOKEN, expect, test, useStandIns, useStoryCoach } from "./support/fixtures";
+import { GUIDED_SPOKEN, STORY_SPOKEN, expect, test, useGuidedCoach, useStandIns, useStoryCoach } from "./support/fixtures";
 // Load Node's file reader, for a real recording to stand in for a written line's audio
 import { readFileSync } from "node:fs";
 // Load the page type, for the story helper
@@ -172,18 +172,14 @@ test("Event prep: date a talk, follow today's step, see progress", async ({ page
   await expect(page.getByRole("list", { name: "Today" }).getByRole("listitem").first()).toContainText("1 of 2");
 });
 
-// Openings and closings: from home, an opening drill with its light, then its findings
-test("Openings and closings: an opening drill from home to its findings", async ({ page }) => {
+// Openings and closings: off the Practice menu since decision 93 (Today's plan still reaches it), so opened by its address; an opening drill with its light, then its findings
+test("Openings and closings: an opening drill from its page to its findings", async ({ page }) => {
   // Use the stand-in microphone and speech
   await useStandIns(page);
   // Past the welcome, which has no tabs (decision 78)
   await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
-  // Start at home
-  await page.goto("/");
-  // Open the drills from Practice
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Practice", exact: true }).click();
-  // Its page, from its row
-  await page.getByRole("link", { name: /^Openings and closings/ }).click();
+  // Its page, by its address
+  await page.goto("/bookends");
   // Pick today's opening (the first prompt link under "Today")
   await page.locator("section", { hasText: "Today" }).getByRole("link").first().click();
   // The drill opens with its tip
@@ -895,3 +891,85 @@ test("Stories: tell a saved moment properly, and find it in Your stories", async
   await expect(page.getByRole("list", { name: "Your stories" })).toContainText("Told once");
 });
 
+// The Practice menu (decision 93): Read aloud sits under Speak on the spot and leads to the readings; Openings and closings is off the menu
+test("Practice: Read aloud is under Speak on the spot, and Openings and closings is gone", async ({ page }) => {
+  // Past the welcome
+  await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+  // Practice, loaded directly
+  await page.goto("/practice");
+  // The on-the-spot group
+  const spot = page.getByRole("region", { name: "Speak on the spot" });
+  // Read aloud is there
+  await expect(spot.getByRole("link", { name: /^Read aloud/ })).toBeVisible();
+  // Not under Build a skill
+  await expect(page.getByRole("region", { name: "Build a skill" }).getByRole("link", { name: /^Read aloud/ })).toHaveCount(0);
+  // No openings row anywhere
+  await expect(page.getByText("Openings and closings")).toHaveCount(0);
+  // Read aloud opens the readings
+  await spot.getByRole("link", { name: /^Read aloud/ }).click();
+  // On Skills, at the readings
+  await expect(page).toHaveURL(/\/skills#readings/);
+});
+
+// Guided stories (decision 93): pick one, see the facts while planning and telling, see what was added beyond them and the coach's word, then tell it again and compare
+test("Guided story: pick one, tell it, see what you added, then tell it again", async ({ page }) => {
+  // The stand-in speech tells the zoo story
+  await useStandIns(page, GUIDED_SPOKEN);
+  // Past the welcome, with the passphrase saved so the coach is asked
+  await page.addInitScript(() => {
+    // Welcome seen
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // The passphrase
+    localStorage.setItem("voicelab-passphrase", "a long passphrase for testing");
+  });
+  // The coach, stood in with the guided reply
+  await useGuidedCoach(page);
+  // From Practice, the guided stories row
+  await page.goto("/practice");
+  // Into the guided stories
+  await page.getByRole("region", { name: "Tell stories" }).getByRole("link", { name: /^Guided stories/ }).click();
+  // The section with its honest line
+  await expect(page.getByText("You get the facts. You make it a story.")).toBeVisible();
+  // Open the harder fold
+  await page.getByText("With a twist", { exact: true }).click();
+  // Pick the zoo
+  await page.getByRole("link", { name: "A day at the zoo" }).click();
+  // The set-up page, starting on the story's own focus
+  await expect(page).toHaveURL(/\/stories\/tell\?prompt=gs13/);
+  // The facts card with the twist
+  await expect(page.getByRole("region", { name: "Your facts" })).toContainText("The gorilla was staring right at you.");
+  // (the focus it suits, chosen)
+  await expect(page.getByRole("button", { name: "Start in the middle" })).toHaveAttribute("aria-pressed", "true");
+  // Short
+  await page.getByRole("button", { name: /^Short/ }).click();
+  // Start
+  await page.getByRole("link", { name: /^Start/ }).click();
+  // The telling page, with the facts in view while planning
+  await expect(page.getByRole("region", { name: "Your facts" })).toContainText("You got a hot dog.");
+  // Plan and tell
+  await tellStory(page);
+  // What you added: all five heard
+  await expect(page.getByRole("list", { name: "What you added" }).locator("[data-added=true]")).toHaveCount(5);
+  // Every fact made it in
+  await expect(page.getByRole("region", { name: "The facts" })).toContainText("4 of 4 heard");
+  // The coach's word on bringing the facts to life
+  await expect(page.locator("[data-brought-to-life]")).toContainText("You added the mustard");
+  // Tell it again
+  await page.getByRole("link", { name: /Tell it again/ }).click();
+  // The facts again, and last time's cue
+  await expect(page.getByText("Pause when the gorilla looks at you.")).toBeVisible();
+  // (the facts card)
+  await expect(page.getByRole("region", { name: "Your facts" })).toBeVisible();
+  // Plan and tell again
+  await tellStory(page);
+  // Both tellings side by side, with the facts kept on each
+  await expect(page.getByRole("table", { name: "Last time and this time" })).toContainText("Facts kept");
+  // The headline counts what was added
+  await expect(page.getByRole("heading", { name: "You added 5 of 5 again. Same facts, new telling." })).toBeVisible();
+  // To Your stories
+  await page.getByRole("link", { name: "Your stories", exact: true }).click();
+  // The story is listed by its title, told twice
+  await expect(page.getByRole("list", { name: "Your stories" })).toContainText("A day at the zoo");
+  // (twice)
+  await expect(page.getByRole("list", { name: "Your stories" })).toContainText("Told twice");
+});

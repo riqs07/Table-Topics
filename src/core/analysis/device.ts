@@ -14,6 +14,9 @@ import { toSteps, usualPitch } from "@/core/pitch";
 import { measureConversation } from "@/core/conversationMeasures";
 // Load the story checks (decision 92)
 import { storyRaw } from "@/core/storyChecks";
+// Load the guided stories and their comparison with the facts (decision 93)
+import { factsOf, findGuidedStory } from "@/content/guidedStories";
+import { guidedRaw } from "@/core/guidedStory";
 // Load the voice report, for how phrases ended
 import { voiceReport } from "@/core/voiceFeedback";
 // Load the spacing of the loudness readings
@@ -200,8 +203,16 @@ export function extractRaw(session: SessionRecord): AnalysisRaw {
     // A conversation's measures
     ...(conversation ? { conversation: { share: conversation.share, questions: conversation.questions, followUps: conversation.followUps, turns: conversation.turns } } : {}),
     // A told story's checks (decision 92)
-    ...(session.mode === "story" ? { story: storyRaw(session.transcript) } : {}),
+    ...(session.mode === "story" ? { story: storyChecksRaw(session) } : {}),
   };
+}
+
+// A told story's checks for the analysis, with a guided story's comparison against its facts added (decision 93)
+function storyChecksRaw(session: SessionRecord): NonNullable<AnalysisRaw["story"]> {
+  // The guided story it told, if it was one
+  const guided = findGuidedStory(session.promptId);
+  // The checks, plus the comparison when guided
+  return { ...storyRaw(session.transcript), ...(guided ? { guided: guidedRaw(session.transcript, factsOf(guided)) } : {}) };
 }
 
 // Pace in each third of the span of speech, from the word times, or null when too short
@@ -353,6 +364,15 @@ export function deviceMetrics(raw: AnalysisRaw): Record<string, MetricValue> {
     put("story.feeling", yes(raw.story.feeling), "yes/no", storyEngine);
     // Ended on the point
     put("story.ends_on_point", yes(raw.story.endsOnPoint), "yes/no", storyEngine);
+    // A guided story: what was added beyond the facts, and the share of facts kept, by their own engine (decision 93)
+    if (raw.story.guided) {
+      // The comparison's engine
+      const guidedEngine = "device-guided-v1";
+      // Added beyond the facts
+      put("story.added", raw.story.guided.added, "count", guidedEngine);
+      // Facts kept, as a percentage
+      put("story.facts_kept", raw.story.guided.facts > 0 ? (raw.story.guided.factsHeard / raw.story.guided.facts) * 100 : null, "%", guidedEngine);
+    }
   }
   // Every measure
   return metrics;

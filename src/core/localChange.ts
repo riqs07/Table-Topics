@@ -14,8 +14,8 @@ import { LOUDNESS_TICK_MS, formatClock, speakingWindow } from "@/core/recordingR
 import { voiceReport, type VoiceLineKind } from "@/core/voiceFeedback";
 // Load the small-talk change, for answers to everyday questions
 import { smallTalkChange } from "@/core/smallTalk";
-// Load the story change (decision 92)
-import { storyChange } from "@/core/storyChecks";
+// Load the story change, open or guided (decisions 92 and 93)
+import { tellingChange } from "@/core/guidedStory";
 // Load the record type
 import type { SessionRecord } from "@/data/records";
 
@@ -47,8 +47,8 @@ export function localChange(session: SessionRecord, options: { pauseWords?: bool
     const window = speakingWindow("story", session.promptId, session.story?.length ?? "full");
     // Well past the window and its grace
     if (window && session.durationSec > window.limit && session.story?.focus !== "minute") return { change: `Land it sooner: you spoke for ${formatClock(session.durationSec)}, past the ${formatClock(window.end)} mark. Cut the set-up, not the turn.`, retryCue: "Start your ending when the light turns yellow.", aboutTiming: true };
-    // The story checks
-    return storyChange(session.transcript, session.durationSec, session.story ?? {});
+    // The story checks, or a guided story's comparison with its facts
+    return tellingChange(session.promptId, session.transcript, session.durationSec, session.story ?? {});
   }
   // The timing window, for a Table Topic or a prepared speech
   const timing = speakingWindow(session.mode);

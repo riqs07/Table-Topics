@@ -1,6 +1,6 @@
 # Plan: storytelling as a practice mode
 
-**Built 2026-10-21 (decision 92).** The user asked to "add emphasis on stories and story telling … create story telling as a practice mode". It is a first-class part of the app, not a drill: its own place on the Practice menu, its own page, a step in today's practice, a family on the speaking profile, and its own coach.
+**Built 2026-10-21 (decision 92); guided stories added the same day (decision 93).** The user asked to "add emphasis on stories and story telling … create story telling as a practice mode". It is a first-class part of the app, not a drill: its own place on the Practice menu, its own page, a step in today's practice, a family on the speaking profile, and its own coach.
 
 ## The idea in one line
 
@@ -72,6 +72,19 @@ The simpler sound option: **the seed's id is the story's id**, kept as each tell
 
 Seven phone measures (`story.*`, engine `device-story-v1`) and six story-coach scores (`rub.story_*`), in a "Stories" group, and a "Stories" family that compares stories only with stories. Details in [architecture/measurements.md](architecture/measurements.md#stories-decision-92).
 
+## Guided stories (decision 93)
+
+The user asked for "more of a guide for the user... like sample scenarios... you went to the zoo and you ate some food and you saw a gorilla. And you just have to retell that story, but make it maybe a little bit more exciting."
+
+- **Content** (`src/content/guidedStories.ts`): 24 guided stories, ids `gs01` to `gs24`. Each has a title ("A day at the zoo"), three to five plain facts written flat on purpose ("You went to the zoo." "You got a hot dog." "You saw a gorilla."), two or three nudges toward what to add ("What did the gorilla do?") and a starting focus that suits it. Twelve are **Just the facts** (easier) and twelve end **With a twist** (harder: "The gorilla was staring right at you."); the twist is what makes one harder (`guidedLevel`). Light and everyday: a bad haircut, a cooking disaster, a missed train, a first day, a lost phone, a camping trip, moving house, a dog that got out, a job interview, wedding rings, a surprise party, being locked out… A content test keeps 3 to 5 facts and 2 to 3 nudges, unique ids, no heavy words, and the facts flat: no feeling, reported speech, turn or point in them, so anything the comparison finds came from the user.
+- **Where:** a "Guided stories" section on `/stories`, second, after Today's story: "You get the facts. You make it a story." and two folds, one per level, each row the title with its first fact. A "Guided stories" row in Practice's "Tell stories" group links to it (`/stories#guided-stories`).
+- **Set-up and telling:** `/stories/tell?prompt=gs13` shows the title and the **facts card** (`GuidedStoryCard`): the facts numbered, the twist marked, "Make it yours" with the nudges, and the chosen shape and focus by name. It takes the place of the shape card rather than sitting beside it, so a phone shows one card; the shape's beats are left off it because the facts are the beats here. The focus starts on the story's own (for the zoo, "Start in the middle") and can be changed; shapes and lengths work as for any story. While telling, the facts sit on one line beside the voice shape, with the focus.
+- **Results** (`src/core/guidedStory.ts`, pure and tested): **What you added** replaces "What I heard": a feeling, someone's words, a turn, details of your own (names, numbers, places and times, plus colours, sizes, sounds and textures, since guided details are rarely names) and a point at the end, each only when the facts did not already say it. Then **The facts · N of M heard**: a fact counts as heard when at least half its content words were said (rough stems, stop words left out, two words run together counting, so "hotdog" meets "hot dog"); each fact not heard is listed with the words listened for. The page still says these are rough guesses. Without the coach, the change (`guidedChange`) is: too little said, then the chosen focus if missed, then a missing fact, then "and then", then the first thing not added.
+- **Coach:** the story coach looks the guided story up by id on the server (the facts never come from the request) and gets its title, facts, twist and nudges. The reply gains `broughtToLife` (one or two sentences on what was added beyond the facts and what is still flat, shown on the results as "Beyond the facts, the coach heard") and the story rubric gains `alive` (0 to 3); both are null for any other story, and the six existing rubric ids are unchanged. The e2e stand-in has a guided reply (`GUIDED_COACH_REPLY`).
+- **Library and Tell it again:** the guided id is the story's id, as for a prompt, so Your stories, renaming and Tell it again work unchanged. A retelling's headline counts what was added ("You added 4 of 5 this time, up from 1.") and its table shows each added line, the facts kept and "and then" on both tellings.
+- **Measures:** `story.added` and `story.facts_kept` (engine `device-guided-v1`) and `rub.story_alive`, only on guided tellings ([measurements.md](architecture/measurements.md#stories-decision-92)).
+- **Plan:** the on-the-spot group's second story turn is a guided story, so open and guided alternate ([plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md#the-daily-mix)).
+
 ## Choices that differ from the brief, and why
 
 - **A story's id is its seed's id**, not a separate id on each session: a prompt or moment note can only ever be one story, so a second id could only drift. The `stories` collection still exists, for the editable title.
@@ -82,4 +95,4 @@ Seven phone measures (`story.*`, engine `device-story-v1`) and six story-coach s
 
 ## Not verified yet
 
-The story coach's prompt has only been run against recorded and stand-in replies, not the live model; the checks have only met stand-in speech and written transcripts, not a real voice on a phone.
+Guided stories: the facts check and the added list have only met stand-in speech and written transcripts; how often a real browser transcript loses a fact the user did say is not known yet. The story coach's prompt has only been run against recorded and stand-in replies, not the live model; the checks have only met stand-in speech and written transcripts, not a real voice on a phone.

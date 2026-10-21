@@ -36,6 +36,8 @@ export interface StoryFeedback {
   yours: string;
   // How it could sound, in their voice, inventing nothing
   better: string;
+  // For a guided story: what they brought to the facts beyond the facts themselves, and what is still flat, in a sentence or two (decision 93)
+  broughtToLife?: string;
 }
 
 // A story's optional shape (decision 92)
@@ -405,6 +407,8 @@ export interface StoryRaw {
   feeling: boolean;
   // The last sentence stated a point or a change
   endsOnPoint: boolean;
+  // For a guided story: how many of the five things beyond the facts were added (a feeling, someone's words, a turn, details, a point), and how many of its facts were heard of how many (decision 93)
+  guided?: { added: number; factsHeard: number; facts: number };
 }
 
 // One rubric score from the coach: 0 to 3, with the speaker's words that back it
@@ -557,6 +561,8 @@ export interface StoryRubric {
   turn: RubricScore;
   // Ends on the point or the change, then stops
   point: RubricScore;
+  // For a guided story: how far the plain facts were brought to life (decision 93)
+  alive?: RubricScore;
 }
 
 // One of the user's stories (decision 92): its id is its seed's id, shared by every telling; the record keeps the title, which the user can change

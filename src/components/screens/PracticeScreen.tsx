@@ -1,5 +1,5 @@
 "use client";
-// Practice: every kind of practice in one place, grouped (stories second, decision 92), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
+// Practice: every kind of practice in one place, grouped (stories second, decision 92; Read aloud with speaking on the spot and the openings drill reached from Today instead, decision 93), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
 
 // Load Next.js's link component
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, RepeatIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
@@ -166,12 +166,12 @@ export function PracticeScreen(props: ScreenProps) {
           { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon },
           // A prepared speech
           { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
-          // Openings and closings
-          { name: "Openings and closings", detail: "The first or last 45 seconds, 1 min", href: "/bookends", icon: QuotesIcon },
           // Free talk: anything, as long as you like (decision 73)
           { name: "Free talk", detail: "Talk about anything, as long as you like", href: "/session?mode=free&prompt=free", icon: MicrophoneStageIcon },
           // A short speech the user plans: topic and points (decision 73)
           { name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon },
+          // Reading aloud, moved here from Build a skill (decision 93)
+          { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills#readings", icon: BookOpenTextIcon },
         ]}
       />
 
@@ -185,6 +185,8 @@ export function PracticeScreen(props: ScreenProps) {
           { name: "Today’s story", detail: story ? story.title : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon },
           // The user's own stories, told again
           { name: "Tell one again", detail: "Your stories, a little better each time", href: "/stories#your-stories", icon: ArrowCounterClockwiseIcon },
+          // A guided story: the facts are given (decision 93)
+          { name: "Guided stories", detail: "You get the facts, you make it a story", href: "/stories#guided-stories", icon: SignpostIcon },
           // A moment note, told properly
           { name: "From your moments", detail: "A one-moment note, told properly", href: "/stories#from-moments", icon: SunHorizonIcon },
         ]}
@@ -235,16 +237,14 @@ export function PracticeScreen(props: ScreenProps) {
         ]}
       />
 
-      {/* Building one skill */}
+      {/* Building one skill: the lessons, one path in order (Read aloud moved up to speaking on the spot, decision 93) */}
       <Group
         id="skills"
         title="Build a skill"
         more={{ href: "/skills", label: "See all" }}
         ways={[
-          // Lessons: straight into the next one (decision 67)
-          { name: "Lessons", detail: nextLesson ? `Next: ${nextLesson.title}` : "One practical tip each, 2 to 3 min", href: nextLesson ? `/session?mode=lesson&prompt=${nextLesson.id}` : "/skills#lessons", icon: GraduationCapIcon },
-          // Readings
-          { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills#readings", icon: BookOpenTextIcon },
+          // Lessons: straight into the next one (decision 67), with where it sits on the path
+          { name: "Lessons", detail: nextLesson ? `Next: ${nextLesson.title} · ${nextLesson.number} of ${LESSONS.length}` : `${LESSONS.length} practical tips, 2 to 3 min each`, href: nextLesson ? `/session?mode=lesson&prompt=${nextLesson.id}` : "/skills#lessons", icon: GraduationCapIcon },
         ]}
       />
 

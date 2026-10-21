@@ -109,4 +109,18 @@ describe("stories across the app", () => {
     // Confirm the values, engine and absence
     expect([story.metrics["story.dialogue"], story.metrics["story.details"]?.value, story.metrics["story.and_then"]?.value, story.metrics["story.starts_in_action"]?.value, story.metrics["story.ends_on_point"]?.value, Object.keys(talk.metrics).some((id) => id.startsWith("story."))]).toEqual([{ value: 1, unit: "yes/no", source: "device", engine: "device-story-v1" }, 3, 0, 1, 1, false]);
   });
+
+  // A guided story (decision 93): titled by its own title, labelled on its results, compared by what was added and the facts kept, its change set against the facts, and measured against them
+  it("handles a guided story like a prompt, set against its facts", () => {
+    // A flat telling of the zoo, then a lively retelling
+    const flat = makeSession({ id: "g1", mode: "story", promptId: "gs13", createdAt: "2026-10-20T10:00:00.000Z", durationSec: 40, transcript: "I went to the zoo and then I got a hot dog and then I saw a gorilla and the gorilla was staring right at me" });
+    // The retelling
+    const lively = makeSession({ id: "g2", mode: "story", promptId: "gs13", retryOf: "g1", createdAt: "2026-10-21T10:00:00.000Z", durationSec: 50, transcript: "The hot dog was sticky with mustard on Saturday but the gorilla was staring right at me and she goes don't move and I was terrified and since then I always eat first" });
+    // The comparison rows
+    const rows = storyCompareRows(flat, lively);
+    // Its analysis
+    const analysis = buildAnalysis(lively, new Date());
+    // Confirm the title, label, headline, rows, change, takeaway and measures
+    expect([defaultStoryTitle("gs13", []), answeredPrompt(flat), retellHeadline(flat, lively), rows.map((row) => row.label), rows.find((row) => row.label === "Facts kept"), localChange(flat).retryCue, storyLibrary([flat], [])[0]?.takeaway, analysis.metrics["story.added"], analysis.metrics["story.facts_kept"]?.value, buildAnalysis(telling("o", "2026-10-21T10:00:00.000Z"), new Date()).metrics["story.added"]]).toEqual(["A day at the zoo", { label: "Your guided story", text: "A day at the zoo" }, "You added 5 of 5 this time, up from 0.", ["A feeling", "Someone’s words", "A turn", "Details of your own", "A point at the end", "Facts kept", "“And then”"], { label: "Facts kept", before: "4 of 4", after: "3 of 4" }, "Link each fact with “but” or “so”.", "Link each fact with “but” or “so”.", { value: 5, unit: "count", source: "device", engine: "device-guided-v1" }, 75, undefined]);
+  });
 });

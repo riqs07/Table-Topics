@@ -1,7 +1,7 @@
 # Measurements
 
 **Purpose:** Every measure VoiceLab records about a take, where it comes from, how strong the evidence is, and how measures are turned into the speaking profile and the weekly summary.
-**Last updated:** 2026-10-21 (decision 92: story measures and the story coach's scores; decision 91: stage B, deeper analysis on the server)
+**Last updated:** 2026-10-21 (decision 93: guided stories' measures; decision 92: story measures and the story coach's scores; decision 91: stage B, deeper analysis on the server)
 **Source of truth:** the registry in `src/core/analysis/metrics.ts`. The tables below are generated from it; if they disagree, the code wins and this file is out of date (a unit test, `tests/unit/core/analysis/registryDoc.test.ts`, fails when a row here differs from the registry). The research behind the choices is in [../research/speech-analysis-2026-10.md](../research/speech-analysis-2026-10.md) (sections 3, 5, 6 and 7).
 
 ## How a take is measured
@@ -25,6 +25,7 @@
 | `device-heuristic-v1` | Pause placement and words between boundary pauses (see below) |
 | `device-browser-transcript-v1` | Pause words per minute as saved on the session, from the browser's transcript, which drops many |
 | `device-story-v1` | Story checks on a told story (decision 92): reported speech, specific details, a turn, "and then", a start in the action, a feeling word and an ending on the point, from the transcript (`src/core/storyChecks.ts`) |
+| `device-guided-v1` | A guided story's telling set against its given facts (decision 93): what was added beyond them and the share of facts heard (`src/core/guidedStory.ts`) |
 | the coach model id | Rubric scores, and on a told story the story coach's scores |
 | `assemblyai-universal-3-pro` | Stage B, source `transcript`: measures from AssemblyAI's verbatim transcript (Universal-3 Pro, `disfluencies`, punctuation and word times on; model name in `src/config/models.ts`) |
 | `assemblyai-universal-3-pro-punctuation-v1` | Stage B: pause placement, words between boundary pauses and pause-word placement, read from that transcript's punctuation (see below) |
@@ -86,6 +87,7 @@ A told story (mode `story`) gets every usual measure plus two story sets, groupe
 
 - **On the phone** (`story.*`, engine `device-story-v1`): `extractRaw` keeps the story checks' yes-or-no results and counts as `raw.story` (`StoryRaw`), so they are worked out again from the raw features like every phone measure. The checks read the browser's transcript, which usually has no punctuation, so "the first sentence" is the first marked sentence or the first 12 words, and "the last sentence" the last marked one or the last 15 words. They are rough guesses, and the results page says so ("What I heard").
 - **From the story coach** (`rub.story_*`): the story coach fills in the usual rubric and a story rubric (`StoryRubricSchema` in `src/core/coachPrompt.ts`: hook, stakes, detail, dialogue, turn, point, each 0 to 3 with a quote). It is kept as `rubric.story` and becomes six measures; a broken story score refuses the whole rubric when read back, as any broken score does.
+- **Guided stories** (decision 93): a telling of a guided story (`gs01` to `gs24`) is also set against its given facts by `compareWithFacts` (`src/core/guidedStory.ts`, engine `device-guided-v1`), kept as `raw.story.guided` (`{ added, factsHeard, facts }`). `story.added` counts which of five things were heard beyond the facts (a feeling, someone's words, a turn, details of your own, a point at the end; anything the facts already said does not count), and `story.facts_kept` is the share of facts heard, a fact counting as heard when at least half its content words (rough stems, stop words left out) were said. The story coach adds a seventh score, `alive` (how far the facts were brought to life), only for guided stories; it becomes `rub.story_alive`. Open stories never have these three.
 
 ## The profile (`src/core/analysis/profile.ts`, page `/profile`)
 
@@ -227,3 +229,6 @@ Stage A measures are computed on the phone or by the coach's rubric. Stage B mea
 | `rub.story_dialogue` | Dialogue | The story coach's score for someone's words said as they were said, 0 to 3. | 0–3 | rubric | weak | internal | higher | A |
 | `rub.story_turn` | The turn | The story coach's score for a clear turn, a “but” or a moment things changed, 0 to 3. | 0–3 | rubric | moderate | shown | higher | A |
 | `rub.story_point` | The point | The story coach's score for ending on the point or the change, then stopping, 0 to 3. | 0–3 | rubric | weak | shown | higher | A |
+| `story.added` | Added to the facts | For a guided story: how many of a feeling, someone's words, a turn, details of your own and a point at the end were heard beyond the given facts, 0 to 5. | count | device | weak | shown | higher | A |
+| `story.facts_kept` | Facts kept | For a guided story: the share of the given facts heard, each matched by at least half its content words. | % | device | weak | internal | higher | A |
+| `rub.story_alive` | Facts brought to life | For a guided story: the story coach's score for how far the plain facts were brought to life, 0 to 3. | 0–3 | rubric | weak | shown | higher | A |

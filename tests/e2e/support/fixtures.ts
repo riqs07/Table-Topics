@@ -24,6 +24,32 @@ export const STORY_COACH_REPLY = {
   rubric: { pointFirst: { score: 2, quote: "the train stopped" }, answersQuestion: { score: 3, quote: "the train stopped" }, structure: { score: 2, quote: "" }, ending: { score: 3, quote: "since then" }, concreteExample: { score: 3, quote: "Reading" }, wordChoice: { score: 2, quote: "stopped dead" }, devices: ["story"], unnecessaryHedges: 0, wordSwaps: [], model: "stand-in", story: { hook: { score: 3, quote: "the train stopped dead" }, stakes: { score: 2, quote: "" }, detail: { score: 3, quote: "Reading" }, dialogue: { score: 2, quote: "she goes" }, turn: { score: 2, quote: "but then" }, point: { score: 3, quote: "since then" } } },
 };
 
+// A guided zoo story the stand-in speech "tells" (decision 93): every fact kept, with a detail, a turn, someone's words, a feeling and a point added
+export const GUIDED_SPOKEN = "The hot dog was sticky with mustard at the zoo on Saturday but the gorilla was staring right at me and she goes don't move and I was terrified and since then I always eat before I see a gorilla";
+
+// The coach's reply for a guided story, stood in: the story reply plus what was brought to life beyond the facts, and the seventh story score (decision 93)
+export const GUIDED_COACH_REPLY = {
+  // What the route sends back
+  feedback: {
+    // One thing that worked
+    keep: "The mustard makes the hot dog real: “sticky with mustard”.",
+    // One change
+    change: "Slow down when the gorilla stares: give that moment a beat of silence.",
+    // The cue for the next telling
+    retryCue: "Pause when the gorilla looks at you.",
+    // The story notes, with what was brought to life
+    story: { beats: [{ beat: "setting", quote: "at the zoo on Saturday" }, { beat: "turn", quote: "but the gorilla was staring right at me" }, { beat: "meaning", quote: "since then I always eat before I see a gorilla" }], yours: "the gorilla was staring right at me", better: "Then the gorilla stops chewing and stares right at me. [what you did next]", broughtToLife: "You added the mustard, Saturday and how scared you were; the gorilla itself is still as flat as the fact." },
+  },
+  // The internal rubric with the story scores, the guided one too
+  rubric: { ...STORY_COACH_REPLY.rubric, story: { ...STORY_COACH_REPLY.rubric.story, alive: { score: 2, quote: "sticky with mustard" } } },
+};
+
+// Stand in for the coach on guided stories: every feedback request gets the guided reply
+export async function useGuidedCoach(page: Page): Promise<void> {
+  // Answer the feedback route with the guided reply
+  await page.route("**/api/feedback", (route) => route.fulfill({ json: GUIDED_COACH_REPLY }));
+}
+
 // Stand in for the coach on told stories: every feedback request gets the story reply
 export async function useStoryCoach(page: Page): Promise<void> {
   // Answer the feedback route with the story reply
@@ -112,6 +138,9 @@ export const ROUTES: ReadonlyArray<string> = [
   "/stories/tell?prompt=sp01",
   "/stories/tell?moment=missing",
   "/session?mode=story&prompt=sp01&shape=but-therefore&focus=dialogue&length=short",
+  // A guided story set up and told (decision 93)
+  "/stories/tell?prompt=gs13",
+  "/session?mode=story&prompt=gs13&shape=classic&focus=middle&length=short",
   // The design style tile
   "/style",
   // The wireframes

@@ -20,8 +20,10 @@ function readStoryRubric(value: unknown): StoryRubric | null {
   if (!isObject(value)) return null;
   // The six scores
   const [hook, stakes, detail, dialogue, turn, point] = [readScore(value.hook), readScore(value.stakes), readScore(value.detail), readScore(value.dialogue), readScore(value.turn), readScore(value.point)];
-  // Every one must read
-  return hook && stakes && detail && dialogue && turn && point ? { hook, stakes, detail, dialogue, turn, point } : null;
+  // A guided story's score for bringing the facts to life, when there is one (decision 93)
+  const alive = value.alive === undefined ? undefined : readScore(value.alive);
+  // Every one must read, the guided score too when it is there
+  return hook && stakes && detail && dialogue && turn && point && alive !== null ? { hook, stakes, detail, dialogue, turn, point, ...(alive ? { alive } : {}) } : null;
 }
 
 // A rubric with every field checked, stamped with when it was saved when it carries none, or null when anything is wrong

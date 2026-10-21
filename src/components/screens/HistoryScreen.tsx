@@ -37,8 +37,8 @@ import { findPersona } from "@/content/conversations";
 import { readingTitle } from "@/content/readingIndex";
 // Load the lesson lookup
 import { findLesson } from "@/content/lessons";
-// Load the story prompts (decision 92)
-import { findStoryPrompt } from "@/content/stories";
+// Load the story seeds: bank prompts and guided stories (decisions 92 and 93)
+import { seedText } from "@/content/stories";
 // Load the sentence builders
 import { dayLabel, formatRate, progressSentence } from "@/core/copy";
 // Load the progress calculations
@@ -116,7 +116,7 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   // And voice drills and shadowing, by their kind and name (decision 80)
   if (session.mode === "voice") return `${session.voice ? VOICE_MODE_NAMES[session.voice.kind] : "Voice drill"}: ${(session.voice?.kind === "shadow" ? findShadowPassage(session.promptId)?.title : findVoiceDrill(session.promptId)?.title) ?? "a drill"}`;
   // And told stories, by their prompt's title (decision 92)
-  if (session.mode === "story") return `${session.retryOf ? "Story, told again" : "Story"}: ${findStoryPrompt(session.promptId)?.title ?? "from your moment"}`;
+  if (session.mode === "story") return `${session.retryOf ? "Story, told again" : "Story"}: ${seedText(session.promptId)?.title ?? "from your moment"}`;
   // And conversations, by who they were with (decision 83)
   if (session.mode === "conversation") return `Conversation with ${findPersona(session.promptId)?.name ?? "someone"}`;
   // And Q&A answers, by their question

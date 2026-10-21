@@ -1,5 +1,5 @@
 "use client";
-// Stories (decision 92): today's story, the user's own stories to tell again, their moment notes to tell properly, and the bank of story prompts
+// Stories (decision 92): today's story, guided stories with the facts given (decision 93), the user's own stories to tell again, their moment notes to tell properly, and the bank of story prompts
 
 // Load React's state and effect tools
 import { useCallback, useEffect, useState } from "react";
@@ -16,6 +16,8 @@ import { FoldCard } from "@/components/script/FoldCard";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the story prompts and groups
 import { STORY_GROUPS, STORY_PROMPTS, momentTitle, storyPromptForDay } from "@/content/stories";
+// Load the guided stories (decision 93)
+import { GUIDED_LEVELS, GUIDED_STORIES, guidedLevel } from "@/content/guidedStories";
 // Load the moment note's prompt
 import { MOMENT_PROMPT } from "@/content/smallTalk";
 // Load the library rules
@@ -177,6 +179,31 @@ export function StoriesScreen(props: ScreenProps) {
           </ul>
         </section>
       )}
+
+      {/* Guided stories: the facts are given, the user makes them a story (decision 93) */}
+      <section aria-labelledby="guided" id="guided-stories" className="mt-10 scroll-mt-6">
+        {/* Heading */}
+        <h2 id="guided" className={SECTION_HEADING}>Guided stories</h2>
+        {/* What they are, honestly */}
+        <p className="mt-1 max-w-[48ch] text-ink-muted">You get the facts. You make it a story.</p>
+        {/* One fold per level */}
+        <div className="mt-2 flex flex-col gap-2">
+          {GUIDED_LEVELS.map((level) => {
+            // The level's stories
+            const stories = GUIDED_STORIES.filter((story) => guidedLevel(story) === level.id);
+            // One fold
+            return (
+              <FoldCard key={level.id} id={`guided-${level.id}`} name={level.name} detail={level.blurb} count={stories.length}>
+                {/* The stories */}
+                <ul aria-label={level.name} className="divide-y divide-rule">
+                  {/* Each story: its title, with its first fact under it */}
+                  {stories.map((story) => <li key={story.id}><RowLink href={tellHref(story.id)} label={story.title}><span className="block font-semibold">{story.title}</span><span className="block text-footnote text-ink-muted">{story.facts[0]}</span></RowLink></li>)}
+                </ul>
+              </FoldCard>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Why loading failed */}
       {loadError !== null && <p role="alert" className="mt-8 max-w-[48ch] text-lede">Your stories could not be loaded. The browser said: “{loadError}” <button type="button" onClick={reload} className={TEXT_LINK}>Try again</button></p>}

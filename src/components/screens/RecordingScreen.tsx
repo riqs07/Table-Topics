@@ -40,8 +40,11 @@ import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
 import type { SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
 // Load the story prompts and moment seeds, and the plan card (decision 92)
-import { findStoryPrompt, momentIdOf } from "@/content/stories";
+import { momentIdOf, seedText } from "@/content/stories";
 import { StoryPlanCard } from "@/components/script/StoryPlanCard";
+// Load the guided stories and their card, shown in place of the shape card (decision 93)
+import { findGuidedStory } from "@/content/guidedStories";
+import { GuidedStoryCard } from "@/components/script/GuidedStoryCard";
 // Load the short-speech plan type
 import type { Outline } from "@/core/outline";
 import type { Repository } from "@/data/repository";
@@ -115,12 +118,12 @@ interface RecordingScreenProps {
 // A story's set-up when none is given: Classic, no focus, full length (decision 92)
 const DEFAULT_STORY: StoryTake = { shape: "classic", focus: null, length: "full" };
 
-// What a story is about: the prompt from the bank, or the moment note's words once loaded (decision 92)
+// What a story is about: the prompt from the bank, a guided story's title, or the moment note's words once loaded (decisions 92 and 93)
 function storyPromptText(promptId: string, momentText: string | null): { id: string; text: string } | undefined {
-  // A prompt from the bank
-  const prompt = findStoryPrompt(promptId);
+  // A prompt from the bank, or a guided story
+  const seed = seedText(promptId);
   // Its words
-  if (prompt) return { id: prompt.id, text: prompt.text };
+  if (seed) return { id: promptId, text: seed.text };
   // A moment note, once read (an empty note still has its story to tell)
   return momentText === null ? undefined : { id: promptId, text: momentText || "Your moment" };
 }
@@ -323,6 +326,8 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
 export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null }: RecordingScreenProps) {
   // A told story's set-up: from the address, or (on a retelling) from the telling before (decision 92)
   const [storyTake, setStoryTake] = useState<StoryTake>(givenStory ?? DEFAULT_STORY);
+  // A guided story's facts and nudges, when the story is one (decision 93)
+  const guidedStory = mode === "story" ? findGuidedStory(promptId) : undefined;
   // For a story from one of the user's moment notes, the note's words (loaded below)
   const [momentText, setMomentText] = useState<string | null>(null);
   // A short speech's plan: from the address, or (on a retry) from the first try
@@ -1319,7 +1324,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* A Record Response keeps its hints in view while speaking */}
           {recording && angles.length > 0 && <Hints angles={angles} compact />}
           {/* A story keeps its shape and focus in view while telling (decision 92) */}
-          {recording && mode === "story" && <StoryPlanCard take={storyTake} compact />}
+          {recording && mode === "story" && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} compact /> : <StoryPlanCard take={storyTake} compact />)}
           {/* Push the way out down */}
           <div className="hidden flex-1 md:block" />
           {/* Leave while thinking (while recording, Pause and Discard sit by the shape) */}
@@ -1530,11 +1535,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {mode === "story" && !recording && (
             <section aria-label="Your story" className="mt-8 md:mt-0">
               {/* Where it came from */}
-              <p className="text-footnote text-ink-muted">{momentIdOf(promptId) ? "From your moment" : thinking ? "Plan it in your head" : "Your story"}</p>
+              <p className="text-footnote text-ink-muted">{momentIdOf(promptId) ? "From your moment" : thinking ? "Plan it in your head" : guidedStory ? "Guided story" : "Your story"}</p>
               {/* The prompt, set like a headline, or the moment in the user's words */}
               <h1 className={`relative mt-1 font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${momentIdOf(promptId) ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"}`}>{prompt?.text ?? "Your moment"}</h1>
-              {/* The shape and focus */}
-              <StoryPlanCard take={storyTake} />
+              {/* The shape and focus, or a guided story's facts with them (decision 93) */}
+              {guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />}
               {/* How planning works, before it starts */}
               {!thinking && !busy && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Up to a minute to plan, then tell it out loud. Tap Ready when you are.</p>}
             </section>

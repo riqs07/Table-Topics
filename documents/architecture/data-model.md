@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-21 (decision 91)
+**Last updated:** 2026-10-21 (decision 93)
 
 ## Where data lives
 
@@ -36,6 +36,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | question | On a Q&A answer (`mode` `qa`, whose `promptId` is the session the question came from): the question it answered |
 | outline | On a short speech (`mode` `outline`): `{ topic, points, goalMinutes }`, the topic (up to 140 characters), one to four points and the length chosen (1, 2, 3 or 5 minutes). Sent to the coach fenced as data; a retry reads it from the first try. The last plan is also kept in this browser under `voicelab-outline-draft` (not exported) so the planning page can bring it back (decision 73) |
 | story | On a told story (`mode` `story`, decision 92): `{ shape, focus, length }`: the shape shown while planning (`classic`, `but-therefore`, `then-now` or `small-moment`), the one focus or null (`middle`, `dialogue`, `detail`, `point`, `minute`) and the length (`short`, about a minute, or `full`, two to three). The story itself is the session's `promptId`: a prompt from the bank (`sp01` to `sp40`) or `moment-` and a moment note's session id. Every telling of the same seed is a version of the same story; a retelling also has `retryOf`, the telling before it. Its feedback may carry `story`: the beats the coach heard (`setting`, `stakes`, `turn`, `ending`, `meaning`, each with a quote), one of the speaker's lines (`yours`) and how it could sound (`better`) |
+| (guided stories) | A guided story (decision 93) is stored exactly like a bank prompt's telling: its id (`gs01` to `gs24`) is the story's id and each telling's `promptId`, and the `stories` record takes its title. Its coach feedback may add `story.broughtToLife` (what was added beyond the facts); its rubric may add `story.alive` (0 to 3 with a quote); its analysis's `raw.story` adds `guided: { added, factsHeard, facts }`. All three are optional, so older records and files read as before. Nothing new is stored on the device for the facts themselves: they come from `src/content/guidedStories.ts` |
 | sectionIndex | For a rehearsal of one section of a talk: which section (counted from 0). Missing or empty for a whole run and for every other mode |
 | pitch | Pitch readings taken with the loudness readings, in whole hertz, or empty where there was no voice (decision 81). Missing on older sessions |
 | autoGain | Whether the browser's automatic levelling was on while recording (decision 81): false means changes in volume across the take are real. Missing when the browser could not say, and on older sessions |

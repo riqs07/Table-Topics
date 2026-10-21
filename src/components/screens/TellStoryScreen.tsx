@@ -1,5 +1,5 @@
 "use client";
-// Before telling a story (decision 92): the prompt or the moment, then an optional shape, one focus and a length; the planning minute and the telling happen on the recording page
+// Before telling a story (decision 92): the prompt, the moment, or a guided story's facts (decision 93), then an optional shape, one focus and a length; the planning minute and the telling happen on the recording page
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -18,6 +18,9 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 import { STORY_FOCUSES, STORY_LENGTHS, STORY_SHAPES, findStoryPrompt, momentIdOf } from "@/content/stories";
 // Load the record types
 import type { StoryFocus, StoryLength, StoryShape } from "@/data/records";
+// Load the guided stories and their card (decision 93)
+import { findGuidedStory } from "@/content/guidedStories";
+import { GuidedStoryCard } from "@/components/script/GuidedStoryCard";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
 
@@ -44,14 +47,16 @@ export function TellStoryScreen({ storyId, planStep = null, ...props }: TellStor
   const { repo } = useScreenBasics(props);
   // The prompt from the bank, if the story came from one
   const prompt = findStoryPrompt(storyId);
+  // The guided story, if it is one (decision 93)
+  const guided = findGuidedStory(storyId);
   // The moment note's id, if it came from one
   const momentId = momentIdOf(storyId);
   // The moment's words (null while loading or when there is none)
   const [moment, setMoment] = useState<{ status: "loading" | "found" | "missing"; text: string }>({ status: momentId ? "loading" : "missing", text: "" });
   // The shape (Classic by default)
   const [shape, setShape] = useState<StoryShape>("classic");
-  // The focus (none by default)
-  const [focus, setFocus] = useState<StoryFocus | null>(null);
+  // The focus: none by default, or the one a guided story suits (the user can change it)
+  const [focus, setFocus] = useState<StoryFocus | null>(guided?.focus ?? null);
   // The length (full by default; short inside today's practice, which keeps to a few minutes)
   const [length, setLength] = useState<StoryLength>(planStep ? "short" : "full");
   // Name the tab
@@ -89,7 +94,7 @@ export function TellStoryScreen({ storyId, planStep = null, ...props }: TellStor
   // Where the close button leads
   const close = planStep ? { href: "/", label: "Close, back to Today" } : { href: "/stories", label: "Close, back to Stories" };
   // Neither a known prompt nor a moment note that exists
-  const unknown = !prompt && (!momentId || moment.status === "missing");
+  const unknown = !prompt && !guided && (!momentId || moment.status === "missing");
 
   // Draw the page
   return (
@@ -102,9 +107,11 @@ export function TellStoryScreen({ storyId, planStep = null, ...props }: TellStor
       ) : (
         <>
           {/* Where it came from */}
-          <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Your story"}</p>
-          {/* The prompt, or the moment in the user's words */}
-          <h1 className={`mt-1 font-display tracking-tight ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : moment.status === "loading" ? "…" : moment.text}</h1>
+          <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : guided ? "Guided story" : "Your story"}</p>
+          {/* The prompt, a guided story's title, or the moment in the user's words */}
+          <h1 className={`mt-1 font-display tracking-tight ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
+          {/* A guided story's facts and nudges, with the shape and focus as chosen below (decision 93) */}
+          {guided && <GuidedStoryCard story={guided} take={{ shape, focus, length }} />}
 
           {/* The shape */}
           <div role="group" aria-labelledby="shape-label" className="mt-8">
@@ -155,13 +162,13 @@ export function TellStoryScreen({ storyId, planStep = null, ...props }: TellStor
             </div>
           </div>
 
-          {/* The plan as it will show while planning */}
-          <StoryPlanCard take={{ shape, focus, length }} />
+          {/* The plan as it will show while planning (a guided story's card above already shows it) */}
+          {!guided && <StoryPlanCard take={{ shape, focus, length }} />}
 
           {/* Push the band down */}
           <div className="flex-1" />
           {/* Start: a minute to plan, then tell it */}
-          <ActionBand action="Start" aside="up to a minute to plan" href={tellSessionHref(prompt ? prompt.id : storyId, shape, focus, length, planStep)} />
+          <ActionBand action="Start" aside="up to a minute to plan" href={tellSessionHref(storyId, shape, focus, length, planStep)} />
         </>
       )}
     </main>

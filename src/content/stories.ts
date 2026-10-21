@@ -2,6 +2,8 @@
 
 // Load the story choice types kept on a session
 import type { StoryBeat, StoryFocus, StoryLength, StoryShape } from "@/data/records";
+// Load the guided stories, the second kind of seed (decision 93)
+import { findGuidedStory } from "@/content/guidedStories";
 
 // A group of prompts in the bank
 export type StoryGroupId = "wrong" | "win" | "first" | "person" | "place" | "surprise" | "lesson" | "funny";
@@ -119,10 +121,22 @@ export function findStoryPrompt(id: string): StoryPrompt | undefined {
   return STORY_PROMPTS.find((prompt) => prompt.id === id);
 }
 
-// Whether an id names a story seed: a prompt from the bank, or a moment note
+// Whether an id names a story seed: a prompt from the bank, a guided story, or a moment note
 export function isStorySeed(id: string): boolean {
-  // Either kind
-  return findStoryPrompt(id) !== undefined || (momentIdOf(id) ?? "") !== "";
+  // Any of the three kinds
+  return findStoryPrompt(id) !== undefined || findGuidedStory(id) !== undefined || (momentIdOf(id) ?? "") !== "";
+}
+
+// What a seed from the app's own content says: a bank prompt's question, or a guided story's title (decision 93); undefined for a moment note or an unknown id
+export function seedText(id: string): { text: string; title: string; guided: boolean } | undefined {
+  // A prompt from the bank
+  const prompt = findStoryPrompt(id);
+  // Its question and short title
+  if (prompt) return { text: prompt.text, title: prompt.title, guided: false };
+  // A guided story
+  const guided = findGuidedStory(id);
+  // Its title, as both
+  return guided ? { text: guided.title, title: guided.title, guided: true } : undefined;
 }
 
 // Calendar days since a fixed start, for taking prompts in turn

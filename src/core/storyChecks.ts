@@ -63,7 +63,7 @@ const NUMBER_WORDS = ["two", "three", "four", "five", "six", "seven", "eight", "
 const TIME_WORDS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "january", "february", "march", "april", "june", "july", "august", "september", "october", "november", "december", "midnight", "noon", "o'clock", "am", "pm"];
 
 // The words of some text, lower case, letters, digits and apostrophes only, curly apostrophes made straight
-function wordsOf(text: string): string[] {
+export function wordsOf(text: string): string[] {
   // Split on spaces, tidy each piece, and drop empty ones
   return text.replace(/[‘’]/g, "'").split(/\s+/).map((word) => word.toLowerCase().replace(/[^a-z0-9':]/g, "").replace(/^'+|'+$/g, "")).filter((word) => word !== "");
 }
@@ -121,7 +121,8 @@ export function dialogueIn(transcript: string): string | null {
     // Only speech words from here
     if (!SPEECH_VERBS.includes(word)) continue;
     // "goes" and "went" only after a speaker, and not when they lead somewhere ("he went home")
-    if ((word === "goes" || word === "went") && (!["i", "he", "she", "they", "we", "you"].includes(before) || MOVEMENT.includes(after) || after === "")) continue;
+    // ("went camping" and "goes shopping" are going somewhere too: a word ending in "ing" after it is an outing, decision 93)
+    if ((word === "goes" || word === "went") && (!["i", "he", "she", "they", "we", "you"].includes(before) || MOVEMENT.includes(after) || after === "" || after.endsWith("ing"))) continue;
     // "told" and "tells" only with someone told ("told me", "told her")
     if ((word === "told" || word === "tells") && !["me", "him", "her", "them", "us", "you", "everyone"].includes(after)) continue;
     // Shown as who was told ("told me"), or the speaker and the word ("she said")
@@ -196,10 +197,18 @@ export function trailsOff(transcript: string): boolean {
   return TRAILING.some((phrase) => end.endsWith(` ${phrase} `));
 }
 
+// Every feeling word heard, story feeling words first, then small talk's, each once (decision 93 uses all of them to leave out any a guided story's facts already said)
+export function feelingsIn(transcript: string): string[] {
+  // The story's own feeling words, in order, then small talk's, leaving out "love", which in a story is as often a name for someone ("don't worry, love")
+  const found = [...wordsOf(transcript).filter((word) => STORY_FEELINGS.includes(word)), ...feelingWords(transcript).filter((word) => word !== "love")];
+  // Each once
+  return [...new Set(found)];
+}
+
 // The first feeling word, or null (a story feeling word wins over a general one)
 export function feelingIn(transcript: string): string | null {
-  // The story's own feeling words first, then small talk's, leaving out "love", which in a story is as often a name for someone ("don't worry, love")
-  return wordsOf(transcript).find((word) => STORY_FEELINGS.includes(word)) ?? feelingWords(transcript).find((word) => word !== "love") ?? null;
+  // The first of them
+  return feelingsIn(transcript)[0] ?? null;
 }
 
 // Every check on a story
@@ -251,8 +260,8 @@ export function heardList(checks: StoryChecks): HeardLine[] {
   ];
 }
 
-// The change and cue for each missing check, in the order they are worth fixing
-const FIXES: Record<HeardLine["id"], { change: string; retryCue: string }> = {
+// The change and cue for each missing check, in the order they are worth fixing (shared with guided stories, decision 93)
+export const STORY_FIXES: Readonly<Record<HeardLine["id"], { change: string; retryCue: string }>> = {
   // A lead-in
   action: { change: "Start in the middle. The lead-in spends your first seconds before anything happens.", retryCue: "Open with the moment things start moving." },
   // No turn
@@ -268,7 +277,7 @@ const FIXES: Record<HeardLine["id"], { change: string; retryCue: string }> = {
 };
 
 // Which check each focus works on
-const FOCUS_CHECK: Partial<Record<StoryFocus, HeardLine["id"]>> = { middle: "action", dialogue: "dialogue", detail: "details", point: "point" };
+export const FOCUS_CHECK: Partial<Record<StoryFocus, HeardLine["id"]>> = { middle: "action", dialogue: "dialogue", detail: "details", point: "point" };
 
 // One change for a story from the phone's checks (for when the coach is not set up): the chosen focus first when it was missed, then "and then" in place of a turn, then the first missing check in order
 export function storyChange(transcript: string, durationSec: number, take: { shape?: StoryShape; focus?: StoryFocus | null; length?: "short" | "full" } = {}): { change: string; retryCue: string } {
@@ -283,7 +292,7 @@ export function storyChange(transcript: string, durationSec: number, take: { sha
   // The focus chosen for this telling
   const focusCheck = take.focus ? FOCUS_CHECK[take.focus] : undefined;
   // Missed: that comes first
-  if (focusCheck && !heard(focusCheck)) return FIXES[focusCheck];
+  if (focusCheck && !heard(focusCheck)) return STORY_FIXES[focusCheck];
   // Under a minute was the focus and it ran over
   if (take.focus === "minute" && durationSec > 60) return { change: `Cut to the moment: that ran ${Math.round(durationSec)} seconds. Drop the set-up and land it in a minute.`, retryCue: "Start at the moment it turned." };
   // A string of "and then" with no turn, or the "but and so" shape with any "and then"
@@ -291,7 +300,7 @@ export function storyChange(transcript: string, durationSec: number, take: { sha
   // The first missing check, in order of worth
   const missing = (["action", "turn", "details", "dialogue", "point", "feeling"] as const).find((id) => !heard(id));
   // One to fix
-  if (missing) return FIXES[missing];
+  if (missing) return STORY_FIXES[missing];
   // Everything heard
   return { change: "Every beat was there. Now slow down at the turn: give the moment itself a few more seconds.", retryCue: "Pause just before the turn." };
 }

@@ -54,8 +54,8 @@ describe("dailyPlan", () => {
     expect([days.every((picks) => picks.length === 2 && picks[0]?.lane !== picks[1]?.lane), repeats(byGroup("spot")), repeats(byGroup("delivery")), repeats(byGroup("connection")), ["talk", "bookend", "response", "story", "pause", "read", "smalltalk"].filter((kind) => !kinds.has(kind as never))]).toEqual([true, false, false, false, []]);
   });
 
-  // A story comes up about twice a week, in the on-the-spot pick, set up on its own page and done by a telling of its prompt today (decision 92)
-  it("offers a story about twice a week, done by telling it", () => {
+  // A story comes up about twice a week, in the on-the-spot pick, open and guided in turn, set up on its own page and done by a telling of its prompt today (decisions 92 and 93)
+  it("offers a story about twice a week, open and guided in turn, done by telling it", () => {
     // The picks over three weeks
     const days = Array.from({ length: 21 }, (_, offset) => regularPlan(dayAfter(offset)).slice(2));
     // The story steps
@@ -67,7 +67,10 @@ describe("dailyPlan", () => {
     // A telling of its prompt that day
     const told = makeSession({ id: "told", mode: "story", promptId: first.promptId, createdAt: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12).toISOString() });
     // Confirm how often, where, how long and where it starts, and that the telling marks it done
-    expect([stories.length >= 5 && stories.length <= 7, stories.every((step) => step.lane === "spot" && step.label === "Story" && step.minutes === 2), first.href, planProgress([first], [told], day)[0]]).toEqual([true, true, `/stories/tell?prompt=${first.promptId}`, true]);
+    // The labels in order, alternating open and guided
+    const labels = stories.map((step) => step.label);
+    // Confirm how often, where, how long, the alternation, where it starts, and that the telling marks it done
+    expect([stories.length >= 5 && stories.length <= 7, stories.every((step) => step.lane === "spot" && ["Story", "Guided story"].includes(step.label) && step.minutes === 2), labels.every((label, index) => index === 0 || label !== labels[index - 1]), stories.filter((step) => step.label === "Guided story").every((step) => step.promptId.startsWith("gs") && step.href === `/stories/tell?prompt=${step.promptId}`), first.href, planProgress([first], [told], day)[0]]).toEqual([true, true, true, true, `/stories/tell?prompt=${first.promptId}`, true]);
   });
 
   // The first days keep the long prepared speech out

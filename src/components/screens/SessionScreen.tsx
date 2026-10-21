@@ -107,6 +107,9 @@ import { noteFor } from "@/core/analysis/deep";
 import { heardList, storyChecks } from "@/core/storyChecks";
 import { retellHeadline, storyCompareRows } from "@/core/storyLibrary";
 import { STORY_BEAT_NAMES, momentIdOf } from "@/content/stories";
+// Load the guided stories and the comparison with their facts (decision 93)
+import { factsOf, findGuidedStory, type GuidedStory } from "@/content/guidedStories";
+import { compareWithFacts } from "@/core/guidedStory";
 import { STORY_BEATS } from "@/data/records";
 
 // What the screen needs: which session, plus the shared props
@@ -847,14 +850,18 @@ function StoryHeard({ session, original, moment }: { session: SessionRecord; ori
   const lines = heardList(checks);
   // The coach's beats, once arrived
   const coach = session.feedback?.story;
+  // A guided story, if it is one (decision 93)
+  const guided = findGuidedStory(session.promptId);
   // Draw them
   return (
     <>
       {/* From a moment note: say so (a prompt from the bank is shown above instead) */}
       {moment && <p className="mt-5 text-footnote text-ink-muted md:mt-0">From your moment</p>}
       {/* The headline: how a retelling compared, or the checklist's name */}
-      <h1 className={`font-display text-3xl font-semibold tracking-tight ${moment ? "mt-1" : "mt-5 md:mt-0"}`}>{original ? retellHeadline(original, session) : "What I heard"}</h1>
-      {/* The checklist */}
+      <h1 className={`font-display text-3xl font-semibold tracking-tight ${moment ? "mt-1" : "mt-5 md:mt-0"}`}>{original ? retellHeadline(original, session) : guided ? "What you added" : "What I heard"}</h1>
+      {/* A guided story: what was added beyond the facts, and the facts kept (decision 93) */}
+      {guided ? <GuidedAdded story={guided} session={session} /> : (
+      // The checklist
       <ul aria-label="What I heard" className={`mt-3 ${CARD_LIST}`}>
         {/* One row per check */}
         {lines.map((line) => (
@@ -867,10 +874,13 @@ function StoryHeard({ session, original, moment }: { session: SessionRecord; ori
           </li>
         ))}
       </ul>
+      )}
       {/* A string of "and then" */}
       {checks.andThen >= 2 && <p className="mt-2 text-footnote">“And then” came {checks.andThen} times. Try “but” or “so”.</p>}
       {/* Honest about what this is */}
       <p className="mt-2 text-footnote text-ink-muted">Rough guesses from the words the phone caught: a line said another way can be missed.</p>
+      {/* For a guided story, the coach's word on how far the facts came to life (decision 93) */}
+      {coach?.broughtToLife && <p data-brought-to-life className="mt-4 border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote text-ink-muted">Beyond the facts, the coach heard</span>{coach.broughtToLife}</p>}
       {/* The coach's beats, once arrived */}
       {coach && (
         <section aria-label="The beats" className="mt-4">
@@ -887,6 +897,50 @@ function StoryHeard({ session, original, moment }: { session: SessionRecord; ori
           </ul>
         </section>
       )}
+    </>
+  );
+}
+
+// A guided story's telling set against its facts (decision 93): what was added beyond them, then any facts not heard
+function GuidedAdded({ story, session }: { story: GuidedStory; session: SessionRecord }) {
+  // The facts, the twist included
+  const facts = factsOf(story);
+  // The comparison
+  const comparison = compareWithFacts(facts, session.transcript);
+  // The facts not heard
+  const lost = comparison.facts.filter((check) => !check.heard);
+  // Draw it
+  return (
+    <>
+      {/* How many of the five */}
+      <p className="mt-1 text-footnote text-ink-muted">{comparison.addedCount} of 5 beyond the facts</p>
+      {/* What was added */}
+      <ul aria-label="What you added" className={`mt-3 ${CARD_LIST}`}>
+        {/* One row each */}
+        {comparison.added.map((line) => (
+          // One thing: its mark, name and what showed it
+          <li key={line.id} data-added={line.added} className="flex gap-3 py-2">
+            {/* The mark: filled when added */}
+            <span aria-hidden="true" className={`mt-1 flex size-5 flex-none items-center justify-center border-2 ${line.added ? "border-fill bg-fill text-fill-ink" : "border-rule"}`}>{line.added && <CheckIcon weight="bold" className="size-3.5" />}</span>
+            {/* Name and note */}
+            <span className="text-lede"><strong className="font-display font-normal">{line.name}.</strong> <span className={line.added ? "" : "text-ink-muted"}>{line.note}</span></span>
+          </li>
+        ))}
+      </ul>
+      {/* The facts kept */}
+      <section aria-label="The facts" className="mt-4">
+        {/* How many */}
+        <p className="text-footnote text-ink-muted">The facts · {comparison.factsHeard} of {facts.length} heard</p>
+        {/* Each one not heard, with the words missed */}
+        {lost.length > 0 ? (
+          <ul className="mt-1 flex flex-col gap-1 text-footnote">
+            {/* Each lost fact */}
+            {lost.map((check) => <li key={check.fact} data-fact-missing className="border-l-2 border-rule pl-3">Not heard: “{check.fact}” <span className="text-ink-muted">(listened for {check.notHeard.join(", ")})</span></li>)}
+          </ul>
+        ) : (
+          <p className="mt-1 text-footnote">Every fact made it in.</p>
+        )}
+      </section>
     </>
   );
 }

@@ -263,3 +263,87 @@ describe("SessionScreen, stories", () => {
     expect([!!screen.getByRole("heading", { name: "6 of 6 this time, up from 0." }), !!screen.getByText("You were working on: Start in the middle."), within(first).getAllByRole("cell").map((cell) => cell.textContent)]).toEqual([true, true, ["–", "Heard"]]);
   });
 });
+
+// A flat telling of the zoo: just the facts, read back
+const ZOO_FLAT = "I went to the zoo and then I got a hot dog and then I saw a gorilla and the gorilla was staring right at me";
+// A lively telling of the zoo that leaves out the gorilla fact's own line
+const ZOO_ALIVE = "The hot dog was sticky with mustard at the zoo on Saturday but the gorilla was staring right at me and she goes don't move and I was terrified and since then I always eat first";
+// The zoo's set-up
+const ZOO_TAKE = { shape: "classic", focus: "middle", length: "short" } as const;
+
+// Group the checks about guided stories (decision 93)
+describe("guided stories", () => {
+  // The Stories page lists them in two folds, with the honest line, each leading to its set-up
+  it("offers guided stories on the Stories page", async () => {
+    // Draw it
+    render(<StoriesScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The section
+    const section = (await screen.findByRole("heading", { name: "Guided stories" })).closest("section") as HTMLElement;
+    // Confirm the line, the two folds, and the zoo's address
+    expect([!!within(section).getByText("You get the facts. You make it a story."), !!within(section).getByText("Just the facts"), !!within(section).getByText("With a twist"), within(section).getByRole("link", { name: "A day at the zoo" }).getAttribute("href")]).toEqual([true, true, true, "/stories/tell?prompt=gs13"]);
+  });
+
+  // The set-up shows the facts, the twist and the nudges, starts on the story's own focus, and lets the user change it
+  it("sets up a guided story with its facts and its own focus", () => {
+    // Draw it for the zoo
+    render(<TellStoryScreen storyId="gs13" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The facts card
+    const card = screen.getByRole("region", { name: "Your facts" });
+    // The start address before and after changing the focus
+    const first = screen.getByRole("link", { name: /Start/ }).getAttribute("href");
+    // Pick another focus
+    fireEvent.click(screen.getByRole("button", { name: "One vivid detail" }));
+    // Confirm the title, a fact, the twist, a nudge, no separate shape card, the default focus and the changed one
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!within(card).getByText("You got a hot dog."), card.querySelector("[data-twist]")?.textContent, !!within(card).getByText("What did the gorilla do?"), screen.queryByRole("region", { name: "Your story's shape" }), first, screen.getByRole("link", { name: /Start/ }).getAttribute("href"), within(card).getByText("One vivid detail").textContent]).toEqual(["A day at the zoo", true, "TwistThe gorilla was staring right at you.", true, null, "/session?mode=story&prompt=gs13&shape=classic&focus=middle&length=full", "/session?mode=story&prompt=gs13&shape=classic&focus=detail&length=full", "One vivid detail"]);
+  });
+
+  // While planning the facts card shows in place of the shape card; while telling, the facts on one line
+  it("keeps the facts in view while planning and telling", async () => {
+    // Fake services
+    const fake = fakeServices(ZOO_ALIVE);
+    // Draw the telling page
+    render(<RecordingScreen promptId="gs13" mode="story" retryOf={null} story={ZOO_TAKE} repository={createRepository(new MemoryStore())} services={fake.services} clock={() => NOW} navigate={() => {}} />);
+    // Before planning: the title, the facts card, no shape card
+    expect([!!(await screen.findByText("A day at the zoo")), !!screen.getByText("Guided story"), !!within(screen.getByRole("region", { name: "Your facts" })).getByText("You saw a gorilla."), screen.queryByRole("region", { name: "Your story's shape" })]).toEqual([true, true, true, null]);
+    // Plan, then Ready
+    fireEvent.click(screen.getByRole("button", { name: /Plan it/ }));
+    // (ready)
+    fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
+    // Recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Confirm the facts on one line beside the voice shape
+    expect(document.querySelector("[data-guided-card='compact']")?.textContent).toContain("You went to the zoo. · You got a hot dog.");
+  });
+
+  // The results show what was added beyond the facts, any fact missed, and the coach's word on bringing them to life
+  it("shows what you added, the facts missed, and the coach's verdict", async () => {
+    // A flat telling that leaves out a fact, and a coached one
+    const repository = await repositoryWith(makeSession({ id: "g1", mode: "story", promptId: "gs13", transcript: "I went to the zoo and then I got a hot dog and then I went home after that", durationSec: 40, story: ZOO_TAKE, feedbackStatus: "failed" }), makeSession({ id: "g2", mode: "story", promptId: "gs13", transcript: ZOO_ALIVE, durationSec: 50, story: ZOO_TAKE, feedbackStatus: "done", feedback: { keep: "k", change: "c", retryCue: "r", story: { beats: [], yours: "y", better: "b", broughtToLife: "You added the mustard and your fear; the hot dog is still flat." } } }));
+    // Draw the flat one
+    render(<SessionScreen sessionId="g1" repository={repository} now={NOW} />);
+    // Its added list
+    const list = await screen.findByRole("list", { name: "What you added" });
+    // Confirm the heading, the label, nothing added, the facts count and the missing gorilla
+    expect([screen.getByRole("heading", { name: "What you added" }).tagName, !!screen.getByText("Your guided story"), within(list).getAllByRole("listitem").map((item) => item.getAttribute("data-added")), within(screen.getByRole("region", { name: "The facts" })).getByText(/2 of 4 heard/).textContent, document.querySelectorAll("[data-fact-missing]").length, screen.queryByRole("list", { name: "What I heard" })]).toEqual(["H1", true, ["false", "false", "false", "false", "false"], "The facts · 2 of 4 heard", 2, null]);
+    // Remove it
+    cleanup();
+    // Draw the coached one
+    render(<SessionScreen sessionId="g2" repository={repository} now={NOW} />);
+    // Confirm everything added, every fact in, and the coach's verdict
+    expect([(await screen.findByRole("list", { name: "What you added" })).querySelectorAll("[data-added=true]").length, !!screen.getByText("Every fact made it in."), document.querySelector("[data-brought-to-life]")?.textContent?.includes("You added the mustard")]).toEqual([5, true, true]);
+  });
+
+  // Telling it again compares what was added and the facts kept on both tellings
+  it("compares a retold guided story by what was added", async () => {
+    // A flat first telling and a lively retelling
+    const repository = await repositoryWith(makeSession({ id: "g1", mode: "story", promptId: "gs13", transcript: ZOO_FLAT, createdAt: "2026-10-21T10:00:00.000Z", story: ZOO_TAKE, feedback: { keep: "k", change: "c", retryCue: "Add one thing they can picture." }, feedbackStatus: "done" }), makeSession({ id: "g2", mode: "story", promptId: "gs13", retryOf: "g1", transcript: ZOO_ALIVE, createdAt: "2026-10-21T10:05:00.000Z", story: ZOO_TAKE, feedbackStatus: "failed" }));
+    // Draw the retelling
+    render(<SessionScreen sessionId="g2" repository={repository} now={NOW} />);
+    // The table
+    const table = await screen.findByRole("table", { name: "Last time and this time" });
+    // The facts row
+    const facts = within(table).getAllByRole("row").find((row) => row.textContent?.includes("Facts kept"))!;
+    // Confirm the headline, the facts on both, and Tell it again's address
+    expect([!!screen.getByRole("heading", { name: "You added 5 of 5 this time, up from 0." }), within(facts).getAllByRole("cell").map((cell) => cell.textContent), screen.getByRole("link", { name: /Tell it again/ }).getAttribute("href")]).toEqual([true, ["4 of 4", "4 of 4"], "/session?mode=story&prompt=gs13&retryOf=g2"]);
+  });
+});

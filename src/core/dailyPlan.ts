@@ -11,6 +11,8 @@ import { findSpeechSummary, partId, readingTitle } from "@/content/readingIndex"
 import { dayKey, daysBetween, startOfDay } from "@/core/dates";
 // Load today's story prompt (decision 92)
 import { storyPromptForDay } from "@/content/stories";
+// Load today's guided story (decision 93)
+import { guidedStoryForDay } from "@/content/guidedStories";
 // Load the small-talk questions and lessons
 import { SMALL_TALK_LESSONS, drillForDay, smallTalkForDay, unitOf } from "@/content/smallTalk";
 // Load the next Learn card
@@ -130,12 +132,12 @@ function skill(focusId: string, day: Date): PlanStep {
 }
 
 // One kind of practice the day can pick
-type PickKind = "talk" | "response" | "bookend" | "story" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios";
+type PickKind = "talk" | "response" | "bookend" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios";
 
 // The bank in three groups, each with its lane: speaking on the spot, delivery skills, and conversation
 const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> = [
-  // On the spot: a Table Topic, a story, an opening or closing, a story again, a prepared speech; a story is two turns in five, so about twice a week, never twice in a row (decision 92)
-  { lane: "spot", kinds: ["talk", "story", "bookend", "story", "response"] },
+  // On the spot: a Table Topic, an open story, an opening or closing, a guided story, a prepared speech; a story is two turns in five, so about twice a week, never twice in a row, open and guided in turn (decisions 92 and 93)
+  { lane: "spot", kinds: ["talk", "story", "bookend", "guided", "response"] },
   // Delivery: the week's focus drill, a voice drill (the voice modes in turn; decision 80), a pause drill
   { lane: "delivery", kinds: ["skill", "voice", "pause"] },
   // Conversation: the next Connect lesson or drill, a round of quick scenarios, an everyday question (decision 72)
@@ -181,6 +183,13 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
     const prompt = storyPromptForDay(input.day);
     // The step: a minute to plan and about a minute to tell
     return { lane, kind: "session", label: "Story", title: prompt.text, mode: "story", promptId: prompt.id, minutes: 2, href: `/stories/tell?prompt=${prompt.id}` };
+  }
+  // A guided story: today's facts to make a story of, set up on its own page with its own focus (decision 93)
+  if (kind === "guided") {
+    // Today's guided story
+    const guided = guidedStoryForDay(input.day);
+    // The step: a minute to plan and about a minute to tell
+    return { lane, kind: "session", label: "Guided story", title: guided.title, mode: "story", promptId: guided.id, minutes: 2, href: `/stories/tell?prompt=${guided.id}` };
   }
   // An opening or a closing drill (the week's focus decides which, if it is one of them)
   if (kind === "bookend") {

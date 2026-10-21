@@ -35,14 +35,26 @@ describe("PracticeScreen", () => {
     await waitFor(async () => expect((await rows("Build a skill"))[1]?.[1]).toBe(`/session?mode=lesson&prompt=${LESSONS[0]?.id}`));
     // Confirm the groups and where each row leads ("See all" first in Build a skill)
     // Confirm the stories group, second on the page, with today's story, telling one again and the moments (decision 92)
-    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["From your moments", "/stories#from-moments"]], 1]);
+    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"], ["From your moments", "/stories#from-moments"]], 1]);
     // Confirm the other groups
-    expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Build a skill"), (await rows("Speak on the spot")).slice(0, 3)]).toEqual([
+    expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Build a skill"), await rows("Speak on the spot")]).toEqual([
       [["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["Asking", "/small-talk/unit?id=asking"], ["Listening", "/small-talk/unit?id=listening"], ["Responding to news", "/small-talk/unit?id=news"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
       [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Tricky words", `/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`], ["Volume", "/voice/drill?id=v01"], ["Pitch and stress", "/voice/drill?id=p01"], ["Tone", "/voice/drill?id=t01"], ["Pausing", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Shadowing", "/voice/shadow?id=s01"]],
-      [[undefined, "/skills"], ["Lessons", `/session?mode=lesson&prompt=${LESSONS[0]?.id}`], ["Read aloud", "/skills#readings"]],
-      [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Openings and closings", "/bookends"]],
+      [[undefined, "/skills"], ["Lessons", `/session?mode=lesson&prompt=${LESSONS[0]?.id}`]],
+      [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Free talk", "/session?mode=free&prompt=free"], ["Short speech", "/practice/outline"], ["Read aloud", "/skills#readings"]],
     ]);
+  });
+
+  // Read aloud sits with speaking on the spot, the openings drill is off the menu (still reached from Today), and Build a skill keeps the lessons with where they are on the path (decision 93)
+  it("puts Read aloud under Speak on the spot and leaves Openings and closings off the menu", async () => {
+    // Draw the page
+    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The on-the-spot group
+    const spot = (await screen.findByRole("heading", { name: "Speak on the spot" })).closest("section") as HTMLElement;
+    // The skills group
+    const skills = screen.getByRole("heading", { name: "Build a skill" }).closest("section") as HTMLElement;
+    // Confirm Read aloud is in the first group only, the openings row is gone everywhere, and the lessons row says where on the path
+    await waitFor(() => expect([!!within(spot).queryByRole("link", { name: /^Read aloud/ }), !!within(skills).queryByRole("link", { name: /^Read aloud/ }), screen.queryByText("Openings and closings"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/bookends"), within(skills).getByRole("link", { name: /^Lessons/ }).textContent?.includes(`1 of ${LESSONS.length}`)]).toEqual([true, false, null, false, true]));
   });
 
   // Q&A practice is removed (decision 61): no row, even after a prepared speech

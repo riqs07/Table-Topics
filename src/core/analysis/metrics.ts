@@ -141,6 +141,10 @@ export const METRICS: ReadonlyArray<MetricDefinition> = [
   metric("rub.story_dialogue", "Dialogue", "The story coach's score for someone's words said as they were said, 0 to 3.", "0–3", "story", "rubric", "weak", false, "higher"),
   metric("rub.story_turn", "The turn", "The story coach's score for a clear turn, a “but” or a moment things changed, 0 to 3.", "0–3", "story", "rubric", "moderate", true, "higher"),
   metric("rub.story_point", "The point", "The story coach's score for ending on the point or the change, then stopping, 0 to 3.", "0–3", "story", "rubric", "weak", true, "higher"),
+  // Guided stories: the facts brought to life (decision 93)
+  metric("story.added", "Added to the facts", "For a guided story: how many of a feeling, someone's words, a turn, details of your own and a point at the end were heard beyond the given facts, 0 to 5.", "count", "story", "device", "weak", true, "higher"),
+  metric("story.facts_kept", "Facts kept", "For a guided story: the share of the given facts heard, each matched by at least half its content words.", "%", "story", "device", "weak", false, "higher"),
+  metric("rub.story_alive", "Facts brought to life", "For a guided story: the story coach's score for how far the plain facts were brought to life, 0 to 3.", "0–3", "story", "rubric", "weak", true, "higher"),
 ];
 
 // The definitions by id

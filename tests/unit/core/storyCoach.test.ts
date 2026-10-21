@@ -59,8 +59,26 @@ describe("story coach", () => {
   it("requires the story scores in the reply shape", () => {
     // A reply with everything but the story scores
     const reply = { beats: [], keep: "k", change: "c", retryCue: "r", yours: "y", better: "b", rubric: { pointFirst: { score: 1, quote: "" }, answersQuestion: null, structure: { score: 1, quote: "" }, ending: { score: 1, quote: "" }, concreteExample: { score: 1, quote: "" }, wordChoice: { score: 1, quote: "" }, devices: [], unnecessaryHedges: 0, wordSwaps: [] } };
-    // Confirm it fails, and passes once they are added
-    expect([StoryFeedbackSchema.safeParse(reply).success, StoryFeedbackSchema.safeParse({ ...reply, storyRubric: SCORES }).success]).toEqual([false, true]);
+    // Confirm it fails, and passes once they are added (with the guided parts null for an open story, decision 93)
+    expect([StoryFeedbackSchema.safeParse(reply).success, StoryFeedbackSchema.safeParse({ ...reply, broughtToLife: null, storyRubric: { ...SCORES, alive: null } }).success]).toEqual([false, true]);
+  });
+
+  // A guided story's message lists its facts, twist and nudges from the app's own content, not the prompt line (decision 93)
+  it("gives the coach a guided story's facts", () => {
+    // A telling of the zoo story
+    const message = buildStoryMessage({ transcript: "words", durationSec: 60, focusId: "x", previousChange: null, mode: "story", promptId: "gs13", story: { shape: "classic", focus: "middle", length: "short" } });
+    // Confirm the title, a fact, the twist, a nudge, no prompt line, and the instructions for guided stories
+    expect([message.includes("Guided story: A day at the zoo"), message.includes("- You got a hot dog."), message.includes("The twist to build to: The gorilla was staring right at you."), message.includes("What did the gorilla do?"), message.includes("Prompt:"), STORY_SYSTEM_PROMPT.includes("broughtToLife"), STORY_SYSTEM_PROMPT.includes("- alive:")]).toEqual([true, true, true, true, false, true, true]);
+  });
+
+  // A guided reply keeps what was brought to life and the seventh score; an open one has neither (decision 93)
+  it("keeps a guided story's verdict and score only when given", () => {
+    // A guided reply and an open one
+    const [guided, open] = [checkStoryFeedback({ beats: [], keep: "k", change: "c", retryCue: "r", yours: "y", better: "b", broughtToLife: "  You added the smell of onions.  " }), checkStoryFeedback({ beats: [], keep: "k", change: "c", retryCue: "r", yours: "y", better: "b", broughtToLife: null })];
+    // The scores, with and without
+    const [scored, unscored] = [checkStoryRubric({ ...SCORES, alive: { score: 4, quote: " onions " } }), checkStoryRubric({ ...SCORES, alive: null })];
+    // Confirm each
+    expect([guided.story?.broughtToLife, open.story && "broughtToLife" in open.story, scored.alive, "alive" in unscored]).toEqual(["You added the smell of onions.", false, { score: 3, quote: "onions" }, false]);
   });
 
   // Scores are kept within 0 to 3, and quotes are trimmed
@@ -78,6 +96,8 @@ describe("story rubric", () => {
   it("reads story scores, refuses broken ones, and allows none", () => {
     // Each case
     expect([readRubric(RUBRIC, "x")?.story?.hook.score, readRubric({ ...RUBRIC, story: { ...SCORES, turn: { score: 9, quote: "" } } }, "x"), readRubric({ ...RUBRIC, story: undefined }, "x")?.story]).toEqual([3, null, undefined]);
+    // A guided story's seventh score reads back, and a broken one spoils the rubric too (decision 93)
+    expect([readRubric({ ...RUBRIC, story: { ...SCORES, alive: { score: 2, quote: "onions" } } }, "x")?.story?.alive, readRubric({ ...RUBRIC, story: { ...SCORES, alive: { score: 2 } } }, "x")]).toEqual([{ score: 2, quote: "onions" }, null]);
   });
 
   // The story scores become registered rub.story_* measures; none without them
@@ -88,5 +108,13 @@ describe("story rubric", () => {
     const ids = Object.keys(withStory).filter((id) => id.startsWith("rub.story_"));
     // Confirm six, each registered in the story group, the values, and none without
     expect([ids.length, ids.every((id) => findMetric(id)?.group === "story"), withStory["rub.story_hook"]?.value, withStory["rub.story_dialogue"]?.value, Object.keys(without).some((id) => id.startsWith("rub.story_"))]).toEqual([6, true, 3, 1, false]);
+  });
+
+  // A guided story's seventh score becomes rub.story_alive, registered in the story group (decision 93)
+  it("turns a guided story's score into its own measure", () => {
+    // The measures with the seventh score
+    const metrics = rubricMetrics({ ...RUBRIC, story: { ...SCORES, alive: { score: 2, quote: "onions" } } });
+    // Confirm the value and its registration
+    expect([metrics["rub.story_alive"]?.value, findMetric("rub.story_alive")?.group]).toEqual([2, "story"]);
   });
 });
