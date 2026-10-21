@@ -120,7 +120,7 @@ Talks are stored in their own collection (added to existing databases by raising
 
 Prompts ship inside the app as fixed content. They are not user data.
 
-The recordings of the fixed lines (small talk and shadowing, decision 82; the four conversation characters' lines, decision 83) ship as files in `public/clips/`. Once played, each is kept in the browser's cache store `voicelab-voice-v1` under its address, so it plays offline. That store also keeps any line fetched from `/api/voice`. It is not user data, is not exported, and the service worker leaves it alone when it updates (each release's worker deletes only older `voicelab-app-<build>` caches and the old `voicelab-v<n>` ones; decision 88).
+The recordings of the fixed lines (small talk and shadowing, decision 82; the four conversation characters' lines, decision 83) ship as files in `public/clips/`. Once played, each is kept in the browser's cache store `voicelab-voice-v1` under its address, so it plays offline. That store also keeps any line fetched from `/api/voice`. It is not user data, is not exported, and the service worker leaves it alone when it updates (each release's worker deletes only older `voicelab-app-<build>` page caches and the old `voicelab-v<n>` ones; decision 88). Built scripts and fonts are kept in `voicelab-static`, shared across releases, with a note of which files the current and the previous release use; a file no longer used by either is removed when the next release takes over (decision 99).
 
 ## Derived, not stored
 

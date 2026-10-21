@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 // Load the build step that stamps the worker with the build's id (decision 88)
-import { BUILD_MARKER, FILES_MARKER, stampWorker } from "../../scripts/build-sw.mjs";
+import { BUILD_MARKER, FILES_MARKER, stampWorker, usedMedia } from "../../scripts/build-sw.mjs";
 
 // The worker's source, as written to public/sw.js by the build with this test build's id
 const TEMPLATE = readFileSync("src/serviceWorker/sw.template.js", "utf8");
@@ -16,6 +16,8 @@ const SOURCE = stampWorker(TEMPLATE, BUILD, ["/_next/static/chunks/later-speeche
 const ORIGIN = "https://voicelab.example";
 // This build's cache name
 const CACHE = `voicelab-app-${BUILD}`;
+// The cache of built files shared across builds (decision 99)
+const STATIC = "voicelab-static";
 
 // How the fake network answers: a function from the request to a response (or a rejection for offline)
 type Network = (request: { url: string; headers?: Headers }) => Promise<Response>;
@@ -30,6 +32,10 @@ interface Worker {
   rscKey(url: URL, headers: Headers): string;
   // Whether a cache is an older build's, to delete
   isOldVersion(name: string): boolean;
+  // Whether a page's text belongs to this build
+  fromThisBuild(text: string): boolean;
+  // How many times the worker asked the browser to look for a newer worker
+  updates(): number;
   // Event handlers the worker registered, by event name
   handlers: Record<string, (event: unknown) => void>;
   // The fake cache stores, by name, each a map from address to saved response
@@ -47,8 +53,8 @@ const OFFLINE: Network = async () => {
 // A network that answers every address with a short page naming it
 const ONLINE: Network = async (request) => new Response(`fresh ${request.url}${request.headers?.get("RSC") === "1" ? " data" : " page"}`);
 
-// Load the worker into a fresh sandbox with fake browser parts
-function loadWorker(stores = new Map<string, Map<string, Response>>()): Worker {
+// Load the worker (this build's, unless another build's source is given) into a fresh sandbox with fake browser parts
+function loadWorker(stores = new Map<string, Map<string, Response>>(), source = SOURCE): Worker {
   // Collected event handlers
   const handlers: Record<string, (event: unknown) => void> = {};
   // How the network answers now
@@ -74,10 +80,18 @@ function loadWorker(stores = new Map<string, Map<string, Response>>()): Worker {
       put: async (key: string | URL | { url: string }, response: Response) => void store.set(keyOf(key), response),
       // Find a saved response (a copy, so it can be read more than once), matching the whole address
       match: async (key: string | URL | { url: string }) => store.get(keyOf(key))?.clone(),
+      // Every saved request
+      keys: async () => [...store.keys()].map((url) => ({ url })),
+      // Remove one saved response
+      delete: async (key: string | URL | { url: string }) => store.delete(keyOf(key)),
     };
   };
+  // Times the worker asked for a newer worker
+  let updates = 0;
   // The fake worker global
   const self: Record<string, unknown> = {
+    // The worker's registration, which can look for a newer worker
+    registration: { update: async () => void (updates += 1) },
     // Record each handler the worker registers
     addEventListener: (name: string, handler: (event: unknown) => void) => void (handlers[name] = handler),
     // The site's address
@@ -97,9 +111,19 @@ function loadWorker(stores = new Map<string, Map<string, Response>>()): Worker {
     match: async (key: string | { url: string }) => [...stores.values()].map((store) => store.get(keyOf(key))).find(Boolean)?.clone(),
   };
   // Run the worker's code with the fakes (timers looked up when called, so fake timers work)
-  runInNewContext(SOURCE, { self, caches, fetch: (request: string | URL | { url: string }, init?: { headers?: Headers }) => network({ url: keyOf(request), headers: init?.headers ?? (typeof request === "object" && "headers" in request ? (request.headers as Headers) : undefined) }), Response, Headers, URL, URLSearchParams, Promise, setTimeout: (run: () => void, ms: number) => setTimeout(run, ms), clearTimeout: (id: ReturnType<typeof setTimeout>) => clearTimeout(id) });
+  runInNewContext(source, { self, caches, fetch: (request: string | URL | { url: string }, init?: { headers?: Headers }) => network({ url: keyOf(request), headers: init?.headers ?? (typeof request === "object" && "headers" in request ? (request.headers as Headers) : undefined) }), Response, Headers, URL, URLSearchParams, Promise, setTimeout: (run: () => void, ms: number) => setTimeout(run, ms), clearTimeout: (id: ReturnType<typeof setTimeout>) => clearTimeout(id) });
   // Hand back what the worker exposed
-  return { strategyFor: self.voicelabStrategyFor as Worker["strategyFor"], pageKey: self.voicelabPageKey as Worker["pageKey"], rscKey: self.voicelabRscKey as Worker["rscKey"], isOldVersion: self.voicelabIsOldVersion as Worker["isOldVersion"], handlers, stores, setNetwork: (next) => void (network = next) };
+  return { strategyFor: self.voicelabStrategyFor as Worker["strategyFor"], pageKey: self.voicelabPageKey as Worker["pageKey"], rscKey: self.voicelabRscKey as Worker["rscKey"], isOldVersion: self.voicelabIsOldVersion as Worker["isOldVersion"], fromThisBuild: self.voicelabFromThisBuild as Worker["fromThisBuild"], updates: () => updates, handlers, stores, setNetwork: (next) => void (network = next) };
+}
+
+// Run the activate step and wait for it
+async function activate(target: Worker): Promise<void> {
+  // Collect the work activation waits for
+  let pending: Promise<unknown> = Promise.resolve();
+  // Run the activate handler
+  target.handlers.activate!({ waitUntil: (promise: Promise<unknown>) => void (pending = promise) });
+  // Wait for it
+  await pending;
 }
 
 // A fetch event as the browser sends it, with what the worker answered and kept alive
@@ -153,10 +177,10 @@ describe("service worker routing", () => {
     expect(worker.strategyFor(new URL(`${ORIGIN}/icons/icon-192.png`), "no-cors", false)).toBe("cache-first");
   });
 
-  // Pages try the network for the latest version, falling back to the saved copy offline
-  it("loads pages from the network first", () => {
+  // Pages come from the saved copy at once, refreshed in the background (decision 99)
+  it("handles page loads as pages", () => {
     // Confirm a page navigation
-    expect(worker.strategyFor(new URL(`${ORIGIN}/history`), "navigate", false)).toBe("network-first");
+    expect(worker.strategyFor(new URL(`${ORIGIN}/history`), "navigate", false)).toBe("page");
   });
 
   // The tab bar moves between pages by fetching their data, not by navigating; those requests used to go uncached, so pages opened that way never worked offline
@@ -213,8 +237,56 @@ describe("service worker cleanup", () => {
     fresh.handlers.activate!({ waitUntil: (promise: Promise<unknown>) => void (pending = promise) });
     // Wait for it
     await pending;
-    // Confirm only the voice store and this build's remain
-    expect([...stores.keys()].sort()).toEqual([CACHE, "voicelab-voice-v1"].sort());
+    // Confirm only the voice store, this build's pages and the shared built files remain
+    expect([...stores.keys()].sort()).toEqual([CACHE, STATIC, "voicelab-voice-v1"].sort());
+  });
+
+  // The update bug (decision 99): a tab still open on the previous release loads a script later (the plan, a reading) and must still find it after the new worker takes over
+  it("keeps the previous build's files until the release after, so an open old tab still loads them", async () => {
+    // The previous release's cache, laid out as before decision 99: its pages and its own built files together
+    const stores = new Map([["voicelab-app-build-old", new Map<string, Response>([[`${ORIGIN}/`, new Response("old today")], [`${ORIGIN}/_next/static/chunks/old-plan.js`, new Response("old plan")]])]]);
+    // This release's worker over them, installed and taking over
+    const fresh = loadWorker(stores);
+    // Online for the install
+    fresh.setNetwork(ONLINE);
+    // Installed
+    await install(fresh);
+    // Taking over
+    await activate(fresh);
+    // The old tab asks for its script, offline
+    fresh.setNetwork(OFFLINE);
+    // (the request)
+    const kept = fetchEvent("/_next/static/chunks/old-plan.js", "no-cors");
+    // Answered by the new worker
+    fresh.handlers.fetch!(kept.event);
+    // The text it got
+    const text = await (await kept.reply()!).text();
+    // The release after this one takes over in turn
+    const later = loadWorker(stores, stampWorker(TEMPLATE, "build-third", ["/_next/static/chunks/third.js"]));
+    // (online for its install)
+    later.setNetwork(ONLINE);
+    // (installed)
+    await install(later);
+    // (activated: the note keeps this build and the third, and drops the oldest)
+    await activate(later);
+    // Confirm the old tab got its script, the old pages went, and the oldest build's file is gone after the next update
+    expect([text, stores.has("voicelab-app-build-old"), stores.get(STATIC)?.has(`${ORIGIN}/_next/static/chunks/old-plan.js`)]).toEqual(["old plan", false, false]);
+  });
+
+  // A file unchanged between releases keeps its name, so an update does not download it again
+  it("does not download a built file again when an update still uses it", async () => {
+    // The shared cache already holds this build's later-loaded script, from the release before
+    const stores = new Map([[STATIC, new Map<string, Response>([[`${ORIGIN}/_next/static/chunks/later-speeches.js`, new Response("kept speeches")]])]]);
+    // A worker over them
+    const fresh = loadWorker(stores);
+    // The addresses fetched
+    const fetched: string[] = [];
+    // Online, noting each address
+    fresh.setNetwork(async (request) => { fetched.push(new URL(request.url).pathname); return ONLINE(request); });
+    // Installed
+    await install(fresh);
+    // Confirm the script was not fetched again and kept its saved copy
+    expect([fetched.includes("/_next/static/chunks/later-speeches.js"), await stores.get(STATIC)?.get(`${ORIGIN}/_next/static/chunks/later-speeches.js`)?.text()]).toEqual([false, "kept speeches"]);
   });
 });
 
@@ -224,6 +296,16 @@ describe("service worker versioning", () => {
   it("names the cache after the build", () => {
     // Confirm each marker is in the source once, and the build's name and files are in the stamped worker
     expect([TEMPLATE.split(BUILD_MARKER).length, TEMPLATE.split(FILES_MARKER).length, SOURCE.includes(BUILD_MARKER), SOURCE.includes(`const BUILD = "${BUILD}"`), SOURCE.includes('const BUILD_FILES = ["/_next/static/chunks/later-speeches.js", "/_next/static/media/font.woff2"]')]).toEqual([2, 2, false, true, true]);
+  });
+
+  // Only the fonts the pages name are saved at install: the other theme's fonts and the extra-alphabet subsets were 650 KB nobody used (decision 99)
+  it("lists only the media the prerendered pages name", () => {
+    // Three fonts built; the pages preload two
+    const media = ["/_next/static/media/atkinson.p.woff2", "/_next/static/media/fraunces-latin.p.woff2", "/_next/static/media/young-serif-ext.woff2"];
+    // The pages' HTML, one naming a font inside escaped script text
+    const pages = ['<link rel="preload" href="/_next/static/media/atkinson.p.woff2" as="font">', 'self.__next_f.push([1,"\\"/_next/static/media/fraunces-latin.p.woff2\\""])'];
+    // Confirm the two named fonts are kept and the unused one is not
+    expect(usedMedia(media, pages)).toEqual(["/_next/static/media/atkinson.p.woff2", "/_next/static/media/fraunces-latin.p.woff2"]);
   });
 
   // Two builds give two different workers, so the browser installs the new one
@@ -269,8 +351,8 @@ describe("service worker install", () => {
     worker.setNetwork(ONLINE);
     // Install
     await install(worker);
-    // Confirm the later-loaded script and the font were saved
-    expect(["/_next/static/chunks/later-speeches.js", "/_next/static/media/font.woff2"].map((path) => worker.stores.get(CACHE)?.has(`${ORIGIN}${path}`))).toEqual([true, true]);
+    // Confirm the later-loaded script and the font were saved with the shared built files
+    expect(["/_next/static/chunks/later-speeches.js", "/_next/static/media/font.woff2"].map((path) => worker.stores.get(STATIC)?.has(`${ORIGIN}${path}`))).toEqual([true, true]);
   });
 
   // Each saved page's scripts are saved too, so pages never opened online still work offline
@@ -280,7 +362,7 @@ describe("service worker install", () => {
     // Install
     await install(worker);
     // Confirm the script named in the pages was saved
-    expect(worker.stores.get(CACHE)?.has(`${ORIGIN}/_next/static/chunks/page-abc.js`)).toBe(true);
+    expect(worker.stores.get(STATIC)?.has(`${ORIGIN}/_next/static/chunks/page-abc.js`)).toBe(true);
   });
 });
 
@@ -366,8 +448,8 @@ describe("service worker fetch", () => {
     expect([text.includes("Pages you've opened while online work offline."), text.includes("has not been opened")]).toEqual([true, false]);
   });
 
-  // On a bad connection, the saved copy is shown after three seconds instead of waiting, and the late answer still refreshes it
-  it("uses the saved copy when the network is slow, then saves the late answer", async () => {
+  // A saved page is shown at once, without waiting for the network at all, and the network's answer refreshes it for next time (decision 99: a poor connection held a saved page for 2.5 seconds)
+  it("shows the saved copy at once, then saves the fresh answer", async () => {
     // Fake timers, to wait without waiting
     vi.useFakeTimers();
     // A saved copy of History
@@ -378,16 +460,40 @@ describe("service worker fetch", () => {
     const page = fetchEvent("/history", "navigate");
     // Run the fetch handler
     worker.handlers.fetch!(page.event);
-    // Three seconds pass
-    await vi.advanceTimersByTimeAsync(3_000);
+    // No time passes
+    await vi.advanceTimersByTimeAsync(0);
     // The answer given
     const shown = await (await page.reply()!).text();
     // The network answers later
-    await vi.advanceTimersByTimeAsync(7_000);
+    await vi.advanceTimersByTimeAsync(10_000);
     // Wait for the save
     await page.settled();
-    // Confirm the saved copy was shown at three seconds and the late answer replaced it
+    // Confirm the saved copy was shown at once and the late answer replaced it
     expect([shown, await worker.stores.get(CACHE)?.get(`${ORIGIN}/history`)?.text()]).toEqual(["saved history", "late /history"]);
+  });
+
+  // A page from a newer release is never saved into this build's cache (its scripts are not this build's); the worker looks for the newer worker instead
+  it("never mixes a newer release's page into this build's saved pages", async () => {
+    // A saved copy of Today from this build
+    worker.stores.set(CACHE, new Map([[`${ORIGIN}/`, new Response("this build's today")]]));
+    // The network now serves a newer release, naming a script this build does not have
+    worker.setNetwork(async () => new Response('<script src="/_next/static/chunks/newer-release.js"></script>'));
+    // Open Today
+    const page = fetchEvent("/", "navigate");
+    // Run the fetch handler
+    worker.handlers.fetch!(page.event);
+    // The answer, and the background refresh
+    const shown = await (await page.reply()!).text();
+    // (the refresh)
+    await page.settled();
+    // Confirm the saved copy was shown and kept, and a newer worker was looked for
+    expect([shown, await worker.stores.get(CACHE)?.get(`${ORIGIN}/`)?.text(), worker.updates()]).toEqual(["this build's today", "this build's today", 1]);
+  });
+
+  // The build check: a page naming only this build's scripts, or none, belongs to it
+  it("tells this build's pages from a newer release's", () => {
+    // This build's script, none, and an unknown one
+    expect([worker.fromThisBuild('<script src="/_next/static/chunks/later-speeches.js">'), worker.fromThisBuild("plain text"), worker.fromThisBuild('"/_next/static/chunks/other.js"')]).toEqual([true, true, false]);
   });
 
   // With nothing saved, a slow network is still waited for (there is nothing better to show)

@@ -44,14 +44,37 @@ export function builtFiles(staticFolder, folder) {
   return paths.map((path) => `/_next/static/${path}`).sort();
 }
 
+/**
+ * The built media files (fonts, images) that the prerendered pages name, so only those are saved at install (decision 99): the other theme's fonts and the extra-alphabet subsets are left to load when a page asks for them.
+ * @param {string[]} media the addresses of every built media file
+ * @param {string[]} pages the HTML of the prerendered pages
+ * @returns {string[]} the media addresses the pages name, sorted
+ */
+export function usedMedia(media, pages) {
+  // Every built-file address the pages name
+  const named = new Set(pages.flatMap((html) => [...html.matchAll(/\/_next\/static\/media\/[^"'\s)\\]+/g)].map((match) => match[0])));
+  // The media files among them
+  return media.filter((file) => named.has(file)).sort();
+}
+
+/**
+ * The HTML of every prerendered page in a folder and the folders inside it.
+ * @param {string} folder the folder, such as ".next/server/app"
+ * @returns {string[]} each page's HTML
+ */
+export function prerenderedPages(folder) {
+  // Every .html file below it
+  return readdirSync(folder, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile() && entry.name.endsWith(".html")).map((entry) => readFileSync(`${entry.parentPath}/${entry.name}`, "utf8"));
+}
+
 // When run directly: read this build's id, stamp the worker and save it where the site serves it
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // The id Next.js gave this build
   const buildId = readFileSync(".next/BUILD_ID", "utf8").trim();
   // The worker's source
   const source = readFileSync("src/serviceWorker/sw.template.js", "utf8");
-  // This build's scripts, styles and fonts
-  const files = [...builtFiles(".next/static", "chunks"), ...builtFiles(".next/static", "media")];
+  // This build's scripts and styles, and the fonts its pages use (decision 99)
+  const files = [...builtFiles(".next/static", "chunks"), ...usedMedia(builtFiles(".next/static", "media"), prerenderedPages(".next/server/app"))];
   // Save the stamped worker
   writeFileSync("public/sw.js", stampWorker(source, buildId, files));
   // Say what was written
