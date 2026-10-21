@@ -11,7 +11,7 @@
     },
     {
       "type": "text",
-      "text": "{\"moment\": \"I built an app\", \"hooks\": [\"it coaches me on public speaking\", \"on my phone\"], \"feeling\": \"\", \"handBack\": \"did you do anything\", \"keep\": \"You led with one clear moment: \\\"I built an app.\\\"\", \"change\": \"Say how it felt. After \\\"on my phone\\\", add one line like \\\"it was way more fun than I expected\\\".\", \"retryCue\": \"After your moment, say how it felt.\", \"livelier\": \"Kind of a nerdy weekend: I built an app that coaches me on public speaking, and got it running on my phone. [how it felt] Did you do anything fun?\"}"
+      "text": "{\"moment\": \"I built an app\", \"hooks\": [\"it coaches me on public speaking\", \"on my phone\"], \"feeling\": \"\", \"handBack\": \"did you do anything\", \"keep\": \"You led with one clear moment: \\\"I built an app.\\\"\", \"change\": \"Say how it felt. After \\\"on my phone\\\", add one line like \\\"it was way more fun than I expected\\\".\", \"retryCue\": \"After your moment, say how it felt.\", \"livelier\": \"Kind of a nerdy weekend: I built an app that coaches me on public speaking, and got it running on my phone. [how it felt] Did you do anything fun?\", \"rubric\": {\"pointFirst\": {\"score\": 3, \"quote\": \"I built an app\"}, \"answersQuestion\": {\"score\": 3, \"quote\": \"I built an app\"}, \"structure\": {\"score\": 2, \"quote\": \"did you do anything\"}, \"ending\": {\"score\": 3, \"quote\": \"did you do anything\"}, \"concreteExample\": {\"score\": 2, \"quote\": \"it coaches me on public speaking\"}, \"wordChoice\": {\"score\": 2, \"quote\": \"coaches me on public speaking\"}, \"devices\": [\"question\"], \"unnecessaryHedges\": 0, \"wordSwaps\": []}}"
     }
   ],
   "stop_reason": "end_turn",

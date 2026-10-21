@@ -83,8 +83,8 @@ export function createFeedbackHandler(deps: FeedbackDeps) {
       const result = await deps.makeCoach(env).getFeedback(data);
       // A safety decline gets its own answer
       if (result.status === "declined") return reply(422, { error: "The coach could not review this session." });
-      // Send the feedback back
-      return reply(200, { feedback: result.feedback });
+      // Send the feedback back, with the internal rubric the app keeps for the profile (decision 90)
+      return reply(200, { feedback: result.feedback, ...(result.rubric ? { rubric: result.rubric } : {}) });
     } catch (error) {
       // The failure's message (from the API: a status and error type, never the key or the transcript)
       const message = (error as Error).message;

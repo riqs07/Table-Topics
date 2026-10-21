@@ -8,6 +8,8 @@ export const COACH_PRICE_PER_MILLION = { input: 2, output: 10 };
 export const COACH_EFFORT = "medium" as const;
 // Weekly summaries (milestone 9): Opus, to be measured against Sonnet (decision 6)
 export const WEEKLY_SUMMARY_MODEL = "claude-opus-5-5";
+// How hard the weekly summary thinks: medium (set explicitly, as it is this model's default), since it reads a small table once a week (decision 90)
+export const WEEKLY_SUMMARY_EFFORT = "medium" as const;
 // Writing a conversation persona's next line (decisions 83 and 84): the fast, low-cost Haiku, since each line is short and the person is waiting
 export const CONVERSATION_MODEL = "claude-haiku-5-5";
 // How hard it thinks: low, to keep the pause before each reply short

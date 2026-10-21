@@ -1,7 +1,7 @@
 # Setup Requirements: Accounts, Keys, and Tools
 
 **Purpose:** Everything only you can set up, when it is needed, and what it costs.
-**Last updated:** 2026-10-20 (decision 87)
+**Last updated:** 2026-10-21 (decision 90)
 
 ## Rule for keys
 
@@ -27,7 +27,7 @@
 
 | Variable | Used for | Secret? | Set in |
 |----------|----------|---------|--------|
-| `ANTHROPIC_API_KEY` | Coach feedback, and picking a conversation character's next lines (decision 83) | Yes | `.env.local` and Vercel |
+| `ANTHROPIC_API_KEY` | Coach feedback (with its internal rubric), picking a conversation character's next lines (decision 83), and the weekly coach summary on the speaking profile (decision 90; no new setting) | Yes | `.env.local` and Vercel |
 | `OPENAI_API_KEY` | Whisper fallback (only if chosen) | Yes | `.env.local` and Vercel |
 | `APP_ACCESS_SECRET` | Gate on AI routes | Yes | `.env.local` and Vercel |
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `_TOKEN`) | Rate-limit counters | Yes | Vercel (optional in `.env.local`) |
@@ -38,7 +38,7 @@
 Rules:
 
 - None of these may start with `NEXT_PUBLIC_`, because that would expose them in the browser.
-- Set a **monthly spend limit in the Anthropic Console and in ElevenLabs** (a credit limit on the key, or on the plan), not only in our code. The app's own daily caps hold a leaked passphrase to at most about $26 a day (worked out in `src/config/limits.ts`); the dashboard limit is the stop that holds if something else goes wrong.
+- Set a **monthly spend limit in the Anthropic Console and in ElevenLabs** (a credit limit on the key, or on the plan), not only in our code. The app's own daily caps hold a leaked passphrase to at most about $27 a day, the weekly summary's 3 calls included (worked out in `src/config/limits.ts`); the dashboard limit is the stop that holds if something else goes wrong.
 - Rotate a key at once if it is ever pasted somewhere by mistake.
 
 ## What I cannot do for you

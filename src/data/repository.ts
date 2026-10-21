@@ -5,7 +5,7 @@ import { startOfDay } from "@/core/dates";
 // Load the rule for which recordings lose their audio
 import { audioToPrune } from "@/core/audioRetention";
 // Load the record types
-import { COLLECTION_NAMES, type ChallengeRecord, type SessionRecord, type SettingsRecord, type TalkRecord } from "@/data/records";
+import { COLLECTION_NAMES, type AnalysisRecord, type ChallengeRecord, type SessionRecord, type SettingsRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
 // Load the storage contract
 import type { Store } from "@/data/store";
 
@@ -46,6 +46,16 @@ export interface Repository {
   listTalks(): Promise<TalkRecord[]>;
   // Remove a talk (its rehearsals stay in history)
   deleteTalk(id: string): Promise<void>;
+  // Save a take's measures (decision 90)
+  saveAnalysis(analysis: AnalysisRecord): Promise<void>;
+  // Load a take's measures by session id
+  getAnalysis(sessionId: string): Promise<AnalysisRecord | undefined>;
+  // Load every take's measures
+  listAnalyses(): Promise<AnalysisRecord[]>;
+  // Save a weekly coach summary
+  saveSummary(summary: SummaryRecord): Promise<void>;
+  // Load every weekly summary, newest first
+  listSummaries(): Promise<SummaryRecord[]>;
   // Remove every stored record and recording
   deleteAllData(): Promise<void>;
 }
@@ -130,6 +140,20 @@ export function createRepository(store: Store): Repository {
 
     // Remove a talk by id
     deleteTalk: (id) => store.delete("talks", id),
+    // Save a take's measures under its session id
+    saveAnalysis: (analysis) => store.put("analyses", analysis.sessionId, analysis),
+    // Load a take's measures
+    getAnalysis: (sessionId) => store.get("analyses", sessionId),
+    // Load every take's measures
+    listAnalyses: () => store.getAll("analyses"),
+    // Save a weekly summary under its id
+    saveSummary: (summary) => store.put("summaries", summary.id, summary),
+
+    // Load every weekly summary, newest first
+    async listSummaries() {
+      // Read all and sort by when they were written, newest first
+      return (await store.getAll("summaries")).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
 
     // Remove everything
     async deleteAllData() {

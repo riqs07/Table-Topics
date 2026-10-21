@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the prompt builder and feedback checker being checked
-import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, CONVERSATION_SYSTEM_PROMPT, FEEDBACK_RULES, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildConnectionMessage, buildConversationMessage, buildSmallTalkMessage, checkConnectionFeedback, checkConversationFeedback, checkFeedback, checkSmallTalkFeedback } from "@/core/coachPrompt";
+import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, CONVERSATION_SYSTEM_PROMPT, FEEDBACK_RULES, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildConnectionMessage, buildConversationMessage, buildSmallTalkMessage, checkConnectionFeedback, checkConversationFeedback, checkFeedback, checkSmallTalkFeedback, checkRubric, RUBRIC_RULES } from "@/core/coachPrompt";
 
 // A typical session for these checks
 const SESSION = { transcript: "Um, so I think, uh, the best part of my week was the dog.", durationSec: 30, focusId: "cut-fillers", previousChange: null, mode: "standard" as const };
@@ -342,3 +342,24 @@ describe("coach messages for a speaker who stammers", () => {
   });
 });
 
+// Group the checks about the internal rubric (decision 90)
+describe("checkRubric", () => {
+  // A score of the right shape
+  const score = (value: number, quote = "q") => ({ score: value, quote });
+  // A rubric as the model might return it
+  const reply = { pointFirst: score(5, "  first  "), answersQuestion: null, structure: score(-1), ending: score(2.4), concreteExample: score(Number.NaN), wordChoice: score(3), devices: ["story", "story", "contrast"] as Array<"story" | "contrast">, unnecessaryHedges: -2, wordSwaps: [{ said: "good", stronger: "gripping", why: "vivid" }, { said: "", stronger: "x", why: "" }, { said: "nice", stronger: "Nice", why: "same" }, { said: "a", stronger: "b", why: "" }, { said: "c", stronger: "d", why: "" }, { said: "e", stronger: "f", why: "" }] };
+
+  // Scores are kept within 0 to 3, quotes trimmed, devices once each, swaps checked and capped at three
+  it("keeps scores in range and tidies the rest", () => {
+    // The tidy rubric
+    const tidy = checkRubric(reply, "model-x");
+    // Confirm each part
+    expect([tidy.pointFirst, tidy.structure.score, tidy.ending.score, tidy.concreteExample.score, tidy.devices, tidy.unnecessaryHedges, tidy.wordSwaps.map((swap) => swap.said), tidy.model, tidy.answersQuestion]).toEqual([{ score: 3, quote: "first" }, 0, 2, 0, ["story", "contrast"], 0, ["good", "a", "c"], "model-x", null]);
+  });
+
+  // Every coach is told about the rubric
+  it("is explained to every coach", () => {
+    // Confirm the rules are in two of the coaches' instructions
+    expect([COACH_SYSTEM_PROMPT.includes(RUBRIC_RULES), CONVERSATION_SYSTEM_PROMPT.includes(RUBRIC_RULES)]).toEqual([true, true]);
+  });
+});

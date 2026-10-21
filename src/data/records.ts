@@ -271,6 +271,153 @@ export interface SettingsRecord {
   wordsToWatch?: Record<string, number>;
 }
 
+// Where a measure came from (decision 90): the phone itself, a transcription service, the voice worker, or the coach's rubric
+export type MetricSource = "device" | "transcript" | "voice" | "rubric";
+
+// One measured value in a take's analysis, with where it came from, so a later, better engine can replace it without mixing definitions (decision 90)
+export interface MetricValue {
+  // The number, or null when it could not be measured on this take
+  value: number | null;
+  // Its unit, such as "words/min" or "%"
+  unit: string;
+  // Which kind of engine measured it
+  source: MetricSource;
+  // The exact engine, such as "device-v1" or "device-heuristic-v1"
+  engine: string;
+}
+
+// One engine that contributed to an analysis, and its version
+export interface EngineInfo {
+  // Its name, such as "device"
+  name: string;
+  // Its version
+  version: string;
+  // When it ran (ISO text)
+  at: string;
+}
+
+// One word of the transcript (lower case, letters and apostrophes only; empty for a piece with no letters) with the time it was first heard (seconds, approximate) and when the next word started (null when not known)
+export interface TimedWord {
+  // The word as heard
+  w: string;
+  // When it was first heard, or null when word times were not saved
+  s: number | null;
+  // When the next word was first heard, or null
+  e: number | null;
+}
+
+// One silence of a quarter second or more between the first and last word
+export interface PauseSpan {
+  // When it started, in seconds
+  start: number;
+  // When it ended, in seconds
+  end: number;
+  // The position of the first word heard after it (in the timed words), or null without word times
+  nextWord: number | null;
+}
+
+// What the analysis keeps so every phone measure can be worked out again without the audio (decision 90); the loudness and pitch readings themselves stay on the session
+export interface AnalysisRaw {
+  // The kind of session and its length
+  mode: SessionMode;
+  // Length in seconds
+  durationSec: number;
+  // The pause-word rate saved on the session (a reading only counts words added to its text)
+  fillersPerMinute: number;
+  // Each word with its time, when word times were saved (empty otherwise)
+  timedWords: TimedWord[];
+  // Every pause of a quarter second or more
+  pauses: PauseSpan[];
+  // Where the pauses came from: the loudness readings, gaps between word times, or nowhere
+  pauseSource: "loudness" | "word-gaps" | "none";
+  // When speech started and ended, in seconds, or null when no speech was found
+  speech: { first: number; last: number } | null;
+  // Loudness while speaking, when recorded: the average, its spread as a share of the average, each third's average, and whether the browser levelled it
+  loudness: { mean: number; cv: number; thirds: [number, number, number] | null; autoGain: boolean | null } | null;
+  // Pitch, when recorded: the usual pitch in hertz, the 10th-to-90th percentile range and the spread in semitones, and how phrases ended
+  pitch: { medianHz: number; rangeSt: number; sdSt: number; ends: { fall: number; level: number; rise: number } } | null;
+  // Phrases that faded at the end, of those long enough to judge
+  fading: { faded: number; stretches: number } | null;
+  // The first 30 seconds against the rest: words a minute and pauses a minute, when the take is long enough
+  firstPart: { firstWpm: number; restWpm: number; firstPausesPerMin: number; restPausesPerMin: number } | null;
+  // Content words (stop words removed) with how often each was said, the 300 most used
+  contentWords: Record<string, number>;
+  // For a conversation: your share of the words, your questions, follow-ups and turns
+  conversation?: { share: number | null; questions: number; followUps: number; turns: number };
+}
+
+// One rubric score from the coach: 0 to 3, with the speaker's words that back it
+export interface RubricScore {
+  // 0 (missing) to 3 (clearly there)
+  score: number;
+  // A short quote that backs the score
+  quote: string;
+}
+
+// The coach's internal rubric for one take (decision 90): never shown as scores, kept for the profile
+export interface RubricRecord {
+  // Main point in the first sentence or two
+  pointFirst: RubricScore;
+  // Answers the question asked, or null when there was no question
+  answersQuestion: RubricScore | null;
+  // A clear opening, body and close
+  structure: RubricScore;
+  // Ends on a clear last line
+  ending: RubricScore;
+  // At least one specific example, number or story
+  concreteExample: RubricScore;
+  // Precise, vivid word choice
+  wordChoice: RubricScore;
+  // Devices used: contrast, rule of three, question, story
+  devices: string[];
+  // Hedges the coach judged unnecessary
+  unnecessaryHedges: number;
+  // Up to three stronger word choices, each from the speaker's own words
+  wordSwaps: Array<{ said: string; stronger: string; why: string }>;
+  // The model that scored it
+  model: string;
+  // When (ISO text)
+  at: string;
+}
+
+// Everything measured about one take, kept apart from the session so the session stays small (decision 90)
+export interface AnalysisRecord {
+  // The session it belongs to
+  sessionId: string;
+  // The version of the measure definitions; a change means every analysis is worked out again
+  schemaVersion: number;
+  // When the measures were last worked out (ISO text)
+  computedAt: string;
+  // Which engines contributed
+  engines: { device: EngineInfo; transcript?: EngineInfo; voice?: EngineInfo; rubric?: EngineInfo };
+  // Every measure, by id (see src/core/analysis/metrics.ts)
+  metrics: Record<string, MetricValue>;
+  // What the phone measures are worked out from
+  raw: AnalysisRaw;
+  // The coach's rubric, once it arrived
+  rubric?: RubricRecord;
+}
+
+// One weekly coach summary (decision 90)
+export interface SummaryRecord {
+  // Unique id
+  id: string;
+  // When it was written (ISO text)
+  createdAt: string;
+  // One line on the week
+  headline: string;
+  // What improved, one line each
+  improved: string[];
+  // One pattern that keeps coming back
+  pattern: string;
+  // The one focus for next week
+  focus: string;
+  // A practice to try, or null
+  suggestedDrill: string | null;
+  // The model that wrote it
+  model: string;
+}
+
 // What each stored collection holds
 export interface Collections {
   // Session records, keyed by session id
@@ -283,10 +430,14 @@ export interface Collections {
   audio: Blob;
   // The user's own talks, keyed by talk id
   talks: TalkRecord;
+  // Each take's measures, keyed by session id (decision 90)
+  analyses: AnalysisRecord;
+  // Weekly coach summaries, keyed by id (decision 90)
+  summaries: SummaryRecord;
 }
 
 // One collection name
 export type CollectionName = keyof Collections;
 
 // Every collection name, for creating and clearing storage
-export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio", "talks"];
+export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio", "talks", "analyses", "summaries"];

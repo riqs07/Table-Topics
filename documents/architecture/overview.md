@@ -1,7 +1,7 @@
 # Architecture Overview
 
 **Purpose:** Show how VoiceLab is built and how data moves.
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-21
 
 ## In one paragraph
 
@@ -15,6 +15,8 @@ VoiceLab is a Next.js web app, installable on a phone (a PWA). Recording and sto
 | Recorder | Browser | Captures audio from the microphone |
 | Transcriber | Browser (Web Speech API) | Live transcript while the user speaks |
 | Metrics engine | Browser | Computes fillers per minute, words per minute |
+| Analysis and profile (decision 90) | Browser | Measures every take in depth (`src/core/analysis/`), saves it in the `analyses` collection, and builds the speaking profile at `/profile` |
+| Weekly summary API (decision 90) | Server (Next.js route) | Sends a compact table of the week's measures to the AI coach, returns a structured summary |
 | Repository | Browser (IndexedDB) | Saves and loads sessions and settings |
 | Feedback API | Server (Next.js route) | Sends transcript text to the AI coach, returns keep/change/retry |
 | Transcribe API | Server (Next.js route) | Fallback: audio to text when Web Speech is unavailable |
@@ -66,6 +68,12 @@ Rule: logic goes in `core/` with no browser dependencies, so it can be tested qu
 `POST /api/feedback` with header `x-voicelab-passphrase` and body `{ transcript, durationSec, focusId, previousChange, mode?, promptId?, question? }`. Checks run in this order, so nothing costs money until the last step: settings present (500 naming the missing variable), passphrase (401), body shape and size (400), shared rate limit (429 with `Retry-After`; 503 if the counter store is down), then the coach (200 `{ feedback }`, 422 if declined, 502 on failure). Logic: `src/server/feedbackHandler.ts`; prompt: `src/core/coachPrompt.ts`.
 
 `POST /api/questions` was removed with Q&A practice (decision 61).
+
+## Speaking profile and weekly summary route (decision 90)
+
+Every saved take is measured (`src/core/analysis/device.ts`, `language.ts`, `placement.ts`; record built by `analysis.ts`; saved by `src/data/analyses.ts` from `saveRecording` and `saveConversationSession`). The coach's reply carries an internal rubric beside the feedback (`RubricSchema` in `src/core/coachPrompt.ts`; the route answers `{ feedback, rubric }`), which `feedbackClient` saves into the take's analysis. `/profile` (`src/components/screens/ProfileScreen.tsx`, linked from Settings and History) measures older takes in batches, builds the profile (`src/core/analysis/profile.ts`) and, with `?session=ID`, shows one take's full table (linked from its results as "See all measures for this take").
+
+`POST /api/summary` with the passphrase header and a compact table (`SummaryInputSchema` in `src/core/weeklySummary.ts`: per family's measures, patterns, short quotes, word swaps, favourite words, last week's focus; at most 12,000 characters of text). It runs the shared checks (`src/server/guard.ts`; 2 a minute and 3 a day, `SUMMARY_LIMITS`), then asks `WEEKLY_SUMMARY_MODEL` (`src/server/summary.ts`, structured output, no retries) and answers 200 `{ summary, model }`, 422 on a decline, 502 on a failure. Logic: `src/server/summaryHandler.ts`; the app's side: `src/data/summaryClient.ts`, called when the profile opens and a summary is due. Measures and rules: [measurements.md](measurements.md).
 
 ## Conversation route (decisions 83 and 84)
 

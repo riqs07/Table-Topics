@@ -67,6 +67,16 @@ describe("feedback handler", () => {
     expect(await response.json()).toEqual({ feedback: FEEDBACK });
   });
 
+  // The coach's internal rubric is passed on beside the feedback (decision 90)
+  it("passes the internal rubric on with the feedback", async () => {
+    // A rubric from the coach
+    const rubric = { pointFirst: { score: 2, quote: "q" }, answersQuestion: null, structure: { score: 1, quote: "" }, ending: { score: 1, quote: "" }, concreteExample: { score: 0, quote: "" }, wordChoice: { score: 2, quote: "" }, devices: [], unnecessaryHedges: 0, wordSwaps: [], model: "coach-model" };
+    // Call the handler with a coach that returns it
+    const response = await createFeedbackHandler(deps({ coach: fakeCoach({ status: "ok", feedback: FEEDBACK, rubric, usage: { inputTokens: 1, outputTokens: 1 } }) }))(request(BODY));
+    // Confirm both are in the body
+    expect(await response.json()).toEqual({ feedback: FEEDBACK, rubric });
+  });
+
   // Shared notes pass the checks and reach the coach; oversized notes are refused
   it("accepts the speaker's notes, within limits", async () => {
     // A coach that remembers what it was given

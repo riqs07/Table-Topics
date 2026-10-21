@@ -11,7 +11,7 @@
     },
     {
       "type": "text",
-      "text": "{\"found\": [{\"beat\": \"open\", \"quote\": \"what was the best thing\"}, {\"beat\": \"their-detail\", \"quote\": \"Lisbon\"}, {\"beat\": \"stay\", \"quote\": \"not a listening beat\"}], \"keep\": \"You picked up \\\"Lisbon\\\" straight away.\", \"change\": \"Keep it to one question: stop after \\\"what was the best thing you ate there\\\".\", \"retryCue\": \"Ask one question, then stop.\", \"better\": \"Lisbon! What was the best thing you ate there?\"}"
+      "text": "{\"found\": [{\"beat\": \"open\", \"quote\": \"what was the best thing\"}, {\"beat\": \"their-detail\", \"quote\": \"Lisbon\"}, {\"beat\": \"stay\", \"quote\": \"not a listening beat\"}], \"keep\": \"You picked up \\\"Lisbon\\\" straight away.\", \"change\": \"Keep it to one question: stop after \\\"what was the best thing you ate there\\\".\", \"retryCue\": \"Ask one question, then stop.\", \"better\": \"Lisbon! What was the best thing you ate there?\", \"rubric\": {\"pointFirst\": {\"score\": 2, \"quote\": \"Lisbon\"}, \"answersQuestion\": null, \"structure\": {\"score\": 2, \"quote\": \"what was the best thing you ate there\"}, \"ending\": {\"score\": 2, \"quote\": \"you ate there\"}, \"concreteExample\": {\"score\": 1, \"quote\": \"Lisbon\"}, \"wordChoice\": {\"score\": 1, \"quote\": \"the best thing\"}, \"devices\": [\"question\"], \"unnecessaryHedges\": 0, \"wordSwaps\": [{\"said\": \"the best thing\", \"stronger\": \"the one dish\", \"why\": \"more specific\"}]}}"
     }
   ],
   "stop_reason": "end_turn",

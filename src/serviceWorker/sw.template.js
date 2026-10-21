@@ -26,6 +26,8 @@ const SHELL = [
   "/rehearse", "/talk",
   // Recording, a saved session, history and settings
   "/session", "/sessions", "/history", "/settings",
+  // Your speaking profile (decision 90)
+  "/profile",
 ];
 // How long a page waits for the network before the saved copy is used instead (the network answer still updates the saved copy)
 const NETWORK_TIMEOUT_MS = 3000;

@@ -6,6 +6,8 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 // Load the screens that must all share the same navigation
 import { HomeScreen } from "@/components/screens/HomeScreen";
 import { HistoryScreen } from "@/components/screens/HistoryScreen";
+// Load the speaking profile (decision 90)
+import { ProfileScreen } from "@/components/screens/ProfileScreen";
 // Load the Practice screen
 import { PracticeScreen } from "@/components/screens/PracticeScreen";
 // Load the Skills screen
@@ -62,6 +64,8 @@ describe("main navigation", () => {
     // History
     // History lives in Settings, so the gear is marked
     ["History", "Settings", async () => <HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // The speaking profile lives in Settings too (decision 90)
+    ["the speaking profile", "Settings", async () => <ProfileScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Your talks belong to Practice
     ["Talks", "Practice", async () => <RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // So does a talk's page

@@ -462,6 +462,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
       block?.focus({ preventScroll: true });
     }, 0);
   }, []);
+  // The coach's first word swap for this take, once its rubric is saved (decision 90)
+  const wordSwap = useWordSwap(repo, session.id, session.feedback);
   // The page title for this kind of session
   const title = warmup ? "Warm-up" : talk ? "Rapid Fire" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : smallTalk ? "Small talk" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared speech" : session.mode === "free" ? "Free talk" : session.mode === "outline" ? "Short speech" : timed ? "Your answer" : "Your take";
   // Name the tab after it
@@ -618,6 +620,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {session.selfReview === null && !smallTalk && <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} />}
           {/* What the coach said to keep, after the next step and the numbers */}
           {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
+          {/* One word swap from the coach's rubric, when it suggested one (decision 90) */}
+          {wordSwap && <p className="mt-2 text-lede"><em>One word swap.</em> <span>“{wordSwap.said}” → “{wordSwap.stronger}”{wordSwap.why ? ` (${wordSwap.why})` : ""}</span></p>}
           {/* Quieter options, as a short list of rows (no empty space above them) */}
           <ul aria-label="More options" className={`mt-6 mb-6 divide-y divide-rule px-4 ${CARD}`}>
             {/* Open the transcript on a phone */}
@@ -634,6 +638,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {smallTalk && !quick && <li><RowLink href={`/small-talk/unit?id=${findSmallTalk(session.promptId)?.unit ?? "answering"}`}>Another question</RowLink></li>}
             {/* Back to where it was started (outside today's practice, whose band moves on; decision 67) */}
             {!plan && !rehearsed && <li><RowLink href={home.href}>{home.label.replace("Close, back to", "Back to")}</RowLink></li>}
+            {/* Every measure of this take, on the profile (decision 90) */}
+            <li><RowLink href={`/profile?session=${encodeURIComponent(session.id)}`}>See all measures for this take</RowLink></li>
           </ul>
           {/* Inside today's practice, the next step; after an old warm-up, a Record Response; otherwise the retry */}
           {plan ? (
@@ -649,6 +655,29 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
       </div>
     </>
   );
+}
+
+// The first word swap the coach suggested for a take, read from its analysis, again when its feedback arrives (null when there is none)
+function useWordSwap(repo: Repository, sessionId: string, feedback: SessionRecord["feedback"]): { said: string; stronger: string; why: string } | null {
+  // The swap, once read
+  const [swap, setSwap] = useState<{ said: string; stronger: string; why: string } | null>(null);
+  // Read it when the take or its feedback changes
+  useEffect(() => {
+    // Ignore a late answer once the take changes
+    let cancelled = false;
+    // Read the analysis (a failure just means no swap is shown)
+    repo.getAnalysis(sessionId).then((analysis) => {
+      // Keep the first swap
+      if (!cancelled) setSwap(analysis?.rubric?.wordSwaps[0] ?? null);
+    }, () => {});
+    // Stop updating once the take changes
+    return () => {
+      // Ignore late answers
+      cancelled = true;
+    };
+  }, [repo, sessionId, feedback]);
+  // The swap
+  return swap;
 }
 
 // What a found beat says when there are no words to quote

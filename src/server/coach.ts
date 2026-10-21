@@ -7,19 +7,19 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 // Load the model settings
 import { COACH_EFFORT, COACH_MODEL } from "@/config/models";
 // Load the coach instructions, message builder, schema, and checker
-import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, CONVERSATION_SYSTEM_PROMPT, ConnectionFeedbackSchema, ConversationFeedbackSchema, FeedbackSchema, SMALL_TALK_SYSTEM_PROMPT, SmallTalkFeedbackSchema, buildCoachMessage, buildConnectionMessage, buildConversationMessage, buildSmallTalkMessage, checkConnectionFeedback, checkConversationFeedback, checkFeedback, checkSmallTalkFeedback, type CoachInput } from "@/core/coachPrompt";
+import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, CONVERSATION_SYSTEM_PROMPT, ConnectionFeedbackSchema, ConversationFeedbackSchema, FeedbackSchema, SMALL_TALK_SYSTEM_PROMPT, SmallTalkFeedbackSchema, buildCoachMessage, buildConnectionMessage, buildConversationMessage, buildSmallTalkMessage, checkConnectionFeedback, checkConversationFeedback, checkFeedback, checkSmallTalkFeedback, checkRubric, type CoachInput, type CoachRubric } from "@/core/coachPrompt";
 // Load the small-talk unit lookup
 import { unitOf } from "@/content/smallTalk";
 // Load the feedback record type
 import type { Feedback } from "@/data/records";
 
-// Room for the model's thinking (always on for the coach model) plus a short JSON reply; too small a cap cuts the reply off and no feedback arrives (4,000 did; kept at 16,000 until real usage on long rehearsals is measured, since a cut-off reply is billed and gives nothing)
+// Room for the model's thinking (always on for the coach model) plus a short JSON reply; too small a cap cuts the reply off and no feedback arrives (4,000 did; kept at 16,000 until real usage on long rehearsals is measured, since a cut-off reply is billed and gives nothing; the internal rubric of decision 90 adds a few hundred tokens of JSON, well inside it)
 const MAX_TOKENS = 16000;
 
 // What asking the coach can produce
 export type CoachResult =
   // Feedback came back, with token counts for cost tracking
-  | { status: "ok"; feedback: Feedback; usage: { inputTokens: number; outputTokens: number } }
+  | { status: "ok"; feedback: Feedback; rubric?: CoachRubric; usage: { inputTokens: number; outputTokens: number } }
   // The model declined for safety reasons
   | { status: "declined" };
 
@@ -57,7 +57,7 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
         // A missing or unreadable reply is an error
         if (!response.parsed_output) throw new Error(`The coach returned no usable feedback (stop reason: ${response.stop_reason}).`);
         // Hand back the checked feedback and token counts
-        return { status: "ok", feedback: checkConversationFeedback(response.parsed_output), usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
+        return { status: "ok", feedback: checkConversationFeedback(response.parsed_output), rubric: checkRubric(response.parsed_output.rubric, COACH_MODEL), usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
       }
       // A follow-up question or a reply to a story goes to the conversation coach, with its own instructions and reply shape
       if (input.mode === "smalltalk" && unitOf(input.promptId ?? "") !== "answering") {
@@ -79,7 +79,7 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
         // A missing or unreadable reply is an error
         if (!response.parsed_output) throw new Error(`The coach returned no usable feedback (stop reason: ${response.stop_reason}).`);
         // Hand back the checked feedback, with its beats, and token counts
-        return { status: "ok", feedback: checkConnectionFeedback(response.parsed_output, input.promptId ?? ""), usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
+        return { status: "ok", feedback: checkConnectionFeedback(response.parsed_output, input.promptId ?? ""), rubric: checkRubric(response.parsed_output.rubric, COACH_MODEL), usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
       }
       // A small-talk answer goes to the small-talk coach, with its own instructions and reply shape
       if (input.mode === "smalltalk") {
@@ -101,7 +101,7 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
         // A missing or unreadable reply is an error
         if (!response.parsed_output) throw new Error(`The coach returned no usable feedback (stop reason: ${response.stop_reason}).`);
         // Hand back the checked feedback, with its beats, and token counts
-        return { status: "ok", feedback: checkSmallTalkFeedback(response.parsed_output), usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
+        return { status: "ok", feedback: checkSmallTalkFeedback(response.parsed_output), rubric: checkRubric(response.parsed_output.rubric, COACH_MODEL), usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
       }
       // Ask Claude, requiring the reply to match the feedback schema
       const response = await client.messages.parse({
@@ -126,6 +126,8 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
         status: "ok",
         // Trim and check the three parts
         feedback: checkFeedback(response.parsed_output),
+        // The internal rubric, kept on the device for the profile (decision 90)
+        rubric: checkRubric(response.parsed_output.rubric, COACH_MODEL),
         // Token counts, for cost tracking
         usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens },
       };

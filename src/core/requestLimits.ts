@@ -83,3 +83,25 @@ export function withinDuration(seconds: number): number {
   // Never over the longest recording
   return Math.min(seconds, LONGEST_RECORDING_SECONDS);
 }
+
+// The weekly summary's limits (decision 90): a compact table of numbers and a few short quotes, never whole transcripts
+export const SUMMARY_SIZE = {
+  // Families of practice in one request
+  families: 5,
+  // Measure rows per family
+  rowsPerFamily: 30,
+  // Patterns, and the longest one in characters
+  patterns: 10,
+  // (characters)
+  patternChars: 300,
+  // Quotes, and the longest one in characters
+  quotes: 5,
+  // (characters)
+  quoteChars: 200,
+  // Word swaps and favourite words
+  swaps: 3,
+  // (favourite words)
+  words: 10,
+  // All the text in one request, in characters
+  totalChars: 12_000,
+} as const;

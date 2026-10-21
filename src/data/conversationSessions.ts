@@ -1,5 +1,7 @@
 // Saves a finished conversation with a persona: the situation, every turn, yours and theirs, counted for the run and today's practice, waiting for the coach, with no audio kept (decision 83)
 
+// Load the analysis saver (decision 90)
+import { analyseSession } from "@/data/analyses";
 // Load the weekly focus rules
 import { currentFocus } from "@/core/focus";
 // Load the measurements
@@ -58,6 +60,8 @@ export async function saveConversationSession(repository: Repository, conversati
   };
   // Save it
   await repository.saveSession(session);
+  // Work out and save its measures (decision 90; a failure here never stops it being saved)
+  await analyseSession(repository, session, now);
   // Hand it back
   return session;
 }

@@ -4,6 +4,10 @@
 import { PASSPHRASE_HEADER } from "@/config/headers";
 // Load the repository type
 import type { Repository } from "@/data/repository";
+// Load the rubric reader and saver (decision 90)
+import { readRubric } from "@/core/analysis/rubric";
+// (saver)
+import { saveRubric } from "@/data/analyses";
 // Load the voice numbers and the usual range (decision 81)
 import { coachVoice, usualRange } from "@/core/voiceFeedback";
 // Load the small-talk unit lookup, to leave out few-second replies
@@ -112,10 +116,16 @@ export async function requestFeedbackDetail(repository: Repository, sessionId: s
   }
   // Success: save the feedback on the session
   if (response.ok) {
-    // Read the feedback from the reply
-    const { feedback } = (await response.json()) as { feedback: NonNullable<typeof session.feedback> };
-    // Save it on the session as it is now (the user may have saved notes while the coach was thinking), and mark it done
-    await repository.saveSession({ ...((await repository.getSession(sessionId)) ?? session), feedback, feedbackStatus: "done" });
+    // Read the feedback, and the internal rubric when sent (decision 90), from the reply
+    const { feedback, rubric } = (await response.json()) as { feedback: NonNullable<typeof session.feedback>; rubric?: unknown };
+    // The session as it is now (the user may have saved notes while the coach was thinking)
+    const latest = (await repository.getSession(sessionId)) ?? session;
+    // The rubric, checked
+    const checked = readRubric(rubric, new Date().toISOString());
+    // Kept in the take's analysis first, so the results page finds it when the feedback shows; a failure here never stops the feedback
+    if (checked) await saveRubric(repository, latest, checked, new Date()).catch((error: unknown) => console.warn(`The coach's rubric could not be saved: ${error instanceof Error ? error.message : String(error)}`));
+    // Save the feedback on the session, and mark it done
+    await repository.saveSession({ ...latest, feedback, feedbackStatus: "done" });
     // Report success
     return plain("done");
   }

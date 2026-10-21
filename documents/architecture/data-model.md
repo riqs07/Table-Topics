@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-21
 
 ## Where data lives
 
@@ -42,6 +42,24 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | conversation | On a conversation (`mode` `conversation`, decisions 83 and 84): `{ turns, scenarioId?, twist? }`. `scenarioId` is the situation (`party`, `monday`, `meeting`, `class`, `coffee`, `walk`, `station` or `lunch`) and `twist` which of its twists was used; both are missing on conversations from before decision 84, which were in the persona's own situation. Each turn is `{ who, text, lineId?, seconds }`: `who` is `you` or `them`; for their turns `text` is the words they said, written for the conversation or (without the coach) recorded, when `lineId` names the recording; for yours `text` is what the phone heard. The "say that again" lines and the listening sounds are not kept. Missing on every other kind of session |
 | voice | On a voice session (`mode` `voice`, decision 80): `{ kind, headline, takes }`, the kind (`clear`, `volume`, `pitch`, `tone` or `shadow`), the results headline, and one `{ label, line }` per take, such as "Meeting room" and "A clear step up from the last take." The takes' audio, loudness and pitch readings are not kept |
 | audioKey | Link to the saved audio, or empty if pruned. Also empty when the user did not keep the recording after listening back (decision 32) |
+
+### Analysis (one per take; added 2026-10-21, decision 90)
+
+Each take's measures, in their own collection (`analyses`, keyed by session id) so the session stays small. Every measure is defined in `src/core/analysis/metrics.ts`; [measurements.md](measurements.md) lists them all and explains how they are worked out. Voice drills and moment notes have none.
+
+| Field | Meaning |
+|-------|---------|
+| sessionId | The session it belongs to |
+| schemaVersion | The version of the measure definitions (`ANALYSIS_SCHEMA_VERSION`); an older one is worked out again from the session, keeping the rubric |
+| computedAt | When the measures were last worked out |
+| engines | `{ device, transcript?, voice?, rubric? }`, each `{ name, version, at }`: which engines contributed. Only `device` and `rubric` exist in stage A |
+| metrics | Every measure by id, each `{ value, unit, source, engine }`: the number (or null when it could not be measured), its unit, where it came from (`device`, `transcript`, `voice` or `rubric`) and the exact engine (such as `device-loudness-v1` or `device-heuristic-v1`, or the coach model for rubric scores) |
+| raw | What the phone measures are worked out from, so they can be worked out again without the audio: the mode, length and saved pause-word rate; `timedWords` (each word of the transcript, cleaned, with the time it was first heard and the next word's time, or null without word times); `pauses` (each silence of 0.25 s or more, with the first word heard after it) and where they came from (`loudness`, `word-gaps` or `none`); the span of speech; summaries of loudness (average, coefficient of variation, thirds, whether the browser levelled it) and pitch (usual pitch, range and spread in semitones, phrase endings); fading phrase ends; the first 30 seconds against the rest; up to 300 content words with their counts; and a conversation's measures. The loudness and pitch readings are not copied: they stay on the session |
+| rubric | The coach's internal rubric, once it arrived: scores of 0 to 3, each with a quote, for point first, answers the question (or null), structure, ending, concrete example and word choice; the devices used; unneeded hedges; up to three word swaps `{ said, stronger, why }`; the model and when. Never shown as scores; the first word swap shows on the results page |
+
+### Weekly summary (added 2026-10-21, decision 90)
+
+One per week, in the `summaries` collection, keyed by id: `createdAt`, the `headline`, `improved` (up to three lines), one `pattern`, next week's `focus`, a `suggestedDrill` or null, and the `model` that wrote it. Shown at the top of the speaking profile with its date.
 
 ### Challenge (one per week)
 
@@ -97,6 +115,7 @@ The recordings of the fixed lines (small talk and shadowing, decision 82; the fo
 
 - **Practice days and the run:** calculated from session and mission dates (decision 78: days in the last seven, and a run that two rest days a week never break), so they can never get out of sync.
 - **Trend lines and before/after numbers:** calculated from sessions on demand.
+- **The speaking profile** (decision 90): usual and recent levels, trends, change flags, patterns and word habits are worked out from the analyses each time the profile opens (`src/core/analysis/profile.ts`).
 
 ## Retention rules
 
@@ -104,11 +123,12 @@ The recordings of the fixed lines (small talk and shadowing, decision 82; the fo
 |------|------|
 | Audio | Last 30 sessions, then deleted automatically. **Always kept:** the baseline (first) recording, and the first recording of each prompt or passage, so "then and now" can play it beside later takes |
 | Transcripts, metrics, feedback | Until the user deletes them |
+| Analyses (each take's measures, raw features and rubric) and weekly summaries | Until the user deletes them; an analysis outlives its take's audio, so measures can be worked out again (decision 90) |
 
 ## Export file
 
-- A JSON file with every session, challenge, and the settings. **Audio is not included** (keeps the file small); sessions in the file have no audio link.
-- Importing adds to what is on the device without losing anything there (decision 86). A session, challenge or talk already on the device is kept and only gains what it lacks from the file (coach feedback with its status, your notes, any empty field); its recording link is never touched, and a challenge marked done stays done. Settings take the file's choices but keep any the file does not have; Learn cards, scenario answers, missions, words to watch and warm-up days are joined, keeping the further-on entry for each (the more recently used card or answer, the mission try that got further, the higher count). The message says how many sessions were new.
+- A JSON file with every session, challenge, saved talk, analysis, weekly summary, and the settings (analyses and summaries since decision 90; older files without them still import). **Audio is not included** (keeps the file small); sessions in the file have no audio link.
+- Importing adds to what is on the device without losing anything there (decision 86). A session, challenge or talk already on the device is kept and only gains what it lacks from the file (coach feedback with its status, your notes, any empty field); its recording link is never touched, and a challenge marked done stays done. An analysis already here is kept and only gains a rubric it lacks; a summary is added when its id is new. Settings take the file's choices but keep any the file does not have; Learn cards, scenario answers, missions, words to watch and warm-up days are joined, keeping the further-on entry for each (the more recently used card or answer, the mission try that got further, the higher count). The message says how many sessions were new.
 - A file that is not a VoiceLab export, is from a newer version, or has a damaged record is refused before anything is saved, with a plain message.
 
 ## What leaves the device
@@ -117,12 +137,13 @@ Every request stays within limits the server checks, kept in one place (`src/cor
 
 | Data | Sent to | When |
 |------|---------|------|
-| Transcript text | AI coach (via our server route) | After each session |
+| Transcript text | AI coach (via our server route) | After each session. The reply now also carries an internal rubric (scores with quotes from your own words, and word swaps), kept on the device (decision 90) |
 | The words of a conversation so far (yours and the persona's), with the persona, situation and twist (decision 84) | Claude Haiku (via our server route `/api/conversation`), to write the persona's next line; that line's words then go to ElevenLabs to be spoken in the persona's voice | After each of your turns, when the passphrase is set. Without it, the recorded script is used and nothing is sent. What goes to ElevenLabs is the line Claude wrote, which may repeat or reword something you said (a persona answering you often does). No audio of you leaves the device |
 | A whole conversation: every turn's words and its situation (decisions 83 and 84) | AI coach (via our server route) | After the conversation, instead of a single transcript. No voice numbers are sent for a conversation |
 | Voice numbers (pitch range, how phrases ended, phrases that faded, the last third's volume; decision 81) | AI coach (via our server route) | With the transcript, when pitch or loudness was recorded. The pitch and loudness readings themselves never leave the device |
 | The session's details: its length, its kind, the prompt or passage id, and the id of this week's focus | AI coach (via our server route) | With every transcript |
 | That you stammer (decision 79) | AI coach (via our server route) | With every transcript, only when you turned it on in Settings, so the coach leaves fluency alone |
+| A compact table of your measures (per family of practice: usual and recent levels, trends and changes of the shown measures and any flagged internal ones), the patterns found, up to five short quotes of at most 200 characters (the coach's own rubric quotes from this week, otherwise the first 20 words of this week's takes), up to three word swaps, words you used far more than usual, and last week's focus (decision 90). Never whole transcripts, audio, pitch or loudness readings; at most 12,000 characters of text | AI coach (Claude Opus, via our server route `/api/summary`) | Once a week at most, when the speaking profile opens, the passphrase is set, and you made at least three takes that week |
 | Your own notes after listening back (what worked, what you would change, and your tags) | AI coach (via our server route) | Only when "Let the coach read my notes" is on in Settings, and only notes you wrote |
 | The question you answered in a Q&A session (written by the coach or typed by you) | AI coach (via our server route) | With that answer's transcript |
 | The plan of a short speech: its topic, points and length (decision 73) | AI coach (via our server route) | With that speech's transcript |

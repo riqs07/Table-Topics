@@ -369,6 +369,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* History, on its own page (decision 79) */}
       <Section title="History">
         <RowLink href="/history">See your practice history</RowLink>
+        {/* Every measure across takes, kept out of the main tabs (decision 90) */}
+        <div className="border-t border-rule"><RowLink href="/profile">Your speaking profile</RowLink></div>
       </Section>
 
       {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}

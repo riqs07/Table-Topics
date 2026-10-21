@@ -11,7 +11,7 @@
     },
     {
       "type": "text",
-      "text": "{\"keep\": \"You asked Theo \\\"what kind of radios\\\", which got him talking.\", \"change\": \"Pick up his words before moving on: when he mentioned flea markets, ask what he looks for there.\", \"retryCue\": \"Ask about the last thing they said.\", \"yours\": \"do you like your job\", \"better\": \" What do you look for at the flea markets? \"}"
+      "text": "{\"keep\": \"You asked Theo \\\"what kind of radios\\\", which got him talking.\", \"change\": \"Pick up his words before moving on: when he mentioned flea markets, ask what he looks for there.\", \"retryCue\": \"Ask about the last thing they said.\", \"yours\": \"do you like your job\", \"better\": \" What do you look for at the flea markets? \", \"rubric\": {\"pointFirst\": {\"score\": 1, \"quote\": \"\"}, \"answersQuestion\": null, \"structure\": {\"score\": 1, \"quote\": \"\"}, \"ending\": {\"score\": 1, \"quote\": \"\"}, \"concreteExample\": {\"score\": 1, \"quote\": \"\"}, \"wordChoice\": {\"score\": 2, \"quote\": \"\"}, \"devices\": [\"question\"], \"unnecessaryHedges\": 0, \"wordSwaps\": []}}"
     }
   ],
   "stop_reason": "end_turn",

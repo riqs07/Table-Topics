@@ -53,6 +53,40 @@ test("Rapid Fire: from the welcome through Practice, countdown, recording, saved
   await expect(page.getByText("Start without the um")).toBeVisible();
 });
 
+// Deep speech analysis (decision 90): a Rapid Fire take is measured as it is saved; its results link to every measure, and the profile shows it
+test("Analysis: record a Rapid Fire take, see all its measures, then the profile", async ({ page }) => {
+  // Use the stand-in microphone and speech
+  await useStandIns(page);
+  // Past the welcome
+  await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+  // Open a Rapid Fire topic directly
+  await page.goto("/session?mode=talk&prompt=t001");
+  // Reveal the topic and start the countdown
+  await page.getByRole("button", { name: /Show my topic/ }).click();
+  // Recording starts by itself after the countdown
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // The countdown is 10 seconds
+  await expect(stop).toBeVisible({ timeout: 15_000 });
+  // Speak past the 10-second minimum
+  await page.waitForTimeout(11_500);
+  // Stop recording
+  await stop.click();
+  // The saved session opens
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+  // Follow the link to every measure of this take
+  await page.getByRole("link", { name: "See all measures for this take" }).click();
+  // The take's table opens
+  await expect(page).toHaveURL(/\/profile\?session=/);
+  // Its speaking rate was measured
+  await expect(page.locator("tr[data-metric='lang.wpm']")).toContainText("words/min");
+  // On to the whole profile
+  await page.getByRole("link", { name: "Your whole speaking profile" }).click();
+  // The profile shows the language measures of speaking on the spot
+  await expect(page.getByRole("heading", { name: "Your speaking profile", level: 1 })).toBeVisible();
+  // (the language group)
+  await expect(page.getByRole("region", { name: "Language" })).toBeVisible();
+});
+
 // Rehearse my talk: save a talk, rehearse it, see the result, and find it in history
 test("Rehearse my talk: save, rehearse, saved session, history", async ({ page }) => {
   // Use the stand-in microphone and speech

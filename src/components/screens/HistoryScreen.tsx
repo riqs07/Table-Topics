@@ -177,6 +177,8 @@ export function HistoryScreen(props: ScreenProps) {
       <PageTitle title="History" />
       {/* The history itself */}
       <HistoryContent repo={repo} today={today} />
+      {/* Every measure across takes, in depth (decision 90) */}
+      <p className="mt-6"><Link href="/profile" className={TEXT_LINK}>See your speaking profile</Link></p>
     </main>
   );
 }

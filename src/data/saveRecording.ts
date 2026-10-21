@@ -14,6 +14,8 @@ import { shouldBeBaseline } from "@/core/progress";
 import type { SessionMode, SessionRecord } from "@/data/records";
 // Load the small-talk unit lookup (a follow-up question or a reply to a story is too short to listen back to first)
 import { unitOf } from "@/content/smallTalk";
+// Load the analysis saver (decision 90)
+import { analyseSession } from "@/data/analyses";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -114,6 +116,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
   await repository.saveSession(session);
   // Remove audio beyond the limit
   await repository.pruneAudio();
+  // Work out and save its measures (decision 90; a failure here never stops the take being saved)
+  await analyseSession(repository, session, now);
   // Hand back the new session
   return session;
 }

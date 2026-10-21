@@ -29,6 +29,9 @@ export const ROUTES: ReadonlyArray<string> = [
   "/history",
   // Settings
   "/settings",
+  // Your speaking profile, and one take's measures for a take that does not exist (decision 90)
+  "/profile",
+  "/profile?session=missing",
   // A small-talk question, and a small-talk lesson
   "/session?mode=smalltalk&prompt=st01",
   "/session?mode=smalltalk&prompt=stl3",
@@ -104,6 +107,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/history", current: null },
   // Settings marks nothing in the tab bar (its gear is marked instead)
   { path: "/settings", current: null },
+  // The speaking profile lives in Settings (decision 90)
+  { path: "/profile", current: null },
   // A saved-session page that does not exist still offers the way out
   { path: "/sessions?id=missing", current: null },
   // A talk's page belongs to Practice

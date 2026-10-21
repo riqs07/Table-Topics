@@ -108,4 +108,16 @@ describe("createClaudeCoach", () => {
     // Confirm the result is a decline
     expect(await coach.getFeedback(INPUT)).toEqual({ status: "declined" });
   });
+
+  // The internal rubric comes back with the feedback, checked, and the visible feedback is unchanged (decision 90)
+  it("returns the internal rubric alongside unchanged feedback", async () => {
+    // Make a fake network that remembers the request
+    const network = fakeNetwork(recorded("feedback-response"));
+    // Ask for feedback
+    const result = await createClaudeCoach("sk-test", network).getFeedback(INPUT);
+    // Read the request body that was sent
+    const sent = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    // Confirm the schema asks for a rubric, the prompt explains it, the feedback has only its three parts, and the rubric carries the model
+    expect([Object.keys(sent.output_config.format.schema.properties).includes("rubric"), JSON.stringify(sent.system).includes("Also fill in rubric"), result.status === "ok" ? Object.keys(result.feedback) : null, result.status === "ok" ? [result.rubric?.pointFirst.score, result.rubric?.wordSwaps[0]?.stronger, result.rubric?.model] : null]).toEqual([true, true, ["keep", "change", "retryCue"], [2, "the highlight", COACH_MODEL]]);
+  });
 });

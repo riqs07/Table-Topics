@@ -1,8 +1,12 @@
-// "Export my data": a JSON file of sessions, challenges, settings and saved talks that can be imported again (checkpoint C8)
+// "Export my data": a JSON file of sessions, challenges, settings, saved talks, each take's measures and the weekly summaries that can be imported again (checkpoint C8, decision 90)
 // Audio is left out to keep the file small; transcripts, numbers and feedback are all included
 
 // Load the record types
-import { isSessionMode, type ChallengeRecord, type SessionRecord, type SettingsRecord, type TalkRecord } from "@/data/records";
+import { isSessionMode, type AnalysisRecord, type ChallengeRecord, type SessionRecord, type SettingsRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
+// Load the rubric reader and the rubric merge (decision 90)
+import { readRubric } from "@/core/analysis/rubric";
+// (merge)
+import { withRubric } from "@/core/analysis/analysis";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 // Load the rules for joining a backup with what is already here (decision 86)
@@ -29,6 +33,10 @@ export interface ExportFile {
   settings: SettingsRecord;
   // The user's own talks (missing in files made before Rehearse my talk)
   talks: TalkRecord[];
+  // Each take's measures (missing in files made before decision 90)
+  analyses: AnalysisRecord[];
+  // Weekly coach summaries, newest first (missing in files made before decision 90)
+  summaries: SummaryRecord[];
 }
 
 // Gather everything into an export file
@@ -36,7 +44,7 @@ export async function buildExport(repo: Repository, now: Date): Promise<ExportFi
   // Read the sessions and clear their audio pointers, since audio is not in the file
   const sessions = (await repo.listSessions()).map((session) => ({ ...session, audioKey: null }));
   // Put the file together
-  return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions, challenges: await repo.listChallenges(), settings: await repo.getSettings(now), talks: await repo.listTalks() };
+  return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions, challenges: await repo.listChallenges(), settings: await repo.getSettings(now), talks: await repo.listTalks(), analyses: await repo.listAnalyses(), summaries: await repo.listSummaries() };
 }
 
 // Save everything from an export file, joined with what is already here (decision 86): a record already on this device is kept and only gains what it lacks (so recordings stay linked and newer feedback or notes are not lost), and settings and progress are joined; returns how many sessions were new and how many already here
@@ -60,6 +68,19 @@ export async function importExport(repo: Repository, file: ExportFile, now: Date
   for (const talk of file.talks) await repo.saveTalk(mergeRecord(await repo.getTalk(talk.id), talk));
   // The settings, joined with those here
   await repo.saveSettings(mergeSettings(await repo.getSettings(now), file.settings));
+  // Each take's measures: one already here is kept, gaining only a rubric it lacks (decision 90)
+  for (const analysis of file.analyses) {
+    // The copy here, if any
+    const here = await repo.getAnalysis(analysis.sessionId);
+    // Saved when new, or when the file adds a rubric
+    if (!here) await repo.saveAnalysis(analysis);
+    // (a rubric the copy here lacks)
+    else if (!here.rubric && analysis.rubric) await repo.saveAnalysis(withRubric(here, analysis.rubric));
+  }
+  // The summaries already here, by id
+  const summaries = new Set((await repo.listSummaries()).map((summary) => summary.id));
+  // Each summary not here yet
+  for (const summary of file.summaries) if (!summaries.has(summary.id)) await repo.saveSummary(summary);
   // Report the counts to show the user
   return { added, kept: file.sessions.length - added };
 }
@@ -133,6 +154,28 @@ function isTalk(value: unknown): value is TalkRecord {
   return isObject(value) && isText(value.id) && isText(value.title) && isText(value.body) && isText(value.createdAt) && (value.goalMinutes === null || isNumber(value.goalMinutes)) && (value.eventDate === undefined || value.eventDate === null || (isText(value.eventDate) && /^\d{4}-\d{2}-\d{2}$/.test(value.eventDate)));
 }
 
+// Check that a value has the shape of one take's analysis (decision 90): its identity, its measures each with a number or nothing, its raw features, and a rubric when there is one
+function isAnalysis(value: unknown): value is AnalysisRecord {
+  // Must be an object with an id, a version, a time and the engines
+  if (!isObject(value) || !isText(value.sessionId) || !isNumber(value.schemaVersion) || !isText(value.computedAt) || !isObject(value.engines) || !isObject(value.raw)) return false;
+  // Every measure: a number or nothing, a unit, a known source and an engine
+  const metricsOk = isObject(value.metrics) && Object.values(value.metrics).every((metric) => isObject(metric) && (metric.value === null || isNumber(metric.value)) && isText(metric.unit) && ["device", "transcript", "voice", "rubric"].includes(metric.source as string) && isText(metric.engine));
+  // The raw features' lists and counts
+  const raw = value.raw;
+  // (checked)
+  const rawOk = Array.isArray(raw.timedWords) && Array.isArray(raw.pauses) && isObject(raw.contentWords) && isNumber(raw.durationSec);
+  // A rubric, when present, must read cleanly
+  const rubricOk = value.rubric === undefined || readRubric(value.rubric, value.computedAt) !== null;
+  // All three
+  return metricsOk && rawOk && rubricOk;
+}
+
+// Check that a value has the shape of a weekly summary
+function isSummary(value: unknown): value is SummaryRecord {
+  // Text fields, a list of lines, and a drill or nothing
+  return isObject(value) && isText(value.id) && isText(value.createdAt) && isText(value.headline) && Array.isArray(value.improved) && value.improved.every(isText) && isText(value.pattern) && isText(value.focus) && isTextOrNull(value.suggestedDrill) && isText(value.model);
+}
+
 // Check that a value has the shape of the settings record
 function isSettings(value: unknown): value is SettingsRecord {
   // Must be an object with a focus position, start date and audio limit
@@ -158,11 +201,11 @@ export function parseExport(text: string): ExportFile {
   // Must be this version (anything else is damaged)
   if (data.version !== VERSION) throw new Error(DAMAGED);
   // Every part must have the right shape
-  const valid = isText(data.exportedAt) && Array.isArray(data.sessions) && data.sessions.every(isSession) && Array.isArray(data.challenges) && data.challenges.every(isChallenge) && isSettings(data.settings) && (data.talks === undefined || (Array.isArray(data.talks) && data.talks.every(isTalk)));
+  const valid = isText(data.exportedAt) && Array.isArray(data.sessions) && data.sessions.every(isSession) && Array.isArray(data.challenges) && data.challenges.every(isChallenge) && isSettings(data.settings) && (data.talks === undefined || (Array.isArray(data.talks) && data.talks.every(isTalk))) && (data.analyses === undefined || (Array.isArray(data.analyses) && data.analyses.every(isAnalysis))) && (data.summaries === undefined || (Array.isArray(data.summaries) && data.summaries.every(isSummary)));
   // Refuse a damaged file
   if (!valid) throw new Error(DAMAGED);
   // The file has been checked, so it can be used as an export
   const file = data as unknown as ExportFile;
   // Sessions from before warm-ups existed are full sessions
-  return { ...file, talks: file.talks ?? [], sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
+  return { ...file, talks: file.talks ?? [], analyses: file.analyses ?? [], summaries: file.summaries ?? [], sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
 }
