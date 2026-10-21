@@ -65,7 +65,7 @@ describe("WarmupScreen", () => {
 
 // Group the checks about the Your voice page
 describe("VoiceScreen", () => {
-  // The warm-up, every drill by mode, pause drills, tricky words and shadowing, with how often each was done
+  // The warm-up, every drill by mode (the tricky words inside clear sounds), pause drills and shadowing, with how often each was done
   it("lists every voice drill, with how often each was done", async () => {
     // A repository with one volume drill done twice
     const repository = createRepository(new MemoryStore());
@@ -84,6 +84,18 @@ describe("VoiceScreen", () => {
       SHADOW_PASSAGES.every((passage) => hrefs.includes(`/voice/shadow?id=${passage.id}`)),
       !!(await screen.findByText(/done twice/)),
     ]).toEqual([true, true, true, true, true, true]);
+  });
+
+  // Tricky words is part of clear sounds: one fold holding its drills and the word lists, and no fold of its own (decision 108)
+  it("keeps the word lists inside the clear sounds fold", async () => {
+    // Draw the page
+    const { container } = render(<VoiceScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The clear sounds fold, once drawn
+    await screen.findAllByRole("link");
+    // Its links
+    const clear = [...(container.querySelector("details#clear")?.querySelectorAll("a") ?? [])].map((link) => link.getAttribute("href"));
+    // Confirm the lists are in it, and there is no tricky-words fold
+    expect([TRICKY_WORDS.every((list) => clear.includes(`/session?mode=read&prompt=${list.id}`)), VOICE_DRILLS.filter((drill) => drill.kind === "clear").every((drill) => clear.includes(`/voice/drill?id=${drill.id}`)), container.querySelector("details#tricky-words")]).toEqual([true, true, null]);
   });
 });
 

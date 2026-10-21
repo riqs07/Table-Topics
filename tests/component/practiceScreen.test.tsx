@@ -9,7 +9,7 @@ import { PracticeScreen } from "@/components/screens/PracticeScreen";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the day's pickers
-import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
+import { promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load today's story prompt (decision 92)
 import { storyPromptForDay } from "@/content/stories";
 // Load the small-talk lessons (decision 95)
@@ -25,22 +25,52 @@ afterEach(cleanup);
 
 // Group the checks about the Practice page
 describe("PracticeScreen", () => {
-  // Every kind of practice is a row in a group, leading to its own screen
-  it("lists every kind of practice in groups, each leading to its own screen", async () => {
+  // Each group shows its first few rows, each leading to its own screen, with "See all" for the rest (decision 108)
+  it("shows each group's first few rows, each leading to its own screen", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // A group's rows as [name, address]
+    // A group's rows as [name, address] ("See all" first, where it is a link)
     const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
-    // Wait until the tricky-words row leads straight into the next list (decision 67)
-    await waitFor(async () => expect((await rows("Your voice"))[3]?.[1]).toBe(`/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`));
-    // Confirm the stories group, second on the page, with today's story, telling one again and the moments (decision 92)
-    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"], ["From your moments", "/stories#from-moments"]], 1]);
-    // Confirm the other groups
+    // Confirm the stories group, second on the page, with today's story, telling one again and guided stories, the moments under "See all" (decision 92)
+    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"]], 1]);
+    // Confirm the other groups: the voice group's warm-up and the first two modes (clear sounds with the word lists as one row), and speaking on the spot's three
     expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Speak on the spot")]).toEqual([
       [[undefined, "/small-talk"], ["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
-      [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Tricky words", `/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`], ["Volume", "/voice/drill?id=v01"], ["Pitch and stress", "/voice/drill?id=p01"], ["Tone", "/voice/drill?id=t01"], ["Pausing", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Shadowing", "/voice/shadow?id=s01"]],
-      [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Free talk", "/session?mode=free&prompt=free"], ["Short speech", "/practice/outline"], ["Read aloud", "/skills"]],
+      [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Volume", "/voice/drill?id=v01"]],
+      [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Read aloud", "/skills"]],
     ]);
+  });
+
+  // Speaking on the spot has no page of its own, so its "See all" opens the rest in place: free talk and the short speech, two taps from Practice (decision 108)
+  it("opens the rest of speaking on the spot in place", async () => {
+    // Draw the page
+    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The group
+    const spot = within((await screen.findByRole("heading", { name: "Speak on the spot" })).closest("section") as HTMLElement);
+    // Its "See all"
+    const all = spot.getByRole("button", { name: "See all" });
+    // Closed at first: no free talk
+    const before = [all.getAttribute("aria-expanded"), spot.queryByRole("link", { name: /^Free talk/ })];
+    // Open it
+    fireEvent.click(all);
+    // Confirm closed then open, with every row
+    expect([before, spot.getByRole("button", { name: "Show fewer" }).getAttribute("aria-expanded"), spot.getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent)]).toEqual([["false", null], "true", ["Rapid Fire", "Prepared speech", "Read aloud", "Free talk", "Short speech"]]);
+  });
+
+  // The voice group shows what is next: the modes done least come first, so a done mode makes room (decision 108)
+  it("puts the voice modes done least first", async () => {
+    // A repository with clear sounds and volume each done once
+    const repository = createRepository(new MemoryStore());
+    // A clear-sounds drill
+    await repository.saveSession(makeSession({ id: "c", mode: "voice", promptId: "c01" }));
+    // A volume drill
+    await repository.saveSession(makeSession({ id: "v", mode: "voice", promptId: "v01" }));
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // The voice group
+    const voice = within((await screen.findByRole("heading", { name: "Your voice" })).closest("section") as HTMLElement);
+    // Confirm pitch and tone now follow the warm-up
+    await waitFor(() => expect(voice.getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent).slice(1)).toEqual(["Warm-up", "Pitch and stress", "Tone"]));
   });
 
   // Read aloud sits with speaking on the spot (decision 93), the openings drill is gone (decision 106), and the lessons moved to Learn, so there is no Build a skill group (decision 107)

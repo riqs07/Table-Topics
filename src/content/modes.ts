@@ -72,10 +72,8 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   { id: "readings", job: "skill", name: "Readings", subtitle: "famous speeches and passages", length: "30 seconds to 2 min", youDo: "Read a speech or passage aloud, at your own pace. Whole speeches come in parts of about a minute.", youGet: "Which words were missed, your pace, and your pauses." },
   // Pause drills
   { id: "pause-drills", job: "skill", name: "Pause drills", subtitle: "pause where the text is marked", length: "1 min", youDo: "Read a passage and pause for a second at each mark.", youGet: "How many pauses you took against the marks." },
-  // Tricky words
-  { id: "tricky-words", job: "skill", name: "Tricky words", subtitle: "crisp consonants", length: "1 min", youDo: "Read a list of words that are easy to swallow.", youGet: "Which words came through clearly." },
   // Voice drills (decision 80)
-  { id: "voice-drills", job: "skill", name: "Your voice", subtitle: "warm-ups, volume, pitch, tone, shadowing", length: "1 to 3 min", youDo: "Short drills for how you sound: say a line a few ways, or copy a speaker phrase by phrase.", youGet: "What changed between your takes: level, pitch, length and the words that came through." },
+  { id: "voice-drills", job: "skill", name: "Your voice", subtitle: "clear sounds, volume, pitch, tone", length: "1 to 3 min", youDo: "Short drills for how you sound: say a line a few ways, read a list of tricky words, or copy a speaker phrase by phrase.", youGet: "What changed between your takes: level, pitch, length and the words that came through." },
   // Small talk
   { id: "small-talk", job: "connect", name: "Small talk", subtitle: "everyday questions", length: "under a minute", youDo: "Hear an everyday question, like \u201cHow was your weekend?\u201d, and answer with one short story: a moment, a hook, how it felt, and a question back.", youGet: "Which of the four you heard yourself do, and one change." },
   // A conversation with a persona (decisions 83 and 84)

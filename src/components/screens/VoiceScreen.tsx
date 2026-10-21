@@ -23,7 +23,7 @@ import { SHADOW_PASSAGES, VOICE_DRILLS, VOICE_MODE_NAMES, type VoiceDrillKind } 
 import { PAUSE_DRILLS, TRICKY_WORDS } from "@/content/prompts";
 
 // What each drill mode is for, in a few words
-const MODE_LINES: Readonly<Record<VoiceDrillKind, string>> = { clear: "Finish every word, 1 min", volume: "Be heard without shouting, 1 min", pitch: "End low, lift a question, stress the key word", tone: "One line, three feelings" };
+const MODE_LINES: Readonly<Record<VoiceDrillKind, string>> = { clear: "Finish every word: drills and word lists", volume: "Be heard without shouting, 1 min", pitch: "End low, lift a question, stress the key word", tone: "One line, three feelings" };
 
 // How often something was done, in a few words
 function doneText(count: number): string {
@@ -91,25 +91,21 @@ export function VoiceScreen(props: ScreenProps) {
           {(["clear", "volume", "pitch", "tone"] as const).map((kind) => {
             // The mode's drills
             const drills = VOICE_DRILLS.filter((drill) => drill.kind === kind);
+            // Clear sounds holds the tricky-word lists too: one row on Practice and one fold here (decision 108)
+            const lists = kind === "clear" ? TRICKY_WORDS : [];
             // One fold
             return (
-              <FoldCard key={kind} id={kind} name={VOICE_MODE_NAMES[kind]} detail={MODE_LINES[kind]} count={drills.length}>
-                {/* The drills */}
+              <FoldCard key={kind} id={kind} name={VOICE_MODE_NAMES[kind]} detail={MODE_LINES[kind]} count={drills.length + lists.length}>
+                {/* The drills, then any word lists */}
                 <ul className="divide-y divide-rule">
                   {/* Each drill */}
                   {drills.map((drill) => <li key={drill.id}><RowLink href={`/voice/drill?id=${drill.id}`} meta={`${drill.takes.length} ${drill.takes.length === 1 ? "take" : "takes"}${doneText(counts.get(drill.id) ?? 0)}`}>{drill.title}</RowLink></li>)}
+                  {/* Each word list, read aloud and checked word by word (once its own "Tricky words" fold; decision 80) */}
+                  {lists.map((list) => <li key={list.id}><RowLink href={`/session?mode=read&prompt=${list.id}`} meta={`word list, 1 min${doneText(counts.get(list.id) ?? 0)}`}>{list.title}</RowLink></li>)}
                 </ul>
               </FoldCard>
             );
           })}
-          {/* Tricky words: the word lists read aloud, checked word by word (moved here from Build a skill; decision 80) */}
-          <FoldCard id="tricky-words" name="Tricky words" detail="Word lists to read aloud, crisp consonants" count={TRICKY_WORDS.length}>
-            {/* The lists */}
-            <ul className="divide-y divide-rule">
-              {/* Each list */}
-              {TRICKY_WORDS.map((list) => <li key={list.id}><RowLink href={`/session?mode=read&prompt=${list.id}`} meta={`1 min${doneText(counts.get(list.id) ?? 0)}`}>{list.title}</RowLink></li>)}
-            </ul>
-          </FoldCard>
           {/* Pausing: the pause drills */}
           <FoldCard id="pausing" name="Pausing" detail="Pause for effect, after a question, between points" count={PAUSE_DRILLS.length}>
             {/* The drills */}

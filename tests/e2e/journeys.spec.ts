@@ -1045,6 +1045,44 @@ test("Practice: Read aloud is under Speak on the spot, and Openings and closings
   await expect(page.getByRole("heading", { level: 1, name: "Read aloud" })).toBeVisible();
 });
 
+// A slimmer Practice (decision 108): each group shows a few rows, and every kind of practice is still within two taps
+test("Practice: every kind of practice is within two taps", async ({ page }) => {
+  // Past the welcome
+  await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+  // Free talk and the short speech: "See all" in Speak on the spot, then the row
+  for (const [row, address] of [["Free talk", /\/session\?mode=free/], ["Short speech", /\/practice\/outline/]] as const) {
+    // Practice
+    await page.goto("/practice");
+    // The group
+    const spot = page.getByRole("region", { name: "Speak on the spot" });
+    // Tap one
+    await spot.getByRole("button", { name: "See all" }).click();
+    // Tap two
+    await spot.getByRole("link", { name: new RegExp(`^${row}`) }).click();
+    // Started
+    await expect(page).toHaveURL(address);
+  }
+  // Every voice mode: "See all" in Your voice, then the mode's fold, which lists its drills (clear sounds with the word lists)
+  for (const [fold, drill] of [["Clear sounds", "Everyday tricky words"], ["Volume", "Three rooms"], ["Pitch and stress", "Statement or question"], ["Tone", "I have some news"], ["Pausing", "Before the point"], ["Shadowing", "Ask not"]] as const) {
+    // Practice
+    await page.goto("/practice");
+    // Tap one
+    await page.getByRole("region", { name: "Your voice" }).getByRole("link", { name: "See all" }).click();
+    // Tap two
+    await page.locator("summary", { hasText: fold }).click();
+    // Its drills are there to start
+    await expect(page.getByRole("link", { name: new RegExp(drill) }).first()).toBeVisible();
+  }
+  // The lessons: the Learn tab, then Speaking skills
+  await page.goto("/practice");
+  // Tap one
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Learn" }).click();
+  // Tap two
+  await page.getByRole("link", { name: /^Speaking skills/ }).click();
+  // Its cards, each leading to a lesson
+  await expect(page.getByRole("heading", { level: 1, name: "Speaking skills" })).toBeVisible();
+});
+
 // The speaking lessons live in Learn (decision 107): the Speaking skills set, one of its cards, and the card's practice opens the lesson with its own text
 test("Learn: a speaking skill's card opens its lesson", async ({ page }) => {
   // Past the welcome
