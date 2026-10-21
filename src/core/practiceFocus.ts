@@ -7,7 +7,7 @@ import type { LearnSetId } from "@/content/learn";
 export type FocusAreaId = "stories" | "conversation" | "spot" | "voice" | "work" | "talk";
 
 // The groups on the Practice page, by their ids there
-export type PracticeGroupId = "on-the-spot" | "stories" | "conversation" | "voice" | "skills";
+export type PracticeGroupId = "on-the-spot" | "stories" | "conversation" | "voice";
 
 // One kind of practice the daily plan can pick (the bank's kinds, plus a lesson or a prepared speech from an area's own list)
 export type PickKind = "talk" | "response" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios" | "focus-lesson" | "focus-speech";
@@ -50,7 +50,7 @@ export const FOCUS_AREAS: ReadonlyArray<FocusArea> = [
   // Speaking at work: short updates, persuading the team, the structure lessons, and Rapid Fire for speaking up in a meeting (in place of the retired closing drill; decision 106)
   { id: "work", name: "Speaking at work", detail: "Updates, meetings and short speeches", phrase: "speaking at work", learnSets: ["work", "point"], practiceGroup: "on-the-spot", picks: ["focus-lesson", "focus-speech", "talk"], lessons: ["l014", "l007", "l013"], speeches: ["p048", "p040", "p037", "p043", "p045", "p046", "p050"] },
   // A talk coming up: a prepared speech, and the lessons for the start, the end and a blank (the openings and closings drill was retired, decision 106; a dated talk of your own takes this pick, as before)
-  { id: "talk", name: "A talk coming up", detail: "Prepare it, open strong, end well", phrase: "a talk coming up", learnSets: ["nerves", "point"], practiceGroup: "on-the-spot", picks: ["response", "focus-lesson"], lessons: ["l001", "l011", "l010", "l015"], speeches: [] },
+  { id: "talk", name: "A talk coming up", detail: "Prepare it, open strong, end well", phrase: "a talk coming up", learnSets: ["nerves", "point", "skills"], practiceGroup: "on-the-spot", picks: ["response", "focus-lesson"], lessons: ["l001", "l011", "l010", "l015"], speeches: [] },
 ];
 
 // Whether a value is a known area id

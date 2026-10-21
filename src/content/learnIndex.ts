@@ -255,4 +255,26 @@ export const LEARN_INDEX: ReadonlyArray<LearnCardSummary> = [
   { id: "work-camera", set: "work", title: "Eye contact on a video call." },
   // work: work-questions
   { id: "work-questions", set: "work", title: "Ask what only they know." },
+  // skills: skills-pause-start
+  { id: "skills-pause-start", set: "skills", title: "Pause before your first word." },
+  // skills: skills-consonants
+  { id: "skills-consonants", set: "skills", title: "Finish the ends of your words." },
+  // skills: skills-numbers
+  { id: "skills-numbers", set: "skills", title: "Slow down for numbers and names." },
+  // skills: skills-land-ending
+  { id: "skills-land-ending", set: "skills", title: "Keep your voice up to the full stop." },
+  // skills: skills-stress
+  { id: "skills-stress", set: "skills", title: "Lean on the word that matters." },
+  // skills: skills-signpost
+  { id: "skills-signpost", set: "skills", title: "Give listeners a map." },
+  // skills: skills-twister
+  { id: "skills-twister", set: "skills", title: "Warm up your mouth before you speak." },
+  // skills: skills-close
+  { id: "skills-close", set: "skills", title: "Finish without “so, yeah”." },
+  // skills: skills-hook
+  { id: "skills-hook", set: "skills", title: "Open with a hook, not your name." },
+  // skills: skills-bridges
+  { id: "skills-bridges", set: "skills", title: "Build a bridge between points." },
+  // skills: skills-blank
+  { id: "skills-blank", set: "skills", title: "When your mind goes blank." },
 ];

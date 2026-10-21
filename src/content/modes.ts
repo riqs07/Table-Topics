@@ -27,7 +27,7 @@ export const JOBS: ReadonlyArray<Job> = [
   // Telling stories, and telling them again better (decision 92)
   { id: "story", name: "Tell stories", blurb: "Your own stories, told and told again, a little better each time.", href: "/stories" },
   // One skill at a time
-  { id: "skill", name: "Build a skill", blurb: "Short lessons, speeches to read, pause and word drills.", href: "/skills" },
+  { id: "skill", name: "Build a skill", blurb: "Speeches to read; the short lessons are in Learn (decision 107).", href: "/skills" },
   // Everyday conversation
   { id: "connect", name: "Small talk", blurb: "Everyday questions, answered with a short story.", href: "/small-talk/unit?id=answering" },
 ];
@@ -67,7 +67,7 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   // Storytelling (decision 92)
   { id: "storytelling", job: "story", name: "Storytelling", subtitle: "a true story, told and told again", length: "1 to 3 min", youDo: "Pick a prompt or one of your moments, plan for up to a minute with a shape if you like, then tell it.", youGet: "What I heard (a start in the action, someone’s words, details, a turn, a feeling, an ending), one change, and your story side by side with last time." },
   // Lessons
-  { id: "lessons", job: "skill", name: "Lessons", subtitle: "one practical tip each", length: "2 to 3 min", youDo: "Read a short tip, then practise it on a text written for it.", youGet: "A check made for that one skill." },
+  { id: "lessons", job: "skill", name: "Lessons", subtitle: "one practical tip each", length: "2 to 3 min", youDo: "Read a short card in Learn, then practise it on a text written for it.", youGet: "A check made for that one skill." },
   // Readings
   { id: "readings", job: "skill", name: "Readings", subtitle: "famous speeches and passages", length: "30 seconds to 2 min", youDo: "Read a speech or passage aloud, at your own pace. Whole speeches come in parts of about a minute.", youGet: "Which words were missed, your pace, and your pauses." },
   // Pause drills

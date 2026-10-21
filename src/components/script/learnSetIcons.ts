@@ -1,7 +1,7 @@
 // Each Learn set's icon, for its course card (decision 57)
 
 // Load the icons
-import { BarbellIcon, BookOpenTextIcon, BriefcaseIcon, ChartLineUpIcon, ChatsCircleIcon, HandHeartIcon, HandshakeIcon, HandWavingIcon, HeartbeatIcon, ScalesIcon, SmileyIcon, SparkleIcon, TargetIcon, TextAaIcon, WaveformIcon } from "@phosphor-icons/react/dist/ssr";
+import { BarbellIcon, GraduationCapIcon, BookOpenTextIcon, BriefcaseIcon, ChartLineUpIcon, ChatsCircleIcon, HandHeartIcon, HandshakeIcon, HandWavingIcon, HeartbeatIcon, ScalesIcon, SmileyIcon, SparkleIcon, TargetIcon, TextAaIcon, WaveformIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the set id type
@@ -39,4 +39,6 @@ export const LEARN_SET_ICONS: Readonly<Record<LearnSetId, Icon>> = {
   humour: SmileyIcon,
   // Speaking at work
   work: BriefcaseIcon,
+  // Speaking skills: the lessons (decision 107)
+  skills: GraduationCapIcon,
 };

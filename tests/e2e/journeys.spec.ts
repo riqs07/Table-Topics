@@ -1033,14 +1033,36 @@ test("Practice: Read aloud is under Speak on the spot, and Openings and closings
   const spot = page.getByRole("region", { name: "Speak on the spot" });
   // Read aloud is there
   await expect(spot.getByRole("link", { name: /^Read aloud/ })).toBeVisible();
-  // Not under Build a skill
-  await expect(page.getByRole("region", { name: "Build a skill" }).getByRole("link", { name: /^Read aloud/ })).toHaveCount(0);
+  // No Build a skill group: the lessons live in Learn (decision 107)
+  await expect(page.getByRole("region", { name: "Build a skill" })).toHaveCount(0);
   // No openings row anywhere
   await expect(page.getByText("Openings and closings")).toHaveCount(0);
   // Read aloud opens the readings
   await spot.getByRole("link", { name: /^Read aloud/ }).click();
-  // On Skills, at the readings
-  await expect(page).toHaveURL(/\/skills#readings/);
+  // On the Read aloud page
+  await expect(page).toHaveURL(/\/skills$/);
+  // (its name)
+  await expect(page.getByRole("heading", { level: 1, name: "Read aloud" })).toBeVisible();
+});
+
+// The speaking lessons live in Learn (decision 107): the Speaking skills set, one of its cards, and the card's practice opens the lesson with its own text
+test("Learn: a speaking skill's card opens its lesson", async ({ page }) => {
+  // Past the welcome
+  await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+  // Learn
+  await page.goto("/learn");
+  // The Speaking skills set
+  await page.getByRole("link", { name: /^Speaking skills/ }).click();
+  // Its page
+  await expect(page.getByRole("heading", { level: 1, name: "Speaking skills" })).toBeVisible();
+  // The card on pausing before you start is in the set
+  await page.getByRole("list", { name: "Cards" }).getByRole("link", { name: /Pause before your first word/ }).click();
+  // Its page opens
+  await expect(page.getByRole("heading", { level: 1, name: "Pause before your first word." })).toBeVisible();
+  // Its practice (checked in the unit tests to be this lesson), opened
+  await page.goto("/session?mode=lesson&prompt=l001");
+  // The lesson's own text to practise
+  await expect(page.getByText(/Good morning, everyone\. Thank you for having me/)).toBeVisible();
 });
 
 // Guided stories (decision 93): pick one, see the facts while planning and telling, see what was added beyond them and the coach's word, then tell it again and compare

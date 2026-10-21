@@ -10,8 +10,6 @@ import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
 // Load the day's pickers
 import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
-// Load the lessons
-import { LESSONS } from "@/content/lessons";
 // Load today's story prompt (decision 92)
 import { storyPromptForDay } from "@/content/stories";
 // Load the small-talk lessons (decision 95)
@@ -33,30 +31,26 @@ describe("PracticeScreen", () => {
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // A group's rows as [name, address]
     const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
-    // Wait until the lessons row leads straight into the next lesson (decision 67)
-    await waitFor(async () => expect((await rows("Build a skill"))[1]?.[1]).toBe(`/session?mode=lesson&prompt=${LESSONS[0]?.id}`));
-    // Confirm the groups and where each row leads ("See all" first in Build a skill)
+    // Wait until the tricky-words row leads straight into the next list (decision 67)
+    await waitFor(async () => expect((await rows("Your voice"))[3]?.[1]).toBe(`/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`));
     // Confirm the stories group, second on the page, with today's story, telling one again and the moments (decision 92)
     expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"], ["From your moments", "/stories#from-moments"]], 1]);
     // Confirm the other groups
-    expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Build a skill"), await rows("Speak on the spot")]).toEqual([
+    expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Speak on the spot")]).toEqual([
       [[undefined, "/small-talk"], ["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
       [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Tricky words", `/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`], ["Volume", "/voice/drill?id=v01"], ["Pitch and stress", "/voice/drill?id=p01"], ["Tone", "/voice/drill?id=t01"], ["Pausing", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Shadowing", "/voice/shadow?id=s01"]],
-      [[undefined, "/skills"], ["Lessons", `/session?mode=lesson&prompt=${LESSONS[0]?.id}`]],
-      [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Free talk", "/session?mode=free&prompt=free"], ["Short speech", "/practice/outline"], ["Read aloud", "/skills#readings"]],
+      [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Free talk", "/session?mode=free&prompt=free"], ["Short speech", "/practice/outline"], ["Read aloud", "/skills"]],
     ]);
   });
 
-  // Read aloud sits with speaking on the spot, the openings drill is off the menu (still reached from Today), and Build a skill keeps the lessons with where they are on the path (decision 93)
-  it("puts Read aloud under Speak on the spot and leaves Openings and closings off the menu", async () => {
+  // Read aloud sits with speaking on the spot (decision 93), the openings drill is gone (decision 106), and the lessons moved to Learn, so there is no Build a skill group (decision 107)
+  it("puts Read aloud under Speak on the spot, with no openings drill and no Build a skill group", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // The on-the-spot group
     const spot = (await screen.findByRole("heading", { name: "Speak on the spot" })).closest("section") as HTMLElement;
-    // The skills group
-    const skills = screen.getByRole("heading", { name: "Build a skill" }).closest("section") as HTMLElement;
-    // Confirm Read aloud is in the first group only, the openings row is gone everywhere, and the lessons row says where on the path
-    await waitFor(() => expect([!!within(spot).queryByRole("link", { name: /^Read aloud/ }), !!within(skills).queryByRole("link", { name: /^Read aloud/ }), screen.queryByText("Openings and closings"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/bookends"), within(skills).getByRole("link", { name: /^Lessons/ }).textContent?.includes(`1 of ${LESSONS.length}`)]).toEqual([true, false, null, false, true]));
+    // Confirm Read aloud is there, and no openings row, Build a skill group or lesson link anywhere
+    await waitFor(() => expect([!!within(spot).queryByRole("link", { name: /^Read aloud/ }), screen.queryByText("Openings and closings"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/bookends"), screen.queryByRole("heading", { name: "Build a skill" }), screen.queryAllByRole("link").some((link) => link.getAttribute("href")?.includes("mode=lesson"))]).toEqual([true, null, false, null, false]));
   });
 
   // The conversation group shows the next unit only, with "See all" for the seven (decision 95): once the first four units' lessons are done, Reading the room and its first lesson
@@ -116,7 +110,7 @@ describe("PracticeScreen", () => {
     // The on-the-spot rows' names
     const spot = within(screen.getByRole("region", { name: /^Speak on the spot/ })).getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent);
     // Confirm the order, the marks, and the first rows
-    expect([headings.slice(0, 5), spot.slice(0, 3)]).toEqual([["Your voiceYour focus", "Speak on the spotYour focus", "Tell stories", "Everyday conversation", "Build a skill"], ["Your talk", "Short speech", "Rapid Fire"]]);
+    expect([headings.slice(0, 5), spot.slice(0, 3)]).toEqual([["Your voiceYour focus", "Speak on the spotYour focus", "Tell stories", "Everyday conversation"], ["Your talk", "Short speech", "Rapid Fire"]]);
   });
 
   // This week's challenge off the page lives here, and ticking it saves it as done

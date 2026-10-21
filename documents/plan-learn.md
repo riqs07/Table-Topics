@@ -249,7 +249,7 @@ Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, an
 | Your voice | `voice-pitch` | Pitch drill: Land it low | `/voice/drill?id=p02` |
 | Your voice | `voice-fry-mixed` | Volume drill: To the last word | `/voice/drill?id=v03` |
 | Your voice | `voice-silent-pause` | Pause drill: Pause for effect | `/session?mode=pause&prompt=d006` |
-| Your voice | `voice-variety` | Tone drill: I have some news | `/voice/drill?id=t01` |
+| Your voice | `voice-variety` | Lesson: Vocal variety | `/session?mode=lesson&prompt=l016` |
 | Your voice | `voice-uptalk` | Pitch drill: Statement or question | `/voice/drill?id=p01` |
 | Your voice | `voice-project` | Volume drill: Three rooms | `/voice/drill?id=v01` |
 | Your voice | `voice-flat-situational` | Prepared speech: a toast to a friend | `/session?mode=response&prompt=p044` |
@@ -294,6 +294,32 @@ Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, an
 | Speaking at work | `work-video-lag` | Talk with Priya: hand over clearly | `/conversations/talk?id=priya` |
 | Speaking at work | `work-camera` | Prepared speech: news, to the camera | `/session?mode=response&prompt=p050` |
 | Speaking at work | `work-questions` | Talk with Theo: ask what only he knows | `/conversations/talk?id=theo` |
+| Speaking skills | `skills-pause-start` | Lesson: Pause before you start | `/session?mode=lesson&prompt=l001` |
+| Speaking skills | `skills-consonants` | Lesson: Crisp consonants | `/session?mode=lesson&prompt=l002` |
+| Speaking skills | `skills-numbers` | Lesson: Slow down for numbers and names | `/session?mode=lesson&prompt=l003` |
+| Speaking skills | `skills-land-ending` | Lesson: Land the ending | `/session?mode=lesson&prompt=l005` |
+| Speaking skills | `skills-stress` | Lesson: Stress the key word | `/session?mode=lesson&prompt=l006` |
+| Speaking skills | `skills-signpost` | Lesson: Signposting | `/session?mode=lesson&prompt=l007` |
+| Speaking skills | `skills-twister` | Lesson: Tongue-twister warm-up | `/session?mode=lesson&prompt=l009` |
+| Speaking skills | `skills-close` | Lesson: A strong close | `/session?mode=lesson&prompt=l010` |
+| Speaking skills | `skills-hook` | Lesson: Open with a hook | `/session?mode=lesson&prompt=l011` |
+| Speaking skills | `skills-bridges` | Lesson: Bridges between points | `/session?mode=lesson&prompt=l013` |
+| Speaking skills | `skills-blank` | Lesson: Recover from a blank | `/session?mode=lesson&prompt=l015` |
+
+## Speaking skills: the lessons in Learn (decision 107, 2026-10-21)
+
+The sixteen speaking lessons (`src/content/lessons.ts`) used to live on the Skills page, apart from Learn. Now Learn is the one place to learn: a **Speaking skills** set (third in the Speaking group, after Stories and Nerves) holds a short card for each lesson that no card already taught, and each card's practice opens that lesson's session (`/session?mode=lesson&prompt=…`), with its purpose-written text and its lesson check.
+
+| Lesson | Reached from |
+|--------|--------------|
+| 1 Pause before you start, 2 Crisp consonants, 3 Slow down for numbers and names, 5 Land the ending, 6 Stress the key word, 7 Signposting, 9 Tongue-twister warm-up, 10 A strong close, 11 Open with a hook, 13 Bridges between points, 15 Recover from a blank | Its own Speaking skills card (`skills-…`), all practical advice from speaking coaching |
+| 4 Pause before the point | `nerves-silence` (the same advice) |
+| 8 The rule of three | `charisma-tactics` and `minds-three-claims` |
+| 12 Tell a short story | `point-concrete` (and the whole Stories set covers telling one) |
+| 14 Answer with point, reason, example | `point-prep` (the same advice) and `words-hedges` |
+| 16 Vocal variety | `voice-variety` (the same advice; it opened a tone drill before) |
+
+No card repeats one that existed: the five lessons above already had a card saying the same thing, so those cards now lead to them. The cards are added at the end of the list, so the next card for someone part-way through Learn does not change. "A talk coming up" puts the set third among its focus sets.
 
 ## Open questions
 

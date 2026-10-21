@@ -1,5 +1,5 @@
 "use client";
-// Skills: the lessons and every text to read aloud, in one place (UX round, 2026-10-15; replaces the separate Lessons and Library pages); the next lesson and reading first, then one folded row per group (decision 79)
+// Read aloud (once "Build a skill"): every text to read aloud, the next part to read first, then one folded row per group (decision 79); the lessons moved to Learn's Speaking skills set (decision 107), so this page keeps the readings only, at its old /skills address
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -11,24 +11,14 @@ import { Masthead } from "@/components/script/Masthead";
 import { PageTitle } from "@/components/script/PageTitle";
 // Load the whole-row link
 import { PRESS, RowLink } from "@/components/script/Buttons";
-// Load the chevron that marks a row as tappable
-import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
-// Load the lessons
-import { LESSONS } from "@/content/lessons";
-// Load the done and next marks
-import { lessonPath } from "@/core/lessonPath";
 // Load the full speeches
 import { FULL_SPEECHES, type FullSpeech } from "@/content/speeches";
 // Load the part id maker
 import { partId } from "@/content/readings";
 // Load the reading-length helpers
 import { lengthLabel, readingTime } from "@/core/readingLength";
-// Load the done and next marks on a path
-import { PathMark } from "@/components/script/PathMark";
-// Load the catalogue
-import { MODES, type ModeInfo } from "@/content/modes";
 // Load the texts
 import { PASSAGES, type Passage } from "@/content/prompts";
 // Load the shared page shell
@@ -37,15 +27,6 @@ import { PAGE } from "@/components/script/layout";
 import { CARD, CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the folded group card
 import { FoldCard, useOpenFoldFromAddress } from "@/components/script/FoldCard";
-
-// The catalogue entry for an id (always present for the ids used here)
-const mode = (id: string) => MODES.find((item) => item.id === id) as ModeInfo;
-
-// How often a lesson has been practised, in words (only shown once it has been)
-function practisedText(count: number): string {
-  // Once, or several times
-  return count === 1 ? "Practised once" : `Practised ${count} times`;
-}
 
 // A list of texts to read, each a link that starts it
 function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passage>; sessionMode: "read" | "pause"; heading?: string }) {
@@ -129,10 +110,10 @@ function SpeechCards({ items }: { items: ReadonlyArray<Passage> }) {
 export function SkillsScreen(props: ScreenProps) {
   // The repository
   const { repo } = useScreenBasics(props);
-  // How many times each lesson has been practised and each text read, by id
+  // How many times each text has been read, by id
   const [counts, setCounts] = useState<ReadonlyMap<string, number>>(new Map());
 
-  // Count lesson sessions once in the browser
+  // Count readings once in the browser
   useEffect(() => {
     // Ignore the result if the page closes first
     let cancelled = false;
@@ -140,10 +121,10 @@ export function SkillsScreen(props: ScreenProps) {
     repo.listSessions().then((sessions) => {
       // Stop if closed
       if (cancelled) return;
-      // Count sessions per lesson
+      // Count sessions per text
       const next = new Map<string, number>();
-      // Each lesson or reading adds one
-      for (const session of sessions) if (session.mode === "lesson" || session.mode === "read") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
+      // Each reading adds one
+      for (const session of sessions) if (session.mode === "read") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
       // Show the counts
       setCounts(next);
     });
@@ -157,41 +138,10 @@ export function SkillsScreen(props: ScreenProps) {
   // Open the group a link points at (such as /skills#readings), and bring it into view
   useOpenFoldFromAddress();
 
-  // The done and next marks, in lesson order
-  const marks = lessonPath(LESSONS.map((lesson) => lesson.id), counts);
-  // The lesson to try next (the first not practised, or the first)
-  const nextLesson = LESSONS[Math.max(0, marks.indexOf("next"))] ?? LESSONS[0];
   // The next part to read: the first part not yet read of the first whole speech not finished
   const nextReading = FULL_SPEECHES.filter((speech) => !speech.commencement).flatMap((speech) => speech.parts.map((_, index) => ({ speech, part: index + 1 }))).find((item) => (counts.get(partId(item.speech, item.part)) ?? 0) === 0);
   // The groups, each a row that opens its own list (decision 79)
   const groups: ReadonlyArray<{ id: string; name: string; detail: string; count: number; list: React.ReactNode }> = [
-    // The lessons as a path
-    { id: "lessons", name: "Lessons", detail: `${mode("lessons").subtitle} · ${mode("lessons").length}`, count: LESSONS.length, list: (
-      <ol aria-label="Lessons" className={`mt-2 ${CARD_LIST}`}>
-        {/* One row per lesson */}
-        {LESSONS.map((lesson, index) => (
-          // One lesson
-          <li key={lesson.id}>
-            {/* The whole row starts the lesson */}
-            <Link href={`/session?mode=lesson&prompt=${lesson.id}`} aria-label={`Practise ${lesson.title}`} className={`flex min-h-14 items-center gap-x-3 py-2.5 hover:text-accent ${PRESS}`}>
-              {/* Its mark */}
-              <PathMark mark={marks[index] ?? "open"} number={lesson.number} />
-              {/* Title, and how often practised */}
-              <span className="min-w-0 flex-1">
-                {/* "Next" above the lesson to try next */}
-                {marks[index] === "next" && <span className="block text-footnote font-semibold text-accent">Next</span>}
-                {/* Title */}
-                <span className="block font-semibold leading-snug">{lesson.title}</span>
-                {/* How often practised, once it has been */}
-                {(counts.get(lesson.id) ?? 0) > 0 && <span className="block text-footnote text-ink-muted">{practisedText(counts.get(lesson.id) ?? 0)}</span>}
-              </span>
-              {/* The chevron */}
-              <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
-            </Link>
-          </li>
-        ))}
-      </ol>
-    ) },
     // Whole speeches
     { id: "readings", name: "Whole speeches", detail: "a part at a time, about a minute each", count: FULL_SPEECHES.filter((speech) => !speech.commencement).length, list: <FullSpeechList heading="Whole speeches, a part at a time" speeches={FULL_SPEECHES.filter((speech) => !speech.commencement)} counts={counts} /> },
     // Commencement speeches
@@ -207,22 +157,20 @@ export function SkillsScreen(props: ScreenProps) {
       {/* Heading and navigation */}
       <Masthead title="Practice" section="skills" />
       {/* The page's name */}
-      <PageTitle title="Build a skill" />
+      <PageTitle title="Read aloud">Famous speeches and plain passages, at your own pace.</PageTitle>
 
-      {/* Up next: the next lesson and the next part to read (decision 79) */}
+      {/* Up next: the next part to read (decision 79) */}
       <section aria-labelledby="up-next" className="mt-6">
         {/* Heading */}
         <h2 id="up-next" className={SECTION_HEADING}>Up next</h2>
-        {/* The two */}
+        {/* The next part */}
         <ul className={`mt-2 ${CARD_LIST}`}>
-          {/* The next lesson */}
-          {nextLesson && <li><RowLink href={`/session?mode=lesson&prompt=${nextLesson.id}`} meta={mode("lessons").length}><span className="block text-footnote text-ink-muted">Lesson {nextLesson.number}</span><span className="block font-semibold">{nextLesson.title}</span></RowLink></li>}
           {/* The next part to read */}
           {nextReading && <li><RowLink href={`/session?mode=read&prompt=${partId(nextReading.speech, nextReading.part)}`} meta="about 1 min"><span className="block text-footnote text-ink-muted">Read aloud · part {nextReading.part} of {nextReading.speech.parts.length}</span><span className="block font-semibold">{nextReading.speech.title}</span></RowLink></li>}
         </ul>
       </section>
 
-      {/* Everything else, one row per group that opens its own list */}
+      {/* Every text, one row per group that opens its own list */}
       <section aria-labelledby="everything" className="mt-8">
         {/* Heading */}
         <h2 id="everything" className={SECTION_HEADING}>Everything</h2>

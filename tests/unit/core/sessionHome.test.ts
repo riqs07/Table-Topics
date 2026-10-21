@@ -11,10 +11,10 @@ import { makeSession } from "../../support/fixtures";
 describe("sessionHome", () => {
   // Each kind of session goes back to its own section, and anything in today's practice to Today
   it("leads each kind of session back to its section", () => {
-    // A reading, a Table Topic, a rehearsal, and a reading inside the plan
-    const homes = [sessionHome("read", "r001", false), sessionHome("talk", "t1", false), sessionHome("rehearse", "talk 1", false), sessionHome("read", "r001", true)].map((home) => [home.section, home.href]);
-    // Confirm each
-    expect(homes).toEqual([["skills", "/skills"], ["practice", "/practice"], ["practice", "/talk?id=talk%201"], ["today", "/"]]);
+    // A reading, a Table Topic, a rehearsal, a reading inside the plan, and a lesson
+    const homes = [sessionHome("read", "r001", false), sessionHome("talk", "t1", false), sessionHome("rehearse", "talk 1", false), sessionHome("read", "r001", true), sessionHome("lesson", "l001", false)].map((home) => [home.section, home.href]);
+    // Confirm each (a lesson goes back to its set in Learn; decision 107)
+    expect(homes).toEqual([["skills", "/skills"], ["practice", "/practice"], ["practice", "/talk?id=talk%201"], ["today", "/"], ["learn", "/learn/set?id=skills"]]);
   });
 
   // Voice drills, pause drills and tricky-word lists close back to Your voice (decision 80)

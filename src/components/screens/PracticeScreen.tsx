@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the Connect units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the next Connect unit (decision 95)
@@ -23,8 +23,6 @@ import { WeeklyChallenge } from "@/components/screens/WeeklyChallenge";
 import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the voice drills' next picks (decision 80)
 import { nextShadowPassage, nextVoiceDrill } from "@/core/voicePicks";
-// Load the lessons
-import { LESSONS } from "@/content/lessons";
 // Load the rule for which comes next
 import { nextToPractise } from "@/core/skillNext";
 // Load React's state and effect tools
@@ -45,7 +43,7 @@ import { Fragment, type ReactNode } from "react";
 import { focusAreas, orderPracticeGroups, readPracticeFocus, type FocusAreaId, type PracticeGroupId } from "@/core/practiceFocus";
 
 // The groups in their usual order
-const USUAL_ORDER: ReadonlyArray<PracticeGroupId> = ["on-the-spot", "stories", "conversation", "voice", "skills"];
+const USUAL_ORDER: ReadonlyArray<PracticeGroupId> = ["on-the-spot", "stories", "conversation", "voice"];
 
 // One kind of practice on the page
 interface Way {
@@ -152,8 +150,8 @@ export function PracticeScreen(props: ScreenProps) {
       if (cancelled) return;
       // Count by prompt
       const next = new Map<string, number>();
-      // Each lesson, reading, drill or voice drill adds one
-      for (const session of sessions) if (session.mode === "lesson" || session.mode === "read" || session.mode === "pause" || session.mode === "voice") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
+      // Each reading, drill or voice drill adds one
+      for (const session of sessions) if (session.mode === "read" || session.mode === "pause" || session.mode === "voice") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
       // Keep them
       setCounts(next);
       // The next Connect unit
@@ -166,9 +164,7 @@ export function PracticeScreen(props: ScreenProps) {
     };
   }, [repo]);
 
-  // The next lesson, pause drill and tricky-words text (once counted)
-  const nextLesson = counts ? LESSONS.find((lesson) => lesson.id === nextToPractise(LESSONS.map((item) => item.id), counts)) : undefined;
-  // The next pause drill
+  // The next pause drill (once counted)
   const nextPause = counts ? PAUSE_DRILLS.find((drill) => drill.id === nextToPractise(PAUSE_DRILLS.map((item) => item.id), counts)) : undefined;
   // The next tricky-words list
   const nextTricky = counts ? TRICKY_WORDS.find((list) => list.id === nextToPractise(TRICKY_WORDS.map((item) => item.id), counts)) : undefined;
@@ -209,8 +205,8 @@ export function PracticeScreen(props: ScreenProps) {
               { name: "Free talk", detail: "Talk about anything, as long as you like", href: "/session?mode=free&prompt=free", icon: MicrophoneStageIcon },
               // A short speech the user plans: topic and points (decision 73), here unless the focus put it first
               ...(focus.includes("work") || focus.includes("talk") ? [] : [{ name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon }]),
-              // Reading aloud, moved here from Build a skill (decision 93)
-              { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills#readings", icon: BookOpenTextIcon },
+              // Reading aloud, moved here from Build a skill (decision 93); the page holds the readings only now (decision 107)
+              { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills", icon: BookOpenTextIcon },
             ]}
           />
       </>
@@ -283,22 +279,6 @@ export function PracticeScreen(props: ScreenProps) {
               { name: "Pausing", detail: nextPause ? `Next: ${nextPause.title}` : "Pause where the text is marked, 1 min", href: nextPause ? `/session?mode=pause&prompt=${nextPause.id}` : "/voice#pausing", icon: PauseIcon },
               // Shadowing
               { name: "Shadowing", detail: `Next: ${nextShadow.title}`, href: `/voice/shadow?id=${nextShadow.id}`, icon: RepeatIcon },
-            ]}
-          />
-      </>
-    ),
-    // The "skills" group
-    "skills": (
-      <>
-          {/* Building one skill: the lessons, one path in order (Read aloud moved up to speaking on the spot, decision 93) */}
-          <Group
-            focus={focusGroups.includes("skills")}
-            id="skills"
-            title="Build a skill"
-            more={{ href: "/skills", label: "See all" }}
-            ways={[
-              // Lessons: straight into the next one (decision 67), with where it sits on the path
-              { name: "Lessons", detail: nextLesson ? `Next: ${nextLesson.title} · ${nextLesson.number} of ${LESSONS.length}` : `${LESSONS.length} practical tips, 2 to 3 min each`, href: nextLesson ? `/session?mode=lesson&prompt=${nextLesson.id}` : "/skills#lessons", icon: GraduationCapIcon },
             ]}
           />
       </>

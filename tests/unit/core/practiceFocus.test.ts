@@ -10,7 +10,7 @@ import { findLesson } from "@/content/lessons";
 import { PROMPTS } from "@/content/prompts";
 
 // The Practice page's groups in their usual order
-const USUAL: ReadonlyArray<PracticeGroupId> = ["on-the-spot", "stories", "conversation", "voice", "skills"];
+const USUAL: ReadonlyArray<PracticeGroupId> = ["on-the-spot", "stories", "conversation", "voice"];
 
 // Group the checks about the user's focus (decision 97)
 describe("practice focus", () => {
@@ -28,7 +28,7 @@ describe("practice focus", () => {
         spot: ["on-the-spot", ["point", "nerves"], ["talk", "response", "focus-lesson"]],
         voice: ["voice", ["voice"], ["voice", "pause", "skill"]],
         work: ["on-the-spot", ["work", "point"], ["focus-lesson", "focus-speech", "talk"]],
-        talk: ["on-the-spot", ["nerves", "point"], ["response", "focus-lesson"]],
+        talk: ["on-the-spot", ["nerves", "point", "skills"], ["response", "focus-lesson"]],
       },
       [],
       ["Telling stories", "Small talk and conversations", "Thinking on my feet", "How I sound", "Speaking at work", "A talk coming up"],
@@ -66,7 +66,7 @@ describe("practice focus", () => {
   // Practice puts the picked areas' groups first, each once; no focus keeps the usual order
   it("puts the focus groups first on Practice", () => {
     // Confirm none, one, two in the same group, and two different
-    expect([orderPracticeGroups([], USUAL), orderPracticeGroups(["voice"], USUAL), orderPracticeGroups(["work", "talk"], USUAL), orderPracticeGroups(["conversation", "stories"], USUAL)]).toEqual([USUAL, ["voice", "on-the-spot", "stories", "conversation", "skills"], USUAL, ["conversation", "stories", "on-the-spot", "voice", "skills"]]);
+    expect([orderPracticeGroups([], USUAL), orderPracticeGroups(["voice"], USUAL), orderPracticeGroups(["work", "talk"], USUAL), orderPracticeGroups(["conversation", "stories"], USUAL)]).toEqual([USUAL, ["voice", "on-the-spot", "stories", "conversation"], USUAL, ["conversation", "stories", "on-the-spot", "voice"]]);
   });
 
   // Learn gains a "For your focus" group of the focus sets, taken out of their usual groups; no focus keeps the groups

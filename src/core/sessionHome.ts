@@ -8,7 +8,7 @@ import { TRICKY_WORDS } from "@/content/prompts";
 import type { SessionMode, SessionRecord } from "@/data/records";
 
 // A main section a session can belong to
-export type SessionSection = "today" | "practice" | "skills";
+export type SessionSection = "today" | "practice" | "skills" | "learn";
 
 // The section, and the way back to it
 export interface SessionHome {
@@ -20,7 +20,7 @@ export interface SessionHome {
   label: string;
 }
 
-// The home of a session: Today inside today's practice, else Stories for a told story, else Conversations for a conversation, else Your voice for voice and pause drills, else Skills for texts to read, else Practice (a rehearsal goes back to its talk)
+// The home of a session: Today inside today's practice, else Stories for a told story, else Conversations for a conversation, else Your voice for voice and pause drills, else Read aloud for texts to read, else the Speaking skills set in Learn for a lesson, else Practice (a rehearsal goes back to its talk)
 export function sessionHome(mode: SessionMode, promptId: string, inPlan: boolean): SessionHome {
   // Inside today's practice
   if (inPlan) return { section: "today", href: "/", label: "Close, back to Today" };
@@ -32,8 +32,10 @@ export function sessionHome(mode: SessionMode, promptId: string, inPlan: boolean
   if (mode === "conversation") return { section: "practice", href: "/conversations", label: "Close, back to Conversations" };
   // A voice drill, shadowing, a pause drill or a tricky-word list (decision 80)
   if (mode === "voice" || mode === "pause" || (mode === "read" && TRICKY_WORDS.some((list) => list.id === promptId))) return { section: "practice", href: "/voice", label: "Close, back to Your voice" };
-  // Readings and lessons
-  if (mode === "read" || mode === "lesson") return { section: "skills", href: "/skills", label: "Close, back to Skills" };
+  // A lesson goes back to its set in Learn, where the lessons live now (decision 107)
+  if (mode === "lesson") return { section: "learn", href: "/learn/set?id=skills", label: "Close, back to Speaking skills" };
+  // A reading goes back to the Read aloud page
+  if (mode === "read") return { section: "skills", href: "/skills", label: "Close, back to Read aloud" };
   // A rehearsal of one of the user's talks
   if (mode === "rehearse") return { section: "practice", href: `/talk?id=${encodeURIComponent(promptId)}`, label: "Close, back to your talk" };
   // Everything else is speaking on the spot

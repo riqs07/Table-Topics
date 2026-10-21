@@ -102,6 +102,8 @@ export const ROUTES: ReadonlyArray<string> = [
   // The new sets' pages, the corrected vocal fry card, and the old fry card's address, which opens it (decision 94)
   "/learn/set?id=stories",
   "/learn/set?id=words",
+  // The Speaking skills set, the lessons' home in Learn (decision 107)
+  "/learn/set?id=skills",
   "/learn/card?id=voice-fry-mixed",
   "/learn/card?id=voice-fry",
   "/learn/card?id=profile-trends",

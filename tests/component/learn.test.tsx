@@ -94,6 +94,18 @@ describe("Learn", () => {
     expect([screen.getByRole("heading", { level: 1 }).textContent, cards[1]?.textContent?.startsWith("2Next"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual(["Nerves and presence", true, `/learn/card?id=${LEARN_CARDS[1]?.id}`]);
   });
 
+  // The speaking lessons live in Learn (decision 107): the Speaking skills set lists its cards, and each card's practice opens its lesson
+  it("lists the speaking skills, each opening its lesson", async () => {
+    // Draw the set
+    render(<LearnSetScreen setId="skills" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The cards
+    const cards = within(await screen.findByRole("list", { name: "Cards" })).getAllByRole("link");
+    // The set's cards in the content
+    const content = LEARN_CARDS.filter((card) => card.set === "skills");
+    // Confirm the name, one row per card, each opening its card, and every card's practice is a lesson
+    expect([screen.getByRole("heading", { level: 1 }).textContent, cards.length, cards.map((link) => link.getAttribute("href")), content.every((card) => card.tryIt.href.startsWith("/session?mode=lesson&prompt=l"))]).toEqual(["Speaking skills", content.length, content.map((card) => `/learn/card?id=${card.id}`), true]);
+  });
+
   // A myth-or-fact card: guess, read on to the end, and it is saved as read, with the next card as the way on (no quiz since decision 67)
   it("takes a guess, then saves the card as read at the end", async () => {
     // A repository

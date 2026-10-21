@@ -7,7 +7,7 @@ import { firstRead, nextCard, setProgress } from "@/core/learn";
 // Load the cards
 import { EVIDENCE_LABELS, LEARN_CARDS, LEARN_GROUPS, LEARN_SETS, PROFILE_TRENDS_MEANING, RETIRED_CARDS, findCard } from "@/content/learn";
 // Load the lessons, to check the cards' links to them
-import { findLesson } from "@/content/lessons";
+import { LESSONS, findLesson } from "@/content/lessons";
 // Load the story prompts, shapes and focuses, to check the cards' links to telling a story
 import { isStoryFocus, isStoryShape, seedText } from "@/content/stories";
 // Load the small-talk lessons, drills, units and the moment prompt, to check the cards' links to them
@@ -202,5 +202,18 @@ describe("learn content (decision 94)", () => {
     expect([card?.meaning, short?.trend, enough?.trend !== null, long?.usual, long?.recent]).toEqual([PROFILE_TRENDS_MEANING, null, true, middle(0, PROFILE_RULES.usualTakes), middle(20 - PROFILE_RULES.recentTakes, PROFILE_RULES.recentTakes)]);
     // Confirm the sentence names the three numbers in words today (if a rule changes, the sentence changes with it)
     expect(PROFILE_TRENDS_MEANING).toBe("Your profile compares your “usual” (the middle of your first five takes) with your “recent” (the middle of your latest seven), and calls a trend only after six takes.");
+  });
+});
+
+// Decision 107: Learn is the one place to learn, so every speaking lesson is reached from a card, and the Speaking skills cards each open a different lesson
+describe("speaking skills in Learn (decision 107)", () => {
+  // Every lesson has a card leading to it, and the set's cards are one per lesson
+  it("reaches every lesson from a card", () => {
+    // The lessons the cards open
+    const opened = new Set(LEARN_CARDS.flatMap((card) => (card.tryIt.href.startsWith("/session?mode=lesson&prompt=") ? [card.tryIt.href.split("prompt=")[1]] : [])));
+    // The Speaking skills cards' lessons
+    const skills = LEARN_CARDS.filter((card) => card.set === "skills").map((card) => card.tryIt.href.split("prompt=")[1]);
+    // Confirm every lesson is opened, the set's cards each open a lesson, none twice, and the set sits in the Speaking group
+    expect([LESSONS.filter((lesson) => !opened.has(lesson.id)).map((lesson) => lesson.id), skills.length, new Set(skills).size, skills.every((id) => !!findLesson(id ?? "")), LEARN_GROUPS[0]?.sets.includes("skills")]).toEqual([[], 11, 11, true, true]);
   });
 });

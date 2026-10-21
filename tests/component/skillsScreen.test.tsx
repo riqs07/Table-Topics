@@ -11,7 +11,6 @@ import { createRepository } from "@/data/repository";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
 // Load the content
-import { LESSONS } from "@/content/lessons";
 import { PASSAGES, PAUSE_DRILLS, TRICKY_WORDS } from "@/content/prompts";
 
 // A fixed "now"
@@ -23,40 +22,25 @@ import { FULL_SPEECHES } from "@/content/speeches";
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
-// Group the checks about the Skills page
+// Group the checks about the Read aloud page (at /skills)
 describe("SkillsScreen", () => {
-  // Lessons and readings in one place: the next lesson and reading first, then one folded row per group (decision 79; pause drills and tricky words moved to Your voice, decision 80)
-  it("puts lessons and every reading in one place, folded by group", async () => {
+  // Every reading in one place: the next part to read first, then one folded row per group (decision 79); the lessons live in Learn now (decision 107)
+  it("puts every reading in one place, folded by group, with no lessons", async () => {
     // Draw the page
     const { container } = render(<SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Every practice link on the page (folded lists are still in the page)
     const hrefs = (await screen.findAllByRole("link")).map((link) => link.getAttribute("href"));
     // The up-next rows
     const upNext = within(screen.getByRole("region", { name: "Up next" })).getAllByRole("link").map((link) => link.getAttribute("href"));
-    // Confirm every lesson and text is there, the groups start folded under the ids other pages link to, and up next leads with lesson 1 and the first whole speech's part 1
+    // Confirm the page's name, every text is there and no lesson or drill, the groups start folded under the ids other pages link to, and up next is the first whole speech's part 1
     expect([
-      LESSONS.every((lesson) => hrefs.includes(`/session?mode=lesson&prompt=${lesson.id}`)),
+      screen.getByRole("heading", { level: 1 }).textContent,
       PASSAGES.every((item) => hrefs.includes(`/session?mode=read&prompt=${item.id}`)),
+      hrefs.some((href) => href?.includes("mode=lesson")),
       [...PAUSE_DRILLS, ...TRICKY_WORDS].some((item) => hrefs.some((href) => href?.endsWith(`prompt=${item.id}`))),
-      ["lessons", "readings"].every((id) => container.querySelector(`details#${id}:not([open])`) !== null),
+      ["readings", "short-readings"].every((id) => container.querySelector(`details#${id}:not([open])`) !== null),
       upNext,
-    ]).toEqual([true, true, false, true, [`/session?mode=lesson&prompt=${LESSONS[0]!.id}`, `/session?mode=read&prompt=${FULL_SPEECHES.find((speech) => !speech.commencement)!.id}-1`]]);
-  });
-
-  // The lessons read as a path: practised ones done, the first one not done marked next
-  it("marks lessons done and the next one to try", async () => {
-    // A repository where lesson one has been practised
-    const repository = createRepository(new MemoryStore());
-    // Lesson one, once
-    await repository.saveSession(makeSession({ id: "l", mode: "lesson", promptId: LESSONS[0]!.id }));
-    // Draw the screen
-    render(<SkillsScreen repository={repository} now={NOW} />);
-    // The first two lesson rows
-    const first = within(await screen.findByRole("link", { name: `Practise ${LESSONS[0]!.title}` }));
-    // (and the second)
-    const second = within(screen.getByRole("link", { name: `Practise ${LESSONS[1]!.title}` }));
-    // Confirm the marks
-    expect([!!(await first.findByText("Done")), !!second.getByText("Next")]).toEqual([true, true]);
+    ]).toEqual(["Read aloud", true, false, false, true, [`/session?mode=read&prompt=${FULL_SPEECHES.find((speech) => !speech.commencement)!.id}-1`]]);
   });
 
   // The famous speeches are cards in a named list, each showing who gave it
