@@ -14,6 +14,8 @@ import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/co
 import { LESSONS } from "@/content/lessons";
 // Load today's story prompt (decision 92)
 import { storyPromptForDay } from "@/content/stories";
+// Load the small-talk lessons (decision 95)
+import { SMALL_TALK_LESSONS } from "@/content/smallTalk";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -38,7 +40,7 @@ describe("PracticeScreen", () => {
     expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"], ["From your moments", "/stories#from-moments"]], 1]);
     // Confirm the other groups
     expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Build a skill"), await rows("Speak on the spot")]).toEqual([
-      [["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["Asking", "/small-talk/unit?id=asking"], ["Listening", "/small-talk/unit?id=listening"], ["Responding to news", "/small-talk/unit?id=news"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
+      [[undefined, "/small-talk"], ["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
       [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Tricky words", `/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`], ["Volume", "/voice/drill?id=v01"], ["Pitch and stress", "/voice/drill?id=p01"], ["Tone", "/voice/drill?id=t01"], ["Pausing", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Shadowing", "/voice/shadow?id=s01"]],
       [[undefined, "/skills"], ["Lessons", `/session?mode=lesson&prompt=${LESSONS[0]?.id}`]],
       [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Free talk", "/session?mode=free&prompt=free"], ["Short speech", "/practice/outline"], ["Read aloud", "/skills#readings"]],
@@ -55,6 +57,20 @@ describe("PracticeScreen", () => {
     const skills = screen.getByRole("heading", { name: "Build a skill" }).closest("section") as HTMLElement;
     // Confirm Read aloud is in the first group only, the openings row is gone everywhere, and the lessons row says where on the path
     await waitFor(() => expect([!!within(spot).queryByRole("link", { name: /^Read aloud/ }), !!within(skills).queryByRole("link", { name: /^Read aloud/ }), screen.queryByText("Openings and closings"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/bookends"), within(skills).getByRole("link", { name: /^Lessons/ }).textContent?.includes(`1 of ${LESSONS.length}`)]).toEqual([true, false, null, false, true]));
+  });
+
+  // The conversation group shows the next unit only, with "See all" for the seven (decision 95): once the first four units' lessons are done, Reading the room and its first lesson
+  it("shows the next conversation unit, with its next lesson", async () => {
+    // A repository with every lesson of the first four units answered
+    const repository = createRepository(new MemoryStore());
+    // Save one answer per lesson
+    for (const lesson of SMALL_TALK_LESSONS.filter((item) => ["answering", "asking", "listening", "news"].includes(item.unit))) await repository.saveSession(makeSession({ id: lesson.id, mode: "smalltalk", promptId: lesson.id }));
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // The unit's row, once the answers are read
+    const row = await screen.findByRole("link", { name: /^Reading the room/ });
+    // Confirm where it leads and what it says next
+    expect([row.getAttribute("href"), row.textContent?.includes("Next: lesson 1, Notice changes, not signals")]).toEqual(["/small-talk/unit?id=room", true]);
   });
 
   // Q&A practice is removed (decision 61): no row, even after a prepared speech

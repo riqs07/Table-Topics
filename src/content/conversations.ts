@@ -582,10 +582,12 @@ export function scenarioText(text: string, persona: Persona): string {
   return text.replaceAll("{name}", persona.name);
 }
 
-// The situation for a persona's next conversation: their own situation first, then round the rest (only those of one skill, if given), moving on one with each conversation and each "another situation"; the twist moves on too, so the same situation comes back different
+// The situation for a persona's next conversation: their own situation first, then round the rest (only those of one skill, if given and it has any), moving on one with each conversation and each "another situation"; the twist moves on too, so the same situation comes back different
 export function pickSituation(persona: Persona, turn: number, skill?: UnitId): { scenario: Scenario; twist: number } {
-  // The situations to choose from
-  const options = skill ? SCENARIOS.filter((scenario) => scenario.unit === skill) : SCENARIOS;
+  // The situations of that skill (none for the units without a conversation, such as reading the room; decision 95)
+  const ofSkill = skill ? SCENARIOS.filter((scenario) => scenario.unit === skill) : [];
+  // The situations to choose from: that skill's, or every one when no skill is given or it has none
+  const options = ofSkill.length > 0 ? ofSkill : SCENARIOS;
   // Where the persona's own situation sits, to start from it
   const start = Math.max(0, options.findIndex((scenario) => scenario.id === persona.home));
   // This turn's situation

@@ -1,9 +1,11 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the rules being checked
-import { betterThanFeared, compareLine, missionDays, missionToday, nextMission, triedMissions } from "@/core/missions";
+import { betterThanFeared, compareLine, missionDays, missionToday, missionsInUnit, nextMission, triedMissions } from "@/core/missions";
 // Load the missions
-import { MISSIONS, findMission } from "@/content/missions";
+import { LEVEL_WORDS, MISSIONS, findMission } from "@/content/missions";
+// Load the units, to check each mission names a real one
+import { UNITS } from "@/content/smallTalk";
 // Load the card lookup, to check missions point at real cards
 import { findCard } from "@/content/learn";
 // Load the record type
@@ -66,5 +68,33 @@ describe("missions", () => {
     const records = [record(), record({ id: "r2", tried: false, outcome: null }), record({ id: "r3", status: "accepted", tried: null, outcome: null, debriefedAt: null }), record({ id: "r4", predicted: 4, outcome: 3 })];
     // Confirm two days, two tried (newest first), and one of two better than expected
     expect([missionDays(records).length, triedMissions(records).map((item) => item.id), betterThanFeared(records), findMission("m14")?.move]).toEqual([2, ["r4", "r1"], { better: 1, total: 2 }, "Remember a name"]);
+  });
+
+  // The units added in decision 95: each has missions from easy to bold, with its own debrief question, and the name mission is the research-corrected one
+  it("gives the new units their missions, each with its own debrief question", () => {
+    // Missions naming a unit that does not exist
+    const strays = MISSIONS.filter((mission) => mission.unit !== null && !UNITS.some((unit) => unit.id === mission.unit)).map((mission) => mission.id);
+    // Each new unit's missions, in ladder order
+    const byUnit = (unit: "room" | "starting" | "deeper") => missionsInUnit(unit, []).map((item) => item.mission.id);
+    // The missions added in this change
+    const added = ["m15", "m16", "m17", "m18", "m19"].map((id) => findMission(id)!);
+    // Confirm: no strays; each unit's missions; every new one with a debrief question and a card; the name mission framed as memory; the level words
+    expect([strays, byUnit("room"), byUnit("starting"), byUnit("deeper"), added.every((mission) => !!mission.notice && !!mission.cardId), findMission("m14")?.task, LEVEL_WORDS[1]]).toEqual([[], ["m15", "m16", "m17"], ["m18", "m09", "m13", "m14"], ["m10", "m11", "m19"], true, "Learn one new name and use it when you say goodbye.", "Easy"]);
+  });
+
+  // Saved tries are untouched: someone who had tried the first four easy missions is offered the new easy one next, and their tries still count
+  it("keeps saved tries, and offers a new easy mission next", () => {
+    // The four easy missions tried before this change
+    const before = ["m01", "m02", "m03", "m04"].map((missionId, index) => record({ id: `r${index}`, missionId }));
+    // Confirm the next mission, and the tries shown as done on the asking unit
+    expect([nextMission(before).id, missionsInUnit("asking", before).map((item) => [item.mission.id, item.tried])]).toEqual(["m15", [["m01", true], ["m06", false]]]);
+  });
+
+  // Only tries that were debriefed as tried mark a mission done
+  it("marks a unit's mission tried only after a debriefed try", () => {
+    // Accepted but not debriefed, and debriefed but not tried
+    const records = [record({ missionId: "m15", status: "accepted", tried: null, outcome: null, debriefedAt: null }), record({ id: "r2", missionId: "m16", tried: false, outcome: null })];
+    // Confirm none tried
+    expect(missionsInUnit("room", records).map((item) => item.tried)).toEqual([false, false, false]);
   });
 });

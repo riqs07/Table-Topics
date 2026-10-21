@@ -5,12 +5,15 @@ import { PERSONAS, SCENARIOS, findLine, findPersona, findScenario, pickSituation
 // Load the small-talk units
 import { UNITS } from "@/content/smallTalk";
 
+// The skills that have conversations so far (the units added in decision 95 have none yet)
+const CONVERSATION_SKILLS = ["answering", "asking", "listening", "news"];
+
 // Group the checks about the personas (decisions 83 and 84)
 describe("PERSONAS", () => {
   // Each persona's own situation covers a different skill, in the units' order
   it("gives each persona their own situation, one per skill", () => {
     // The skills of their own situations
-    expect(PERSONAS.map((persona) => findScenario(persona.home)?.unit)).toEqual(UNITS.map((unit) => unit.id));
+    expect(PERSONAS.map((persona) => findScenario(persona.home)?.unit)).toEqual(CONVERSATION_SKILLS);
   });
 
   // A personality, a life and a voice of their own, and the recorded lines the fallback needs
@@ -58,7 +61,7 @@ describe("SCENARIOS", () => {
       scenario.twists.length >= 4 && scenario.twists.every((twist) => twist.includes("{name}") && /[.]$/.test(twist)) ? null : `${scenario.id}: twists`,
     ].filter(Boolean));
     // None, unique ids, and two per skill
-    expect([problems, new Set(SCENARIOS.map((scenario) => scenario.id)).size, UNITS.map((unit) => SCENARIOS.filter((scenario) => scenario.unit === unit.id).length)]).toEqual([[], SCENARIOS.length, [2, 2, 2, 2]]);
+    expect([problems, new Set(SCENARIOS.map((scenario) => scenario.id)).size, UNITS.map((unit) => SCENARIOS.filter((scenario) => scenario.unit === unit.id).length)]).toEqual([[], SCENARIOS.length, [2, 2, 2, 2, 0, 0, 0]]);
   });
 
   // The persona's name fills every "{name}"
@@ -86,5 +89,13 @@ describe("pickSituation", () => {
     const theo = findPersona("theo")!;
     // Four in a row
     expect(Array.from({ length: 4 }, (_, turn) => pickSituation(theo, turn, "listening").scenario.id)).toEqual(["coffee", "walk", "coffee", "walk"]);
+  });
+
+  // A skill with no conversation yet (such as reading the room, decision 95) falls back to every situation rather than failing
+  it("falls back to every situation for a skill that has none", () => {
+    // Theo, asked for reading the room
+    const theo = findPersona("theo")!;
+    // The same as with no skill at all
+    expect([pickSituation(theo, 0, "room").scenario.id, pickSituation(theo, 3, "deeper").scenario.id]).toEqual([pickSituation(theo, 0).scenario.id, pickSituation(theo, 3).scenario.id]);
   });
 });

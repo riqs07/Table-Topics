@@ -43,7 +43,7 @@ describe("small talk", () => {
     // The recipe
     const recipe = await screen.findByRole("region", { name: "A good answer, in four beats" });
     // Confirm the four beats, today's question, and the first lesson as the main action
-    expect([within(recipe).getAllByRole("listitem").length, within(screen.getByRole("region", { name: "Answer a question" })).getByText(smallTalkForDay(NOW).text).tagName, screen.getByRole("link", { name: /^Answering lesson 1The dead end/ }).getAttribute("href")]).toEqual([4, "H1", "/session?mode=smalltalk&prompt=stl1"]);
+    expect([within(recipe).getAllByRole("listitem").length, within(screen.getByRole("region", { name: "Answer a question" })).getByText(smallTalkForDay(NOW).text).tagName, screen.getByRole("link", { name: /^Lesson 1The dead end/ }).getAttribute("href")]).toEqual([4, "H1", "/session?mode=smalltalk&prompt=stl1"]);
   });
 
   // Answers are listed on the page with how many beats they showed, and in History too (since the daily mix)
@@ -129,7 +129,7 @@ describe("small talk", () => {
     // Draw Asking
     render(<SmallTalkScreen unitId="asking" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The asking recipe, its lessons, and the main action leading to its first lesson
-    const asking = [!!(await screen.findByRole("region", { name: "A good follow-up, in four beats" })), screen.getByRole("link", { name: "Asking lesson 1: Ask about what they said" }).getAttribute("href"), screen.getByRole("link", { name: /^Asking lesson 1Ask about/ }).getAttribute("href"), !!screen.getByRole("region", { name: "Ask a follow-up" })];
+    const asking = [!!(await screen.findByRole("region", { name: "A good follow-up, in four beats" })), screen.getByRole("link", { name: "Asking lesson 1: Ask about what they said" }).getAttribute("href"), screen.getByRole("link", { name: /^Lesson 1Ask about/ }).getAttribute("href"), !!screen.getByRole("region", { name: "Ask a follow-up" })];
     // Draw Listening
     cleanup();
     // The page

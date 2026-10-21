@@ -390,8 +390,10 @@ test("Small talk: listen to a story and see it afterwards", async ({ page }) => 
   await useStandIns(page, "no way you missed your stop and your boss was waiting that must have been so awkward");
   // Start at Practice
   await page.goto("/practice");
+  // Every unit is under "See all" (decision 95)
+  await page.getByRole("region", { name: "Everyday conversation" }).getByRole("link", { name: "See all" }).click();
   // Open the Listening unit
-  await page.getByRole("link", { name: /^Listening/ }).click();
+  await page.getByRole("list", { name: "Units" }).getByRole("link", { name: /^Listening/ }).click();
   // Its practice box
   await page.getByRole("region", { name: "Listen to a story" }).getByRole("link", { name: "Listen and respond" }).click();
   // The story is not shown
@@ -412,6 +414,92 @@ test("Small talk: listen to a story and see it afterwards", async ({ page }) => 
   await expect(page.getByRole("list", { name: "The beats" })).toContainText("React.");
   // The main action moves on
   await expect(page.locator("[data-action-band]")).toContainText("Next one");
+});
+
+// Reading the room (decision 95): from Practice's "See all", a moment read on a card (no voice), a short reply, and its beats
+test("Reading the room: read a moment, say what you'd say, see the beats", async ({ page }) => {
+  // The stand-in speech replies to the moment
+  await useStandIns(page, "you seem a bit busy do you need to go no worries if so");
+  // Start at Practice
+  await page.goto("/practice");
+  // Every unit
+  await page.getByRole("region", { name: "Everyday conversation" }).getByRole("link", { name: "See all" }).click();
+  // Open Reading the room
+  await page.getByRole("list", { name: "Units" }).getByRole("link", { name: /^Reading the room/ }).click();
+  // Its practice box
+  await page.getByRole("region", { name: "Read the room" }).getByRole("link", { name: "Say what you'd say" }).click();
+  // The moment is on the card
+  await expect(page.getByText("The moment")).toBeVisible();
+  // Start: no voice, recording straight away
+  await page.getByRole("button", { name: /Answer it/ }).click();
+  // Recording is under way
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // It starts without waiting for a voice
+  await expect(stop).toBeVisible({ timeout: 10_000 });
+  // Let the reply be heard
+  await page.waitForTimeout(4_500);
+  // Stop
+  await stop.click();
+  // The reply opens on its result
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+  // The room's beats, with what was noticed quoted
+  await expect(page.getByRole("list", { name: "The beats" })).toContainText("“you seem”");
+  // The main action moves on to another moment
+  await expect(page.locator("[data-action-band]")).toContainText("another moment");
+});
+
+// Starting and ending (decision 95): its first lesson from the unit page, an opener and a goodbye in one take, and the goodbye heard
+test("Starting and ending: a lesson, an opener and a goodbye, and the beats", async ({ page }) => {
+  // The stand-in speech opens and closes
+  await useStandIns(page, "these plates are tiny are you a friend of sams great chatting I'll let you grab some food enjoy the party");
+  // Start at the unit's page
+  await page.goto("/small-talk/unit?id=starting");
+  // Start the first lesson from the main action
+  await page.locator("[data-action-band]").click();
+  // The lesson teaches first, with its research line
+  await expect(page.getByRole("region", { name: "The lesson" })).toContainText("Sandstrom");
+  // Start: both ends, straight away
+  await page.getByRole("button", { name: /Say both/ }).click();
+  // Recording is under way
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // It starts without a voice
+  await expect(stop).toBeVisible({ timeout: 10_000 });
+  // Let both ends be heard
+  await page.waitForTimeout(6_500);
+  // Stop
+  await stop.click();
+  // The take opens on its result
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+  // The goodbye's beats, with what was enjoyed quoted
+  await expect(page.getByRole("list", { name: "The beats" })).toContainText("“great chatting”");
+});
+
+// Going deeper (decision 95): pick a flat question from the unit's list, ask a better one, and see what made it deeper
+test("Going deeper: upgrade a flat question", async ({ page }) => {
+  // The stand-in speech asks a better question
+  await useStandIns(page, "what's the best part of what you do");
+  // Start at the unit's page
+  await page.goto("/small-talk/unit?id=deeper");
+  // Pick "What do you do?" from the list
+  await page.getByRole("region", { name: "Questions to upgrade" }).getByRole("link", { name: "What do you do?" }).click();
+  // The flat question is on the card
+  await expect(page.getByText("Upgrade this question")).toBeVisible();
+  // Start
+  await page.getByRole("button", { name: /Ask it better/ }).click();
+  // Recording is under way
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // It starts without a voice
+  await expect(stop).toBeVisible({ timeout: 10_000 });
+  // Let the question be heard
+  await page.waitForTimeout(3_500);
+  // Stop
+  await stop.click();
+  // The question opens on its result
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+  // The flat question, and the deeper beat with its words
+  await expect(page.getByText("The flat question")).toBeVisible();
+  // What made it deeper
+  await expect(page.getByRole("list", { name: "The beats" })).toContainText("“best part”");
 });
 
 // One moment a day: record a short private note from the Small talk page, and find it listed there

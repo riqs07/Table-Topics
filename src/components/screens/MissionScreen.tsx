@@ -124,8 +124,8 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
                   <p className="mt-6 font-medium">How did it go?</p>
                   {/* The scale */}
                   <ScaleChoice label="How did it go?" value={outcome} onChoose={setOutcome} />
-                  {/* What they noticed */}
-                  <label htmlFor="mission-note" className="mt-6 block font-medium">What did you notice about them? <span className="text-ink-muted">(optional)</span></label>
+                  {/* What they noticed, asked the mission's own way when it has one (decision 95) */}
+                  <label htmlFor="mission-note" className="mt-6 block font-medium">{mission.notice ?? "What did you notice about them?"} <span className="text-ink-muted">(optional)</span></label>
                   {/* Typed */}
                   <textarea id="mission-note" value={note} onChange={(event) => setNote(event.target.value)} rows={3} className="mt-2 w-full border border-rule bg-paper p-3 text-lede" />
                   {/* Or said */}

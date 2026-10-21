@@ -75,7 +75,7 @@ export const ROUTES: ReadonlyArray<string> = [
   "/skills",
   // Talks
   "/rehearse",
-  // The old Connect address, which now leads to Learn (decision 66)
+  // Every Connect unit (the old Connect address, a redirect to Learn from decision 66 until decision 95)
   "/small-talk",
   // History
   "/history",
@@ -112,6 +112,14 @@ export const ROUTES: ReadonlyArray<string> = [
   "/stories/tell?prompt=sp04&shape=then-now&focus=middle",
   // A small-talk unit
   "/small-talk/unit?id=news",
+  // The units added in decision 95, a drill of each and a lesson
+  "/small-talk/unit?id=room",
+  "/small-talk/unit?id=starting",
+  "/small-talk/unit?id=deeper",
+  "/session?mode=smalltalk&prompt=sr01",
+  "/session?mode=smalltalk&prompt=se01",
+  "/session?mode=smalltalk&prompt=sd01",
+  "/session?mode=smalltalk&prompt=srl5",
   "/learn/card?id=warm-good-news",
   // A mission debrief that does not exist (the page explains)
   "/mission?id=missing",
@@ -167,6 +175,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/rehearse", current: "Practice" },
   // A small-talk unit belongs to Practice (Connect folded into Learn and Practice, decision 66)
   { path: "/small-talk/unit?id=answering", current: "Practice" },
+  // Every Connect unit (decision 95)
+  { path: "/small-talk", current: "Practice" },
   // Talk with someone belongs to Practice (decision 83)
   { path: "/conversations", current: "Practice" },
   // Learn marks Learn

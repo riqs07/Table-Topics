@@ -1,5 +1,5 @@
 "use client";
-// Practice: every kind of practice in one place, grouped (stories second, decision 92; Read aloud with speaking on the spot and the openings drill reached from Today instead, decision 93), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
+// Practice: every kind of practice in one place, grouped (the conversation units as the next one and "See all", decision 95; stories second, decision 92; Read aloud with speaking on the spot and the openings drill reached from Today instead, decision 93), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
 
 // Load Next.js's link component
 import Link from "next/link";
@@ -8,7 +8,11 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MicrophoneStageIcon, CaretRightIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the Connect units' icons
+import { UNIT_ICONS } from "@/components/script/unitIcons";
+// Load the next Connect unit (decision 95)
+import { nextUnit, type UnitProgress } from "@/core/units";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
@@ -108,6 +112,8 @@ export function PracticeScreen(props: ScreenProps) {
 
   // How often each lesson and drill was practised, once read (empty until then, so the rows first lead to the lists)
   const [counts, setCounts] = useState<ReadonlyMap<string, number> | null>(null);
+  // The Connect unit to suggest next (the first unit until the sessions are read; decision 95)
+  const [unit, setUnit] = useState<UnitProgress>(() => nextUnit([]));
 
   // Count the lessons, readings and drills practised
   useEffect(() => {
@@ -123,6 +129,8 @@ export function PracticeScreen(props: ScreenProps) {
       for (const session of sessions) if (session.mode === "lesson" || session.mode === "read" || session.mode === "pause" || session.mode === "voice") next.set(session.promptId, (next.get(session.promptId) ?? 0) + 1);
       // Keep them
       setCounts(next);
+      // The next Connect unit
+      setUnit(nextUnit(sessions));
     });
     // Mark as closed when leaving
     return () => {
@@ -192,21 +200,16 @@ export function PracticeScreen(props: ScreenProps) {
         ]}
       />
 
-      {/* Everyday conversation */}
+      {/* Everyday conversation: a whole conversation, the next of the seven units (the rest under "See all"), and the moment note (decision 95) */}
       <Group
         id="conversation"
         title="Everyday conversation"
+        more={{ href: "/small-talk", label: "See all" }}
         ways={[
           // A whole conversation with one of four people (decision 83)
           { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon },
-          // Answering
-          { name: "Answering", detail: "“How was your weekend?” with a short story", href: "/small-talk/unit?id=answering", icon: ChatTeardropTextIcon },
-          // Asking
-          { name: "Asking", detail: "Hear something, ask one good follow-up", href: "/small-talk/unit?id=asking", icon: QuestionIcon },
-          // Listening
-          { name: "Listening", detail: "Hear a short story, respond so they feel heard", href: "/small-talk/unit?id=listening", icon: EarIcon },
-          // Responding to news
-          { name: "Responding to news", detail: "Good or bad news: react, ask, no buts", href: "/small-talk/unit?id=news", icon: MegaphoneSimpleIcon },
+          // The next unit, straight to its page, with its next lesson or what you do in it
+          { name: unit.unit.name, detail: unit.nextLesson ? `Next: lesson ${unit.nextLesson.number}, ${unit.nextLesson.title}` : unit.unit.youDo, href: `/small-talk/unit?id=${unit.unit.id}`, icon: UNIT_ICONS[unit.unit.id] },
           // One moment a day
           { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon },
         ]}

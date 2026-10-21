@@ -115,6 +115,36 @@ describe("dailyPlan", () => {
     expect([lesson?.label, lesson?.promptId, new Set(drills.map((step) => step?.label)), drills.find((step) => step?.label === "Listening")?.title]).toEqual(["Asking lesson 1", "sal1", new Set(["Follow-up", "Listening", "News"]), "A short story to respond to"]);
   });
 
+  // The units added in decision 95: after the first four units' lessons comes Reading the room; once every lesson is done, all six drill units take turns
+  it("moves on to the new units' lessons, then takes all six units' drills in turn", () => {
+    // Every lesson of the first four units, as someone who finished them before this change would have
+    const oldLessons = SMALL_TALK_LESSONS.filter((lesson) => ["answering", "asking", "listening", "news"].includes(lesson.unit)).map((lesson, index) => daysAgo(4 + index, { mode: "smalltalk", promptId: lesson.id }));
+    // Every lesson answered earlier
+    const allLessons = SMALL_TALK_LESSONS.map((lesson, index) => daysAgo(4 + index, { mode: "smalltalk", promptId: lesson.id }));
+    // The Connect step on a day, if the day picks it
+    const connect = (day: Date, sessions: ReturnType<typeof daysAgo>[]) => regularPlan(day, { sessions: [...regular, ...sessions] }).find((step) => step.lane === "connection" && step.label !== "Small talk");
+    // The lesson after the old ones, on the first day that picks it
+    const lesson = Array.from({ length: 9 }, (_, offset) => connect(dayAfter(offset), oldLessons)).find(Boolean);
+    // A day whose picks include the Connect step
+    const day = Array.from({ length: 9 }, (_, offset) => dayAfter(offset)).find((candidate) => connect(candidate, allLessons))!;
+    // The drill after none to five earlier drills
+    const drills = [0, 1, 2, 3, 4, 5].map((done) => connect(day, [...allLessons, ...["sa01", "sls01", "sn01", "sr01", "se01"].slice(0, done).map((promptId, index) => daysAgo(40 + index, { mode: "smalltalk", promptId }))]));
+    // Confirm the first room lesson, then each unit's drill once, in order
+    expect([lesson?.label, lesson?.promptId, drills.map((step) => step?.label)]).toEqual(["Reading the room lesson 1", "srl1", ["Follow-up", "Listening", "News", "Reading the room", "Starting and ending", "Going deeper"]]);
+    // Confirm the cards' steps lead to their own drills
+    expect([drills[3]?.promptId.startsWith("sr"), drills[4]?.promptId.startsWith("se"), drills[5]?.promptId.startsWith("sd")]).toEqual([true, true, true]);
+  });
+
+  // Saved progress is unaffected: someone halfway through the news lessons still gets the next news lesson
+  it("keeps someone's place in the old lessons", () => {
+    // Every lesson before the second news lesson
+    const upTo = SMALL_TALK_LESSONS.slice(0, SMALL_TALK_LESSONS.findIndex((item) => item.id === "snl2")).map((lesson, index) => daysAgo(4 + index, { mode: "smalltalk", promptId: lesson.id }));
+    // The Connect step on the first day that picks it
+    const step = Array.from({ length: 9 }, (_, offset) => regularPlan(dayAfter(offset), { sessions: [...regular, ...upTo] }).find((item) => item.lane === "connection" && item.label !== "Small talk")).find(Boolean);
+    // Confirm the second news lesson
+    expect([step?.label, step?.promptId]).toEqual(["News lesson 2", "snl2"]);
+  });
+
   // What counts as read comes from before today, so reading a card today does not change today's plan
   it("uses only progress from before today", () => {
     // The plan in the morning

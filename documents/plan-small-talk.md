@@ -130,12 +130,16 @@ A short voice note on the Small talk page: "What's one thing from today worth te
 
 ## Stages
 
-1. **Content and checks.** Built (asking and listening followed as units 2 and 3, decision 47). The questions, the six lessons with their examples, the recipe text, and the phone's checks (`src/core/smallTalk.ts`), all with tests.
+1. **Content and checks.** Built (asking and listening followed as units 2 and 3, decision 47; news as a fourth, decision 55; reading the room, starting and ending, and going deeper as units 5 to 7, decision 95, each read on a card rather than heard). The questions, the six lessons with their examples, the recipe text, and the phone's checks (`src/core/smallTalk.ts`), all with tests.
 2. **The mode.** Built (decision 42); the lessons' teaching lives on the recording page before the question, so there are no separate lesson pages. A new session mode `smalltalk` kept out of the speech numbers, the Small talk tab and page, the recording page with the strip and its fading, the timing window, the four listen-back questions, and notes by beat (phone checks first).
 3. **The voice.** Built (decision 43). The `/api/voice` route with a stand-in for tests, the "Hear it" button, auto-start after the voice, caching, and the phone-voice fallback.
 4. **The coach.** Built. The small-talk prompt and schema (moment, hooks, feeling, hand-back, livelier version, one change), shown by beat.
 5. **Lessons and moments.** Built (decision 44). The lesson pages (idea, flat and good examples, your turn) and the one-moment note, all on the Small talk page.
 6. **Docs, decisions, screenshots,** Done. and a browser journey through a whole answer.
+
+## Since then: seven units (decision 95)
+
+The small-talk page grew into seven units, each with its own recipe of four beats, lessons and drills: Answering (this plan), Asking, Listening, News, and since 2026-10-21 Reading the room, Starting and ending, and Going deeper. The last three are read, not heard: a moment from a conversation, a situation to open and close in, or a flat question to upgrade. The phone checks each beat (`src/core/smallTalk.ts`), the conversation coach reads them with the same notes shape as asking and listening, and every unit is listed at `/small-talk` ("See all" on Practice). Details are in [plan-daily-mix-and-connection.md](plan-daily-mix-and-connection.md).
 
 ## Open questions
 

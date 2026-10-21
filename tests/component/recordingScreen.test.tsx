@@ -563,6 +563,34 @@ describe("RecordingScreen", () => {
     await waitFor(async () => expect([fake.said, (await repository.listSessions()).map((session) => [session.promptId, session.selfReview])]).toEqual([["We got a kitten last week."], [["sa08", undefined]]]));
   });
 
+  // Reading the room (decision 95): the moment is read on a card, never said aloud, and recording starts straight away; a short reply is kept
+  it("shows a moment on a card and records without the voice", async () => {
+    // Draw a moment, with a voice that would note anything said
+    const { fake, clock, repository } = draw({ mode: "smalltalk", promptId: "sr01" }, { voice: true, finalText: "you seem busy do you need to go" });
+    // Confirm the card's label, the moment without quote marks, and the room recipe
+    expect([!!(await screen.findByText("The moment")), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("heading", { level: 1 }).className.includes("before:content"), within(screen.getByRole("list", { name: "The recipe" })).getAllByRole("listitem")[0]?.textContent]).toEqual([true, "Their answers are getting shorter, and they keep checking their phone.", false, "1. Name itSay the change you noticed, kindly."]);
+    // Start: no voice, straight to recording
+    fireEvent.click(screen.getByRole("button", { name: /Answer it/ }));
+    // Recording is under way
+    const stop = await screen.findByRole("button", { name: /Stop/ });
+    // Reply for four seconds
+    clock.advance(4_000);
+    // Stop
+    fireEvent.click(stop);
+    // Confirm nothing was said aloud, and the reply was kept
+    await waitFor(async () => expect([fake.said, (await repository.listSessions()).map((session) => session.promptId)]).toEqual([[], ["sr01"]]));
+  });
+
+  // A lesson in a card unit teaches with its research line, and labels the example as the situation
+  it("teaches a starting-and-ending lesson with its research line", async () => {
+    // Draw lesson 4, "Leave while it's good"
+    draw({ mode: "smalltalk", promptId: "sel4" });
+    // The lesson
+    const lesson = await screen.findByRole("region", { name: "The lesson" });
+    // Confirm the title, the research line, the example's label, and the question
+    expect([within(lesson).getByRole("heading").textContent, !!within(lesson).getByText(/Mastroianni et al., 2021/), !!within(lesson).getByText("The situation"), screen.getByRole("heading", { level: 1 }).textContent]).toEqual(["Lesson 4: Leave while it's good", true, true, "At the dog park, your chat with another owner is winding down."]);
+  });
+
   // Listening: the story is said aloud but not shown, so you listen the way you would in person
   it("keeps a story hidden and says it aloud", async () => {
     // Draw the train story with a voice

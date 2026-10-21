@@ -14,7 +14,7 @@ import { storyPromptForDay } from "@/content/stories";
 // Load today's guided story (decision 93)
 import { guidedStoryForDay } from "@/content/guidedStories";
 // Load the small-talk questions and lessons
-import { SMALL_TALK_LESSONS, drillForDay, smallTalkForDay, unitOf } from "@/content/smallTalk";
+import { SMALL_TALK_LESSONS, UNITS, drillForDay, findUnit, smallTalkForDay, unitOf, type UnitId } from "@/content/smallTalk";
 // Load the next Learn card
 import { nextCard, type LearnProgress } from "@/core/learn";
 // Load the record types
@@ -275,9 +275,12 @@ function picks(input: PlanInput, before: ReadonlyArray<SessionRecord>, firstDays
 }
 
 // The lesson labels by unit
-const LESSON_LABELS = { answering: "Small-talk lesson", asking: "Asking lesson", listening: "Listening lesson", news: "News lesson" } as const;
+const LESSON_LABELS: Readonly<Record<UnitId, string>> = { answering: "Small-talk lesson", asking: "Asking lesson", listening: "Listening lesson", news: "News lesson", room: "Reading the room lesson", starting: "Starting and ending lesson", deeper: "Going deeper lesson" };
 
-// Connection: real conversations. The next small-talk lesson (answering, then asking, then listening, then news); once they are done, a follow-up, a story and some news in turn
+// The units whose drills take turns once every lesson is done: every unit but answering, in the units' order (asking, listening, news, then reading the room, starting and ending, and going deeper; decision 95)
+const DRILL_TURNS: ReadonlyArray<UnitId> = UNITS.map((unit) => unit.id).filter((id) => id !== "answering");
+
+// Connection: real conversations. The next small-talk lesson (answering, then asking, news and listening, then reading the room, starting and ending, and going deeper); once they are done, each unit's drill in turn
 function connection(input: PlanInput, before: ReadonlyArray<SessionRecord>): PlanStep {
   // Lessons answered before today
   const answered = new Set(before.filter((session) => session.mode === "smalltalk").map((session) => session.promptId));
@@ -287,12 +290,12 @@ function connection(input: PlanInput, before: ReadonlyArray<SessionRecord>): Pla
   if (lesson) return { lane: "connection", kind: "session", label: `${LESSON_LABELS[lesson.unit]} ${lesson.number}`, title: lesson.title, mode: "smalltalk", promptId: lesson.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${lesson.id}` };
   // Drills already done before today (not lessons), so the units take turns by practice rather than by date (the conversation pick comes up every few days, which would always land on the same unit)
   const drillsDone = before.filter((session) => session.mode === "smalltalk" && unitOf(session.promptId) !== "answering" && !SMALL_TALK_LESSONS.some((item) => item.id === session.promptId)).length;
-  // Lessons finished: asking, listening and news in turn
-  const unit = (["asking", "listening", "news"] as const)[drillsDone % 3]!;
+  // Lessons finished: the units' drills in turn
+  const unit = DRILL_TURNS[drillsDone % DRILL_TURNS.length]!;
   // Today's drill
   const drill = drillForDay(unit, input.day);
   // The step (a story stays hidden until it is heard)
-  return { lane: "connection", kind: "session", label: unit === "asking" ? "Follow-up" : unit === "news" ? "News" : "Listening", title: unit === "listening" ? "A short story to respond to" : drill.text, mode: "smalltalk", promptId: drill.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${drill.id}` };
+  return { lane: "connection", kind: "session", label: findUnit(unit).words.history, title: unit === "listening" ? "A short story to respond to" : drill.text, mode: "smalltalk", promptId: drill.id, minutes: 1, href: `/session?mode=smalltalk&prompt=${drill.id}` };
 }
 
 // Learn: one card every day, the next one not read before today; none once every card is read (decision 67)

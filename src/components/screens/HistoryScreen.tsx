@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { pauseWordsShown } from "@/core/pauseWords";
 import { formatClock } from "@/core/recordingRules";
 // Load the small-talk questions
-import { findSmallTalk, findUnit } from "@/content/smallTalk";
+import { responseLabel } from "@/content/smallTalk";
 // Load the missions and their rules
 import { findMission } from "@/content/missions";
 import { betterThanFeared, triedMissions } from "@/core/missions";
@@ -134,10 +134,8 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
   if (session.mode === "rehearse") return talkTitles.has(session.promptId) ? `Rehearsal: ${talkTitles.get(session.promptId)}` : "Rehearsal";
   // And small-talk answers, by their question
   if (session.mode === "smalltalk") {
-    // What was said, and its unit
-    const found = findSmallTalk(session.promptId);
-    // Asking and listening say which, with a story cut short
-    return found ? `${findUnit(found.unit).words.history}: ${found.unit === "listening" ? shorten(found.question) : found.question}` : `Small talk: ${text}`;
+    // Its unit's word and what was said, a long story, moment or situation cut short
+    return responseLabel(session.promptId) ?? `Small talk: ${text}`;
   }
   // And prepared speeches
   return session.mode === "response" ? `Prepared speech: ${text}` : text;
@@ -312,12 +310,4 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
       )}
     </div>
   );
-}
-
-// A story's first few words, for a one-line label
-function shorten(story: string): string {
-  // The words
-  const words = story.split(/\s+/);
-  // The first eight, with an ellipsis when cut
-  return words.length > 8 ? `${words.slice(0, 8).join(" ")}…` : story;
 }

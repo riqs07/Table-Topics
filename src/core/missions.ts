@@ -6,6 +6,8 @@ import { MISSIONS, findMission, type Mission } from "@/content/missions";
 import { dayKey } from "@/core/dates";
 // Load the record type
 import type { MissionRecord } from "@/data/records";
+// Load the unit id type
+import type { UnitId } from "@/content/smallTalk";
 
 // Where today's mission stands
 export type MissionState =
@@ -81,4 +83,12 @@ export function betterThanFeared(records: ReadonlyArray<MissionRecord>): { bette
   const rated = triedMissions(records).filter((record) => record.predicted !== null);
   // Better than predicted
   return { better: rated.filter((record) => record.outcome! > record.predicted!).length, total: rated.length };
+}
+
+// A unit's missions in ladder order, each with whether it has been tried and debriefed (for the unit's page; decision 95)
+export function missionsInUnit(unit: UnitId, records: ReadonlyArray<MissionRecord>): Array<{ mission: Mission; tried: boolean }> {
+  // Missions tried at least once (as the ladder counts them)
+  const tried = new Set(records.filter((record) => record.status === "done" && record.tried).map((record) => record.missionId));
+  // The unit's missions, marked
+  return MISSIONS.filter((mission) => mission.unit === unit).map((mission) => ({ mission, tried: tried.has(mission.id) }));
 }

@@ -125,7 +125,7 @@ In v1 the focus changes every 7 calendar days, cycling through 1 to 5 and then s
 | Accounts and cloud sync | Later | Local-first protects privacy |
 | Push reminders | Later | Needed once habit data shows drop-off |
 | Freestyle mode, debate mode | Later | Not core to this user |
-| Small-talk and social conversation practice | Cut (2026-10-15); **back since 2026-10-17** (decision 42 onwards: small talk, connection units, and since decision 83 conversations with characters) | Cut as belonging to the old target user; the user brought it back as everyday conversation practice beside the speaking practice |
+| Small-talk and social conversation practice | Cut (2026-10-15); **back since 2026-10-17** (decision 42 onwards: small talk and seven connection units, the last three (reading the room, starting and ending, going deeper) added in decision 95; and since decision 83 conversations with characters) | Cut as belonging to the old target user; the user brought it back as everyday conversation practice beside the speaking practice |
 | Video (eye contact, gestures) | Later | A big step in work and privacy; see plan-public-speaking.md |
 
 ## 9. Success metrics

@@ -11,7 +11,7 @@ import { findLesson } from "@/content/lessons";
 // Load the story prompts, shapes and focuses, to check the cards' links to telling a story
 import { findStoryPrompt, isStoryFocus, isStoryShape } from "@/content/stories";
 // Load the small-talk lessons and units, to check the cards' links to them
-import { findSmallTalk } from "@/content/smallTalk";
+import { UNITS, findSmallTalk } from "@/content/smallTalk";
 // Load the daily plan, to check old progress does not upset it
 import { dailyPlan } from "@/core/dailyPlan";
 // Load the profile's take counts and its summary, to check the trends card says what the profile does
@@ -111,7 +111,7 @@ describe("learn content (decision 94)", () => {
         // A small-talk link names a real small-talk lesson
         query.get("mode") === "smalltalk" && !findSmallTalk(query.get("prompt") ?? "") ? "no small-talk lesson" : null,
         // A small-talk unit link names a real unit
-        url.pathname === "/small-talk/unit" && !["answering", "asking", "listening", "news"].includes(query.get("id") ?? "") ? "no unit" : null,
+        url.pathname === "/small-talk/unit" && !UNITS.some((unit) => unit.id === query.get("id")) ? "no unit" : null,
         // A story link names a real prompt, and any shape or focus is a real one
         url.pathname === "/stories/tell" && (!findStoryPrompt(query.get("prompt") ?? "") || (query.has("shape") && !isStoryShape(query.get("shape"))) || (query.has("focus") && !isStoryFocus(query.get("focus")))) ? "no such story set-up" : null,
       ].filter((problem) => problem !== null);

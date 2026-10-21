@@ -3,7 +3,7 @@
 // Load the session kind and story length types
 import type { SessionMode, StoryLength } from "@/data/records";
 // Load the small-talk unit lookup (asking and listening are shorter than answering)
-import { unitOf } from "@/content/smallTalk";
+import { unitOf, type UnitId } from "@/content/smallTalk";
 
 // The length to aim for, in seconds (for a Table Topic, the top of the 1:00 to 2:00 window)
 export function targetSeconds(mode: SessionMode, promptId = "", storyLength: StoryLength = "full"): number {
@@ -47,8 +47,8 @@ export function maxSeconds(mode: SessionMode, promptId = "", storyLength: StoryL
   if (mode === "bookend") return 60;
   // A Q&A answer stops at two minutes
   if (mode === "qa") return 120;
-  // A follow-up question stops by itself at half a minute
-  if (mode === "smalltalk" && unitOf(promptId) === "asking") return 30;
+  // A follow-up question or an upgraded question stops by itself at half a minute
+  if (mode === "smalltalk" && (unitOf(promptId) === "asking" || unitOf(promptId) === "deeper")) return 30;
   // A small-talk answer or a moment note stops by itself at one minute
   if (mode === "smalltalk" || mode === "moment") return 60;
   // Warm-ups stop at 30 seconds; full sessions at three minutes
@@ -140,16 +140,23 @@ export const ASKING_WINDOW: SpeakingWindow = { start: 2, yellow: 8, end: 12, lim
 export const LISTENING_WINDOW: SpeakingWindow = { start: 5, yellow: 20, end: 30, limit: 30 };
 // A response to news: green at 0:03, red at 0:20
 export const NEWS_WINDOW: SpeakingWindow = { start: 3, yellow: 15, end: 20, limit: 20 };
+// What you'd say when reading the room: like news, green at 0:03, red at 0:20 (decision 95)
+export const ROOM_WINDOW: SpeakingWindow = { start: 3, yellow: 15, end: 20, limit: 20 };
+// An opener and a goodbye together: green at 0:05, red at 0:30
+export const STARTING_WINDOW: SpeakingWindow = { start: 5, yellow: 20, end: 30, limit: 30 };
+// An upgraded question: like a follow-up, red at 0:12
+export const DEEPER_WINDOW: SpeakingWindow = { start: 2, yellow: 8, end: 12, limit: 12 };
+
+// Each unit's window (a record, so a new unit cannot be left out)
+const UNIT_WINDOWS: Readonly<Record<UnitId, SpeakingWindow>> = { answering: SMALL_TALK_WINDOW, asking: ASKING_WINDOW, listening: LISTENING_WINDOW, news: NEWS_WINDOW, room: ROOM_WINDOW, starting: STARTING_WINDOW, deeper: DEEPER_WINDOW };
 
 // A story: a short one is about a minute (green 0:45, yellow 1:00, red 1:15, 15 seconds of grace); a full one two to three minutes (green 2:00, yellow 2:30, red 3:00, 30 seconds of grace; decision 92)
 export const STORY_WINDOWS: Readonly<Record<StoryLength, SpeakingWindow>> = { short: { start: 45, yellow: 60, end: 75, limit: 90 }, full: { start: 120, yellow: 150, end: 180, limit: 210 } };
 
 // The window for a small-talk prompt, by its unit
 export function smallTalkWindow(promptId: string): SpeakingWindow {
-  // The prompt's unit
-  const unit = unitOf(promptId);
-  // Its window
-  return unit === "asking" ? ASKING_WINDOW : unit === "listening" ? LISTENING_WINDOW : unit === "news" ? NEWS_WINDOW : SMALL_TALK_WINDOW;
+  // The prompt's unit's window
+  return UNIT_WINDOWS[unitOf(promptId)];
 }
 
 // The window for a kind of session (and, for small talk, its prompt), if it has one

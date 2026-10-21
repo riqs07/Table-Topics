@@ -94,7 +94,7 @@ describe("asking and listening", () => {
   // Every unit has four beats, its lessons, and each lesson's beat is one of its own
   it("gives each unit four beats and lessons that teach its own beats", () => {
     // Confirm per unit: four beats, lessons, beats in the unit
-    expect(UNITS.map((unit) => [unit.beats.length, lessonsFor(unit.id).length, lessonsFor(unit.id).every((lesson) => lesson.beat === null || unit.beats.some((beat) => beat.id === lesson.beat))])).toEqual([[4, 6, true], [4, 3, true], [4, 3, true], [4, 3, true]]);
+    expect(UNITS.map((unit) => [unit.beats.length, lessonsFor(unit.id).length, lessonsFor(unit.id).every((lesson) => lesson.beat === null || unit.beats.some((beat) => beat.id === lesson.beat))])).toEqual([[4, 6, true], [4, 3, true], [4, 3, true], [4, 3, true], [4, 6, true], [4, 6, true], [4, 6, true]]);
   });
 
   // The unit comes from the prompt id

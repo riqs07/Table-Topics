@@ -25,8 +25,8 @@ import { NotesFold } from "@/components/screens/NotesFold";
 // Load the quick tags, for showing the user's notes
 import { CHANGE_TAGS, WORKED_TAGS } from "@/core/selfReview";
 // Load the small-talk beats and checks
-import { ASKING_BEATS, BEATS, LISTENING_BEATS, NEWS_BEATS, beatsFor, findSmallTalk, findUnit, nextInUnit, type BeatId } from "@/content/smallTalk";
-import { beatCount, beatFound, deadEndOpening, feelingWords, handBack, questionKind, reaction, sharedWords, theirFeelingWords } from "@/core/smallTalk";
+import { UNITS, beatsFor, findSmallTalk, findUnit, nextInUnit, type BeatId } from "@/content/smallTalk";
+import { beatCount, beatFound, deadEndOpening, phoneQuotes } from "@/core/smallTalk";
 // Load the tick
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the comparison of notes with the numbers
@@ -483,7 +483,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   // The user's notes, with their tags as words
   const review = session.selfReview && !session.selfReview.skipped ? session.selfReview : null;
   // The tag words
-  const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS, ...[...BEATS, ...ASKING_BEATS, ...LISTENING_BEATS, ...NEWS_BEATS].map((beat) => ({ id: beat.id, label: beat.name }))].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
+  const tagWords = review ? [...WORKED_TAGS, ...CHANGE_TAGS, ...beatTags(session.promptId)].filter((tag) => review.tags.includes(tag.id)).map((tag) => tag.label.toLowerCase()) : [];
   // The notes against the numbers
   const checks = smallTalk ? [] : compareNotes(session);
   // One change picked from the numbers, shown until the coach's arrives
@@ -568,7 +568,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {session.feedback?.connection && (
               <>
                 {/* Small heading */}
-                <p className="mt-4 text-footnote text-ink-muted">{findSmallTalk(session.promptId)?.unit === "asking" ? "A better follow-up" : "A better response"}</p>
+                <p className="mt-4 text-footnote text-ink-muted">{findUnit(findSmallTalk(session.promptId)?.unit ?? "asking").words.better}</p>
                 {/* The better version */}
                 <p className="mt-1 text-lede">{session.feedback.connection.better}</p>
               </>
@@ -757,7 +757,23 @@ const FOUND_WITHOUT_QUOTE: Partial<Record<BeatId, string>> = {
   "one-question": "One short question.",
   // A reply with no story of your own
   stay: "No story of your own.",
+  // A response to news with no downside or advice
+  "no-buts": "No buts, no advice.",
+  // A moment where they asked or checked in (decision 95)
+  check: "You asked.",
+  // No guilt trip
+  "no-blame": "Light, with no guilt.",
+  // An opener with an easy question
+  "ask-in": "Asked in the opener.",
 };
+
+// The small-talk beats a session's tags can name, by id: its own unit's beats first, then any other unit's, each id once (several units share a beat id, such as React)
+function beatTags(promptId: string): Array<{ id: string; label: string }> {
+  // The session's own unit's beats first, so its names win
+  const all = [...beatsFor(findSmallTalk(promptId)?.unit ?? "answering"), ...UNITS.flatMap((unit) => unit.beats)];
+  // Each id once
+  return all.filter((beat, index) => all.findIndex((other) => other.id === beat.id) === index).map((beat) => ({ id: beat.id, label: beat.name }));
+}
 
 // A small-talk response's beats: what was said to them (for asking and listening), how many beats were found, then each beat with the words that showed it (the coach's quotes, or the phone's checks and the user's own ticks). On a fresh answer, before the user has ticked any and before the coach has reported, there is no count to grade it by: it asks which beats they hit, with the ticks to fill in straight under the question (round 4; "0 of 4 beats." read as a fail)
 function SmallTalkBeats({ session, ticks }: { session: SessionRecord; ticks: ReactNode }) {
@@ -775,26 +791,14 @@ function SmallTalkBeats({ session, ticks }: { session: SessionRecord; ticks: Rea
   const reported = !!coach || !!connection || (!!session.selfReview && !session.selfReview.skipped);
   // A fresh answer with no notes yet: ask, and offer the ticks instead of the list
   const askFirst = !reported && session.selfReview === null;
-  // The speaker's words that showed each beat (quotes), or null when there are none to show
+  // The speaker's words that showed each beat: the coach's quotes when it has answered, otherwise the phone's
   const quotes = (beat: BeatId): string[] => {
     // From the conversation coach: its quote
     if (connection) return connection.found.filter((item) => item.beat === beat).map((item) => item.quote);
     // From the coach: its quotes
     if (coach) return (beat === "moment" ? [coach.moment] : beat === "hook" ? coach.hooks : beat === "feeling" ? [coach.feeling] : [coach.handBack]).filter(Boolean);
-    // From the phone: the feeling words
-    if (beat === "feeling") return feelingWords(session.transcript);
-    // From the phone: the question back
-    if (beat === "hand-back") return [handBack(session.transcript)].filter((phrase): phrase is string => phrase !== null);
-    // From the phone: the reaction
-    if (beat === "react") return [reaction(session.transcript)].filter((phrase): phrase is string => phrase !== null);
-    // From the phone: their words, picked up
-    if (beat === "their-detail" || beat === "their-words") return sharedWords(session.transcript, found?.question ?? "");
-    // From the phone: how it felt for them
-    if (beat === "their-feeling") return theirFeelingWords(session.transcript);
-    // From the phone: the open question's first word
-    if (beat === "open" && questionKind(session.transcript) === "open") return [session.transcript.split(/\s+/).find((word) => /^(what|how|why|where|when|which|who|tell)/i.test(word)) ?? ""].filter(Boolean);
-    // The rest only the user can say
-    return [];
+    // From the phone's own checks (empty for beats only the user can say)
+    return phoneQuotes(session, beat);
   };
   // Draw them
   return (
@@ -804,8 +808,8 @@ function SmallTalkBeats({ session, ticks }: { session: SessionRecord; ticks: Rea
         <div className="mt-5 md:mt-0">
           {/* Small heading */}
           <p className="text-footnote text-ink-muted">{findUnit(unit).words.said}</p>
-          {/* Their words */}
-          <p className="mt-1 max-w-[52ch] text-lede">&ldquo;{found.question}&rdquo;</p>
+          {/* Their words (a described moment or situation is not quoted, decision 95) */}
+          <p className="mt-1 max-w-[52ch] text-lede">{findUnit(unit).drill === "situation" ? found.question : <>&ldquo;{found.question}&rdquo;</>}</p>
         </div>
       )}
       {/* How many, as a headline, once reported; until then, the question */}

@@ -1,7 +1,9 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
+// Load the small-talk units (decision 95)
+import { UNITS } from "@/content/smallTalk";
 // Load the prompt builder and feedback checker being checked
-import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, CONVERSATION_SYSTEM_PROMPT, FEEDBACK_RULES, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildConnectionMessage, buildConversationMessage, buildSmallTalkMessage, checkConnectionFeedback, checkConversationFeedback, checkFeedback, checkSmallTalkFeedback, checkRubric, RUBRIC_RULES } from "@/core/coachPrompt";
+import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, ConnectionFeedbackSchema, CONVERSATION_SYSTEM_PROMPT, FEEDBACK_RULES, SMALL_TALK_SYSTEM_PROMPT, buildCoachMessage, buildConnectionMessage, buildConversationMessage, buildSmallTalkMessage, checkConnectionFeedback, checkConversationFeedback, checkFeedback, checkSmallTalkFeedback, checkRubric, RUBRIC_RULES } from "@/core/coachPrompt";
 
 // A typical session for these checks
 const SESSION = { transcript: "Um, so I think, uh, the best part of my week was the dog.", durationSec: 30, focusId: "cut-fillers", previousChange: null, mode: "standard" as const };
@@ -361,5 +363,54 @@ describe("checkRubric", () => {
   it("is explained to every coach", () => {
     // Confirm the rules are in two of the coaches' instructions
     expect([COACH_SYSTEM_PROMPT.includes(RUBRIC_RULES), CONVERSATION_SYSTEM_PROMPT.includes(RUBRIC_RULES)]).toEqual([true, true]);
+  });
+});
+
+// Group the checks about the conversation coach for the units added in decision 95
+describe("conversation coach: reading the room, starting and ending, going deeper", () => {
+  // Each new unit tells the coach its skill and what was on the card
+  it("names each new skill and what was on the card", () => {
+    // A moment, a situation, and a flat question
+    const messages = ["sr01", "se01", "sd01"].map((promptId) => buildConnectionMessage({ transcript: "you seem busy", durationSec: 5, focusId: "pausing", previousChange: null, mode: "smalltalk", promptId }));
+    // Confirm the skills and the labelled cards
+    expect(messages.map((message) => message.split("\n").slice(0, 2))).toEqual([
+      ["Skill: reading the room (room)", "The moment: <said>Their answers are getting shorter, and they keep checking their phone.</said>"],
+      ["Skill: starting and ending a conversation (starting)", "The situation: <said>Waiting for the kettle in the office kitchen with a coworker you haven't met.</said>"],
+      ["Skill: going deeper: upgrading a flat question (deeper)", "The flat question: <said>What do you do?</said>"],
+    ]);
+  });
+
+  // A lesson's turn names the lesson and its beat
+  it("tells the coach the lesson and its beat", () => {
+    // Reading the room, lesson 2
+    const message = buildConnectionMessage({ transcript: "do you need to go", durationSec: 3, focusId: "pausing", previousChange: null, mode: "smalltalk", promptId: "srl2" });
+    // Confirm the lesson and the beat
+    expect([message.includes("This was room lesson 2, \"Ask, don't guess\""), message.includes("Pay most attention to the check beat.")]).toEqual([true, true]);
+  });
+
+  // The standing instructions teach every new beat, and keep the research honest
+  it("teaches the coach every new beat, without the name myth", () => {
+    // The new beats
+    const beats = UNITS.filter((unit) => ["room", "starting", "deeper"].includes(unit.id)).flatMap((unit) => unit.beats.map((beat) => beat.id));
+    // Confirm each is described, the name advice is ruled out, and guessing feelings is not praised
+    expect([beats.filter((beat) => !CONNECTION_SYSTEM_PROMPT.includes(`- ${beat}:`)), CONNECTION_SYSTEM_PROMPT.includes("Using someone's name often to be liked is not supported"), CONNECTION_SYSTEM_PROMPT.includes("never praise guessing what the other person feels")]).toEqual([[], true, true]);
+  });
+
+  // The reply keeps only the unit's own beats: a room reply keeps "noticed" and drops a news beat
+  it("keeps only the new unit's beats from the coach", () => {
+    // A reply naming a room beat, a news beat and a deeper beat
+    const reply = { found: [{ beat: "noticed", quote: "you seem busy" }, { beat: "no-buts", quote: "x" }, { beat: "depth", quote: "y" }], keep: "k", change: "c", retryCue: "r", better: "You seem busy. Do you need to go?" };
+    // Confirm for room, and for deeper
+    expect([checkConnectionFeedback(reply, "sr01").connection?.found.map((item) => item.beat), checkConnectionFeedback(reply, "sd01").connection?.found.map((item) => item.beat)]).toEqual([["noticed"], ["depth"]]);
+  });
+
+  // A malformed reply is refused: the schema rejects missing or mistyped parts, and an empty better version is incomplete
+  it("refuses a malformed reply", () => {
+    // A good reply, with its rubric
+    const good = { found: [{ beat: "around", quote: "this kettle" }], keep: "k", change: "c", retryCue: "r", better: "This kettle takes forever, doesn't it? … Great chatting, good luck!", rubric: { pointFirst: { score: 2, quote: "a" }, answersQuestion: null, structure: { score: 2, quote: "" }, ending: { score: 2, quote: "" }, concreteExample: { score: 1, quote: "" }, wordChoice: { score: 2, quote: "" }, devices: [], unnecessaryHedges: 0, wordSwaps: [] } };
+    // Confirm the good one passes, a missing better fails, a found beat with no quote fails, and an empty better is incomplete
+    expect([ConnectionFeedbackSchema.safeParse(good).success, ConnectionFeedbackSchema.safeParse({ ...good, better: undefined }).success, ConnectionFeedbackSchema.safeParse({ ...good, found: [{ beat: "around" }] }).success]).toEqual([true, false, false]);
+    // Confirm an empty better version is refused
+    expect(() => checkConnectionFeedback({ ...good, better: "  " }, "se01")).toThrow("incomplete");
   });
 });

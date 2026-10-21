@@ -56,7 +56,7 @@ import { readPassphrase } from "@/data/passphrase";
 // Load where each kind of session belongs
 import { sessionHome } from "@/core/sessionHome";
 // Load the small-talk content, the strip's level, and the strip
-import { asksWhatYouDid, findSmallTalk, findUnit } from "@/content/smallTalk";
+import { asksWhatYouDid, findSmallTalk, findUnit, unitOf } from "@/content/smallTalk";
 import { stripLevel } from "@/core/smallTalk";
 import { RecipeStrip } from "@/components/script/RecipeStrip";
 // Load the change picked from the numbers, for a retry cue without the coach
@@ -460,8 +460,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   useEffect(() => {
     // Only for small talk
     if (mode !== "smalltalk") return;
-    // Fetch the question's audio ahead of the tap
-    services.prepareSpeech?.(promptId);
+    // Fetch the question's audio ahead of the tap (a drill read on a card has no voice; decision 95)
+    if (findUnit(unitOf(promptId)).drill === "heard") services.prepareSpeech?.(promptId);
     // Ignore the result if the screen closes first
     let cancelled = false;
     // Read them
@@ -1064,8 +1064,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Wake its sound
       cues.current.prime();
     }
-    // The start itself: a small-talk question is asked aloud first, a Table Topic or prepared speech counts down, anything else records
-    const go = smallTalk ? () => void ask(smallTalk.question) : think > 0 ? beginThinking : () => void start();
+    // The start itself: a small-talk question is asked aloud first (a moment, situation or flat question read on a card is not; decision 95), a Table Topic or prepared speech counts down, anything else records
+    const go = smallTalk && findUnit(smallTalk.unit).drill === "heard" ? () => void ask(smallTalk.question) : think > 0 ? beginThinking : () => void start();
     // The first ever recording: explain the microphone, and start once it is allowed
     if (needsPrimer) {
       // Remember the start for afterwards
@@ -1173,6 +1173,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const unit = smallTalk && smallTalk.unit !== "answering" ? findUnit(smallTalk.unit) : null;
   // A story to listen to is not shown before answering, except in a lesson (you listen the way you would in person)
   const storyHidden = smallTalk?.unit === "listening" && !smallTalk.lesson;
+  // The label above a small-talk drill: who is speaking, or what is shown on the card
+  const cue = smallTalk ? findUnit(smallTalk.unit).words.cue : null;
+  // Whether the drill is a described moment or situation rather than words someone says (decision 95)
+  const described = !!smallTalk && findUnit(smallTalk.unit).drill === "situation";
   // The page title for this kind of session
   const title = retryOf ? (mode === "story" ? "Tell it again" : "Second try") : mode === "story" ? "Story" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Rapid Fire" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
   // Name the tab after it
@@ -1444,8 +1448,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                   <h2 className="font-display text-statement tracking-tight">Lesson {smallTalk.lesson.number}: {smallTalk.lesson.title}</h2>
                   {/* The idea */}
                   <p className="mt-3 max-w-[52ch] text-lede">{smallTalk.lesson.idea}</p>
-                  {/* What they said, in an asking or listening example */}
-                  {smallTalk.lesson.example && <p className="mt-4 max-w-[52ch] text-lede"><span className="block text-footnote text-ink-muted">They say</span>&ldquo;{smallTalk.lesson.example}&rdquo;</p>}
+                  {/* Why it works, from the research, folded so the lesson stays short (decision 95) */}
+                  {smallTalk.lesson.why && <details className="mt-2 max-w-[52ch] text-footnote text-ink-muted"><summary className="cursor-pointer">Why it works</summary><p className="mt-1">{smallTalk.lesson.why}</p></details>}
+                  {/* What they said, or the moment, situation or flat question, in the example (a described moment is not quoted) */}
+                  {smallTalk.lesson.example && <p className="mt-4 max-w-[52ch] text-lede"><span className="block text-footnote text-ink-muted">{findUnit(smallTalk.unit).words.example}</span>{findUnit(smallTalk.unit).drill === "situation" ? smallTalk.lesson.example : <>&ldquo;{smallTalk.lesson.example}&rdquo;</>}</p>}
                   {/* The flat answer */}
                   {smallTalk.lesson.flat && (
                     <p className="mt-4 max-w-[52ch] border-l-2 border-rule pl-4 text-lede text-ink-muted"><span className="block text-footnote">Flat</span>&ldquo;{smallTalk.lesson.flat}&rdquo;</p>
@@ -1456,14 +1462,14 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                   <p className="mt-6 text-footnote text-ink-muted">Your turn</p>
                 </section>
               )}
-              {/* Asking: who is speaking */}
-              {(smallTalk.unit === "asking" || smallTalk.unit === "news") && <p className={`text-footnote text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>{smallTalk.unit === "news" ? "They tell you" : "They say"}</p>}
+              {/* Who is speaking, or what is shown: the unit's cue (none for an everyday question or a hidden story) */}
+              {cue && <p className={`text-footnote text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>{cue}</p>}
               {/* A story to listen to, not shown */}
               {storyHidden ? (
                 <h1 className="mt-8 font-display text-prompt tracking-tight md:mt-0 md:max-w-[18ch]">Listen to their story.</h1>
               ) : (
-                // The question, remark or story, set like a headline (a story a size smaller)
-                <h1 className={`relative font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${smallTalk.unit === "listening" ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"} ${smallTalk.lesson && !busy ? "mt-1" : smallTalk.unit === "asking" || smallTalk.unit === "news" ? "mt-1" : "mt-8 md:mt-0"}`}>
+                // The question, remark or story, set like a headline (a story, moment or situation a size smaller; a described moment without quote marks)
+                <h1 className={`relative font-display tracking-tight ${described ? "" : "before:absolute before:-left-[0.42em] before:text-accent before:content-['“']"} ${smallTalk.unit === "listening" || described ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"} ${smallTalk.lesson && !busy ? "mt-1" : cue ? "mt-1" : "mt-8 md:mt-0"}`}>
                   {smallTalk.question}
                 </h1>
               )}

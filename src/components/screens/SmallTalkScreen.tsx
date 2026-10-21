@@ -19,7 +19,7 @@ import { PathMark } from "@/components/script/PathMark";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the small-talk content
-import { ASKING_DRILLS, MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_QUESTIONS, UNITS, drillForDay, findSmallTalk, findUnit, lessonsFor, unitOf, type UnitId } from "@/content/smallTalk";
+import { MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_QUESTIONS, drillBank, drillForDay, findSmallTalk, findUnit, lessonsFor, responseLabel, unitOf, type UnitId } from "@/content/smallTalk";
 // Load the units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the conversation personas and situations, for this unit's person to talk with (decisions 83 and 84)
@@ -33,7 +33,12 @@ import { dayLabel } from "@/core/copy";
 // Load the calendar-day key
 import { dayKey } from "@/core/dates";
 // Load the record types
-import type { SessionRecord } from "@/data/records";
+import type { MissionRecord, SessionRecord } from "@/data/records";
+// Load the mission tries (decision 95)
+import { loadMissions } from "@/data/missions";
+// Load the unit's missions, marked tried or not, and the words for each step's size
+import { missionsInUnit } from "@/core/missions";
+import { LEVEL_WORDS } from "@/content/missions";
 // Load the shared heading look
 import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared page shell
@@ -57,6 +62,29 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
   const [moments, setMoments] = useState<SessionRecord[]>([]);
   // How many drills along from today's ("another" adds one)
   const [offset, setOffset] = useState(0);
+  // The mission tries, oldest first (null while loading)
+  const [missions, setMissions] = useState<MissionRecord[] | null>(null);
+
+  // Load the mission tries once today is known, for this unit's missions (decision 95)
+  useEffect(() => {
+    // Wait for the date
+    if (!today) return;
+    // Ignore the result if the page closes first
+    let cancelled = false;
+    // Read them; a failure just shows the missions as untried
+    loadMissions(repo, today).then((records) => {
+      // Keep them if still open
+      if (!cancelled) setMissions(records);
+    }, () => {
+      // Shown as untried
+      if (!cancelled) setMissions([]);
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [repo, today]);
 
   // Load the answers once in the browser
   useEffect(() => {
@@ -111,16 +139,16 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       </div>
 
       {/* Until today's date and the answers are read, a quiet placeholder, so the page appears in one piece (decision 76) */}
-      {!(today && answers) && <Skeleton blocks={["h-40", "h-28", "h-56"]} />}
+      {!(today && answers && missions) && <Skeleton blocks={["h-40", "h-28", "h-56"]} />}
       {/* Everything that depends on them, at once */}
-      {today && answers && (<>
+      {today && answers && missions && (<>
       {/* Today's question, with a way to get another */}
       {question && (
         <section aria-label={unit.words.practice} className="mt-4">
           {/* Small heading */}
           <p className="text-footnote text-ink-muted">{unit.words.kicker}</p>
-          {/* What is said (a story stays hidden until afterwards) */}
-          <h1 className="mt-1 font-display text-statement tracking-tight">{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
+          {/* What is said (a story stays hidden until afterwards; a described moment or situation a size smaller, decision 95) */}
+          <h1 className={`mt-1 font-display tracking-tight ${unit.drill === "situation" ? "text-cue" : "text-statement"}`}>{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
           {/* Reply, or move along */}
           <p className="mt-3 flex flex-wrap gap-3">
             {/* Reply, the main choice */}
@@ -248,15 +276,41 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           </div>
         </section>
       )}
-      {/* Everything people say in the asking drills */}
-      {unit.id === "asking" && (
+      {/* Every drill in the unit, when its page lists them: things people say, news, moments, situations or flat questions */}
+      {unit.words.list && (
         <section aria-labelledby="remarks" className="mt-10">
           {/* Run-in heading */}
-          <h2 id="remarks" className={SECTION_HEADING}>Things people say</h2>
-          {/* Each one, followed up by tapping it */}
+          <h2 id="remarks" className={SECTION_HEADING}>{unit.words.list}</h2>
+          {/* Each one, practised by tapping it */}
           <ul className={`mt-2 ${CARD_LIST}`}>
-            {/* One remark */}
-            {ASKING_DRILLS.map((item) => <li key={item.id}><RowLink href={answerHref(item.id)}>{item.text}</RowLink></li>)}
+            {/* One drill */}
+            {drillBank(unit.id).map((item) => <li key={item.id}><RowLink href={answerHref(item.id)}>{item.text}</RowLink></li>)}
+          </ul>
+        </section>
+      )}
+
+      {/* This unit's missions: the real-world tries, easiest first, marked once tried (decision 95) */}
+      {missionsInUnit(unit.id, missions).length > 0 && (
+        <section aria-labelledby="unit-missions" className="mt-10">
+          {/* Run-in heading, and where today's mission is */}
+          <div className="flex items-baseline justify-between gap-4">
+            {/* Run-in heading */}
+            <h2 id="unit-missions" className={SECTION_HEADING}>Try it for real</h2>
+            {/* Today's mission lives on Learn */}
+            <Link href="/learn#missions" className={`${TEXT_LINK} text-footnote`}>Today’s mission</Link>
+          </div>
+          {/* The missions */}
+          <ul aria-label="This unit's missions" className={`mt-2 ${CARD_LIST}`}>
+            {/* One mission: its mark, then what to try */}
+            {missionsInUnit(unit.id, missions).map((item) => (
+              // One mission
+              <li key={item.mission.id} data-tried={item.tried} className="flex gap-3 py-3">
+                {/* Its mark: filled once tried */}
+                <span aria-hidden="true" className={`mt-1 size-4 flex-none rounded-full border-2 ${item.tried ? "border-fill bg-fill" : "border-rule"}`} />
+                {/* What to try, and whether it is done */}
+                <span><span className="block">{item.mission.task}</span><span className="block text-footnote text-ink-muted">{item.tried ? "Tried" : LEVEL_WORDS[item.mission.level]}</span></span>
+              </li>
+            ))}
           </ul>
         </section>
       )}
@@ -279,9 +333,9 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
 
       </>)}
 
-      {/* The main action: this unit's next lesson, or its drill once the lessons are done */}
+      {/* The main action: this unit's next lesson (named by number, as the page names the unit, so a long unit name never squeezes the title), or its drill once the lessons are done */}
       {nextLesson ? (
-        <ActionBand action={`${UNITS.find((item) => item.id === nextLesson.unit)?.name} lesson ${nextLesson.number}`} aside={nextLesson.title} href={answerHref(nextLesson.id)} />
+        <ActionBand action={`Lesson ${nextLesson.number}`} aside={nextLesson.title} href={answerHref(nextLesson.id)} />
       ) : (
         question && <ActionBand action={unit.words.band} aside={unit.id === "listening" ? unit.words.then : question.text} href={answerHref(question.id)} />
       )}
@@ -289,14 +343,8 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
   );
 }
 
-// One line for a recent response: the question or remark, or a story's first words
+// One line for a recent response: the question, or the unit's word and what was said, a long one cut short
 function answerLabel(promptId: string): string {
-  // What was said
-  const found = findSmallTalk(promptId);
-  // Unknown
-  if (!found) return "A question";
-  // A story, cut short
-  if (found.unit === "listening") return `Story: ${found.question.split(/\s+/).slice(0, 8).join(" ")}…`;
-  // A question as it is; anything else with its unit's word
-  return found.unit === "answering" ? found.question : `${findUnit(found.unit).words.history}: ${found.question}`;
+  // An everyday question as it is (this is the Answering page); otherwise the shared label, or a plain one when the prompt is unknown
+  return unitOf(promptId) === "answering" ? (findSmallTalk(promptId)?.question ?? "A question") : (responseLabel(promptId) ?? "A question");
 }

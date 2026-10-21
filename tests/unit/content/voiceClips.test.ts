@@ -5,7 +5,7 @@ import { readdirSync, statSync } from "node:fs";
 // Load the saved recordings being checked
 import { VOICE_CLIPS, voiceClip } from "@/content/voiceClips";
 // Load every small-talk line
-import { ASKING_DRILLS, LISTENING_STORIES, NEWS_DRILLS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, findSmallTalk } from "@/content/smallTalk";
+import { ASKING_DRILLS, LISTENING_STORIES, NEWS_DRILLS, SMALL_TALK_LESSONS, SMALL_TALK_QUESTIONS, findSmallTalk, findUnit } from "@/content/smallTalk";
 // Load the passages to shadow and their steps
 import { SHADOW_PASSAGES, shadowSteps } from "@/content/voice";
 // Load the conversation characters (decision 83)
@@ -18,8 +18,8 @@ const BIT_RATE = 64_000;
 
 // Every line the app says aloud, with its words now
 const LINES: ReadonlyArray<{ id: string; text: string }> = [
-  // Small talk: each question, lesson, remark, piece of news and story, as the voice route would say it
-  ...[...SMALL_TALK_QUESTIONS, ...SMALL_TALK_LESSONS, ...ASKING_DRILLS, ...NEWS_DRILLS, ...LISTENING_STORIES].map((item) => ({ id: item.id, text: findSmallTalk(item.id)!.question })),
+  // Small talk: each question, lesson, remark, piece of news and story, as the voice route would say it (the units read on a card, added in decision 95, are never said aloud)
+  ...[...SMALL_TALK_QUESTIONS, ...SMALL_TALK_LESSONS.filter((lesson) => findUnit(lesson.unit).drill === "heard"), ...ASKING_DRILLS, ...NEWS_DRILLS, ...LISTENING_STORIES].map((item) => ({ id: item.id, text: findSmallTalk(item.id)!.question })),
   // Shadowing: each phrase, then each whole passage
   ...SHADOW_PASSAGES.flatMap((passage) => shadowSteps(passage).map((step) => ({ id: step.voiceId, text: step.text }))),
   // Conversations: every line each character can say

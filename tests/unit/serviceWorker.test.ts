@@ -250,7 +250,7 @@ describe("service worker install", () => {
     // The saved addresses
     const saved = [...(worker.stores.get(CACHE)?.keys() ?? [])];
     // Confirm the tabs and the pages a tab leads to were saved
-    expect(saved).toEqual(expect.arrayContaining(["/", "/practice", "/learn", "/conversations", "/conversations/talk", "/voice", "/skills", "/history", "/settings", "/session", "/sessions"].map((path) => `${ORIGIN}${path}`)));
+    expect(saved).toEqual(expect.arrayContaining(["/", "/practice", "/learn", "/conversations", "/conversations/talk", "/voice", "/skills", "/small-talk", "/history", "/settings", "/session", "/sessions"].map((path) => `${ORIGIN}${path}`)));
   });
 
   // Each page's data for in-app moves is saved too, under the data key
