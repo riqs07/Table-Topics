@@ -51,7 +51,23 @@ describe("dailyPlan", () => {
     // Every kind that came up
     const kinds = new Set(days.flatMap((picks) => picks.map((step) => step.mode)));
     // Confirm two groups a day, no repeats within a group, and every kind of practice comes up (in pausing week the pause pick is a practice reading)
-    expect([days.every((picks) => picks.length === 2 && picks[0]?.lane !== picks[1]?.lane), repeats(byGroup("spot")), repeats(byGroup("delivery")), repeats(byGroup("connection")), ["talk", "bookend", "response", "pause", "read", "smalltalk"].filter((kind) => !kinds.has(kind as never))]).toEqual([true, false, false, false, []]);
+    expect([days.every((picks) => picks.length === 2 && picks[0]?.lane !== picks[1]?.lane), repeats(byGroup("spot")), repeats(byGroup("delivery")), repeats(byGroup("connection")), ["talk", "bookend", "response", "story", "pause", "read", "smalltalk"].filter((kind) => !kinds.has(kind as never))]).toEqual([true, false, false, false, []]);
+  });
+
+  // A story comes up about twice a week, in the on-the-spot pick, set up on its own page and done by a telling of its prompt today (decision 92)
+  it("offers a story about twice a week, done by telling it", () => {
+    // The picks over three weeks
+    const days = Array.from({ length: 21 }, (_, offset) => regularPlan(dayAfter(offset)).slice(2));
+    // The story steps
+    const stories = days.flatMap((picks) => picks.filter((step) => step.mode === "story"));
+    // The first one
+    const first = stories[0]!;
+    // Its day
+    const day = dayAfter(days.findIndex((picks) => picks.includes(first)));
+    // A telling of its prompt that day
+    const told = makeSession({ id: "told", mode: "story", promptId: first.promptId, createdAt: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12).toISOString() });
+    // Confirm how often, where, how long and where it starts, and that the telling marks it done
+    expect([stories.length >= 5 && stories.length <= 7, stories.every((step) => step.lane === "spot" && step.label === "Story" && step.minutes === 2), first.href, planProgress([first], [told], day)[0]]).toEqual([true, true, `/stories/tell?prompt=${first.promptId}`, true]);
   });
 
   // The first days keep the long prepared speech out

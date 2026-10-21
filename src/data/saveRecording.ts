@@ -11,7 +11,9 @@ import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the baseline rule
 import { shouldBeBaseline } from "@/core/progress";
 // Load the record types
-import type { SessionMode, SessionRecord } from "@/data/records";
+import type { SessionMode, SessionRecord, StoryTake } from "@/data/records";
+// Load the story record maker (decision 92)
+import { ensureStory } from "@/data/stories";
 // Load the small-talk unit lookup (a follow-up question or a reply to a story is too short to listen back to first)
 import { unitOf } from "@/content/smallTalk";
 // Load the analysis saver (decision 90)
@@ -53,6 +55,8 @@ export interface FinishedRecording {
   question?: string;
   // For a short speech the user planned: its topic, points and length
   outline?: Outline;
+  // For a told story: its shape, focus and length (decision 92)
+  story?: StoryTake;
 }
 
 // Round seconds to a tenth
@@ -107,6 +111,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.question ? { question: recording.question } : {}),
     // Keep a short speech's plan
     ...(recording.outline ? { outline: recording.outline } : {}),
+    // Keep a told story's set-up
+    ...(recording.story ? { story: recording.story } : {}),
     // Keep the section of a section rehearsal
     ...(recording.sectionIndex !== undefined && recording.sectionIndex !== null ? { sectionIndex: recording.sectionIndex } : {}),
   };
@@ -116,6 +122,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
   await repository.saveSession(session);
   // Remove audio beyond the limit
   await repository.pruneAudio();
+  // A told story gets its library record the first time its seed is told (decision 92; a failure here never stops the take being saved, and the library falls back to the starting title)
+  if (session.mode === "story") await ensureStory(repository, session.promptId, now).catch((error: unknown) => console.warn(`The story could not be added to your stories: ${error instanceof Error ? error.message : String(error)}`));
   // Work out and save its measures (decision 90; a failure here never stops the take being saved)
   await analyseSession(repository, session, now);
   // Hand back the new session

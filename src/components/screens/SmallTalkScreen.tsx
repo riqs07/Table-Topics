@@ -164,6 +164,8 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
                   <span className="block text-footnote text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
                   {/* The words */}
                   <span className="block text-lede">{moment.transcript || "(no words were caught)"}</span>
+                  {/* Tell it properly, as a story (decision 92) */}
+                  {moment.transcript.trim() !== "" && <Link href={`/stories/tell?moment=${encodeURIComponent(moment.id)}`} className={`${TEXT_LINK} text-footnote`}>Tell it properly</Link>}
                 </li>
               ))}
             </ul>

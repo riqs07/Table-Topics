@@ -20,12 +20,14 @@ export interface SessionHome {
   label: string;
 }
 
-// The home of a session: Today inside today's practice, else Conversations for a conversation, else Your voice for voice and pause drills, else Skills for texts to read, else Practice (a rehearsal goes back to its talk)
+// The home of a session: Today inside today's practice, else Stories for a told story, else Conversations for a conversation, else Your voice for voice and pause drills, else Skills for texts to read, else Practice (a rehearsal goes back to its talk)
 export function sessionHome(mode: SessionMode, promptId: string, inPlan: boolean): SessionHome {
   // Inside today's practice
   if (inPlan) return { section: "today", href: "/", label: "Close, back to Today" };
   // A small-talk answer or a moment note lives on its own page
   if (mode === "smalltalk" || mode === "moment") return { section: "practice", href: `/small-talk/unit?id=${mode === "moment" ? "answering" : unitOf(promptId)}`, label: `Close, back to ${UNITS.find((unit) => unit.id === (mode === "moment" ? "answering" : unitOf(promptId)))?.name ?? "Practice"}` };
+  // A told story goes back to Stories (decision 92)
+  if (mode === "story") return { section: "practice", href: "/stories", label: "Close, back to Stories" };
   // A conversation with a character goes back to the list of people (decision 83)
   if (mode === "conversation") return { section: "practice", href: "/conversations", label: "Close, back to Conversations" };
   // A voice drill, shadowing, a pause drill or a tricky-word list (decision 80)

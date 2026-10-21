@@ -15,6 +15,8 @@ import { promptForDay } from "@/content/prompts";
 import { isSessionMode } from "@/data/records";
 // Load the reader for a short speech's plan
 import { outlineFromQuery } from "@/core/outline";
+// Load the story choice checks and today's story prompt (decision 92)
+import { isStoryFocus, isStoryLength, isStoryShape, storyPromptForDay } from "@/content/stories";
 // Load the text loader, so a speech part's text is loaded before the screen shows (decision 88)
 import { useReading } from "@/components/screens/useReading";
 // Load the loading frame and the buttons' look
@@ -32,7 +34,9 @@ export function RecordingFromAddress() {
   // A Table Topic, a Record Response, reading aloud, a pause drill, a rehearsal, a lesson, an old warm-up, or (with no mode) an old one-minute session
   const mode = isSessionMode(named) ? named : "standard";
   // The prompt in the address, or today's (free talk and a short speech have no prompt; decision 73)
-  const promptId = params.get("prompt") ?? (mode === "free" || mode === "outline" ? mode : promptForDay(new Date()).id);
+  const promptId = params.get("prompt") ?? (mode === "free" || mode === "outline" ? mode : mode === "story" ? storyPromptForDay(new Date()).id : promptForDay(new Date()).id);
+  // A story's shape, focus and length from the address, each only when it is a known one (decision 92)
+  const [shape, focus, length] = [params.get("shape"), params.get("focus"), params.get("length")];
   // The text to read, when reading aloud or doing a pause drill (a speech part's text loads first)
   const reading = useReading(mode === "read" || mode === "pause" ? promptId : null);
   // While a speech's text loads, the page's frame
@@ -61,6 +65,8 @@ export function RecordingFromAddress() {
       promptId={promptId}
       // A short speech's topic, points and length
       outline={mode === "outline" ? outlineFromQuery(params) : null}
+      // A story's set-up (Classic, no focus and full length when the address has none)
+      story={mode === "story" ? { shape: isStoryShape(shape) ? shape : "classic", focus: isStoryFocus(focus) ? focus : null, length: isStoryLength(length) ? length : "full" } : null}
       // Full session or warm-up
       mode={mode}
       // The session being retried, if any

@@ -38,7 +38,10 @@ import type { CuePlayer } from "@/audio/timingTones";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
-import type { SessionMode, SessionRecord, TalkRecord } from "@/data/records";
+import type { SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
+// Load the story prompts and moment seeds, and the plan card (decision 92)
+import { findStoryPrompt, momentIdOf } from "@/content/stories";
+import { StoryPlanCard } from "@/components/script/StoryPlanCard";
 // Load the short-speech plan type
 import type { Outline } from "@/core/outline";
 import type { Repository } from "@/data/repository";
@@ -105,6 +108,21 @@ interface RecordingScreenProps {
   outline?: Outline | null;
   // Network function for deeper analysis (replaced in tests; decision 91)
   fetchFn?: typeof fetch;
+  // For a told story: its shape, focus and length (on a retelling, read from the telling before instead; decision 92)
+  story?: StoryTake | null;
+}
+
+// A story's set-up when none is given: Classic, no focus, full length (decision 92)
+const DEFAULT_STORY: StoryTake = { shape: "classic", focus: null, length: "full" };
+
+// What a story is about: the prompt from the bank, or the moment note's words once loaded (decision 92)
+function storyPromptText(promptId: string, momentText: string | null): { id: string; text: string } | undefined {
+  // A prompt from the bank
+  const prompt = findStoryPrompt(promptId);
+  // Its words
+  if (prompt) return { id: prompt.id, text: prompt.text };
+  // A moment note, once read (an empty note still has its story to tell)
+  return momentText === null ? undefined : { id: promptId, text: momentText || "Your moment" };
 }
 
 // One tip for each end of a talk, shown before an openings and closings drill
@@ -185,9 +203,9 @@ const RESPONSE_SIGNAL_TEXT: Record<TimeSignal, string> = {
 };
 
 // The timing light's words in the status line while recording (green, yellow, red for a Table Topic; yellow, red for a Record Response); the voice shape carries the colour, so there is no separate lamp (decision 77)
-function TimingLight({ signal, mode, promptId }: { signal: TimeSignal; mode: SessionMode; promptId: string }) {
-  // The window, for a Table Topic, a prepared speech or small talk
-  const window = speakingWindow(mode, promptId);
+function TimingLight({ signal, mode, promptId, storyLength }: { signal: TimeSignal; mode: SessionMode; promptId: string; storyLength: StoryTake["length"] }) {
+  // The window, for a Table Topic, a prepared speech, small talk or a story
+  const window = speakingWindow(mode, promptId, storyLength);
   // The words for this kind of session
   const words = window ? windowSignalText(window) : RESPONSE_SIGNAL_TEXT;
   // The words, announced politely when they change (no separate name, so the words themselves are read)
@@ -302,7 +320,11 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null }: RecordingScreenProps) {
+  // A told story's set-up: from the address, or (on a retelling) from the telling before (decision 92)
+  const [storyTake, setStoryTake] = useState<StoryTake>(givenStory ?? DEFAULT_STORY);
+  // For a story from one of the user's moment notes, the note's words (loaded below)
+  const [momentText, setMomentText] = useState<string | null>(null);
   // A short speech's plan: from the address, or (on a retry) from the first try
   const [outline, setOutline] = useState<Outline | null>(givenOutline);
   // Use the given repository, or the browser's
@@ -382,7 +404,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // For a Q&A answer, the question (loaded from the session it belongs to, below)
   const [qaQuestion, setQaQuestion] = useState<string | null>(null);
   // The prompt to speak to (for reading aloud, its title; for a Q&A answer, the question)
-  const prompt = mode === "qa" ? (qaQuestion ? { id: promptId, text: qaQuestion } : undefined) : findPrompt(promptId);
+  const prompt = mode === "qa" ? (qaQuestion ? { id: promptId, text: qaQuestion } : undefined) : mode === "story" ? storyPromptText(promptId, momentText) : findPrompt(promptId);
   // The passage, when reading aloud or doing a pause drill
   const passage = useReading(mode === "read" || mode === "pause" ? promptId : null).passage;
   // The user's own talk, when rehearsing (loaded from storage below)
@@ -473,6 +495,26 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     };
   }, [mode, promptId, questionIndex, repo]);
 
+  // For a story from a moment note, load the note's words (decision 92)
+  useEffect(() => {
+    // The note's id, when the story came from one
+    const momentId = mode === "story" ? momentIdOf(promptId) : null;
+    // Nothing to load
+    if (!momentId) return;
+    // Ignore the result if the screen closes first
+    let cancelled = false;
+    // Read the note
+    repo.getSession(momentId).then((moment) => {
+      // Keep its words if still open
+      if (!cancelled) setMomentText(moment?.transcript ?? "");
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [mode, promptId, repo]);
+
   // When rehearsing, load the talk
   useEffect(() => {
     // Only for rehearsals
@@ -490,10 +532,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       cancelled = true;
     };
   }, [mode, promptId, repo]);
-  // Target and limit for this kind of session
-  const target = targetSeconds(mode, promptId);
+  // Target and limit for this kind of session (a story's depend on its length)
+  const target = targetSeconds(mode, promptId, storyTake.length);
   // The limit
-  const limit = maxSeconds(mode, promptId);
+  const limit = maxSeconds(mode, promptId, storyTake.length);
   // The shortest recording kept
   const shortest = minSeconds(mode, promptId);
 
@@ -515,6 +557,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       setOwnNote(original?.selfReview?.change || null);
       // A short speech keeps the first try's plan
       if (original?.outline) setOutline((current) => current ?? original.outline ?? null);
+      // A retold story keeps the telling before's shape, focus and length (decision 92)
+      if (original?.story) setStoryTake(original.story);
     });
     // Mark as closed when leaving
     return () => {
@@ -617,7 +661,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}), ...(mode === "story" ? { story: storyTake } : {}) }, clock());
       // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
       void requestPersistentStorage();
       // Send the audio for deeper analysis when that setting is on (no wait, and it never fails: its outcome is kept as a quiet note on the take; decision 91)
@@ -645,7 +689,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [clock, fetchFn, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest]);
+  }, [clock, fetchFn, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
 
   // Stop recording, then keep the take
   const stop = useCallback(async () => {
@@ -1076,8 +1120,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         event.preventDefault();
         // Start or stop
         if (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed") begin();
-        // While thinking about a Record Response, start early (a Table Topic's countdown cannot be skipped)
-        else if (stage === "thinking" && mode === "response") void start();
+        // While thinking about a Record Response or planning a story, start early (a Table Topic's countdown cannot be skipped)
+        else if (stage === "thinking" && (mode === "response" || mode === "story")) void start();
         else if (stage === "recording") void stop();
       }
       // Escape while thinking or recording: discard
@@ -1111,11 +1155,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
   // Length wording for this kind of session
-  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId) ? `${formatClock(speakingWindow(mode, promptId)!.start)} to ${formatClock(speakingWindow(mode, promptId)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : mode === "free" ? "as long as you like" : "about a minute";
+  const lengthText = goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId, storyTake.length) ? `${formatClock(speakingWindow(mode, promptId, storyTake.length)!.start)} to ${formatClock(speakingWindow(mode, promptId, storyTake.length)!.end)}` : mode === "bookend" || mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : mode === "free" ? "as long as you like" : "about a minute";
   // Whether the thinking countdown is showing
   const thinking = stage === "thinking";
   // Whether this kind of session has a timing light
-  const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "bookend" || mode === "qa" || ((mode === "rehearse" || mode === "outline") && !!goalSeconds);
+  const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "story" || mode === "bookend" || mode === "qa" || ((mode === "rehearse" || mode === "outline") && !!goalSeconds);
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
   const busy = recording || thinking || stage === "asking" || stage === "starting" || stage === "saving";
   // Where this kind of session belongs, for the close button (practising hides the tab bar)
@@ -1125,11 +1169,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // A story to listen to is not shown before answering, except in a lesson (you listen the way you would in person)
   const storyHidden = smallTalk?.unit === "listening" && !smallTalk.lesson;
   // The page title for this kind of session
-  const title = retryOf ? "Second try" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Rapid Fire" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
+  const title = retryOf ? (mode === "story" ? "Tell it again" : "Second try") : mode === "story" ? "Story" : mode === "warmup" ? "Warm-up" : mode === "talk" ? "Rapid Fire" : mode === "response" ? "Prepared speech" : mode === "read" ? "Read aloud" : mode === "pause" ? "Pause drill" : mode === "rehearse" ? "Rehearsal" : mode === "lesson" ? "Lesson" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : mode === "qa" ? "Q&A answer" : mode === "smalltalk" ? "Small talk" : mode === "moment" ? "One moment" : mode === "free" ? "Free talk" : mode === "outline" ? "Short speech" : "Recording";
   // Name the tab after it
   usePageTitle(title);
   // The timing light now, while recording (off otherwise)
-  const signal = recording && hasLight ? timeSignal(mode, elapsed, goalSeconds, promptId) : "none";
+  const signal = recording && hasLight ? timeSignal(mode, elapsed, goalSeconds, promptId, storyTake.length) : "none";
   // A tone (and a buzz, where the phone allows) when the light first comes on and at red, if switched on (decision 77)
   useEffect(() => {
     // The cue for this change, if any
@@ -1165,15 +1209,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     notice.current?.focus({ preventScroll: true });
   }, [notKept]);
   // The keyboard hint for this stage
-  const hint = recording ? "Space to stop · Esc to discard" : thinking ? (mode === "talk" ? "Esc to leave" : "Space to start speaking · Esc to leave") : mode === "talk" ? "Space to see your topic" : mode === "smalltalk" ? `Space to hear ${unit ? "them" : "the question"}` : mode === "response" ? "Space to start thinking" : mode === "rehearse" ? "Space to start rehearsing" : passage || lesson ? "Space to start reading" : "Space to start";
+  const hint = recording ? "Space to stop · Esc to discard" : thinking ? (mode === "talk" ? "Esc to leave" : "Space to start speaking · Esc to leave") : mode === "talk" ? "Space to see your topic" : mode === "story" ? "Space to start planning" : mode === "smalltalk" ? `Space to hear ${unit ? "them" : "the question"}` : mode === "response" ? "Space to start thinking" : mode === "rehearse" ? "Space to start rehearsing" : passage || lesson ? "Space to start reading" : "Space to start";
   // After a Rapid Fire take that was not kept, the topic has been seen: it stays in view for the next try instead of hiding again
   const topicSeen = mode === "talk" && (stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded");
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
-  const showPrompt = !recording && !!prompt && !script && !smallTalk && (mode !== "talk" || thinking || topicSeen);
+  const showPrompt = !recording && !!prompt && !script && !smallTalk && mode !== "story" && (mode !== "talk" || thinking || topicSeen);
   // A Table Topic's briefing, shown before the question is first seen
   const showBriefing = mode === "talk" && stage === "ready";
   // This prompt's angles, for a Record Response
-  const angles = mode === "response" ? (prompt?.angles ?? []) : [];
+  const angles = mode === "response" ? (findPrompt(promptId)?.angles ?? []) : [];
   // Seconds left in a Rapid Fire countdown, as shown
   const countdown = Math.ceil(thinkLeft);
   // What the countdown says to screen readers: once at the start, then only the last three seconds (the shown number changes every second without being read)
@@ -1210,10 +1254,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       {recording && <VoiceBlob levels={levels} signal={signal} clock={formatClock(elapsed)} onStop={() => void stop()} compact={!!script} paused={paused} focusOnMount />}
       {/* Ready, or ready again: the start shape */}
       {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
-        <StartBlob compact={!!script} onStart={begin} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : lengthText} />
+        <StartBlob compact={!!script} onStart={begin} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "story" ? "Plan it" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : mode === "story" ? "up to a minute, then tell it" : lengthText} />
       )}
       {/* Thinking about a Record Response: start speaking early */}
-      {thinking && mode === "response" && <StartBlob compact={!!script} onStart={() => void start()} label="Ready" detail="start speaking" />}
+      {thinking && (mode === "response" || mode === "story") && <StartBlob compact={!!script} onStart={() => void start()} label="Ready" detail={mode === "story" ? "start telling" : "start speaking"} />}
       {/* A Table Topic's countdown: no early start, just the time left */}
       {thinking && mode === "talk" && <StatusBlob compact={!!script} label="Get ready" detail={`starting in ${countdown}`} live={false} />}
       {/* What the countdown says to screen readers: at the start and in the last three seconds only */}
@@ -1274,6 +1318,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
           {recording && angles.length > 0 && <Hints angles={angles} compact />}
+          {/* A story keeps its shape and focus in view while telling (decision 92) */}
+          {recording && mode === "story" && <StoryPlanCard take={storyTake} compact />}
           {/* Push the way out down */}
           <div className="hidden flex-1 md:block" />
           {/* Leave while thinking (while recording, Pause and Discard sit by the shape) */}
@@ -1297,7 +1343,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {paused ? "Paused" : "Recording"}
               </p>
               {/* The timing words, or (without a light, on a phone, where the margin moves below) the length to aim for */}
-              {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
+              {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} storyLength={storyTake.length} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
             </div>
           )}
           {/* The question being answered, above the shape */}
@@ -1478,6 +1524,19 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               </ol>
               {/* Before starting, how to use them */}
               {!recording && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Open with why it matters, give each point an example, then close on one line.</p>}
+            </section>
+          )}
+          {/* A story, before and while planning: the prompt or the moment, then the shape and focus (decision 92) */}
+          {mode === "story" && !recording && (
+            <section aria-label="Your story" className="mt-8 md:mt-0">
+              {/* Where it came from */}
+              <p className="text-footnote text-ink-muted">{momentIdOf(promptId) ? "From your moment" : thinking ? "Plan it in your head" : "Your story"}</p>
+              {/* The prompt, set like a headline, or the moment in the user's words */}
+              <h1 className={`relative mt-1 font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${momentIdOf(promptId) ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"}`}>{prompt?.text ?? "Your moment"}</h1>
+              {/* The shape and focus */}
+              <StoryPlanCard take={storyTake} />
+              {/* How planning works, before it starts */}
+              {!thinking && !busy && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Up to a minute to plan, then tell it out loud. Tap Ready when you are.</p>}
             </section>
           )}
           {/* Thinking about a Record Response: the hints */}

@@ -38,6 +38,7 @@ Rules:
 - The same kind of step is not used two days running within a lane, and each kind comes round at least once a week.
 - At most one long step a day; the day stays about 5 to 10 minutes.
 - A talk coming up still takes the On-the-spot step; new users still get a gentle first week.
+- **Stories (added 2026-10-21, decision 92).** The on-the-spot group's kinds are taken in turn as Rapid Fire, story, opening or closing, story, prepared speech (`GROUPS` in `src/core/dailyPlan.ts`). A story is two turns in five of a group that comes up two days in three, so about twice a week, and it never follows itself because an opening or Rapid Fire sits between. The step is today's story prompt (`storyPromptForDay`), set up on `/stories/tell` with the short length chosen first inside the plan, and counts as 2 minutes (a minute to plan, about a minute to tell). It is done by any telling of that prompt today. In the first days the prepared speech is still left out, which leaves Rapid Fire, story, opening, story. Chosen over a new lane or a swap in the conversation group because it leaves every other group's rotation, and the plan's existing tests, as they were.
 - The week's focus tilts the Delivery pick (pausing week brings more pause drills).
 - **Review is mixed in:** about one day in three, a lane offers something you did a week or more ago (a lesson's beat, an earlier question) instead of something new. Spacing and mixing kinds of practice both help retention.
 

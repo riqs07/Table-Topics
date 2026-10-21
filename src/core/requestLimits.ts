@@ -92,8 +92,8 @@ export const ANALYSE_AUDIO_TYPES: ReadonlyArray<string> = ["audio/webm", "audio/
 
 // The weekly summary's limits (decision 90): a compact table of numbers and a few short quotes, never whole transcripts
 export const SUMMARY_SIZE = {
-  // Families of practice in one request
-  families: 5,
+  // Families of practice in one request (six since stories joined; decision 92)
+  families: 6,
   // Measure rows per family
   rowsPerFamily: 30,
   // Patterns, and the longest one in characters

@@ -63,6 +63,8 @@ const RequestSchema = z.object({
     // The turns
     turns: z.array(z.object({ who: z.enum(["you", "them"]), text: z.string().max(TURN_MAX_CHARS).optional(), lineId: z.string().max(16).optional() })).max(MAX_TURNS),
   }).optional(),
+  // For a told story: its shape, focus and length, as known ids only (decision 92)
+  story: z.object({ shape: z.enum(["classic", "but-therefore", "then-now", "small-moment"]), focus: z.enum(["middle", "dialogue", "detail", "point", "minute"]).nullable(), length: z.enum(["short", "full"]) }).optional(),
   // All the text together within one cap, so the per-field caps cannot stack into one very costly call
 }).refine((body) => requestTextLength(body) <= REQUEST_TEXT_MAX_CHARS);
 

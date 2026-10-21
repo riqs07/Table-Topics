@@ -2,7 +2,7 @@
 
 **Purpose:** One place for every decision about what VoiceLab is, how it is built, and the rules we build by.
 **Audience:** A human inspector. Each file is short and can be read on its own.
-**Last updated:** 2026-10-19
+**Last updated:** 2026-10-21
 
 ## What VoiceLab is (30 seconds)
 
@@ -35,6 +35,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 21 | [research/charisma-connection-deep-dive-2026-10.md](research/charisma-connection-deep-dive-2026-10.md) | What builds warmth and connection in conversation, how are these skills trained, and how should text scenario questions work in VoiceLab? | 15 min |
 | 22 | [plan-research-applied.md](plan-research-applied.md) | How does the charisma and connection research change the app: missions, feedback, Learn, Connect? | 5 min |
 | 23 | [plan-voice-modes.md](plan-voice-modes.md) | What do the voice modes (warm-ups, clear sounds, volume, pitch, tone, pausing, shadowing) do, and where will shadowing audio come from? (Built, decision 80) | 8 min |
+| 24 | [plan-storytelling.md](plan-storytelling.md) | How does the Storytelling mode work (prompts, shapes, telling it again, the story coach), and what research is it built on? (Built, decision 92) | 5 min |
 
 ## Inspector checklist
 

@@ -12,6 +12,8 @@ import { fadingEnds, speechThreshold } from "@/core/pauses";
 import { toSteps, usualPitch } from "@/core/pitch";
 // Load the conversation measures
 import { measureConversation } from "@/core/conversationMeasures";
+// Load the story checks (decision 92)
+import { storyRaw } from "@/core/storyChecks";
 // Load the voice report, for how phrases ended
 import { voiceReport } from "@/core/voiceFeedback";
 // Load the spacing of the loudness readings
@@ -197,6 +199,8 @@ export function extractRaw(session: SessionRecord): AnalysisRaw {
     contentWords: contentWordCounts(words.map((word) => word.w).filter(Boolean)),
     // A conversation's measures
     ...(conversation ? { conversation: { share: conversation.share, questions: conversation.questions, followUps: conversation.followUps, turns: conversation.turns } } : {}),
+    // A told story's checks (decision 92)
+    ...(session.mode === "story" ? { story: storyRaw(session.transcript) } : {}),
   };
 }
 
@@ -328,6 +332,27 @@ export function deviceMetrics(raw: AnalysisRaw): Record<string, MetricValue> {
     put("conv.followups", raw.conversation.followUps, "count");
     // Turns
     put("conv.turns", raw.conversation.turns, "count");
+  }
+  // A told story's checks, as yes-or-no and counts (decision 92)
+  if (raw.story) {
+    // The story checks' own engine
+    const storyEngine = "device-story-v1";
+    // Yes as 1, no as 0
+    const yes = (value: boolean) => (value ? 1 : 0);
+    // Started in the action (unknown with no words)
+    put("story.starts_in_action", raw.story.startsInAction === null ? null : yes(raw.story.startsInAction), "yes/no", storyEngine);
+    // Someone's words
+    put("story.dialogue", yes(raw.story.dialogue), "yes/no", storyEngine);
+    // Specific details
+    put("story.details", raw.story.details, "count", storyEngine);
+    // A turn
+    put("story.turn", yes(raw.story.turn), "yes/no", storyEngine);
+    // "And then"
+    put("story.and_then", raw.story.andThen, "count", storyEngine);
+    // A feeling
+    put("story.feeling", yes(raw.story.feeling), "yes/no", storyEngine);
+    // Ended on the point
+    put("story.ends_on_point", yes(raw.story.endsOnPoint), "yes/no", storyEngine);
   }
   // Every measure
   return metrics;

@@ -1,5 +1,5 @@
 "use client";
-// Practice: every kind of practice in one place, grouped, each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
+// Practice: every kind of practice in one place, grouped (stories second, decision 92), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61)
 
 // Load Next.js's link component
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, RepeatIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, MegaphoneSimpleIcon, MicrophoneStageIcon, CaretRightIcon, ChatTeardropTextIcon, EarIcon, GraduationCapIcon, LightningIcon, NotePencilIcon, PauseIcon, QuestionIcon, QuotesIcon, RepeatIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TextTIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
@@ -27,6 +27,8 @@ import { nextToPractise } from "@/core/skillNext";
 import { useEffect, useState } from "react";
 // Load the moment note's prompt
 import { MOMENT_PROMPT } from "@/content/smallTalk";
+// Load today's story prompt (decision 92)
+import { storyPromptForDay } from "@/content/stories";
 // Load the shared heading look
 import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared link look
@@ -144,6 +146,8 @@ export function PracticeScreen(props: ScreenProps) {
   const topic = today ? tableTopicForDay(today, 1) : null;
   // The task
   const prompt = today ? promptForDay(today, 1) : null;
+  // Today's story prompt (decision 92)
+  const story = today ? storyPromptForDay(today) : null;
 
   // Draw the page
   return (
@@ -168,6 +172,21 @@ export function PracticeScreen(props: ScreenProps) {
           { name: "Free talk", detail: "Talk about anything, as long as you like", href: "/session?mode=free&prompt=free", icon: MicrophoneStageIcon },
           // A short speech the user plans: topic and points (decision 73)
           { name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon },
+        ]}
+      />
+
+      {/* Telling stories, and telling them again (decision 92) */}
+      <Group
+        id="stories"
+        title="Tell stories"
+        more={{ href: "/stories", label: "See all" }}
+        ways={[
+          // Today's story prompt
+          { name: "Today’s story", detail: story ? story.title : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon },
+          // The user's own stories, told again
+          { name: "Tell one again", detail: "Your stories, a little better each time", href: "/stories#your-stories", icon: ArrowCounterClockwiseIcon },
+          // A moment note, told properly
+          { name: "From your moments", detail: "A one-moment note, told properly", href: "/stories#from-moments", icon: SunHorizonIcon },
         ]}
       />
 

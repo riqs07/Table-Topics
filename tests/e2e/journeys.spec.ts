@@ -1,7 +1,9 @@
 // Whole journeys with the stand-in microphone: record, save, and read the result (rules T1, T3, T11)
-import { expect, test, useStandIns } from "./support/fixtures";
+import { STORY_SPOKEN, expect, test, useStandIns, useStoryCoach } from "./support/fixtures";
 // Load Node's file reader, for a real recording to stand in for a written line's audio
 import { readFileSync } from "node:fs";
+// Load the page type, for the story helper
+import type { Page } from "@playwright/test";
 
 // The welcome leads straight into today's first step, a Learn card; then Rapid Fire (once Table Topic) from Practice, to the saved session
 test("Rapid Fire: from the welcome through Practice, countdown, recording, saved session", async ({ page }) => {
@@ -769,3 +771,127 @@ test("Deeper analysis: a part that fails leaves a quiet note on the take", async
   // The quiet note on the take
   await expect(page.getByText("Deeper analysis transcribed this take, but the voice analysis didn’t work this time.")).toBeVisible({ timeout: 10_000 });
 });
+
+// Plan a story for a while, tell it past the minimum, and stop; the take's page opens (decision 92)
+async function tellStory(page: Page): Promise<void> {
+  // Start the planning minute
+  await page.getByRole("button", { name: /Plan it/ }).click();
+  // Ready before the minute is up
+  await page.getByRole("button", { name: /Ready/ }).click();
+  // Recording is under way
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // Wait for it
+  await expect(stop).toBeVisible({ timeout: 10_000 });
+  // The story's light is showing
+  await expect(page.locator("[role=status][data-signal]")).toBeVisible();
+  // Tell past the 10-second minimum
+  await page.waitForTimeout(11_500);
+  // Stop
+  await stop.click();
+  // The take opens (never stuck on "Saving…")
+  await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
+}
+
+// Storytelling (decision 92): pick a prompt, choose a shape and a focus, plan, tell, see what was heard and the coach's line, tell it again and see both tellings side by side, then find it in Your stories
+test("Stories: pick a prompt, choose a shape, tell it, then tell it again and compare", async ({ page }) => {
+  // The stand-in speech tells a story
+  await useStandIns(page, STORY_SPOKEN);
+  // Past the welcome, with the passphrase saved so the coach is asked
+  await page.addInitScript(() => {
+    // Welcome seen
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // The passphrase
+    localStorage.setItem("voicelab-passphrase", "a long passphrase for testing");
+  });
+  // The coach, stood in with the story reply
+  await useStoryCoach(page);
+  // From Practice
+  await page.goto("/practice");
+  // Into Stories
+  await page.getByRole("region", { name: "Tell stories" }).getByRole("link", { name: "See all" }).click();
+  // Open a group of prompts
+  await page.getByText("A time something went wrong", { exact: true }).click();
+  // Pick a prompt
+  await page.getByRole("link", { name: "Tell me about a time a plan fell apart at the last minute." }).click();
+  // The set-up page
+  await expect(page).toHaveURL(/\/stories\/tell\?prompt=sp01/);
+  // Choose the "But and so" shape
+  await page.getByRole("button", { name: /But and so/ }).click();
+  // And one thing to try
+  await page.getByRole("button", { name: "Add one line of what someone said" }).click();
+  // Short
+  await page.getByRole("button", { name: /^Short/ }).click();
+  // Start
+  await page.getByRole("link", { name: /^Start/ }).click();
+  // The telling page, with the set-up in the address
+  await expect(page).toHaveURL(/mode=story&prompt=sp01&shape=but-therefore&focus=dialogue&length=short/);
+  // The shape shows while planning
+  await expect(page.getByRole("region", { name: "Your story's shape" })).toContainText("What you wanted");
+  // Plan and tell
+  await tellStory(page);
+  // What I heard: someone's words and the turn were heard
+  await expect(page.getByRole("list", { name: "What I heard" }).locator("[data-heard=true]")).not.toHaveCount(0);
+  // The coach's line and how it could sound
+  await expect(page.locator("[data-story-line]")).toContainText("Could sound like");
+  // The beats it heard
+  await expect(page.getByRole("region", { name: "The beats" })).toContainText("3 of 5");
+  // Tell it again
+  await page.getByRole("link", { name: /Tell it again/ }).click();
+  // Same story, same shape, last time's cue to carry in
+  await expect(page.getByText("Slow down at the guard's words.")).toBeVisible();
+  // (the shape is kept)
+  await expect(page.getByRole("region", { name: "Your story's shape" })).toContainText("What you wanted");
+  // Plan and tell again
+  await tellStory(page);
+  // Both tellings side by side
+  await expect(page.getByRole("table", { name: "Last time and this time" })).toBeVisible();
+  // (what it was working on)
+  await expect(page.getByText("You were working on: Slow down at the guard's words.")).toBeVisible();
+  // To Your stories
+  await page.getByRole("link", { name: "Your stories", exact: true }).click();
+  // The story is listed by its title, told twice
+  await expect(page.getByRole("list", { name: "Your stories" })).toContainText("The plan that fell apart");
+  // (twice)
+  await expect(page.getByRole("list", { name: "Your stories" })).toContainText("Told twice");
+});
+
+// A saved moment note, told properly as a story, lands in Your stories (decision 92)
+test("Stories: tell a saved moment properly, and find it in Your stories", async ({ page }) => {
+  // The stand-in speech
+  await useStandIns(page, STORY_SPOKEN);
+  // Past the welcome (no passphrase: the change comes from the phone's checks)
+  await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+  // Record a moment
+  await page.goto("/session?mode=moment&prompt=moment");
+  // Start speaking
+  await page.getByRole("button", { name: /Start speaking/ }).click();
+  // Recording
+  const stop = page.getByRole("button", { name: /Stop/ });
+  // Wait for it
+  await expect(stop).toBeVisible({ timeout: 10_000 });
+  // Past the minimum
+  await page.waitForTimeout(11_500);
+  // Stop
+  await stop.click();
+  // Back on the Small talk page, the moment listed with a way to tell it properly
+  await expect(page.getByRole("list", { name: "Your moments" })).toContainText("The train stopped", { timeout: 15_000 });
+  // Stories, loaded directly
+  await page.goto("/stories");
+  // Tell the moment properly
+  await page.getByRole("link", { name: /Tell it properly/ }).first().click();
+  // The set-up shows the moment's words
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("The train stopped");
+  // Start
+  await page.getByRole("link", { name: /^Start/ }).click();
+  // Plan and tell
+  await tellStory(page);
+  // What I heard, from the phone, with its honest line
+  await expect(page.getByText(/Rough guesses/)).toBeVisible();
+  // To Your stories
+  await page.getByRole("link", { name: "Your stories", exact: true }).click();
+  // The story is listed by the moment's first words, told once
+  await expect(page.getByRole("list", { name: "Your stories" })).toContainText("The train stopped dead outside Reading at six");
+  // (once)
+  await expect(page.getByRole("list", { name: "Your stories" })).toContainText("Told once");
+});
+

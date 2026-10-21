@@ -4,7 +4,7 @@
 import type { SessionMode } from "@/data/records";
 
 // The jobs the app is organised around
-export type JobId = "talk" | "spot" | "skill" | "connect";
+export type JobId = "talk" | "spot" | "story" | "skill" | "connect";
 
 // One job, as shown on Today and in the menu
 export interface Job {
@@ -24,6 +24,8 @@ export const JOBS: ReadonlyArray<Job> = [
   { id: "talk", name: "Prepare a talk", blurb: "Your own talk: a plan to the day, section by section.", href: "/rehearse" },
   // Speaking without a script
   { id: "spot", name: "Speak on the spot", blurb: "Surprise questions, prepared speeches, openings and closings.", href: "/practice" },
+  // Telling stories, and telling them again better (decision 92)
+  { id: "story", name: "Tell stories", blurb: "Your own stories, told and told again, a little better each time.", href: "/stories" },
   // One skill at a time
   { id: "skill", name: "Build a skill", blurb: "Short lessons, speeches to read, pause and word drills.", href: "/skills" },
   // Everyday conversation
@@ -64,6 +66,8 @@ export const MODES: ReadonlyArray<ModeInfo> = [
   { id: "short-speech", job: "spot", name: "Short speech", subtitle: "your topic and a few points", length: "1 to 5 min", youDo: "Type what it's about and up to four points, choose a length, then speak with your points in view.", youGet: "Which points were heard, your time against your length, and one change." },
   // Q&A practice (removed from the app, decision 61; kept so old Q&A answers still find their name)
   { id: "qa", job: "spot", name: "Q&A practice", subtitle: "answer likely questions", length: "1 min a question", youDo: "Answer the questions an audience would ask after your talk or prepared speech.", youGet: "Your time against a 1:00 goal, and whether you answered directly." },
+  // Storytelling (decision 92)
+  { id: "storytelling", job: "story", name: "Storytelling", subtitle: "a true story, told and told again", length: "1 to 3 min", youDo: "Pick a prompt or one of your moments, plan for up to a minute with a shape if you like, then tell it.", youGet: "What I heard (a start in the action, someone’s words, details, a turn, a feeling, an ending), one change, and your story side by side with last time." },
   // Lessons
   { id: "lessons", job: "skill", name: "Lessons", subtitle: "one practical tip each", length: "2 to 3 min", youDo: "Read a short tip, then practise it on a text written for it.", youGet: "A check made for that one skill." },
   // Readings
@@ -112,6 +116,8 @@ const SESSION_TO_MODE: Readonly<Partial<Record<SessionMode, string>>> = {
   voice: "voice-drills",
   // A conversation with a persona
   conversation: "conversations",
+  // A told story (decision 92)
+  story: "storytelling",
 };
 
 // The catalogue entry that explains a kind of session, if it has one

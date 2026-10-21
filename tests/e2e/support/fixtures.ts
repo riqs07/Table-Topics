@@ -4,6 +4,32 @@ import { test as base, expect, type Page } from "@playwright/test";
 // What the stand-in speech recognition "hears", a word at a time
 export const SPOKEN = "Um so the best part of my week was uh walking home and seeing a tiny dog in a raincoat";
 
+// A story the stand-in speech "tells" (decision 92): a start in the action, a detail, a turn, someone's words, a feeling and an ending on the point
+export const STORY_SPOKEN = "The train stopped dead outside Reading at six but then the guard came through and she goes don't worry love two minutes and I was so relieved since then I always carry a charger";
+
+// The coach's reply for a told story, stood in (the story schema: feedback with beats and one line made better, the rubric with the story scores; decision 92)
+export const STORY_COACH_REPLY = {
+  // What the route sends back
+  feedback: {
+    // One thing that worked
+    keep: "You opened right in the action: “the train stopped dead”.",
+    // One change
+    change: "Give the guard's line its own moment: pause, then say her words.",
+    // The cue for the next telling
+    retryCue: "Slow down at the guard's words.",
+    // The story notes
+    story: { beats: [{ beat: "setting", quote: "outside Reading" }, { beat: "turn", quote: "but then the guard came through" }, { beat: "meaning", quote: "since then I always carry a charger" }], yours: "she goes don't worry love two minutes", better: "Then the guard leans in: “Don't worry, love. Two minutes.” [how you felt]" },
+  },
+  // The internal rubric with the story scores
+  rubric: { pointFirst: { score: 2, quote: "the train stopped" }, answersQuestion: { score: 3, quote: "the train stopped" }, structure: { score: 2, quote: "" }, ending: { score: 3, quote: "since then" }, concreteExample: { score: 3, quote: "Reading" }, wordChoice: { score: 2, quote: "stopped dead" }, devices: ["story"], unnecessaryHedges: 0, wordSwaps: [], model: "stand-in", story: { hook: { score: 3, quote: "the train stopped dead" }, stakes: { score: 2, quote: "" }, detail: { score: 3, quote: "Reading" }, dialogue: { score: 2, quote: "she goes" }, turn: { score: 2, quote: "but then" }, point: { score: 3, quote: "since then" } } },
+};
+
+// Stand in for the coach on told stories: every feedback request gets the story reply
+export async function useStoryCoach(page: Page): Promise<void> {
+  // Answer the feedback route with the story reply
+  await page.route("**/api/feedback", (route) => route.fulfill({ json: STORY_COACH_REPLY }));
+}
+
 // Every page the app has, as a user would type it in (rule T5: load each one directly)
 export const ROUTES: ReadonlyArray<string> = [
   // Today
@@ -81,6 +107,11 @@ export const ROUTES: ReadonlyArray<string> = [
   "/speech?id=missing",
   // A part of a full speech, to read
   "/session?mode=read&prompt=jfk-inaugural-2",
+  // Stories, setting up a story, a moment that does not exist, and telling one (decision 92)
+  "/stories",
+  "/stories/tell?prompt=sp01",
+  "/stories/tell?moment=missing",
+  "/session?mode=story&prompt=sp01&shape=but-therefore&focus=dialogue&length=short",
   // The design style tile
   "/style",
   // The wireframes
@@ -115,6 +146,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/talk?id=missing", current: "Practice" },
   // Openings and closings belong to Practice
   { path: "/bookends", current: "Practice" },
+  // Stories belong to Practice (decision 92)
+  { path: "/stories", current: "Practice" },
   // A full speech belongs to Skills, a page inside Practice
   { path: "/speech?id=jfk-inaugural", current: "Practice" },
 ];

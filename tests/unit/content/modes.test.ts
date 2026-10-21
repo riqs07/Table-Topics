@@ -19,6 +19,7 @@ describe("mode catalogue", () => {
     expect(JOBS.map((job) => [job.id, MODES.filter((mode) => mode.job === job.id).map((mode) => mode.id)])).toEqual([
       ["talk", ["talks"]],
       ["spot", ["table-topic", "prepared", "openings", "free-talk", "short-speech", "qa"]],
+      ["story", ["storytelling"]],
       ["skill", ["lessons", "readings", "pause-drills", "tricky-words", "voice-drills"]],
       ["connect", ["small-talk", "conversations", "moments"]],
     ]);

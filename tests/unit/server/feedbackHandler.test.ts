@@ -358,3 +358,36 @@ describe("feedback handler", () => {
     expect((await response.json()).error).toMatch(/retried/);
   });
 });
+
+// Group the checks about told stories on the feedback route (decision 92)
+describe("feedback handler, stories", () => {
+  // A story's set-up passes the checks and reaches the coach
+  it("passes a story's shape, focus and length on to the coach", async () => {
+    // A coach that remembers what it was given
+    const seen: unknown[] = [];
+    // (the coach)
+    const coach: Coach = { async getFeedback(input) { seen.push(input); return { status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } }; } };
+    // Call the handler with a story
+    const response = await createFeedbackHandler(deps({ coach }))(request({ ...BODY, mode: "story", promptId: "sp01", story: { shape: "small-moment", focus: null, length: "short" } }));
+    // Confirm success and what the coach got
+    expect([response.status, (seen[0] as { story?: unknown }).story]).toEqual([200, { shape: "small-moment", focus: null, length: "short" }]);
+  });
+
+  // An unknown shape, focus or length is refused before the coach is asked
+  it("refuses an unknown story set-up", async () => {
+    // A coach that counts calls
+    const coach = fakeCoach({ status: "ok", feedback: FEEDBACK, usage: { inputTokens: 1, outputTokens: 1 } });
+    // Three bad set-ups
+    const statuses = await Promise.all([{ shape: "epic", focus: null, length: "short" }, { shape: "classic", focus: "rhyme", length: "short" }, { shape: "classic", focus: null, length: "long" }].map(async (story) => (await createFeedbackHandler(deps({ coach }))(request({ ...BODY, mode: "story", promptId: "sp01", story }))).status));
+    // Confirm each refused, and the coach never asked
+    expect([statuses, coach.calls]).toEqual([[400, 400, 400], 0]);
+  });
+
+  // A malformed story reply (the coach's check throws) is a coach failure: the app keeps the take and asks again later
+  it("reports a malformed story reply as a failure to retry", async () => {
+    // A coach whose reply failed its check
+    const response = await createFeedbackHandler(deps({ coach: fakeCoach(new Error("The coach's feedback was incomplete.")), log: () => {} }))(request({ ...BODY, mode: "story", promptId: "sp01", story: { shape: "classic", focus: null, length: "full" } }));
+    // Confirm the retry-later answer
+    expect(response.status).toBe(502);
+  });
+});

@@ -12,6 +12,8 @@ import { createRepository } from "@/data/repository";
 import { PAUSE_DRILLS, TRICKY_WORDS, promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load the lessons
 import { LESSONS } from "@/content/lessons";
+// Load today's story prompt (decision 92)
+import { storyPromptForDay } from "@/content/stories";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -32,6 +34,9 @@ describe("PracticeScreen", () => {
     // Wait until the lessons row leads straight into the next lesson (decision 67)
     await waitFor(async () => expect((await rows("Build a skill"))[1]?.[1]).toBe(`/session?mode=lesson&prompt=${LESSONS[0]?.id}`));
     // Confirm the groups and where each row leads ("See all" first in Build a skill)
+    // Confirm the stories group, second on the page, with today's story, telling one again and the moments (decision 92)
+    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["From your moments", "/stories#from-moments"]], 1]);
+    // Confirm the other groups
     expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Build a skill"), (await rows("Speak on the spot")).slice(0, 3)]).toEqual([
       [["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["Asking", "/small-talk/unit?id=asking"], ["Listening", "/small-talk/unit?id=listening"], ["Responding to news", "/small-talk/unit?id=news"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
       [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Tricky words", `/session?mode=read&prompt=${TRICKY_WORDS[0]?.id}`], ["Volume", "/voice/drill?id=v01"], ["Pitch and stress", "/voice/drill?id=p01"], ["Tone", "/voice/drill?id=t01"], ["Pausing", `/session?mode=pause&prompt=${PAUSE_DRILLS[0]?.id}`], ["Shadowing", "/voice/shadow?id=s01"]],

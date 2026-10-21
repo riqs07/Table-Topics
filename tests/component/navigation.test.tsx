@@ -16,6 +16,8 @@ import { SkillsScreen } from "@/components/screens/SkillsScreen";
 import { TalkScreen } from "@/components/screens/TalkScreen";
 // Load the openings and closings page
 import { BookendsScreen } from "@/components/screens/BookendsScreen";
+// Load the Stories page (decision 92)
+import { StoriesScreen } from "@/components/screens/StoriesScreen";
 import { RehearseScreen } from "@/components/screens/RehearseScreen";
 import { SessionScreen } from "@/components/screens/SessionScreen";
 import { SettingsScreen } from "@/components/screens/SettingsScreen";
@@ -72,6 +74,8 @@ describe("main navigation", () => {
     ["a talk's page", "Practice", async () => <TalkScreen talkId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
     // Openings and closings belong to Practice
     ["Openings and closings", "Practice", async () => <BookendsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // Stories belong to Practice (decision 92)
+    ["Stories", "Practice", async () => <StoriesScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Settings
     ["Settings", "Settings", async () => <SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // A session's results belong to where that kind of session lives (here speaking on the spot)

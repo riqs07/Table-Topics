@@ -28,6 +28,8 @@ const SHELL = [
   "/session", "/sessions", "/history", "/settings",
   // Your speaking profile (decision 90)
   "/profile",
+  // Stories and telling one (decision 92)
+  "/stories", "/stories/tell",
 ];
 // How long a page waits for the network before the saved copy is used instead (the network answer still updates the saved copy)
 const NETWORK_TIMEOUT_MS = 3000;

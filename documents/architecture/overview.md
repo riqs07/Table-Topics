@@ -19,7 +19,8 @@ VoiceLab is a Next.js web app, installable on a phone (a PWA). Recording and sto
 | Weekly summary API (decision 90) | Server (Next.js route) | Sends a compact table of the week's measures to the AI coach, returns a structured summary |
 | Deeper analysis API (decision 91) | Server (Next.js route `/api/analyse`) | Opt-in: takes one saved take's audio, sends it to AssemblyAI and the voice worker at once, returns the transcript and voice numbers; stores nothing |
 | Voice worker (decision 91) | Separate Python service (`voice-worker/`, on Modal or Cloud Run) | Praat and librosa voice measures for one recording, behind a shared secret; keeps nothing |
-| Repository | Browser (IndexedDB) | Saves and loads sessions and settings |
+| Repository | Browser (IndexedDB) | Saves and loads sessions and settings, and the user's stories (decision 92) |
+| Storytelling (decision 92) | Browser | `/stories` (today's story, your stories with "Tell it again", your moments to tell properly, the prompt bank) and `/stories/tell` (shape, focus, length), then the usual recording page with a planning minute. Story checks are pure functions in `src/core/storyChecks.ts`; the library in `src/core/storyLibrary.ts`; titles in the `stories` collection |
 | Feedback API | Server (Next.js route) | Sends transcript text to the AI coach, returns keep/change/retry |
 | Transcribe API | Server (Next.js route) | Fallback: audio to text when Web Speech is unavailable |
 | Access gate and cost guard | Server | Passphrase check, rate limit, and daily call cap, with counters in a small shared store (server memory alone is not reliable on serverless hosting; see risks.md R4) |
@@ -67,7 +68,7 @@ Rule: logic goes in `core/` with no browser dependencies, so it can be tested qu
 
 ## Feedback route
 
-`POST /api/feedback` with header `x-voicelab-passphrase` and body `{ transcript, durationSec, focusId, previousChange, mode?, promptId?, question? }`. Checks run in this order, so nothing costs money until the last step: settings present (500 naming the missing variable), passphrase (401), body shape and size (400), shared rate limit (429 with `Retry-After`; 503 if the counter store is down), then the coach (200 `{ feedback }`, 422 if declined, 502 on failure). Logic: `src/server/feedbackHandler.ts`; prompt: `src/core/coachPrompt.ts`.
+`POST /api/feedback` with header `x-voicelab-passphrase` and body `{ transcript, durationSec, focusId, previousChange, mode?, promptId?, question?, story? }` (`story`: a told story's shape, focus and length as known ids only; decision 92). Checks run in this order, so nothing costs money until the last step: settings present (500 naming the missing variable), passphrase (401), body shape and size (400), shared rate limit (429 with `Retry-After`; 503 if the counter store is down), then the coach (200 `{ feedback }`, 422 if declined, 502 on failure). Logic: `src/server/feedbackHandler.ts`; prompt: `src/core/coachPrompt.ts`. A told story goes to the story coach (`STORY_SYSTEM_PROMPT`, `StoryFeedbackSchema`): keep, change and retry cue, the beats it heard with quotes, one line and how it could sound, the usual rubric, and the story scores, which the app keeps as `rub.story_*` measures.
 
 `POST /api/questions` was removed with Q&A practice (decision 61).
 

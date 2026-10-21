@@ -18,6 +18,43 @@ export interface Feedback {
   connection?: ConnectionFeedback;
   // For a conversation with a character: one of your lines, and how it could sound (decision 83)
   conversation?: ConversationFeedback;
+  // For a story: the beats heard, and one of your lines as it could sound (decision 92)
+  story?: StoryFeedback;
+}
+
+// The beats of a told story the coach listens for (decision 92)
+export const STORY_BEATS = ["setting", "stakes", "turn", "ending", "meaning"] as const;
+
+// One beat of a told story
+export type StoryBeat = (typeof STORY_BEATS)[number];
+
+// The coach's notes on a story: each beat it heard with the words that showed it, and one line made better
+export interface StoryFeedback {
+  // Each beat heard, with the speaker's words that showed it (missing beats are left out)
+  beats: Array<{ beat: StoryBeat; quote: string }>;
+  // One of the speaker's lines, quoted exactly
+  yours: string;
+  // How it could sound, in their voice, inventing nothing
+  better: string;
+}
+
+// A story's optional shape (decision 92)
+export type StoryShape = "classic" | "but-therefore" | "then-now" | "small-moment";
+
+// The one thing to try in this telling, or none (decision 92)
+export type StoryFocus = "middle" | "dialogue" | "detail" | "point" | "minute";
+
+// How long to tell it: about a minute, or two to three (decision 92)
+export type StoryLength = "short" | "full";
+
+// What one telling of a story was set up with; the story itself is named by the session's prompt id (its seed: a prompt from the bank, or "moment-" and a moment note's id), so every telling of the same seed is a version of the same story (decision 92)
+export interface StoryTake {
+  // The shape shown while planning
+  shape: StoryShape;
+  // The focus, or null for none
+  focus: StoryFocus | null;
+  // The length chosen
+  length: StoryLength;
 }
 
 // The coach's notes on a conversation: one of your lines as you said it, and a better version
@@ -50,8 +87,8 @@ export interface SmallTalkFeedback {
   livelier: string;
 }
 
-// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment"), or free talk about anything ("free") and a short speech the user planned themselves ("outline", decision 73), or a voice drill or shadowing, recorded take by take ("voice", decision 80), or a spoken conversation with a character ("conversation", decision 83)
-export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment", "free", "outline", "voice", "conversation"] as const;
+// Every kind of session: a Table Topic ("talk", Toastmasters timing), a Record Response, reading aloud, a pause drill, a rehearsal of the user's own talk, a skill-path lesson, an openings and closings drill, or the retired one-minute session and 30-second warm-up, or a small-talk answer ("smalltalk", kept apart from the speech practice), or a private "one moment a day" note ("moment"), or free talk about anything ("free") and a short speech the user planned themselves ("outline", decision 73), or a voice drill or shadowing, recorded take by take ("voice", decision 80), or a spoken conversation with a character ("conversation", decision 83), or a told story ("story", decision 92)
+export const SESSION_MODES = ["standard", "warmup", "talk", "response", "read", "pause", "rehearse", "lesson", "bookend", "qa", "smalltalk", "moment", "free", "outline", "voice", "conversation", "story"] as const;
 
 // One kind of session (bookend: an openings and closings drill; qa: an answer to a likely audience question; both added 2026-10-15)
 export type SessionMode = (typeof SESSION_MODES)[number];
@@ -135,6 +172,8 @@ export interface SessionRecord {
   voice?: VoiceSummary;
   // For a conversation (mode "conversation"): every turn, yours and theirs, and the situation and twist it was in (missing on conversations from before decision 84, which were in the persona's own situation); no audio is kept (decisions 83 and 84)
   conversation?: { turns: ConversationTurn[]; scenarioId?: string; twist?: number };
+  // For a told story (mode "story"): its shape, focus and length; the story is the prompt id (decision 92)
+  story?: StoryTake;
 }
 
 // One turn of a conversation with a character (decision 83)
@@ -346,6 +385,26 @@ export interface AnalysisRaw {
   contentWords: Record<string, number>;
   // For a conversation: your share of the words, your questions, follow-ups and turns
   conversation?: { share: number | null; questions: number; followUps: number; turns: number };
+  // For a told story: what the phone's story checks found (decision 92)
+  story?: StoryRaw;
+}
+
+// What the phone's story checks found in a told story, kept so its story measures can be worked out again (decision 92)
+export interface StoryRaw {
+  // Someone's words were reported ("she said", "I was like", a quote)
+  dialogue: boolean;
+  // How many specific details were heard (numbers, names, places, times), up to five
+  details: number;
+  // A turn or a problem ("but", "suddenly", "turns out")
+  turn: boolean;
+  // How many times "and then" was said
+  andThen: number;
+  // Whether the first sentence started in the action rather than a lead-in, or null with no words
+  startsInAction: boolean | null;
+  // A feeling word was heard
+  feeling: boolean;
+  // The last sentence stated a point or a change
+  endsOnPoint: boolean;
 }
 
 // One rubric score from the coach: 0 to 3, with the speaker's words that back it
@@ -376,6 +435,8 @@ export interface RubricRecord {
   unnecessaryHedges: number;
   // Up to three stronger word choices, each from the speaker's own words
   wordSwaps: Array<{ said: string; stronger: string; why: string }>;
+  // For a told story, the story scores (decision 92)
+  story?: StoryRubric;
   // The model that scored it
   model: string;
   // When (ISO text)
@@ -482,6 +543,34 @@ export interface DeepStatus {
   at: string;
 }
 
+// The coach's story scores for a told story, each 0 to 3 with a quote (decision 92)
+export interface StoryRubric {
+  // Opens in a way that makes you want to hear more, ideally in the action
+  hook: RubricScore;
+  // Something was at stake: a want, a problem, a risk
+  stakes: RubricScore;
+  // Specific, concrete detail a listener can picture
+  detail: RubricScore;
+  // Someone's words, said as they said them
+  dialogue: RubricScore;
+  // A turn: a "but" or a moment where things changed
+  turn: RubricScore;
+  // Ends on the point or the change, then stops
+  point: RubricScore;
+}
+
+// One of the user's stories (decision 92): its id is its seed's id, shared by every telling; the record keeps the title, which the user can change
+export interface StoryRecord {
+  // The seed's id: a prompt from the bank, or "moment-" and a moment note's id
+  id: string;
+  // The title shown in the library
+  title: string;
+  // When it was first told (ISO text)
+  createdAt: string;
+  // When the title last changed (ISO text), for joining with a backup
+  updatedAt: string;
+}
+
 // One weekly coach summary (decision 90)
 export interface SummaryRecord {
   // Unique id
@@ -518,10 +607,12 @@ export interface Collections {
   analyses: AnalysisRecord;
   // Weekly coach summaries, keyed by id (decision 90)
   summaries: SummaryRecord;
+  // The user's stories, keyed by their seed's id (decision 92)
+  stories: StoryRecord;
 }
 
 // One collection name
 export type CollectionName = keyof Collections;
 
 // Every collection name, for creating and clearing storage
-export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio", "talks", "analyses", "summaries"];
+export const COLLECTION_NAMES: ReadonlyArray<CollectionName> = ["sessions", "challenges", "settings", "audio", "talks", "analyses", "summaries", "stories"];

@@ -47,6 +47,8 @@ export function rubricMetrics(rubric: RubricRecord): Record<string, MetricValue>
     "rub.devices_count": value(rubric.devices.length, "count"),
     // (unneeded hedges)
     "rub.unnecessary_hedges": value(rubric.unnecessaryHedges, "count"),
+    // A told story's scores, when the story coach gave them (decision 92)
+    ...(rubric.story ? { "rub.story_hook": value(rubric.story.hook.score), "rub.story_stakes": value(rubric.story.stakes.score), "rub.story_detail": value(rubric.story.detail.score), "rub.story_dialogue": value(rubric.story.dialogue.score), "rub.story_turn": value(rubric.story.turn.score), "rub.story_point": value(rubric.story.point.score) } : {}),
   };
 }
 

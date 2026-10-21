@@ -7,7 +7,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 // Load the model settings
 import { COACH_EFFORT, COACH_MODEL } from "@/config/models";
 // Load the coach instructions, message builder, schema, and checker
-import { COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, CONVERSATION_SYSTEM_PROMPT, ConnectionFeedbackSchema, ConversationFeedbackSchema, FeedbackSchema, SMALL_TALK_SYSTEM_PROMPT, SmallTalkFeedbackSchema, buildCoachMessage, buildConnectionMessage, buildConversationMessage, buildSmallTalkMessage, checkConnectionFeedback, checkConversationFeedback, checkFeedback, checkSmallTalkFeedback, checkRubric, type CoachInput, type CoachRubric } from "@/core/coachPrompt";
+import { STORY_SYSTEM_PROMPT, StoryFeedbackSchema, buildStoryMessage, checkStoryFeedback, checkStoryRubric, COACH_SYSTEM_PROMPT, CONNECTION_SYSTEM_PROMPT, CONVERSATION_SYSTEM_PROMPT, ConnectionFeedbackSchema, ConversationFeedbackSchema, FeedbackSchema, SMALL_TALK_SYSTEM_PROMPT, SmallTalkFeedbackSchema, buildCoachMessage, buildConnectionMessage, buildConversationMessage, buildSmallTalkMessage, checkConnectionFeedback, checkConversationFeedback, checkFeedback, checkSmallTalkFeedback, checkRubric, type CoachInput, type CoachRubric } from "@/core/coachPrompt";
 // Load the small-talk unit lookup
 import { unitOf } from "@/content/smallTalk";
 // Load the feedback record type
@@ -58,6 +58,28 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
         if (!response.parsed_output) throw new Error(`The coach returned no usable feedback (stop reason: ${response.stop_reason}).`);
         // Hand back the checked feedback and token counts
         return { status: "ok", feedback: checkConversationFeedback(response.parsed_output), rubric: checkRubric(response.parsed_output.rubric, COACH_MODEL), usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
+      }
+      // A told story goes to the story coach, with its own instructions, reply shape and story scores (decision 92)
+      if (input.mode === "story") {
+        // Ask Claude, requiring the reply to match the story schema
+        const response = await client.messages.parse({
+          // The configured coach model
+          model: COACH_MODEL,
+          // Room for thinking and the reply
+          max_tokens: MAX_TOKENS,
+          // The story instructions, cached between stories
+          system: [{ type: "text", text: STORY_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+          // The prompt, set-up, numbers and transcript
+          messages: [{ role: "user", content: buildStoryMessage(input) }],
+          // Thinking depth and the required JSON shape
+          output_config: { effort: COACH_EFFORT, format: zodOutputFormat(StoryFeedbackSchema) },
+        });
+        // A safety decline is reported, not treated as a crash
+        if (response.stop_reason === "refusal") return { status: "declined" };
+        // A missing or unreadable reply is an error
+        if (!response.parsed_output) throw new Error(`The coach returned no usable feedback (stop reason: ${response.stop_reason}).`);
+        // Hand back the checked feedback, the rubric with the story scores, and token counts
+        return { status: "ok", feedback: checkStoryFeedback(response.parsed_output), rubric: { ...checkRubric(response.parsed_output.rubric, COACH_MODEL), story: checkStoryRubric(response.parsed_output.storyRubric) }, usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
       }
       // A follow-up question or a reply to a story goes to the conversation coach, with its own instructions and reply shape
       if (input.mode === "smalltalk" && unitOf(input.promptId ?? "") !== "answering") {

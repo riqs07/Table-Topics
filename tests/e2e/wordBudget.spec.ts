@@ -5,7 +5,7 @@ import { expect, test } from "./support/fixtures";
 const WORD_BUDGET = 100;
 
 // Pages to measure: the tabs, their inside pages, and the start of each kind of practice without a passage
-const PAGES: ReadonlyArray<string> = ["/", "/practice", "/learn", "/skills", "/settings", "/profile", "/bookends", "/small-talk/unit?id=answering", "/small-talk/unit?id=news", "/learn/set?id=warmth", "/learn/scenarios", "/session?mode=talk&prompt=t001", "/session?mode=response&prompt=p001", "/session?mode=smalltalk&prompt=st01", "/session?mode=smalltalk&prompt=sn01", "/session?mode=bookend&prompt=b001", "/session?mode=moment&prompt=moment", "/voice", "/voice/warmup", "/voice/drill?id=v01", "/voice/shadow?id=s01", "/conversations", "/conversations/talk?id=maya"];
+const PAGES: ReadonlyArray<string> = ["/", "/practice", "/learn", "/skills", "/settings", "/profile", "/bookends", "/small-talk/unit?id=answering", "/small-talk/unit?id=news", "/learn/set?id=warmth", "/learn/scenarios", "/session?mode=talk&prompt=t001", "/session?mode=response&prompt=p001", "/session?mode=smalltalk&prompt=st01", "/session?mode=smalltalk&prompt=sn01", "/session?mode=bookend&prompt=b001", "/session?mode=moment&prompt=moment", "/voice", "/voice/warmup", "/voice/drill?id=v01", "/voice/shadow?id=s01", "/conversations", "/conversations/talk?id=maya", "/stories", "/stories/tell?prompt=sp01", "/session?mode=story&prompt=sp01"];
 
 // One check per page
 for (const path of PAGES) {

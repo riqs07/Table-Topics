@@ -17,7 +17,7 @@ import { median, robustSpread, round } from "@/core/analysis/stats";
 import type { AnalysisRecord, MetricSource, SessionMode, SessionRecord } from "@/data/records";
 
 // A family of practice
-export type FamilyId = "spot" | "reading" | "rehearse" | "smalltalk" | "conversation";
+export type FamilyId = "spot" | "reading" | "rehearse" | "smalltalk" | "conversation" | "story";
 
 // The families, their names, and the kinds of session in each (voice drills and moment notes are left out)
 export const FAMILIES: ReadonlyArray<{ id: FamilyId; name: string; modes: ReadonlyArray<SessionMode> }> = [
@@ -31,6 +31,8 @@ export const FAMILIES: ReadonlyArray<{ id: FamilyId; name: string; modes: Readon
   { id: "smalltalk", name: "Small talk", modes: ["smalltalk"] },
   // Conversations with a character
   { id: "conversation", name: "Conversations", modes: ["conversation"] },
+  // Told stories, compared only with each other (decision 92)
+  { id: "story", name: "Stories", modes: ["story"] },
 ];
 
 // Takes for the usual level

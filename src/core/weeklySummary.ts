@@ -47,7 +47,7 @@ export const SummaryInputSchema = z.object({
   // Takes in the last seven days
   takesThisWeek: z.number().int().min(0).max(1_000),
   // Each family's table
-  families: z.array(z.object({ id: z.enum(["spot", "reading", "rehearse", "smalltalk", "conversation"]), name: z.string().max(40), takes: z.number().int().min(0).max(100_000), takesThisWeek: z.number().int().min(0).max(1_000), rows: z.array(RowSchema).max(SUMMARY_SIZE.rowsPerFamily) })).max(SUMMARY_SIZE.families),
+  families: z.array(z.object({ id: z.enum(["spot", "reading", "rehearse", "smalltalk", "conversation", "story"]), name: z.string().max(40), takes: z.number().int().min(0).max(100_000), takesThisWeek: z.number().int().min(0).max(1_000), rows: z.array(RowSchema).max(SUMMARY_SIZE.rowsPerFamily) })).max(SUMMARY_SIZE.families),
   // Patterns found, as sentences
   patterns: z.array(z.string().max(SUMMARY_SIZE.patternChars)).max(SUMMARY_SIZE.patterns),
   // A few short quotes from this week's takes

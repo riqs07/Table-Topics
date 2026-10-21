@@ -1,7 +1,7 @@
 # Measurements
 
 **Purpose:** Every measure VoiceLab records about a take, where it comes from, how strong the evidence is, and how measures are turned into the speaking profile and the weekly summary.
-**Last updated:** 2026-10-21 (decision 91: stage B, deeper analysis on the server)
+**Last updated:** 2026-10-21 (decision 92: story measures and the story coach's scores; decision 91: stage B, deeper analysis on the server)
 **Source of truth:** the registry in `src/core/analysis/metrics.ts`. The tables below are generated from it; if they disagree, the code wins and this file is out of date (a unit test, `tests/unit/core/analysis/registryDoc.test.ts`, fails when a row here differs from the registry). The research behind the choices is in [../research/speech-analysis-2026-10.md](../research/speech-analysis-2026-10.md) (sections 3, 5, 6 and 7).
 
 ## How a take is measured
@@ -24,7 +24,8 @@
 | `device-wordlist-v1` | Word-list measures: hedges, tag questions, vague words, intensifiers, pronouns, repeats, openings and closings (lists in `src/core/analysis/lexicon.ts`) |
 | `device-heuristic-v1` | Pause placement and words between boundary pauses (see below) |
 | `device-browser-transcript-v1` | Pause words per minute as saved on the session, from the browser's transcript, which drops many |
-| the coach model id | Rubric scores |
+| `device-story-v1` | Story checks on a told story (decision 92): reported speech, specific details, a turn, "and then", a start in the action, a feeling word and an ending on the point, from the transcript (`src/core/storyChecks.ts`) |
+| the coach model id | Rubric scores, and on a told story the story coach's scores |
 | `assemblyai-universal-3-pro` | Stage B, source `transcript`: measures from AssemblyAI's verbatim transcript (Universal-3 Pro, `disfluencies`, punctuation and word times on; model name in `src/config/models.ts`) |
 | `assemblyai-universal-3-pro-punctuation-v1` | Stage B: pause placement, words between boundary pauses and pause-word placement, read from that transcript's punctuation (see below) |
 | `voice-worker-1+praat-6.1.38` | Stage B, source `voice`: the voice worker's measures (its version and the Praat inside parselmouth). Definitions in `voice-worker/README.md` |
@@ -79,9 +80,16 @@ This over-counts boundaries before "I" or "this" used mid-sentence and under-cou
 - **Not computed: less common words** (`lang.rare_word_share`). It needs a frequency list of the most common English words under a licence that allows this use. None was confirmed as permissive in stage B either (see "Not computed yet" above), so nothing is bundled.
 - **Articulation clarity** (`pro.articulation_clarity`, the other meaning of diction) comes with deeper analysis: the average confidence the transcription had in your words, as a percentage. Checking it against the words the clear-sounds drills missed (`wordsToWatch`) is left for later.
 
+## Stories (decision 92)
+
+A told story (mode `story`) gets every usual measure plus two story sets, grouped as "Stories" on the profile and compared only with other stories:
+
+- **On the phone** (`story.*`, engine `device-story-v1`): `extractRaw` keeps the story checks' yes-or-no results and counts as `raw.story` (`StoryRaw`), so they are worked out again from the raw features like every phone measure. The checks read the browser's transcript, which usually has no punctuation, so "the first sentence" is the first marked sentence or the first 12 words, and "the last sentence" the last marked one or the last 15 words. They are rough guesses, and the results page says so ("What I heard").
+- **From the story coach** (`rub.story_*`): the story coach fills in the usual rubric and a story rubric (`StoryRubricSchema` in `src/core/coachPrompt.ts`: hook, stakes, detail, dialogue, turn, point, each 0 to 3 with a quote). It is kept as `rubric.story` and becomes six measures; a broken story score refuses the whole rubric when read back, as any broken score does.
+
 ## The profile (`src/core/analysis/profile.ts`, page `/profile`)
 
-- **Families:** speaking on the spot (talk, response, bookend, free, outline, qa, and the retired standard and warm-up), reading aloud (read, pause, lesson), rehearsing (rehearse), small talk, conversations. Voice drills and moment notes are left out. Families are never compared as if they were the same kind of speech.
+- **Families:** speaking on the spot (talk, response, bookend, free, outline, qa, and the retired standard and warm-up), reading aloud (read, pause, lesson), rehearsing (rehearse), small talk, conversations, stories (decision 92). Voice drills and moment notes are left out. Families are never compared as if they were the same kind of speech.
 - **Like with like** (decision 91): for each measure, only takes whose value came from the same source as the latest take's (phone, transcript or voice) are summed up, so a take measured on the server is never set against phone guesses. Turning deeper analysis on therefore starts a fresh history for the pause-word count and pause placement; the per-take table compares the same way and marks server values "deeper analysis". The voice group lists the server's voice measures under "From deeper analysis", each with its plain meaning.
 - **Usual:** the median of the first five takes. **Recent:** the median of the latest seven. **Spread:** 1.4826 × the median absolute deviation over the family's takes.
 - **Trend** (six takes or more): up or down when recent and usual differ by more than half a spread and by more than 5% of the usual; otherwise steady. The registry's "better" direction turns it into better, worse, or just changed.
@@ -202,3 +210,20 @@ Stage A measures are computed on the phone or by the coach's rubric. Stage B mea
 | `conv.detail_pickups` | Details picked up | Details from their turns you reused, judged by the coach. | count | rubric | moderate | internal | higher | B |
 | `conv.self_disclosure` | Sharing | Turns where you shared a personal detail. | count | rubric | moderate | internal | neither | B |
 
+### Stories
+
+| id | Name | Definition | Unit | Source | Evidence | Shown | Better | Stage |
+|---|---|---|---|---|---|---|---|---|
+| `story.starts_in_action` | Starts in the action | 1 when the first sentence starts in the story rather than a lead-in such as “so basically” or “let me tell you about”, otherwise 0. | yes/no | device | weak | shown | higher | A |
+| `story.dialogue` | Someone's words | 1 when someone's words were reported (“she said”, “I was like”, a quote), otherwise 0. | yes/no | device | moderate | shown | higher | A |
+| `story.details` | Specific details | Numbers, times, names and places heard (capitalised words mid-sentence), up to five. | count | device | moderate | shown | higher | A |
+| `story.turn` | A turn | 1 when a turn was heard (“but”, “suddenly”, “until”, “turns out”), otherwise 0. | yes/no | device | weak | shown | higher | A |
+| `story.and_then` | “And then” | How many times “and then” linked the events. | count | device | weak | internal | lower | A |
+| `story.feeling` | A feeling | 1 when a feeling word was heard, otherwise 0. | yes/no | device | weak | internal | higher | A |
+| `story.ends_on_point` | Ends on the point | 1 when the last sentence states a point or a change (“since then”, “I realised”, “now I”), otherwise 0. | yes/no | device | weak | shown | higher | A |
+| `rub.story_hook` | Story opening | The story coach's score for an opening that makes you want to hear more, ideally in the action, 0 to 3. | 0–3 | rubric | weak | shown | higher | A |
+| `rub.story_stakes` | Stakes | The story coach's score for something at stake: a want, a problem or a risk, 0 to 3. | 0–3 | rubric | moderate | shown | higher | A |
+| `rub.story_detail` | Vivid detail | The story coach's score for specific detail a listener can picture, 0 to 3. | 0–3 | rubric | moderate | shown | higher | A |
+| `rub.story_dialogue` | Dialogue | The story coach's score for someone's words said as they were said, 0 to 3. | 0–3 | rubric | weak | internal | higher | A |
+| `rub.story_turn` | The turn | The story coach's score for a clear turn, a “but” or a moment things changed, 0 to 3. | 0–3 | rubric | moderate | shown | higher | A |
+| `rub.story_point` | The point | The story coach's score for ending on the point or the change, then stopping, 0 to 3. | 0–3 | rubric | weak | shown | higher | A |

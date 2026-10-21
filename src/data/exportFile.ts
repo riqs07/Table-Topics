@@ -1,8 +1,12 @@
-// "Export my data": a JSON file of sessions, challenges, settings, saved talks, each take's measures and the weekly summaries that can be imported again (checkpoint C8, decision 90)
+// "Export my data": a JSON file of sessions, challenges, settings, saved talks, each take's measures, the weekly summaries and the user's stories that can be imported again (checkpoint C8, decisions 90 and 92)
 // Audio is left out to keep the file small; transcripts, numbers and feedback are all included
 
 // Load the record types
-import { isSessionMode, type AnalysisRecord, type ChallengeRecord, type SessionRecord, type SettingsRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
+import { isSessionMode, type AnalysisRecord, type ChallengeRecord, type SessionRecord, type SettingsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
+// Load the story merge rule (decision 92)
+import { mergeStory } from "@/core/storyLibrary";
+// Load the story choice checks
+import { isStoryFocus, isStoryLength, isStoryShape } from "@/content/stories";
 // Load the rubric reader and the rubric merge (decision 90)
 import { readRubric } from "@/core/analysis/rubric";
 // (merge)
@@ -39,6 +43,8 @@ export interface ExportFile {
   analyses: AnalysisRecord[];
   // Weekly coach summaries, newest first (missing in files made before decision 90)
   summaries: SummaryRecord[];
+  // The user's stories and their titles (missing in files made before decision 92)
+  stories: StoryRecord[];
 }
 
 // Gather everything into an export file
@@ -46,7 +52,7 @@ export async function buildExport(repo: Repository, now: Date): Promise<ExportFi
   // Read the sessions and clear their audio pointers, since audio is not in the file
   const sessions = (await repo.listSessions()).map((session) => ({ ...session, audioKey: null }));
   // Put the file together
-  return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions, challenges: await repo.listChallenges(), settings: await repo.getSettings(now), talks: await repo.listTalks(), analyses: await repo.listAnalyses(), summaries: await repo.listSummaries() };
+  return { format: FORMAT, version: VERSION, exportedAt: now.toISOString(), sessions, challenges: await repo.listChallenges(), settings: await repo.getSettings(now), talks: await repo.listTalks(), analyses: await repo.listAnalyses(), summaries: await repo.listSummaries(), stories: await repo.listStories() };
 }
 
 // Save everything from an export file, joined with what is already here (decision 86): a record already on this device is kept and only gains what it lacks (so recordings stay linked and newer feedback or notes are not lost), and settings and progress are joined; returns how many sessions were new and how many already here
@@ -96,6 +102,8 @@ export async function importExport(repo: Repository, file: ExportFile, now: Date
   const summaries = new Set((await repo.listSummaries()).map((summary) => summary.id));
   // Each summary not here yet
   for (const summary of file.summaries) if (!summaries.has(summary.id)) await repo.saveSummary(summary);
+  // Each story, joined with the copy here: the later title wins (decision 92)
+  for (const story of file.stories) await repo.saveStory(mergeStory(await repo.getStory(story.id), story));
   // Report the counts to show the user
   return { added, kept: file.sessions.length - added };
 }
@@ -119,7 +127,7 @@ const isTextOrNull = (value: unknown) => value === null || isText(value);
 // Check that a value has the shape of coach feedback
 function isFeedback(value: unknown): boolean {
   // Feedback must be an object with three text parts
-  return isObject(value) && isText(value.keep) && isText(value.change) && isText(value.retryCue) && (value.smallTalk === undefined || isObject(value.smallTalk)) && (value.connection === undefined || isObject(value.connection)) && (value.conversation === undefined || isObject(value.conversation));
+  return isObject(value) && isText(value.keep) && isText(value.change) && isText(value.retryCue) && (value.smallTalk === undefined || isObject(value.smallTalk)) && (value.connection === undefined || isObject(value.connection)) && (value.conversation === undefined || isObject(value.conversation)) && (value.story === undefined || isObject(value.story));
 }
 
 // Check that a value has the shape of one turn of a conversation
@@ -150,6 +158,8 @@ function isSession(value: unknown): value is SessionRecord {
     (value.outline === undefined || (typeof value.outline === "object" && value.outline !== null && isText((value.outline as Record<string, unknown>).topic) && Array.isArray((value.outline as Record<string, unknown>).points) && ((value.outline as Record<string, unknown>).points as unknown[]).every(isText) && typeof (value.outline as Record<string, unknown>).goalMinutes === "number")) &&
     // A conversation's turns, each said by you or them, and its situation (only on conversations, decisions 83 and 84)
     (value.conversation === undefined || (isObject(value.conversation) && Array.isArray(value.conversation.turns) && value.conversation.turns.every(isTurn) && (value.conversation.scenarioId === undefined || isText(value.conversation.scenarioId)) && (value.conversation.twist === undefined || isNumber(value.conversation.twist)))) &&
+    // A told story's set-up (only on stories, decision 92)
+    (value.story === undefined || (isObject(value.story) && isStoryShape(value.story.shape) && (value.story.focus === null || isStoryFocus(value.story.focus)) && isStoryLength(value.story.length))) &&
     // Section of a rehearsal (missing on most sessions)
     (value.sectionIndex === undefined || value.sectionIndex === null || isNumber(value.sectionIndex)) &&
     // Feedback and its status
@@ -197,6 +207,12 @@ function isSummary(value: unknown): value is SummaryRecord {
   return isObject(value) && isText(value.id) && isText(value.createdAt) && isText(value.headline) && Array.isArray(value.improved) && value.improved.every(isText) && isText(value.pattern) && isText(value.focus) && isTextOrNull(value.suggestedDrill) && isText(value.model);
 }
 
+// Check that a value has the shape of one of the user's stories
+function isStory(value: unknown): value is StoryRecord {
+  // Text fields only
+  return isObject(value) && isText(value.id) && isText(value.title) && isText(value.createdAt) && isText(value.updatedAt);
+}
+
 // Check that a value has the shape of the settings record
 function isSettings(value: unknown): value is SettingsRecord {
   // Must be an object with a focus position, start date and audio limit
@@ -222,11 +238,11 @@ export function parseExport(text: string): ExportFile {
   // Must be this version (anything else is damaged)
   if (data.version !== VERSION) throw new Error(DAMAGED);
   // Every part must have the right shape
-  const valid = isText(data.exportedAt) && Array.isArray(data.sessions) && data.sessions.every(isSession) && Array.isArray(data.challenges) && data.challenges.every(isChallenge) && isSettings(data.settings) && (data.talks === undefined || (Array.isArray(data.talks) && data.talks.every(isTalk))) && (data.analyses === undefined || (Array.isArray(data.analyses) && data.analyses.every(isAnalysis))) && (data.summaries === undefined || (Array.isArray(data.summaries) && data.summaries.every(isSummary)));
+  const valid = isText(data.exportedAt) && Array.isArray(data.sessions) && data.sessions.every(isSession) && Array.isArray(data.challenges) && data.challenges.every(isChallenge) && isSettings(data.settings) && (data.talks === undefined || (Array.isArray(data.talks) && data.talks.every(isTalk))) && (data.analyses === undefined || (Array.isArray(data.analyses) && data.analyses.every(isAnalysis))) && (data.summaries === undefined || (Array.isArray(data.summaries) && data.summaries.every(isSummary))) && (data.stories === undefined || (Array.isArray(data.stories) && data.stories.every(isStory)));
   // Refuse a damaged file
   if (!valid) throw new Error(DAMAGED);
   // The file has been checked, so it can be used as an export
   const file = data as unknown as ExportFile;
   // Sessions from before warm-ups existed are full sessions
-  return { ...file, talks: file.talks ?? [], analyses: file.analyses ?? [], summaries: file.summaries ?? [], sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
+  return { ...file, talks: file.talks ?? [], analyses: file.analyses ?? [], summaries: file.summaries ?? [], stories: file.stories ?? [], sessions: file.sessions.map((session) => ({ ...session, mode: session.mode ?? "standard" })) };
 }

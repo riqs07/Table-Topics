@@ -5,7 +5,7 @@ import { startOfDay } from "@/core/dates";
 // Load the rule for which recordings lose their audio
 import { audioToPrune } from "@/core/audioRetention";
 // Load the record types
-import { COLLECTION_NAMES, type AnalysisRecord, type ChallengeRecord, type SessionRecord, type SettingsRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
+import { COLLECTION_NAMES, type AnalysisRecord, type ChallengeRecord, type SessionRecord, type SettingsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
 // Load the storage contract
 import type { Store } from "@/data/store";
 
@@ -56,6 +56,12 @@ export interface Repository {
   saveSummary(summary: SummaryRecord): Promise<void>;
   // Load every weekly summary, newest first
   listSummaries(): Promise<SummaryRecord[]>;
+  // Save one of the user's stories (decision 92)
+  saveStory(story: StoryRecord): Promise<void>;
+  // Load a story by its seed's id
+  getStory(id: string): Promise<StoryRecord | undefined>;
+  // Load every story, first told first
+  listStories(): Promise<StoryRecord[]>;
   // Remove every stored record and recording
   deleteAllData(): Promise<void>;
 }
@@ -153,6 +159,17 @@ export function createRepository(store: Store): Repository {
     async listSummaries() {
       // Read all and sort by when they were written, newest first
       return (await store.getAll("summaries")).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+
+    // Save a story under its seed's id
+    saveStory: (story) => store.put("stories", story.id, story),
+    // Load a story
+    getStory: (id) => store.get("stories", id),
+
+    // Load every story, first told first
+    async listStories() {
+      // Read all and sort by when each was first told
+      return (await store.getAll("stories")).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     },
 
     // Remove everything

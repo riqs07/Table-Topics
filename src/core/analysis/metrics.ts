@@ -4,7 +4,7 @@
 import type { MetricSource } from "@/data/records";
 
 // The group a measure belongs to on the profile page
-export type MetricGroup = "language" | "vocabulary" | "fluency" | "voice" | "conversation" | "content";
+export type MetricGroup = "language" | "vocabulary" | "fluency" | "voice" | "conversation" | "content" | "story";
 
 // How strong the research behind a measure is (documents/research/speech-analysis-2026-10.md, section 3)
 export type Evidence = "strong" | "moderate" | "weak";
@@ -127,6 +127,20 @@ export const METRICS: ReadonlyArray<MetricDefinition> = [
   metric("rub.unnecessary_hedges", "Unneeded hedges", "Hedges the coach judged unnecessary.", "count", "content", "rubric", "moderate", false, "lower"),
   metric("rub.coherence", "Coherence", "Stays on one line of thought, 0 to 3.", "0–3", "content", "rubric", "moderate", false, "higher", "B"),
   metric("rub.audience_orientation", "Speaks to the listener", "Speaks to the listener's needs, judged as a whole, 0 to 3.", "0–3", "content", "rubric", "weak", false, "higher", "B"),
+  // Stories: the phone's story checks and the story coach's scores (decision 92)
+  metric("story.starts_in_action", "Starts in the action", "1 when the first sentence starts in the story rather than a lead-in such as “so basically” or “let me tell you about”, otherwise 0.", "yes/no", "story", "device", "weak", true, "higher"),
+  metric("story.dialogue", "Someone's words", "1 when someone's words were reported (“she said”, “I was like”, a quote), otherwise 0.", "yes/no", "story", "device", "moderate", true, "higher"),
+  metric("story.details", "Specific details", "Numbers, times, names and places heard (capitalised words mid-sentence), up to five.", "count", "story", "device", "moderate", true, "higher"),
+  metric("story.turn", "A turn", "1 when a turn was heard (“but”, “suddenly”, “until”, “turns out”), otherwise 0.", "yes/no", "story", "device", "weak", true, "higher"),
+  metric("story.and_then", "“And then”", "How many times “and then” linked the events.", "count", "story", "device", "weak", false, "lower"),
+  metric("story.feeling", "A feeling", "1 when a feeling word was heard, otherwise 0.", "yes/no", "story", "device", "weak", false, "higher"),
+  metric("story.ends_on_point", "Ends on the point", "1 when the last sentence states a point or a change (“since then”, “I realised”, “now I”), otherwise 0.", "yes/no", "story", "device", "weak", true, "higher"),
+  metric("rub.story_hook", "Story opening", "The story coach's score for an opening that makes you want to hear more, ideally in the action, 0 to 3.", "0–3", "story", "rubric", "weak", true, "higher"),
+  metric("rub.story_stakes", "Stakes", "The story coach's score for something at stake: a want, a problem or a risk, 0 to 3.", "0–3", "story", "rubric", "moderate", true, "higher"),
+  metric("rub.story_detail", "Vivid detail", "The story coach's score for specific detail a listener can picture, 0 to 3.", "0–3", "story", "rubric", "moderate", true, "higher"),
+  metric("rub.story_dialogue", "Dialogue", "The story coach's score for someone's words said as they were said, 0 to 3.", "0–3", "story", "rubric", "weak", false, "higher"),
+  metric("rub.story_turn", "The turn", "The story coach's score for a clear turn, a “but” or a moment things changed, 0 to 3.", "0–3", "story", "rubric", "moderate", true, "higher"),
+  metric("rub.story_point", "The point", "The story coach's score for ending on the point or the change, then stopping, 0 to 3.", "0–3", "story", "rubric", "weak", true, "higher"),
 ];
 
 // The definitions by id
@@ -152,4 +166,6 @@ export const METRIC_GROUPS: ReadonlyArray<{ id: MetricGroup; name: string }> = [
   { id: "content", name: "Content and structure" },
   // Conversations
   { id: "conversation", name: "Conversation" },
+  // Told stories (decision 92)
+  { id: "story", name: "Stories" },
 ];
