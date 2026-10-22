@@ -88,6 +88,21 @@ Measured the same way (gzip KB of each prerendered page's first-load scripts), b
 
 The take's page grows 1.5 KB because the voice section, the planned-stress card and the last-try card load only after the page is up, and only for takes that show them; the phrase rows are their own page. A first version that loaded them with the page added 9.6 KB, so they were split out. The model voice's pitch for shadowing (about 6 KB of numbers) loads with the comparison, after the first take. The readings are read only where these views draw them, and each take's phrases are worked out once (memoised); the phrase rows draw 40 phrases at a time.
 
+## The browser suite (decision 112)
+
+The Playwright suite (`pnpm e2e`, 320 checks) was run on this machine (4 cores, 15 GB, Chromium 1194 headless), on one production build each time:
+
+| | Workers | Checks spread | Wall time | Sum of check times |
+|---|---|---|---|---|
+| Before | 2 (Playwright's default, half the cores) | file by file: a file's checks ran one after another | **445 s** (7.4 min; `journeys.spec.ts` alone 6.6 min) | 753 s |
+| After, run 1 | 4 (`workers: process.env.CI ? 2 : 4`) | every check on its own (`fullyParallel: true`) | **310 s** (5.1 min) | 1,082 s |
+| After, run 2 | 4 | the same | **314 s** (5.2 min) | about the same |
+| Tried: 3 workers | 3 | the same | 348 s (5.8 min) | |
+
+Both runs after passed all 320 checks; nothing flaked, so no file is kept serial. Each check already has its own browser context and storage; the only thing shared is the one app server (`webServer`, port 3111), which is fine. The gain is smaller than four workers suggest because the machine is busy: the app server and four Chromiums share four cores, so each check takes longer (the sum of check times rose by 44%), and the longest single check (the weekly check-in journey, about 2 minutes of real-time recording) now sets the floor. CI keeps 2 workers.
+
+**How tests are run now (the user's request to spend less time on tests):** each commit runs lint, the type check, the unit and screen tests, the production build, and only the browser specs that touch what changed; one full browser run on the final code before the final push. The browser run and the screenshots reuse one production build.
+
 ## Storage
 
 | | 1 year: before → after | 5,000: before → after |

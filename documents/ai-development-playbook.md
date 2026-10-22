@@ -71,7 +71,7 @@ Before saying "done", the agent confirms each of these and reports any that were
 
 - [ ] New logic has tests; a bug fix has a test that reproduced the bug before the fix (T9).
 - [ ] The failure path is tested (T1, T2), not just the success path.
-- [ ] Lint, typecheck, unit tests and the production build all pass. Read the "Test Files" count too, not just "Tests": a file that fails to load drops its tests from the total silently (this happened on 2026-10-15 and was caught only because the total shrank).
+- [ ] Lint, typecheck, unit tests and the production build all pass on every commit, with the browser specs that touch what changed; one full browser run on the final code before the final push (decision 112, at the user's request to cut test time). Read the "Test Files" count too, not just "Tests": a file that fails to load drops its tests from the total silently (this happened on 2026-10-15 and was caught only because the total shrank).
 - [ ] The change was run in a real browser, each touched page was loaded directly, and the console was clean (T5).
 - [ ] New or changed screens were looked at in screenshots at phone and desktop width (T8).
 - [ ] The report says exactly what was verified and with what (for example "stand-in microphone, desktop Chromium"), and what still needs the user (a real voice, a phone, an API key).

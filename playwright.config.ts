@@ -12,6 +12,10 @@ export default defineConfig({
   testMatch: "**/*.spec.ts",
   // Recordings wait in real time, so allow a minute per check
   timeout: 60_000,
+  // Run every check on its own, so the checks inside one file spread across workers too: each has its own browser context and storage, and they share only the one app server (measured 2026-10-22: 7.4 min on 2 workers, file by file)
+  fullyParallel: true,
+  // Use the machine: four workers locally, two on CI's smaller machines
+  workers: process.env.CI ? 2 : 4,
   // Fail CI if a check was left marked "only"
   forbidOnly: Boolean(process.env.CI),
   // No automatic retries: a check that fails once is a real failure (playbook: "flake" is not a cause)
