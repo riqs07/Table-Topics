@@ -233,7 +233,7 @@ function FocusAsk({ onAnswer }: { onAnswer: (picks: FocusAreaId[]) => Promise<vo
       {/* The question */}
       <h2 id="focus-ask" className="font-display text-cue font-semibold tracking-tight">What do you want to get better at most?</h2>
       {/* What it does */}
-      <p className="mt-1 text-footnote text-ink-muted">Pick one or two, and today’s practice leans that way.</p>
+      <p className="mt-1 text-footnote text-ink-muted">Pick one or two; today’s practice leans that way.</p>
       {/* The choices, names only */}
       <FocusPicker value={picks} onChange={setPicks} label="What do you want to get better at most?" compact />
       {/* A save that failed: why, with the buttons still there to try again */}
