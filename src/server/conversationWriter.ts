@@ -13,7 +13,7 @@ import type { WriterEvent } from "@/server/conversationStream";
 // Load the persona and situation types
 import type { Persona, Scenario } from "@/content/conversations";
 // Load the saved turn type
-import type { ConversationTurn } from "@/data/records";
+import type { ConversationDifficulty, ConversationTurn } from "@/data/records";
 
 // A line is a few dozen words of JSON
 const MAX_TOKENS = 1024;
@@ -27,10 +27,10 @@ export type WriteResult =
 
 // Anything that can write the next line (the real writer, or a fake in tests)
 export interface ConversationWriter {
-  // Write what the persona says next; heard is false when the person's last turn was not caught
-  write(persona: Persona, scenario: Scenario, twist: number, turns: ReadonlyArray<ConversationTurn>, stage: ConversationStage, heard: boolean): Promise<WriteResult>;
+  // Write what the persona says next; heard is false when the person's last turn was not caught; difficulty makes it easier or harder (decision 141; normal when left out)
+  write(persona: Persona, scenario: Scenario, twist: number, turns: ReadonlyArray<ConversationTurn>, stage: ConversationStage, heard: boolean, difficulty?: ConversationDifficulty): Promise<WriteResult>;
   // The same, streamed as plain text with a goodbye header first, ending with whether it was declined (decision 102); the signal stops it when the phone stops listening
-  stream(persona: Persona, scenario: Scenario, twist: number, turns: ReadonlyArray<ConversationTurn>, stage: ConversationStage, heard: boolean, signal?: AbortSignal): AsyncIterable<WriterEvent>;
+  stream(persona: Persona, scenario: Scenario, twist: number, turns: ReadonlyArray<ConversationTurn>, stage: ConversationStage, heard: boolean, signal?: AbortSignal, difficulty?: ConversationDifficulty): AsyncIterable<WriterEvent>;
 }
 
 // Build a writer that asks Claude; the network function can be replaced in tests
@@ -40,7 +40,7 @@ export function createClaudeWriter(apiKey: string, fetchFn?: typeof fetch): Conv
   // Hand back the writer
   return {
     // Write the next line
-    async write(persona, scenario, twist, turns, stage, heard) {
+    async write(persona, scenario, twist, turns, stage, heard, difficulty) {
       // Ask Claude, requiring the reply to match the line shape
       const response = await client.messages.parse({
         // The fast model
@@ -52,7 +52,7 @@ export function createClaudeWriter(apiKey: string, fetchFn?: typeof fetch): Conv
         // The standing instructions, cached between turns
         system: [{ type: "text", text: WRITER_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         // The persona, the situation and the conversation so far
-        messages: [{ role: "user", content: writeMessage(persona, scenario, twist, turns, stage, heard) }],
+        messages: [{ role: "user", content: writeMessage(persona, scenario, twist, turns, stage, heard, difficulty) }],
         // Low effort and the required JSON shape
         output_config: { effort: CONVERSATION_EFFORT, format: zodOutputFormat(WriteSchema) },
       });
@@ -64,7 +64,7 @@ export function createClaudeWriter(apiKey: string, fetchFn?: typeof fetch): Conv
       return { status: "ok", line: response.parsed_output.line, goodbye: response.parsed_output.goodbye };
     },
     // Write the next line as a stream of text
-    async *stream(persona, scenario, twist, turns, stage, heard, signal) {
+    async *stream(persona, scenario, twist, turns, stage, heard, signal, difficulty) {
       // Ask Claude, streaming plain text
       const stream = client.messages.stream({
         // The fast model
@@ -76,7 +76,7 @@ export function createClaudeWriter(apiKey: string, fetchFn?: typeof fetch): Conv
         // The standing instructions for the streamed format, cached between turns
         system: [{ type: "text", text: WRITER_STREAM_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         // The persona, the situation and the conversation so far
-        messages: [{ role: "user", content: writeMessage(persona, scenario, twist, turns, stage, heard) }],
+        messages: [{ role: "user", content: writeMessage(persona, scenario, twist, turns, stage, heard, difficulty) }],
         // Low effort
         output_config: { effort: CONVERSATION_EFFORT },
       }, { signal });

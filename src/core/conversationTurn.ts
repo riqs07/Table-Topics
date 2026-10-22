@@ -3,9 +3,9 @@
 // Load the schema library, for the writer's reply
 import { z } from "zod";
 // Load the persona and situation types, and the lookups
-import { findLine, scenarioText, type ConversationLine, type Persona, type Scenario } from "@/content/conversations";
+import { findDifficulty, findLine, scenarioText, type ConversationLine, type Persona, type Scenario } from "@/content/conversations";
 // Load the saved turn type
-import type { ConversationTurn } from "@/data/records";
+import type { ConversationDifficulty, ConversationTurn } from "@/data/records";
 
 // A conversation ends by this many seconds: the persona says goodbye after your next turn
 export const CONVERSATION_LIMIT_SECONDS = 180;
@@ -75,9 +75,11 @@ const STAGE_LINES: Readonly<Record<ConversationStage, string>> = {
 };
 
 // The message asking the writer for the persona's next line
-export function writeMessage(persona: Persona, scenario: Scenario, twist: number, turns: ReadonlyArray<ConversationTurn>, stage: ConversationStage, heard = true): string {
+export function writeMessage(persona: Persona, scenario: Scenario, twist: number, turns: ReadonlyArray<ConversationTurn>, stage: ConversationStage, heard = true, difficulty: ConversationDifficulty = "normal"): string {
   // Fill in the name
   const named = (text: string) => scenarioText(text, persona);
+  // The difficulty's rule, if any (decision 141)
+  const rule = findDifficulty(difficulty).rule;
   // Put the message together
   return [
     // Who they are, always
@@ -94,6 +96,8 @@ export function writeMessage(persona: Persona, scenario: Scenario, twist: number
     `Direction: ${named(scenario.direction)}`,
     // What the person is practising
     `The person is practising: ${named(scenario.practise)}`,
+    // How hard to make it, when not the usual
+    ...(rule ? [`Difficulty: ${rule}`] : []),
     // The conversation so far, fenced as data
     "<conversation>",
     ...turns.map((turn) => `${turn.who === "you" ? "Person" : persona.name}: ${fenced(turn.text) || "(nothing heard)"}`),

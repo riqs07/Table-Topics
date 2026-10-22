@@ -8,7 +8,7 @@ import Link from "next/link";
 // Load the masthead
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared button looks
-import { PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared card look
 import { CARD } from "@/components/script/textStyles";
 // Load the voice shapes
@@ -26,7 +26,7 @@ import { DEFAULT_TURN_ENDING, soundsLikeQuestion, startTurn, stepTurn, turnEndin
 // Load the iPhone check, where speech recognition is least reliable (decision 101)
 import { isIosSafari } from "@/data/storageSafety";
 // Load the personas and situations
-import { findLine, findPersona, findScenario, pickSituation, scenarioText, type Persona, type Scenario } from "@/content/conversations";
+import { DIFFICULTIES, difficultyOf, findDifficulty, findLine, findPersona, findScenario, pickSituation, scenarioText, type Persona, type Scenario } from "@/content/conversations";
 // Load the small-talk unit type, for a conversation opened from a unit page
 import type { UnitId } from "@/content/smallTalk";
 // Load the saved recordings, for each recorded line's length
@@ -34,7 +34,9 @@ import { voiceClip } from "@/content/voiceClips";
 // Load the turn rules
 import { CONVERSATION_LIMIT_SECONDS, isGoodbye, listeningLine, openingLine, scriptedNext, stageAt, type ConversationStage } from "@/core/conversationTurn";
 // Load the clock formatter
-import { formatClock } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, formatClock } from "@/core/recordingRules";
+// Load where speech was heard in a turn, for its times (decision 141)
+import { speechSpan } from "@/core/conversationTiming";
 // Load the client that asks for the next line
 import { isRefusal, nextLine, type LineRefusal, type LineRequest, type LineResult, type LineSegment, type WrittenLine } from "@/data/conversationClient";
 // Load the saved passphrase
@@ -42,7 +44,7 @@ import { readPassphrase } from "@/data/passphrase";
 // Load the saver
 import { saveConversationSession } from "@/data/conversationSessions";
 // Load the turn type
-import type { ConversationTurn } from "@/data/records";
+import type { ConversationDifficulty, ConversationTurn } from "@/data/records";
 // Load the recording contracts
 import type { RecordingServices } from "@/audio/services";
 // Load the live listener (decision 140)
@@ -66,6 +68,13 @@ const HOLD_MS = 5_000;
 const POINTER_FOCUS_MS = 800;
 // Steps in the countdown shown while a pause is noticed (redrawn only when a step changes)
 const CUE_STEPS = 5;
+// How long the live service takes to send the first words of you talking over the persona, in seconds (decision 141; a rough allowance for their times)
+const BARGE_LAG_SECONDS = 0.5;
+// The most times the persona cuts in on a long turn in one conversation, on hard (decision 141)
+const MAX_CUT_INS = 2;
+
+// How a turn of yours ended: a tap on Done, by itself when you stopped talking, the turn's timer, or the persona cutting in on a long turn (hard; decision 141)
+type TurnEnd = "tap" | "auto" | "timer" | "cut";
 
 // Where the conversation is
 type Phase =
@@ -153,6 +162,8 @@ interface ConversationScreenProps extends ScreenProps {
   openLive?: OpenLive;
   // How a live conversation is settled
   settleLive?: SettleLive;
+  // After how many seconds of one turn the persona cuts in on hard (the level's own when left out; shorter in checks)
+  cutInSeconds?: number;
 }
 
 // Draw the conversation with the persona named, or say they could not be found
@@ -175,7 +186,7 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
 }
 
 // The conversation itself
-function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, openLive = openLiveRoute, settleLive = settleLiveRoute, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
+function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, openLive = openLiveRoute, settleLive = settleLiveRoute, cutInSeconds, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
   // The repository once in the browser
   const { repo } = useScreenBasics(props);
   // The clock
@@ -194,6 +205,18 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const headphonesRef = useRef(false);
   // The live listener while connected (null otherwise)
   const live = useRef<LiveTurns | null>(null);
+  // Whether live was connected at any point, saved with the conversation (decision 141)
+  const usedLive = useRef(false);
+  // How hard the persona makes it, from the last choice (decision 141)
+  const [difficulty, setDifficulty] = useState<ConversationDifficulty>("normal");
+  // When your turn's recording started, in seconds of the conversation (for its times)
+  const turnStartedAt = useRef<number | null>(null);
+  // When you started talking over the persona, in seconds of the conversation (live with headphones)
+  const bargeAt = useRef<number | null>(null);
+  // When a streamed line was first and last heard, in seconds of the conversation
+  const streamedTimes = useRef<{ at: number; end: number } | null>(null);
+  // How many times the persona has cut in on a long turn (hard; at most twice a conversation, so it is "now and then")
+  const cutIns = useRef(0);
   // Whether live is connected, for drawing
   const [liveOn, setLiveOn] = useState(false);
   // The one plain line when live could not start or dropped
@@ -213,7 +236,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   // When the screen was last tapped
   const pointerAt = useRef(Number.NEGATIVE_INFINITY);
   // The latest "done", for the readings to call
-  const doneRef = useRef<(how: "tap" | "auto" | "timer") => Promise<void>>(async () => undefined);
+  const doneRef = useRef<(how: TurnEnd) => Promise<void>>(async () => undefined);
   // The latest "end", for the page hiding while live
   const endRef = useRef<() => Promise<void>>(async () => undefined);
   // Each reading while recording: track the turn and end it when the person has finished
@@ -285,9 +308,9 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   // The reply request under way, to cancel
   const asking = useRef<AbortController | null>(null);
   // Your words from a turn that was reopened, joined to what you say next
-  const carried = useRef<{ text: string; seconds: number } | null>(null);
+  const carried = useRef<{ text: string; seconds: number; at?: number } | null>(null);
   // Where to go back to if "I wasn't finished" is tapped: the conversation before that turn, and the turn's words
-  const resumePoint = useRef<{ length: number; text: string; seconds: number } | null>(null);
+  const resumePoint = useRef<{ length: number; text: string; seconds: number; at?: number } | null>(null);
   // Whether "I wasn't finished" is shown
   const [canResume, setCanResume] = useState(false);
   // What a screen reader hears when the turn changes
@@ -320,6 +343,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       if (!cancelled) setTurnEnding(turnEndingOf(settings));
       // And whether headphones are on
       if (!cancelled) headphonesRef.current = settings.headphones === true;
+      // And the last difficulty chosen
+      if (!cancelled) setDifficulty(difficultyOf(settings.conversationDifficulty));
     }).catch(() => {
       // Unreadable: the default stays
     });
@@ -381,9 +406,27 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   }, [clock, phase]);
 
   // Add a turn
-  function add(turn: ConversationTurn) {
+  function add(turn: ConversationTurn): ConversationTurn {
     // To the list
     turns.current = [...turns.current, turn];
+    // Handed back, to be timed once said
+    return turn;
+  }
+
+  // Add a turn's times once known (decision 141); nothing if the turn is gone ("I wasn't finished" went back before it)
+  function stamp(turn: ConversationTurn | null, times: { at?: number; end?: number; cut?: boolean }) {
+    // Nothing to time
+    if (!turn) return;
+    // That turn, timed
+    turns.current = turns.current.map((each) => (each === turn ? { ...each, ...roundTimes(times) } : each));
+  }
+
+  // Choose how hard the persona makes it, remembered for next time
+  function chooseDifficulty(next: ConversationDifficulty) {
+    // Shown
+    setDifficulty(next);
+    // Saved (a failure only loses the memory of the choice)
+    void repo.getSettings(clock()).then((settings) => repo.saveSettings({ ...settings, conversationDifficulty: next })).catch(() => undefined);
   }
 
   // Say recorded lines in order, adding each to the conversation (or not, for a line that is not part of it); true if one was a goodbye
@@ -407,11 +450,15 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // Their words on screen
       setCaption(line.text);
       // Part of the conversation, counted as said even if it is cut short
-      if (keep) add({ who: "them", text: line.text, lineId: line.id, seconds: voiceClip(line.id)?.seconds ?? 0 });
+      const added = keep ? add({ who: "them", text: line.text, lineId: line.id, seconds: voiceClip(line.id)?.seconds ?? 0 }) : null;
       // Said
       said.push(id);
+      // When it started
+      const at = secondsIn();
       // Say it (called straight away, so the first line plays within the Start tap)
       await services.speak?.(line.text, line.id).catch(() => null);
+      // Its times, and whether it was cut short
+      stamp(added, { at, end: secondsIn(), cut: interrupted.current });
     }
     // Whether it ended the conversation
     return keep && said.some((id) => isGoodbye(persona, id));
@@ -435,8 +482,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     if (line.streamed) {
       // The whole line
       setCaption(line.text);
-      // Part of the conversation
-      if (keep) add({ who: "them", text: line.text, seconds: 0 });
+      // Part of the conversation, with when it was heard
+      const added = keep ? add({ who: "them", text: line.text, seconds: 0 }) : null;
+      // Its times, when its pieces played
+      if (streamedTimes.current) stamp(added, { ...streamedTimes.current, cut: interrupted.current });
+      // Used
+      streamedTimes.current = null;
       // Whether it ended the conversation
       return keep && line.goodbye;
     }
@@ -447,11 +498,15 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Their words on screen
     setCaption(line.text);
     // Part of the conversation, counted as said even if it is cut short
-    if (keep) add({ who: "them", text: line.text, seconds: 0 });
+    const added = keep ? add({ who: "them", text: line.text, seconds: 0 }) : null;
     // Their first sound
     noteFirstSound();
+    // When it started
+    const at = secondsIn();
     // Say it in their voice, or the phone's own
     await services.speakAudio?.(line.audio, line.text).catch(() => undefined);
+    // Its times, and whether it was cut short
+    stamp(added, { at, end: secondsIn(), cut: interrupted.current });
     // Whether it ended the conversation
     return keep && line.goodbye;
   }
@@ -468,6 +523,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     asking.current = controller;
     // A listening sound
     const sound: { playing: Promise<unknown> | null } = { playing: null };
+    // No streamed line heard yet
+    streamedTimes.current = null;
     // Your last words
     const yours = [...turns.current].reverse().find((turn) => turn.who === "you")?.text ?? "";
     // Wanted: not before their first line, when asking you to say it again, or after a question of yours (they answer it instead)
@@ -503,12 +560,16 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
         setCaption(pieces.shown.join(" "));
         // Their first sound
         noteFirstSound();
+        // When this piece started
+        const at = secondsIn();
         // Said in their voice, or the phone's own
         await services.speakAudio?.(segment.audio, segment.text).catch(() => undefined);
+        // The line's times so far: from its first piece to this one's end
+        streamedTimes.current = { at: streamedTimes.current?.at ?? at, end: secondsIn() };
       });
     };
     // Ask
-    const reply = writeLine({ personaId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, stage, heard, conversationId: conversationId.current, elapsedSec: secondsIn() }, { signal: controller.signal, onSegment }).catch(() => null);
+    const reply = writeLine({ personaId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, stage, heard, conversationId: conversationId.current, elapsedSec: secondsIn(), difficulty }, { signal: controller.signal, onSegment }).catch(() => null);
     // The line
     const line = await reply;
     // No longer cancellable
@@ -565,7 +626,11 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // You talked over the persona (headphones): stop them and start your turn
       onBargeIn: () => {
         // Only while they talk
-        if (phaseRef.current === "them") interrupt();
+        if (phaseRef.current !== "them") return;
+        // When you started, allowing for the half second the service takes to send words
+        bargeAt.current = Math.max(0, secondsIn() - BARGE_LAG_SECONDS);
+        // Stopped, and your turn starts
+        interrupt();
       },
       // The socket dropped: turns end on the phone, and a turn under way ends with what was heard
       onDropped: () => {
@@ -593,6 +658,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     }
     // Live
     live.current = result.live;
+    // Noted for the saved conversation
+    usedLive.current = true;
     // Told what to send now
     result.live.setMode(liveModeFor(phaseRef.current, headphonesRef.current));
     // Drawn as on
@@ -618,6 +685,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // Nothing more
       return;
     }
+    // When the recording started, for the turn's times
+    if (started) turnStartedAt.current = secondsIn();
     // Recording: track the turn on the phone when turns end by themselves and live is not connected (live's own model ends it otherwise)
     if (started) detector.current = auto && !live.current ? startTurn(clock().getTime()) : null;
     // Say whose turn it is
@@ -635,9 +704,9 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   }
 
   // Offer "I wasn't finished" for a few seconds after a turn ended by itself
-  function offerResume(length: number, text: string, seconds: number) {
+  function offerResume(length: number, text: string, seconds: number, at?: number) {
     // Where to go back to
-    resumePoint.current = { length, text, seconds };
+    resumePoint.current = { length, text, seconds, at };
     // Shown
     setCanResume(true);
     // Said
@@ -677,13 +746,13 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Their last line back on screen
     setCaption([...turns.current].reverse().find((turn) => turn.who === "them")?.text ?? "");
     // Your words so far, joined to what comes next
-    carried.current = { text: point.text, seconds: point.seconds };
+    carried.current = { text: point.text, seconds: point.seconds, at: point.at };
     // Carry on
     void yourTurn();
   }
 
   // Done: end your turn (a tap, by itself when you stopped talking, or the timer), then let them answer
-  async function done(how: "tap" | "auto" | "timer" = "tap") {
+  async function done(how: TurnEnd = "tap") {
     // This run of turns
     const mine = flow.current;
     // Whether "I wasn't finished" has moved things on, or the conversation ended
@@ -698,6 +767,14 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     const take = await stop({ quick: how === "auto" });
     // Nothing was under way, or the conversation ended
     if (!take || stale()) return;
+    // Where speech was heard in the recording
+    const span = speechSpan(take.levels, LOUDNESS_TICK_MS);
+    // When the recording started
+    const recordedFrom = turnStartedAt.current ?? secondsIn() - take.durationSec;
+    // Your speech's times (from talking over the persona, when you did)
+    const yourTimes = { at: Math.min(recordedFrom + (span?.first ?? 0), bargeAt.current ?? Number.POSITIVE_INFINITY), end: recordedFrom + (span?.last ?? take.durationSec), cut: how === "cut" };
+    // Used
+    bargeAt.current = null;
     // Words from a reopened turn, joined to these
     const before = carried.current;
     // Used
@@ -706,6 +783,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     const text = [before?.text ?? "", take.transcript.trim()].filter(Boolean).join(" ");
     // How long you spoke in all
     const seconds = Math.round(((before?.seconds ?? 0) + take.durationSec) * 10) / 10;
+    // A reopened turn started when its first part did
+    if (before?.at !== undefined) yourTimes.at = Math.min(yourTimes.at, before.at);
     // Nothing caught after time is up: never ask again (the turn would end itself at once, over and over), so say goodbye and save
     if (!text && stageAt(secondsIn()) === "end") return farewell();
     // Nothing caught: they ask you to say it again, then it is your turn again
@@ -737,10 +816,10 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     setMissed(false);
     // The conversation before this turn, to go back to
     const length = turns.current.length;
-    // Your turn
-    add({ who: "you", text, seconds });
+    // Your turn, with its times
+    add({ who: "you", text, seconds, ...roundTimes(yourTimes) });
     // Ended by itself: offer to carry on
-    if (how === "auto") offerResume(length, text, seconds);
+    if (how === "auto") offerResume(length, text, seconds, yourTimes.at);
     // How far in
     const stage = stageAt(secondsIn());
     // Their reply ends the conversation
@@ -793,6 +872,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     flow.current += 1;
     // A new conversation id, for the server's caps
     conversationId.current = crypto.randomUUID();
+    // No cut-ins or live yet, and no times carried over (decision 141)
+    cutIns.current = 0;
+    // (live)
+    usedLive.current = false;
+    // (times)
+    bargeAt.current = null;
     // No readout yet
     setLatency(null);
     // The longer waits on an iPhone, where speech recognition stops by itself (decision 101)
@@ -874,7 +959,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Words from a reopened turn, joined to these
     const text = [carried.current?.text ?? "", take?.transcript.trim() ?? ""].filter(Boolean).join(" ");
     // Keep them, if any
-    if (text) add({ who: "you", text, seconds: Math.round(((carried.current?.seconds ?? 0) + (take?.durationSec ?? 0)) * 10) / 10 });
+    if (text) add({ who: "you", text, seconds: Math.round(((carried.current?.seconds ?? 0) + (take?.durationSec ?? 0)) * 10) / 10, ...(take && turnStartedAt.current !== null ? roundTimes({ at: carried.current?.at ?? turnStartedAt.current + (speechSpan(take.levels, LOUDNESS_TICK_MS)?.first ?? 0), end: turnStartedAt.current + (speechSpan(take.levels, LOUDNESS_TICK_MS)?.last ?? take.durationSec) }) : {}) });
     // Used
     carried.current = null;
     // Save
@@ -907,7 +992,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // A new id
       const id = crypto.randomUUID();
       // Saved, waiting for the coach
-      await saveConversationSession(repo, { id, characterId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, durationSec: secondsIn() }, clock());
+      await saveConversationSession(repo, { id, characterId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, durationSec: secondsIn(), difficulty: written ? difficulty : undefined, turnMode: usedLive.current ? "live" : auto ? "auto" : "tap" }, clock());
       // Its results, where the coach's notes arrive
       navigate(`/sessions?id=${id}`);
     } catch {
@@ -924,8 +1009,19 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     if (!recording) return;
     // Seconds left before it ends by itself
     const left = Math.min(MAX_TURN_SECONDS, CONVERSATION_LIMIT_SECONDS + LIMIT_GRACE_SECONDS - (startedAt.current ? (clock().getTime() - startedAt.current.getTime()) / 1000 : 0));
+    // On hard, with written lines, the persona cuts in on a long turn now and then (decision 141)
+    const level = findDifficulty(difficulty).cutInSeconds;
+    // (the check's shorter time, when given)
+    const cutIn = written && cutIns.current < MAX_CUT_INS && level !== null ? (cutInSeconds ?? level) : null;
+    // Cutting in comes first
+    const cuts = cutIn !== null && cutIn < left;
     // End it then
-    const timer = setTimeout(() => void done("timer"), Math.max(0, left) * 1000);
+    const timer = setTimeout(() => {
+      // Counted
+      if (cuts) cutIns.current += 1;
+      // Ended
+      void done(cuts ? "cut" : "timer");
+    }, Math.max(0, cuts ? cutIn : left) * 1000);
     // Not if it ends first
     return () => clearTimeout(timer);
     // done reads only refs and steady tools, so it need not restart the timer
@@ -1030,6 +1126,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
             {/* The skill */}
             <p className="mt-1 text-lede">{named(scenario.practise)}</p>
           </div>
+          {/* How hard, with written lines (decision 141) */}
+          {written && <DifficultyPicker chosen={difficulty} name={persona.name} onChoose={chooseDifficulty} />}
           {/* The coach could not be reached */}
           {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
           {/* How it works */}
@@ -1121,6 +1219,33 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       )}
     </main>
   );
+}
+
+// How hard the persona makes it (decision 141): three buttons side by side, the chosen one filled, and what it means
+function DifficultyPicker({ chosen, name, onChoose }: { chosen: ConversationDifficulty; name: string; onChoose: (next: ConversationDifficulty) => void }) {
+  // The buttons and the line
+  return (
+    <div data-difficulty={chosen} className="mt-5">
+      {/* The choice's name */}
+      <p id="difficulty-label" className="text-footnote text-ink-muted">How hard should {name} make it?</p>
+      {/* The three buttons */}
+      <div role="group" aria-labelledby="difficulty-label" className="mt-2 grid max-w-sm grid-cols-3 gap-1 rounded-2xl bg-paper p-1">
+        {/* One per level */}
+        {DIFFICULTIES.map((level) => (
+          // One level, filled when chosen
+          <button key={level.id} type="button" aria-pressed={chosen === level.id} onClick={() => onChoose(level.id)} className={`min-h-11 rounded-xl px-3 ${PRESS} ${chosen === level.id ? "bg-fill font-semibold text-fill-ink" : "text-ink-muted hover:bg-card hover:text-ink"}`}>{level.name}</button>
+        ))}
+      </div>
+      {/* What the chosen one means */}
+      <p className="mt-2 text-footnote text-ink-muted">{findDifficulty(chosen).blurb}</p>
+    </div>
+  );
+}
+
+// Times rounded to a tenth of a second, for saving (decision 141)
+function roundTimes<Times extends { at?: number; end?: number; cut?: boolean }>(times: Times): Times {
+  // Each time to a tenth, never negative; cut kept only when true
+  return { ...times, ...(times.at !== undefined ? { at: Math.max(0, Math.round(times.at * 10) / 10) } : {}), ...(times.end !== undefined ? { end: Math.max(0, Math.round(times.end * 10) / 10) } : {}), cut: times.cut === true ? true : undefined };
 }
 
 // What the live socket sends in each phase (decision 140): the microphone on your turn; while the persona talks, the microphone only with headphones (to notice you talking over them); silence otherwise, so their voice from a speaker is never heard as yours

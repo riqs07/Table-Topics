@@ -252,8 +252,8 @@ function isFeedback(value: unknown): boolean {
 
 // Check that a value has the shape of one turn of a conversation
 function isTurn(value: unknown): boolean {
-  // Said by you or them, with the words, how long it took, and for their turns the line said
-  return isObject(value) && (value.who === "you" || value.who === "them") && isText(value.text) && isNumber(value.seconds) && (value.lineId === undefined || isText(value.lineId));
+  // Said by you or them, with the words, how long it took, for their turns the line said, and when it began and ended and whether it was cut short (decision 141)
+  return isObject(value) && (value.who === "you" || value.who === "them") && isText(value.text) && isNumber(value.seconds) && (value.lineId === undefined || isText(value.lineId)) && (value.at === undefined || isNumber(value.at)) && (value.end === undefined || isNumber(value.end)) && (value.cut === undefined || typeof value.cut === "boolean");
 }
 
 // Check that a value has the shape of a session record
@@ -277,7 +277,7 @@ function isSession(value: unknown): value is SessionRecord {
     // A short speech's plan (usually missing)
     (value.outline === undefined || (typeof value.outline === "object" && value.outline !== null && isText((value.outline as Record<string, unknown>).topic) && Array.isArray((value.outline as Record<string, unknown>).points) && ((value.outline as Record<string, unknown>).points as unknown[]).every(isText) && typeof (value.outline as Record<string, unknown>).goalMinutes === "number")) &&
     // A conversation's turns, each said by you or them, and its situation (only on conversations, decisions 83 and 84)
-    (value.conversation === undefined || (isObject(value.conversation) && Array.isArray(value.conversation.turns) && value.conversation.turns.every(isTurn) && (value.conversation.scenarioId === undefined || isText(value.conversation.scenarioId)) && (value.conversation.twist === undefined || isNumber(value.conversation.twist)))) &&
+    (value.conversation === undefined || (isObject(value.conversation) && Array.isArray(value.conversation.turns) && value.conversation.turns.every(isTurn) && (value.conversation.scenarioId === undefined || isText(value.conversation.scenarioId)) && (value.conversation.twist === undefined || isNumber(value.conversation.twist)) && (value.conversation.difficulty === undefined || ["easy", "normal", "hard"].includes(value.conversation.difficulty as string)) && (value.conversation.turnMode === undefined || ["tap", "auto", "live", "call"].includes(value.conversation.turnMode as string)))) &&
     // A check-in take's check-in, number and part (decision 100)
     (value.checkIn === undefined || (isObject(value.checkIn) && isText(value.checkIn.id) && /^ci-\d{4}-\d{2}-\d{2}$/.test(value.checkIn.id) && isNumber(value.checkIn.week) && value.checkIn.week >= 1 && isCheckInPart(value.checkIn.part))) &&
     // A told story's set-up (only on stories, decision 92)

@@ -52,7 +52,7 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
       {/* The results */}
       <section aria-labelledby="conversation-heading" className="mt-8 md:max-w-2xl">
         {/* Who, and how long */}
-        <p className="text-footnote font-semibold text-accent">With {name}{scenario ? ` · ${scenario.title}` : ""} · {formatClock(session.durationSec)}</p>
+        <p className="text-footnote font-semibold text-accent">With {name}{scenario ? ` · ${scenario.title}` : ""}{session.conversation?.difficulty && session.conversation.difficulty !== "normal" ? ` · ${session.conversation.difficulty === "hard" ? "Hard" : "Easy"}` : ""} · {formatClock(session.durationSec)}</p>
         {/* The share and the questions */}
         <h1 id="conversation-heading" className="mt-1 font-display text-3xl font-semibold tracking-tight">{conversationHeadline(measures)}</h1>
         {/* The one change */}
@@ -83,8 +83,8 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
         {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this conversation."}</p>}
         {/* What worked, once the coach has looked */}
         {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
-        {/* The turns in two lanes, its own view (decision 115) */}
-        <ConversationTimeline turns={turns} name={name} />
+        {/* The turns in two lanes, its own view (decision 115), with their times and cut-ins (decision 141; exact when the turns were live) */}
+        <ConversationTimeline turns={turns} name={name} live={session.conversation?.turnMode === "live" || session.conversation?.turnMode === "call"} />
         {/* The whole conversation */}
         <h2 className="mt-8 font-display text-xl font-semibold tracking-tight">The conversation</h2>
         {/* Each turn */}

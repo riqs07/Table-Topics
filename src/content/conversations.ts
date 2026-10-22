@@ -2,6 +2,8 @@
 
 // Load the small-talk unit type
 import type { UnitId } from "@/content/smallTalk";
+// Load the difficulty type
+import type { ConversationDifficulty } from "@/data/records";
 
 // What a recorded line is for
 export type ConversationLineKind = "opening" | "listening" | "reaction" | "share" | "short" | "question" | "turn" | "goodbye";
@@ -30,6 +32,8 @@ export interface Persona {
   background: string;
   // Their ElevenLabs voice (not secret; the voice must be in the account's voices)
   voiceId: string;
+  // The voice the ElevenLabs agent uses for them in a phone call, when their usual one is not allowed there (decision 142; missing means the usual one)
+  liveVoiceId?: string;
   // The situation their recorded lines were written for, used when the coach cannot be reached
   home: string;
   // Their recorded line for when they did not catch what you said
@@ -74,6 +78,8 @@ export const PERSONAS: ReadonlyArray<Persona> = [
     background: "Moved to the city from Denver about a month ago, after working at a tiny startup; now works in marketing. Joined a Saturday-morning running club to meet people and chats at the back instead of running. Has a cat called Biscuit who yells at her at five every morning. Is trying every taco place within walking distance. Has a younger sister who visits soon.",
     // Brittney: bright, lively and conversational
     voiceId: "BBGL1mJ66fANrjWTOM5c",
+    // Brittney is blocked in ElevenLabs Agents by its live moderation, so a phone call uses the stand-in "Emma" (decision 142; the user adds it to the account)
+    liveVoiceId: "Mac2FKpSgaGIsaNRXt8A",
     // Her recorded situation
     home: "party",
     // When they did not catch what you said
@@ -602,4 +608,49 @@ export function pickSituation(persona: Persona, turn: number, skill?: UnitId): {
 export function findLine(persona: Persona, id: string): ConversationLine | undefined {
   // Look through their lines
   return persona.lines.find((line) => line.id === id);
+}
+
+// The voice a persona has in a phone call with the ElevenLabs agent (decision 142): their stand-in where their usual voice is not allowed there
+export function liveVoiceOf(persona: Persona): string {
+  // The stand-in, or the usual
+  return persona.liveVoiceId ?? persona.voiceId;
+}
+
+// One level of difficulty (decision 141): its name, a line for the picker, the rule added to the persona's instructions (none for normal, so the usual conversation is unchanged), and after how many seconds of one turn of yours the persona cuts in (hard only, in tap, automatic and live turns)
+export interface DifficultyLevel {
+  // Which
+  id: ConversationDifficulty;
+  // Its name on the picker
+  name: string;
+  // What it means, in a few words
+  blurb: string;
+  // The rule added to the persona's instructions, or null
+  rule: string | null;
+  // Seconds of one turn of yours before the persona cuts in, or null for never
+  cutInSeconds: number | null;
+}
+
+// The three levels, easiest first (decision 141)
+export const DIFFICULTIES: ReadonlyArray<DifficultyLevel> = [
+  // Easy: warm, open and easy to follow
+  { id: "easy", name: "Easy", blurb: "Warm and chatty, with details to pick up.", rule: "Make this conversation easy for the person: be warm and patient, give fuller answers with a detail or two they can pick up, and ask simple, friendly questions. Never cut them off.", cutInSeconds: null },
+  // Normal: as the situation's direction says
+  { id: "normal", name: "Normal", blurb: "As the situation goes.", rule: null, cutInSeconds: null },
+  // Hard: short answers, and now and then they cut in
+  { id: "hard", name: "Hard", blurb: "Short answers, and they may cut in.", rule: "Make this conversation harder for the person, as a busy or distracted person would: answer briefly (often one short sentence), offer little unless they ask a good open question, and now and then cut in with your own point when they go on. Stay polite and in character; never rude.", cutInSeconds: 25 },
+];
+
+// The usual level
+export const DEFAULT_DIFFICULTY: ConversationDifficulty = "normal";
+
+// A saved level, made safe: anything unknown is normal
+export function difficultyOf(value: unknown): ConversationDifficulty {
+  // One of the three, or normal
+  return DIFFICULTIES.some((level) => level.id === value) ? (value as ConversationDifficulty) : DEFAULT_DIFFICULTY;
+}
+
+// The level's details
+export function findDifficulty(id: ConversationDifficulty): DifficultyLevel {
+  // Found, or normal
+  return DIFFICULTIES.find((level) => level.id === id) ?? DIFFICULTIES[1]!;
 }

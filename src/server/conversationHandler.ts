@@ -67,6 +67,8 @@ const RequestSchema = z.object({
   elapsedSec: z.number().min(0).max(LONGEST_RECORDING_SECONDS),
   // Stream the line, piece by piece (decision 102)
   stream: z.boolean().optional(),
+  // How hard the persona makes it (decision 141; normal when left out)
+  difficulty: z.enum(["easy", "normal", "hard"]).optional(),
 });
 
 // The checked request
@@ -218,7 +220,7 @@ export function createConversationHandler(deps: ConversationDeps) {
       // Starting can fail
       try {
         // Started
-        start = await startStreamedLine({ events: deps.makeWriter(env).stream(persona, scenario, data.twist, turns, data.stage, data.heard, request.signal), speak: (spoken) => speak(voice, spoken, persona.voiceId, true, request.signal), now: timer, log });
+        start = await startStreamedLine({ events: deps.makeWriter(env).stream(persona, scenario, data.twist, turns, data.stage, data.heard, request.signal, data.difficulty), speak: (spoken) => speak(voice, spoken, persona.voiceId, true, request.signal), now: timer, log });
       } catch (error) {
         // Failed before anything
         start = { kind: "failed", reason: (error as Error).message };
@@ -289,7 +291,7 @@ export function createConversationHandler(deps: ConversationDeps) {
     // Asking can fail
     try {
       // Ask the writer
-      written = await deps.makeWriter(env).write(persona, scenario, data.twist, turns, data.stage, data.heard);
+      written = await deps.makeWriter(env).write(persona, scenario, data.twist, turns, data.stage, data.heard, data.difficulty);
     } catch (error) {
       // Log the reason, never the conversation
       log(`Conversation line failed: ${(error as Error).message}`);

@@ -1,7 +1,9 @@
-// A conversation's timeline (decision 115): your turns and theirs in two lanes, each as long as it took, your questions marked, your share of the talking, and one plain line on the turns' lengths. Pure
+// A conversation's timeline (decision 115): your turns and theirs in two lanes, each as long as it took, your questions marked, your share of the talking, and one plain line on the turns' lengths. With the turns' saved times (decision 141) each turn sits where it really was, so the gaps, the stretches where you both talked and the moments one of you cut in show too. Pure
 
 // Load the question check and the measures
 import { asksQuestion, measureConversation } from "@/core/conversationMeasures";
+// Load the timing check (decision 141)
+import { isBackchannel, isTimed } from "@/core/conversationTiming";
 // Load the record type
 import type { ConversationTurn } from "@/data/records";
 
@@ -20,6 +22,24 @@ export interface TimelineTurn {
   seconds: number;
   // Whether it asked a question (yours only)
   question: boolean;
+  // Whether it was only a listening sound (yours only; decision 141)
+  backchannel: boolean;
+}
+
+// A stretch where both of you talked at once (decision 141)
+export interface TimelineOverlap {
+  // When it started, in seconds from the first turn
+  start: number;
+  // How long, in seconds
+  seconds: number;
+}
+
+// A moment one of you cut the other short (decision 141)
+export interface TimelineCut {
+  // When, in seconds from the first turn
+  at: number;
+  // Who cut in
+  by: "you" | "them";
 }
 
 // The timeline
@@ -32,6 +52,18 @@ export interface ConversationTimeline {
   share: number | null;
   // One plain line
   line: string;
+  // Whether the turns sat at their real times (decision 141; spaced end to end otherwise)
+  timed: boolean;
+  // Stretches where both talked at once (none without times)
+  overlaps: TimelineOverlap[];
+  // Moments one cut the other short
+  cuts: TimelineCut[];
+}
+
+// Round to a hundredth of a second (times are saved to a tenth; this keeps sums tidy)
+function hundredth(value: number): number {
+  // To two places
+  return Math.round(value * 100) / 100;
 }
 
 // An ordinal for a turn number: 1st, 2nd, 3rd, 4th
@@ -44,17 +76,36 @@ function ordinal(count: number): string {
 export function conversationTimeline(turns: ReadonlyArray<ConversationTurn>): ConversationTimeline | null {
   // Nothing to draw
   if (turns.length === 0) return null;
-  // The running clock
+  // With every turn's times, each sits where it was, from the first turn's start
+  const timed = isTimed(turns);
+  // Where time starts
+  const origin = timed ? Math.min(...turns.map((turn) => turn.at!)) : 0;
+  // The running clock, when spacing them end to end
   let clock = 0;
   // Each turn placed
   const placed = turns.map((turn) => {
-    // Its place
-    const item: TimelineTurn = { who: turn.who, start: clock, seconds: Math.max(0.5, turn.seconds), question: turn.who === "you" && asksQuestion(turn.text) };
+    // Its place: its real time, or after the one before
+    const item: TimelineTurn = timed ? { who: turn.who, start: hundredth(turn.at! - origin), seconds: Math.max(0.5, hundredth(turn.end! - turn.at!)), question: turn.who === "you" && asksQuestion(turn.text), backchannel: isBackchannel(turn) } : { who: turn.who, start: clock, seconds: Math.max(0.5, turn.seconds), question: turn.who === "you" && asksQuestion(turn.text), backchannel: isBackchannel(turn) };
     // Move on
     clock += item.seconds;
     // Hand it back
     return item;
   });
+  // Where both talked at once, and who cut in: only with times
+  const overlaps: TimelineOverlap[] = [];
+  // (cuts)
+  const cuts: TimelineCut[] = [];
+  // Each handover
+  for (let index = 1; timed && index < turns.length; index += 1) {
+    // The turn before, and this one
+    const [before, turn] = [turns[index - 1]!, turns[index]!];
+    // Talking at once
+    const together = before.end! - turn.at!;
+    // Kept when there was some
+    if (together > 0) overlaps.push({ start: hundredth(turn.at! - origin), seconds: hundredth(Math.min(together, turn.end! - turn.at!)) });
+    // A cut-in between the two of you: marked, or more than a normal handover (a listening sound is not one)
+    if (before.who !== turn.who && (before.cut === true || together >= 0.3) && !isBackchannel(turn)) cuts.push({ at: hundredth(before.end! - origin), by: turn.who });
+  }
   // The measures, for the share
   const measures = measureConversation(turns);
   // Your turns
@@ -69,6 +120,6 @@ export function conversationTimeline(turns: ReadonlyArray<ConversationTurn>): Co
   const share = measures.share === null ? null : Math.round(measures.share * 100);
   // The line: one turn that ran long, or how the turns compared
   const line = longest && yours.length >= 3 && longest.seconds >= LONG_TURN_SECONDS && longest.seconds >= usual * LONG_TURN_TIMES ? `Your ${ordinal(yours.indexOf(longest) + 1)} turn ran longest, ${Math.round(longest.seconds)} seconds. Hand it back sooner with a question.` : yours.length === 0 ? "Nothing was heard from you this time." : `Your turns were ${Math.round(usual)} seconds or so each.`;
-  // The timeline
-  return { turns: placed, total: clock, share, line };
+  // The timeline: its whole length is the latest end
+  return { turns: placed, total: Math.max(...placed.map((turn) => turn.start + turn.seconds)), share, line, timed, overlaps, cuts };
 }

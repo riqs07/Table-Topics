@@ -41,6 +41,12 @@ Conversations without tapping Done at the end of every turn, and replies that co
 - **Closing** (billing stops): `Terminate` and close on the conversation's end or save, the page hiding or closing (which also ends and saves the conversation), the page closing mid-conversation, an error, the socket dropping, and the vendor's own cap at the reserved time. `POST /api/live/end` then hands back the reserved minutes not used, once.
 - **Falling back:** over budget, not set up, offline, no passphrase, the token route or socket failing: one line ("This month's live minutes are used up, so turns end automatically.") and automatic turns. A drop mid-conversation ends the turn under way with what was heard and says "The live connection dropped, so turns now end automatically."
 
+## Timing and difficulty (every mode, decision 141)
+
+- **Turn times:** each turn saves when its speaking began and ended (`at`, `end`) and whether it was cut short (`cut`). Yours: the recording's start plus where the microphone first and last heard speech (or, live, the moment you talked over the persona); theirs: the first sound to the last, or the moment it was stopped.
+- **Measures** (`src/core/conversationTiming.ts`, in the registry): the reply gap's median, cut-ins by you and by them, seconds talking at once, and listening sounds. On the results, the conversation timeline (chart 13) places turns at their real times, shades the stretches where both talked, and marks each cut-in; only sure findings show, the rest behind "See more". There is no scrubber on a conversation's page (no audio is kept), so there are no scrubber markers.
+- **Difficulty:** Easy, Normal or Hard, picked before starting (with written lines), remembered, sent with each line request and saved. Each level's rule (`DIFFICULTIES` in `src/content/conversations.ts`) is added to the writer's message; Normal adds nothing. On Hard the persona also cuts in on a turn of yours that runs past 25 s, at most twice a conversation (in a phone call the agent's prompt carries the rule instead).
+
 ## What to measure (steps 1 to 3a)
 
 - How often "I wasn't finished" is tapped (target: under one turn in ten), split by iPhone and computer.
