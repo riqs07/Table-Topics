@@ -50,7 +50,7 @@ describe("Usage and costs", () => {
     // As estimated: live $0.30, calls 30 × ($0.08 + 3 lines) $2.41, Turbo $1.60, lines $0.06, total $4.37; no v4 row
     expect([section.closest("section[aria-labelledby='group-services']") !== null, rows]).toEqual([true, ["Live turns120 of 150 minutes, 30 left$0.30", "Phone calls30 of 60 minutes, 30 left$2.41", "Persona voice (Turbo)40,000 characters$1.60", "Claude, conversation lines400 lines$0.06", "Total$4.37"]]);
     // The note and the prices, marked unverified where they are
-    expect([within(section).getByText("Estimates from the prices below; your provider’s bill is the real number.") !== null, within(section).getByText(/\$0\.15 per hour of open connection · checked 2026-10-21 · unverified/) !== null]).toEqual([true, true]);
+    expect([within(section).getByText("Estimates from the prices below; your provider’s bill is the real number.") !== null, within(section).getByText(/\$0\.15 per hour of open connection · checked\s2026.10.21 · unverified/) !== null]).toEqual([true, true]);
   });
 
   // Not set up on the server, said by row

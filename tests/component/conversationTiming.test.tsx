@@ -177,12 +177,14 @@ describe("ConversationTimeline timing", () => {
     { who: "you", text: "what did you like", seconds: 2, at: 14, end: 16 },
   ];
 
-  // Live: overlaps and cut-ins drawn, the sure findings shown, nothing behind See more
+  // Live: overlaps and cut-ins drawn, the two surest findings shown, the rest behind See more
   it("draws overlaps and cut-ins, and shows the sure findings", () => {
     // Drawn live
     render(<ConversationTimeline turns={TURNS} name="Maya" live />);
     // One overlap, one cut by you and one by her; the key names them
     expect([document.querySelectorAll("[data-overlap]").length, document.querySelectorAll("[data-cut='you']").length, document.querySelectorAll("[data-cut='them']").length, screen.getByText("You cut in") !== null, screen.getByText("Maya cut in") !== null, screen.getByText("You cut in on Maya once.") !== null]).toEqual([1, 1, 1, true, true, true]);
+    // At most two shown first; the other sure ones wait behind See more
+    expect([document.querySelectorAll("[data-timing='sure'] li").length, screen.getByRole("button", { name: "See more" }) !== null]).toEqual([2, true]);
   });
 
   // Not live: the rough findings wait behind See more

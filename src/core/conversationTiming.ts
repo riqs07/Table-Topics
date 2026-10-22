@@ -100,7 +100,7 @@ export interface TimingFinding {
   confident: boolean;
 }
 
-// The timing findings of a conversation, confident first; live turns make the gaps and listening sounds trustworthy (the browser's speech recognition drops most "mm-hm"s, and a tapped turn's start is the tap)
+// The timing findings of a conversation, confident first, most telling first (cut-ins, the reply gap, talking at once, listening sounds); live turns make the gaps and listening sounds trustworthy (the browser's speech recognition drops most "mm-hm"s, and a tapped turn's start is the tap)
 export function timingFindings(turns: ReadonlyArray<ConversationTurn>, name: string, live: boolean): TimingFinding[] {
   // The measures
   const timing = conversationTiming(turns);
@@ -110,10 +110,10 @@ export function timingFindings(turns: ReadonlyArray<ConversationTurn>, name: str
   if (timing.interruptionsByYou !== null && timing.interruptionsByYou > 0) findings.push({ id: "interruptions_by_you", line: `You cut in on ${name} ${times(timing.interruptionsByYou)}.`, confident: true });
   // Theirs
   if (timing.interruptionsReceived !== null && timing.interruptionsReceived > 0) findings.push({ id: "interruptions_received", line: `${name} cut in on you ${times(timing.interruptionsReceived)}.`, confident: true });
-  // Talking at once
-  if (timing.overlapSeconds !== null) findings.push({ id: "overlap", line: timing.overlapSeconds > 0 ? `You talked at the same time for ${timing.overlapSeconds} seconds in all.` : "You never talked at the same time.", confident: timing.overlapSeconds >= NOTABLE_OVERLAP });
   // The reply gap
   if (timing.replyGapMedian !== null) findings.push({ id: "reply_gap", line: `You usually replied ${timing.replyGapMedian} seconds after ${name} finished.`, confident: live && gapsCounted(turns) >= CONFIDENT_GAPS });
+  // Talking at once
+  if (timing.overlapSeconds !== null) findings.push({ id: "overlap", line: timing.overlapSeconds > 0 ? `You talked at the same time for ${timing.overlapSeconds} seconds in all.` : "You never talked at the same time.", confident: timing.overlapSeconds >= NOTABLE_OVERLAP });
   // Listening sounds
   findings.push({ id: "backchannels", line: timing.backchannels > 0 ? `You made ${timing.backchannels} listening ${timing.backchannels === 1 ? "sound" : "sounds"} (“mm-hm”, “right”).` : "No listening sounds were heard.", confident: live && timing.backchannels > 0 });
   // Confident first, otherwise in order

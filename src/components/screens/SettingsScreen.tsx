@@ -214,7 +214,7 @@ function TurnEndingChoice({ settings, onSave }: { settings: SettingsRecord; onSa
       {/* The choice's name */}
       <p id="turn-ending-label">Ending your turn</p>
       {/* The two buttons */}
-      <div role="group" aria-labelledby="turn-ending-label" className="mt-2 grid max-w-xl grid-cols-2 gap-1 rounded-2xl bg-paper p-1 sm:grid-cols-4">
+      <div role="group" aria-labelledby="turn-ending-label" className="mt-2 grid max-w-2xl grid-cols-2 gap-1 rounded-2xl bg-paper p-1 leading-tight sm:grid-cols-4">
         {/* One button per choice */}
         {TURN_ENDINGS.map((choice) => (
           // One choice, filled when chosen

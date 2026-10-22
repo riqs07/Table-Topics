@@ -70,7 +70,7 @@ describe("timing findings", () => {
     // Live
     const findings = timingFindings(LIVE, "Maya", true);
     // All sure, in order
-    expect(findings.map((finding) => [finding.id, finding.confident])).toEqual([["interruptions_by_you", true], ["interruptions_received", true], ["overlap", true], ["reply_gap", true], ["backchannels", true]]);
+    expect(findings.map((finding) => [finding.id, finding.confident])).toEqual([["interruptions_by_you", true], ["interruptions_received", true], ["reply_gap", true], ["overlap", true], ["backchannels", true]]);
   });
 
   // Tap or automatic turns: the reply gap and listening sounds wait behind "See more"
@@ -84,7 +84,7 @@ describe("timing findings", () => {
   // The words
   it("says each finding plainly", () => {
     // The lines
-    expect(timingFindings(LIVE, "Maya", true).map((finding) => finding.line)).toEqual(["You cut in on Maya once.", "Maya cut in on you once.", "You talked at the same time for 0.6 seconds in all.", "You usually replied 0.8 seconds after Maya finished.", "You made 1 listening sound (“mm-hm”, “right”)."]);
+    expect(timingFindings(LIVE, "Maya", true).map((finding) => finding.line)).toEqual(["You cut in on Maya once.", "Maya cut in on you once.", "You usually replied 0.8 seconds after Maya finished.", "You talked at the same time for 0.6 seconds in all.", "You made 1 listening sound (“mm-hm”, “right”)."]);
   });
 });
 

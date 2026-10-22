@@ -16,6 +16,9 @@ import { formatClock } from "@/core/recordingRules";
 // Load the record type
 import type { ConversationTurn } from "@/data/records";
 
+// The most sure timing findings shown before "See more"
+const SURE_SHOWN = 2;
+
 // The picture's size and lanes
 const PICTURE = { width: 326, height: 74, left: 44, theirs: 8, yours: 40, lane: 16 } as const;
 
@@ -31,10 +34,10 @@ export function ConversationTimeline({ turns, name, live = false }: { turns: Rea
   const x = (seconds: number) => PICTURE.left + (seconds / Math.max(1, timeline.total)) * (PICTURE.width - PICTURE.left - 2);
   // The timing findings, only with times (decision 141)
   const findings = timeline.timed ? timingFindings(turns, name, live) : [];
-  // The sure ones, shown first
-  const sure = findings.filter((finding) => finding.confident);
+  // The sure ones shown first, at most two, so the card stays short (decision 115)
+  const sure = findings.filter((finding) => finding.confident).slice(0, SURE_SHOWN);
   // The rest, behind "See more"
-  const rest = findings.filter((finding) => !finding.confident);
+  const rest = findings.filter((finding) => !sure.includes(finding));
   // Who cut in, for the key
   const cutBy = new Set(timeline.cuts.map((cut) => cut.by));
   // The card
@@ -49,7 +52,7 @@ export function ConversationTimeline({ turns, name, live = false }: { turns: Rea
         {/* Yours */}
         <text x="0" y={PICTURE.yours + 12} className="fill-ink-muted text-footnote">You</text>
         {/* Stretches where both talked, shaded across both lanes, under the turns */}
-        {timeline.overlaps.map((overlap, index) => <rect key={`o${index}`} data-overlap x={x(overlap.start)} y={PICTURE.theirs - 3} width={Math.max(2, x(overlap.start + overlap.seconds) - x(overlap.start))} height={PICTURE.yours + PICTURE.lane - PICTURE.theirs + 6} rx="2" className="fill-warm/30" />)}
+        {timeline.overlaps.map((overlap, index) => <rect key={`o${index}`} data-overlap x={x(overlap.start)} y={PICTURE.theirs - 3} width={Math.max(4, x(overlap.start + overlap.seconds) - x(overlap.start))} height={PICTURE.yours + PICTURE.lane - PICTURE.theirs + 6} rx="2" className="fill-warm/30" />)}
         {/* Each turn (a listening sound of yours drawn lighter) */}
         {timeline.turns.map((turn, index) => <rect key={index} data-turn={turn.who} x={x(turn.start)} y={turn.who === "you" ? PICTURE.yours : PICTURE.theirs} width={Math.max(3, x(turn.start + turn.seconds) - x(turn.start) - 2)} height={PICTURE.lane} rx="4" className={turn.who === "you" ? (turn.backchannel ? "fill-accent/40" : "fill-accent") : "fill-ink-muted/40"} />)}
         {/* Each cut-in: a line across both lanes where it happened, with a notch on the side of whoever cut in */}

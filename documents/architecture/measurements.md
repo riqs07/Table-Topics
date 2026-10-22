@@ -68,7 +68,7 @@ Each conversation turn saves when the speaking began and ended (`at` and `end`, 
 
 **Where the times come from.** Your turn: the recording's start on the conversation clock, plus the first and last loudness readings at three times the quietest (`speechSpan`, the same rule as decision 101's); when you talked over the persona, the moment the live service heard you. Their line: from the first sound played to the end of the last, or the moment it was cut short. In a phone call (decision 142): the agent's speaking and listening changes and the moments the transcripts arrive. Timings are rough in tap and automatic modes (the browser's speech recognition drops most "mm-hm"s, and the recording starts only after their line), most precise live.
 
-**Shown focus first** (decision 115): the conversation timeline draws overlaps and cut-in marks; under it, only confident findings show (a cut-in is a recorded event; talking at once of half a second or more; the reply gap and listening sounds only from live turns, with three or more gaps), and the rest wait behind "See more".
+**Shown focus first** (decision 115): the conversation timeline draws overlaps and cut-in marks; under it, at most two confident findings show, most telling first (a cut-in is a recorded event; the reply gap only from live turns, with three or more gaps; talking at once of half a second or more; listening sounds only live), and the rest wait behind "See more".
 - `lang.sentiment_arc`, `lang.concreteness_mean`, `flu.keypoint_pause_s` and the stage-B rubric scores: not part of this stage.
 
 ## How pause placement is approximated

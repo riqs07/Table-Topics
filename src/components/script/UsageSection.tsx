@@ -64,7 +64,7 @@ function rowsOf(usage: Usage, costs: CostRow[]): Array<{ id: string; name: strin
 // One price, in words
 function priceLine(price: Price): string {
   // The amount, what for, when checked, and how sure
-  return `$${price.usd.toFixed(2)} per ${price.per} · checked ${price.checkedOn}${price.verified ? "" : " · unverified"}`;
+  return `$${price.usd.toFixed(2)} per ${price.per} · checked ${price.checkedOn.replace(/-/g, "‑")}${price.verified ? "" : " · unverified"}`;
 }
 
 // The section's content: asked of the server once, when a passphrase is saved
