@@ -2,6 +2,13 @@
 import { expect, test } from "./support/fixtures";
 // Load the small-talk lessons, so every unit's lesson pages are measured too (decision 96)
 import { SMALL_TALK_LESSONS } from "../../src/content/smallTalk";
+// Load every Learn card's title, so Today is measured with the longest one (decision 112)
+import { LEARN_INDEX } from "../../src/content/learnIndex";
+
+// A fixed day, so a page that shows the day's picks (Today's prompts) is measured the same on every date: the check once failed only on some days (2026-10-22)
+const FIXED_DAY = new Date("2026-10-22T09:00:00");
+// The Learn card title with the most words: Today is measured with it in place of the card shown (Today shows the next unread card, whichever that is)
+const LONGEST_CARD = [...LEARN_INDEX].sort((a, b) => b.title.split(/\s+/).length - a.title.split(/\s+/).length)[0]!.title;
 
 // The most words allowed in the first phone screen of a page (text read aloud, such as a passage, is not on these pages)
 const WORD_BUDGET = 100;
@@ -17,16 +24,22 @@ for (const path of PAGES) {
     await page.setViewportSize({ width: 390, height: 844 });
     // Skip the welcome so Today shows its usual page
     await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+    // The same day every time (timers still run)
+    await page.clock.setFixedTime(FIXED_DAY);
     // Open the page
     await page.goto(path);
     // Let it settle
     await page.waitForLoadState("networkidle");
-    // Words in the main column whose text sits at least partly on the first screen
-    const words = await page.evaluate(() => {
+    // Words in the main column whose text sits at least partly on the first screen, with the longest Learn card's title in place of the one shown
+    const words = await page.evaluate((longest) => {
       // The main column
       const main = document.querySelector("main");
       // Nothing to count without it
       if (!main) return 0;
+      // Today's Learn step title, when there is one
+      const card = main.querySelector("[data-step-lane='learn'] [data-step-title]");
+      // The longest title in its place, so the page is laid out (and wraps) as it would with that card
+      if (card) card.textContent = longest;
       // Walk every piece of text
       const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
       // The running count
@@ -44,7 +57,7 @@ for (const path of PAGES) {
       }
       // The total
       return count;
-    });
+    }, LONGEST_CARD);
     // Confirm it stays within the budget
     expect(words).toBeLessThanOrEqual(WORD_BUDGET);
   });

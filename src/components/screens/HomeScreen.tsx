@@ -233,7 +233,7 @@ function FocusAsk({ onAnswer }: { onAnswer: (picks: FocusAreaId[]) => Promise<vo
       {/* The question */}
       <h2 id="focus-ask" className="font-display text-cue font-semibold tracking-tight">What do you want to get better at most?</h2>
       {/* What it does */}
-      <p className="mt-1 text-footnote text-ink-muted">Pick one or two; today’s practice leans that way.</p>
+      <p className="mt-1 text-footnote text-ink-muted">Pick one or two.</p>
       {/* The choices, names only */}
       <FocusPicker value={picks} onChange={setPicks} label="What do you want to get better at most?" compact />
       {/* A save that failed: why, with the buttons still there to try again */}
@@ -445,7 +445,7 @@ export function HomeScreen(props: ScreenProps) {
                   const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
                   // One step
                   return (
-                    <li key={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
+                    <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
                       {/* The whole row starts the step: a rounded tile, warm when next */}
                       <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
                         {/* Its mark (when the day is first done, the ticks grow in one by one, unless motion is unwelcome) */}
@@ -455,7 +455,7 @@ export function HomeScreen(props: ScreenProps) {
                           {/* Its name and time */}
                           <span className={`block text-footnote ${mark === "next" ? "font-semibold text-warm-ink" : "text-ink-muted"}`}>{step.label} · {step.minutes} min</span>
                           {/* What it uses */}
-                          <span className="block leading-snug">{step.title}</span>
+                          <span data-step-title className="block leading-snug">{step.title}</span>
                           {/* How it went, once done */}
                           {result && <span className="block text-footnote text-ink-muted">{result}</span>}
                         </span>
@@ -524,7 +524,8 @@ export function HomeScreen(props: ScreenProps) {
             // Once done: with a focus, its one next thing; otherwise everything in Practice (decision 97)
             plan.suggestion ? <ActionBand action={plan.suggestion.action} aside={`for ${plan.suggestion.phrase}`} href={plan.suggestion.href} /> : <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />
           ) : (
-            <ActionBand action={checkInWaiting ? (plan.checkIn?.parts.some((part) => part.status !== "open") ? "Continue check-in" : "Start check-in") : doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={nextStep ? (checkInWaiting ? `about ${CHECK_IN_MINUTES} min` : `Step ${nextIndex + 1} · ${stepWords(nextStep)}`) : ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
+            // The band; which step it starts is said beside it once a step is done or put off (on a fresh day the first step is the highlighted row just above; decision 113)
+            <ActionBand action={checkInWaiting ? (plan.checkIn?.parts.some((part) => part.status !== "open") ? "Continue check-in" : "Start check-in") : doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={nextStep ? (checkInWaiting ? `about ${CHECK_IN_MINUTES} min` : doneCount > 0 || plan.skipped.some(Boolean) ? `Step ${nextIndex + 1} · ${stepWords(nextStep)}` : "") : ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
           ))}
         </div>
       </div>}
