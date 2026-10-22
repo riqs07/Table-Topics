@@ -55,13 +55,13 @@ export function loopTable(numbers: ReadonlyArray<RoundNumbers>, options: { pause
   // The rows
   return [
     // Overall pace
-    { label: "pace, words a minute", values: numbers.map((round) => String(round.pace)) },
+    { label: "pace a min", values: numbers.map((round) => String(round.pace)) },
     // Pause words, unless they are hidden (decision 79)
-    ...(options.pauseWords === false ? [] : [{ label: "pause words a minute", values: numbers.map((round) => String(round.pauseWords)) }]),
+    ...(options.pauseWords === false ? [] : [{ label: "pause words a min", values: numbers.map((round) => String(round.pauseWords)) }]),
     // Pauses
-    { label: "pauses a minute", values: numbers.map((round) => shown(round.pauses)) },
+    { label: "pauses a min", values: numbers.map((round) => shown(round.pauses)) },
     // Story checks, for a story
-    ...(numbers.some((round) => round.storyChecks !== null) ? [{ label: "story checks heard", values: numbers.map((round) => shown(round.storyChecks)) }] : []),
+    ...(numbers.some((round) => round.storyChecks !== null) ? [{ label: "story checks", values: numbers.map((round) => shown(round.storyChecks)) }] : []),
     // Time against the round's target
     { label: "time / target", values: numbers.map((round) => `${formatClock(round.durationSec)} / ${formatClock(round.targetSec)}`) },
   ];

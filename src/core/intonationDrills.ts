@@ -25,16 +25,24 @@ export interface IntonationTake {
   pitches: ReadonlyArray<number | null>;
 }
 
-// One take of a line with its key word judged as planned stress: the pitch in its words and the verdict, or null with too little voice
-export function drillStress(take: IntonationTake, text: string, stress: string): { pitch: PitchWords; judged: StressResult | null } | null {
+// One take of a line with its key word judged as planned stress: the pitch in its words and the verdict, or null with too little voice. A drill line is a single short clause, so a near-level take has no clear peak: it is not counted as landing on the key word, and its line says so (decision 117)
+export function drillStress(take: IntonationTake, text: string, stress: string): { pitch: PitchWords; judged: StressResult | null; level: boolean } | null {
   // The line with its key word starred
   const marked = markWord(text, stress);
   // Its words spread over the voice
   const alignment = alignFromText(scriptTexts(marked).join(" "), take.levels, LOUDNESS_TICK_MS, take.durationSec);
   // The pitch in them
   const pitch = pitchWords({ pitch: take.pitches, alignment, tickMs: LOUDNESS_TICK_MS });
-  // Judged, when there was voice
-  return pitch ? { pitch, judged: judgeStress(stressRows(marked), pitch)[0] ?? null } : null;
+  // Too little voice
+  if (!pitch) return null;
+  // Judged
+  const judged = judgeStress(stressRows(marked), pitch)[0] ?? null;
+  // The heard words' pitches
+  const steps = judged ? judged.words.flatMap((word) => (word.step === null ? [] : [word.step])) : [];
+  // Level: judged, but spanning too little to have a peak
+  const level = judged !== null && judged.hit !== null && Math.max(...steps) - Math.min(...steps) < LEVEL_SPAN_STEPS;
+  // The verdict, a level take said plainly and not counted as a hit
+  return { pitch, judged: judged && level ? { ...judged, hit: false, line: { tone: "plain", text: `No clear peak: the line stayed level. Lift “${bare(stress)}”.` } } : judged, level };
 }
 
 // One take's verdict for "Same sentence, different stress": whether the peak landed on the target, and the word it landed on
@@ -45,14 +53,23 @@ export interface ShiftVerdict {
   hit: boolean | null;
   // The word the peak landed on, when judged
   peak: string | null;
+  // The line stayed level, so there was no clear peak to land anywhere (counted as not on the target)
+  level?: boolean;
 }
+
+// A take whose words span less than this many steps has no clear peak: a near-level line would otherwise "land" on any target within half a step of its top
+export const LEVEL_SPAN_STEPS = 1.5;
 
 // Judge one take: did its highest pitch land on the target word?
 export function shiftVerdict(take: IntonationTake, text: string, target: string): ShiftVerdict {
   // The planned-stress verdict
-  const result = drillStress(take, text, target)?.judged ?? null;
+  const stressed = drillStress(take, text, target);
+  // (the clause's)
+  const result = stressed?.judged ?? null;
   // Too little voice
-  if (!result || result.hit === null) return { target, hit: null, peak: null };
+  if (!stressed || !result || result.hit === null) return { target, hit: null, peak: null };
+  // A level line: no clear peak, so not on the target
+  if (stressed.level) return { target, hit: false, peak: null, level: true };
   // The verdict and the peak's word
   return { target, hit: result.hit, peak: result.highest ? bare(result.highest.text) : null };
 }
@@ -64,7 +81,7 @@ export function shiftFindings(verdicts: ReadonlyArray<ShiftVerdict>): { headline
   // The headline: how many got the peak on their target
   const headline = judged.length === 0 ? "Not enough voice to read the pitch." : `${judged.filter((verdict) => verdict.hit).length} of ${judged.length} ${judged.length === 1 ? "take" : "takes"} got the peak on the target word.`;
   // A line per take
-  const lines = verdicts.map((verdict) => (verdict.hit === null ? "Too little voice to check the target word." : verdict.hit ? `Peak on “${verdict.target}”, the target.` : `Peak on “${verdict.peak ?? "another word"}”, not “${verdict.target}”.`));
+  const lines = verdicts.map((verdict) => (verdict.hit === null ? "Too little voice to check the target word." : verdict.level ? "No clear peak." : verdict.hit ? `Peak on “${verdict.target}”, the target.` : `Peak on “${verdict.peak ?? "another word"}”, not “${verdict.target}”.`));
   // Both
   return { headline, lines };
 }

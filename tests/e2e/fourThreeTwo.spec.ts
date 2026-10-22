@@ -66,7 +66,7 @@ test("4/3/2: tell a short story three times, shorter each time, then compare the
   // The three rounds compared: the line
   await expect(page.locator("[data-loop-line]")).toHaveText(/^From round 1 to round 3, /, { timeout: 15_000 });
   // The table: a column per round, story checks and time against target
-  await expect(page.getByRole("row", { name: /story checks heard/ })).toBeVisible();
+  await expect(page.getByRole("row", { name: /story checks/ })).toBeVisible();
   // (the times)
   await expect(page.getByRole("row", { name: /time \/ target/ })).toHaveText(/^time \/ target1:5\d \/ 2:001:2\d \/ 1:300:5\d \/ 1:00$/);
   // The curves on matching phrases, with the three rounds' key

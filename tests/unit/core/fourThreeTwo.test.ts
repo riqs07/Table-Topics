@@ -108,16 +108,16 @@ describe("4/3/2 comparison", () => {
     // A prepared speech's rows
     expect(loopTable(numbers([122, 135, 150], [6, 4, 2]))).toEqual([
       // Pace
-      { label: "pace, words a minute", values: ["122", "135", "150"] },
+      { label: "pace a min", values: ["122", "135", "150"] },
       // Pause words
-      { label: "pause words a minute", values: ["6", "4", "2"] },
+      { label: "pause words a min", values: ["6", "4", "2"] },
       // Pauses
-      { label: "pauses a minute", values: ["6", "6", "6"] },
+      { label: "pauses a min", values: ["6", "6", "6"] },
       // Time against target
       { label: "time / target", values: ["3:55 / 4:00", "2:50 / 3:00", "1:58 / 2:00"] },
     ]);
     // A story's rows add the checks, and pause words can be left out
-    expect(loopTable(numbers([1, 2, 3], [0, 0, 0]).map((round) => ({ ...round, storyChecks: 4 })), { pauseWords: false }).map((row) => row.label)).toEqual(["pace, words a minute", "pauses a minute", "story checks heard", "time / target"]);
+    expect(loopTable(numbers([1, 2, 3], [0, 0, 0]).map((round) => ({ ...round, storyChecks: 4 })), { pauseWords: false }).map((row) => row.label)).toEqual(["pace a min", "pauses a min", "story checks", "time / target"]);
   });
 
   // Numbers from saved rounds

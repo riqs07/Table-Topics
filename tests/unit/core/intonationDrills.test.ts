@@ -33,6 +33,16 @@ describe("stress shift", () => {
     expect(shiftVerdict(said("say"), "I didn’t say she stole it.", "stole")).toEqual({ target: "stole", hit: false, peak: "say" });
   });
 
+  // A level line has no clear peak, so it is not on the target, whatever the half-step rule says
+  it("does not count a level line as a hit", () => {
+    // Every word at the same pitch
+    const level = makeTake([{ words: "I didn’t say she stole it.".split(" ").map((text) => ({ text, step: 0.3 })), pauseAfter: 0.6 }], { glide: true });
+    // Judged
+    const verdict = shiftVerdict({ durationSec: level.durationSec, levels: level.loudness, pitches: level.pitch }, "I didn’t say she stole it.", "she");
+    // Not a hit, and said so
+    expect([verdict.hit, verdict.level, shiftFindings([verdict]).lines[0]]).toEqual([false, true, "No clear peak."]);
+  });
+
   // Too little voice: not judged
   it("does not judge a take with no voice", () => {
     // Silence
@@ -89,6 +99,6 @@ describe("dial back", () => {
     // The findings
     const found = drillFindings(drillWithSet(findVoiceDrill("p06")!, 2), [take(0.5), take(8), take(4)]);
     // A line per take with its range, and the headline about the share kept
-    expect([found.lines.every((line) => /^Range: \d+ steps\.$/.test(line)), found.headline.startsWith("Your natural take kept")]).toEqual([true, true]);
+    expect([found.lines.every((line) => /^Range: \d+ steps?\.$/.test(line)), found.headline.startsWith("Your natural take kept")]).toEqual([true, true]);
   });
 });

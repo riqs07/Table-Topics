@@ -151,7 +151,7 @@ describe("Exaggerate, then dial back", () => {
     // A curve per take
     await waitFor(() => expect(document.querySelectorAll("[data-take-curve]").length).toBe(3));
     // A range on each take's line, and the headline on how much was kept
-    expect([screen.getAllByText(/^Range: \d+ steps\.$/).length, screen.getByRole("heading", { level: 1 }).textContent]).toEqual([3, expect.stringMatching(/^Your natural take kept .+ of the exaggerated range \(\d+ of \d+ steps\)\.$/)]);
+    expect([screen.getAllByText(/^Range: \d+ steps?\.$/).length, screen.getByRole("heading", { level: 1 }).textContent]).toEqual([3, expect.stringMatching(/^Your natural take kept .+ of the exaggerated range \(\d+ of \d+ steps\)\.$/)]);
     // Saved as a voice session
     await waitFor(async () => expect((await repository.listSessions()).map((session) => [session.mode, session.promptId, session.voice?.takes.map((take) => take.label)])).toEqual([["voice", "p06", ["Flat", "Exaggerated", "Natural"]]]));
   });

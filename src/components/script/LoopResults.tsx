@@ -143,7 +143,7 @@ export function LoopResults({ repo, session, all, pauseWords = true }: { repo: R
             {/* The rounds */}
             <thead><tr className="border-b border-rule text-ink-muted"><th scope="col" className="py-2 pr-2 font-normal">Round</th>{numbers.map((round) => <th key={round.round} scope="col" className="py-2 pr-2 font-normal">{round.round}</th>)}</tr></thead>
             {/* One row per measure */}
-            <tbody>{loopTable(numbers, { pauseWords }).map((row) => <tr key={row.label} className="border-b border-rule last:border-0"><th scope="row" className="py-2 pr-2 font-normal">{row.label}</th>{row.values.map((value, index) => <td key={index} className="py-2 pr-2">{value}</td>)}</tr>)}</tbody>
+            <tbody>{loopTable(numbers, { pauseWords }).map((row) => <tr key={row.label} className="border-b border-rule last:border-0"><th scope="row" className="min-w-[6.5rem] py-2 pr-2 font-normal">{row.label}</th>{row.values.map((value, index) => <td key={index} className="whitespace-nowrap py-2 pr-2">{value}</td>)}</tr>)}</tbody>
           </table>
         </div>
       )}

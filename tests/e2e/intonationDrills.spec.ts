@@ -54,7 +54,7 @@ test("Exaggerate, then dial back: flat, exaggerated, natural, each drawn with it
   // A curve for each take
   await expect(page.locator("[data-take-curve]")).toHaveCount(3, { timeout: 15_000 });
   // Each take's range
-  await expect(page.getByText(/^Range: \d+ steps\.$/)).toHaveCount(3);
+  await expect(page.getByText(/^Range: \d+ steps?\.$/)).toHaveCount(3);
 });
 
 // A lesson's goal shows before starting, under its tip
