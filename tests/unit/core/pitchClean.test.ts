@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load what is being checked
-import { cleanPitch, cleanSteps, dropLoneReadings, fillShortGaps, foldOctaves, medianFilter, semitonesFrom, smoothPath } from "@/core/pitchClean";
+import { cleanPitch, cleanSteps, dropLoneReadings, fillShortGaps, foldOctaves, medianFilter, semitonesFrom, smoothForDrawing, smoothPath } from "@/core/pitchClean";
 
 // Group the checks on cleaning pitch readings (decision 111)
 describe("pitch cleaning", () => {
@@ -84,5 +84,24 @@ describe("smoothPath", () => {
     const path = smoothPath([{ x: 0, y: 0 }, { x: 10, y: 10 }, { x: 20, y: 0 }]);
     // Starts on the first, reaches the middle, ends on the last
     expect([path.startsWith("M0 0C"), path.includes(" 10 10C"), path.endsWith(" 20 0")]).toEqual([true, true, true]);
+  });
+});
+
+// Smoothing for drawing (decision 114)
+describe("smoothForDrawing", () => {
+  // A step becomes a slope
+  it("spreads a step from one level to another over its neighbours, rising each reading, and keeps breaks", () => {
+    // A level, a jump, a break, a lone reading
+    const drawn = smoothForDrawing([0, 0, 0, 0, 6, 6, 6, 6, null, 2]);
+    // Rising through the jump
+    expect(drawn.slice(1, 7).every((value, index, all) => index === 0 || (value ?? 0) > (all[index - 1] ?? 0))).toBe(true);
+    // The break stays a break, and the lone reading is its own
+    expect(drawn.slice(8)).toEqual([null, 2]);
+  });
+
+  // A flat line stays flat
+  it("leaves a level line as it is", () => {
+    // Five readings at 3
+    expect(smoothForDrawing([3, 3, 3, 3, 3])).toEqual([3, 3, 3, 3, 3]);
   });
 });

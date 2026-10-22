@@ -3,7 +3,7 @@
 // Load the end rule shared with the whole-take summary
 import { endOfSteps } from "@/core/pitch";
 // Load the cleaning
-import { cleanSteps } from "@/core/pitchClean";
+import { cleanSteps, smoothForDrawing } from "@/core/pitchClean";
 // Load the word lists: small words that rarely carry the meaning, and words that start a clause
 import { CLAUSE_STARTERS, STOP_WORDS } from "@/core/analysis/lexicon";
 // Load the word placement types
@@ -32,6 +32,12 @@ const QUESTION_STARTS: ReadonlySet<string> = new Set(["do", "does", "did", "is",
 // Punctuation that ends a clause (with any closing quote or bracket after it)
 const CLAUSE_END = /[.,;:?!…—–]["'”’)\]]*$/;
 
+// Whether a word as written ends a clause, by its punctuation (the lenses place pauses by it, decision 112)
+export function endsClauseText(text: string): boolean {
+  // Its written form ends in clause punctuation
+  return CLAUSE_END.test(text.trim());
+}
+
 // How a phrase ended
 export type PhraseEnd = "fell" | "held" | "rose";
 
@@ -59,6 +65,8 @@ export interface Phrase {
   firstTick: number;
   // Its cleaned readings in steps, from firstTick on (null where unvoiced)
   steps: (number | null)[];
+  // The same readings smoothed for drawing (decision 112)
+  curve: (number | null)[];
   // How it ended, or null with too few voiced readings
   ending: PhraseEnd | null;
   // The steps between its low and high readings (10th to 90th percentile), or null with too few
@@ -81,8 +89,10 @@ export interface PitchWords {
   phrases: Phrase[];
   // How sure the word times are
   precision: AlignPrecision;
-  // The whole take's cleaned readings in steps
+  // The whole take's cleaned readings in steps (word pitches and peaks use these)
   steps: (number | null)[];
+  // The same readings smoothed for drawing, so curves flow instead of stepping word to word (decision 112)
+  curve: (number | null)[];
   // The take's usual pitch in hertz
   usualHz: number;
   // Milliseconds between readings
@@ -169,6 +179,8 @@ export function pitchWords(input: { pitch: ReadonlyArray<number | null>; alignme
   const { steps, usualHz } = cleanSteps(input.pitch, input.tickMs);
   // Too little voice
   if (usualHz === null || steps.filter((step) => step !== null).length < MIN_VOICED_READINGS) return null;
+  // The readings smoothed for drawing
+  const curve = smoothForDrawing(steps);
   // The phrases' words
   const groups = splitPhrases(input.alignment.words, input.alignment.punctuated);
   // Each phrase worked out
@@ -211,10 +223,10 @@ export function pitchWords(input: { pitch: ReadonlyArray<number | null>; alignme
     // The phrase before, for the pause
     const before = groups[index - 1];
     // The phrase
-    return { index, words, start, end, firstTick: from, steps: own, ending, rangeSteps, flat: rangeSteps !== null && rangeSteps < FLAT_STEPS && group.length >= FLAT_WORDS && ending !== "rose" && ending !== "fell", question, risingStatement: ending === "rose" && !question, top, pauseBefore: before ? Math.max(0, Math.round((start - before.at(-1)!.end) * 10) / 10) : null };
+    return { index, words, start, end, firstTick: from, steps: own, curve: curve.slice(from, to + 1), ending, rangeSteps, flat: rangeSteps !== null && rangeSteps < FLAT_STEPS && group.length >= FLAT_WORDS && ending !== "rose" && ending !== "fell", question, risingStatement: ending === "rose" && !question, top, pauseBefore: before ? Math.max(0, Math.round((start - before.at(-1)!.end) * 10) / 10) : null };
   });
   // Hand it back
-  return { phrases, precision: input.alignment.precision, steps, usualHz, tickMs: input.tickMs };
+  return { phrases, precision: input.alignment.precision, steps, curve, usualHz, tickMs: input.tickMs };
 }
 
 // A word without its punctuation, for quoting

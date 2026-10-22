@@ -45,7 +45,7 @@ interface LastVsThisProps {
 // One of this take's phrases with the last take's curve under it (or alone)
 function PairRows({ phrase, pitch, under, width, measure }: { phrase: Phrase; pitch: PitchWords; under: ((slots: Parameters<typeof overlayPoints>[2]) => string) | null; width: number; measure: (text: string, bold: boolean) => number }) {
   // The phrase's rows
-  const lines = curveLines(phrase.words, pitch.steps, pitch.tickMs, width, measure);
+  const lines = curveLines(phrase.words, pitch.curve, pitch.tickMs, width, measure);
   // Each row
   return (
     <div className="flex flex-col gap-1">

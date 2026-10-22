@@ -112,6 +112,40 @@ export function cleanSteps(readings: ReadonlyArray<number | null>, tickMs: numbe
   return { steps: usualHz === null ? cleaned.map(() => null) : semitonesFrom(cleaned, usualHz), usualHz };
 }
 
+// The spread of the smoothing for drawing, in readings (0.2 s at ten readings a second)
+const DRAW_SIGMA = 2;
+// Readings on each side the smoothing reaches
+const DRAW_SIDE = 5;
+
+// The cleaned readings smoothed for drawing (decision 112): a gentle bell-shaped average over each reading's voiced neighbours within the same voiced run, so a curve flows like a voice instead of stepping from word to word; breaks stay breaks. Word pitches and peaks keep using the cleaned readings, not these
+export function smoothForDrawing(steps: ReadonlyArray<number | null>, sigma = DRAW_SIGMA, side = DRAW_SIDE): (number | null)[] {
+  // The weight at each distance
+  const weights = Array.from({ length: side + 1 }, (_, distance) => Math.exp(-(distance * distance) / (2 * sigma * sigma)));
+  // Each reading
+  return steps.map((step, index) => {
+    // A break stays a break
+    if (step === null) return null;
+    // The running totals
+    let [sum, weight] = [step * weights[0]!, weights[0]!];
+    // Outwards on both sides, stopping at a break
+    for (const direction of [-1, 1]) {
+      // Each distance
+      for (let distance = 1; distance <= side; distance++) {
+        // The neighbour
+        const near = steps[index + direction * distance];
+        // A break or the edge ends this side
+        if (near === null || near === undefined) break;
+        // Added with its weight
+        sum += near * weights[distance]!;
+        // (and its weight)
+        weight += weights[distance]!;
+      }
+    }
+    // The average, to a tenth
+    return Math.round((sum / weight) * 10) / 10;
+  });
+}
+
 // A number to one decimal, for short path text
 function short(value: number): string {
   // Rounded, without a trailing ".0"

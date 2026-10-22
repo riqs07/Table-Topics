@@ -76,7 +76,7 @@ export function overlayPoints(pair: PhrasePair, tickMs: number, slots: ReadonlyA
   // Seconds per reading
   const tick = tickMs / 1000;
   // Each reading of the last take's phrase inside the stretch
-  return pair.before.steps.flatMap((step, place) => {
+  return pair.before.curve.flatMap((step, place) => {
     // Its moment
     const seconds = (pair.before.firstTick + place) * tick;
     // Outside the matched stretch

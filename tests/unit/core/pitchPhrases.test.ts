@@ -219,3 +219,57 @@ describe("stretchPoints", () => {
     expect(stretchPoints([1], 0, 1, [{ index: 0, left: 0, width: 10 }], [{ start: 0, end: 1 }])).toEqual([]);
   });
 });
+
+// The bug the user saw (2026-10-22): phrase rows drawn as stepped plateaus, one flat level per word, because the curve went through the median-filtered readings, which keep a voice held at a word's level as a flat step. Curves are now drawn from the readings smoothed for drawing (decision 114)
+describe("curves flow instead of stepping", () => {
+  // The biggest jump between two neighbouring points of a row, and the longest run of equal heights
+  function shape(points: ReadonlyArray<{ x: number; y: number } | null>): { jump: number; flat: number } {
+    // The voiced points
+    const voiced = points.filter((point): point is { x: number; y: number } => point !== null);
+    // Each jump
+    const jumps = voiced.slice(1).map((point, index) => Math.abs(point.y - voiced[index]!.y));
+    // The longest run of the same height
+    let [flat, run] = [1, 1];
+    // Walk the points
+    for (let index = 1; index < voiced.length; index++) {
+      // The same height continues the run
+      run = voiced[index]!.y === voiced[index - 1]!.y ? run + 1 : 1;
+      // The longest
+      flat = Math.max(flat, run);
+    }
+    // Both
+    return { jump: Math.max(0, ...jumps), flat };
+  }
+
+  // The zoo story said word by word, each held at its level (the seeded take behind the screenshot)
+  it("draws the phrase with the peak on “stole” as a slope, not a flat step", () => {
+    // The take, held word by word
+    const take = makeTake(ZOO_PHRASES);
+    // Its phrases
+    const pitch = pitchWords({ pitch: take.pitch, alignment: alignFromServer(take.serverWords), tickMs: 100 })!;
+    // The third phrase's words
+    const phrase = pitch.phrases[2]!;
+    // Laid out in one row
+    const slots = layoutWords(phrase.words, 600, (text) => text.length * 8)[0]!.slots;
+    // Drawn from the cleaned readings, as before: a plateau with a cliff each side
+    const before = shape(rowPoints(pitch.steps, 100, slots, phrase.words));
+    // Drawn from the smoothed readings
+    const after = shape(rowPoints(pitch.curve, 100, slots, phrase.words));
+    // Before: a jump of more than a dozen pixels and flat runs of several readings (the plateaus)
+    expect([before.jump > 12, before.flat >= 3]).toEqual([true, true]);
+    // After: the cliff becomes a slope, no jump over half the old one
+    expect([after.jump <= 7, after.jump * 2 < before.jump]).toEqual([true, true]);
+  });
+
+  // Peaks still come from the cleaned readings
+  it("keeps word pitches and peaks from the cleaned readings, not the smoothed ones", () => {
+    // The take
+    const take = makeTake(ZOO_PHRASES);
+    // Its phrases
+    const pitch = pitchWords({ pitch: take.pitch, alignment: alignFromServer(take.serverWords), tickMs: 100 })!;
+    // "stole" is still its phrase's peak, at its full height
+    expect(pitch.phrases[2]!.words.find((word) => word.w === "stole")).toMatchObject({ peak: true, step: expect.any(Number) });
+    // (the cleaned reading's height, above the smoothed one)
+    expect(Math.max(...pitch.phrases[2]!.steps.filter((step): step is number => step !== null))).toBeGreaterThan(Math.max(...pitch.phrases[2]!.curve.filter((step): step is number => step !== null)));
+  });
+});

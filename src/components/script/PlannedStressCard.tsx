@@ -27,7 +27,7 @@ export function StressRowView({ result, pitch, width, measure }: { result: Stres
   // The words as drawn: the key words and the highest word in bold
   const words = result.words.map((word) => ({ ...word, peak: result.row.targets.includes(word.ref) || word === result.highest }));
   // The words in rows with their curves
-  const lines = curveLines(words, pitch.steps, pitch.tickMs, width, measure);
+  const lines = curveLines(words, pitch.curve, pitch.tickMs, width, measure);
   // The highest point of the whole clause
   const top = highestPoint(lines.flatMap((line) => line.points));
   // Each row, then the line

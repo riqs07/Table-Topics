@@ -13,7 +13,7 @@ import { useServerWords } from "@/components/screens/useServerWords";
 // Load the pitch in the words
 import { takePitch } from "@/core/takePitch";
 import { pitchSummary, yForStep, CURVE_HEIGHT, USUAL_Y, type LinePart } from "@/core/pitchPhrases";
-import { smoothPath } from "@/core/pitchClean";
+import { smoothForDrawing, smoothPath } from "@/core/pitchClean";
 // Load the voice report
 import { voiceReport, type VoiceLineKind } from "@/core/voiceFeedback";
 // Load the record type
@@ -55,7 +55,7 @@ const DOTS = { work: { dot: "bg-warm", said: "To work on: " }, good: { dot: "bg-
 // The whole take's pitch as one smooth curve, for a take whose words were not caught
 function WholeCurve({ steps }: { steps: ReadonlyArray<number | null> }) {
   // The curve across one unit per reading
-  const path = smoothPath(steps.map((step, index) => (step === null ? null : { x: index, y: yForStep(step) })));
+  const path = smoothPath(smoothForDrawing(steps).map((step, index) => (step === null ? null : { x: index, y: yForStep(step) })));
   // The picture, stretched to the card's width
   return (
     <svg viewBox={`0 0 ${Math.max(1, steps.length - 1)} ${CURVE_HEIGHT}`} preserveAspectRatio="none" role="img" aria-label="Your pitch across the take" className="mt-3 h-16 w-full">

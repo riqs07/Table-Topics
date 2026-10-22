@@ -50,7 +50,7 @@ function prefersLessMotion(): boolean {
 // One phrase's rows: its header, its curve over its words, and its note
 function PhraseRow({ phrase, pitch, width, measure, time, playing, current, onWord }: { phrase: Phrase; pitch: PitchWords; width: number; measure: (text: string, bold: boolean) => number; time: number; playing: boolean; current: boolean; onWord: ((seconds: number) => void) | null }) {
   // Its rows
-  const lines = curveLines(phrase.words, pitch.steps, pitch.tickMs, width, measure);
+  const lines = curveLines(phrase.words, pitch.curve, pitch.tickMs, width, measure);
   // The note, if useful
   const note = phraseNote(phrase);
   // The word playing now, while this phrase plays
@@ -74,7 +74,7 @@ function PhraseRow({ phrase, pitch, width, measure, time, playing, current, onWo
         // The playhead, while this row plays
         const inRow = current && time >= from - 0.02 && time <= to + 0.02;
         // Its place: across by the moment, up by the pitch then (on the usual line in a gap)
-        const step = pitch.steps[Math.round((time * 1000) / pitch.tickMs)] ?? null;
+        const step = pitch.curve[Math.round((time * 1000) / pitch.tickMs)] ?? null;
         // The playhead
         const playhead = inRow ? { x: Math.round(xForTime(time, line.slots, phrase.words) * 10) / 10, y: step === null ? USUAL_Y : yForStep(step) } : null;
         // The row

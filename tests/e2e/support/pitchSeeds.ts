@@ -25,10 +25,10 @@ function exactAnalysis(session: FullSession, take: MadeTake): AnalysisRecord {
   return { ...buildAnalysis(session, new Date(session.createdAt)), server: { transcript: { engine: "seeded", text: take.transcript, words: take.serverWords, at: session.createdAt }, voice: null } };
 }
 
-// The zoo story, told once (exact) and told again as a second try (exact, "me" now falling), plus an older take whose readings were dropped
+// The zoo story, gliding between words like a voice (decision 114), told once (exact) and told again as a second try (exact, "me" now falling), plus an older take whose readings were dropped
 export function zooSeed(): Seed {
   // The two tellings
-  const [first, again] = [makeTake(ZOO_PHRASES), makeTake(ZOO_AGAIN_PHRASES)];
+  const [first, again] = [makeTake(ZOO_PHRASES, { glide: true }), makeTake(ZOO_AGAIN_PHRASES, { glide: true })];
   // The first: a Rapid Fire take with its recording
   const zoo = madeSession("seeded-zoo", first, { createdAt: daysAgo(2), mode: "talk", promptId: "t001", audioKey: "seeded-zoo-audio", feedback: { keep: "You ended on the gorilla.", change: "Let “me” drop at the end.", retryCue: "Land the ending low." } });
   // The second try

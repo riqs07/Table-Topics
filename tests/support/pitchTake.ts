@@ -54,8 +54,44 @@ function wordSeconds(text: string): number {
   return Math.round((0.2 + 0.12 * syllables) * 10) / 10;
 }
 
-// Make a take from its phrases
-export function makeTake(phrases: ReadonlyArray<SaidPhrase>): MadeTake {
+// How many readings a word lasts: by its length, and when gliding, a word whose pitch slides takes 0.2 s longer (a voice takes its time to rise or fall at the end of a line)
+function readingsFor(word: SaidWord, glide: boolean): number {
+  // Its readings
+  return Math.round(wordSeconds(word.text) * 10) + (glide && word.to !== undefined ? 2 : 0);
+}
+
+// A phrase's pitch at each reading when the voice glides between words (as real voices do), from anchors at each word's middle (or, for a word that slides, its start and end): a smooth (cosine) blend between neighbouring anchors, held before the first and after the last, with a small wobble
+function glideSteps(words: ReadonlyArray<{ word: SaidWord; ticks: number }>): number[] {
+  // The anchors: each word's middle at its pitch, and its end where it slides to
+  const anchors: Array<{ at: number; step: number }> = [];
+  // Readings so far
+  let tick = 0;
+  // Each word
+  for (const { word, ticks } of words) {
+    // A word that slides: from its start to its end, as before; otherwise its middle
+    if (word.to !== undefined) anchors.push({ at: tick, step: word.step }, { at: tick + ticks - 1, step: word.to });
+    // (its middle)
+    else anchors.push({ at: tick + ticks * 0.45, step: word.step });
+    // Move on
+    tick += ticks;
+  }
+  // Each reading
+  return Array.from({ length: tick }, (_, at) => {
+    // The anchors either side
+    const after = anchors.findIndex((anchor) => anchor.at >= at);
+    // Before the first or after the last: held
+    if (after <= 0) return (after === -1 ? anchors.at(-1)! : anchors[0]!).step + 0.12 * Math.sin(at * 1.7);
+    // The two ends
+    const [left, right] = [anchors[after - 1]!, anchors[after]!];
+    // How far between, eased
+    const share = (1 - Math.cos((Math.PI * (at - left.at)) / Math.max(1e-6, right.at - left.at))) / 2;
+    // Blended, with a small wobble
+    return left.step + (right.step - left.step) * share + 0.12 * Math.sin(at * 1.7);
+  });
+}
+
+// Make a take from its phrases (glide: the pitch glides between words, as a real voice does, instead of holding each word's pitch level)
+export function makeTake(phrases: ReadonlyArray<SaidPhrase>, options: { glide?: boolean } = {}): MadeTake {
   // The readings
   const pitch: (number | null)[] = Array.from({ length: LEAD * 10 }, () => null);
   // (loudness)
@@ -68,21 +104,27 @@ export function makeTake(phrases: ReadonlyArray<SaidPhrase>): MadeTake {
   const serverWords: ServerWord[] = [];
   // Each phrase
   for (const phrase of phrases) {
+    // The gliding pitch for the whole phrase, when asked for
+    const glided = options.glide ? glideSteps(phrase.words.map((word) => ({ word, ticks: readingsFor(word, true) }))) : null;
+    // Readings into the phrase so far
+    let into = 0;
     // Each word
     for (const word of phrase.words) {
       // When it starts
       const start = pitch.length / 10;
       // How many readings it lasts
-      const ticks = Math.round(wordSeconds(word.text) * 10);
+      const ticks = readingsFor(word, options.glide === true);
       // Each reading, sliding from its start pitch to its end pitch, with a small wobble
       for (let tick = 0; tick < ticks; tick++) {
-        // Its pitch in steps
-        const step = word.step + ((word.to ?? word.step) - word.step) * (ticks > 1 ? tick / (ticks - 1) : 0) + 0.15 * Math.sin(pitch.length);
+        // Its pitch in steps: gliding through the phrase, or held at the word's level and sliding to its end
+        const step = glided ? glided[into + tick]! : word.step + ((word.to ?? word.step) - word.step) * (ticks > 1 ? tick / (ticks - 1) : 0) + 0.15 * Math.sin(pitch.length);
         // In whole hertz
         pitch.push(Math.round(MADE_USUAL_HZ * 2 ** (step / 12)));
         // Its loudness
         loudness.push(word.level ?? 0.2);
       }
+      // Readings into the phrase
+      into += ticks;
       // When it ends
       const end = pitch.length / 10;
       // As the phone hears it

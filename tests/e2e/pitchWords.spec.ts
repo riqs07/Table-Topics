@@ -25,8 +25,8 @@ test("a take's page shows pitch in the text, and the phrase rows play from a tap
   // The pause between the first two
   await expect(page.getByText("0.8 s pause")).toBeVisible();
   // Tap "stole"
-  await page.getByRole("button", { name: "stole, 0:06, play from here" }).click();
-  // The recording moved to the word (6.8 s) and is playing from there
+  await page.getByRole("button", { name: /^stole, 0:0\d, play from here$/ }).click();
+  // The recording moved to the word (7.2 s in the gliding seed) and is playing from there
   await expect.poll(async () => page.locator("audio").evaluate((audio: HTMLAudioElement) => audio.currentTime), { timeout: 5_000 }).toBeGreaterThanOrEqual(6.75);
   // Not far past it
   expect(await page.locator("audio").evaluate((audio: HTMLAudioElement) => audio.currentTime)).toBeLessThan(8.5);

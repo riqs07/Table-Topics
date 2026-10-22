@@ -9,7 +9,7 @@ import { StressKey, StressRowView } from "@/components/script/PlannedStressCard"
 // Load the word placement, the phrases, the cleaning and the stress checks
 import { alignFromText } from "@/core/wordAlign";
 import { curveLines, pitchWords, rowPoints, stretchPoints } from "@/core/pitchPhrases";
-import { cleanSteps, fillShortGaps, smoothPath } from "@/core/pitchClean";
+import { cleanSteps, fillShortGaps, smoothForDrawing, smoothPath } from "@/core/pitchClean";
 import { judgeStress, stressRows } from "@/core/plannedStress";
 import { markWord } from "@/core/stressMarks";
 import { thickPieces } from "@/core/loudnessLine";
@@ -64,8 +64,8 @@ export function TakeThickness({ take, text, loudest, label }: { take: TakeRecord
   const rows = useMemo(() => {
     // The words spread over the voice
     const words = alignFromText(text, take.levels, LOUDNESS_TICK_MS, take.durationSec).words;
-    // The cleaned readings in steps
-    const { steps } = cleanSteps(take.pitches, LOUDNESS_TICK_MS);
+    // The cleaned readings in steps, smoothed for drawing (decision 112)
+    const steps = smoothForDrawing(cleanSteps(take.pitches, LOUDNESS_TICK_MS).steps);
     // Each row with its curve and thick pieces
     return { words, lines: curveLines(words, steps, LOUDNESS_TICK_MS, width, measure).map((line) => ({ ...line, pieces: thickPieces(steps, take.levels, loudest, LOUDNESS_TICK_MS, line.slots, words) })) };
   }, [take, text, loudest, width, measure]);
@@ -91,9 +91,9 @@ export function ShadowCurve({ take, text, model, label }: { take: TakeRecording;
     // Your words spread over your voice
     const words = alignFromText(text, take.levels, LOUDNESS_TICK_MS, take.durationSec).words;
     // Your readings in steps around your usual pitch
-    const yours = cleanSteps(take.pitches, LOUDNESS_TICK_MS).steps;
+    const yours = smoothForDrawing(cleanSteps(take.pitches, LOUDNESS_TICK_MS).steps);
     // The model's, its gaps up to 0.6 s joined first (the reader catches a recorded voice only now and then, and the model is a guide, not a measure), then cleaned around its own usual pitch
-    const theirs = model ? cleanSteps(fillShortGaps(model, LOUDNESS_TICK_MS, MODEL_GAP_MS), LOUDNESS_TICK_MS).steps : [];
+    const theirs = model ? smoothForDrawing(cleanSteps(fillShortGaps(model, LOUDNESS_TICK_MS, MODEL_GAP_MS), LOUDNESS_TICK_MS).steps) : [];
     // Whether the model's pitch could be read
     const modelDrawn = theirs.filter((step) => step !== null).length >= 5;
     // Your words' stretch of time
