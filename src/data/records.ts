@@ -187,7 +187,7 @@ export interface SessionRecord {
   checkIn?: CheckInTake;
   // How the speaker said the take felt, asked once before its results (decision 116); missing when the question was skipped or not asked
   selfRating?: SelfRating;
-  // For a round of a 4/3/2 loop: the loop it belongs to, which round, and its target length (decision 117); missing on every other take
+  // For a round of a 4/3/2 loop: the loop it belongs to, which round, and its target length (decision 118); missing on every other take
   loop?: LoopTake;
 }
 
@@ -231,7 +231,7 @@ export interface SelfRating {
   ratedAt: string;
 }
 
-// One round of a 4/3/2 loop: the same content three times in one sitting, each round shorter (decision 117)
+// One round of a 4/3/2 loop: the same content three times in one sitting, each round shorter (decision 118)
 export interface LoopTake {
   // The loop's id, shared by its three rounds
   id: string;

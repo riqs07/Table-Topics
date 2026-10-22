@@ -397,7 +397,7 @@ describe("parseExport", () => {
     expect([parseExport(file([session])).sessions[0]?.conversation?.turns, (() => { try { parseExport(file([broken])); return "accepted"; } catch { return "refused"; } })()]).toEqual([turns, "refused"]);
   });
 
-  // A self-rating and a 4/3/2 round go out and come back; a rating from the wrong scale or a round past three is refused (decisions 116 and 117)
+  // A self-rating and a 4/3/2 round go out and come back; a rating from the wrong scale or a round past three is refused (decisions 116 and 118)
   it("carries a take's self-rating and its 4/3/2 round, and refuses broken ones", async () => {
     // A rated round of a loop
     const session = makeSession({ id: "l3", mode: "story", promptId: "sp01", selfRating: { scale: "liveliness", answer: "lively", ratedAt: NOW.toISOString() }, loop: { id: "loop-1", round: 3, targetSec: 60 } });

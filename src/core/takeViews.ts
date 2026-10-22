@@ -124,8 +124,8 @@ export function takeViews(take: TakeFacts): TakeViewPlan {
     const kind = take.voice?.kind;
     // Volume: thicker where louder
     if (kind === "volume") return focus(band, ["thickness"], "pitch", false);
-    // Pitch and stress: planned stress (the stress drill) or the pitch line
-    if (kind === "pitch") return focus(band, take.promptId === "p04" ? ["planned-stress"] : ["pitch-line"], "pitch", false);
+    // Pitch and stress: planned stress (the stress drill and "Same sentence, different stress", decision 117) or the pitch line ("Exaggerate, then dial back" draws it over the words with each take's range)
+    if (kind === "pitch") return focus(band, take.promptId === "p04" || take.promptId === "p05" ? ["planned-stress"] : ["pitch-line"], "pitch", false);
     // Tone: the pitch line
     if (kind === "tone") return focus(band, ["pitch-line"], "pitch", false);
     // Shadowing: your curve over the model voice's

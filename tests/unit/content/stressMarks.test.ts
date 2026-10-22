@@ -46,9 +46,9 @@ describe("stress marks", () => {
 
   // The stress drill names its key word, and the word is in the line
   it("name the key word in the stress drill", () => {
-    // Every take of a drill with a key word
-    const takes = VOICE_DRILLS.flatMap((drill) => drill.takes.filter((take) => take.stress).map((take) => ({ drill: drill.id, word: take.stress!, text: take.text })));
-    // All six in the stress drill, each in its line
-    expect([takes.length, takes.every((take) => take.drill === "p04" && take.text.split(/[\s.,]+/).includes(take.word))]).toEqual([6, true]);
+    // Every take of a drill with a key word, in every sentence set (decision 117)
+    const takes = VOICE_DRILLS.flatMap((drill) => (drill.sets ?? [drill.takes]).flatMap((set) => set.filter((take) => take.stress).map((take) => ({ drill: drill.id, word: take.stress!, text: take.text }))));
+    // Six in the stress drill and twenty-one across "Same sentence, different stress", each in its line
+    expect([takes.filter((take) => take.drill === "p04").length, takes.filter((take) => take.drill === "p05").length, takes.every((take) => ["p04", "p05"].includes(take.drill) && take.text.split(/[\s.,?]+/).includes(take.word))]).toEqual([6, 21, true]);
   });
 });

@@ -99,7 +99,7 @@ export function VoiceScreen(props: ScreenProps) {
                 {/* The drills, then any word lists */}
                 <ul className="divide-y divide-rule">
                   {/* Each drill */}
-                  {drills.map((drill) => <li key={drill.id}><RowLink href={`/voice/drill?id=${drill.id}`} meta={`${drill.takes.length} ${drill.takes.length === 1 ? "take" : "takes"}${doneText(counts.get(drill.id) ?? 0)}`}>{drill.title}</RowLink></li>)}
+                  {drills.map((drill) => <li key={drill.id}><RowLink href={`/voice/drill?id=${drill.id}`} meta={`${drill.sets ? `${drill.sets.length} sentences` : `${drill.takes.length} ${drill.takes.length === 1 ? "take" : "takes"}`}${doneText(counts.get(drill.id) ?? 0)}`}>{drill.title}</RowLink></li>)}
                   {/* Each word list, read aloud and checked word by word (once its own "Tricky words" fold; decision 80) */}
                   {lists.map((list) => <li key={list.id}><RowLink href={`/session?mode=read&prompt=${list.id}`} meta={`word list, 1 min${doneText(counts.get(list.id) ?? 0)}`}>{list.title}</RowLink></li>)}
                 </ul>

@@ -67,7 +67,7 @@ export interface FinishedRecording {
   marker?: boolean;
   // A take in the weekly check-in: which check-in and which part; the take is then a marker, numbered with its check-in, and has no listening step (decision 100)
   checkIn?: { id: string; part: CheckInPart };
-  // A round of a 4/3/2 loop: the loop, the round and its target length (decision 117)
+  // A round of a 4/3/2 loop: the loop, the round and its target length (decision 118)
   loop?: LoopTake;
 }
 
@@ -125,7 +125,7 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.outline ? { outline: recording.outline } : {}),
     // Keep a told story's set-up
     ...(recording.story ? { story: recording.story } : {}),
-    // Keep a 4/3/2 round's loop, round and target (decision 117)
+    // Keep a 4/3/2 round's loop, round and target (decision 118)
     ...(recording.loop ? { loop: recording.loop } : {}),
     // Keep the section of a section rehearsal
     ...(recording.sectionIndex !== undefined && recording.sectionIndex !== null ? { sectionIndex: recording.sectionIndex } : {}),

@@ -1,5 +1,5 @@
 "use client";
-// Pitch in your words on the voice drills (decision 111): planned stress on the stress drill's takes, loudness as thickness on the volume drills' takes, and the model voice's curve under yours in shadowing. A drill's takes keep no word times, so each line's known words are spread over the voiced time (rough)
+// Pitch in your words on the voice drills (decision 111): planned stress on the stress drills' takes, loudness as thickness on the volume drills' takes, each take's curve for "Exaggerate, then dial back" (decision 117), and the model voice's curve under yours in shadowing. A drill's takes keep no word times, so each line's known words are spread over the voiced time (rough)
 
 // Load React's memo tool
 import { useMemo } from "react";
@@ -8,12 +8,11 @@ import { CurveRow, useRowWidth, useWordMeasure } from "@/components/script/Pitch
 import { StressKey, StressRowView } from "@/components/script/PlannedStressCard";
 // Load the word placement, the phrases, the cleaning and the stress checks
 import { alignFromText } from "@/core/wordAlign";
-import { curveLines, pitchWords, rowPoints, stretchPoints } from "@/core/pitchPhrases";
+import { curveLines, rowPoints, stretchPoints } from "@/core/pitchPhrases";
 import { cleanSteps, fillShortGaps, smoothForDrawing, smoothPath } from "@/core/pitchClean";
-import { judgeStress, stressRows } from "@/core/plannedStress";
-import { markWord } from "@/core/stressMarks";
 import { thickPieces } from "@/core/loudnessLine";
-import { scriptTexts } from "@/core/takePitch";
+// Load a drill take's planned-stress verdict (shared with the drills' findings, decision 117)
+import { drillStress } from "@/core/intonationDrills";
 // Load the spacing of the readings
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the take type
@@ -30,17 +29,8 @@ export function TakeStress({ take, text, stress }: { take: TakeRecording; text: 
   const { ref, width } = useRowWidth();
   // How wide words are
   const measure = useWordMeasure();
-  // The line with its key word starred
-  const marked = markWord(text, stress);
-  // Its words spread over the voice, then judged
-  const result = useMemo(() => {
-    // The words, as the script numbers them
-    const alignment = alignFromText(scriptTexts(marked).join(" "), take.levels, LOUDNESS_TICK_MS, take.durationSec);
-    // The pitch in them
-    const pitch = pitchWords({ pitch: take.pitches, alignment, tickMs: LOUDNESS_TICK_MS });
-    // Judged, when there was voice
-    return pitch ? { pitch, judged: judgeStress(stressRows(marked), pitch)[0] ?? null } : null;
-  }, [marked, take]);
+  // Its words spread over the voice, then judged (shared with the drills' findings, decision 117)
+  const result = useMemo(() => drillStress(take, text, stress), [take, text, stress]);
   // Too little voice
   if (!result || !result.judged) return <p className="mt-3 text-footnote text-ink-muted">Too little voice was heard to check the key word.</p>;
   // The row and the key
@@ -76,6 +66,32 @@ export function TakeThickness({ take, text, loudest, label }: { take: TakeRecord
     <div ref={ref} data-thickness className="mt-3 flex flex-col gap-1">
       {/* Each row */}
       {rows.lines.map((line, index) => <CurveRow key={index} width={width} words={rows.words} slots={line.slots} path={smoothPath(line.points)} pieces={line.pieces} label={`${label}: your pitch line, thicker where you were louder.`} />)}
+    </div>
+  );
+}
+
+// A take's pitch curve over its words, for "Exaggerate, then dial back" (decision 117): the same phrase row as elsewhere, so the three takes' shapes can be set side by side
+export function TakeCurve({ take, text, label }: { take: TakeRecording; text: string; label: string }) {
+  // The width the row is drawn in
+  const { ref, width } = useRowWidth();
+  // How wide words are
+  const measure = useWordMeasure();
+  // The rows ready to draw
+  const rows = useMemo(() => {
+    // The words spread over the voice
+    const words = alignFromText(text, take.levels, LOUDNESS_TICK_MS, take.durationSec).words;
+    // The cleaned readings in steps, smoothed for drawing (decision 114)
+    const steps = smoothForDrawing(cleanSteps(take.pitches, LOUDNESS_TICK_MS).steps);
+    // Each row with its curve
+    return { words, lines: curveLines(words, steps, LOUDNESS_TICK_MS, width, measure) };
+  }, [take, text, width, measure]);
+  // Nothing voiced to draw
+  if (rows.lines.every((line) => line.points.every((point) => point === null))) return <p className="mt-3 text-footnote text-ink-muted">Too little voice was heard to draw the pitch.</p>;
+  // The rows
+  return (
+    <div ref={ref} data-take-curve className="mt-3 flex flex-col gap-1">
+      {/* Each row */}
+      {rows.lines.map((line, index) => <CurveRow key={index} width={width} words={rows.words} slots={line.slots} path={smoothPath(line.points)} label={label} />)}
     </div>
   );
 }

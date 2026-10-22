@@ -32,7 +32,7 @@ import { useTakeRecorder, type TakeResult } from "@/components/screens/useTakeRe
 // Load the take player
 import { useTakePlayback } from "@/components/screens/useTakePlayback";
 // Load the drills
-import { findVoiceDrill, VOICE_MODE_NAMES, type VoiceDrill, type VoiceTake } from "@/content/voice";
+import { drillWithSet, findVoiceDrill, VOICE_MODE_NAMES, type VoiceDrill, type VoiceTake } from "@/content/voice";
 // Load the findings
 import { drillFindings, measureTake } from "@/core/voiceFindings";
 // Load the usual-pitch rule, for the pitch lines
@@ -50,6 +50,8 @@ import type { RecordingServices } from "@/audio/services";
 const TakeStress = dynamic(() => import("@/components/script/DrillCurves").then((module) => module.TakeStress), { ssr: false });
 // (loudness as thickness)
 const TakeThickness = dynamic(() => import("@/components/script/DrillCurves").then((module) => module.TakeThickness), { ssr: false });
+// (each take's curve over its words, for "Exaggerate, then dial back", decision 117)
+const TakeCurve = dynamic(() => import("@/components/script/DrillCurves").then((module) => module.TakeCurve), { ssr: false });
 
 // The longest a take runs before it stops by itself, in seconds
 const MAX_TAKE_SECONDS = 30;
@@ -61,7 +63,7 @@ const SILENT_LEVEL = 0.01;
 // The measures drawn as loudness bars, and as pitch lines
 const LEVEL_MEASURES = new Set(["steps", "drop", "tone"]);
 // The measures drawn as pitch lines
-const PITCH_MEASURES = new Set(["ends", "range", "stress", "tone"]);
+const PITCH_MEASURES = new Set(["ends", "range", "stress", "tone", "dialback"]);
 
 // Mix the order of the takes for the guessing game
 function mixedOrder(count: number): number[] {
@@ -85,6 +87,8 @@ const wordsOf = (text: string) => text.split(/[\s,.;:!?“”"]+/).filter(Boolea
 interface VoiceDrillScreenProps extends ScreenProps {
   // The drill's id
   drillId: string;
+  // For a drill done with one of several sentences: which (counted from 0), or null to take the next in turn (decision 117)
+  set?: number | null;
   // The browser's microphone, transcriber and capture
   services: RecordingServices;
   // The step inside today's practice, or null
@@ -96,13 +100,43 @@ interface VoiceDrillScreenProps extends ScreenProps {
 }
 
 // Draw the drill
-export function VoiceDrillScreen({ drillId, services, planStep = null, clock: givenClock, shuffle = mixedOrder, ...props }: VoiceDrillScreenProps) {
+export function VoiceDrillScreen({ drillId, services, planStep = null, set = null, clock: givenClock, shuffle = mixedOrder, ...props }: VoiceDrillScreenProps) {
   // The repository and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
   // The clock
   const [clock] = useState(() => givenClock ?? (() => new Date()));
-  // The drill
-  const drill = findVoiceDrill(drillId);
+  // The drill as written
+  const written = findVoiceDrill(drillId);
+  // How many sentences it turns through (none for most drills)
+  const setCount = written?.sets?.length ?? 0;
+  // The next sentence in turn, worked out from how often the drill was done, when the address does not name one (decision 117)
+  const [nextSet, setNextSet] = useState<number | null>(null);
+  // Read how often it was done, once, only when needed
+  useEffect(() => {
+    // Not a drill with sentences, or one was named
+    if (setCount === 0 || set !== null) return;
+    // Ignore a late answer
+    let cancelled = false;
+    // Count this drill's sessions
+    repo.listSessions().then((sessions) => {
+      // The next sentence in turn
+      if (!cancelled) setNextSet(sessions.filter((session) => session.mode === "voice" && session.promptId === drillId).length % setCount);
+    }, () => {
+      // Unreadable: the first sentence
+      if (!cancelled) setNextSet(0);
+    });
+    // Stop on leaving
+    return () => {
+      // Ignore late answers
+      cancelled = true;
+    };
+  }, [drillId, repo, set, setCount]);
+  // The sentence in use: the named one, the next in turn once known, or none for most drills
+  const setIndex = setCount === 0 ? null : set !== null ? ((set % setCount) + setCount) % setCount : nextSet;
+  // The drill with that sentence's takes (memoised, so the findings below stay put)
+  const drill = useMemo(() => (written && setIndex !== null ? drillWithSet(written, setIndex) : written), [written, setIndex]);
+  // Still finding which sentence comes next
+  const choosingSet = setCount > 0 && setIndex === null;
   // Where this sits in today's practice
   const plan = usePlanNav(repo, today, planStep);
   // Whether this browser can turn speech into text (worked out in the browser only)
@@ -124,7 +158,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, clock: gi
   // How the slow round went, once done
   const [slowLine, setSlowLine] = useState<string | null>(null);
   // The guessing game's order, mixed once
-  const [order] = useState(() => shuffle(drill?.takes.length ?? 0));
+  const [order] = useState(() => shuffle(Math.max(drill?.takes.length ?? 0, ...(written?.sets ?? []).map((takes) => takes.length))));
   // The findings, once every take is in
   const findings = useMemo(() => (drill && takes.length >= drill.takes.length ? drillFindings(drill, takes) : null), [drill, takes]);
   // The speaker's usual pitch across the takes, for the pitch lines
@@ -287,7 +321,9 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, clock: gi
   // The problem to show: the blocked browser first
   const shownProblem = blocked ? "speech-unsupported" : problem;
   // Whether the take shows (the drill's takes, or the slow round)
-  const taking = stage !== "results" && current;
+  const taking = stage !== "results" && current && !choosingSet;
+  // Which sentence of how many, for a drill with sentences (counted from 1)
+  const sentenceLabel = setIndex !== null && setCount > 0 ? ` · Sentence ${setIndex + 1} of ${setCount}` : "";
 
   // Draw the page
   return (
@@ -300,9 +336,13 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, clock: gi
       {taking && (
         <section aria-labelledby="take-heading" className="mt-8 flex flex-col md:max-w-2xl">
           {/* Which take */}
-          <p className="text-footnote font-semibold text-accent">{stage === "slow" ? `${drill.title} · Slow round` : `${drill.title} · Take ${takes.length + 1} of ${drill.takes.length} · ${current.label}`}</p>
+          <p className="text-footnote font-semibold text-accent">{stage === "slow" ? `${drill.title} · Slow round` : `${drill.title}${sentenceLabel} · Take ${takes.length + 1} of ${drill.takes.length} · ${current.label}`}</p>
           {/* What the drill trains, before the first take */}
           {stage === "take" && takes.length === 0 && !recording && <p className="mt-1 max-w-[48ch] text-ink-muted">{drill.intro}</p>}
+          {/* What good looks like and how it will be shown, before the first take (decision 117) */}
+          {stage === "take" && takes.length === 0 && !recording && <p data-goal className="mt-2 max-w-[48ch] text-footnote"><span className="font-semibold">Goal:</span> {drill.goal}</p>}
+          {/* Another of the drill's sentences, before the first take */}
+          {stage === "take" && takes.length === 0 && !recording && !starting && setIndex !== null && setCount > 1 && <p><Link href={`/voice/drill?id=${drill.id}&set=${((setIndex + 1) % setCount) + 1}${planStep ? `&plan=${planStep}` : ""}`} className={`${TEXT_LINK} text-footnote`}>Another sentence</Link></p>}
           {/* What to say */}
           <h1 id="take-heading" className="mt-3 font-display text-statement font-semibold tracking-tight">{current.text}</h1>
           {/* How to say it */}
@@ -363,15 +403,21 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, clock: gi
                 </div>
                 {/* The stress drill: did the lift land on the key word (planned stress, decision 111) */}
                 {take.stress && takes[index] && <TakeStress take={takes[index]} text={take.text} stress={take.stress} />}
+                {/* Exaggerate, then dial back: the take's curve over its words (decision 117) */}
+                {drill.measure === "dialback" && takes[index] && <TakeCurve take={takes[index]} text={take.text} label={`${take.label}: your pitch line. ${findings.lines[index] ?? ""}`} />}
                 {/* Its pitch, for the other pitch and tone drills */}
-                {PITCH_MEASURES.has(drill.measure) && !take.stress && <div className="mt-3"><PitchLine pitches={takes[index]?.pitches ?? []} usual={usual} label={`${take.label}: pitch line. ${findings.lines[index] ?? ""}`} /></div>}
+                {PITCH_MEASURES.has(drill.measure) && drill.measure !== "dialback" && !take.stress && <div className="mt-3"><PitchLine pitches={takes[index]?.pitches ?? []} usual={usual} label={`${take.label}: pitch line. ${findings.lines[index] ?? ""}`} /></div>}
                 {/* The volume drills: the line thicker where louder (decision 111) */}
                 {drill.kind === "volume" && takes[index] && <TakeThickness take={takes[index]} text={take.text} loudest={loudest} label={take.label} />}
               </li>
             ))}
           </ol>
           {/* For the pitch lines: what the dashed line is */}
-          {PITCH_MEASURES.has(drill.measure) && drill.measure !== "stress" && usual !== null && <p className="mt-2 text-footnote text-ink-muted">The dashed line is your usual pitch; up is higher.</p>}
+          {PITCH_MEASURES.has(drill.measure) && drill.measure !== "stress" && drill.measure !== "dialback" && usual !== null && <p className="mt-2 text-footnote text-ink-muted">The dashed line is your usual pitch; up is higher.</p>}
+          {/* For the curves over the words: what the dashed line is */}
+          {drill.measure === "dialback" && <p className="mt-2 text-footnote text-ink-muted">The dashed line is each take’s own usual pitch; up is higher.</p>}
+          {/* For the stress takes: the key */}
+          {drill.measure === "shift" && <p className="mt-2 text-footnote text-ink-muted">The dashed circle is the word to stress; the dot is where your highest pitch landed.</p>}
           {/* For the thick lines: what the thickness is */}
           {drill.kind === "volume" && <p className="mt-2 text-footnote text-ink-muted">Thicker where you were louder. The dashed line is your usual pitch.</p>}
 

@@ -351,6 +351,8 @@ export interface Passage extends Prompt {
   source: string;
   // The words to read
   body: string;
+  // For a pause drill or a list of tricky words: what good looks like and how the results will show it, in one plain line shown before starting (decision 117); missing on other texts
+  goal?: string;
   // Key words to lean on (decision 111): each a stretch of the body as written, with its key word in *stars*; shown in bold while reading, and the results check whether the voice's lift landed on them. Missing on most texts
   stress?: ReadonlyArray<string>;
 }
@@ -407,36 +409,42 @@ export const PASSAGES: ReadonlyArray<Passage> = [
   { id: "r024", kind: "speech", title: "Safe for diversity", source: "John F. Kennedy, 1963", text: "Safe for diversity", body: "So, let us not be blind to our differences—but let us also direct attention to our common interests and to the means by which those differences can be resolved. And if we cannot end now our differences, at least we can help make the world safe for diversity. For, in the final analysis, our most basic common link is that we all inhabit this small planet. We all breathe the same air. We all cherish our children's future. And we are all mortal." },
 ];
 
+// The goal every pause drill shares (decision 117)
+const PAUSE_GOAL = "A pause of one to two seconds at each mark. You’ll see a bar for each mark against that target.";
+
+// The goal every list of tricky words shares (decision 117)
+const WORDS_GOAL = "Every word finished and clear. You’ll see which words could not be caught.";
+
 // Pause drills: passages with " / " where a deliberate pause belongs. DRAFT: approved at checkpoint C13
 export const PAUSE_DRILLS: ReadonlyArray<Passage> = [
   // Drill 1
-  { id: "d001", kind: "pause", title: "Before the point", source: "Pause drill", text: "Before the point", body: "Good evening, everyone. / Tonight I want to talk about one simple idea. / Most of us speak too fast when we are nervous. / The cure is not to slow every word. / It is to stop, / just for a moment, / before the words that matter most. / Try it now. / Pause, / and then say the thing you came to say." },
+  { id: "d001", kind: "pause", goal: PAUSE_GOAL, title: "Before the point", source: "Pause drill", text: "Before the point", body: "Good evening, everyone. / Tonight I want to talk about one simple idea. / Most of us speak too fast when we are nervous. / The cure is not to slow every word. / It is to stop, / just for a moment, / before the words that matter most. / Try it now. / Pause, / and then say the thing you came to say." },
   // Drill 2
-  { id: "d002", kind: "pause", title: "Three steps", source: "Pause drill", text: "Three steps", body: "There are three steps to a strong opening. / First, stand still and look at the room. / Second, breathe in, slowly. / Third, say your first sentence to one person, not to everyone. / That is all. / Three steps, / and the hardest part of the talk is behind you." },
+  { id: "d002", kind: "pause", goal: PAUSE_GOAL, title: "Three steps", source: "Pause drill", text: "Three steps", body: "There are three steps to a strong opening. / First, stand still and look at the room. / Second, breathe in, slowly. / Third, say your first sentence to one person, not to everyone. / That is all. / Three steps, / and the hardest part of the talk is behind you." },
   // Drill 3
-  { id: "d003", kind: "pause", title: "The numbers", source: "Pause drill", text: "The numbers", body: "Last year we answered twelve thousand calls. / This year, / we answered twenty thousand. / That is not a small change. / It means more people trusted us, / and more people needed us. / So the question for next year is simple. / Can we keep that trust / while we grow?" },
+  { id: "d003", kind: "pause", goal: PAUSE_GOAL, title: "The numbers", source: "Pause drill", text: "The numbers", body: "Last year we answered twelve thousand calls. / This year, / we answered twenty thousand. / That is not a small change. / It means more people trusted us, / and more people needed us. / So the question for next year is simple. / Can we keep that trust / while we grow?" },
   // Drill 4
-  { id: "d004", kind: "pause", title: "A short story", source: "Pause drill", text: "A short story", body: "When I was nine, / I forgot every word of my school speech. / I stood there, / silent, / for what felt like an hour. / Then a teacher at the back nodded at me. / Just a nod. / I found my first line, / and the rest came with it. / I still look for that nod in every room." },
+  { id: "d004", kind: "pause", goal: PAUSE_GOAL, title: "A short story", source: "Pause drill", text: "A short story", body: "When I was nine, / I forgot every word of my school speech. / I stood there, / silent, / for what felt like an hour. / Then a teacher at the back nodded at me. / Just a nod. / I found my first line, / and the rest came with it. / I still look for that nod in every room." },
   // Drill 5
-  { id: "d005", kind: "pause", title: "The closing line", source: "Pause drill", text: "The closing line", body: "Thank you all for being here. / We have covered a lot today, / but if you remember one thing, / let it be this. / You do not need to be fearless to speak well. / You only need to keep going / while the fear is still there. / Thank you." },
+  { id: "d005", kind: "pause", goal: PAUSE_GOAL, title: "The closing line", source: "Pause drill", text: "The closing line", body: "Thank you all for being here. / We have covered a lot today, / but if you remember one thing, / let it be this. / You do not need to be fearless to speak well. / You only need to keep going / while the fear is still there. / Thank you." },
   // Drill 6: a pause for effect, one to two seconds before the key word (decision 80)
-  { id: "d006", kind: "pause", title: "Pause for effect", source: "Pause drill", text: "Pause for effect", body: "And the award goes to / you. / There was one thing / that changed everything. / The answer, / it turns out, / was right in front of us / all along." },
+  { id: "d006", kind: "pause", goal: PAUSE_GOAL, title: "Pause for effect", source: "Pause drill", text: "Pause for effect", body: "And the award goes to / you. / There was one thing / that changed everything. / The answer, / it turns out, / was right in front of us / all along." },
   // Drill 7: a pause after a question, so it lands
-  { id: "d007", kind: "pause", title: "Question pause", source: "Pause drill", text: "Question pause", body: "What would you do with one extra hour a day? / Most of us would say: rest. / So why do we fill every hour we already have? / Think about it. / What would you stop doing? /" },
+  { id: "d007", kind: "pause", goal: PAUSE_GOAL, title: "Question pause", source: "Pause drill", text: "Question pause", body: "What would you do with one extra hour a day? / Most of us would say: rest. / So why do we fill every hour we already have? / Think about it. / What would you stop doing? /" },
   // Drill 8: a pause between points
-  { id: "d008", kind: "pause", title: "Between points", source: "Pause drill", text: "Between points", body: "Three things matter this year. / First, our customers. / Second, our people. / And third, / the way we work together. / Customers, / people, / and how we work." },
+  { id: "d008", kind: "pause", goal: PAUSE_GOAL, title: "Between points", source: "Pause drill", text: "Between points", body: "Three things matter this year. / First, our customers. / Second, our people. / And third, / the way we work together. / Customers, / people, / and how we work." },
 ];
 
 // Lists of words that are easy to stumble on, for the practice library. DRAFT: approved at checkpoint C13
 export const TRICKY_WORDS: ReadonlyArray<Passage> = [
   // List 1
-  { id: "k001", kind: "words", title: "Everyday tricky words", source: "Tricky words", text: "Everyday tricky words", body: "specific, statistics, particularly, February, library, probably, recognize, comfortable, temperature, vegetable, sixth, clothes" },
+  { id: "k001", kind: "words", goal: WORDS_GOAL, title: "Everyday tricky words", source: "Tricky words", text: "Everyday tricky words", body: "specific, statistics, particularly, February, library, probably, recognize, comfortable, temperature, vegetable, sixth, clothes" },
   // List 2
-  { id: "k002", kind: "words", title: "Business words", source: "Tricky words", text: "Business words", body: "entrepreneur, quarterly, deliverables, prioritize, accessibility, infrastructure, regulatory, anonymity, preliminary, simultaneously, thoroughly, hierarchy" },
+  { id: "k002", kind: "words", goal: WORDS_GOAL, title: "Business words", source: "Tricky words", text: "Business words", body: "entrepreneur, quarterly, deliverables, prioritize, accessibility, infrastructure, regulatory, anonymity, preliminary, simultaneously, thoroughly, hierarchy" },
   // List 3
-  { id: "k003", kind: "words", title: "Sound-alike pairs", source: "Tricky words", text: "Sound-alike pairs", body: "accept, except, affect, effect, then, than, quite, quiet, desert, dessert, specific, Pacific, conscience, conscious" },
+  { id: "k003", kind: "words", goal: WORDS_GOAL, title: "Sound-alike pairs", source: "Tricky words", text: "Sound-alike pairs", body: "accept, except, affect, effect, then, than, quite, quiet, desert, dessert, specific, Pacific, conscience, conscious" },
   // List 4
-  { id: "k004", kind: "words", title: "Long words, steady pace", source: "Tricky words", text: "Long words, steady pace", body: "responsibility, opportunity, organization, communication, collaboration, determination, characteristic, representative, unfortunately, approximately, environmental, extraordinary" },
+  { id: "k004", kind: "words", goal: WORDS_GOAL, title: "Long words, steady pace", source: "Tricky words", text: "Long words, steady pace", body: "responsibility, opportunity, organization, communication, collaboration, determination, characteristic, representative, unfortunately, approximately, environmental, extraordinary" },
 ];
 
 // Day the rotation counts from

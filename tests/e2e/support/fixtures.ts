@@ -66,6 +66,9 @@ export const ROUTES: ReadonlyArray<string> = [
   "/voice",
   "/voice/warmup",
   "/voice/drill?id=p04",
+  // The two intonation drills, one with a sentence named (decision 117)
+  "/voice/drill?id=p05",
+  "/voice/drill?id=p06&set=2",
   "/voice/shadow?id=s01",
   "/voice/drill?id=missing",
   // Skills

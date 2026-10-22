@@ -1,6 +1,6 @@
 # Plan: voice modes (warm-ups, clear sounds, volume, pitch, tone, pausing, shadowing)
 
-**Status: built 2026-10-19 (decision 80)**. Shadowing plays saved ElevenLabs reads since 2026-10-20 (decision 82). Still to come: model reads for the tone drills, and the user's YouTube picks. Pause drills and tricky words moved into "Your voice" as proposed below (that question was not answered; moving them back is a small change).
+**Status: built 2026-10-19 (decision 80)**; two intonation drills and a goal line before every drill added 2026-10-22 (decision 117). Shadowing plays saved ElevenLabs reads since 2026-10-20 (decision 82). Still to come: model reads for the tone drills, and the user's YouTube picks. Pause drills and tricky words moved into "Your voice" as proposed below (that question was not answered; moving them back is a small change).
 
 Proposed 2026-10-19 and updated the same day with the user's answers. The user asked for pronunciation drills, rhythm, pitch and volume drills, tone and pausing drills, and shadowing ("copy a speaker you admire: their pace, their energy, the way they land a point"), each with a daily minute of speaking. This plan fleshes out the modes; how to build them comes later.
 
@@ -138,6 +138,11 @@ About 15 sets to start.
 - **Land it low.** Three statements, each ending with a clear step down.
 - **Stretch the range.** Read a line with too much melody on purpose, then normally. The normal take usually lands in between, livelier than before.
 - **Stress the key word.** "I didn't say she took the money", six times, stressing a different word each time. The meaning changes each time.
+- **Same sentence, different stress** (built 2026-10-22, decision 117; p05). One of six sentences in turn ("I didn’t say she stole it", "We moved the meeting to Friday", "She gave him the blue folder", "I thought you were coming tonight", "Can you send the report today?", "My brother bought a red car"), said three or four times, leaning on a different marked word each time. Each take is drawn as planned stress (decision 111: the target in a dashed circle, a dot where your highest pitch landed), and the headline counts the takes whose peak landed on their target ("3 of 4 takes got the peak on the target word."). No guessing game: the circle and the dot answer it.
+- **Exaggerate, then dial back** (built 2026-10-22, decision 117; p06). One of six lines in turn ("I can’t believe we actually won.", "You’ll never guess who called me today.", "This is the best news all year.", "We have exactly one hour to finish.", "Nobody told me it would snow.", "That was the longest meeting of my life."), said flat, then exaggerated, then naturally. Each take is drawn as a phrase row (its curve over its words) with its range in steps, and one line: "Your natural take kept half of the exaggerated range (4 of 8 steps)." If the exaggerated take was not clearly wider than the flat one (decision 103's fixed amount for a pitch range: a sixth or one step), it says so instead. "Stretch the range" (p03) stays as the two-take version.
+- **Both new drills** use targets from stress marks only: no new model recordings (ElevenLabs reads cost credits and were not asked for). "Another sentence" moves to the next one; without one named, the drill takes the next in turn by how often it was done.
+
+**Before the first take** (decision 117, every drill): one plain line on what good looks like and how it will be shown, such as "Goal: your highest pitch lands on the key word. You’ll see a circle on the target and a dot where your peak landed."
 
 **Afterwards.**
 - **A pitch line under each take.** It is drawn relative to your own usual pitch, so every voice reads the same way, low or high.

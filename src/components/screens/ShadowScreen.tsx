@@ -271,7 +271,9 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
           {/* Its name */}
           <h1 id="shadow-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">{passage.title}</h1>
           {/* How it works */}
-          <p className="mt-3 max-w-[48ch] text-lede">Listen to each phrase, then say it back the same way: the pace, the energy, where it lands. Then the whole passage.</p>
+          <p className="mt-3 max-w-[48ch] text-lede">Listen to each phrase, then say it back the same way. Then the whole passage.</p>
+          {/* What good looks like and how it will be shown (decision 117) */}
+          <p data-goal className="mt-2 max-w-[48ch] text-footnote"><span className="font-semibold">Goal:</span> {passage.goal}</p>
           {/* The phrases */}
           <ol aria-label="Phrases" className="mt-5 flex flex-col gap-2">
             {/* Each phrase */}

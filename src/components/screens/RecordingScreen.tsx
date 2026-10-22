@@ -1469,6 +1469,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               )}
               {/* For a pause drill, how it works */}
               {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Pause for a second at each ‖.</p>}
+              {/* A lesson, a pause drill or a list of tricky words: what good looks like and how it will be shown, before starting (decision 117) */}
+              {!recording && (lesson?.goal ?? passage?.goal) && <p data-goal className="mt-3 max-w-[52ch] text-footnote"><span className="font-semibold">Goal:</span> {lesson?.goal ?? passage?.goal}</p>}
               {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
               {!textHidden && (
 <ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />

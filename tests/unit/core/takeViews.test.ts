@@ -107,6 +107,10 @@ describe("takeViews: drills and lessons show only their own view", () => {
   it.each([
     [{ kind: "volume" as const }, "v01", ["thickness"]],
     [{ kind: "pitch" as const }, "p04", ["planned-stress"]],
+    // Same sentence, different stress (decision 117)
+    [{ kind: "pitch" as const }, "p05", ["planned-stress"]],
+    // Exaggerate, then dial back: its pitch line, drawn over the words
+    [{ kind: "pitch" as const }, "p06", ["pitch-line"]],
     [{ kind: "pitch" as const }, "p01", ["pitch-line"]],
     [{ kind: "tone" as const }, "t01", ["pitch-line"]],
     [{ kind: "shadow" as const }, "s01", ["shadow"]],

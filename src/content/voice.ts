@@ -74,6 +74,10 @@ export type VoiceMeasure =
   | "range"
   // Which word was stressed, judged by guessing
   | "stress"
+  // Same sentence, different stress: whether each take's peak landed on its own target word (decision 117)
+  | "shift"
+  // Exaggerate, then dial back: each take's pitch range, and how much of the exaggerated range the natural take kept (decision 117)
+  | "dialback"
   // Three feelings, compared and guessed
   | "tone";
 
@@ -101,11 +105,68 @@ export interface VoiceDrill {
   title: string;
   // One line on what it trains
   intro: string;
+  // What good looks like for this drill and how the results will show it, in one plain line shown before the first take (decision 117)
+  goal: string;
   // What the results look at
   measure: VoiceMeasure;
-  // The takes, in order
+  // The takes, in order (for a drill with sentence sets, the first set's)
   takes: ReadonlyArray<VoiceTake>;
+  // For a drill done with one of several sentences: each sentence's takes; the drill turns through them (decision 117)
+  sets?: ReadonlyArray<ReadonlyArray<VoiceTake>>;
 }
+
+// One sentence of "Same sentence, different stress": the line and the words to lean on, one a take (decision 117)
+interface ShiftSentence {
+  // The line
+  text: string;
+  // The words to stress in turn, each found once in the line
+  targets: ReadonlyArray<string>;
+}
+
+// The sentences for "Same sentence, different stress": each said three or four times, leaning on a different word each time (written for the app; the first is the classic example)
+export const SHIFT_SENTENCES: ReadonlyArray<ShiftSentence> = [
+  // The classic: who, what and to whom changes with the stress
+  { text: "I didn’t say she stole it.", targets: ["I", "say", "she", "stole"] },
+  // A meeting moved
+  { text: "We moved the meeting to Friday.", targets: ["We", "meeting", "Friday"] },
+  // A folder handed over
+  { text: "She gave him the blue folder.", targets: ["She", "him", "blue", "folder"] },
+  // A plan misunderstood
+  { text: "I thought you were coming tonight.", targets: ["I", "you", "tonight"] },
+  // A request
+  { text: "Can you send the report today?", targets: ["you", "report", "today"] },
+  // A car bought
+  { text: "My brother bought a red car.", targets: ["brother", "bought", "red", "car"] },
+];
+
+// The lines for "Exaggerate, then dial back": each said flat, then with big melody, then naturally (written for the app)
+export const DIALBACK_LINES: ReadonlyArray<string> = [
+  // A surprise win
+  "I can’t believe we actually won.",
+  // A phone call
+  "You’ll never guess who called me today.",
+  // Good news
+  "This is the best news all year.",
+  // A deadline
+  "We have exactly one hour to finish.",
+  // Weather
+  "Nobody told me it would snow.",
+  // A long meeting
+  "That was the longest meeting of my life.",
+];
+
+// The three takes of one "Exaggerate, then dial back" line
+const dialBack = (text: string): VoiceTake[] => [
+  // Flat
+  { label: "Flat", text, cue: "No melody at all, like reading out a list." },
+  // Exaggerated
+  { label: "Exaggerated", text, cue: "Big ups and downs, far more than feels normal." },
+  // Natural
+  { label: "Natural", text, cue: "Now say it naturally, keeping some of that life." },
+];
+
+// The takes of one "Same sentence, different stress" sentence, one per target word
+const stressShift = (sentence: ShiftSentence): VoiceTake[] => sentence.targets.map((word) => ({ label: `Stress “${word}”`, text: sentence.text, cue: `Lean on “${word}”: your highest pitch on it.`, stress: word }));
 
 // The three rooms of the volume drill, in order
 const ROOMS = [
@@ -129,7 +190,7 @@ const STRESSED = ["I", "didn’t", "say", "she", "took", "money"];
 // Every voice drill
 export const VOICE_DRILLS: ReadonlyArray<VoiceDrill> = [
   // Clear sounds: word endings
-  { id: "c01", kind: "clear", title: "Word endings", intro: "Finish every word, especially the last sound.", measure: "words", takes: [
+  { id: "c01", kind: "clear", title: "Word endings", intro: "Finish every word, especially the last sound.", goal: "Every last sound comes through. You’ll see which words the phone could not catch.", measure: "words", takes: [
     // Endings in -ed and -s
     { label: "Line 1", text: "She asked if the tests passed last Tuesday.", cue: "Land the t and the s at the end of each word." },
     // More endings
@@ -138,7 +199,7 @@ export const VOICE_DRILLS: ReadonlyArray<VoiceDrill> = [
     { label: "Line 3", text: "The facts were clear, and the costs were fixed.", cue: "Don’t rush the last word." },
   ] },
   // Clear sounds: long words
-  { id: "c02", kind: "clear", title: "Long words", intro: "Long words get squashed when rushed. Give every syllable its turn.", measure: "words", takes: [
+  { id: "c02", kind: "clear", title: "Long words", intro: "Long words get squashed when rushed. Give every syllable its turn.", goal: "Every syllable of each long word comes through. You’ll see which words could not be caught.", measure: "words", takes: [
     // A ladder of one word
     { label: "Ladder 1", text: "particular, particularly, particularity", cue: "Slowly. Every syllable." },
     // Another ladder
@@ -147,7 +208,7 @@ export const VOICE_DRILLS: ReadonlyArray<VoiceDrill> = [
     { label: "Ladder 3", text: "statistic, statistics, statistical", cue: "Crisp t and s." },
   ] },
   // Clear sounds: tongue twisters
-  { id: "c03", kind: "clear", title: "Tongue twisters", intro: "Fast is not the point. Clear first, then a little faster.", measure: "words", takes: [
+  { id: "c03", kind: "clear", title: "Tongue twisters", intro: "Fast is not the point. Clear first, then a little faster.", goal: "Each twister clear first, then a little faster. You’ll see which words could not be caught.", measure: "words", takes: [
     // Seashells
     { label: "Twister 1", text: "She sells seashells by the seashore.", cue: "Clear before fast." },
     // Lorry
@@ -156,32 +217,32 @@ export const VOICE_DRILLS: ReadonlyArray<VoiceDrill> = [
     { label: "Twister 3", text: "Unique New York, you know you need unique New York.", cue: "Light and quick, every word there." },
   ] },
   // Clear sounds: everyday tricky words (the first tricky-word list)
-  { id: "c04", kind: "clear", title: "Everyday tricky words", intro: "Words people often blur in everyday speech.", measure: "words", takes: [
+  { id: "c04", kind: "clear", title: "Everyday tricky words", intro: "Words people often blur in everyday speech.", goal: "Each word finished before the next starts. You’ll see which words could not be caught.", measure: "words", takes: [
     // The list in two halves
     { label: "First half", text: "specific, statistics, particularly, February, library, probably", cue: "A short pause after each comma." },
     // The second half
     { label: "Second half", text: "recognize, comfortable, temperature, vegetable, sixth, clothes", cue: "Finish each word before the next." },
   ] },
   // Clear sounds: business words
-  { id: "c05", kind: "clear", title: "Business words", intro: "Long work words that tend to lose their middle.", measure: "words", takes: [
+  { id: "c05", kind: "clear", title: "Business words", intro: "Long work words that tend to lose their middle.", goal: "Each long word keeps its middle. You’ll see which words could not be caught.", measure: "words", takes: [
     // The first half
     { label: "First half", text: "entrepreneur, quarterly, deliverables, prioritize, accessibility, infrastructure", cue: "Steady, one word at a time." },
     // The second half
     { label: "Second half", text: "regulatory, anonymity, preliminary, simultaneously, thoroughly, hierarchy", cue: "Every syllable." },
   ] },
   // Clear sounds: sound-alike pairs
-  { id: "c06", kind: "clear", title: "Sound-alike pairs", intro: "Pairs that only one sound tells apart.", measure: "words", takes: [
+  { id: "c06", kind: "clear", title: "Sound-alike pairs", intro: "Pairs that only one sound tells apart.", goal: "Each pair sounds clearly different. You’ll see which words could not be caught.", measure: "words", takes: [
     // The first pairs
     { label: "First pairs", text: "accept, except, affect, effect, then, than, quite, quiet", cue: "Make each pair clearly different." },
     // More pairs
     { label: "More pairs", text: "desert, dessert, specific, Pacific, conscience, conscious", cue: "Lean on the sound that differs." },
   ] },
   // Volume: three rooms, with a greeting
-  { id: "v01", kind: "volume", title: "Three rooms: the greeting", intro: "One line at three levels. Make each step a clear jump.", measure: "steps", takes: rooms("Good morning, everyone. Let’s get started.") },
+  { id: "v01", kind: "volume", title: "Three rooms: the greeting", intro: "One line at three levels. Make each step a clear jump.", goal: "Each room a clear step louder than the last. You’ll see a bar for each take and the size of each step.", measure: "steps", takes: rooms("Good morning, everyone. Let’s get started.") },
   // Volume: three rooms, with news
-  { id: "v02", kind: "volume", title: "Three rooms: the news", intro: "One line at three levels, louder without shouting.", measure: "steps", takes: rooms("I have some news that changes everything.") },
+  { id: "v02", kind: "volume", title: "Three rooms: the news", intro: "One line at three levels, louder without shouting.", goal: "Each room a clear step louder, never shouting. You’ll see a bar for each take and the size of each step.", measure: "steps", takes: rooms("I have some news that changes everything.") },
   // Volume: to the last word
-  { id: "v03", kind: "volume", title: "To the last word", intro: "Many speakers fade on the last word. Keep it as strong as the first.", measure: "endings", takes: [
+  { id: "v03", kind: "volume", title: "To the last word", intro: "Many speakers fade on the last word. Keep it as strong as the first.", goal: "The last word as strong as the first. You’ll see each line drawn thicker where you were louder.", measure: "endings", takes: [
     // A result
     { label: "Line 1", text: "We finished the project two weeks early.", cue: "The last word as strong as the first." },
     // A payoff
@@ -190,21 +251,21 @@ export const VOICE_DRILLS: ReadonlyArray<VoiceDrill> = [
     { label: "Line 3", text: "Thank you for everything you did this year.", cue: "Don’t let “this year” drop away." },
   ] },
   // Volume: drop for effect
-  { id: "v04", kind: "volume", title: "Drop for effect", intro: "A quieter line makes people lean in. Say it once normally, then clearly quieter.", measure: "drop", takes: [
+  { id: "v04", kind: "volume", title: "Drop for effect", intro: "A quieter line makes people lean in. Say it once normally, then clearly quieter.", goal: "The second take clearly quieter, every word still clear. You’ll see a bar for each take.", measure: "drop", takes: [
     // Normal
     { label: "Normal", text: "And then, the whole room went silent.", cue: "Your normal speaking voice." },
     // Quieter
     { label: "Quiet, for effect", text: "And then, the whole room went silent.", cue: "Clearly quieter, but every word still clear." },
   ] },
   // Pitch: statement or question
-  { id: "p01", kind: "pitch", title: "Statement or question", intro: "The same words mean different things when the end goes down or up.", measure: "ends", takes: [
+  { id: "p01", kind: "pitch", title: "Statement or question", intro: "The same words mean different things when the end goes down or up.", goal: "The statement ends low and the question ends high. You’ll see each take’s pitch line and how it ended.", measure: "ends", takes: [
     // A statement
     { label: "Statement", text: "You finished the report.", cue: "End low: a fact.", expect: "fall" },
     // A question
     { label: "Question", text: "You finished the report?", cue: "End high: a real question.", expect: "rise" },
   ] },
   // Pitch: land it low
-  { id: "p02", kind: "pitch", title: "Land it low", intro: "Ending a statement low makes it sound certain.", measure: "ends", takes: [
+  { id: "p02", kind: "pitch", title: "Land it low", intro: "Ending a statement low makes it sound certain.", goal: "Each line steps down on its last word. You’ll see each take’s pitch line and how it ended.", measure: "ends", takes: [
     // A plan
     { label: "Line 1", text: "This is the plan.", cue: "Step down on “plan”.", expect: "fall" },
     // A date
@@ -213,26 +274,30 @@ export const VOICE_DRILLS: ReadonlyArray<VoiceDrill> = [
     { label: "Line 3", text: "I’m confident it will work.", cue: "Step down on “work”.", expect: "fall" },
   ] },
   // Pitch: stretch the range
-  { id: "p03", kind: "pitch", title: "Stretch the range", intro: "Overdo the melody once, then say it normally. The normal take usually lands livelier than before.", measure: "range", takes: [
+  { id: "p03", kind: "pitch", title: "Stretch the range", intro: "Overdo the melody once, then say it normally. The normal take usually lands livelier than before.", goal: "Your normal take keeps some of the big melody. You’ll see each take’s pitch line and range.", measure: "range", takes: [
     // Too much
     { label: "Too much melody", text: "What a wonderful surprise this is.", cue: "Big ups and downs, like a children’s story." },
     // Normal
     { label: "Normal", text: "What a wonderful surprise this is.", cue: "Now say it naturally." },
   ] },
   // Pitch and stress: the classic stress drill
-  { id: "p04", kind: "pitch", title: "Stress the key word", intro: "One sentence, six meanings. Stress a different word each time.", measure: "stress", takes: STRESSED.map((word) => ({ label: `Stress “${word}”`, text: "I didn’t say she took the money.", cue: `Lean on “${word}”: a little higher, louder or longer.`, stress: word })) },
+  { id: "p04", kind: "pitch", title: "Stress the key word", intro: "One sentence, six meanings. Stress a different word each time.", goal: "Your highest pitch lands on the key word. You’ll see a circle on the target and a dot where your peak landed.", measure: "stress", takes: STRESSED.map((word) => ({ label: `Stress “${word}”`, text: "I didn’t say she took the money.", cue: `Lean on “${word}”: a little higher, louder or longer.`, stress: word })) },
+  // Pitch and stress: same sentence, different stress, one of six sentences in turn (decision 117)
+  { id: "p05", kind: "pitch", title: "Same sentence, different stress", intro: "One sentence, said a few times. Move your highest pitch to a different word each time.", goal: "Your highest pitch lands on a different word each time. You’ll see a circle on each target and a dot where your peak landed.", measure: "shift", takes: stressShift(SHIFT_SENTENCES[0]!), sets: SHIFT_SENTENCES.map(stressShift) },
+  // Pitch: exaggerate, then dial back, one of six lines in turn (decision 117)
+  { id: "p06", kind: "pitch", title: "Exaggerate, then dial back", intro: "Flat, then far too much, then natural. The natural take usually keeps some of the life.", goal: "A big range, then a natural take that keeps some of it. You’ll see each take’s curve and its range in steps.", measure: "dialback", takes: dialBack(DIALBACK_LINES[0]!), sets: DIALBACK_LINES.map(dialBack) },
   // Tone: news
-  { id: "t01", kind: "tone", title: "I have some news", intro: "One line, three feelings. Change pitch, volume and pace on purpose.", measure: "tone", takes: feelings("I have some news.", ["Excited", "Worried", "Calm"]) },
+  { id: "t01", kind: "tone", title: "I have some news", intro: "One line, three feelings. Change pitch, volume and pace on purpose.", goal: "Three takes that sound clearly different. You’ll see pitch, level and length for each, then guess which was which.", measure: "tone", takes: feelings("I have some news.", ["Excited", "Worried", "Calm"]) },
   // Tone: a thank-you
-  { id: "t02", kind: "tone", title: "Thank you all for coming", intro: "One line, three feelings.", measure: "tone", takes: feelings("Thank you all for coming.", ["Warm", "Formal", "Moved"]) },
+  { id: "t02", kind: "tone", title: "Thank you all for coming", intro: "One line, three feelings.", goal: "Three takes that sound clearly different. You’ll see pitch, level and length for each, then guess which was which.", measure: "tone", takes: feelings("Thank you all for coming.", ["Warm", "Formal", "Moved"]) },
   // Tone: the budget
-  { id: "t03", kind: "tone", title: "We need to talk about the budget", intro: "One line, three feelings.", measure: "tone", takes: feelings("We need to talk about the budget.", ["Calm", "Urgent", "Reassuring"]) },
+  { id: "t03", kind: "tone", title: "We need to talk about the budget", intro: "One line, three feelings.", goal: "Three takes that sound clearly different. You’ll see pitch, level and length for each, then guess which was which.", measure: "tone", takes: feelings("We need to talk about the budget.", ["Calm", "Urgent", "Reassuring"]) },
   // Tone: an idea
-  { id: "t04", kind: "tone", title: "That’s an interesting idea", intro: "One line, three feelings.", measure: "tone", takes: feelings("That’s an interesting idea.", ["Curious", "Doubtful", "Delighted"]) },
+  { id: "t04", kind: "tone", title: "That’s an interesting idea", intro: "One line, three feelings.", goal: "Three takes that sound clearly different. You’ll see pitch, level and length for each, then guess which was which.", measure: "tone", takes: feelings("That’s an interesting idea.", ["Curious", "Doubtful", "Delighted"]) },
   // Tone: a win
-  { id: "t05", kind: "tone", title: "We did it", intro: "One line, three feelings.", measure: "tone", takes: feelings("We did it.", ["Proud", "Relieved", "Amazed"]) },
+  { id: "t05", kind: "tone", title: "We did it", intro: "One line, three feelings.", goal: "Three takes that sound clearly different. You’ll see pitch, level and length for each, then guess which was which.", measure: "tone", takes: feelings("We did it.", ["Proud", "Relieved", "Amazed"]) },
   // Tone: an apology
-  { id: "t06", kind: "tone", title: "I’m sorry, that was my mistake", intro: "One line, three feelings.", measure: "tone", takes: feelings("I’m sorry, that was my mistake.", ["Sincere", "Brisk", "Embarrassed"]) },
+  { id: "t06", kind: "tone", title: "I’m sorry, that was my mistake", intro: "One line, three feelings.", goal: "Three takes that sound clearly different. You’ll see pitch, level and length for each, then guess which was which.", measure: "tone", takes: feelings("I’m sorry, that was my mistake.", ["Sincere", "Brisk", "Embarrassed"]) },
 ];
 
 // The names of the voice modes, as Practice and today's plan show them
@@ -256,12 +321,17 @@ export interface ShadowPassage {
   source: string;
   // The phrases, in order
   phrases: ReadonlyArray<ShadowPhrase>;
+  // What good looks like and how the results will show it, in one plain line shown before the first phrase (decision 117)
+  goal: string;
 }
+
+// The goal every passage to shadow shares: the same thing is being copied, whoever said it
+const SHADOW_GOAL = "Your pace and melody close to the model’s. You’ll see your curve over the model voice’s, and your pace against it.";
 
 // Every passage to shadow: lines from public-domain speeches already in the app, and short original ones in a few styles
 export const SHADOW_PASSAGES: ReadonlyArray<ShadowPassage> = [
   // Kennedy, 1961
-  { id: "s01", title: "Ask not", source: "John F. Kennedy, 1961", phrases: [
+  { id: "s01", title: "Ask not", source: "John F. Kennedy, 1961", goal: SHADOW_GOAL, phrases: [
     // The address
     { text: "And so, my fellow Americans:", copy: "Slow down, and pause after “Americans”." },
     // The turn
@@ -270,7 +340,7 @@ export const SHADOW_PASSAGES: ReadonlyArray<ShadowPassage> = [
     { text: "ask what you can do for your country.", copy: "Stress “you”, and land “country” low." },
   ] },
   // Lincoln, 1865
-  { id: "s02", title: "With malice toward none", source: "Abraham Lincoln, 1865", phrases: [
+  { id: "s02", title: "With malice toward none", source: "Abraham Lincoln, 1865", goal: SHADOW_GOAL, phrases: [
     // Two halves
     { text: "With malice toward none, with charity for all,", copy: "Two matching halves, a short pause between them." },
     // Firmness
@@ -279,7 +349,7 @@ export const SHADOW_PASSAGES: ReadonlyArray<ShadowPassage> = [
     { text: "let us strive on to finish the work we are in.", copy: "Land “the work we are in” low and slow." },
   ] },
   // Roosevelt, 1933
-  { id: "s03", title: "Fear itself", source: "Franklin D. Roosevelt, 1933", phrases: [
+  { id: "s03", title: "Fear itself", source: "Franklin D. Roosevelt, 1933", goal: SHADOW_GOAL, phrases: [
     // The set-up
     { text: "So, first of all, let me assert my firm belief", copy: "Calm and deliberate." },
     // The build
@@ -288,7 +358,7 @@ export const SHADOW_PASSAGES: ReadonlyArray<ShadowPassage> = [
     { text: "is fear itself.", copy: "Pause before it, then drop your voice." },
   ] },
   // An energetic update
-  { id: "s04", title: "The good news", source: "An energetic update", phrases: [
+  { id: "s04", title: "The good news", source: "An energetic update", goal: SHADOW_GOAL, phrases: [
     // The opener
     { text: "Here’s the good news.", copy: "Bright and quick." },
     // The fact
@@ -299,7 +369,7 @@ export const SHADOW_PASSAGES: ReadonlyArray<ShadowPassage> = [
     { text: "Customers noticed.", copy: "Short, low and certain." },
   ] },
   // A warm toast
-  { id: "s05", title: "A toast", source: "A warm toast", phrases: [
+  { id: "s05", title: "A toast", source: "A warm toast", goal: SHADOW_GOAL, phrases: [
     // The friend
     { text: "I’ve known Sam since our first week at work.", copy: "Warm, unhurried." },
     // The pattern
@@ -310,7 +380,7 @@ export const SHADOW_PASSAGES: ReadonlyArray<ShadowPassage> = [
     { text: "So please, raise your glasses.", copy: "Lift the energy, then smile." },
   ] },
   // Calm authority
-  { id: "s06", title: "Get it right", source: "Calm authority", phrases: [
+  { id: "s06", title: "Get it right", source: "Calm authority", goal: SHADOW_GOAL, phrases: [
     // Clear
     { text: "Let me be clear about one thing.", copy: "Low and steady." },
     // No rush
@@ -326,6 +396,16 @@ export const SHADOW_PASSAGES: ReadonlyArray<ShadowPassage> = [
 export function findVoiceDrill(id: string): VoiceDrill | undefined {
   // Look through every drill
   return VOICE_DRILLS.find((drill) => drill.id === id);
+}
+
+// A drill with one of its sentence sets in place of its takes (counted from 0, wrapping round); a drill without sets is unchanged
+export function drillWithSet(drill: VoiceDrill, set: number): VoiceDrill {
+  // No sets
+  if (!drill.sets || drill.sets.length === 0) return drill;
+  // The set, wrapping round
+  const index = ((set % drill.sets.length) + drill.sets.length) % drill.sets.length;
+  // The drill with that set's takes
+  return { ...drill, takes: drill.sets[index]! };
 }
 
 // Find a passage to shadow by id

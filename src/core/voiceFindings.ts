@@ -10,6 +10,8 @@ import { summarizePitch, usualPitch, type PitchEnd } from "@/core/pitch";
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the drill type
 import type { VoiceDrill } from "@/content/voice";
+// Load the two intonation drills' verdicts (decision 117)
+import { dialBackLine, shiftFindings, shiftVerdict } from "@/core/intonationDrills";
 
 // One recorded take, as the drill screen collects it
 export interface TakeRecording {
@@ -168,6 +170,10 @@ export function drillFindings(drill: VoiceDrill, takes: ReadonlyArray<TakeRecord
     // A line per take
     return { headline, lines: measures.map((measure) => (measure.rangeSteps === null ? noPitch : `Range: ${measure.rangeSteps} steps.`)), measures };
   }
+  // Same sentence, different stress: whether each take's peak landed on its own target (decision 117)
+  if (drill.measure === "shift") return { ...shiftFindings(takes.map((take, index) => shiftVerdict(take, drill.takes[index]?.text ?? "", drill.takes[index]?.stress ?? ""))), measures };
+  // Exaggerate, then dial back: each take's range, and how much of the exaggerated range the natural take kept (decision 117)
+  if (drill.measure === "dialback") return { headline: dialBackLine({ flat: measures[0]?.rangeSteps ?? null, exaggerated: measures[1]?.rangeSteps ?? null, natural: measures[2]?.rangeSteps ?? null }), lines: measures.map((measure) => (measure.rangeSteps === null ? noPitch : `Range: ${measure.rangeSteps} steps.`)), measures };
   // Stress the key word: judged by guessing, with each take's range as a hint
   if (drill.measure === "stress") return { headline: "Which word did you stress? Play the guessing game to find out.", lines: measures.map((measure) => (measure.rangeSteps === null ? noPitch : `Range: ${measure.rangeSteps} steps.`)), measures };
   // Tone: what changed between the feelings, then a guessing game
