@@ -23,6 +23,10 @@ import { findGuidedStory } from "@/content/guidedStories";
 import { GuidedStoryCard } from "@/components/script/GuidedStoryCard";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
+// Load the switch row
+import { CheckRow } from "@/components/script/CheckRow";
+// Load the 4/3/2 loop's address and times (decision 118)
+import { loopHref, targetWords } from "@/core/fourThreeTwo";
 
 // What the screen is given
 interface TellStoryProps extends ScreenProps {
@@ -63,6 +67,8 @@ export function TellStoryScreen({ storyId, planStep = null, initialShape = null,
   const [focus, setFocus] = useState<StoryFocus | null>(initialFocus ?? guided?.focus ?? null);
   // The length (full by default; short inside today's practice, which keeps to a few minutes, or when the link asks for under a minute)
   const [length, setLength] = useState<StoryLength>(planStep || initialFocus === "minute" ? "short" : "full");
+  // Tell it three times, shorter each time (decision 118)
+  const [threeTimes, setThreeTimes] = useState(false);
   // Name the tab
   usePageTitle("Tell a story");
 
@@ -166,13 +172,16 @@ export function TellStoryScreen({ storyId, planStep = null, initialShape = null,
             </div>
           </div>
 
+          {/* Tell it three times, shorter each time (decision 118) */}
+          <div className="mt-6 max-w-md"><CheckRow checked={threeTimes} onChange={(event) => setThreeTimes(event.target.checked)} detail={targetWords("story", length)}>Tell it three times, shorter each time</CheckRow></div>
+
           {/* The plan as it will show while planning (a guided story's card above already shows it) */}
           {!guided && <StoryPlanCard take={{ shape, focus, length }} />}
 
           {/* Push the band down */}
           <div className="flex-1" />
           {/* Start: a minute to plan, then tell it */}
-          <ActionBand action="Start" aside="up to a minute to plan" href={tellSessionHref(storyId, shape, focus, length, planStep)} />
+          <ActionBand action="Start" aside={threeTimes ? "three rounds, one sitting" : "up to a minute to plan"} href={threeTimes ? loopHref({ mode: "story", promptId: storyId, story: { shape, focus, length }, planStep }, "new", 1) : tellSessionHref(storyId, shape, focus, length, planStep)} />
         </>
       )}
     </main>

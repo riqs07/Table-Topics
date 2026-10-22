@@ -5,7 +5,7 @@ import { summarizePitch, usualPitch } from "@/core/pitch";
 // Load the phrase finder and the fading rule
 import { fadingEnds, speechStretches } from "@/core/pauses";
 // Load the loudness comparisons
-import { levelStep, speechLevel, type LevelStep } from "@/core/voiceFindings";
+import { levelStep, speechLevel, type LevelStep } from "@/core/levelSteps";
 // Load the shared limits for fading
 import { FADING, MIN_ENDINGS } from "@/core/notesCheck";
 // Load the spacing of the readings

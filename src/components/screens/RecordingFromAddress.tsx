@@ -47,6 +47,10 @@ export function RecordingFromAddress() {
   const [checkInId, part] = [params.get("checkin"), params.get("part")];
   // (both checked)
   const checkIn = checkInId && checkInDayOf(checkInId) && isCheckInPart(part) ? { id: checkInId, part } : null;
+  // A 4/3/2 round (decision 118): "new" starts round 1 with no loop id yet; otherwise the loop's id and its round, 1 to 3
+  const [loopParam, roundParam] = [params.get("loop"), params.get("round")];
+  // (read)
+  const loop = loopParam === "new" ? { id: null, round: 1 } : loopParam && /^[1-3]$/.test(roundParam ?? "") ? { id: loopParam, round: Number(roundParam) } : null;
   // The text to read, when reading aloud or doing a pause drill (a speech part's text loads first)
   const reading = useReading(mode === "read" || mode === "pause" ? promptId : null);
   // The openings and closings drill was retired (decision 106): its old addresses lead to Practice, so no new one is recorded
@@ -80,12 +84,16 @@ export function RecordingFromAddress() {
   // Draw the screen with the real browser pieces
   return (
     <RecordingScreen
+      // A fresh screen for each round of a 4/3/2 loop, which moves on within this page (decision 118)
+      key={loop ? `loop-${loop.id ?? "new"}-${loop.round}` : "take"}
       // The prompt
       promptId={promptId}
       // A short speech's topic, points and length
       outline={mode === "outline" ? (checkIn?.part === "pitch" ? CHECK_IN_PITCH : outlineFromQuery(params)) : null}
       // Inside the weekly check-in, which check-in and part
       checkIn={checkIn}
+      // A round of a 4/3/2 loop
+      loop={loop}
       // A story's set-up (Classic, no focus and full length when the address has none)
       story={mode === "story" ? { shape: isStoryShape(shape) ? shape : "classic", focus: isStoryFocus(focus) ? focus : null, length: isStoryLength(length) ? length : "full" } : null}
       // Full session or warm-up

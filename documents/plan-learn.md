@@ -245,6 +245,7 @@ Checks: `tests/unit/core/learn.test.ts` resolves every link (the page exists, an
 | How to practise | `practise-recall` | Quick scenarios: answer before you peek | `/learn/scenarios` |
 | How to practise | `practise-steps` | Missions, easiest first | `/small-talk/unit?id=answering#unit-missions` |
 | How to practise | `practise-doing` | Today’s mission | `/learn#missions` |
+| How to practise | `practise-four-three-two` | A prepared speech, three times | `/session?mode=response&prompt=p008&loop=new` |
 | Your voice | `voice-pace` | Lesson: Slow down for numbers | `/session?mode=lesson&prompt=l003` |
 | Your voice | `voice-pitch` | Pitch drill: Land it low | `/voice/drill?id=p02` |
 | Your voice | `voice-fry-mixed` | Volume drill: To the last word | `/voice/drill?id=v03` |

@@ -129,6 +129,9 @@ export const ROUTES: ReadonlyArray<string> = [
   "/session?mode=talk&prompt=t001",
   // A prepared response
   "/session?mode=response&prompt=p001",
+  // A 4/3/2 loop's first round of a story, and a later round of a prepared speech (decision 118)
+  "/session?mode=story&prompt=sp01&shape=classic&length=short&loop=new&round=1",
+  "/session?mode=response&prompt=p008&loop=missing&round=2",
   // A reading from the library
   "/session?mode=read&prompt=r001",
   // A pause drill

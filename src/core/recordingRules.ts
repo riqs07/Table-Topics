@@ -165,6 +165,24 @@ export function speakingWindow(mode: SessionMode, promptId = "", storyLength: St
   return mode === "talk" ? TOPIC_WINDOW : mode === "response" ? SPEECH_WINDOW : mode === "smalltalk" ? smallTalkWindow(promptId) : mode === "story" ? STORY_WINDOWS[storyLength] : null;
 }
 
+// A 4/3/2 round's window (decision 118), scaled from the prepared speech's lights: green at half the target, yellow at three quarters, red at the target, and an eighth more (to the nearest 5 seconds) of grace, so a 4:00 round has exactly the prepared speech's lights
+export function loopWindow(targetSec: number): SpeakingWindow {
+  // The lights as shares of the target
+  return { start: Math.round(targetSec * 0.5), yellow: Math.round(targetSec * 0.75), end: targetSec, limit: targetSec + Math.round(targetSec / 8 / 5) * 5 };
+}
+
+// A saved or planned take's window: its 4/3/2 round's when it is one, otherwise its kind's (decision 118)
+export function takeWindow(take: { mode: SessionMode; promptId: string; story?: { length: StoryLength } | undefined; loop?: { targetSec: number } | undefined }): SpeakingWindow | null {
+  // A round's own, or the kind's
+  return take.loop ? loopWindow(take.loop.targetSec) : speakingWindow(take.mode, take.promptId, take.story?.length ?? "full");
+}
+
+// The light for a moment against a given window (a 4/3/2 round's; decision 118)
+export function windowSignal(window: SpeakingWindow, seconds: number): TimeSignal {
+  // Past the limit, red, yellow, green, or off
+  return seconds > window.limit ? "overtime" : seconds >= window.end ? "red" : seconds >= window.yellow ? "yellow" : seconds >= window.start ? "green" : "none";
+}
+
 // The timing light: off, green, yellow, red, or past the limit (still red)
 export type TimeSignal = "none" | "green" | "yellow" | "red" | "overtime";
 
@@ -217,13 +235,13 @@ export function timingCue(previous: TimeSignal, next: TimeSignal): TimingCue | n
 }
 
 // One plain sentence on the timing: for a Table Topic over the limit, that it would not qualify; otherwise, how it compared with the goal (a rehearsal passes its own goal)
-export function timingSentence(mode: SessionMode, durationSec: number, goalSeconds?: number, promptId = "", storyLength: StoryLength = "full"): string {
+export function timingSentence(mode: SessionMode, durationSec: number, goalSeconds?: number, promptId = "", storyLength: StoryLength = "full", givenWindow: SpeakingWindow | null = null): string {
   // Whole seconds, as the timer would record them
   const seconds = Math.round(durationSec);
   // The length as a clock
   const clock = formatClock(seconds);
-  // The window, for a Table Topic, a prepared speech, small talk or a story
-  const window = speakingWindow(mode, promptId, storyLength);
+  // The window given (a 4/3/2 round's, decision 118), or the one for a Table Topic, a prepared speech, small talk or a story
+  const window = givenWindow ?? speakingWindow(mode, promptId, storyLength);
   // Anything else compares with its goal
   if (!window) {
     // The goal: a rehearsal's own, or this kind's

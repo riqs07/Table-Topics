@@ -167,6 +167,8 @@ export interface CurveRowProps {
   label: string;
   // A curve drawn dashed underneath: the last take, or the model voice
   under?: string | null;
+  // A second, fainter curve underneath: the first round of a 4/3/2 loop (decision 118)
+  faintUnder?: string | null;
   // Where the key words sit on the curve (dashed circles)
   targets?: ReadonlyArray<{ x: number; y: number }>;
   // The highest point (a dot)
@@ -184,7 +186,7 @@ export interface CurveRowProps {
 }
 
 // One row: the curve over its words, the usual pitch dashed across it
-export function CurveRow({ width, words, slots, path, label, under = null, targets = [], dot = null, pieces = [], playhead = null, look = () => "plain", onWord = null, wordLabel }: CurveRowProps) {
+export function CurveRow({ width, words, slots, path, label, under = null, faintUnder = null, targets = [], dot = null, pieces = [], playhead = null, look = () => "plain", onWord = null, wordLabel }: CurveRowProps) {
   // The curve and the words
   return (
     <div>
@@ -192,6 +194,8 @@ export function CurveRow({ width, words, slots, path, label, under = null, targe
       <svg width={width} height={CURVE_HEIGHT} viewBox={`0 0 ${width} ${CURVE_HEIGHT}`} role="img" aria-label={label} className="block overflow-visible">
         {/* The usual pitch */}
         <line x1="0" x2={width} y1={USUAL_Y} y2={USUAL_Y} className="text-ink-muted" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.45" />
+        {/* The faintest curve, dashed and lighter still (a loop's first round) */}
+        {faintUnder && <path data-under-faint d={faintUnder} className="text-ink-muted" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeDasharray="2 4" opacity="0.45" />}
         {/* The other curve, dashed and muted */}
         {under && <path data-under d={under} className="text-ink-muted" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeDasharray="6 4" />}
         {/* Loudness: thicker where louder */}

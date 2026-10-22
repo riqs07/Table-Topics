@@ -113,3 +113,25 @@ export function pairsToShow(pairs: ReadonlyArray<PhrasePair>, most = 3): PhraseP
   // Highest score first, then in order of this take
   return [...pairs].sort((a, b) => score(b) - score(a) || a.after.index - b.after.index).slice(0, most);
 }
+
+// One phrase of the last round of a 4/3/2 loop with its partners in the first two rounds (decision 118): the same phrase pairing as last try and this try, done twice against the last round
+export interface PhraseTriple {
+  // The last round's phrase
+  after: Phrase;
+  // Its partner in the middle round, or null when the words do not line up
+  middle: PhrasePair | null;
+  // Its partner in the first round, or null when the words do not line up
+  first: PhrasePair | null;
+}
+
+// Line up three takes of the same words on the last one's phrases: the phrases where at least one earlier round's words align, those where both do first, then the most words matched, then in order
+export function alignThree(first: ReadonlyArray<Phrase>, middle: ReadonlyArray<Phrase>, last: ReadonlyArray<Phrase>, most = 2): PhraseTriple[] {
+  // Each earlier round paired with the last, by the last round's phrase
+  const [fromFirst, fromMiddle] = [new Map(pairPhrases(first, last).map((pair) => [pair.after.index, pair])), new Map(pairPhrases(middle, last).map((pair) => [pair.after.index, pair]))];
+  // Each phrase of the last round with its partners
+  const triples = last.map((phrase) => ({ after: phrase, middle: fromMiddle.get(phrase.index) ?? null, first: fromFirst.get(phrase.index) ?? null }));
+  // How well a phrase lines up: both partners count most, then the words matched
+  const score = (triple: PhraseTriple) => (triple.first && triple.middle ? 1000 : 0) + (triple.first?.words.length ?? 0) + (triple.middle?.words.length ?? 0);
+  // Those with a partner, best lined up first, then in order
+  return triples.filter((triple) => triple.first || triple.middle).sort((a, b) => score(b) - score(a) || a.after.index - b.after.index).slice(0, most);
+}

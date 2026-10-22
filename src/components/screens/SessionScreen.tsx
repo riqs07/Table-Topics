@@ -77,7 +77,7 @@ import { localChange } from "@/core/localChange";
 // Load the section splitter, for rehearsals of one section
 import { talkSections } from "@/core/eventPrep";
 // Load the Table Topics timing sentence
-import { LOUDNESS_TICK_MS, formatClock, speakingWindow, timingSentence } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, formatClock, takeWindow, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
 import { headlineFor, headlineKind, measureFor, retryHeadline } from "@/core/focusMeasure";
 // Load the pause-word and fluency settings rules
@@ -125,6 +125,8 @@ const TakeViews = dynamic(() => import("@/components/script/TakeViews").then((mo
 const PlannedStressCard = dynamic(() => import("@/components/script/PlannedStressCard").then((module) => module.PlannedStressCard), { ssr: false });
 // Last try and this try, loaded only where the same words were said twice (decision 111)
 const LastVsThisCard = dynamic(() => import("@/components/script/LastVsThisCard").then((module) => module.LastVsThisCard), { ssr: false });
+// The three rounds of a 4/3/2 loop compared, loaded only on a last round (decision 118)
+const LoopResults = dynamic(() => import("@/components/script/LoopResults").then((module) => module.LoopResults), { ssr: false });
 
 // What the screen needs: which session, plus the shared props
 interface SessionScreenProps extends ScreenProps {
@@ -353,7 +355,7 @@ function NumbersRow({ session, pauseCount, leaveOut, onShowFillers }: { session:
 // For a timed session: a ring that draws round to how long you spoke against the window's end, beside how the timing went (decision 69)
 function LengthRing({ session }: { session: FullSession }) {
   // The window, when this kind of session has one
-  const window = speakingWindow(session.mode, session.promptId, session.story?.length);
+  const window = takeWindow(session);
   // How far round: the length against the window's end (or a full ring without one)
   const share = window ? Math.min(1, session.durationSec / window.end) : 1;
   // The ring's length
@@ -369,7 +371,7 @@ function LengthRing({ session }: { session: FullSession }) {
         <circle cx="46" cy="46" r="38" fill="none" strokeWidth="10" strokeLinecap="round" strokeDasharray={length} strokeDashoffset={length * (1 - share)} className="stroke-accent motion-safe:animate-ring" style={{ "--vl-ring-len": String(length) } as CSSProperties} />
       </svg>
       {/* How the timing went, with the length */}
-      <p className="text-lede">{timingSentence(session.mode, session.durationSec, undefined, session.promptId, session.story?.length)}</p>
+      <p className="text-lede">{timingSentence(session.mode, session.durationSec, undefined, session.promptId, session.story?.length, takeWindow(session))}</p>
     </div>
   );
 }
@@ -576,6 +578,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {headline && shownHeadline === "fillers" && fillerCount(session) > 0 && !reading && <p><button type="button" onClick={showFillers} className={`${TEXT_LINK} text-footnote`}>Show where</button></p>}
           {/* The speaker's own call against the measure, when it was rated and the measure is confident (decision 116) */}
           <RatingLine session={session} all={all} />
+          {/* A 4/3/2 loop's last round: the three rounds compared; an earlier round: which it was, and the way to the comparison (decision 118) */}
+          {session.loop && (session.loop.round >= 3 ? <LoopResults repo={repo} session={session} all={all} pauseWords={view.pauseWords} /> : <LoopRoundNote session={session} all={all} />)}
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
           <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
             {/* The pill that names it, and where it comes from until the coach's note arrives */}
@@ -711,6 +715,14 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
       </div>
     </>
   );
+}
+
+// On an earlier round of a 4/3/2 loop: which round it was, and the way to the last round's comparison when it was told (decision 118)
+function LoopRoundNote({ session, all }: { session: SessionRecord; all: ReadonlyArray<SessionRecord> }) {
+  // The loop's last round, if it was told
+  const last = all.find((other) => other.loop?.id === session.loop?.id && other.loop?.round === 3);
+  // The note
+  return <p data-loop-round className="mt-4 text-footnote text-ink-muted">Round {session.loop?.round} of 3, told three times.{last && <> <Link href={`/sessions?id=${encodeURIComponent(last.id)}`} className={TEXT_LINK}>See all three rounds</Link></>}</p>;
 }
 
 // The one line comparing the speaker's call before the results with what was measured, or nothing when it was not rated or no confident measure maps to it (decision 116)

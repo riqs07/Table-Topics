@@ -64,6 +64,10 @@ The recording page in mode `story`: the prompt, the shape card and the focus, th
 
 "Tell it again" (on the results and in Your stories) opens the recording page with the same seed and `retryOf` the latest telling; the shape, focus and length are read from that telling, so they stay the same whatever the address says. The new telling's page keeps its full results and adds **Last time and this time**: what it was working on, a headline ("5 of 6 this time, up from 2."), and a table of each check and the usual numbers on both tellings (the second-try table, now shared as `BeforeAfterTable`). Every telling is a session with the story's id as its `promptId`, so the versions are simply the story's sessions in time order (`storyVersions`).
 
+## Telling it three times (4/3/2, decision 118)
+
+Built 2026-10-22. A story can be told three times in one sitting, shorter each time, after Paul Nation's 4/3/2 fluency activity: a short story 2:00, 1:30, 1:00; a full one 3:00, 2:15, 1:30 (a prepared speech keeps Nation's 4:00, 3:00, 2:00). It is a switch on the set-up page and a link before telling, so it works with Tell it again too. Each round is a telling of the same story, linked by a loop id; after the third, the rounds are compared: one line on what changed (pace and pause words, only past the noise), the phrase row with all three rounds' curves where the words line up, and a small table with the story checks per round. It is not part of today's practice (three sessions in one step would change the plan's rules; see decision 118).
+
 ## Data
 
 The simpler sound option: **the seed's id is the story's id**, kept as each telling's `promptId`, plus a small `stories` collection for the title (`StoryRecord`: id, title, createdAt, updatedAt). Each telling also keeps its set-up (`story: { shape, focus, length }`). Counts, the latest telling and the takeaway are worked out from the sessions, so nothing is stored twice. Export and import carry stories; the merge keeps the most recently renamed title and the earlier first-told date (`mergeStory`). Details in [architecture/data-model.md](architecture/data-model.md).

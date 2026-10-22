@@ -9,7 +9,7 @@ import { formatRate } from "@/core/copy";
 // Load the weekly focus lookup, for when nothing stands out
 import { findFocus } from "@/core/focus";
 // Load the timing rules
-import { LOUDNESS_TICK_MS, formatClock, speakingWindow } from "@/core/recordingRules";
+import { LOUDNESS_TICK_MS, formatClock, speakingWindow, takeWindow } from "@/core/recordingRules";
 // Load the voice report (decision 81)
 import { voiceReport, type VoiceLineKind } from "@/core/voiceFeedback";
 // Load the small-talk change, for answers to everyday questions
@@ -44,14 +44,14 @@ export function localChange(session: FullSession, options: { pauseWords?: boolea
   // A told story: the timing against its length first when far off, then the story checks (decision 92)
   if (session.mode === "story") {
     // Its window
-    const window = speakingWindow("story", session.promptId, session.story?.length ?? "full");
+    const window = takeWindow(session);
     // Well past the window and its grace
     if (window && session.durationSec > window.limit && session.story?.focus !== "minute") return { change: `Land it sooner: you spoke for ${formatClock(session.durationSec)}, past the ${formatClock(window.end)} mark. Cut the set-up, not the turn.`, retryCue: "Start your ending when the light turns yellow.", aboutTiming: true };
     // The story checks, or a guided story's comparison with its facts
     return tellingChange(session.promptId, session.transcript, session.durationSec, session.story ?? {});
   }
-  // The timing window, for a Table Topic or a prepared speech
-  const timing = speakingWindow(session.mode);
+  // The timing window, for a Table Topic or a prepared speech (a 4/3/2 round's own, decision 118)
+  const timing = session.loop ? takeWindow(session) : speakingWindow(session.mode);
   // Too short for the window
   if (timing && session.durationSec < timing.start) return { change: `Keep going a little longer: you spoke for ${formatClock(session.durationSec)}, and the window opens at ${formatClock(timing.start)}.`, retryCue: "Add one more example before you close.", aboutTiming: true };
   // Past the window and its grace

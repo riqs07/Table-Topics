@@ -277,4 +277,6 @@ export const LEARN_INDEX: ReadonlyArray<LearnCardSummary> = [
   { id: "skills-bridges", set: "skills", title: "Build a bridge between points." },
   // skills: skills-blank
   { id: "skills-blank", set: "skills", title: "When your mind goes blank." },
+  // practice: practise-four-three-two
+  { id: "practise-four-three-two", set: "practice", title: "Tell it three times, shorter each time." },
 ];

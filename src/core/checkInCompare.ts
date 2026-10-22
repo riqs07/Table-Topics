@@ -15,7 +15,7 @@ import type { AnalysisRecord, CheckInPart, MetricValue, SessionRecord } from "@/
 // Load the robust spread the profile uses
 import { robustSpread } from "@/core/analysis/stats";
 // Load the fixed amounts a change must clear, shared with "last try and this try" (decision 111)
-import { fixedThreshold, PITCH_RANGE_NOISE } from "@/core/changeNoise";
+import { fixedThreshold, PACE_NOISE, PAUSE_WORD_NOISE, PITCH_RANGE_NOISE } from "@/core/changeNoise";
 
 // One measure in a part's comparison, and the words for its two directions
 interface MeasureSpec {
@@ -38,9 +38,9 @@ interface MeasureSpec {
 // The measures every part compares: pace, pause words, pauses, pitch range, volume variety, and clarity when deeper analysis ran
 const COMMON: ReadonlyArray<MeasureSpec> = [
   // Pace while speaking: a tenth, or 10 words a minute (pace drifts with the day and the topic)
-  { id: "flu.articulation_rate_wpm", up: "faster", down: "slower", noise: { share: 0.1, amount: 10 } },
+  { id: "flu.articulation_rate_wpm", up: "faster", down: "slower", noise: PACE_NOISE },
   // Pause words: a quarter, or 1.5 a minute (the speech service drops many, so small moves are noise; 15 to 16 is about the same)
-  { id: "lang.fillers_per_min", up: "more", down: "fewer", pauseWords: true, noise: { share: 0.25, amount: 1.5 } },
+  { id: "lang.fillers_per_min", up: "more", down: "fewer", pauseWords: true, noise: PAUSE_WORD_NOISE },
   // Pauses: a fifth, or 2 a minute
   { id: "flu.pause_rate", up: "more pauses", down: "fewer pauses", noise: { share: 0.2, amount: 2 } },
   // Pauses in the middle of a sentence: 8 points

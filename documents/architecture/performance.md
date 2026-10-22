@@ -1,7 +1,7 @@
 # Performance at a year of practice
 
 **Purpose:** What VoiceLab's pages cost with a lot of saved practice, measured before and after decisions 98 and 99, so the next change can be checked against the same numbers.
-**Last updated:** 2026-10-22 (decisions 98, 99 and 111)
+**Last updated:** 2026-10-22 (decisions 98, 99, 111 and 116 to 118)
 
 ## How it was measured (read this first)
 
@@ -104,6 +104,24 @@ Measured the same way on one build each (gzip KB of each prerendered page's firs
 | All built scripts | 1,221.1 | 1,238.5 |
 
 The take's views (`TakeViews`: the lenses, the fingerprint, the best moment, the energy arc, the story shape) load after the page is up, in place of the voice section they now hold, and the conversation timeline only on a conversation, so a take's first load is unchanged. The recording page grows 1.9 KB because the tiny fingerprint is made as the take is saved. History draws the tiny fingerprints from its one read of the sessions (no readings are read, decision 99); older takes get theirs at idle, 20 a batch, one readings record each, once. The profile's usual zone reads only the family summaries it already works out.
+
+### Rate yourself, the intonation drills and the 4/3/2 loop (decisions 116 to 118)
+
+Measured the same way as the table above (gzip KB of each prerendered page's first-load scripts, the polyfill left out), on one build each. Before is `4315355`:
+
+| Route | Before | After |
+|---|---|---|
+| `/sessions` (a take) | 321.1 | 322.6 |
+| `/session` (recording) | 336.9 | 339.0 |
+| `/profile` | 275.2 | 275.0 |
+| `/history` | 237.6 | 239.3 |
+| `/voice` | 218.9 | 220.5 |
+| `/voice/drill` | 214.9 | 224.5 |
+| `/stories/tell` | 194.1 | 196.5 |
+| `/stories` | 219.5 | 219.7 |
+| `/` Today | 230.1 | 230.7 |
+
+The first build put 9 to 24 KB more on several pages, so three things moved: the families of practice into `src/core/analysis/families.ts` (the comparison line no longer loads the profile), the level helpers into `src/core/levelSteps.ts` (the voice report on a take's page loaded the drills' findings through them, and with them the new pitch checks), and the loop's comparison into `src/core/loopCompare.ts` (the recording page and a story's set-up need only the timings and addresses). The three rounds' results (`LoopResults`) load only on a last round's page. `/voice/drill` is 9.6 KB heavier because the drill page now works out planned stress itself for "Same sentence, different stress" (`src/core/intonationDrills.ts`: the word placement, the phrases and the stress checks), which the planned-stress view loaded after the page was up before; left as it is, since a drill page is small and opened on purpose.
 
 ## The browser suite (decision 112)
 

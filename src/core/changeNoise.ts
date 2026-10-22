@@ -11,6 +11,12 @@ export interface Noise {
 // The pitch range's: 0.15 of the earlier range, or one step (decision 103; also used by "last try and this try", decision 111)
 export const PITCH_RANGE_NOISE: Noise = { share: 0.15, amount: 1 };
 
+// Pace's: a tenth of the earlier pace, or 10 words a minute (decision 103; also used by the 4/3/2 loop, decision 118)
+export const PACE_NOISE: Noise = { share: 0.1, amount: 10 };
+
+// Pause words': a quarter of the earlier rate, or 1.5 a minute (decision 103; also used by the 4/3/2 loop, decision 118)
+export const PAUSE_WORD_NOISE: Noise = { share: 0.25, amount: 1.5 };
+
 // The fixed amount for a measure: a share of the earlier value, or the set amount, whichever is bigger
 export function fixedThreshold(noise: Noise, before: number): number {
   // The bigger of the two
