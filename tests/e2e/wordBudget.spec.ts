@@ -2,7 +2,7 @@
 import { expect, test } from "./support/fixtures";
 // Load the small-talk lessons, so every unit's lesson pages are measured too (decision 96)
 import { SMALL_TALK_LESSONS } from "../../src/content/smallTalk";
-// Load every Learn card's title, so Today is measured with the longest one (decision 112)
+// Load every Learn card's title, so Today is measured with the longest one (decision 113)
 import { LEARN_INDEX } from "../../src/content/learnIndex";
 
 // A fixed day, so a page that shows the day's picks (Today's prompts) is measured the same on every date: the check once failed only on some days (2026-10-22)

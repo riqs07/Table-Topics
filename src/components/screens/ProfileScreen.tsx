@@ -35,6 +35,8 @@ import { requestWeeklySummary } from "@/data/summaryClient";
 import { readPassphrase } from "@/data/passphrase";
 // Load the record types
 import type { AnalysisRecord, SessionRecord, SummaryRecord } from "@/data/records";
+// Load the usual zone (decision 115)
+import { UsualZone } from "@/components/script/UsualZone";
 // Load the check-in grouping, worked out from the sessions already read (decision 100)
 import { dayWords, groupCheckIns, recordedCheckIns, shortDay } from "@/core/checkIn";
 
@@ -273,6 +275,8 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
     <>
       {/* How many takes */}
       <p className="mt-4 text-footnote text-ink-muted">{family.takes} {family.takes === 1 ? "take" : "takes"} measured. Recent is your latest seven; usual is your first five.</p>
+      {/* Where the latest take sits against the usual band, for a few headline measures (decision 115) */}
+      <UsualZone metrics={family.metrics} />
       {/* Each group with headline measures */}
       {METRIC_GROUPS.map((group) => {
         // The shown measures in it that have values

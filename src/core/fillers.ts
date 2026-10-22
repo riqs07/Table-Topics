@@ -227,3 +227,24 @@ export function markFillers(transcript: string): TranscriptPiece[] {
   // Hand back the pieces
   return pieces;
 }
+
+// Which space-separated pieces of a transcript are pause words, by the filler marker's spans (decision 115: the lenses and the fingerprint mark them in place)
+export function fillerPieces(transcript: string): boolean[] {
+  // The marker's pieces (fillers and the plain text between)
+  const marked = markFillers(transcript);
+  // Each character's place inside a filler
+  const inFiller: boolean[] = [];
+  // Walk the pieces
+  for (const piece of marked) for (let index = 0; index < piece.text.length; index++) inFiller.push(piece.filler);
+  // Each space-separated piece, by where its letters sit
+  const flags: boolean[] = [];
+  // Walk the transcript's pieces with their places
+  for (const match of transcript.matchAll(/\S+/g)) {
+    // Where it starts
+    const from = match.index ?? 0;
+    // A filler when any of its letters is inside one
+    flags.push([...match[0]].some((letter, offset) => /[\p{L}\p{N}]/u.test(letter) && inFiller[from + offset] === true));
+  }
+  // Hand them back
+  return flags;
+}

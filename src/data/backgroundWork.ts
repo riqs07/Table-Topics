@@ -1,9 +1,11 @@
-// The app's quiet work after a page has loaded (decisions 98 and 99): move older records to the current layout, tidy old recordings and readings, then send any feedback still waiting. Loaded on its own, after the page, so its code (the coach request, the analysis engine and its checks) is not part of every page's download.
+// The app's quiet work after a page has loaded (decisions 98, 99 and 115): move older records to the current layout, tidy old recordings and readings, make tiny fingerprints for older takes, then send any feedback still waiting. Loaded on its own, after the page, so its code (the coach request, the analysis engine and its checks) is not part of every page's download.
 
 // Load the layout move
 import { migrate } from "@/data/migrations";
 // Load the recording upkeep
 import { tidyRecordings } from "@/data/housekeeping";
+// Load the fingerprint backfill (decision 115)
+import { backfillFingerprints } from "@/data/fingerprints";
 // Load the waiting-feedback sender
 import { sendPendingFeedback, type FeedbackOptions } from "@/data/feedbackClient";
 // Load the repository type
@@ -23,6 +25,8 @@ export async function runBackgroundWork(repository: Repository, options: Feedbac
   await migrate(repository, { now }).catch((error: unknown) => warn("Moving older records", error));
   // Old recordings and readings
   await tidyRecordings(repository, now).catch((error: unknown) => warn("Tidying old recordings", error));
+  // Tiny fingerprints for older takes, for History (decision 115)
+  await backfillFingerprints(repository).catch((error: unknown) => warn("Drawing older takes' shapes", error));
   // Waiting feedback
   await sendPendingFeedback(repository, options).catch((error: unknown) => warn("Sending waiting feedback", error));
 }

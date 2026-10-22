@@ -1,4 +1,7 @@
 // The records VoiceLab stores on the device (see documents/architecture/data-model.md)
+
+// Load the tiny fingerprint's shape (decision 115)
+import type { MiniFingerprint } from "@/core/miniFingerprint";
 // Dates are stored as ISO text such as "2026-10-12T15:00:00.000Z" so exports round-trip exactly
 
 // The coach's three-part feedback for one session
@@ -158,6 +161,8 @@ export interface SessionRecord {
   starred?: boolean;
   // A marker take, such as the weekly check-in's: kept like a starred one, so "how you sounded then" always has something to play (decision 98)
   marker?: boolean;
+  // A tiny copy of the take's shape for History (decision 115): loudness in 32 parts (0 to 9) and the parts with pause words, made when saved or at idle from the readings; null when there was nothing to draw, missing until made
+  fingerprint?: MiniFingerprint | null;
   // When the detailed readings (pitch, loudness and word times) were dropped by the retention rule, so pages say so instead of drawing a chart (decision 98); missing while they are kept
   trimmedAt?: string;
   // For a rehearsal or a response: likely audience questions for Q&A practice (written by the coach or typed by the user)

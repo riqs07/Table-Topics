@@ -32,7 +32,7 @@ const QUESTION_STARTS: ReadonlySet<string> = new Set(["do", "does", "did", "is",
 // Punctuation that ends a clause (with any closing quote or bracket after it)
 const CLAUSE_END = /[.,;:?!…—–]["'”’)\]]*$/;
 
-// Whether a word as written ends a clause, by its punctuation (the lenses place pauses by it, decision 112)
+// Whether a word as written ends a clause, by its punctuation (the lenses place pauses by it, decision 115)
 export function endsClauseText(text: string): boolean {
   // Its written form ends in clause punctuation
   return CLAUSE_END.test(text.trim());
@@ -65,7 +65,7 @@ export interface Phrase {
   firstTick: number;
   // Its cleaned readings in steps, from firstTick on (null where unvoiced)
   steps: (number | null)[];
-  // The same readings smoothed for drawing (decision 112)
+  // The same readings smoothed for drawing (decision 114)
   curve: (number | null)[];
   // How it ended, or null with too few voiced readings
   ending: PhraseEnd | null;
@@ -91,7 +91,7 @@ export interface PitchWords {
   precision: AlignPrecision;
   // The whole take's cleaned readings in steps (word pitches and peaks use these)
   steps: (number | null)[];
-  // The same readings smoothed for drawing, so curves flow instead of stepping word to word (decision 112)
+  // The same readings smoothed for drawing, so curves flow instead of stepping word to word (decision 114)
   curve: (number | null)[];
   // The take's usual pitch in hertz
   usualHz: number;

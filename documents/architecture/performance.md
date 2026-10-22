@@ -88,6 +88,23 @@ Measured the same way (gzip KB of each prerendered page's first-load scripts), b
 
 The take's page grows 1.5 KB because the voice section, the planned-stress card and the last-try card load only after the page is up, and only for takes that show them; the phrase rows are their own page. A first version that loaded them with the page added 9.6 KB, so they were split out. The model voice's pitch for shadowing (about 6 KB of numbers) loads with the comparison, after the first take. The readings are read only where these views draw them, and each take's phrases are worked out once (memoised); the phrase rows draw 40 phrases at a time.
 
+### Focus first and the lenses (decision 115)
+
+Measured the same way on one build each (gzip KB of each prerendered page's first-load scripts, the polyfill left out; this count includes some scripts the table above left out, so compare within this table only). Before is `4c53f65`:
+
+| Route | Before | After |
+|---|---|---|
+| Shared by every page | 185.3 | 185.3 |
+| `/sessions` (a take) | 321.2 | 321.1 |
+| `/sessions/voice` | 230.5 | 230.7 |
+| `/session` (recording) | 335.0 | 336.9 |
+| `/history` | 237.7 | 237.6 |
+| `/profile` | 274.6 | 275.2 |
+| `/` Today | 230.1 | 230.1 |
+| All built scripts | 1,221.1 | 1,238.5 |
+
+The take's views (`TakeViews`: the lenses, the fingerprint, the best moment, the energy arc, the story shape) load after the page is up, in place of the voice section they now hold, and the conversation timeline only on a conversation, so a take's first load is unchanged. The recording page grows 1.9 KB because the tiny fingerprint is made as the take is saved. History draws the tiny fingerprints from its one read of the sessions (no readings are read, decision 99); older takes get theirs at idle, 20 a batch, one readings record each, once. The profile's usual zone reads only the family summaries it already works out.
+
 ## The browser suite (decision 112)
 
 The Playwright suite (`pnpm e2e`, 320 checks) was run on this machine (4 cores, 15 GB, Chromium 1194 headless), on one production build each time:

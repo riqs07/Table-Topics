@@ -117,7 +117,7 @@ const DRAW_SIGMA = 2;
 // Readings on each side the smoothing reaches
 const DRAW_SIDE = 5;
 
-// The cleaned readings smoothed for drawing (decision 112): a gentle bell-shaped average over each reading's voiced neighbours within the same voiced run, so a curve flows like a voice instead of stepping from word to word; breaks stay breaks. Word pitches and peaks keep using the cleaned readings, not these
+// The cleaned readings smoothed for drawing (decision 114): a gentle bell-shaped average over each reading's voiced neighbours within the same voiced run, so a curve flows like a voice instead of stepping from word to word; breaks stay breaks. Word pitches and peaks keep using the cleaned readings, not these
 export function smoothForDrawing(steps: ReadonlyArray<number | null>, sigma = DRAW_SIGMA, side = DRAW_SIDE): (number | null)[] {
   // The weight at each distance
   const weights = Array.from({ length: side + 1 }, (_, distance) => Math.exp(-(distance * distance) / (2 * sigma * sigma)));

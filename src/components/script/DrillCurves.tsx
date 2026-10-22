@@ -64,7 +64,7 @@ export function TakeThickness({ take, text, loudest, label }: { take: TakeRecord
   const rows = useMemo(() => {
     // The words spread over the voice
     const words = alignFromText(text, take.levels, LOUDNESS_TICK_MS, take.durationSec).words;
-    // The cleaned readings in steps, smoothed for drawing (decision 112)
+    // The cleaned readings in steps, smoothed for drawing (decision 114)
     const steps = smoothForDrawing(cleanSteps(take.pitches, LOUDNESS_TICK_MS).steps);
     // Each row with its curve and thick pieces
     return { words, lines: curveLines(words, steps, LOUDNESS_TICK_MS, width, measure).map((line) => ({ ...line, pieces: thickPieces(steps, take.levels, loudest, LOUDNESS_TICK_MS, line.slots, words) })) };

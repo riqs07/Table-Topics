@@ -45,6 +45,8 @@ import { dayLabel, formatRate, progressSentence } from "@/core/copy";
 import { baselineProgress, historyRows, trendSeries, type HistoryRow } from "@/core/progress";
 // Load the session record type
 import type { MissionRecord, SessionRecord } from "@/data/records";
+// Load the tiny fingerprint (decision 115)
+import { MiniFingerprint } from "@/components/script/MiniFingerprint";
 // Load the shared heading look
 import { CARD, SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 
@@ -160,6 +162,8 @@ function Row({ row, now, talkTitles, pauseWords }: { row: HistoryRow; now: Date;
           <span className="block leading-snug">{promptText(row.session, talkTitles)}</span>
           {/* The day, and whether it was tried twice */}
           <span className="block text-footnote text-ink-muted">{dayLabel(new Date(row.session.createdAt), now)}{row.retry ? " · tried twice" : ""}</span>
+          {/* The take's shape, when one is kept (decision 115) */}
+          {row.session.fingerprint && <span className="mt-1 block"><MiniFingerprint value={row.session.fingerprint} /></span>}
         </span>
         {/* The result, with its unit */}
         <span className="flex-none text-right"><span className="block font-semibold tabular-nums">{result}</span><span className="block text-footnote text-ink-muted">{pauseWords ? "pause words a minute" : "long"}</span></span>

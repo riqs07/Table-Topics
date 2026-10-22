@@ -16,6 +16,8 @@ import type { CheckInPart, FullSession, SessionMode, StoryTake } from "@/data/re
 import { groupCheckIns, weekFor } from "@/core/checkIn";
 // Load the pitch range rule, to save the take's range with it (decision 98)
 import { rangeOf } from "@/core/voiceFeedback";
+// Load the tiny fingerprint, kept for History (decision 115)
+import { sessionMiniFingerprint } from "@/core/fingerprint";
 // Load the story record maker (decision 92)
 import { ensureStory } from "@/data/stories";
 // Load the small-talk unit lookup (a follow-up question or a reply to a story is too short to listen back to first)
@@ -132,6 +134,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
   const range = rangeOf(session);
   // Added when there was enough voice
   if (range !== null) session.pitchRange = range;
+  // The take's tiny fingerprint, kept on the session so History draws it without the readings (decision 115)
+  if (session.loudness && session.loudness.length > 0) session.fingerprint = sessionMiniFingerprint(session);
   // Save the audio first, so the session never points at missing audio
   await repository.saveAudio(recording.id, recording.audio);
   // Save the session (its readings are kept apart; older recordings lose their audio later, when the app is idle, never while saving; decision 98)

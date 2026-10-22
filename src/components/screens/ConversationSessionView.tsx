@@ -1,5 +1,7 @@
 // A saved conversation with a persona (decisions 83 and 84): who and where, the share of the talking and the questions, one change (the coach's, or from the numbers until it arrives), one of your lines and how it could sound, and the whole conversation as text (no audio is kept)
 
+// Load Next.js's lazy loader, for the timeline only a conversation shows (decision 115)
+import dynamic from "next/dynamic";
 // Load the masthead
 import { Masthead } from "@/components/script/Masthead";
 // Load the action band
@@ -20,6 +22,9 @@ import { sessionHome } from "@/core/sessionHome";
 import type { PlanNav } from "@/components/screens/planNav";
 // Load the session type
 import type { SessionRecord } from "@/data/records";
+
+// The conversation's timeline, loaded after the page is up (decision 115)
+const ConversationTimeline = dynamic(() => import("@/components/script/ConversationTimeline").then((module) => module.ConversationTimeline), { ssr: false });
 
 // Draw a saved conversation
 export function ConversationSessionView({ session, now, note, plan }: { session: SessionRecord; now: Date; note: string; plan: PlanNav | null }) {
@@ -78,6 +83,8 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
         {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this conversation."}</p>}
         {/* What worked, once the coach has looked */}
         {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
+        {/* The turns in two lanes, its own view (decision 115) */}
+        <ConversationTimeline turns={turns} name={name} />
         {/* The whole conversation */}
         <h2 className="mt-8 font-display text-xl font-semibold tracking-tight">The conversation</h2>
         {/* Each turn */}
