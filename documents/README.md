@@ -2,7 +2,7 @@
 
 **Purpose:** One place for every decision about what VoiceLab is, how it is built, and the rules we build by.
 **Audience:** A human inspector. Each file is short and can be read on its own.
-**Last updated:** 2026-10-21
+**Last updated:** 2026-10-22
 
 ## What VoiceLab is (30 seconds)
 
@@ -39,6 +39,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 24 | [plan-storytelling.md](plan-storytelling.md) | How does the Storytelling mode work (prompts, shapes, telling it again, the story coach), and what research is it built on? (Built, decision 92) | 5 min |
 | 25 | [plan-weekly-check-in.md](plan-weekly-check-in.md) | How does the weekly check-in work (four fixed parts, when it is due, the comparison, the reminders, storage), and what was not built? (Built, decision 100) | 4 min |
 | 26 | [plan-live-conversation.md](plan-live-conversation.md) | How do conversations feel live: turns that end by themselves, faster replies, and what was not approved? (Steps 1 and 2 built, decisions 101 and 102) | 4 min |
+| 27 | [handoff/voice-journal-starter.md](handoff/voice-journal-starter.md) | Starting a new voice journal app: what to reuse from VoiceLab, the mistakes to avoid from day one, and what to decide first? (For the next project's AI session) | 10 min |
 
 ## Inspector checklist
 
