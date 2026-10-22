@@ -56,6 +56,8 @@ import { checkDeepSetup, type DeepSetup } from "@/data/deepAnalysisClient";
 import { WEEKDAY_NAMES, readCheckInSettings } from "@/core/checkIn";
 // Load the reader for how a conversation turn ends (decision 101)
 import { turnEndingOf, type TurnEnding } from "@/core/endOfTurn";
+// Load the usage and costs section (decision 143)
+import { UsageSection } from "@/components/script/UsageSection";
 // Load the month's conversation minutes check (decision 102)
 import { conversationMinutes, type ConversationMinutes } from "@/data/conversationClient";
 
@@ -778,6 +780,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Deeper analysis of each take on the server (decision 91; drawn once the settings are loaded) */}
       {today && settings && <Section title="Deeper analysis (advanced)">
         <DeepAnalysisChoice settings={settings} fetchFn={fetchFn} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
+      </Section>}
+
+      {/* This month's usage and estimated costs, from the server's counters (decision 143; drawn in the browser only, where the saved passphrase can be read) */}
+      {today && <Section title="Usage and costs (estimated)" id="usage">
+        <UsageSection passphrase={readPassphrase()} fetchFn={fetchFn} />
       </Section>}
       </Group>
 

@@ -106,6 +106,8 @@ test("a phone call's transcript is saved and the coach reviews it", async ({ pag
     // Its notes
     return route.fulfill({ json: { feedback: { keep: "You shared a real weekend detail.", change: "Ask Maya something back.", retryCue: "Answer, then ask.", conversation: { yours: YOUR_LINE, better: "I went climbing on Saturday. Do you climb?" } } } });
   });
+  // This month's usage, stood in (Settings asks once a passphrase is saved; decision 143)
+  await page.route("**/api/usage", (route) => route.fulfill({ json: { month: "2026-10", live: { used: 0, limit: 150, left: 150, setUp: false }, call: { used: 0, limit: 60, left: 60, setUp: false }, voiceCharacters: { turbo: 0, v4: 0 }, lines: 0, conversationMinutes: { used: 0, limit: 150 } } }));
   // A phone call chosen
   await page.goto("/settings");
   // Chosen

@@ -109,6 +109,8 @@ async function useStreamingStandIn(page: Page): Promise<void> {
 
 // Choose live turns in Settings
 async function chooseLive(page: Page): Promise<void> {
+  // This month's usage, stood in (Settings asks once a passphrase is saved; decision 143)
+  await page.route("**/api/usage", (route) => route.fulfill({ json: { month: "2026-10", live: { used: 0, limit: 150, left: 150, setUp: false }, call: { used: 0, limit: 60, left: 60, setUp: false }, voiceCharacters: { turbo: 0, v4: 0 }, lines: 0, conversationMinutes: { used: 0, limit: 150 } } }));
   // Settings
   await page.goto("/settings");
   // Live
