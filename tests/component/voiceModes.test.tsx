@@ -134,8 +134,8 @@ describe("ShadowScreen", () => {
       },
       // A listener handing back the next words
       createTranscriber: () => ({ start: () => {}, stop: async () => heard.shift() ?? "" }),
-      // A steady level
-      createCapture: () => ({ level: () => 0.5, stop: async () => new Blob(["voice"]) }),
+      // A steady level and pitch
+      createCapture: () => ({ level: () => 0.5, pitch: () => 150, stop: async () => new Blob(["voice"]) }),
     };
     // An empty repository
     const repository = createRepository(new MemoryStore());
@@ -157,6 +157,8 @@ describe("ShadowScreen", () => {
     await act(async () => void fireEvent.click(stop));
     // The comparison
     expect([said, (await screen.findByText(/model’s pace/)).textContent]).toEqual([["s01-1: And so, my fellow Americans:"], "About the model’s pace (2.1 s against 2.0 s). Every word caught."]);
+    // Your pitch over the phrase's words, with the model voice's curve dashed under it (decision 111; loaded with the comparison)
+    expect([!!(await screen.findByText("Model voice")), !!document.querySelector("[data-shadow-curve] [data-under]")]).toEqual([true, true]);
     // On through the other phrases without recording, by finishing early (the whole passage can be left out)
     fireEvent.click(screen.getByRole("button", { name: "Next phrase" }));
     // The second phrase is shown

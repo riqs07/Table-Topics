@@ -32,8 +32,8 @@ const SHELL = [
   "/skills", "/speech", "/small-talk", "/small-talk/unit",
   // Your own talks
   "/rehearse", "/talk",
-  // Recording, a saved session, history and settings
-  "/session", "/sessions", "/history", "/settings",
+  // Recording, a saved session, its pitch phrase by phrase (decision 111), history and settings
+  "/session", "/sessions", "/sessions/voice", "/history", "/settings",
   // Your speaking profile (decision 90)
   "/profile",
   // Stories and telling one (decision 92)

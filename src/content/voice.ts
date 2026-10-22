@@ -87,6 +87,8 @@ export interface VoiceTake {
   cue: string;
   // For pitch drills: how the take should end
   expect?: "fall" | "rise";
+  // For the stress drill: the word to lean on, checked as planned stress on the results (decision 111)
+  stress?: string;
 }
 
 // One voice drill
@@ -218,7 +220,7 @@ export const VOICE_DRILLS: ReadonlyArray<VoiceDrill> = [
     { label: "Normal", text: "What a wonderful surprise this is.", cue: "Now say it naturally." },
   ] },
   // Pitch and stress: the classic stress drill
-  { id: "p04", kind: "pitch", title: "Stress the key word", intro: "One sentence, six meanings. Stress a different word each time.", measure: "stress", takes: STRESSED.map((word) => ({ label: `Stress “${word}”`, text: "I didn’t say she took the money.", cue: `Lean on “${word}”: a little higher, louder or longer.` })) },
+  { id: "p04", kind: "pitch", title: "Stress the key word", intro: "One sentence, six meanings. Stress a different word each time.", measure: "stress", takes: STRESSED.map((word) => ({ label: `Stress “${word}”`, text: "I didn’t say she took the money.", cue: `Lean on “${word}”: a little higher, louder or longer.`, stress: word })) },
   // Tone: news
   { id: "t01", kind: "tone", title: "I have some news", intro: "One line, three feelings. Change pitch, volume and pace on purpose.", measure: "tone", takes: feelings("I have some news.", ["Excited", "Worried", "Calm"]) },
   // Tone: a thank-you

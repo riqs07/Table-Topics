@@ -37,6 +37,11 @@ import { findStoryPrompt } from "@/content/stories";
 import { analysesFor, loadCheckIns, type CheckInData } from "@/data/checkIns";
 // Load the record types
 import type { AnalysisRecord, SessionRecord } from "@/data/records";
+// Load Next.js's lazy loader
+import dynamic from "next/dynamic";
+
+// Then and now, pitch phrase by phrase, loaded only when a part has both takes of the same words (decision 111)
+const LastVsThisLoader = dynamic(() => import("@/components/script/LastVsThisCard").then((module) => module.LastVsThisLoader), { ssr: false });
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -284,6 +289,8 @@ function PartSection({ repo, comparison, part }: { repo: Repository; comparison:
           <button type="button" aria-pressed={side === "b"} onClick={() => play("b")} className={`min-h-11 min-w-11 rounded-full px-4 ${PRESS} ${side === "b" ? "bg-fill font-semibold text-fill-ink" : "bg-paper text-ink"}`}>Now</button>
         </div>
       )}
+      {/* The same words both times: then's pitch dashed under now's, phrase by phrase (decision 111) */}
+      {part.a && part.b && part.a.promptId === part.b.promptId && <LastVsThisLoader repo={repo} beforeId={part.a.id} afterId={part.b.id} kind="Then and now" names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} plays={{ before: "Play then", after: "Play now" }} />}
       {/* What changed, in plain lines */}
       <ul aria-label={`What changed, ${partName(part.part)}`} className="mt-4 list-disc space-y-1 pl-5">
         {/* Each line */}

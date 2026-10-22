@@ -23,7 +23,8 @@
     "bakeoff": "tsx --env-file-if-exists=.env.local scripts/filler-bakeoff.ts",
     "e2e": "playwright test",
     "speech-index": "tsx scripts/speech-index.ts",
-    "learn-index": "tsx scripts/learn-index.ts"
+    "learn-index": "tsx scripts/learn-index.ts",
+    "shadow-pitch": "tsx scripts/shadow-pitch.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.133.0",

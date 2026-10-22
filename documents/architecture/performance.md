@@ -1,7 +1,7 @@
 # Performance at a year of practice
 
 **Purpose:** What VoiceLab's pages cost with a lot of saved practice, measured before and after decisions 98 and 99, so the next change can be checked against the same numbers.
-**Last updated:** 2026-10-21 (decisions 98 and 99)
+**Last updated:** 2026-10-22 (decisions 98, 99 and 111)
 
 ## How it was measured (read this first)
 
@@ -70,6 +70,23 @@ The re-measuring row is not like for like: after, takes older than 30 days have 
 | `/settings` | 252.4 | 247.0 |
 
 The shared part fell by 75 KB because the background work (the coach request with zod, the analysis engine, the small-talk content) is loaded only when the page is idle (decision 99). A take's page grew 2.6 KB (the star and the readings join). **Precache:** 87 files → 85, and the fonts saved at install fell from 13 files (about 750 KB) to the 2 the pages use (about 100 KB); but the build's scripts in all grew from 997 to 1,186 KB gzip (71 → 82 files), because the bundler copies shared content into each lazily loaded piece. The install still downloads less overall (about 1.75 MB → 1.3 MB), and an update now downloads only the files that changed.
+
+### Pitch with your words (decision 111)
+
+Measured the same way (gzip KB of each prerendered page's first-load scripts), before and after, on one build each:
+
+| Route | Before | After |
+|---|---|---|
+| Shared by every page | 146.7 | 146.6 |
+| `/sessions` (a take) | 281.0 | **282.5** |
+| `/sessions/voice` (phrase rows, new) | n/a | 191.8 |
+| `/session` (recording) | 296.0 | 296.3 |
+| `/voice/drill` | 175.2 | 176.1 |
+| `/voice/shadow` | 175.6 | 176.1 |
+| `/check-in/compare` | 197.7 | 200.0 |
+| All built scripts | 1,133.7 | 1,221.1 |
+
+The take's page grows 1.5 KB because the voice section, the planned-stress card and the last-try card load only after the page is up, and only for takes that show them; the phrase rows are their own page. A first version that loaded them with the page added 9.6 KB, so they were split out. The model voice's pitch for shadowing (about 6 KB of numbers) loads with the comparison, after the first take. The readings are read only where these views draw them, and each take's phrases are worked out once (memoised); the phrase rows draw 40 phrases at a time.
 
 ## Storage
 

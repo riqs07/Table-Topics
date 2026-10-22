@@ -25,7 +25,7 @@ function fakeClock(start = new Date(2026, 9, 19, 10).getTime()) {
 }
 
 // Fake recording services: a steady level, and the words each take's listener hears in turn
-function fakeServices(options: { supported?: boolean; heard?: string[]; level?: number } = {}): RecordingServices {
+function fakeServices(options: { supported?: boolean; heard?: string[]; level?: number; pitch?: number } = {}): RecordingServices {
   // The words still to hand out, one per take
   const heard = [...(options.heard ?? [])];
   // The services
@@ -37,12 +37,12 @@ function fakeServices(options: { supported?: boolean; heard?: string[]; level?: 
     // A listener that hands back the next take's words
     createTranscriber: () => ({ start: () => {}, stop: async () => heard.shift() ?? "" }),
     // A capture with a steady level and fixed audio
-    createCapture: () => ({ level: () => options.level ?? 0.5, stop: async () => new Blob(["voice"]) }),
+    createCapture: () => ({ level: () => options.level ?? 0.5, ...(options.pitch ? { pitch: () => options.pitch ?? null } : {}), stop: async () => new Blob(["voice"]) }),
   };
 }
 
 // Draw the drill with fakes
-function draw(drillId: string, options: { supported?: boolean; heard?: string[]; level?: number; repository?: Repository } = {}) {
+function draw(drillId: string, options: { supported?: boolean; heard?: string[]; level?: number; pitch?: number; repository?: Repository } = {}) {
   // An empty repository unless given
   const repository = options.repository ?? createRepository(new MemoryStore());
   // The clock
@@ -85,6 +85,16 @@ describe("VoiceDrillScreen", () => {
     await waitFor(async () => expect((await repository.listSessions()).map((session) => [session.mode, session.promptId, session.voice?.kind, session.voice?.takes.length, session.audioKey])).toEqual([["voice", "v01", "volume", 3, null]]));
     // The band leads to the next volume drill
     expect((await screen.findByRole("link", { name: /Next drill/ })).getAttribute("href")).toBe("/voice/drill?id=v02");
+  });
+
+  // A volume drill draws each take's line thicker where it was louder (decision 111), and only the volume drills do
+  it("draws loudness as thickness on a volume drill", async () => {
+    // A volume drill, with a steady pitch
+    const { clock } = draw("v01", { pitch: 180 });
+    // Three takes
+    for (let take = 0; take < 3; take += 1) await recordTake(clock);
+    // One thick line per take, and what the thickness means
+    expect([await waitFor(() => { const found = document.querySelectorAll("[data-thickness]").length; expect(found).toBe(3); return found; }), !!screen.getByText(/Thicker where you were louder/)]).toEqual([3, true]);
   });
 
   // A take under a second is not kept

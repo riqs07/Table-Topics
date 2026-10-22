@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-21 (decision 102)
+**Last updated:** 2026-10-22 (decision 111)
 
 ## Where data lives
 
@@ -57,7 +57,7 @@ A take's detailed readings (loudness, pitch and word times) are not on the sessi
 
 ### Readings (one per take that has them; decision 98)
 
-In the `signals` collection, keyed by session id. Kept apart because they were about 85% of a session's size and every page read every session: a full read of a year's sessions took about 0.8 s on a slowed phone, and about a tenth of that without them. They are read only where they are drawn or measured: the take's page, the coach request for that take, and working its analysis out again.
+In the `signals` collection, keyed by session id. Kept apart because they were about 85% of a session's size and every page read every session: a full read of a year's sessions took about 0.8 s on a slowed phone, and about a tenth of that without them. They are read only where they are drawn or measured: the take's page (and its phrase rows, `/sessions/voice`), the check-in comparison's pitch for two takes of the same words (decision 111), the coach request for that take, and working its analysis out again.
 
 | Field | Meaning |
 |-------|---------|
@@ -146,6 +146,8 @@ Talks are stored in their own collection (added to existing databases by raising
 ### Prompts
 
 Prompts ship inside the app as fixed content. They are not user data.
+
+**Key-word stress marks** (decision 111) are content fields, not user data: a passage's `stress` (in `src/content/prompts.ts` and the check-in passage in `src/content/checkIn.ts`) is a list of stretches of its text as written, each with its key word in *stars*, such as `"The morning was *cold*."`; the six short practice passages (r007 to r012) and the check-in passage have them. `markStress` puts the stars into the text, so the reading page shows the key words in bold and the word numbers (and so the saved `scriptTimes`) are unchanged; a content test checks every mark is found exactly once, has one starred word and leaves the words to read as they were. A lesson's `plannedStress` (only lesson 6, "Stress the key word") says its stars are where the voice should lift (other lessons star signposts). A voice drill take's `stress` names its key word (the six takes of the stress drill, p04). The shadowing model voice's pitch, read once from each model clip by `pnpm shadow-pitch`, is in `src/content/shadowPitch.ts` (ten readings a second, whole hertz or null, by the clip's id); a unit test checks every shadowing step has its readings. Nothing new is stored on the device: pitch in your words is worked out from a take's readings (`signals`) and, when deeper analysis ran, its analysis's `server.transcript.words`, each time the take's page or its phrase rows open.
 
 The recordings of the fixed lines (small talk and shadowing, decision 82; the four conversation characters' lines, decision 83) ship as files in `public/clips/`. Once played, each is kept in the browser's cache store `voicelab-voice-v1` under its address, so it plays offline. That store also keeps any line fetched from `/api/voice`. It is not user data, is not exported, and the service worker leaves it alone when it updates (each release's worker deletes only older `voicelab-app-<build>` page caches and the old `voicelab-v<n>` ones; decision 88). Built scripts and fonts are kept in `voicelab-static`, shared across releases, with a note of which files the current and the previous release use; a file no longer used by either is removed when the next release takes over (decision 99).
 

@@ -140,8 +140,8 @@ test("upgrades an older database and History, the profile and a take still work"
 
   // A recent take's page still draws its voice chart, now from the readings kept apart
   await page.goto("/sessions?id=take-0");
-  // The voice section with its pitch line
-  await expect(page.getByRole("region", { name: "Your voice" }).getByRole("img", { name: /Your pitch across the take/ })).toBeVisible();
+  // The voice section with its pitch shown in the words (decision 111; the take has word times)
+  await expect(page.getByRole("region", { name: "Your voice" }).locator("[data-pitch-text]")).toBeVisible();
   // Star it
   await page.getByRole("button", { name: "Star this take" }).click();
   // Starred

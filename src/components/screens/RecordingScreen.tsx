@@ -23,6 +23,8 @@ import { findLesson } from "@/content/lessons";
 import { markFillers } from "@/core/fillers";
 // Load the live reading tools
 import { followReading, readingTokens, scriptWords, scrollGuide, stampFirstRead, stampSpoken, type ReadingToken } from "@/core/liveReading";
+// Load the stress marker, so a reading's key words show in bold while reading (decision 111)
+import { markStress } from "@/core/stressMarks";
 // Load the speech-or-silence threshold, for scrolling at the reader's pace
 import { speechThreshold } from "@/core/pauses";
 import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
@@ -428,8 +430,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [earlierAnswers, setEarlierAnswers] = useState<SessionRecord[]>([]);
   // For a question about what you have been up to, your moment notes from the last week (newest first)
   const [recentMoments, setRecentMoments] = useState<SessionRecord[]>([]);
-  // The text on screen: a passage, a lesson's practice text, or the talk being rehearsed
-  const script = passage ? { title: passage.title, source: passage.source, body: passage.body } : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, source: "", body: lesson.body } : talk ? { title: talk.title, source: section !== null ? `Your talk · section ${section + 1} of ${sections.length}` : "Your talk", body: talkText } : null;
+  // The text on screen: a passage (its key words starred, decision 111), a lesson's practice text, or the talk being rehearsed
+  const script = passage ? { title: passage.title, source: passage.source, body: markStress(passage.body, passage.stress ?? []) } : lesson ? { title: `Lesson ${lesson.number}: ${lesson.title}`, source: "", body: lesson.body } : talk ? { title: talk.title, source: section !== null ? `Your talk · section ${section + 1} of ${sections.length}` : "Your talk", body: talkText } : null;
   // The text on screen as pieces that can be lit up, and the words to listen for
   const scriptBody = script?.body ?? null;
   // The pieces (the compiler keeps them until the text changes)

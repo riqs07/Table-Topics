@@ -15,6 +15,8 @@ import { QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { StartBlob, StatusBlob, VoiceBlob } from "@/components/script/VoiceShapes";
 // Load the take pictures
 import { LevelBars, PitchLine } from "@/components/script/TakeVisuals";
+// Load Next.js's lazy loader
+import dynamic from "next/dynamic";
 // Load the guessing game
 import { GuessGame } from "@/components/script/GuessGame";
 // Load the microphone help
@@ -43,6 +45,11 @@ import { formatClock } from "@/core/recordingRules";
 import { saveVoiceSession, saveWordsToWatch } from "@/data/voiceSessions";
 // Load the recording contracts
 import type { RecordingServices } from "@/audio/services";
+
+// Pitch in your words for the drills, loaded once a drill's results show: planned stress and loudness as thickness (decision 111)
+const TakeStress = dynamic(() => import("@/components/script/DrillCurves").then((module) => module.TakeStress), { ssr: false });
+// (loudness as thickness)
+const TakeThickness = dynamic(() => import("@/components/script/DrillCurves").then((module) => module.TakeThickness), { ssr: false });
 
 // The longest a take runs before it stops by itself, in seconds
 const MAX_TAKE_SECONDS = 30;
@@ -124,6 +131,8 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, clock: gi
   const usual = useMemo(() => usualPitch(takes.flatMap((take) => take.pitches)), [takes]);
   // The recordings, for playing back
   const audio = useMemo(() => takes.map((take) => take.audio), [takes]);
+  // The loudest reading across the takes, for loudness as thickness (decision 111)
+  const loudest = useMemo(() => Math.max(0, ...takes.flatMap((take) => take.levels)), [takes]);
   // The player
   const { play, playing } = useTakePlayback(audio);
   // Every word missed across the takes, once each
@@ -352,13 +361,19 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, clock: gi
                   {/* Hear it */}
                   <button type="button" onClick={() => play(index)} aria-label={`Play ${take.label}`} className={QUIET}>{playing === index ? "Playing" : "Play"}</button>
                 </div>
-                {/* Its pitch, for the pitch and tone drills */}
-                {PITCH_MEASURES.has(drill.measure) && <div className="mt-3"><PitchLine pitches={takes[index]?.pitches ?? []} usual={usual} label={`${take.label}: pitch line. ${findings.lines[index] ?? ""}`} /></div>}
+                {/* The stress drill: did the lift land on the key word (planned stress, decision 111) */}
+                {take.stress && takes[index] && <TakeStress take={takes[index]} text={take.text} stress={take.stress} />}
+                {/* Its pitch, for the other pitch and tone drills */}
+                {PITCH_MEASURES.has(drill.measure) && !take.stress && <div className="mt-3"><PitchLine pitches={takes[index]?.pitches ?? []} usual={usual} label={`${take.label}: pitch line. ${findings.lines[index] ?? ""}`} /></div>}
+                {/* The volume drills: the line thicker where louder (decision 111) */}
+                {drill.kind === "volume" && takes[index] && <TakeThickness take={takes[index]} text={take.text} loudest={loudest} label={take.label} />}
               </li>
             ))}
           </ol>
           {/* For the pitch lines: what the dashed line is */}
-          {PITCH_MEASURES.has(drill.measure) && usual !== null && <p className="mt-2 text-footnote text-ink-muted">The dashed line is your usual pitch; up is higher.</p>}
+          {PITCH_MEASURES.has(drill.measure) && drill.measure !== "stress" && usual !== null && <p className="mt-2 text-footnote text-ink-muted">The dashed line is your usual pitch; up is higher.</p>}
+          {/* For the thick lines: what the thickness is */}
+          {drill.kind === "volume" && <p className="mt-2 text-footnote text-ink-muted">Thicker where you were louder. The dashed line is your usual pitch.</p>}
 
           {/* Clear sounds: the hard words once more, slowly */}
           {drill.measure === "words" && missed.length > 0 && (

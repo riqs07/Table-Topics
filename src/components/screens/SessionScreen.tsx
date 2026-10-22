@@ -5,6 +5,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 // Load Next.js's link component
 import Link from "next/link";
+// Load Next.js's lazy loader, for the voice cards only some takes show (decisions 99 and 111)
+import dynamic from "next/dynamic";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { PRESS, RowButton, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
@@ -39,8 +41,9 @@ import { markPauses, marksPaused, marksSentence, paceAcross } from "@/core/wordT
 import { playbackGain } from "@/core/voiceLevels";
 // Load the pause-length bars (decision 80)
 import { PauseLengths } from "@/components/script/PauseLengths";
-// Load the voice section and the usual range (decision 81)
-import { VoiceSection } from "@/components/script/VoiceSection";
+// Load the usual range (decision 81)
+// Load the text a take read, for pitch in its words and planned stress (decision 111)
+import { useTakeScript } from "@/components/screens/useTakeScript";
 import { rangeOf, usualRangeBefore } from "@/core/voiceFeedback";
 // Load the saved voice drill's view (decision 80)
 import { VoiceSessionView } from "@/components/screens/VoiceSessionView";
@@ -113,6 +116,13 @@ import { STORY_BEAT_NAMES, momentIdOf } from "@/content/stories";
 import { factsOf, findGuidedStory, type GuidedStory } from "@/content/guidedStories";
 import { compareWithFacts } from "@/core/guidedStory";
 import { STORY_BEATS } from "@/data/records";
+
+// The voice section, pitch in the words and the volume, loaded once the page is up so the take's first download stays small (decisions 81, 99 and 111)
+const VoiceSection = dynamic(() => import("@/components/script/VoiceSection").then((module) => module.VoiceSection), { ssr: false });
+// Planned stress, loaded only for a take whose text has key words (decision 111)
+const PlannedStressCard = dynamic(() => import("@/components/script/PlannedStressCard").then((module) => module.PlannedStressCard), { ssr: false });
+// Last try and this try, loaded only where the same words were said twice (decision 111)
+const LastVsThisCard = dynamic(() => import("@/components/script/LastVsThisCard").then((module) => module.LastVsThisCard), { ssr: false });
 
 // What the screen needs: which session, plus the shared props
 interface SessionScreenProps extends ScreenProps {
@@ -484,6 +494,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   }, []);
   // The coach's first word swap for this take, once its rubric is saved (decision 90)
   const wordSwap = useWordSwap(repo, session.id, session.feedback);
+  // The text it read, with any key words (decision 111)
+  const takeScript = useTakeScript(session);
   // The page title for this kind of session
   const title = warmup ? "Warm-up" : talk ? "Rapid Fire" : qa ? "Q&A answer" : bookend ? (bookend.part === "opening" ? "Opening drill" : "Closing drill") : smallTalk ? "Small talk" : session.mode === "pause" ? "Pause drill" : session.mode === "rehearse" ? "Rehearsal" : lesson ? `Lesson ${lesson.number}: ${lesson.title}` : reading ? "Read aloud" : session.mode === "response" ? "Prepared speech" : session.mode === "free" ? "Free talk" : session.mode === "outline" ? "Short speech" : story ? (original ? "Told again" : "Story") : timed ? "Your answer" : "Your take";
   // Name the tab after it
@@ -604,6 +616,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           </div>
           {/* A retold story: this telling beside the one before (decision 92) */}
           {story && original && <StoryBeforeAfter original={original} retold={session} pauseWords={view.pauseWords} />}
+          {/* The same words told again: the last telling's pitch under this one's (decision 111) */}
+          {story && original && !session.trimmedAt && <LastVsThisCard repo={repo} before={original} after={session} kind="Tell it again" names={{ before: `Last time, ${dayLabel(new Date(original.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}`, after: "This time" }} plays={{ before: "Play last time", after: "Play this time" }} />}
           {/* A short speech's points, right under the change: the answer people look for first (decision 77) */}
           <OutlinePoints session={session} />
           {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
@@ -625,8 +639,10 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {pace && !quick && <p className="mt-2 text-footnote text-ink-muted">{pace.sentence}</p>}
           {/* After a Table Topic or Record Response, how the timing went (left out when the one change above already says it, so it is said once) */}
           {timed && !(!session.feedback && ownChange.aboutTiming) && <LengthRing session={session} />}
-          {/* How the voice sounded: pitch and volume (decision 81; not for a few-second reply) */}
-          {!quick && (session.trimmedAt ? <TrimmedNote /> : <VoiceSection session={session} usual={usual} hide={session.feedback ? undefined : ownChange.voiceKind} fluency={view.fluency} />)}
+          {/* Planned stress, only where the text marks key words (decision 111) */}
+          {!quick && !session.trimmedAt && takeScript.planned && takeScript.script && <PlannedStressCard repo={repo} session={session} script={takeScript.script} kind={session.checkIn ? "Check-in" : lesson ? "Lesson" : "Read aloud"} />}
+          {/* How the voice sounded: pitch in the words and volume (decisions 81 and 111; not for a few-second reply) */}
+          {!quick && (session.trimmedAt ? <TrimmedNote /> : takeScript.ready && <VoiceSection repo={repo} session={session} usual={usual} hide={session.feedback ? undefined : ownChange.voiceKind} fluency={view.fluency} script={takeScript.script} onPlay={session.audioKey ? () => playAt(0) : null} />)}
           {/* After a short speech, how the timing went against its length, and which points were heard */}
           {session.mode === "outline" && session.outline && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, session.outline.goalMinutes * 60)}</p>}
           {/* After a rehearsal with a goal, how the timing went */}
@@ -1032,7 +1048,7 @@ function PlanBand({ plan }: { plan: PlanNav }) {
 }
 
 // The Retry result screen
-function RetryView({ repo, retry, original, now, plan, view }: { repo: Repository; retry: FullSession; original: FullSession; now: Date; plan: PlanNav | null; view: ResultView }) {
+function RetryView({ repo, retry, original, now, plan, view, usual }: { repo: Repository; retry: FullSession; original: FullSession; now: Date; plan: PlanNav | null; view: ResultView; usual: number | null }) {
   // Where the session belongs, and the way back
   const home = sessionHome(retry.mode, retry.promptId, plan !== null);
   // The cue the first try gave
@@ -1041,6 +1057,8 @@ function RetryView({ repo, retry, original, now, plan, view }: { repo: Repositor
   const pausesOf = (session: FullSession) => (session.loudness && session.loudness.length > 0 ? findPauses(session.loudness, LOUDNESS_TICK_MS).count : null);
   // The pitch range on each try, when both were measured (decision 81)
   const ranges = [rangeOf(original), rangeOf(retry)];
+  // The text both tries read, if any (decision 111)
+  const takeScript = useTakeScript(retry);
   // Both tries' numbers, with the pitch range last
   const changes = [...resultChanges(original, retry, { before: pausesOf(original), after: pausesOf(retry) }).filter((change) => view.pauseWords || change.label !== "pause words a minute"), ...(ranges[0] !== null && ranges[1] !== null ? [{ label: "pitch range, steps", before: String(ranges[0]), after: String(ranges[1]) }] : [])];
   // Draw the page
@@ -1060,8 +1078,12 @@ function RetryView({ repo, retry, original, now, plan, view }: { repo: Repositor
           <div className="mt-2"><BeforeAfterTable label="First and second try" first="First" second="Second" rows={changes} /></div>
           {/* The coach's notes on the retry */}
           {retry.feedback && <p className="mt-5 max-w-[48ch] text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
+          {/* The first try's pitch under the second's, phrase by phrase (decision 111) */}
+          {!retry.trimmedAt && takeScript.ready && <LastVsThisCard repo={repo} before={original} after={retry} kind="Second try" names={{ before: "First try", after: "Second try" }} plays={{ before: "Play first try", after: "Play second try" }} script={takeScript.script} />}
           {/* Listen back to the second try */}
           <div className="max-w-[48ch]"><Playback repo={repo} session={retry} /></div>
+          {/* How the second try's voice sounded (decision 111: the standard voice view on every take with pitch readings) */}
+          <div className="max-w-[48ch]">{retry.trimmedAt ? <TrimmedNote /> : takeScript.ready && <VoiceSection repo={repo} session={retry} usual={usual} fluency={view.fluency} script={takeScript.script} />}</div>
           {/* Where the second try's deeper analysis stands, said quietly (decision 91) */}
           <DeepNote repo={repo} sessionId={retry.id} now={now} />
           {/* Push the action down */}
@@ -1235,7 +1257,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
       {loaded?.session?.mode === "voice" && today && <VoiceSessionView session={loaded.session} now={today} plan={plan} />}
       {/* A conversation with a persona: where, the share, the change and the turns (decisions 83 and 84) */}
       {loaded?.session?.mode === "conversation" && today && <ConversationSessionView session={loaded.session} now={today} note={note} plan={plan} />}
-      {loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation" && loaded.original && loaded.session.mode !== "smalltalk" && loaded.session.mode !== "story" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} view={view} />}
+      {loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation" && loaded.original && loaded.session.mode !== "smalltalk" && loaded.session.mode !== "story" && today && <RetryView repo={repo} retry={loaded.session} original={loaded.original} now={today} plan={plan} view={view} usual={loaded.usual} />}
       {/* A first try (or a retry whose first try is missing) */}
       {loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation" && (!loaded.original || loaded.session.mode === "smalltalk" || loaded.session.mode === "story") && today && <FeedbackView repo={repo} session={loaded.session} original={loaded.session.mode === "story" ? loaded.original : null} now={today} note={note} earlier={loaded.earlier} rehearsed={loaded.talk} qaIndex={loaded.qaIndex} plan={plan} view={view} usual={loaded.usual} onReviewed={(updated) => {
         // Show the notes and the feedback

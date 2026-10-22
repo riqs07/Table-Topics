@@ -21,6 +21,8 @@ export const CHECK_IN_PASSAGE: Passage = {
   text: "The Saturday walk",
   // The words
   body: "Every Saturday I take the same walk to the market. It is not far, about twenty minutes, but I never hurry. Why would I? The baker waves from her door. The man at the flower stall calls out the price of tulips, as if I might have forgotten since last week. Some days it rains; some days the sun is so bright that I have to squint. Once, a small brown dog followed me all the way home! I stopped, knelt down, and asked him, “Where do you think you’re going?” He did not answer, of course. Walks like this remind me that small things, done again and again, add up to something. So next Saturday, I will go again.",
+  // The key words to lean on, shown in bold while reading and checked on the results (decision 111)
+  stress: ["the *same* walk", "but I *never* hurry.", "Some days it *rains*;", "the sun is so *bright*", "all the way *home*!", "He did *not* answer,", "add up to *something*.", "I will go *again*."],
 };
 
 // The pitch's prompt id, the same every week

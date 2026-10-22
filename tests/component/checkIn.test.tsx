@@ -20,6 +20,8 @@ import { checkInId } from "@/core/checkIn";
 import type { CheckInPart } from "@/data/records";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
+// Load the made-up takes with realistic pitch (decision 111)
+import { makeTake } from "../support/pitchTake";
 
 // Tuesday 13 October 2026, mid-morning
 const NOW = new Date(2026, 9, 13, 10);
@@ -239,6 +241,27 @@ describe("the comparison", () => {
     const read = document.querySelector("section[data-part='read']")!;
     // Confirm the parts, the players (seven), the table's time row, the missing note and A/B for the reading only where both are here, and the table folded under "All numbers" after what changed (decision 103)
     expect([document.querySelectorAll("section[data-part]").length, (await screen.findAllByRole("button", { name: /^Play (then|now)/ })).length, within(table).getAllByRole("row")[1]!.textContent, !!screen.getByText(/The recording isn’t on this device/), screen.queryByRole("group", { name: "Switch between then and now, A story" }), !!screen.getByRole("group", { name: "Switch between then and now, Read aloud" }), (table.closest("details") as HTMLDetailsElement | null)?.open, table.closest("details")?.querySelector("summary")?.textContent, Array.from(read.children).map((child) => child.tagName)]).toEqual([4, 7, "Time1:101:20", true, null, true, false, "All numbers", ["H2", "DIV", "DIV", "UL", "DETAILS"]]);
+  });
+
+  // The reading read twice: then's pitch dashed under now's, phrase by phrase (decision 111)
+  it("draws then's pitch under now's for the same words", async () => {
+    // The passage's first sentence, read twice: the second time "market" falls instead of rising
+    const said = (end: number) => makeTake([{ words: "Every Saturday I take the same walk to the market.".split(" ").map((text) => ({ text, step: text === "same" ? 4 : 0, ...(text === "market." ? { to: end } : {}) })), pauseAfter: 0.5 }]);
+    // An empty repository
+    const repository = createRepository(new MemoryStore());
+    // Both check-ins' readings
+    for (const [day, week, take] of [[new Date(2026, 9, 6), 1, said(5)], [NOW, 2, said(-4)]] as const) {
+      // The take's id
+      const id = `${checkInId(day)}-read`;
+      // Saved with its readings, each script word read when heard
+      await repository.saveSession(makeSession({ id, createdAt: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9).toISOString(), mode: "read", promptId: "ci-read", durationSec: take.durationSec, transcript: take.transcript, marker: true, checkIn: { id: checkInId(day), week, part: "read" }, pitch: take.pitch, loudness: take.loudness, spokenTimes: take.spokenTimes, scriptTimes: take.spokenTimes }));
+    }
+    // Drawn
+    render(<CheckInCompareScreen repository={repository} now={NOW} />);
+    // The reading's comparison, headed by the change
+    const card = await screen.findByRole("region", { name: "Your ending used to rise. Now it falls." });
+    // Inside the reading's part, then's curve dashed under now's
+    expect([card.closest("section[data-part]")?.getAttribute("data-part"), card.querySelectorAll("[data-under]").length > 0]).toEqual(["read", true]);
   });
 
   // A/B marks the side playing

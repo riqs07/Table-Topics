@@ -15,8 +15,8 @@ import { ActionBand } from "@/components/script/ActionBand";
 import { PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the voice shapes
 import { StartBlob, StatusBlob, VoiceBlob } from "@/components/script/VoiceShapes";
-// Load the pitch line
-import { PitchLine } from "@/components/script/TakeVisuals";
+// Load Next.js's lazy loader
+import dynamic from "next/dynamic";
 // Load the microphone help
 import { ALLOW_STEPS, PROBLEM_TEXT } from "@/components/script/microphoneHelp";
 // Load the shared screen starting points
@@ -33,8 +33,6 @@ import { useTakePlayback } from "@/components/screens/useTakePlayback";
 import { findShadowPassage, shadowSteps, type ShadowPassage, type ShadowStep } from "@/content/voice";
 // Load the shadowing findings
 import { measureTake, paceMatch, shadowHeadline, shadowLine } from "@/core/voiceFindings";
-// Load the usual-pitch rule, for the pitch lines
-import { usualPitch } from "@/core/pitch";
 // Load the next-passage picker
 import { nextShadowPassage } from "@/core/voicePicks";
 // Load the clock formatter
@@ -43,6 +41,9 @@ import { formatClock } from "@/core/recordingRules";
 import { saveVoiceSession } from "@/data/voiceSessions";
 // Load the recording contracts
 import type { RecordingServices } from "@/audio/services";
+
+// Your curve with the model voice's under it, loaded with the model's pitch once a take is in (decision 111)
+const ShadowModelCurve = dynamic(() => import("@/components/script/DrillCurves").then((module) => module.ShadowModelCurve), { ssr: false });
 
 // The longest a take runs before it stops by itself, in seconds
 const MAX_TAKE_SECONDS = 45;
@@ -97,8 +98,6 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
   const [saving, setSaving] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   // The passage to offer next, once saved
   const [nextPassage, setNextPassage] = useState<ShadowPassage | null>(null);
-  // The speaker's usual pitch across the takes, for the pitch lines
-  const usual = useMemo(() => usualPitch(takes.flatMap((take) => take?.pitches ?? [])), [takes]);
   // The recordings, for playing back (an empty one where a step has none yet)
   const audio = useMemo(() => takes.map((take) => take?.audio ?? new Blob()), [takes]);
   // The player
@@ -334,7 +333,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
               {/* How it compared */}
               <p className="text-lede">{line}</p>
               {/* Your pitch */}
-              <div className="mt-3"><PitchLine pitches={take.pitches} usual={usual} label={`${current.label}: your pitch line`} /></div>
+              <ShadowModelCurve take={take} text={current.text} voiceId={current.voiceId} label={current.label} />
               {/* Next, or again */}
               <p className="mt-4 flex flex-wrap gap-3">
                 {/* Next */}

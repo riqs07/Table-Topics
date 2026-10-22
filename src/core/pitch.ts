@@ -80,7 +80,7 @@ export function detectPitch(samples: ArrayLike<number>, sampleRate: number): num
 }
 
 // The middle of a list of numbers
-function median(values: ReadonlyArray<number>): number {
+export function median(values: ReadonlyArray<number>): number {
   // In order
   const sorted = [...values].sort((a, b) => a - b);
   // The middle one (or the average of the two in the middle)
@@ -138,12 +138,18 @@ export function summarizePitch(readings: ReadonlyArray<number | null>, usual: nu
   const sorted = [...steps].sort((a, b) => a - b);
   // The range
   const rangeSteps = steps.length >= MIN_FOR_RANGE ? Math.round(percentile(sorted, 0.9) - percentile(sorted, 0.1)) : null;
+  // How it ended (null with too few readings)
+  return { voiced: steps.length, rangeSteps, end: endOfSteps(steps) };
+}
+
+// How a run of voiced readings in steps ended: the last few against the middle of the rest, falling or rising by at least END_STEPS, otherwise level (null with too few readings); shared by a whole take and each phrase (pitch in your words)
+export function endOfSteps(steps: ReadonlyArray<number>): PitchEnd | null {
   // Too few for an ending
-  if (steps.length < MIN_FOR_END) return { voiced: steps.length, rangeSteps, end: null };
-  // The last few readings against the rest of the take
+  if (steps.length < MIN_FOR_END) return null;
+  // The last few readings against the rest
   const change = steps.slice(-END_READINGS).reduce((sum, step) => sum + step, 0) / END_READINGS - median(steps.slice(0, -END_READINGS));
   // Falling, rising, or level
-  return { voiced: steps.length, rangeSteps, end: change <= -END_STEPS ? "fall" : change >= END_STEPS ? "rise" : "level" };
+  return change <= -END_STEPS ? "fall" : change >= END_STEPS ? "rise" : "level";
 }
 
 // Fewer readings for drawing a long take: each group's middle voiced reading, or null when under a third of the group was voiced

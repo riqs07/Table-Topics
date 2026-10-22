@@ -14,6 +14,8 @@ import { STORY_WINDOWS, TOPIC_WINDOW, formatClock, type SpeakingWindow } from "@
 import type { AnalysisRecord, CheckInPart, MetricValue, SessionRecord } from "@/data/records";
 // Load the robust spread the profile uses
 import { robustSpread } from "@/core/analysis/stats";
+// Load the fixed amounts a change must clear, shared with "last try and this try" (decision 111)
+import { fixedThreshold, PITCH_RANGE_NOISE } from "@/core/changeNoise";
 
 // One measure in a part's comparison, and the words for its two directions
 interface MeasureSpec {
@@ -44,7 +46,7 @@ const COMMON: ReadonlyArray<MeasureSpec> = [
   // Pauses in the middle of a sentence: 8 points
   { id: "flu.midclause_pause_share", up: "more of them mid-sentence", down: "fewer of them mid-sentence", noise: { share: 0, amount: 8 } },
   // Pitch range: a sixth, or 1 semitone
-  { id: "pro.f0_range_st", up: "wider", down: "narrower", noise: { share: 0.15, amount: 1 } },
+  { id: "pro.f0_range_st", up: "wider", down: "narrower", noise: PITCH_RANGE_NOISE },
   // Volume variety: a sixth, or 0.03
   { id: "pro.loudness_cv", up: "more varied", down: "steadier", levelled: true, noise: { share: 0.15, amount: 0.03 } },
   // Articulation clarity, from deeper analysis: 3 points
@@ -184,7 +186,7 @@ function likeWithLike(a: AnalysisRecord | undefined, b: AnalysisRecord | undefin
 // The smallest change that counts for a measure (decision 103): the spread of this part's values from the same kind of engine over earlier check-ins, once there are enough, never below half the fixed amount; otherwise the fixed amount
 export function changeThreshold(spec: { noise: { share: number; amount: number } }, before: number, history: ReadonlyArray<number>): { value: number; basis: "spread" | "fixed" } {
   // The fixed amount: a share of the earlier value, or the amount, whichever is bigger
-  const fixed = Math.max(Math.abs(before) * spec.noise.share, spec.noise.amount);
+  const fixed = fixedThreshold(spec.noise, before);
   // Enough history: its spread
   if (history.length >= SPREAD_TAKES) return { value: Math.max(robustSpread(history) ?? 0, spec.noise.amount / 2), basis: "spread" };
   // Otherwise fixed

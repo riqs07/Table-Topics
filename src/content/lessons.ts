@@ -35,6 +35,8 @@ export interface Lesson {
   body: string;
   // What is checked afterwards
   check: LessonCheck;
+  // Whether the *starred* words are where the voice should lift, so the results show planned stress (decision 111); missing on lessons whose stars mark something else, such as signposts
+  plannedStress?: boolean;
 }
 
 // The lessons, in order
@@ -50,7 +52,7 @@ export const LESSONS: ReadonlyArray<Lesson> = [
   // Lesson 5
   { id: "l005", number: 5, title: "Land the ending", text: "Land the ending", check: "ending", tip: "Many speakers fade on the last words of a sentence, just where the meaning lands. Keep your voice up until the full stop, then pause.", body: "This plan saves us money. It saves us time. It keeps our customers happy. And it starts on Monday. I know change is hard. But this change is worth it. Let's make it work." },
   // Lesson 6
-  { id: "l006", number: 6, title: "Stress the key word", text: "Stress the key word", check: "coach", tip: "In most sentences one word carries the meaning. Lean on it a little and the sentence becomes easy to follow. Read the bold word a touch louder and slower.", body: "I never said *she* took the money. I never said she *took* the money. I never said she took *the* money. I never said she took the *money*. One sentence, four meanings, and only the stress changes." },
+  { id: "l006", number: 6, title: "Stress the key word", text: "Stress the key word", check: "coach", plannedStress: true, tip: "In most sentences one word carries the meaning. Lean on it a little and the sentence becomes easy to follow. Read the bold word a touch louder and slower.", body: "I never said *she* took the money. I never said she *took* the money. I never said she took *the* money. I never said she took the *money*. One sentence, four meanings, and only the stress changes." },
   // Lesson 7
   { id: "l007", number: 7, title: "Signposting", text: "Signposting", check: "coach", tip: "Spoken arguments are hard to follow without a map. Say where you are going, then use words like first, next and finally so listeners always know where they are.", body: "I have three points today. *First*, why our sign-up page loses people. *Next*, the two changes we tested. *Finally*, what we will do this quarter. So, *first*: the sign-up page asks for too much, too early." },
   // Lesson 8

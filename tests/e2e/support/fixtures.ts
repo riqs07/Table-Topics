@@ -136,6 +136,8 @@ export const ROUTES: ReadonlyArray<string> = [
   "/session?mode=rehearse&prompt=missing",
   // A session that does not exist
   "/sessions?id=missing",
+  // A take's pitch phrase by phrase, for a take that does not exist (decision 111)
+  "/sessions/voice?id=missing",
   // A talk's page for a talk that does not exist
   "/talk?id=missing",
   // A full speech's page
