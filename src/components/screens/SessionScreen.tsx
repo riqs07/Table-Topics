@@ -96,6 +96,8 @@ import { lessonResult } from "@/core/lessonCheck";
 import { bookendResult, retiredDrillLesson } from "@/core/bookend";
 // Load the session record type
 import type { FullSession, SessionRecord, TalkRecord } from "@/data/records";
+// Load the comparison of the speaker's own call with the measure (decision 116)
+import { compareRating } from "@/core/ratingCompare";
 // Load the star toggle (decision 98)
 import { StarToggle } from "@/components/script/StarToggle";
 // Load the repository type
@@ -572,6 +574,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           )}
           {/* When the headline is the fillers (so no fillers tile below), the way to see where they were */}
           {headline && shownHeadline === "fillers" && fillerCount(session) > 0 && !reading && <p><button type="button" onClick={showFillers} className={`${TEXT_LINK} text-footnote`}>Show where</button></p>}
+          {/* The speaker's own call against the measure, when it was rated and the measure is confident (decision 116) */}
+          <RatingLine session={session} all={all} />
           {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
           <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
             {/* The pill that names it, and where it comes from until the coach's note arrives */}
@@ -707,6 +711,16 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
       </div>
     </>
   );
+}
+
+// The one line comparing the speaker's call before the results with what was measured, or nothing when it was not rated or no confident measure maps to it (decision 116)
+function RatingLine({ session, all }: { session: SessionRecord; all: ReadonlyArray<SessionRecord> }) {
+  // The comparison, against the earlier takes of the same family
+  const comparison = compareRating(session, all);
+  // Nothing to say
+  if (!comparison) return null;
+  // The line
+  return <p data-self-rating className="mt-4 max-w-[48ch] text-lede">{comparison.text}</p>;
 }
 
 // How often the take's page looks again while its deeper analysis is under way
@@ -1072,6 +1086,8 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
           <h1 className="mt-6 font-display text-statement font-semibold tracking-tight motion-safe:animate-rise md:mt-0 md:max-w-[18ch] md:text-statement-xl">{view.pauseWords || measureFor(original.focus)?.kind !== "fillers" ? retryHeadline(retry, original) : "Your second try is in."}</h1>
           {/* What the first try said to work on */}
           {cue && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">You were working on: {cue}</p>}
+          {/* The speaker's own call against the measure (decision 116) */}
+          <RatingLine session={retry} all={all} />
           {/* Both tries' numbers, first then second (decision 67) */}
           <div className="mt-2"><BeforeAfterTable label="First and second try" first="First" second="Second" rows={changes} /></div>
           {/* The coach's notes on the retry */}

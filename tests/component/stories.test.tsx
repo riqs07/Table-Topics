@@ -213,6 +213,8 @@ describe("RecordingScreen, stories", () => {
     // Stop
     fireEvent.click(screen.getByRole("button", { name: /Stop/ }));
     // It opens the take
+    // Skip the question before the results (decision 116)
+    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // The saved take
     const [saved] = await repository.listSessions();

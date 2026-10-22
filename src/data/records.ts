@@ -185,6 +185,60 @@ export interface SessionRecord {
   story?: StoryTake;
   // For a take in the weekly check-in: which check-in, its number and which of the four parts (decision 100); missing on every other take
   checkIn?: CheckInTake;
+  // How the speaker said the take felt, asked once before its results (decision 116); missing when the question was skipped or not asked
+  selfRating?: SelfRating;
+  // For a round of a 4/3/2 loop: the loop it belongs to, which round, and its target length (decision 117); missing on every other take
+  loop?: LoopTake;
+}
+
+// The scales a take can be rated on before its results (decision 116): its pace, or (for a story) how lively it sounded
+export const RATING_SCALES = ["pace", "liveliness"] as const;
+
+// One scale
+export type RatingScale = (typeof RATING_SCALES)[number];
+
+// The answers, three per scale: rushed, about right or slow for pace; flat, OK or lively for liveliness
+export const RATING_ANSWERS = ["rushed", "right", "slow", "flat", "ok", "lively"] as const;
+
+// One answer
+export type RatingAnswer = (typeof RATING_ANSWERS)[number];
+
+// Whether a value names a rating scale
+export function isRatingScale(value: unknown): value is RatingScale {
+  // One of the two
+  return typeof value === "string" && (RATING_SCALES as ReadonlyArray<string>).includes(value);
+}
+
+// Whether a value names a rating answer
+export function isRatingAnswer(value: unknown): value is RatingAnswer {
+  // One of the six
+  return typeof value === "string" && (RATING_ANSWERS as ReadonlyArray<string>).includes(value);
+}
+
+// The scale an answer belongs to: rushed, right and slow are about pace; flat, OK and lively about liveliness
+export function answerScale(answer: RatingAnswer): RatingScale {
+  // Pace answers, then the rest
+  return answer === "rushed" || answer === "right" || answer === "slow" ? "pace" : "liveliness";
+}
+
+// The speaker's own call on a take, saved before its results showed (decision 116)
+export interface SelfRating {
+  // What was asked about
+  scale: RatingScale;
+  // The answer tapped
+  answer: RatingAnswer;
+  // When it was tapped (ISO text)
+  ratedAt: string;
+}
+
+// One round of a 4/3/2 loop: the same content three times in one sitting, each round shorter (decision 117)
+export interface LoopTake {
+  // The loop's id, shared by its three rounds
+  id: string;
+  // Which round, 1 to 3
+  round: number;
+  // The round's target length in seconds (its red light)
+  targetSec: number;
 }
 
 // The four parts of the weekly check-in, in the order they are done (decision 100): the same passage read aloud, the same two-minute pitch, a story and a surprise question from matched pools

@@ -16,26 +16,12 @@ import { median, robustSpread, round } from "@/core/analysis/stats";
 // Load the take counts the profile works with
 import { PROFILE_RULES } from "@/core/analysis/profileRules";
 // Load the record types
-import type { AnalysisRecord, MetricSource, SessionMode, SessionRecord } from "@/data/records";
+import type { AnalysisRecord, MetricSource, SessionRecord } from "@/data/records";
 
-// A family of practice
-export type FamilyId = "spot" | "reading" | "rehearse" | "smalltalk" | "conversation" | "story";
-
-// The families, their names, and the kinds of session in each (voice drills and moment notes are left out)
-export const FAMILIES: ReadonlyArray<{ id: FamilyId; name: string; modes: ReadonlyArray<SessionMode> }> = [
-  // Speaking on the spot or from a light plan
-  { id: "spot", name: "Speaking on the spot", modes: ["talk", "response", "bookend", "free", "outline", "qa", "standard", "warmup"] },
-  // Reading a text aloud
-  { id: "reading", name: "Reading aloud", modes: ["read", "pause", "lesson"] },
-  // Rehearsing your own talk
-  { id: "rehearse", name: "Rehearsing your talks", modes: ["rehearse"] },
-  // Small-talk answers and replies
-  { id: "smalltalk", name: "Small talk", modes: ["smalltalk"] },
-  // Conversations with a character
-  { id: "conversation", name: "Conversations", modes: ["conversation"] },
-  // Told stories, compared only with each other (decision 92)
-  { id: "story", name: "Stories", modes: ["story"] },
-];
+// The families and the lookup live in their own small file, so pages that only need them do not load the profile (decision 116)
+export { FAMILIES, familyOf, type FamilyId } from "@/core/analysis/families";
+// (and are used here)
+import { FAMILIES, familyOf, type FamilyId } from "@/core/analysis/families";
 
 // Takes for the usual level (the take counts live in profileRules.ts, which the Learn card also reads)
 const BASELINE_TAKES = PROFILE_RULES.usualTakes;
@@ -58,11 +44,6 @@ const RECENT_DAYS = 14;
 // Milliseconds in a day
 const DAY_MS = 86_400_000;
 
-// Which family a kind of session belongs to, or null when it is left out
-export function familyOf(mode: SessionMode): FamilyId | null {
-  // The family listing it
-  return FAMILIES.find((family) => family.modes.includes(mode))?.id ?? null;
-}
 
 // One take with its measures, as the profile reads it
 export interface ProfileTake {

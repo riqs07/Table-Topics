@@ -1,7 +1,7 @@
 # Data Model
 
 **Purpose:** List what VoiceLab stores, where, and for how long.
-**Last updated:** 2026-10-22 (decisions 111 and 115)
+**Last updated:** 2026-10-22 (decisions 111 and 115 to 117)
 
 ## Where data lives
 
@@ -52,6 +52,7 @@ Code: `src/data/records.ts` (record types), `src/data/repository.ts` (all reads 
 | marker | A marker take, kept whole like a starred one. Every weekly check-in take has it (decision 100; `saveRecording` sets it for a take with `checkIn`, or with `marker: true`). With "first, last 12, one a month" chosen, the other check-ins' takes are no longer treated as markers by the retention rule (the field stays). Missing means not a marker |
 | checkIn | On a weekly check-in take (decision 100): `{ id, week, part }`. `id` is `ci-` and the day it was done (`ci-2026-10-21`), shared by the four parts; `week` is its number among check-ins with a take (1 is the first, worked out when saved); `part` is `read`, `pitch`, `story` or `surprise`. The take is an ordinary session of its kind: `read` with prompt `ci-read`, `outline` with prompt `ci-pitch` and the pitch's plan, `story` (short) with prompt `cis01`–`cis12`, `talk` with prompt `ciq01`–`ciq12`. It has no `selfReview` (no listening step). A check-in itself is not stored: it is worked out from its takes and the skipped parts each time (`groupCheckIns`). Missing on every other take |
 | fingerprint | A tiny copy of the take's shape for History (decision 115): `{ v: 1, bins, ums }`, 32 whole numbers 0 to 9 (the speech loudness in each 32nd of the take against its loudest part, 0 where mostly silent) and the parts in which pause words were said (at most 16). Made when the take is saved, and once at idle for older takes that still have readings (`src/data/fingerprints.ts`); `null` when there was nothing to draw; missing until made. A value that is not version 1 or is damaged is not drawn. Exported and imported with the session; kept when the readings are dropped |
+| selfRating | How the speaker said the take felt, asked once after it was saved and before its results (decision 116): `{ scale, answer, ratedAt }`. `scale` is `pace` (Rapid Fire, prepared speech, free talk, short speech, reading aloud, the check-in's read, pitch and question) or `liveliness` (a story); `answer` is `rushed`, `right` or `slow` on pace, and `flat`, `ok` or `lively` on liveliness (an answer from the other scale is refused on import). Missing when the question was skipped or not asked. The comparison with the measure is not stored: it is worked out on the results and on Your progress from the take and its family's earlier takes |
 | trimmedAt | When the take's detailed readings were dropped by the retention rule (decision 98). Its page then says "Detailed charts aren't kept for older takes" where a chart would be, and its analysis is no longer worked out again. Missing while the readings are kept |
 
 A take's detailed readings (loudness, pitch and word times) are not on the session since decision 98: they are in `signals`, below.

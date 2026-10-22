@@ -34,7 +34,9 @@ import { requestWeeklySummary } from "@/data/summaryClient";
 // Load the saved passphrase
 import { readPassphrase } from "@/data/passphrase";
 // Load the record types
-import type { AnalysisRecord, SessionRecord, SummaryRecord } from "@/data/records";
+import { RATING_SCALES, type AnalysisRecord, type SessionRecord, type SummaryRecord } from "@/data/records";
+// Load how often the speaker's own call matched the measure (decision 116)
+import { calibration } from "@/core/ratingCompare";
 // Load the usual zone (decision 115)
 import { UsualZone } from "@/components/script/UsualZone";
 // Load the check-in grouping, worked out from the sessions already read (decision 100)
@@ -164,6 +166,8 @@ function WholeProfile({ loaded, now, summaryNote }: { loaded: Loaded; now: Date;
       {summaryNote && <p className="mt-2 text-footnote text-ink-muted">{summaryNote}</p>}
       {/* The weekly check-ins, from the same read of the sessions (decision 100), as their own section (decision 109) */}
       <CheckIns sessions={loaded.sessions} />
+      {/* How often the speaker's own call matched the measure, once there are enough rated takes (decision 116) */}
+      <Calibration sessions={loaded.sessions} />
       {/* Nothing measured yet */}
       {!family && <p className="mt-6 max-w-[48ch] text-lede">No takes measured yet. Record one in <Link href="/practice" className={TEXT_LINK} data-inline>Practice</Link> and its measures appear here.</p>}
       {/* The families, when there are several */}
@@ -224,6 +228,21 @@ function CheckIns({ sessions }: { sessions: ReadonlyArray<SessionRecord> }) {
           </>
         )}
       </div>
+    </section>
+  );
+}
+
+// How often the speaker's sense matched the measure, one line per scale with at least eight rated takes compared, or nothing (decision 116)
+function Calibration({ sessions }: { sessions: ReadonlyArray<SessionRecord> }) {
+  // Pace and liveliness, worked out once per load
+  const [lines] = useState(() => RATING_SCALES.flatMap((scale) => calibration(sessions, scale) ?? []));
+  // Nothing yet
+  if (lines.length === 0) return null;
+  // The lines in one small card
+  return (
+    <section aria-label="Your sense and the measure" data-calibration className={`mt-4 p-5 ${CARD}`}>
+      {/* Each line */}
+      {lines.map((line) => <p key={line.scale} className="text-lede">{line.text}</p>)}
     </section>
   );
 }

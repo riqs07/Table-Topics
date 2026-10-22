@@ -7,7 +7,7 @@ import { joinSignals, splitSignals } from "@/core/sessionSignals";
 // Load the word splitter, to rebuild an analysis's words while the take keeps its word times (decision 98)
 import { timedWords } from "@/core/analysis/timedWords";
 // Load the record types
-import { USER_COLLECTIONS, type AnalysisRecord, type ChallengeRecord, type FullSession, type SessionRecord, type SettingsRecord, type SignalsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
+import { USER_COLLECTIONS, type AnalysisRecord, type ChallengeRecord, type FullSession, type SelfRating, type SessionRecord, type SettingsRecord, type SignalsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
 // Load the storage contract
 import type { Store, StoreOp } from "@/data/store";
 
@@ -52,6 +52,8 @@ export interface Repository {
   listPendingSessions(): Promise<SessionRecord[]>;
   // Star a take, or take its star away: a starred take keeps its recording and readings (decision 98)
   setStarred(id: string, starred: boolean): Promise<void>;
+  // Save how the speaker said a take felt, asked before its results (decision 116)
+  setSelfRating(id: string, rating: SelfRating): Promise<void>;
   // Save a recording under a key
   saveAudio(key: string, audio: Blob): Promise<void>;
   // Load a recording by key
@@ -250,6 +252,8 @@ export function createRepository(store: Store, options: RepositoryOptions = {}):
 
     // Star or unstar a take, changing only that field of the session as stored now
     setStarred: (id, starred) => writing(store.batch([{ kind: "update", collection: "sessions", key: id, change: (stored) => (stored ? { ...stored, starred } : undefined) }])),
+    // Save the speaker's own call on a take, in the same way (decision 116)
+    setSelfRating: (id, selfRating) => writing(store.batch([{ kind: "update", collection: "sessions", key: id, change: (stored) => (stored ? { ...stored, selfRating } : undefined) }])),
     // Save a recording under its key
     saveAudio: (key, audio) => store.put("audio", key, audio),
     // Load a recording by key

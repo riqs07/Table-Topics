@@ -40,7 +40,7 @@ import type { CuePlayer } from "@/audio/timingTones";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
-import type { CheckInPart, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
+import type { CheckInPart, RatingAnswer, RatingScale, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
 // Load the check-in's parts, for a take inside the weekly check-in (decision 100)
 import { CHECK_IN_PARTS, CHECK_IN_PART_INFO } from "@/core/checkIn";
 // Load the story prompts and moment seeds, and the plan card (decision 92)
@@ -86,6 +86,9 @@ import { holdScreenAwake } from "@/audio/wakeLock";
 import { requestPersistentStorage } from "@/data/storageSafety";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
+// Load the question asked before the results, and which kinds are asked (decision 116)
+import { ratingScaleFor } from "@/core/selfRating";
+import { SelfRatingAsk } from "@/components/script/SelfRatingAsk";
 
 // What the screen is given
 interface RecordingScreenProps {
@@ -145,7 +148,7 @@ const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
 ];
 
 // Where the screen is in the flow
-type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | "speech-dropped" | { problem: RecordingProblem };
+type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | "speech-dropped" | "rating" | { problem: RecordingProblem };
 
 // How many recent moment notes to show beside a question about what you have been up to
 const RECENT_MOMENTS = 3;
@@ -384,6 +387,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [saveError, setSaveError] = useState("");
   // Where a take saved after the speech service dropped can be seen (shown with the explanation instead of going there at once)
   const [droppedHref, setDroppedHref] = useState("");
+  // A saved take waiting for the question before its results: the take, where its results are, and what is asked (decision 116)
+  const [ratingAsk, setRatingAsk] = useState<{ sessionId: string; next: string; scale: RatingScale } | null>(null);
   // Whether the screen is still open, so a start that was waiting (the question being said, the microphone being allowed) stops if the page closes
   const mounted = useRef(true);
   // Open while drawn, closed when the screen goes
@@ -678,6 +683,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         // Done
         return;
       }
+      // The question before the results, for the kinds that are asked (decision 116)
+      const scale = ratingScaleFor(mode, { wordList: passage?.kind === "words" });
+      // Asked: the take is saved, the question shows, and the results open after it
+      if (scale) {
+        // What to ask, and where to go after
+        setRatingAsk({ sessionId: session.id, next, scale });
+        // Ask
+        setStage("rating");
+        // Done
+        return;
+      }
       // Go there
       navigate(next);
     } catch (error) {
@@ -690,7 +706,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [checkIn, clock, fetchFn, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
+  }, [checkIn, clock, fetchFn, mode, navigate, outline, passage?.kind, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
+
+  // Save the answer to the question before the results on the take, then open the results (a failure is said by the question, which offers the way on; decision 116)
+  const answerRating = useCallback(async (answer: RatingAnswer) => {
+    // Nothing waiting
+    if (!ratingAsk) return;
+    // Saved on the take
+    await repo.setSelfRating(ratingAsk.sessionId, { scale: ratingAsk.scale, answer, ratedAt: clock().toISOString() });
+    // The results
+    navigate(ratingAsk.next);
+  }, [clock, navigate, ratingAsk, repo]);
 
   // Stop recording, then keep the take
   const stop = useCallback(async () => {
@@ -1248,6 +1274,19 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* Let the browser ask */}
           <ActionButton action="Allow microphone" aside="your browser asks next" onClick={() => void allowMicrophone()} />
         </section>
+      </main>
+    );
+  }
+
+  // After a take is saved, before its results: how did that feel? (decision 116)
+  if (stage === "rating" && ratingAsk) {
+    // Draw the question on its own
+    return (
+      <main id="main" className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
+        {/* Title, no way out but the question's own */}
+        <Masthead title={title} nav={false} close={null}>{""}</Masthead>
+        {/* The question */}
+        <div className="md:pt-8"><SelfRatingAsk scale={ratingAsk.scale} onAnswer={answerRating} onSkip={() => navigate(ratingAsk.next)} /></div>
       </main>
     );
   }

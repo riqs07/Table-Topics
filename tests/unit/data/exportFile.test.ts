@@ -397,6 +397,30 @@ describe("parseExport", () => {
     expect([parseExport(file([session])).sessions[0]?.conversation?.turns, (() => { try { parseExport(file([broken])); return "accepted"; } catch { return "refused"; } })()]).toEqual([turns, "refused"]);
   });
 
+  // A self-rating and a 4/3/2 round go out and come back; a rating from the wrong scale or a round past three is refused (decisions 116 and 117)
+  it("carries a take's self-rating and its 4/3/2 round, and refuses broken ones", async () => {
+    // A rated round of a loop
+    const session = makeSession({ id: "l3", mode: "story", promptId: "sp01", selfRating: { scale: "liveliness", answer: "lively", ratedAt: NOW.toISOString() }, loop: { id: "loop-1", round: 3, targetSec: 60 } });
+    // Saved, exported and read back
+    const repository = createRepository(new MemoryStore());
+    // (saved)
+    await repository.saveSession(session);
+    // (exported and read back)
+    const file = parseExport(JSON.stringify(await buildExport(repository, NOW)));
+    // The file with one field changed
+    const changed = (change: Record<string, unknown>) => JSON.stringify({ ...file, sessions: file.sessions.map((item) => ({ ...item, ...change })) });
+    // Whether a file is refused
+    const refused = (text: string) => { try { parseExport(text); return false; } catch { return true; } };
+    // Both kept; a pace answer on the liveliness scale, an unknown answer and a fourth round are refused
+    expect([file.sessions[0]?.selfRating, file.sessions[0]?.loop, refused(changed({ selfRating: { scale: "liveliness", answer: "rushed", ratedAt: "x" } })), refused(changed({ selfRating: { scale: "pace", answer: "great", ratedAt: "x" } })), refused(changed({ loop: { id: "loop-1", round: 4, targetSec: 60 } }))]).toEqual([session.selfRating, session.loop, true, true, true]);
+    // Imported into an empty device, both are there
+    const fresh = createRepository(new MemoryStore());
+    // (imported)
+    await importExport(fresh, file);
+    // Read back
+    expect(await fresh.getSession("l3")).toMatchObject({ selfRating: session.selfRating, loop: session.loop });
+  });
+
   // A damaged file with a broken session
   it("rejects a file with a damaged record", () => {
     // Build a file whose session is missing its transcript

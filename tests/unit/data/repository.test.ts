@@ -215,6 +215,29 @@ describe("setStarred", () => {
   });
 });
 
+// Group the checks about the answer before the results (decision 116)
+describe("setSelfRating", () => {
+  // Only the answer is added; the take's readings and feedback stay
+  it("saves the answer on the take without touching anything else", async () => {
+    // A take with feedback and readings
+    await repo.saveSession(makeSession({ id: "s1", feedbackStatus: "done", feedback: { keep: "k", change: "c", retryCue: "r" }, loudness: [0.2, 0.3] }));
+    // Rated
+    await repo.setSelfRating("s1", { scale: "pace", answer: "slow", ratedAt: day(1) });
+    // Read with its readings
+    const full = await repo.getFullSession("s1");
+    // The answer is there, the rest unchanged
+    expect([full?.selfRating, full?.feedback?.keep, full?.loudness]).toEqual([{ scale: "pace", answer: "slow", ratedAt: day(1) }, "k", [0.2, 0.3]]);
+  });
+
+  // A take that is not there is left alone
+  it("does nothing for a take that is not there", async () => {
+    // Rated
+    await repo.setSelfRating("missing", { scale: "pace", answer: "slow", ratedAt: day(1) });
+    // Still not there
+    expect(await repo.getSession("missing")).toBeUndefined();
+  });
+});
+
 // Group the checks about settings
 describe("settings", () => {
   // A new user gets defaults without anything being saved first

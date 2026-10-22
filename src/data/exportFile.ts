@@ -2,7 +2,7 @@
 // Audio is left out to keep the file small; transcripts, numbers and feedback are all included. Since decision 99 the file is written compactly, a part at a time, and read back in batches, with progress shown for big files
 
 // Load the record types
-import { isCheckInPart, isSessionMode, type AnalysisRecord, type ChallengeRecord, type FullSession, type SessionRecord, type SettingsRecord, type SignalsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
+import { answerScale, isCheckInPart, isRatingAnswer, isRatingScale, isSessionMode, type AnalysisRecord, type SelfRating, type ChallengeRecord, type FullSession, type SessionRecord, type SettingsRecord, type SignalsRecord, type StoryRecord, type SummaryRecord, type TalkRecord } from "@/data/records";
 // Load the story merge rule (decision 92)
 import { mergeStory } from "@/core/storyLibrary";
 // Load the story choice checks
@@ -256,6 +256,12 @@ function isTurn(value: unknown): boolean {
   return isObject(value) && (value.who === "you" || value.who === "them") && isText(value.text) && isNumber(value.seconds) && (value.lineId === undefined || isText(value.lineId));
 }
 
+// Check that a value is a self-rating: a known scale, an answer on that scale, and when (decision 116)
+function isSelfRating(value: unknown): value is SelfRating {
+  // An object with a known scale, its own kind of answer and a time
+  return isObject(value) && isRatingScale(value.scale) && isRatingAnswer(value.answer) && answerScale(value.answer) === value.scale && isText(value.ratedAt);
+}
+
 // Check that a value has the shape of a session record
 function isSession(value: unknown): value is SessionRecord {
   // Must be an object to check further
@@ -282,6 +288,10 @@ function isSession(value: unknown): value is SessionRecord {
     (value.checkIn === undefined || (isObject(value.checkIn) && isText(value.checkIn.id) && /^ci-\d{4}-\d{2}-\d{2}$/.test(value.checkIn.id) && isNumber(value.checkIn.week) && value.checkIn.week >= 1 && isCheckInPart(value.checkIn.part))) &&
     // A told story's set-up (only on stories, decision 92)
     (value.story === undefined || (isObject(value.story) && isStoryShape(value.story.shape) && (value.story.focus === null || isStoryFocus(value.story.focus)) && isStoryLength(value.story.length))) &&
+    // The speaker's own call on the take, asked before its results (decision 116; usually missing)
+    (value.selfRating === undefined || isSelfRating(value.selfRating)) &&
+    // A 4/3/2 round's loop, round and target (decision 117; usually missing)
+    (value.loop === undefined || (isObject(value.loop) && isText(value.loop.id) && isNumber(value.loop.round) && value.loop.round >= 1 && value.loop.round <= 3 && isNumber(value.loop.targetSec) && value.loop.targetSec > 0)) &&
     // Section of a rehearsal (missing on most sessions)
     (value.sectionIndex === undefined || value.sectionIndex === null || isNumber(value.sectionIndex)) &&
     // Feedback and its status

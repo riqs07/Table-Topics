@@ -11,7 +11,7 @@ import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the baseline rule
 import { shouldBeBaseline } from "@/core/progress";
 // Load the record types
-import type { CheckInPart, FullSession, SessionMode, StoryTake } from "@/data/records";
+import type { CheckInPart, FullSession, LoopTake, SessionMode, StoryTake } from "@/data/records";
 // Load the check-in grouping, to number a check-in's takes (decision 100)
 import { groupCheckIns, weekFor } from "@/core/checkIn";
 // Load the pitch range rule, to save the take's range with it (decision 98)
@@ -67,6 +67,8 @@ export interface FinishedRecording {
   marker?: boolean;
   // A take in the weekly check-in: which check-in and which part; the take is then a marker, numbered with its check-in, and has no listening step (decision 100)
   checkIn?: { id: string; part: CheckInPart };
+  // A round of a 4/3/2 loop: the loop, the round and its target length (decision 117)
+  loop?: LoopTake;
 }
 
 // Round seconds to a tenth
@@ -123,6 +125,8 @@ export async function saveRecording(repository: Repository, recording: FinishedR
     ...(recording.outline ? { outline: recording.outline } : {}),
     // Keep a told story's set-up
     ...(recording.story ? { story: recording.story } : {}),
+    // Keep a 4/3/2 round's loop, round and target (decision 117)
+    ...(recording.loop ? { loop: recording.loop } : {}),
     // Keep the section of a section rehearsal
     ...(recording.sectionIndex !== undefined && recording.sectionIndex !== null ? { sectionIndex: recording.sectionIndex } : {}),
     // Mark a marker take (decision 98); every check-in take is one
