@@ -1,7 +1,7 @@
 // The page security headers and the development tunnel setting, read by next.config.ts (decision 87); kept free of "@/" imports so the config file can load it
 
-// The live services' addresses a live conversation connects to straight from the browser, with a short-lived token from our own routes (decision 140: AssemblyAI's streaming socket)
-export const LIVE_CONNECT_SOURCES: ReadonlyArray<string> = ["wss://streaming.assemblyai.com"];
+// The live services' addresses a live conversation connects to straight from the browser, with a short-lived token from our own routes: AssemblyAI's streaming socket (decision 140), and the ElevenLabs agent's call, over its API's WebSocket or its WebRTC (LiveKit) hosts (decision 142; the hosts are those in @elevenlabs/client 1.29.0)
+export const LIVE_CONNECT_SOURCES: ReadonlyArray<string> = ["wss://streaming.assemblyai.com", "wss://api.elevenlabs.io", "https://api.elevenlabs.io", "wss://*.rtc.elevenlabs.io", "https://*.rtc.elevenlabs.io"];
 
 // What the page may load, as one Content-Security-Policy value
 export function contentSecurityPolicy(development: boolean): string {

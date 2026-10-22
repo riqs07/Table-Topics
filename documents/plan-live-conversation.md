@@ -1,7 +1,7 @@
 # Making "Talk with someone" feel live
 
 **Purpose:** How conversations are made to feel live, step by step, why each choice was made, and what is not done yet.
-**Status:** Steps 1 and 2 built, decisions 101 and 102 (2026-10-21). Step 3 approved on 2026-10-22 ("make a plan and let it rip"): 3a built as Live (beta), decision 140.
+**Status:** Steps 1 and 2 built, decisions 101 and 102 (2026-10-21). Step 3 approved on 2026-10-22 ("make a plan and let it rip"): 3a built as Live (beta), decision 140; 3b built as Phone call (beta), decision 142.
 
 ## What the user asked for
 
@@ -11,6 +11,7 @@ Conversations without tapping Done at the end of every turn, and replies that co
 |------|------|------|--------|
 | 1 | Turns end by themselves, worked out on the phone; Done stays; "I wasn't finished"; tap to interrupt | Nothing | Built (decision 101) |
 | 2 | Faster, cheaper replies: timings first, the persona's line streamed sentence by sentence into streaming speech, a listening sound at once, a faster voice model, minute budgets | Saves money with the faster voice model | Built (decision 102) |
+| 3b | Phone call (beta): the ElevenLabs agent runs the whole call (speech-to-text, Claude Haiku 5.5, the voice, turn-taking and interruptions) with per-call instructions for the persona | About $0.08 a minute; 60 minutes a month by default | Built (decision 142) |
 | 3a | Live (beta): AssemblyAI streaming speech-to-text decides when your turn ends; our own reply flow (streamed Claude and Turbo) is unchanged; talking over the persona with headphones | About $0.15 an hour of open socket; 150 minutes a month by default | Built (decision 140) |
 
 ## Step 1: turns that end by themselves
@@ -40,6 +41,14 @@ Conversations without tapping Done at the end of every turn, and replies that co
 - **A turn:** its words come from the socket's `Turn` messages; a `Turn` with `end_of_turn` and words ends it (the same path as an automatic end, so "I wasn't finished" works). Done mid-sentence sends `ForceEndpoint` and waits up to 1.5 s for the last words. Then the usual reply: streamed Claude into Turbo (decision 102).
 - **Closing** (billing stops): `Terminate` and close on the conversation's end or save, the page hiding or closing (which also ends and saves the conversation), the page closing mid-conversation, an error, the socket dropping, and the vendor's own cap at the reserved time. `POST /api/live/end` then hands back the reserved minutes not used, once.
 - **Falling back:** over budget, not set up, offline, no passphrase, the token route or socket failing: one line ("This month's live minutes are used up, so turns end automatically.") and automatic turns. A drop mid-conversation ends the turn under way with what was heard and says "The live connection dropped, so turns now end automatically."
+
+## Step 3b: Phone call (beta), the ElevenLabs agent
+
+- **Settings → Conversation turns:** a fourth choice, **Phone call (beta)**. Needs the coach; without it, or whenever the call cannot start, one plain line and live turns (step 3a), or automatic turns if live cannot start either.
+- **Starting:** `POST /api/live` with `kind: "b"` reserves call minutes (`LIVE_B_MINUTES_PER_MONTH`, default 60) and asks ElevenLabs for a WebRTC conversation token (`GET /v1/convai/conversation/token?agent_id=…`) or, with `LIVE_B_CONNECTION=websocket`, a signed address (`/get-signed-url`). The page loads `@elevenlabs/client` only now and starts the session with the agent's overrides (`src/core/liveCall.ts`): the instructions (the writer's house rules for a speaking agent, without bracketed directions, with the wind-down at 2:30 and goodbye by 3:00, then the persona, situation, twist and difficulty), the situation's first line (`opener`), English, and the persona's call voice (`liveVoiceId`: Maya uses Emma). The SDK has no override for the call's length, so the agent's own 300 s and the page's timer at the granted seconds hold it.
+- **A refused voice:** if the call fails to start, or ends with an error before the agent has said anything, it starts once more without the voice override (the agent's own voice), reusing the same reservation; logged in the console.
+- **During:** the latest line, yours or theirs, is the heading; the shape says whether they are talking ("talk over them any time") or listening; End call hangs up. Interruptions are the agent's own (WebRTC echo cancellation).
+- **The transcript:** `CallTranscript` collects the SDK's events with the time each arrived: the agent's speaking and listening changes, voice-activity scores, your transcripts, its lines, interruptions and corrections, into the saved turn shape with `at`, `end` and `cut`. On hang-up, the agent ending the call, the time running out, or the page hiding or closing, the call is saved as a conversation (`turnMode: "call"`) and the coach reviews it as usual; the timing measures come from those times.
 
 ## Timing and difficulty (every mode, decision 141)
 

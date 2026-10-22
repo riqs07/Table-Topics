@@ -50,7 +50,11 @@ import type { RecordingServices } from "@/audio/services";
 // Load the live listener (decision 140)
 import { openLiveListener, type LiveEvents, type LiveMode, type LiveTurns } from "@/audio/liveListener";
 // Load the live routes' client and the fallback lines
-import { endLive, liveRefusalLine, startLive, type LiveRefusal } from "@/data/liveClient";
+import { endLive, liveRefusalLine, startLive, type LiveRefusal, type LiveStart } from "@/data/liveClient";
+// Load the phone call (decision 142)
+import { startElevenLabsCall, type CallHandlers, type LiveCall, type StartCall } from "@/audio/liveCall";
+// Load the call's overrides and transcript
+import { CallTranscript, buildCallOverrides } from "@/core/liveCall";
 
 // The longest one turn of yours runs before it ends by itself, in seconds
 const MAX_TURN_SECONDS = 60;
@@ -84,6 +88,8 @@ type Phase =
   | "them"
   // Their next line is on its way
   | "thinking"
+  // A phone call with the agent is under way (decision 142)
+  | "call"
   // Your turn: the microphone starting, recording, or a problem to retry
   | "you"
   // Being saved
@@ -138,6 +144,18 @@ const settleLiveRoute: SettleLive = (conversationId, seconds) => {
   void endLive("a", conversationId, seconds, { passphrase: readPassphrase() });
 };
 
+// Asks for a phone call's token (decision 142)
+export type OpenCall = (conversationId: string) => Promise<LiveStart>;
+
+// The real asker: the live route with the saved passphrase
+const openCallRoute: OpenCall = (conversationId) => startLive("b", conversationId, { passphrase: readPassphrase() });
+
+// The real call settler
+const settleCallRoute: SettleLive = (conversationId, seconds) => {
+  // Sent, never failing out loud
+  void endLive("b", conversationId, seconds, { passphrase: readPassphrase() });
+};
+
 // What the conversation page is given
 interface ConversationScreenProps extends ScreenProps {
   // Who to talk with
@@ -164,6 +182,12 @@ interface ConversationScreenProps extends ScreenProps {
   settleLive?: SettleLive;
   // After how many seconds of one turn the persona cuts in on hard (the level's own when left out; shorter in checks)
   cutInSeconds?: number;
+  // How a phone call's token is asked for, how the call starts and how it is settled (the route and ElevenLabs' SDK in the app, fakes in checks; decision 142)
+  openCall?: OpenCall;
+  // (starting)
+  startCall?: StartCall;
+  // (settling)
+  settleCall?: SettleLive;
 }
 
 // Draw the conversation with the persona named, or say they could not be found
@@ -186,7 +210,7 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
 }
 
 // The conversation itself
-function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, openLive = openLiveRoute, settleLive = settleLiveRoute, cutInSeconds, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
+function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, openLive = openLiveRoute, settleLive = settleLiveRoute, cutInSeconds, openCall = openCallRoute, startCall = startElevenLabsCall, settleCall = settleCallRoute, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
   // The repository once in the browser
   const { repo } = useScreenBasics(props);
   // The clock
@@ -201,6 +225,16 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const auto = turnEnding !== "tap";
   // Whether live step A was chosen in Settings
   const liveChosen = turnEnding === "live";
+  // Whether a phone call was chosen (decision 142)
+  const callChosen = turnEnding === "call";
+  // The call under way, its transcript, when it started and its time limit
+  const call = useRef<{ live: LiveCall | null; transcript: CallTranscript; startedAt: number; timer: ReturnType<typeof setTimeout> | null; heard: boolean; retried: boolean; ending: boolean } | null>(null);
+  // Whether the agent is speaking, for drawing
+  const [callSpeaking, setCallSpeaking] = useState(false);
+  // The one plain line when a call could not start
+  const [callNote, setCallNote] = useState("");
+  // Whether this conversation was a call, saved with it
+  const usedCall = useRef(false);
   // Whether headphones are on, so talking over the persona stops them (decision 140; read outside drawing)
   const headphonesRef = useRef(false);
   // The live listener while connected (null otherwise)
@@ -389,7 +423,20 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     live.current = null;
     // Closed and settled
     if (open) void open.close().then((seconds) => settleLive(conversationId.current, seconds));
-  }, [services, settleLive]);
+    // A call under way
+    const calling = call.current;
+    // Forgotten
+    call.current = null;
+    // Hung up and settled
+    if (calling) {
+      // No time limit left
+      if (calling.timer) clearTimeout(calling.timer);
+      // Hung up
+      void calling.live?.end().catch(() => undefined);
+      // Settled
+      settleCall(conversationId.current, (Date.now() - calling.startedAt) / 1000);
+    }
+  }, [services, settleLive, settleCall]);
 
 
   // Seconds since the start
@@ -397,8 +444,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
 
   // Tick the clock while the conversation runs
   useEffect(() => {
-    // Only while talking
-    if (phase !== "them" && phase !== "thinking" && phase !== "you") return;
+    // Only while talking, or on a call
+    if (phase !== "them" && phase !== "thinking" && phase !== "you" && phase !== "call") return;
     // Twice a second
     const timer = setInterval(() => setElapsed(startedAt.current ? (clock().getTime() - startedAt.current.getTime()) / 1000 : 0), 500);
     // Not once it stops
@@ -666,6 +713,138 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     setLiveOn(true);
   }
 
+  // The call's events: into the transcript, the latest line on screen, and whether the agent is speaking
+  function callHandlers(): CallHandlers {
+    // The handlers
+    return {
+      // Each event
+      onEvent: (event) => {
+        // The call under way
+        const calling = call.current;
+        // None (ended)
+        if (!calling) return;
+        // Into the transcript
+        calling.transcript.add(event);
+        // A line: shown, and the agent heard from
+        if (event.type === "agent" || event.type === "user") {
+          // Shown
+          if (event.text.trim()) setCaption(event.text.trim());
+          // Heard from (a refused voice can no longer be the reason it ends)
+          if (event.type === "agent") calling.heard = true;
+        }
+        // Speaking or listening
+        if (event.type === "mode") setCallSpeaking(event.mode === "speaking");
+        // Cut short
+        if (event.type === "interruption") setCallSpeaking(false);
+      },
+      // Connected: nothing more to do
+      onConnected: () => undefined,
+      // Ended by itself: a refused voice before any line is tried once more with the agent's own; otherwise the call is saved
+      onEnded: (error) => {
+        // The call under way
+        const calling = call.current;
+        // Already ending
+        if (!calling || calling.ending) return;
+        // A fault before the agent said anything, with the persona's voice asked for: once more without it
+        if (error && !calling.heard && !calling.retried) {
+          // Logged (decision 142: the agent may refuse a voice it does not allow)
+          console.info("The phone call ended before it began; trying again with the agent’s own voice.");
+          // Tried again; if that cannot start either, what was said is saved (or the page says the conversation could not continue)
+          void startCallAttempt(false).then((started) => (started ? undefined : save(true)));
+          // Nothing more
+          return;
+        }
+        // Saved
+        void finishCall();
+      },
+    };
+  }
+
+  // Start the call once: a token (a second one for the same conversation reuses its minutes), then the SDK; false when it could not start
+  async function startCallAttempt(voice: boolean): Promise<boolean> {
+    // The call under way, if this is a second try
+    const calling = call.current;
+    // Marked as retried
+    if (calling) calling.retried = !voice;
+    // The token
+    const started = await openCall(conversationId.current);
+    // Refused
+    if ("refused" in started || started.grant.kind !== "b") {
+      // Said in one line
+      setCallNote(liveRefusalLine("refused" in started ? started.refused : "unavailable", "b", "this conversation uses live turns"));
+      // Not started
+      return false;
+    }
+    // The grant
+    const grant = started.grant;
+    // The overrides: the persona, situation, difficulty, house rules, first line and voice
+    const { overrides, maxDurationSeconds } = buildCallOverrides({ persona, scenario, twist, difficulty, voice, maxDurationSeconds: grant.grantedSeconds });
+    // Kept (a fresh transcript for a first try)
+    call.current = calling ?? { live: null, transcript: new CallTranscript(clock().getTime()), startedAt: Date.now(), timer: null, heard: false, retried: !voice, ending: false };
+    // Starting can fail
+    try {
+      // Started
+      call.current.live = await startCall(grant, overrides, callHandlers());
+    } catch {
+      // A first try with the persona's voice: once more with the agent's own
+      if (voice) {
+        // Logged
+        console.info("The phone call could not start with the persona’s voice; trying the agent’s own voice.");
+        // Tried again
+        return startCallAttempt(false);
+      }
+      // Nothing used
+      settleCall(conversationId.current, 0);
+      // Forgotten
+      call.current = null;
+      // Said in one line
+      setCallNote(liveRefusalLine("unavailable", "b", "this conversation uses live turns"));
+      // Not started
+      return false;
+    }
+    // Ended while connecting: hang up and save
+    if (!alive.current) {
+      // Saved (hangs up)
+      await finishCall();
+      // Started, then ended
+      return true;
+    }
+    // The time limit (the SDK cannot set the agent's own, which is five minutes)
+    if (call.current.timer) clearTimeout(call.current.timer);
+    // Hung up at the granted time
+    call.current.timer = setTimeout(() => void finishCall(), maxDurationSeconds * 1000);
+    // Noted for the saved conversation
+    usedCall.current = true;
+    // The call
+    setPhase("call");
+    // Said
+    setAnnouncement(`On a call with ${persona.name}. Talk when you like.`);
+    // Started
+    return true;
+  }
+
+  // End the call: hang up, settle the minutes, and save what was said
+  async function finishCall() {
+    // The call under way
+    const calling = call.current;
+    // None, or already ending
+    if (!calling || calling.ending) return;
+    // Once
+    calling.ending = true;
+    // No time limit left
+    if (calling.timer) clearTimeout(calling.timer);
+    // Hung up (a failure only means it was already over)
+    await calling.live?.end().catch(() => undefined);
+    // Forgotten
+    call.current = null;
+    // Settled
+    settleCall(conversationId.current, (Date.now() - calling.startedAt) / 1000);
+    // The transcript, with its times
+    turns.current = calling.transcript.finish(clock().getTime());
+    // Saved
+    await save();
+  }
+
   // Your turn: start recording
   async function yourTurn() {
     // Stop if the conversation ended
@@ -872,8 +1051,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     flow.current += 1;
     // A new conversation id, for the server's caps
     conversationId.current = crypto.randomUUID();
-    // No cut-ins or live yet, and no times carried over (decision 141)
+    // No cut-ins, live or call yet, and no times carried over (decision 141)
     cutIns.current = 0;
+    // (call)
+    usedCall.current = false;
+    // Nothing said about a call
+    setCallNote("");
     // (live)
     usedLive.current = false;
     // (times)
@@ -884,8 +1067,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     conservative.current = isIosSafari();
     // Recorded: the opening starts within this tap, which lets phones play the later lines too
     if (!written) {
-      // Live needs the coach: said in one line, and turns end automatically
-      setLiveNote(liveChosen ? liveRefusalLine("no-coach", "a", "turns end automatically") : "");
+      // Live and calls need the coach: said in one line, and turns end automatically
+      setLiveNote(liveChosen ? liveRefusalLine("no-coach", "a", "turns end automatically") : callChosen ? liveRefusalLine("no-coach", "b", "turns end automatically") : "");
       // The opening, then your turn
       await sayRecorded([openingLine(persona, earlier ?? 0).id]);
       // Your turn
@@ -893,8 +1076,15 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     }
     // Written: unlock the player within this tap, since the opening arrives over the network
     services.unlockSpeech?.();
-    // Live chosen: connect first (or say why not, and carry on with turns ending on the phone)
-    if (liveChosen) await goLive();
+    // A phone call chosen: the agent takes over (decision 142); if it cannot start, live turns instead
+    if (callChosen) {
+      // Started: the call runs the conversation from here
+      if (await startCallAttempt(true)) return;
+      // Ended while trying
+      if (!alive.current) return;
+    }
+    // Live chosen, or a call that could not start: connect first (or say why not, and carry on with turns ending on the phone)
+    if (liveChosen || callChosen) await goLive();
     // The opening
     const opening = await ask("open", true);
     // The coach could not be reached, or the month's minutes are used up: back to the start, with their recorded lines instead
@@ -992,7 +1182,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // A new id
       const id = crypto.randomUUID();
       // Saved, waiting for the coach
-      await saveConversationSession(repo, { id, characterId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, durationSec: secondsIn(), difficulty: written ? difficulty : undefined, turnMode: usedLive.current ? "live" : auto ? "auto" : "tap" }, clock());
+      await saveConversationSession(repo, { id, characterId: persona.id, scenarioId: scenario.id, twist, turns: turns.current, durationSec: secondsIn(), difficulty: written ? difficulty : undefined, turnMode: usedCall.current ? "call" : usedLive.current ? "live" : auto ? "auto" : "tap" }, clock());
       // Its results, where the coach's notes arrive
       navigate(`/sessions?id=${id}`);
     } catch {
@@ -1076,17 +1266,17 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   }, [clock, talking]);
   // While live, the page hiding or closing ends the conversation and saves what was said: an installed iPhone app loses the microphone when hidden, and the socket is billed while it is open (decision 140)
   useEffect(() => {
-    // Only while talking live
-    if (!talking || !liveOn) return;
+    // Only while talking live, or on a call
+    if (!(talking && liveOn) && phase !== "call") return;
     // Hidden
     const onVisibility = () => {
       // Ended and saved
-      if (document.visibilityState === "hidden") void endRef.current();
+      if (document.visibilityState === "hidden") void (call.current ? finishCall() : endRef.current());
     };
     // Closing
     const onPageHide = () => {
       // Ended and saved
-      void endRef.current();
+      void (call.current ? finishCall() : endRef.current());
     };
     // Listen
     document.addEventListener("visibilitychange", onVisibility);
@@ -1099,7 +1289,9 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // (closing)
       window.removeEventListener("pagehide", onPageHide);
     };
-  }, [talking, liveOn]);
+    // finishCall reads only refs and steady tools
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [talking, liveOn, phase]);
   // The situation's words, with the name filled in
   const named = (text: string) => scenarioText(text, persona);
 
@@ -1108,7 +1300,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Dark while you speak (the stage, decision 69)
     <main id="main" data-area={recording ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title, the time, and the way out (none mid-conversation; End saves it instead) */}
-      <Masthead title="Conversation" nav={false} close={talking || phase === "saving" ? null : { href: "/conversations", label: "Close, back to Conversations" }}>{talking ? `${formatClock(elapsed)} of ${formatClock(CONVERSATION_LIMIT_SECONDS)}` : ""}</Masthead>
+      <Masthead title="Conversation" nav={false} close={talking || phase === "call" || phase === "saving" ? null : { href: "/conversations", label: "Close, back to Conversations" }}>{talking || phase === "call" ? `${formatClock(elapsed)} of ${formatClock(CONVERSATION_LIMIT_SECONDS)}` : ""}</Masthead>
 
       {/* Before starting: the situation and what to practise (once the earlier conversations are counted) */}
       {phase === "intro" && earlier !== null && (
@@ -1131,7 +1323,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           {/* The coach could not be reached */}
           {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
           {/* How it works */}
-          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. {liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. {liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
+          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. {callChosen ? "A phone call (beta, change this in Settings): no turns to end, and you can talk over each other." : liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. {callChosen ? "During the call your voice goes to ElevenLabs and is not kept." : liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
           {/* No speech-to-text in this browser */}
           {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
           {/* Start, or another situation */}
@@ -1153,6 +1345,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           <p className="text-footnote font-semibold text-accent">{persona.name} · {scenario.title}{liveOn ? <span data-live="on"> · Live</span> : null}</p>
           {/* Live could not start or dropped: why, in one line (decision 140) */}
           {liveNote && <p role="status" data-live-note className="mt-2 max-w-[48ch] text-footnote text-ink-muted">{liveNote}</p>}
+          {/* A call could not start: why, in one line (decision 142) */}
+          {callNote && <p role="status" data-call-note className="mt-2 max-w-[48ch] text-footnote text-ink-muted">{callNote}</p>}
           {/* Their latest line, announced as it changes */}
           <h1 id="line-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold tracking-tight">{caption || "…"}</h1>
           {/* Not caught last time */}
@@ -1195,6 +1389,24 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           <p role="status" className="sr-only">{talking ? announcement : ""}</p>
           {/* End early, saving what was said */}
           {talking && !stopping && <p className="mt-4 text-center md:text-left"><button type="button" onClick={() => void end()} className={QUIET}>End conversation</button></p>}
+        </section>
+      )}
+
+      {/* A phone call with the agent (decision 142) */}
+      {phase === "call" && (
+        <section aria-labelledby="call-heading" data-call className="mt-8 flex flex-col md:max-w-2xl">
+          {/* Who, where, and that it is a call */}
+          <p className="text-footnote font-semibold text-accent">{persona.name} · {scenario.title} · Phone call</p>
+          {/* The latest line, yours or theirs, announced as it changes */}
+          <h1 id="call-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold tracking-tight">{caption || "…"}</h1>
+          {/* Speaking or listening */}
+          <StatusBlob compact={false} label={callSpeaking ? persona.name : "Your turn"} detail={callSpeaking ? "is talking · talk over them any time" : "just talk"} />
+          {/* How it works */}
+          <p className="text-center text-footnote text-ink-muted md:text-left">On a call: no turns to end. Talk when you like; {persona.name} can be interrupted.</p>
+          {/* Whose turn, for screen readers */}
+          <p role="status" className="sr-only">{announcement}</p>
+          {/* Hang up, saving what was said */}
+          <p className="mt-4 text-center md:text-left"><button type="button" onClick={() => void finishCall()} className={SECONDARY}>End call</button></p>
         </section>
       )}
 

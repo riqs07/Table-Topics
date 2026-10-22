@@ -218,6 +218,36 @@ describe("live start route", () => {
     expect([statuses, await liveMinutesUsed(wired.store, "a", NOW)]).toEqual([[200, 200, 409], 5]);
   });
 
+  // Step B: the agent's WebRTC token by default, counted against the call minutes, apart from step A's
+  it("hands out the agent's call token and reserves call minutes", async () => {
+    // The fakes
+    const wired = deps();
+    // Asked
+    const body = await (await createLiveStartHandler(wired)(request({ kind: "b", conversationId: "conv-0100" }))).json();
+    // The token, five minutes, 55 of 60 left; step A untouched
+    expect([body.connection, body.conversationToken, body.grantedSeconds, body.minutesLeft, await liveMinutesUsed(wired.store, "b", NOW), await liveMinutesUsed(wired.store, "a", NOW)]).toEqual(["webrtc", "el-conversation-token", 300, 55, 5, 0]);
+  });
+
+  // Step B over a WebSocket when chosen on the server
+  it("hands out a signed address when the server chooses WebSocket", async () => {
+    // WebSocket chosen
+    const body = await (await createLiveStartHandler(deps({ settings: { connection: "websocket" } }))(request({ kind: "b", conversationId: "conv-0101" }))).json();
+    // The address
+    expect([body.connection, body.signedUrl]).toEqual(["websocket", "wss://api.elevenlabs.io/v1/convai/conversation?token=x"]);
+  });
+
+  // The call minutes have their own limit
+  it("refuses a call when the month's call minutes are used up", async () => {
+    // A store with 60 call minutes reserved
+    const store = new MemoryCounterStore();
+    // Reserved
+    await store.add(LIVE_KEYS.reserved("b", "2026-10"), 60);
+    // Asked
+    const response = await createLiveStartHandler(deps({ store }))(request({ kind: "b", conversationId: "conv-0102" }));
+    // Refused with the call's words
+    expect([response.status, (await response.json()).error]).toEqual([429, "This month’s phone-call minutes are used up."]);
+  });
+
   // The counter down: refused rather than run uncounted (rule: an outage never lifts a cap)
   it("refuses when the counter cannot be reached", async () => {
     // A store that fails

@@ -420,7 +420,7 @@ export interface SettingsRecord {
   // The weekly check-in's day, skipped parts, reminders seen and which recordings it keeps (decision 100; missing until the first is used)
   checkIn?: CheckInSettings;
   // How a turn of yours ends in a conversation: "tap" (tap Done), "auto" (ends when you stop talking; decision 101) or "live" (a streaming service's end-of-turn model, beta, uses live minutes; decision 140). Missing means automatically
-  turnEnding?: "tap" | "auto" | "live";
+  turnEnding?: "tap" | "auto" | "live" | "call";
   // "I'm using headphones": in a live conversation, talking over the persona stops them (decision 140; missing means off, since a phone speaker's sound would be heard as you)
   headphones?: boolean;
   // How hard the persona makes a conversation, the last one chosen before starting (decision 141; missing means normal)
