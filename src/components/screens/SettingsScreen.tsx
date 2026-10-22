@@ -56,6 +56,8 @@ import { checkDeepSetup, type DeepSetup } from "@/data/deepAnalysisClient";
 import { WEEKDAY_NAMES, readCheckInSettings } from "@/core/checkIn";
 // Load the reader for how a conversation turn ends (decision 101)
 import { turnEndingOf, type TurnEnding } from "@/core/endOfTurn";
+// Load the usage and costs section (decision 122)
+import { UsageSection } from "@/components/script/UsageSection";
 // Load the month's conversation minutes check (decision 102)
 import { conversationMinutes, type ConversationMinutes } from "@/data/conversationClient";
 
@@ -190,12 +192,16 @@ function DeepAnalysisChoice({ settings, onSave, fetchFn }: { settings: SettingsR
   );
 }
 
-// The two ways a conversation turn can end, with what each means (decision 101)
+// The ways a conversation turn can end, with what each means (decisions 101 and 119)
 const TURN_ENDINGS: ReadonlyArray<{ id: TurnEnding; name: string; detail: string }> = [
   // Tap Done
   { id: "tap", name: "Tap when done", detail: "Your turn lasts until you tap Done." },
   // By itself
   { id: "auto", name: "Automatically", detail: "Your turn ends when you stop talking for a moment. Done still works, and “I wasn’t finished” gives the turn back. Worked out on this phone; nothing extra is sent." },
+  // Live, through a streaming speech service (decision 119)
+  { id: "live", name: "Live (beta)", detail: "A live speech service hears when you have finished, which is quicker and steadier on a phone. Uses live minutes, and needs the coach. While you talk, your voice goes to AssemblyAI and is not kept. If it can’t connect, turns end automatically." },
+  // A phone call with the ElevenLabs agent (decision 121)
+  { id: "call", name: "Phone call (beta)", detail: "Talk as on a phone call: no turns to end, and you can talk over each other. Uses call minutes, and needs the coach. During the call your voice goes to ElevenLabs and is not kept. If it can’t connect, it uses live turns, or automatic." },
 ];
 
 // "Ending your turn" in a conversation: two buttons side by side, the chosen one filled, and what it means
@@ -208,7 +214,7 @@ function TurnEndingChoice({ settings, onSave }: { settings: SettingsRecord; onSa
       {/* The choice's name */}
       <p id="turn-ending-label">Ending your turn</p>
       {/* The two buttons */}
-      <div role="group" aria-labelledby="turn-ending-label" className="mt-2 grid max-w-md grid-cols-2 gap-1 rounded-2xl bg-paper p-1">
+      <div role="group" aria-labelledby="turn-ending-label" className="mt-2 grid max-w-2xl grid-cols-2 gap-1 rounded-2xl bg-paper p-1 leading-tight sm:grid-cols-4">
         {/* One button per choice */}
         {TURN_ENDINGS.map((choice) => (
           // One choice, filled when chosen
@@ -217,6 +223,8 @@ function TurnEndingChoice({ settings, onSave }: { settings: SettingsRecord; onSa
       </div>
       {/* What the chosen one means */}
       <p className="mt-2 text-footnote text-ink-muted">{TURN_ENDINGS.find((choice) => choice.id === chosen)?.detail}</p>
+      {/* Live: headphones let you talk over the persona (decision 119; detection is unreliable, so it is asked) */}
+      {chosen === "live" && <div className="mt-3"><CheckRow checked={settings.headphones === true} onChange={(event) => onSave({ ...settings, headphones: event.target.checked })} detail="Then talking over them stops them, as in a real conversation. Without headphones, tap them to cut in.">I’m using headphones</CheckRow></div>}
     </div>
   );
 }
@@ -684,7 +692,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Export and import */}
       <Section title="Your data" id="your-data">
         {/* Where it lives */}
-        <p className="text-ink-muted">VoiceLab keeps your recordings (for the days you chose above), transcripts and settings on this device. Your browser’s speech recognition turns your words into text; in most browsers Apple or Google does that on their servers, so they hear the audio.{settings?.deepAnalysis ? " With deeper analysis on, each take’s recording is also sent once for analysis and not kept there." : ""}</p>
+        <p className="text-ink-muted">VoiceLab keeps your recordings (for the days you chose above), transcripts and settings on this device. Your browser’s speech recognition turns your words into text; in most browsers Apple or Google does that on their servers, so they hear the audio.{settings?.deepAnalysis ? " With deeper analysis on, each take’s recording is also sent once for analysis and not kept there." : ""}{settings?.turnEnding === "live" ? " With live conversations on, your voice goes to AssemblyAI while you talk and is not kept." : ""}{settings?.turnEnding === "call" ? " With phone calls on, your voice goes to ElevenLabs during a call and is not kept." : ""}</p>
         {/* How safe it is from the browser clearing it, and when a copy was last saved (drawn in the browser only) */}
         {/* Room is kept for this line while it loads, so the sections below do not jump (decision 76) */}
         {!(today && safety) && <p aria-hidden="true" className="mt-2 min-h-12" />}
@@ -772,6 +780,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Deeper analysis of each take on the server (decision 91; drawn once the settings are loaded) */}
       {today && settings && <Section title="Deeper analysis (advanced)">
         <DeepAnalysisChoice settings={settings} fetchFn={fetchFn} onSave={(next) => void saveSettingsWith(next, "Saved.")} />
+      </Section>}
+
+      {/* This month's usage and estimated costs, from the server's counters (decision 122; drawn in the browser only, where the saved passphrase can be read) */}
+      {today && <Section title="Usage and costs (estimated)" id="usage">
+        <UsageSection passphrase={readPassphrase()} fetchFn={fetchFn} />
       </Section>}
       </Group>
 

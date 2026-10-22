@@ -52,7 +52,23 @@ The worker also returns its own pitch summary (median, 10th and 90th percentiles
 
 **Not computed yet, and why:**
 - `lang.rare_word_share`: still needs an English frequency list whose licence clearly allows bundling it in the app. The obvious candidates are share-alike (`wordfreq`'s data is CC BY-SA 4.0) or have unclear terms (lists derived from the Google Web corpus, SUBTLEX); none was confirmed as permissive, so nothing is bundled.
-- `conv.reply_latency_median_s`: conversations keep no audio (decision 83), so there is nothing to send.
+- `conv.reply_latency_median_s`: conversations keep no audio (decision 83), so there is nothing to send. Its phone-side counterpart, `conv.reply_gap_median_s`, is worked out from the turns' saved times instead (decision 120, below).
+
+## Conversation timing (decision 120)
+
+Each conversation turn saves when the speaking began and ended (`at` and `end`, seconds from the start) and whether it was cut short (`cut`). `src/core/conversationTiming.ts` works the measures out from those times alone, engine `device-turn-times-v1` (listening sounds: `device-wordlist-v1`, from the words). A conversation from before, or with any turn untimed, gets no timing measures (they are left out, not zero), except listening sounds.
+
+| id | How |
+|---|---|
+| `conv.reply_gap_median_s` | For each of your turns straight after one of theirs (listening sounds left out): your first sound minus their last, never below zero. The median, once there are two or more |
+| `conv.interruptions_by_you` | Handovers from them to you where their turn was marked cut (you tapped, or talked over them with headphones or in a phone call), or where you started 0.3 s or more before they finished. A listening sound over them is not counted |
+| `conv.interruptions_received` | The same, from you to them: on the Hard setting the persona cuts in on a long turn (decision 120), and in a phone call the agent may start before you finish |
+| `conv.overlap_s` | The seconds each turn started before the one before it ended, added up |
+| `conv.backchannels` | Your turns whose words are only listening sounds (three words at most from mm, mm-hm, uh-huh, yeah, right, okay, oh, sure and a few more; `onlyListening` in `src/core/liveStreaming.ts`) |
+
+**Where the times come from.** Your turn: the recording's start on the conversation clock, plus the first and last loudness readings at three times the quietest (`speechSpan`, the same rule as decision 101's); when you talked over the persona, the moment the live service heard you. Their line: from the first sound played to the end of the last, or the moment it was cut short. In a phone call (decision 121): the agent's speaking and listening changes and the moments the transcripts arrive. Timings are rough in tap and automatic modes (the browser's speech recognition drops most "mm-hm"s, and the recording starts only after their line), most precise live.
+
+**Shown focus first** (decision 115): the conversation timeline draws overlaps and cut-in marks; under it, at most two confident findings show, most telling first (a cut-in is a recorded event; the reply gap only from live turns, with three or more gaps; talking at once of half a second or more; listening sounds only live), and the rest wait behind "See more".
 - `lang.sentiment_arc`, `lang.concreteness_mean`, `flu.keypoint_pause_s` and the stage-B rubric scores: not part of this stage.
 
 ## How pause placement is approximated
@@ -208,6 +224,11 @@ Stage A measures are computed on the phone or by the coach's rubric. Stage B mea
 | `conv.questions` | Questions asked | Your turns that asked a question (spotted by how they start). | count | device | strong | shown | higher | A |
 | `conv.followups` | Follow-up questions | Questions that picked up a word the other person had just said. | count | device | strong | shown | higher | A |
 | `conv.turns` | Your turns | How many times you spoke. | count | device | weak | internal | neither | A |
+| `conv.reply_gap_median_s` | Reply gap | Median seconds from the end of their line to the start of your reply, from the turns' saved times (most precise in live turns). | s | device | moderate | internal | neither | A |
+| `conv.interruptions_by_you` | You cut in | Times you cut the other person short: tapping or talking over them by more than a third of a second. | count | device | moderate | internal | neither | A |
+| `conv.interruptions_received` | They cut in | Times the other person cut you short. | count | device | moderate | internal | neither | A |
+| `conv.overlap_s` | Talking at once | Seconds both of you were talking at the same time. | s | device | weak | internal | neither | A |
+| `conv.backchannels` | Listening sounds | Your turns that were only a listening sound (mm-hm, right, yeah). | count | device | weak | internal | neither | A |
 | `conv.reply_latency_median_s` | Reply gap | Median time from the end of their line to your first word. | s | transcript | moderate | internal | neither | B |
 | `conv.detail_pickups` | Details picked up | Details from their turns you reused, judged by the coach. | count | rubric | moderate | internal | higher | B |
 | `conv.self_disclosure` | Sharing | Turns where you shared a personal detail. | count | rubric | moderate | internal | neither | B |

@@ -26,6 +26,8 @@ import { voiceModelId, type PersonaVoice } from "@/server/voice";
 import type { CounterStore } from "@/server/rateLimit";
 // Load the saved turn type
 import type { ConversationTurn } from "@/data/records";
+// Load the usage counting (decision 122)
+import { countLine, countVoiceCharacters } from "@/server/usageCounters";
 
 // What the route needs beyond the shared checks
 export interface ConversationDeps extends GuardDeps {
@@ -67,6 +69,8 @@ const RequestSchema = z.object({
   elapsedSec: z.number().min(0).max(LONGEST_RECORDING_SECONDS),
   // Stream the line, piece by piece (decision 102)
   stream: z.boolean().optional(),
+  // How hard the persona makes it (decision 120; normal when left out)
+  difficulty: z.enum(["easy", "normal", "hard"]).optional(),
 });
 
 // The checked request
@@ -208,6 +212,15 @@ export function createConversationHandler(deps: ConversationDeps) {
     const turns: ConversationTurn[] = data.turns.map((turn) => ({ who: turn.who, text: turn.text, seconds: 0 }));
     // The voice, with the chosen model
     const voice = deps.makeVoice(voiceModelId(settings.voiceModel));
+    // Speak words in the persona's voice and count the characters spoken, for Settings' usage section (decision 122)
+    const speakCounted = async (spoken: string, streaming: boolean, signal?: AbortSignal) => {
+      // Spoken, or not
+      const audio = await speak(voice, spoken, persona.voiceId, streaming, signal);
+      // Counted only when ElevenLabs spoke it
+      if (audio) await countVoiceCharacters(store, settings.voiceModel, spoken.length, deps.now(), log);
+      // The audio
+      return audio;
+    };
     // Whether the line ends the conversation: only when winding down (always when time is up), so it never ends early
     const endsIt = (said: boolean) => data.stage === "end" || (data.stage === "wrap" && said);
 
@@ -218,7 +231,7 @@ export function createConversationHandler(deps: ConversationDeps) {
       // Starting can fail
       try {
         // Started
-        start = await startStreamedLine({ events: deps.makeWriter(env).stream(persona, scenario, data.twist, turns, data.stage, data.heard, request.signal), speak: (spoken) => speak(voice, spoken, persona.voiceId, true, request.signal), now: timer, log });
+        start = await startStreamedLine({ events: deps.makeWriter(env).stream(persona, scenario, data.twist, turns, data.stage, data.heard, request.signal, data.difficulty), speak: (spoken) => speakCounted(spoken, true, request.signal), now: timer, log });
       } catch (error) {
         // Failed before anything
         start = { kind: "failed", reason: (error as Error).message };
@@ -234,6 +247,8 @@ export function createConversationHandler(deps: ConversationDeps) {
       }
       // Nothing to say
       if (start.kind === "empty") return reply(502, { error: "The conversation could not continue right now." });
+      // A line was written: counted (decision 122)
+      await countLine(store, deps.now(), log);
       // The events to send
       const events = start.events();
       // The timings so far
@@ -289,7 +304,7 @@ export function createConversationHandler(deps: ConversationDeps) {
     // Asking can fail
     try {
       // Ask the writer
-      written = await deps.makeWriter(env).write(persona, scenario, data.twist, turns, data.stage, data.heard);
+      written = await deps.makeWriter(env).write(persona, scenario, data.twist, turns, data.stage, data.heard, data.difficulty);
     } catch (error) {
       // Log the reason, never the conversation
       log(`Conversation line failed: ${(error as Error).message}`);
@@ -306,8 +321,10 @@ export function createConversationHandler(deps: ConversationDeps) {
     if (!shown) return reply(502, { error: "The conversation could not continue right now." });
     // When speaking started
     const speaking = timer();
-    // Say it in their voice, when ElevenLabs is set up
-    const audio = await speak(voice, spoken, persona.voiceId, false);
+    // A line was written: counted (decision 122)
+    await countLine(store, deps.now(), log);
+    // Say it in their voice, when ElevenLabs is set up (the characters counted)
+    const audio = await speakCounted(spoken, false);
     // How long speaking took
     const voiceMs = timer() - speaking;
     // In all

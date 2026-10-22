@@ -7,7 +7,7 @@ import type { ConversationStage } from "@/core/conversationTurn";
 // Load the stream's line format
 import { STREAM_CONTENT_TYPE, decodeEvent, splitLines } from "@/core/conversationStream";
 // Load the saved turn type
-import type { ConversationTurn } from "@/data/records";
+import type { ConversationDifficulty, ConversationTurn } from "@/data/records";
 // Load the size limits the route checks (decision 86)
 import { MAX_TURNS, TURN_MAX_CHARS, withinDuration, withinLimit } from "@/core/requestLimits";
 
@@ -41,6 +41,8 @@ export interface LineRequest {
   conversationId: string;
   // Seconds since the conversation started
   elapsedSec: number;
+  // How hard the persona makes it (decision 120; normal when left out)
+  difficulty?: ConversationDifficulty;
 }
 
 // A written line

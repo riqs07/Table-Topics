@@ -67,8 +67,8 @@ describe("Settings: Send my recordings for deeper analysis", () => {
     render(<SettingsScreen repository={repository} now={NOW} fetchFn={fetchFn} />);
     // The switch
     const toggle = await screen.findByRole("checkbox", { name: /Send my recordings for deeper analysis/ });
-    // Calls to anything but the conversation minutes (which Settings also asks for, decision 102)
-    const deepCalls = () => fetchFn.mock.calls.filter((call) => !String(call[0]).includes("/api/conversation"));
+    // Calls to anything but the conversation minutes and the month's usage (which Settings also asks for, decisions 102 and 122)
+    const deepCalls = () => fetchFn.mock.calls.filter((call) => !String(call[0]).includes("/api/conversation") && !String(call[0]).includes("/api/usage"));
     // Off, with what leaves the phone explained, and nothing asked yet
     const before = [toggle instanceof HTMLInputElement && toggle.checked, !!screen.getByText(/sent once to a transcription service \(AssemblyAI\) and to VoiceLab’s own voice-analysis server/), !!screen.getByText(/Neither keeps your recording or transcript/), deepCalls().length];
     // Switch it on

@@ -180,7 +180,7 @@ export interface SessionRecord {
   // For a voice drill or shadowing (mode "voice"): what kind, the headline, and one line per take; the takes' audio is kept only while on the page (decision 80)
   voice?: VoiceSummary;
   // For a conversation (mode "conversation"): every turn, yours and theirs, and the situation and twist it was in (missing on conversations from before decision 84, which were in the persona's own situation); no audio is kept (decisions 83 and 84)
-  conversation?: { turns: ConversationTurn[]; scenarioId?: string; twist?: number };
+  conversation?: { turns: ConversationTurn[]; scenarioId?: string; twist?: number; difficulty?: ConversationDifficulty; turnMode?: ConversationTurnMode };
   // For a told story (mode "story"): its shape, focus and length; the story is the prompt id (decision 92)
   story?: StoryTake;
   // For a take in the weekly check-in: which check-in, its number and which of the four parts (decision 100); missing on every other take
@@ -317,7 +317,19 @@ export interface ConversationTurn {
   lineId?: string;
   // How long it took, in seconds (your take, or their recording)
   seconds: number;
+  // When the speaking began and ended, in seconds from the start of the conversation (decision 120): your speech as the microphone heard it, their line from its first sound to its last. Missing on conversations from before, and when it could not be told
+  at?: number;
+  // (when it ended)
+  end?: number;
+  // True when this turn was cut short by the other speaker: you tapped or talked over them, or they cut in on a long turn of yours (decision 120)
+  cut?: boolean;
 }
+
+// How hard the persona makes a conversation (decision 120): easy, normal (the usual) or hard
+export type ConversationDifficulty = "easy" | "normal" | "hard";
+
+// How turns ended in a conversation (decisions 101, 119 and 121): tap, automatically, live (AssemblyAI) or a phone call (the ElevenLabs agent)
+export type ConversationTurnMode = "tap" | "auto" | "live" | "call";
 
 // What a voice drill or a shadowing session showed, kept with the session (decision 80)
 export interface VoiceSummary {
@@ -407,6 +419,20 @@ export interface ScenarioProgress {
   lastAt: string;
 }
 
+// A conversation's timing measures (decision 120), worked out from its turns' times: null where the turns were not timed
+export interface ConversationTimingRaw {
+  // Median gap from the end of their line to the start of your reply, in seconds, or null
+  replyGapMedian: number | null;
+  // Times you cut them short
+  interruptionsByYou: number | null;
+  // Times they cut you short
+  interruptionsReceived: number | null;
+  // Seconds both of you were talking at once
+  overlapSeconds: number | null;
+  // Your turns that were only a listening sound ("mm-hm", "right")
+  backchannels: number;
+}
+
 // The user's settings (one record)
 export interface SettingsRecord {
   // Position in the v1 weekly focus list
@@ -447,8 +473,12 @@ export interface SettingsRecord {
   practiceFocus?: FocusAreaId[];
   // The weekly check-in's day, skipped parts, reminders seen and which recordings it keeps (decision 100; missing until the first is used)
   checkIn?: CheckInSettings;
-  // How a turn of yours ends in a conversation: "tap" (tap Done) or "auto" (ends when you stop talking; decision 101). Missing means automatically
-  turnEnding?: "tap" | "auto";
+  // How a turn of yours ends in a conversation: "tap" (tap Done), "auto" (ends when you stop talking; decision 101) or "live" (a streaming service's end-of-turn model, beta, uses live minutes; decision 119). Missing means automatically
+  turnEnding?: "tap" | "auto" | "live" | "call";
+  // "I'm using headphones": in a live conversation, talking over the persona stops them (decision 119; missing means off, since a phone speaker's sound would be heard as you)
+  headphones?: boolean;
+  // How hard the persona makes a conversation, the last one chosen before starting (decision 120; missing means normal)
+  conversationDifficulty?: ConversationDifficulty;
 }
 
 // Where a measure came from (decision 90): the phone itself, a transcription service, the voice worker, or the coach's rubric
@@ -523,7 +553,7 @@ export interface AnalysisRaw {
   // Content words (stop words removed) with how often each was said, the 300 most used
   contentWords: Record<string, number>;
   // For a conversation: your share of the words, your questions, follow-ups and turns
-  conversation?: { share: number | null; questions: number; followUps: number; turns: number };
+  conversation?: { share: number | null; questions: number; followUps: number; turns: number; timing?: ConversationTimingRaw };
   // For a told story: what the phone's story checks found (decision 92)
   story?: StoryRaw;
 }

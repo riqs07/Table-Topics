@@ -45,6 +45,16 @@ export function builtFiles(staticFolder, folder) {
 }
 
 /**
+ * Whether a built script is the phone call's SDK (@elevenlabs/client with LiveKit, about 600 KB; decision 121), which is loaded only when a call starts and needs the network anyway, so it is not saved for everyone at install.
+ * @param {string} source the script's text
+ * @returns {boolean} true for the call's SDK
+ */
+export function callOnlyChunk(source) {
+  // The SDK's own address for its calls is in no other script
+  return source.includes("/v1/convai/conversation");
+}
+
+/**
  * The built media files (fonts, images) that the prerendered pages name, so only those are saved at install (decision 99): the other theme's fonts and the extra-alphabet subsets are left to load when a page asks for them.
  * @param {string[]} media the addresses of every built media file
  * @param {string[]} pages the HTML of the prerendered pages
@@ -74,7 +84,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // The worker's source
   const source = readFileSync("src/serviceWorker/sw.template.js", "utf8");
   // This build's scripts and styles, and the fonts its pages use (decision 99)
-  const files = [...builtFiles(".next/static", "chunks"), ...usedMedia(builtFiles(".next/static", "media"), prerenderedPages(".next/server/app"))];
+  const files = [...builtFiles(".next/static", "chunks").filter((file) => !callOnlyChunk(readFileSync(`.next${file.slice("/_next".length)}`, "utf8"))), ...usedMedia(builtFiles(".next/static", "media"), prerenderedPages(".next/server/app"))];
   // Save the stamped worker
   writeFileSync("public/sw.js", stampWorker(source, buildId, files));
   // Say what was written

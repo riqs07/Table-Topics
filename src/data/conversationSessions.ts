@@ -7,7 +7,7 @@ import { currentFocus } from "@/core/focus";
 // Load the measurements
 import { fillersPerMinute, wordsPerMinute } from "@/core/metrics";
 // Load the record types
-import type { ConversationTurn, SessionRecord } from "@/data/records";
+import type { ConversationDifficulty, ConversationTurn, ConversationTurnMode, SessionRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -25,6 +25,10 @@ export interface FinishedConversation {
   turns: ReadonlyArray<ConversationTurn>;
   // How long the whole conversation took, in seconds
   durationSec: number;
+  // How hard the persona made it, when lines were written (decision 120)
+  difficulty?: ConversationDifficulty;
+  // How turns ended: tap, automatically, live or a phone call (decision 120)
+  turnMode?: ConversationTurnMode;
 }
 
 // Save it and hand back the session (now is when it finished)
@@ -56,7 +60,7 @@ export async function saveConversationSession(repository: Repository, conversati
     // Waiting for the coach, with no audio kept
     feedback: null, feedbackStatus: "pending", audioKey: null,
     // Every turn
-    conversation: { turns: [...conversation.turns], scenarioId: conversation.scenarioId, twist: conversation.twist },
+    conversation: { turns: [...conversation.turns], scenarioId: conversation.scenarioId, twist: conversation.twist, ...(conversation.difficulty ? { difficulty: conversation.difficulty } : {}), ...(conversation.turnMode ? { turnMode: conversation.turnMode } : {}) },
   };
   // Save it
   await repository.saveSession(session);

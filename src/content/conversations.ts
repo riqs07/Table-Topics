@@ -2,6 +2,8 @@
 
 // Load the small-talk unit type
 import type { UnitId } from "@/content/smallTalk";
+// Load the difficulty type
+import type { ConversationDifficulty } from "@/data/records";
 
 // What a recorded line is for
 export type ConversationLineKind = "opening" | "listening" | "reaction" | "share" | "short" | "question" | "turn" | "goodbye";
@@ -30,6 +32,8 @@ export interface Persona {
   background: string;
   // Their ElevenLabs voice (not secret; the voice must be in the account's voices)
   voiceId: string;
+  // The voice the ElevenLabs agent uses for them in a phone call, when their usual one is not allowed there (decision 121; missing means the usual one)
+  liveVoiceId?: string;
   // The situation their recorded lines were written for, used when the coach cannot be reached
   home: string;
   // Their recorded line for when they did not catch what you said
@@ -56,6 +60,8 @@ export interface Scenario {
   direction: string;
   // What is going on for the persona this time, as a sentence: one is picked for each conversation, and kept from the person
   twists: ReadonlyArray<string>;
+  // The persona's first line in a phone call (decision 121), where the agent speaks it before any line is written; "{name}" is their name
+  opener: string;
 }
 
 // Every persona, in the order of their own situations' skills
@@ -74,6 +80,8 @@ export const PERSONAS: ReadonlyArray<Persona> = [
     background: "Moved to the city from Denver about a month ago, after working at a tiny startup; now works in marketing. Joined a Saturday-morning running club to meet people and chats at the back instead of running. Has a cat called Biscuit who yells at her at five every morning. Is trying every taco place within walking distance. Has a younger sister who visits soon.",
     // Brittney: bright, lively and conversational
     voiceId: "BBGL1mJ66fANrjWTOM5c",
+    // Brittney is blocked in ElevenLabs Agents by its live moderation, so a phone call uses the stand-in "Emma" (decision 121; the user adds it to the account)
+    liveVoiceId: "Mac2FKpSgaGIsaNRXt8A",
     // Her recorded situation
     home: "party",
     // When they did not catch what you said
@@ -442,6 +450,8 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
     direction: "{name} is new and wants to get to know the person, so mostly asks about their life (their weekend, their work, what they do for fun) and reacts warmly. After a flat answer (\"good\", \"not much\"), asks a gentle follow-up about one specific bit. When asked something, shares a little of their own life, then often hands back with a question.",
     // What is going on for them this time
     twists: ["{name} is still finding the way around the office.", "{name} had a funny mix-up on the first day.", "{name} is hunting for a good lunch spot nearby.", "{name} spent the weekend exploring the city."],
+    // Their first line in a phone call (decision 121)
+    opener: "Oh hi! I don’t think we’ve properly met. I’m {name}, I just joined the team.",
   },
   // Answering, again
   {
@@ -459,6 +469,8 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
     direction: "{name} is friendly and asks about the person's weekend first, then about whatever they mention, reacting to it. After a flat answer, asks about one specific bit. When asked, shares a little of their own weekend, then hands back.",
     // What is going on for them this time
     twists: ["{name} had a quiet weekend at home.", "{name} went to a wedding on Saturday.", "Something broke at {name}’s home on Sunday, and {name} spent the day fixing it.", "{name} visited family and is a bit tired from the trip."],
+    // Their first line in a phone call (decision 121)
+    opener: "Morning! This machine is taking forever again. Good weekend?",
   },
   // Asking: they say little unless asked well
   {
@@ -476,6 +488,8 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
     direction: "{name} is quiet today and volunteers little. To yes-or-no questions, small talk, or when the person talks mostly about themselves, gives a short answer of a few words. To an open question (what, how, why) about them, or a follow-up on something they just said, opens up a little more, one detail at a time. Asks at most one question back, late in the conversation.",
     // What is going on for them this time
     twists: ["{name} has a hobby that matters a lot but rarely comes up.", "{name} is planning a trip and is quietly excited about it.", "{name} is nervous about presenting in this meeting.", "{name} finished something at the weekend and is proud of it."],
+    // Their first line in a phone call (decision 121)
+    opener: "Oh. Hi. Looks like we’re early.",
   },
   // Asking, again
   {
@@ -493,6 +507,8 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
     direction: "{name} is shy among new people and volunteers little. To yes-or-no questions or small talk, gives a short answer. To an open question about them, or a follow-up on something they said, opens up a little more each time. Asks at most one question back, late on.",
     // What is going on for them this time
     twists: ["{name} signed up on a friend’s dare.", "{name} wants to learn one dish really well, to cook for someone special.", "{name} is new to the area and trying to meet people.", "{name} burned a lasagne badly last month and wants revenge."],
+    // Their first line in a phone call (decision 121)
+    opener: "Hi. Is this the cooking class? I think I’m a bit early.",
   },
   // Listening: something hard happened to them
   {
@@ -510,6 +526,8 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
     direction: "{name} is having a rough week and tells the story a piece at a time. Shares the next piece when the person reacts, asks what happened, or says how it must feel, and warms up when they name the feeling. If they jump to advice, change the subject, or move to their own story, goes a little flat, shares less, and may say they just need to get it off their chest. Near the end may mention one small bright spot and ask how the person is.",
     // What is going on for them this time
     twists: ["{name}’s landlord is selling the flat {name} loves, and a project {name} worked on all year was cancelled.", "{name}’s dog has been ill, and the vet bills keep coming.", "{name} had a falling-out with a close friend.", "{name} did not get a much-wanted job after the final interview."],
+    // Their first line in a phone call (decision 121)
+    opener: "Hey, thanks for meeting up. Sorry, I’m a bit tired today.",
   },
   // Listening, again
   {
@@ -527,6 +545,8 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
     direction: "{name} has had a bad day and tells it a piece at a time. Shares more when the person reacts, asks what happened, or says how it must feel. If they give advice too soon, change the subject, or make it about themselves, goes a little flat and shares less. Thanks the person warmly if they listened well.",
     // What is going on for them this time
     twists: ["{name}’s presentation went badly in front of the boss.", "A customer shouted at {name} over something that was not {name}’s fault.", "{name} found out the team is being reorganised.", "{name} made a mistake that cost the team a day of work."],
+    // Their first line in a phone call (decision 121)
+    opener: "Oh, hey. Heading home too? What a day.",
   },
   // News: they have big news
   {
@@ -544,6 +564,8 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
     direction: "{name} has big, good news and shares it near the start. Shares details when asked: the moment they found out, who they told, what happens next. When the person reacts warmly and asks about the moment, lights up and shares more. If they add a downside, give advice, or switch to their own news, deflates a little and shares less. Later admits one mixed feeling about it, a chance for the person to stay with that feeling.",
     // What is going on for them this time
     twists: ["{name} got into a two-year programme abroad, after applying twice.", "{name} got engaged last weekend.", "{name} got the job {name} had wanted for years.", "{name} ran a first marathon on Sunday."],
+    // Their first line in a phone call (decision 121)
+    opener: "No way, hi! It’s been ages! How are you?",
   },
   // News, again
   {
@@ -561,6 +583,8 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
     direction: "{name} has news, good or bad, and shares it early. Shares details when asked: how they found out, how it feels, what happens next. With good news, lights up when the person reacts warmly and asks about the moment. With bad news, wants to be listened to, not fixed. If the person adds a downside, gives advice, or switches to their own news, shares less.",
     // What is going on for them this time
     twists: ["{name} is moving across the country for a new job, excited and nervous.", "{name} was made redundant this week.", "{name} is going to be a parent.", "{name}’s grandmother has to have an operation next week."],
+    // Their first line in a phone call (decision 121)
+    opener: "Hi! Okay, sit down, I have to tell you something.",
   },
 ];
 
@@ -602,4 +626,49 @@ export function pickSituation(persona: Persona, turn: number, skill?: UnitId): {
 export function findLine(persona: Persona, id: string): ConversationLine | undefined {
   // Look through their lines
   return persona.lines.find((line) => line.id === id);
+}
+
+// The voice a persona has in a phone call with the ElevenLabs agent (decision 121): their stand-in where their usual voice is not allowed there
+export function liveVoiceOf(persona: Persona): string {
+  // The stand-in, or the usual
+  return persona.liveVoiceId ?? persona.voiceId;
+}
+
+// One level of difficulty (decision 120): its name, a line for the picker, the rule added to the persona's instructions (none for normal, so the usual conversation is unchanged), and after how many seconds of one turn of yours the persona cuts in (hard only, in tap, automatic and live turns)
+export interface DifficultyLevel {
+  // Which
+  id: ConversationDifficulty;
+  // Its name on the picker
+  name: string;
+  // What it means, in a few words
+  blurb: string;
+  // The rule added to the persona's instructions, or null
+  rule: string | null;
+  // Seconds of one turn of yours before the persona cuts in, or null for never
+  cutInSeconds: number | null;
+}
+
+// The three levels, easiest first (decision 120)
+export const DIFFICULTIES: ReadonlyArray<DifficultyLevel> = [
+  // Easy: warm, open and easy to follow
+  { id: "easy", name: "Easy", blurb: "Warm and chatty, with details to pick up.", rule: "Make this conversation easy for the person: be warm and patient, give fuller answers with a detail or two they can pick up, and ask simple, friendly questions. Never cut them off.", cutInSeconds: null },
+  // Normal: as the situation's direction says
+  { id: "normal", name: "Normal", blurb: "As the situation goes.", rule: null, cutInSeconds: null },
+  // Hard: short answers, and now and then they cut in
+  { id: "hard", name: "Hard", blurb: "Short answers, and they may cut in.", rule: "Make this conversation harder for the person, as a busy or distracted person would: answer briefly (often one short sentence), offer little unless they ask a good open question, and now and then cut in with your own point when they go on. Stay polite and in character; never rude.", cutInSeconds: 25 },
+];
+
+// The usual level
+export const DEFAULT_DIFFICULTY: ConversationDifficulty = "normal";
+
+// A saved level, made safe: anything unknown is normal
+export function difficultyOf(value: unknown): ConversationDifficulty {
+  // One of the three, or normal
+  return DIFFICULTIES.some((level) => level.id === value) ? (value as ConversationDifficulty) : DEFAULT_DIFFICULTY;
+}
+
+// The level's details
+export function findDifficulty(id: ConversationDifficulty): DifficultyLevel {
+  // Found, or normal
+  return DIFFICULTIES.find((level) => level.id === id) ?? DIFFICULTIES[1]!;
 }

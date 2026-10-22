@@ -859,6 +859,8 @@ test("Deeper analysis: switch it on, record a take, see the voice measures from 
   await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You named the dog.", change: "Start on the dog.", retryCue: "Dog first." } } }));
   // The month's conversation minutes, stood in (Settings asks once a passphrase is saved; decision 102)
   await page.route("**/api/conversation", (route) => route.fulfill({ json: { minutesUsed: 0, minutesPerMonth: 150, minutesLeft: 150 } }));
+  // This month's usage, stood in (Settings asks once a passphrase is saved; decision 122)
+  await page.route("**/api/usage", (route) => route.fulfill({ json: { month: "2026-10", live: { used: 0, limit: 150, left: 150, setUp: false }, call: { used: 0, limit: 60, left: 60, setUp: false }, voiceCharacters: { turbo: 0, v4: 0 }, lines: 0, conversationMinutes: { used: 0, limit: 150 } } }));
   // Settings, loaded directly
   await page.goto("/settings");
   // Switch deeper analysis on
@@ -902,6 +904,8 @@ test("Deeper analysis: a part that fails leaves a quiet note on the take", async
   await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You named the dog.", change: "Start on the dog.", retryCue: "Dog first." } } }));
   // The month's conversation minutes, stood in (Settings asks once a passphrase is saved; decision 102)
   await page.route("**/api/conversation", (route) => route.fulfill({ json: { minutesUsed: 0, minutesPerMonth: 150, minutesLeft: 150 } }));
+  // This month's usage, stood in (Settings asks once a passphrase is saved; decision 122)
+  await page.route("**/api/usage", (route) => route.fulfill({ json: { month: "2026-10", live: { used: 0, limit: 150, left: 150, setUp: false }, call: { used: 0, limit: 60, left: 60, setUp: false }, voiceCharacters: { turbo: 0, v4: 0 }, lines: 0, conversationMinutes: { used: 0, limit: 150 } } }));
   // Settings, loaded directly
   await page.goto("/settings");
   // Switch deeper analysis on

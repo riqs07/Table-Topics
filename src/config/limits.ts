@@ -43,3 +43,21 @@ export const TRANSCRIPT_POLL_MS = 3_000;
 
 // Wrong passphrases one caller (by network address) may send in an hour before every request from it is refused until the next hour, so the passphrase cannot be guessed at speed
 export const PASSPHRASE_FAILURES_PER_HOUR = 20;
+
+// Live conversations (decisions 119 and 121): starting a live conversation (a streaming token for AssemblyAI, or a call token for the ElevenLabs agent) is allowed at most 3 times a minute and 30 times a day, counted apart from everything else; the agent itself also allows 30 a day
+export const LIVE_LIMITS: RateLimits = { perMinute: 3, perDay: 30, scope: "live" };
+
+// Live minutes a month with AssemblyAI streaming (decision 119), unless LIVE_MINUTES_PER_MONTH says otherwise: at about $0.15 an hour of open connection, 150 minutes is about 38 cents
+export const LIVE_MINUTES_PER_MONTH = 150;
+
+// Phone-call minutes a month with the ElevenLabs agent (decision 121), unless LIVE_B_MINUTES_PER_MONTH says otherwise: at about $0.08 a minute, 60 minutes is about $4.80
+export const LIVE_B_MINUTES_PER_MONTH = 60;
+
+// The longest one live conversation may stay open, in seconds: the same five minutes as decision 102's cap (the persona still says goodbye at three); the vendor is told this too, so an open socket can never run on
+export const LIVE_SESSION_SECONDS = 300;
+
+// How long a streaming token may wait before its socket opens, in seconds (AssemblyAI allows 1 to 600)
+export const LIVE_TOKEN_EXPIRES_SECONDS = 60;
+
+// How many tokens one live conversation may ask for: the first, and one more when the ElevenLabs agent refuses the persona's voice and the call starts again with its own (decision 121)
+export const LIVE_TOKENS_PER_CONVERSATION = 2;

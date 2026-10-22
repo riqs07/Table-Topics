@@ -12,6 +12,10 @@ import { fadingEnds, speechThreshold } from "@/core/pauses";
 import { toSteps, usualPitch } from "@/core/pitch";
 // Load the conversation measures
 import { measureConversation } from "@/core/conversationMeasures";
+// Load the conversation's timing measures (decision 120)
+import { conversationTiming } from "@/core/conversationTiming";
+// Load the timing engine's name
+import { TIMING_ENGINE } from "@/config/models";
 // Load the story checks (decision 92)
 import { storyRaw } from "@/core/storyChecks";
 // Load the guided stories and their comparison with the facts (decision 93)
@@ -198,7 +202,7 @@ export function extractRaw(session: FullSession): AnalysisRaw & { timedWords: Ti
     // Content-word counts
     contentWords: contentWordCounts(words.map((word) => word.w).filter(Boolean)),
     // A conversation's measures
-    ...(conversation ? { conversation: { share: conversation.share, questions: conversation.questions, followUps: conversation.followUps, turns: conversation.turns } } : {}),
+    ...(conversation ? { conversation: { share: conversation.share, questions: conversation.questions, followUps: conversation.followUps, turns: conversation.turns, timing: conversationTiming(session.conversation!.turns) } } : {}),
     // A told story's checks (decision 92)
     ...(session.mode === "story" ? { story: storyChecksRaw(session) } : {}),
   };
@@ -340,6 +344,21 @@ export function deviceMetrics(raw: AnalysisRaw & { timedWords: TimedWord[] }): R
     put("conv.followups", raw.conversation.followUps, "count");
     // Turns
     put("conv.turns", raw.conversation.turns, "count");
+    // The timing measures, from the turns' saved times (decision 120; missing on analyses from before)
+    const timing = raw.conversation.timing;
+    // Only when worked out
+    if (timing) {
+      // The reply gap
+      put("conv.reply_gap_median_s", timing.replyGapMedian, "s", TIMING_ENGINE);
+      // Who cut whom short
+      put("conv.interruptions_by_you", timing.interruptionsByYou, "count", TIMING_ENGINE);
+      // (them)
+      put("conv.interruptions_received", timing.interruptionsReceived, "count", TIMING_ENGINE);
+      // Talking at once
+      put("conv.overlap_s", timing.overlapSeconds, "s", TIMING_ENGINE);
+      // Listening sounds, from the words alone
+      put("conv.backchannels", timing.backchannels, "count", "device-wordlist-v1");
+    }
   }
   // A told story's checks, as yes-or-no and counts (decision 92)
   if (raw.story) {
