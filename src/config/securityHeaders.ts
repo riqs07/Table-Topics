@@ -1,5 +1,8 @@
 // The page security headers and the development tunnel setting, read by next.config.ts (decision 87); kept free of "@/" imports so the config file can load it
 
+// The live services' addresses a live conversation connects to straight from the browser, with a short-lived token from our own routes (decision 140: AssemblyAI's streaming socket)
+export const LIVE_CONNECT_SOURCES: ReadonlyArray<string> = ["wss://streaming.assemblyai.com"];
+
 // What the page may load, as one Content-Security-Policy value
 export function contentSecurityPolicy(development: boolean): string {
   // One rule per kind of content
@@ -14,8 +17,8 @@ export function contentSecurityPolicy(development: boolean): string {
     "img-src 'self' data: blob:",
     // Sound from this site, recordings played back from memory, and the short silence that unlocks playback on phones
     "media-src 'self' blob: data:",
-    // Network requests only to this site (the paid services are reached through its own routes), so nothing can be sent elsewhere
-    "connect-src 'self'",
+    // Network requests to this site (the paid services are reached through its own routes), plus the one live speech socket a live conversation opens with a short-lived token from those routes (decision 140); nothing else can be sent elsewhere
+    `connect-src 'self' ${LIVE_CONNECT_SOURCES.join(" ")}`,
     // Fonts are served by this site
     "font-src 'self'",
     // No plug-ins

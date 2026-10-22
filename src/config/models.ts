@@ -22,3 +22,7 @@ export const CONVERSATION_VOICE_MODEL_FAST = "eleven_v4_turbo";
 export const TRANSCRIPTION_MODEL = "universal-3-pro";
 // The engine name stored with every measure read from its transcript
 export const TRANSCRIPTION_ENGINE = `assemblyai-${TRANSCRIPTION_MODEL}`;
+// Live conversations, step A (decision 140): AssemblyAI's Universal-Streaming English model, which ends each turn with its own end-of-turn model. Billed per hour the connection is open. The id is listed in AssemblyAI's own SDK (assemblyai 4.41.7, StreamingSpeechModel)
+export const LIVE_STREAMING_MODEL = "universal-streaming-english";
+// The engine name stored with every timing measure worked out from a conversation's turn times (decision 141)
+export const TIMING_ENGINE = "device-turn-times-v1";

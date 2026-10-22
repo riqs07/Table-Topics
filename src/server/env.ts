@@ -154,3 +154,51 @@ export function readAnalysisSettings(source: EnvSource = process.env): AnalysisS
   // Everything read
   return { assemblyAiKey, voiceWorker, problems };
 }
+
+// How the browser joins the ElevenLabs agent's call (decision 142): WebRTC, whose echo cancellation lets you talk over the persona on a phone speaker, or a WebSocket as a fallback
+export type LiveCallConnection = "webrtc" | "websocket";
+
+// The live-conversation settings (decisions 140 and 142): the keys and agent, each null when not set, and the monthly minutes
+export interface LiveSettings {
+  // The AssemblyAI key, for live step A's streaming tokens (the same key deeper analysis uses)
+  assemblyAiKey: string | null;
+  // The ElevenLabs key, for the agent's call tokens (it needs the ElevenLabs Agents permission)
+  elevenLabsKey: string | null;
+  // The ElevenLabs agent's id
+  agentId: string | null;
+  // Live minutes a month with AssemblyAI streaming
+  minutesPerMonth: number;
+  // Phone-call minutes a month with the ElevenLabs agent
+  callMinutesPerMonth: number;
+  // How the browser joins the call
+  connection: LiveCallConnection;
+}
+
+// Read a whole number of minutes, or the default when not set; anything else is an error naming the setting (rule T13)
+function wholeMinutes(source: EnvSource, name: string, fallback: number): number {
+  // The value, if set
+  const value = source[name]?.trim();
+  // Not set: the default
+  if (!value) return fallback;
+  // A whole number from 0 up (0 turns that kind of live conversation off)
+  if (!/^\d{1,6}$/.test(value)) throw new Error(`${name} must be a whole number of minutes, such as ${fallback}.`);
+  // The number
+  return Number(value);
+}
+
+// Read the live-conversation settings, with the given default minutes; a value that cannot be used is an error naming the setting
+export function readLiveSettings(source: EnvSource = process.env, defaults: { minutesPerMonth: number; callMinutesPerMonth: number } = { minutesPerMonth: 150, callMinutesPerMonth: 60 }): LiveSettings {
+  // The connection, if set
+  const connection = source.LIVE_B_CONNECTION?.trim().toLowerCase();
+  // Only the two choices
+  if (connection && connection !== "webrtc" && connection !== "websocket") throw new Error("LIVE_B_CONNECTION must be webrtc or websocket.");
+  // Everything read
+  return {
+    // The keys and the agent, each null when not set
+    assemblyAiKey: source.ASSEMBLYAI_API_KEY?.trim() || null, elevenLabsKey: source.ELEVENLABS_API_KEY?.trim() || null, agentId: source.ELEVENLABS_AGENT_ID?.trim() || null,
+    // The monthly minutes
+    minutesPerMonth: wholeMinutes(source, "LIVE_MINUTES_PER_MONTH", defaults.minutesPerMonth), callMinutesPerMonth: wholeMinutes(source, "LIVE_B_MINUTES_PER_MONTH", defaults.callMinutesPerMonth),
+    // WebRTC unless chosen otherwise
+    connection: connection === "websocket" ? "websocket" : "webrtc",
+  };
+}

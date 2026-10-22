@@ -199,7 +199,7 @@ describe("turnEndingOf", () => {
     // The reader
     const { turnEndingOf } = await import("@/core/endOfTurn");
     // Each case
-    expect([turnEndingOf(undefined), turnEndingOf({}), turnEndingOf({ turnEnding: "tap" }), turnEndingOf({ turnEnding: "auto" }), turnEndingOf({ turnEnding: 3 })]).toEqual(["auto", "auto", "tap", "auto", "auto"]);
+    expect([turnEndingOf(undefined), turnEndingOf({}), turnEndingOf({ turnEnding: "tap" }), turnEndingOf({ turnEnding: "auto" }), turnEndingOf({ turnEnding: 3 }), turnEndingOf({ turnEnding: "live" })]).toEqual(["auto", "auto", "tap", "auto", "auto", "live"]);
   });
 });
 

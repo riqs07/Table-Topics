@@ -1,8 +1,8 @@
 // Browser checks: run the real app in Chromium the way a user would (playbook rules T5, T10, T11)
 import { defineConfig, devices } from "@playwright/test";
 
-// The port the app runs on for these checks, apart from the usual 3000 (setup rule S2)
-const PORT = 3111;
+// The port the app runs on for these checks, apart from the usual 3000 (setup rule S2); E2E_PORT moves it, so two builds can be checked side by side on one machine
+const PORT = Number(process.env.E2E_PORT ?? 3111);
 
 // Settings for the browser suite
 export default defineConfig({

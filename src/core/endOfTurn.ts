@@ -285,16 +285,16 @@ export function stepTurn(previous: TurnState, reading: TurnReading, options: Tur
 }
 
 
-// How a turn of yours ends in a conversation: tap Done, or automatically when you stop talking (Settings; decision 101)
-export type TurnEnding = "tap" | "auto";
+// How a turn of yours ends in a conversation: tap Done, automatically when you stop talking (Settings; decision 101), or live, where a streaming service's end-of-turn model decides (beta, uses live minutes; decision 140)
+export type TurnEnding = "tap" | "auto" | "live";
 
 // Automatically unless chosen otherwise (decision 101 says why)
 export const DEFAULT_TURN_ENDING: TurnEnding = "auto";
 
-// The saved choice, made safe: anything but "tap" means automatically
+// The saved choice, made safe: tap or live only when chosen, anything else automatically
 export function turnEndingOf(settings: { turnEnding?: unknown } | null | undefined): TurnEnding {
-  // Tap only when chosen
-  return settings?.turnEnding === "tap" ? "tap" : DEFAULT_TURN_ENDING;
+  // Tap or live only when chosen
+  return settings?.turnEnding === "tap" || settings?.turnEnding === "live" ? settings.turnEnding : DEFAULT_TURN_ENDING;
 }
 
 // Whether a turn ending with these words asked a question, so no listening sound plays before the answer (decision 102): a question mark, or a question opening near the end (speech recognition rarely adds the mark)

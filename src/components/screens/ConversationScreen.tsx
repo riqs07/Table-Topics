@@ -2,7 +2,7 @@
 // A spoken conversation with a persona (decisions 83 and 84): they speak, you answer out loud and tap Done, for about three minutes; then it is saved and the coach reviews the whole conversation. With the coach set up, each conversation is in a new situation and every line is written for it and spoken in the persona's voice; without it, the persona says their recorded lines in their own situation
 
 // Load React's state, ref, effect, callback and external-store tools
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the masthead
@@ -45,6 +45,10 @@ import { saveConversationSession } from "@/data/conversationSessions";
 import type { ConversationTurn } from "@/data/records";
 // Load the recording contracts
 import type { RecordingServices } from "@/audio/services";
+// Load the live listener (decision 140)
+import { openLiveListener, type LiveEvents, type LiveMode, type LiveTurns } from "@/audio/liveListener";
+// Load the live routes' client and the fallback lines
+import { endLive, liveRefusalLine, startLive, type LiveRefusal } from "@/data/liveClient";
 
 // The longest one turn of yours runs before it ends by itself, in seconds
 const MAX_TURN_SECONDS = 60;
@@ -91,6 +95,40 @@ const askRoute: WriteLine = (request, options) => nextLine(request, { passphrase
 // Whether the coach is set up on this device (a passphrase is saved)
 const passphraseSaved = () => readPassphrase() !== "";
 
+// Opens live step A for a conversation (decision 140): the listener and the seconds granted, or why not
+export type OpenLive = (conversationId: string, events: LiveEvents) => Promise<{ live: LiveTurns; grantedSeconds: number } | { refused: LiveRefusal }>;
+
+// Settles a live conversation: hands back the minutes it did not use
+export type SettleLive = (conversationId: string, seconds: number) => void;
+
+// The real opener: a token from our route, then the socket and the microphone; a failure after the token hands its minutes back at once
+const openLiveRoute: OpenLive = async (conversationId, events) => {
+  // The saved passphrase
+  const passphrase = readPassphrase();
+  // The token
+  const started = await startLive("a", conversationId, { passphrase });
+  // Refused
+  if ("refused" in started) return started;
+  // Not step A's
+  if (started.grant.kind !== "a") return { refused: "unavailable" };
+  // Opening can fail
+  try {
+    // The socket and the microphone
+    return { live: await openLiveListener({ token: started.grant.token, events }), grantedSeconds: started.grant.grantedSeconds };
+  } catch {
+    // Nothing was used
+    void endLive("a", conversationId, 0, { passphrase });
+    // Said
+    return { refused: "unavailable" };
+  }
+};
+
+// The real settler
+const settleLiveRoute: SettleLive = (conversationId, seconds) => {
+  // Sent, never failing out loud
+  void endLive("a", conversationId, seconds, { passphrase: readPassphrase() });
+};
+
 // What the conversation page is given
 interface ConversationScreenProps extends ScreenProps {
   // Who to talk with
@@ -111,6 +149,10 @@ interface ConversationScreenProps extends ScreenProps {
   listenDelayMs?: number;
   // How long "I wasn't finished" stays, in milliseconds (shorter in checks)
   undoMs?: number;
+  // How live step A opens (the route and AssemblyAI in the app, a fake in checks; decision 140)
+  openLive?: OpenLive;
+  // How a live conversation is settled
+  settleLive?: SettleLive;
 }
 
 // Draw the conversation with the persona named, or say they could not be found
@@ -133,7 +175,7 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
 }
 
 // The conversation itself
-function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
+function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, openLive = openLiveRoute, settleLive = settleLiveRoute, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
   // The repository once in the browser
   const { repo } = useScreenBasics(props);
   // The clock
@@ -144,8 +186,20 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const coach = useSyncExternalStore(subscribeToNothing, coachReady, () => false);
   // How a turn of yours ends, from Settings (automatically until read; decision 101)
   const [turnEnding, setTurnEnding] = useState<TurnEnding>(DEFAULT_TURN_ENDING);
-  // Whether turns end by themselves
-  const auto = turnEnding === "auto";
+  // Whether turns end by themselves (live falls back to this whenever it is not connected; decision 140)
+  const auto = turnEnding !== "tap";
+  // Whether live step A was chosen in Settings
+  const liveChosen = turnEnding === "live";
+  // Whether headphones are on, so talking over the persona stops them (decision 140; read outside drawing)
+  const headphonesRef = useRef(false);
+  // The live listener while connected (null otherwise)
+  const live = useRef<LiveTurns | null>(null);
+  // Whether live is connected, for drawing
+  const [liveOn, setLiveOn] = useState(false);
+  // The one plain line when live could not start or dropped
+  const [liveNote, setLiveNote] = useState("");
+  // Where the conversation is, for the live listener's events (which arrive outside drawing)
+  const phaseRef = useRef<Phase>("intro");
   // The turn's end-of-speech tracker while one is under way (null otherwise)
   const detector = useRef<TurnState | null>(null);
   // Whether to use the longer waits (an iPhone)
@@ -160,6 +214,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const pointerAt = useRef(Number.NEGATIVE_INFINITY);
   // The latest "done", for the readings to call
   const doneRef = useRef<(how: "tap" | "auto" | "timer") => Promise<void>>(async () => undefined);
+  // The latest "end", for the page hiding while live
+  const endRef = useRef<() => Promise<void>>(async () => undefined);
   // Each reading while recording: track the turn and end it when the person has finished
   const onReading = useCallback((reading: TakeReading) => {
     // Only while a turn is tracked
@@ -187,10 +243,21 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       void doneRef.current(step.end === "silence" ? "auto" : "timer");
     }
   }, []);
+  // The recorder's services: while live, each turn's words come from the live socket instead of the browser's speech recognition (decision 140)
+  const recorderServices = useMemo<RecordingServices>(() => ({ ...services, createTranscriber: () => live.current?.turnTranscriber() ?? services.createTranscriber() }), [services]);
   // The recorder, listening for words (its clock is this turn's; the whole conversation's is in the header)
-  const { recording, stopping, levels, elapsed: turnSeconds, problem, start, stop } = useTakeRecorder({ services, clock, raw: false, words: true, onReading });
+  const { recording, stopping, levels, elapsed: turnSeconds, problem, start, stop } = useTakeRecorder({ services: recorderServices, clock, raw: false, words: true, onReading });
   // Where the conversation is
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhaseState] = useState<Phase>("intro");
+  // Move to a phase: kept where the live listener's events can read it, and the live socket told what to send at once (the microphone on your turn; while the persona talks only with headphones, to notice you talking over them; silence otherwise, so their voice from a speaker is never heard as yours)
+  const setPhase = (next: Phase) => {
+    // Kept
+    phaseRef.current = next;
+    // Told
+    live.current?.setMode(liveModeFor(next, headphonesRef.current));
+    // Drawn
+    setPhaseState(next);
+  };
   // Their latest line, shown as they say it
   const [caption, setCaption] = useState("");
   // Whether your last turn was not caught
@@ -251,6 +318,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     repo.getSettings(clock()).then((settings) => {
       // Keep the choice while the page is open
       if (!cancelled) setTurnEnding(turnEndingOf(settings));
+      // And whether headphones are on
+      if (!cancelled) headphonesRef.current = settings.headphones === true;
     }).catch(() => {
       // Unreadable: the default stays
     });
@@ -283,13 +352,20 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     for (const line of persona.lines) services.prepareSpeech?.(line.id);
   }, [persona, services]);
 
-  // Stop the voice and every waiting step if the page closes mid-conversation
+  // Stop the voice and every waiting step if the page closes mid-conversation, and close a live socket (billed while open)
   useEffect(() => () => {
     // No longer running
     alive.current = false;
     // Quiet
     services.stopSpeaking?.();
-  }, [services]);
+    // The live socket, if open
+    const open = live.current;
+    // Forgotten
+    live.current = null;
+    // Closed and settled
+    if (open) void open.close().then((seconds) => settleLive(conversationId.current, seconds));
+  }, [services, settleLive]);
+
 
   // Seconds since the start
   const secondsIn = () => (startedAt.current ? (clock().getTime() - startedAt.current.getTime()) / 1000 : 0);
@@ -459,6 +535,70 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     return save();
   }
 
+  // Close the live socket and settle its minutes; with a reason, say in one line that turns now end on the phone (decision 140)
+  async function closeLive(why?: "dropped") {
+    // The socket, if open
+    const open = live.current;
+    // None
+    if (!open) return;
+    // Forgotten, so turns end on the phone from now on
+    live.current = null;
+    // Drawn as off
+    setLiveOn(false);
+    // Said
+    if (why) setLiveNote(liveRefusalLine(why, "a", "turns now end automatically"));
+    // Closed (billing stops), then settled
+    settleLive(conversationId.current, await open.close());
+  }
+
+  // Open live step A for this conversation, or say in one line why turns end automatically instead
+  async function goLive() {
+    // Nothing said yet
+    setLiveNote("");
+    // The service's events
+    const events: LiveEvents = {
+      // Your turn is over: end it as if it had ended by itself
+      onEndOfTurn: () => {
+        // Only during your turn
+        if (phaseRef.current === "you") void doneRef.current("auto");
+      },
+      // You talked over the persona (headphones): stop them and start your turn
+      onBargeIn: () => {
+        // Only while they talk
+        if (phaseRef.current === "them") interrupt();
+      },
+      // The socket dropped: turns end on the phone, and a turn under way ends with what was heard
+      onDropped: () => {
+        // Closed and said
+        void closeLive("dropped");
+        // A turn under way ends now
+        if (phaseRef.current === "you") void doneRef.current("auto");
+      },
+    };
+    // Opened, or why not
+    const result = await openLive(conversationId.current, events);
+    // Refused: said, and turns end automatically
+    if ("refused" in result) {
+      // Said
+      setLiveNote(liveRefusalLine(result.refused, "a", "turns end automatically"));
+      // Nothing more
+      return;
+    }
+    // The conversation ended while connecting: close at once
+    if (!alive.current) {
+      // Closed and settled
+      settleLive(conversationId.current, await result.live.close());
+      // Nothing more
+      return;
+    }
+    // Live
+    live.current = result.live;
+    // Told what to send now
+    result.live.setMode(liveModeFor(phaseRef.current, headphonesRef.current));
+    // Drawn as on
+    setLiveOn(true);
+  }
+
   // Your turn: start recording
   async function yourTurn() {
     // Stop if the conversation ended
@@ -478,10 +618,10 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // Nothing more
       return;
     }
-    // Recording: track the turn when turns end by themselves
-    if (started) detector.current = auto ? startTurn(clock().getTime()) : null;
+    // Recording: track the turn on the phone when turns end by themselves and live is not connected (live's own model ends it otherwise)
+    if (started) detector.current = auto && !live.current ? startTurn(clock().getTime()) : null;
     // Say whose turn it is
-    if (started) setAnnouncement(auto ? "Your turn. It ends when you stop talking, or tap Done." : "Your turn. Tap Done when you’ve finished.");
+    if (started) setAnnouncement(live.current ? "Your turn. It ends when you finish, or tap Done." : auto ? "Your turn. It ends when you stop talking, or tap Done." : "Your turn. Tap Done when you’ve finished.");
   }
 
   // Tap while they are talking: stop their line and start your turn (decision 101; no voice barge-in, since echo cancellation is doubtful on phone speakers)
@@ -659,6 +799,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     conservative.current = isIosSafari();
     // Recorded: the opening starts within this tap, which lets phones play the later lines too
     if (!written) {
+      // Live needs the coach: said in one line, and turns end automatically
+      setLiveNote(liveChosen ? liveRefusalLine("no-coach", "a", "turns end automatically") : "");
       // The opening, then your turn
       await sayRecorded([openingLine(persona, earlier ?? 0).id]);
       // Your turn
@@ -666,12 +808,16 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     }
     // Written: unlock the player within this tap, since the opening arrives over the network
     services.unlockSpeech?.();
+    // Live chosen: connect first (or say why not, and carry on with turns ending on the phone)
+    if (liveChosen) await goLive();
     // The opening
     const opening = await ask("open", true);
     // The coach could not be reached, or the month's minutes are used up: back to the start, with their recorded lines instead
     if (!opening || isRefusal(opening)) {
       // No longer running
       alive.current = false;
+      // No live socket left open
+      await closeLive();
       // Why
       setFellBackWhy(opening && opening.refused === "budget" ? "budget" : "unreachable");
       // Use the recordings
@@ -721,8 +867,10 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     alive.current = false;
     // Quiet
     services.stopSpeaking?.();
-    // A take under way
+    // A take under way (its last words read from the live socket first, if open)
     const take = await stop();
+    // The live socket closed, so billing stops
+    await closeLive();
     // Words from a reopened turn, joined to these
     const text = [carried.current?.text ?? "", take?.transcript.trim() ?? ""].filter(Boolean).join(" ");
     // Keep them, if any
@@ -743,6 +891,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     alive.current = false;
     // Show it
     setPhase("saving");
+    // The live socket closed first, so billing stops
+    await closeLive();
     // Nothing heard from you: nothing to save
     if (!turns.current.some((turn) => turn.who === "you" && turn.text.trim() !== "")) {
       // Say so
@@ -782,10 +932,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clock, recording]);
 
-  // Keep the readings' "done" current after each draw
+  // Keep the readings' "done" and the hiding page's "end" current after each draw
   useEffect(() => {
     // The newest
     doneRef.current = done;
+    // (and end)
+    endRef.current = end;
   });
 
   // Whether the conversation is under way
@@ -826,6 +978,32 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       document.removeEventListener("focusin", onFocus, true);
     };
   }, [clock, talking]);
+  // While live, the page hiding or closing ends the conversation and saves what was said: an installed iPhone app loses the microphone when hidden, and the socket is billed while it is open (decision 140)
+  useEffect(() => {
+    // Only while talking live
+    if (!talking || !liveOn) return;
+    // Hidden
+    const onVisibility = () => {
+      // Ended and saved
+      if (document.visibilityState === "hidden") void endRef.current();
+    };
+    // Closing
+    const onPageHide = () => {
+      // Ended and saved
+      void endRef.current();
+    };
+    // Listen
+    document.addEventListener("visibilitychange", onVisibility);
+    // (closing)
+    window.addEventListener("pagehide", onPageHide);
+    // Stop listening
+    return () => {
+      // Each one
+      document.removeEventListener("visibilitychange", onVisibility);
+      // (closing)
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [talking, liveOn]);
   // The situation's words, with the name filled in
   const named = (text: string) => scenarioText(text, persona);
 
@@ -855,7 +1033,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           {/* The coach could not be reached */}
           {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
           {/* How it works */}
-          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. {auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. Your browser turns your words into text, usually through Apple or Google.</p>
+          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. {liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. {liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
           {/* No speech-to-text in this browser */}
           {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
           {/* Start, or another situation */}
@@ -874,7 +1052,9 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       {(talking || phase === "saving") && (
         <section aria-labelledby="line-heading" className="mt-8 flex flex-col md:max-w-2xl">
           {/* Who, and where */}
-          <p className="text-footnote font-semibold text-accent">{persona.name} · {scenario.title}</p>
+          <p className="text-footnote font-semibold text-accent">{persona.name} · {scenario.title}{liveOn ? <span data-live="on"> · Live</span> : null}</p>
+          {/* Live could not start or dropped: why, in one line (decision 140) */}
+          {liveNote && <p role="status" data-live-note className="mt-2 max-w-[48ch] text-footnote text-ink-muted">{liveNote}</p>}
           {/* Their latest line, announced as it changes */}
           <h1 id="line-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold tracking-tight">{caption || "…"}</h1>
           {/* Not caught last time */}
@@ -907,7 +1087,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
           )}
           {/* What to do while recording: tap Done, or the countdown when turns end by themselves */}
           {recording && !auto && <p className="text-center text-footnote text-ink-muted md:text-left">Your turn. Tap Done when you’ve finished.</p>}
-          {recording && auto && <TurnCueLine cue={cue} />}
+          {recording && auto && !liveOn && <TurnCueLine cue={cue} />}
+          {recording && liveOn && <p data-live-turn className="mt-1 text-center text-footnote text-ink-muted md:text-left">Live. Your turn ends when you finish, or tap Done.</p>}
           {/* A turn that ended by itself, for a few seconds: carry on */}
           {canResume && (phase === "thinking" || phase === "them") && <p className="mt-3 text-center md:text-left"><button type="button" onClick={resume} className={SECONDARY}>I wasn’t finished</button></p>}
           {/* While developing: how long their first sound took after your turn ended */}
@@ -940,6 +1121,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       )}
     </main>
   );
+}
+
+// What the live socket sends in each phase (decision 140): the microphone on your turn; while the persona talks, the microphone only with headphones (to notice you talking over them); silence otherwise, so their voice from a speaker is never heard as yours
+function liveModeFor(phase: Phase, headphones: boolean): LiveMode {
+  // By phase
+  return phase === "you" ? "listen" : phase === "them" && headphones ? "barge" : "silence";
 }
 
 // What the countdown says, by where the turn is

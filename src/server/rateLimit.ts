@@ -9,6 +9,22 @@ export interface CounterStore {
   increment(key: string, windowSec: number): Promise<number>;
   // Read a counter without changing it (zero when it does not exist)
   read(key: string): Promise<number>;
+  // Add a whole amount at once and return the new total, starting the window on first use (optional: live minutes and voice characters use it, decisions 140 and 143; addToCounter falls back to adding one at a time)
+  add?(key: string, amount: number, windowSec: number): Promise<number>;
+}
+
+// Add a whole amount to a counter: in one step when the store can, otherwise one at a time
+export async function addToCounter(store: CounterStore, key: string, amount: number, windowSec: number): Promise<number> {
+  // Nothing to add: the total as it is
+  if (amount <= 0) return store.read(key);
+  // In one step
+  if (store.add) return store.add(key, amount, windowSec);
+  // The running total
+  let total = 0;
+  // One at a time
+  for (let step = 0; step < amount; step += 1) total = await store.increment(key, windowSec);
+  // The new total
+  return total;
 }
 
 // How many calls are allowed
@@ -68,6 +84,16 @@ export class MemoryCounterStore implements CounterStore {
   async read(key: string): Promise<number> {
     // The total, or zero when it was never counted
     return this.counts.get(key) ?? 0;
+  }
+
+  // Add a whole amount at once
+  async add(key: string, amount: number): Promise<number> {
+    // Work out the new total
+    const next = (this.counts.get(key) ?? 0) + amount;
+    // Save it
+    this.counts.set(key, next);
+    // Hand it back
+    return next;
   }
 }
 
@@ -131,6 +157,16 @@ export class UpstashCounterStore implements CounterStore {
     const count = await this.command(`incr/${encodeURIComponent(key)}`);
     // On first use, make the counter expire at the end of its window
     if (count === 1) await this.command(`expire/${encodeURIComponent(key)}/${windowSec}`);
+    // Hand back the new total
+    return count;
+  }
+
+  // Add a whole amount at once (Redis INCRBY), starting its expiry window on first use
+  async add(key: string, amount: number, windowSec: number): Promise<number> {
+    // Increase the counter by the amount
+    const count = await this.command(`incrby/${encodeURIComponent(key)}/${Math.round(amount)}`);
+    // On first use (the total is just this amount), make the counter expire at the end of its window
+    if (count === Math.round(amount)) await this.command(`expire/${encodeURIComponent(key)}/${windowSec}`);
     // Hand back the new total
     return count;
   }

@@ -1,17 +1,17 @@
 # Making "Talk with someone" feel live
 
 **Purpose:** How conversations are made to feel live, step by step, why each choice was made, and what is not done yet.
-**Status:** Steps 1 and 2 built, decisions 101 and 102 (2026-10-21). Step 3 not approved.
+**Status:** Steps 1 and 2 built, decisions 101 and 102 (2026-10-21). Step 3 approved on 2026-10-22 ("make a plan and let it rip"): 3a built as Live (beta), decision 140.
 
 ## What the user asked for
 
-Conversations without tapping Done at the end of every turn, and replies that come sooner. The research (October 2026, "Making Talk with someone live") proposed three steps; the user approved steps 1 and 2 only.
+Conversations without tapping Done at the end of every turn, and replies that come sooner. The research (October 2026, "Making Talk with someone live") proposed three steps; the user approved steps 1 and 2 first, then step 3 on 2026-10-22, both live options behind Settings choices with monthly minute budgets.
 
 | Step | What | Cost | Status |
 |------|------|------|--------|
 | 1 | Turns end by themselves, worked out on the phone; Done stays; "I wasn't finished"; tap to interrupt | Nothing | Built (decision 101) |
 | 2 | Faster, cheaper replies: timings first, the persona's line streamed sentence by sentence into streaming speech, a listening sound at once, a faster voice model, minute budgets | Saves money with the faster voice model | Built (decision 102) |
-| 3 | Fully live: streaming speech-to-text (AssemblyAI) or ElevenLabs Agents, voice barge-in | $0.30 to $10 a month for one user | **Not approved; not to be built** |
+| 3a | Live (beta): AssemblyAI streaming speech-to-text decides when your turn ends; our own reply flow (streamed Claude and Turbo) is unchanged; talking over the persona with headphones | About $0.15 an hour of open socket; 150 minutes a month by default | Built (decision 140) |
 
 ## Step 1: turns that end by themselves
 
@@ -32,10 +32,20 @@ Conversations without tapping Done at the end of every turn, and replies that co
 - **Voice model:** the Turbo model by default (`CONVERSATION_VOICE_MODEL=turbo`), the expressive one with `v4`.
 - **Caps:** five minutes (or 40 lines) per conversation, and 150 conversation minutes a month by default (`CONVERSATION_MINUTES_PER_MONTH`), counted on the server; Settings shows the minutes left. With none left, the people use their recorded lines.
 
-## What to measure before step 3 (not built yet)
+## Step 3a: Live (beta), AssemblyAI streaming
+
+- **Settings → Conversation turns → Ending your turn:** Tap when done, Automatically (the default) or **Live (beta)**. With Live, an "I'm using headphones" switch. Live needs the coach (a saved passphrase); without it, or whenever Live cannot connect, turns end automatically and one plain line says why.
+- **Starting:** inside the Start tap the player is unlocked, then `POST /api/live` (passphrase, body, set up, rate limit, the month's live minutes, in that order) asks AssemblyAI for a single-use token (`GET /v3/token`, `expires_in_seconds` 60, `max_session_duration_seconds` the minutes reserved, at most 300) and reserves those minutes. The page opens `wss://streaming.assemblyai.com/v3/ws` with the token, 16 kHz 16-bit PCM, `universal-streaming-english`, and patient turn settings (`end_of_turn_confidence_threshold` 0.6, `min_turn_silence` 560 ms, `max_turn_silence` 2,400 ms; `format_turns` off). It waits up to 5 s for `Begin`.
+- **One socket per conversation:** the microphone (echo cancellation on) goes through a 16 kHz audio graph in chunks of at least 100 ms. On your turn the microphone is sent; while the persona talks, silence (so a speaker's sound is never your words), or with headphones the microphone, where real words (not "mm-hm") stop the persona and start your turn. Tap to interrupt stays.
+- **A turn:** its words come from the socket's `Turn` messages; a `Turn` with `end_of_turn` and words ends it (the same path as an automatic end, so "I wasn't finished" works). Done mid-sentence sends `ForceEndpoint` and waits up to 1.5 s for the last words. Then the usual reply: streamed Claude into Turbo (decision 102).
+- **Closing** (billing stops): `Terminate` and close on the conversation's end or save, the page hiding or closing (which also ends and saves the conversation), the page closing mid-conversation, an error, the socket dropping, and the vendor's own cap at the reserved time. `POST /api/live/end` then hands back the reserved minutes not used, once.
+- **Falling back:** over budget, not set up, offline, no passphrase, the token route or socket failing: one line ("This month's live minutes are used up, so turns end automatically.") and automatic turns. A drop mid-conversation ends the turn under way with what was heard and says "The live connection dropped, so turns now end automatically."
+
+## What to measure (steps 1 to 3a)
 
 - How often "I wasn't finished" is tapped (target: under one turn in ten), split by iPhone and computer.
 - How long after the last word a turn ends.
 - How often people still tap Done in automatic mode.
 - The first-sound time from the server logs and the development readout: p50 and p90 (target p50 under 1.5 s).
 - Whether the Turbo voice sounds as good as the expressive one on the persona lines (a blind comparison of about 20 lines).
+- Live (beta): how often "I wasn't finished" is tapped after a live end of turn, against automatic; live minutes per conversation against the five reserved; the AssemblyAI bill against Settings' estimate; iPhone against computer.

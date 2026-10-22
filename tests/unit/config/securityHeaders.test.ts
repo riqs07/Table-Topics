@@ -12,7 +12,7 @@ describe("security headers", () => {
     // The production policy, split into directives
     const live = contentSecurityPolicy(false).split("; ");
     // Confirm the directives
-    expect(live).toEqual(["default-src 'self'", "script-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self'", "font-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "worker-src 'self'", "manifest-src 'self'"]);
+    expect(live).toEqual(["default-src 'self'", "script-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self' wss://streaming.assemblyai.com", "font-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "worker-src 'self'", "manifest-src 'self'"]);
     // Confirm eval only while developing
     expect([contentSecurityPolicy(false).includes("unsafe-eval"), contentSecurityPolicy(true).includes("'unsafe-eval'")]).toEqual([false, true]);
   });
