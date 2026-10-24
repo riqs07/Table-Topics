@@ -23,12 +23,38 @@ const NOW = new Date(2026, 9, 15, 10);
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
+// Open "More ways to practise", where the groups live (decision 125)
+async function openMore(): Promise<void> {
+  // Tap it
+  fireEvent.click(await screen.findByRole("button", { name: "More ways to practise" }));
+}
+
 // Group the checks about the Practice page
 describe("PracticeScreen", () => {
+  // The six that do the most work come first, and everything else waits under "More ways to practise" (decision 125)
+  it("shows the six main ways to practise, with the rest one tap away", async () => {
+    // Draw the page
+    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The main list's rows as [name, address]
+    const main = within(await screen.findByRole("list", { name: "Main ways to practise" })).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
+    // Confirm the six, in order
+    expect(main).toEqual([["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Tell a story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Weekly check-in", "/check-in"], ["Talk with someone", "/conversations"], ["Read aloud", "/skills"]]);
+    // The rest is closed: no groups yet
+    const more = screen.getByRole("button", { name: "More ways to practise" });
+    // Closed at first
+    const before = [more.getAttribute("aria-expanded"), screen.queryByRole("heading", { name: "Your voice" })];
+    // Open it
+    fireEvent.click(more);
+    // Confirm closed, then the groups open
+    expect([before, screen.getByRole("button", { name: "Fewer ways to practise" }).getAttribute("aria-expanded"), !!screen.getByRole("heading", { name: "Your voice" })]).toEqual([["false", null], "true", true]);
+  });
+
   // Each group shows its first few rows, each leading to its own screen, with "See all" for the rest (decision 108)
   it("shows each group's first few rows, each leading to its own screen", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Open the rest, where the groups are
+    await openMore();
     // A group's rows as [name, address] ("See all" first, where it is a link)
     const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
     // Confirm the stories group, second on the page, with today's story, telling one again and guided stories, the moments under "See all" (decision 92)
@@ -45,6 +71,8 @@ describe("PracticeScreen", () => {
   it("opens the rest of speaking on the spot in place", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Open the rest, where the groups are
+    await openMore();
     // The group
     const spot = within((await screen.findByRole("heading", { name: "Speak on the spot" })).closest("section") as HTMLElement);
     // Its "See all"
@@ -67,6 +95,8 @@ describe("PracticeScreen", () => {
     await repository.saveSession(makeSession({ id: "v", mode: "voice", promptId: "v01" }));
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
+    // Open the rest, where the groups are
+    await openMore();
     // The voice group
     const voice = within((await screen.findByRole("heading", { name: "Your voice" })).closest("section") as HTMLElement);
     // Confirm pitch and tone now follow the warm-up
@@ -77,6 +107,8 @@ describe("PracticeScreen", () => {
   it("puts Read aloud under Speak on the spot, with no openings drill and no Build a skill group", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Open the rest, where the groups are
+    await openMore();
     // The on-the-spot group
     const spot = (await screen.findByRole("heading", { name: "Speak on the spot" })).closest("section") as HTMLElement;
     // Confirm Read aloud is there, and no openings row, Build a skill group or lesson link anywhere
@@ -91,6 +123,8 @@ describe("PracticeScreen", () => {
     for (const lesson of SMALL_TALK_LESSONS.filter((item) => ["answering", "asking", "listening", "news"].includes(item.unit))) await repository.saveSession(makeSession({ id: lesson.id, mode: "smalltalk", promptId: lesson.id }));
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
+    // Open the rest, where the groups are
+    await openMore();
     // The unit's row, once the answers are read
     const row = await screen.findByRole("link", { name: /^Reading the room/ });
     // Confirm where it leads and what it says next
@@ -119,6 +153,8 @@ describe("PracticeScreen", () => {
     await repository.saveTalk(makeTalk({ id: "pitch", title: "Pitch", eventDate: "2026-10-17" }));
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
+    // Open the rest, where the groups are
+    await openMore();
     // Wait for the page
     await screen.findByRole("heading", { name: "Speak on the spot" });
     // Confirm no talks section and no link to rehearse
@@ -133,6 +169,8 @@ describe("PracticeScreen", () => {
     await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["voice", "talk"] });
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
+    // Open the rest, where the groups are
+    await openMore();
     // Wait for the order to follow the focus
     await waitFor(() => expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)[0]).toBe("Your voiceYour focus"));
     // The headings in order

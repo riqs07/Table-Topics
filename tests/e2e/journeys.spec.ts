@@ -304,6 +304,8 @@ test("Focus: the welcome's pick steers Today, Practice and Learn", async ({ page
   await expect(page.getByRole("link", { name: /^Step 3: (Story|Guided story)$/ })).toBeVisible();
   // Practice puts Tell stories first
   await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
   // (its first heading)
   await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^Tell stories\s*Your focus$/);
   // Learn opens with the focus sets
@@ -444,6 +446,8 @@ test("Small talk: listen to a story and see it afterwards", async ({ page }) => 
   await useStandIns(page, "no way you missed your stop and your boss was waiting that must have been so awkward");
   // Start at Practice
   await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
   // Every unit is under "See all" (decision 95)
   await page.getByRole("region", { name: "Everyday conversation" }).getByRole("link", { name: "See all" }).click();
   // Open the Listening unit
@@ -476,6 +480,8 @@ test("Reading the room: read a moment, say what you'd say, see the beats", async
   await useStandIns(page, "you seem a bit busy do you need to go no worries if so");
   // Start at Practice
   await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
   // Every unit
   await page.getByRole("region", { name: "Everyday conversation" }).getByRole("link", { name: "See all" }).click();
   // Open Reading the room
@@ -562,6 +568,8 @@ test("One moment a day: record a note and see it on the Small talk page", async 
   await useStandIns(page, "I fixed the bike chain myself and rode to the river");
   // Start at Practice
   await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
   // Record today's moment from its row
   await page.getByRole("link", { name: /^One moment a day/ }).click();
   // Start speaking
@@ -584,6 +592,8 @@ test("Your voice: warm up, then a volume drill", async ({ page }) => {
   await useStandIns(page);
   // Start at Practice
   await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
   // The warm-up row
   await page.getByRole("link", { name: /^Warm-up/ }).click();
   // Start the routine
@@ -957,6 +967,8 @@ test("Stories: pick a prompt, choose a shape, tell it, then tell it again and co
   await useStoryCoach(page);
   // From Practice
   await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
   // Into Stories
   await page.getByRole("region", { name: "Tell stories" }).getByRole("link", { name: "See all" }).click();
   // Open a group of prompts
@@ -1051,6 +1063,8 @@ test("Practice: Read aloud is under Speak on the spot, and Openings and closings
   await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
   // Practice, loaded directly
   await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
   // The on-the-spot group
   const spot = page.getByRole("region", { name: "Speak on the spot" });
   // Read aloud is there
@@ -1075,6 +1089,8 @@ test("Practice: every kind of practice is within two taps", async ({ page }) => 
   for (const [row, address] of [["Free talk", /\/session\?mode=free/], ["Short speech", /\/practice\/outline/]] as const) {
     // Practice
     await page.goto("/practice");
+    // The rest of the ways to practise, opened (decision 125)
+    await page.getByRole("button", { name: "More ways to practise" }).click();
     // The group
     const spot = page.getByRole("region", { name: "Speak on the spot" });
     // Tap one
@@ -1088,6 +1104,8 @@ test("Practice: every kind of practice is within two taps", async ({ page }) => 
   for (const [fold, drill] of [["Clear sounds", "Everyday tricky words"], ["Volume", "Three rooms"], ["Pitch and stress", "Statement or question"], ["Tone", "I have some news"], ["Pausing", "Before the point"], ["Shadowing", "Ask not"]] as const) {
     // Practice
     await page.goto("/practice");
+    // The rest of the ways to practise, opened (decision 125)
+    await page.getByRole("button", { name: "More ways to practise" }).click();
     // Tap one
     await page.getByRole("region", { name: "Your voice" }).getByRole("link", { name: "See all" }).click();
     // Tap two
@@ -1140,6 +1158,8 @@ test("Guided story: pick one, tell it, see what you added, then tell it again", 
   await useGuidedCoach(page);
   // From Practice, the guided stories row
   await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
   // Into the guided stories
   await page.getByRole("region", { name: "Tell stories" }).getByRole("link", { name: /^Guided stories/ }).click();
   // The section with its honest line
