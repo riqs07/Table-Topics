@@ -1,5 +1,5 @@
 "use client";
-// Practice, slimmer (decision 125): the six kinds of practice that do the most work first (Rapid Fire, a prepared speech, a story, the weekly check-in, talking with someone and reading aloud), and everything else one tap away under "More ways to practise". Inside it, as before: every kind of practice in one place, grouped, the groups of what the user wants to get better at first (decision 97; the conversation units as the next one and "See all", decision 95; stories second, decision 92; Read aloud with speaking on the spot and the openings drill reached from Today instead, decision 93), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61); each group shows its first few rows, the most relevant first, with "See all" for the rest, decision 108
+// Practice, slimmer (decision 125): the five kinds of practice that do the most work first (Rapid Fire, a prepared speech, a story, talking with someone and reading aloud; the weekly check-in comes to Today on its day, decision 100), and everything else one tap away under "More ways to practise". Inside it, as before: every kind of practice in one place, grouped, the groups of what the user wants to get better at first (decision 97; the conversation units as the next one and "See all", decision 95; stories second, decision 92; Read aloud with speaking on the spot and the openings drill reached from Today instead, decision 93), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61); each group shows its first few rows, the most relevant first, with "See all" for the rest, decision 108
 
 // Load Next.js's link component
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { ArrowCounterClockwiseIcon, CalendarCheckIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the Connect units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the next Connect unit (decision 95)
@@ -43,8 +43,6 @@ import { TEXT_LINK } from "@/components/script/Buttons";
 import { PAGE } from "@/components/script/layout";
 // Load React's fragment, to place the groups in order
 import { Fragment, type ReactNode } from "react";
-// Load the check-in's length
-import { CHECK_IN_MINUTES } from "@/core/checkIn";
 // Load what the user wants to get better at most, and the order it gives the groups (decision 97)
 import { focusAreas, orderPracticeGroups, readPracticeFocus, type FocusAreaId, type PracticeGroupId } from "@/core/practiceFocus";
 
@@ -216,7 +214,7 @@ export function PracticeScreen(props: ScreenProps) {
     shadowing: { name: "Shadowing", detail: `Next: ${nextShadow.title}`, href: `/voice/shadow?id=${nextShadow.id}`, icon: RepeatIcon },
   };
 
-  // The six that do the most work, always shown (decision 125)
+  // The five that do the most work, always shown (decision 125)
   const core: Way[] = [
     // A surprise question
     { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon },
@@ -224,8 +222,6 @@ export function PracticeScreen(props: ScreenProps) {
     { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
     // Today's story, with the user's own stories a tap further
     { name: "Tell a story", detail: story ? `Today: ${story.title}` : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon },
-    // The weekly check-in
-    { name: "Weekly check-in", detail: `The same four parts each week, about ${CHECK_IN_MINUTES} min`, href: "/check-in", icon: CalendarCheckIcon },
     // A whole conversation, out loud
     { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon },
     // Reading aloud
@@ -333,7 +329,7 @@ export function PracticeScreen(props: ScreenProps) {
       {/* The page's name, and how it relates to Today */}
       <PageTitle title="Practice">Pick one and speak. Your steps for the day are on Today.</PageTitle>
 
-      {/* The six that do the most work (decision 125) */}
+      {/* The five that do the most work (decision 125) */}
       <ul aria-label="Main ways to practise" className={`mt-6 ${CARD_LIST}`}>
         {/* Each one */}
         {core.map((way) => <li key={way.name}><WayRow way={way} /></li>)}

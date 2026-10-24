@@ -108,8 +108,8 @@ test("Weekly check-in: a first one, a second a week later, then compare and hear
   await page.getByRole("link", { name: "Compare with your first" }).click();
   // The comparison: four parts
   await expect(page.locator("section[data-part]")).toHaveCount(4);
-  // Two recordings each, all playable
-  await expect(page.getByRole("button", { name: /^Play (then|now)/ })).toHaveCount(8);
+  // Two recordings each, all playable (counted outside the "Then and now" pitch cards, which load in later with their own Play then and Play now, so the count never depends on timing)
+  await expect(page.getByRole("button", { name: /^Play (then|now)/ }).and(page.locator("section[data-part] button:not([data-last-this] *)"))).toHaveCount(8);
   // What changed, in words, first
   await expect(page.getByRole("list", { name: "What changed, Read aloud" }).getByRole("listitem")).not.toHaveCount(0);
   // The reading's measures, folded away under "All numbers" (decision 103)

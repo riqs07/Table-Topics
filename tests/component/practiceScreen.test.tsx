@@ -31,14 +31,14 @@ async function openMore(): Promise<void> {
 
 // Group the checks about the Practice page
 describe("PracticeScreen", () => {
-  // The six that do the most work come first, and everything else waits under "More ways to practise" (decision 125)
-  it("shows the six main ways to practise, with the rest one tap away", async () => {
+  // The five that do the most work come first (the check-in comes to Today on its day), and everything else waits under "More ways to practise" (decision 125)
+  it("shows the five main ways to practise, with the rest one tap away", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // The main list's rows as [name, address]
     const main = within(await screen.findByRole("list", { name: "Main ways to practise" })).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
-    // Confirm the six, in order
-    expect(main).toEqual([["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Tell a story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Weekly check-in", "/check-in"], ["Talk with someone", "/conversations"], ["Read aloud", "/skills"]]);
+    // Confirm the five, in order, with no check-in row
+    expect(main).toEqual([["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Tell a story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Talk with someone", "/conversations"], ["Read aloud", "/skills"]]);
     // The rest is closed: no groups yet
     const more = screen.getByRole("button", { name: "More ways to practise" });
     // Closed at first
