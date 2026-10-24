@@ -78,3 +78,15 @@ test("History rows show each take's tiny fingerprint, older takes' made at idle"
     return page.locator("[data-mini-fingerprint]").count();
   }, { timeout: 20_000 }).toBe(4);
 });
+
+// Every chart, for the week of testing (decision 124)
+test("a three-minute speech draws every chart it can under its own views", async ({ page }) => {
+  // The seeded takes
+  await seedTakes(page, lensSeed());
+  // Its page
+  await page.goto("/sessions?id=seeded-speech");
+  // The section
+  const trial = page.getByRole("region", { name: "Every chart (trial)" });
+  // The flow ribbon, the endings and the shape of the take
+  await expect(trial.locator("[data-trial-chart='flow'], [data-trial-chart='endings'], [data-trial-chart='shape']")).toHaveCount(3);
+});

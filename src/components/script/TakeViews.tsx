@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import { VoiceSection } from "@/components/script/VoiceSection";
 // Load the lens views
 import { ClarityLensView, LensEmpty, LookCloser, PaceLensView, PausesLensView, WordsLensView, type PlayFrom } from "@/components/script/LensViews";
+// Load every chart, for the week of testing (decision 124)
+import { ChartTrial } from "@/components/script/ChartTrial";
 // Load the at-a-glance views
 import { BestMomentCard, EnergyArcCard, FingerprintCard, StoryShapeStrip } from "@/components/script/TakeGlance";
 // Load the shared heading look
@@ -143,7 +145,7 @@ export function TakeViews({ repo, session, sessions, usual, hide, fluency, pause
     // The story's shape (word times only when they line up one to one with the words)
     const shape = plan.views.includes("story-shape") ? storyShape({ transcript: session.transcript, times: session.spokenTimes && session.spokenTimes.length === session.transcript.split(/\s+/).filter((piece) => piece !== "").length ? session.spokenTimes : null, durationSec: session.durationSec, beats: session.feedback?.story?.beats ?? null }) : null;
     // Everything
-    return { text, pauses, pace, words, clarity, print, moment, arc, shape };
+    return { text, pauses, pace, words, clarity, print, moment, arc, shape, phrases };
   }, [ready, session, serverWords, script, sessions, analysis, plan, pauseWords]);
   // Whether the lens tabs are open: open from the start on a long take
   const [open, setOpen] = useState(plan.views.includes("lens-tabs"));
@@ -271,6 +273,8 @@ export function TakeViews({ repo, session, sessions, usual, hide, fluency, pause
       {found.moment && <BestMomentCard moment={found.moment} onPlay={session.audioKey ? playRange : null} />}
       {/* The energy arc */}
       {found.arc && <EnergyArcCard arc={found.arc} />}
+      {/* Every chart, for a week of testing (decision 124; not for a drill or a conversation, which keep their own pictures, nor a take whose readings were dropped) */}
+      {session.mode !== "voice" && session.mode !== "conversation" && !session.trimmedAt && <ChartTrial session={session} sessions={sessions} usual={usual} text={found.text} pauses={found.pauses} pace={found.pace} phrases={found.phrases} pauseWords={pauseWords} onPlay={onPlay} />}
     </>
   );
 }

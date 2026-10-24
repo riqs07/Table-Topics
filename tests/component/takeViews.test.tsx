@@ -285,3 +285,37 @@ describe("History and Your progress", () => {
     expect([screen.getByText(/175 words\/min · faster than usual/), screen.getByRole("img", { name: /^Your usual overall pace/ })].every(Boolean)).toBe(true);
   });
 });
+
+describe("every chart, for the week of testing (decision 124)", () => {
+  // A short take draws what it can and lists the rest
+  it("draws each chart the take can, lists the ones it cannot, and plays an ending from its start", async () => {
+    // Playing is stood in
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    // The zoo story as a Rapid Fire answer, with the service's words
+    const session = madeSession("trial", zoo, { mode: "talk", promptId: "t001", audioKey: "audio-trial" });
+    // Drawn
+    render(<SessionScreen sessionId="trial" repository={await repositoryWith([session], { trial: zoo })} now={NOW} />);
+    // The section
+    const section = await screen.findByRole("region", { name: "Every chart (trial)" });
+    // The charts drawn from this one take
+    expect([...section.querySelectorAll("[data-trial-chart]")].map((chart) => chart.getAttribute("data-trial-chart"))).toEqual(expect.arrayContaining(["line", "flow", "loud", "endings", "emphasis"]));
+    // The ones needing earlier takes are listed with why
+    expect(within(section.querySelector<HTMLElement>("[data-trial-missing]")!).getByText(/Today vs your usual: needs 5 earlier takes/)).toBeTruthy();
+    // Tap the ending that rose
+    fireEvent.click(within(within(section).getByRole("list", { name: "How each sentence ended" })).getByRole("button", { name: /me rose/ }));
+    // It plays
+    await waitFor(() => expect(play).toHaveBeenCalled());
+  });
+
+  // An older take whose readings were dropped
+  it("is left out when the take's readings were dropped", async () => {
+    // A trimmed take
+    const session = madeSession("old-trial", zoo, { mode: "talk", promptId: "t001", trimmedAt: "2026-09-01T00:00:00.000Z", pitch: undefined, loudness: undefined, spokenTimes: undefined });
+    // Drawn
+    render(<SessionScreen sessionId="old-trial" repository={await repositoryWith([session])} now={NOW} />);
+    // The trimmed note shows, the trial does not
+    await screen.findByText(/Detailed charts aren’t kept/);
+    // No section
+    expect(screen.queryByRole("region", { name: "Every chart (trial)" })).toBeNull();
+  });
+});
