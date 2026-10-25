@@ -22,7 +22,7 @@ import { checkInDayOf } from "@/core/checkIn";
 // Load the reader for a short speech's plan
 import { outlineFromQuery } from "@/core/outline";
 // Load the story choice checks and today's story prompt (decision 92)
-import { isStoryFocus, isStoryLength, isStoryShape, storyPromptForDay } from "@/content/stories";
+import { storyPromptForDay, storyTakeFromQuery } from "@/content/stories";
 // Load the text loader, so a speech part's text is loaded before the screen shows (decision 88)
 import { useReading } from "@/components/screens/useReading";
 // Load the loading frame and the buttons' look
@@ -41,8 +41,6 @@ export function RecordingFromAddress() {
   const mode = isSessionMode(named) ? named : "standard";
   // The prompt in the address, or today's (free talk and a short speech have no prompt; decision 73)
   const promptId = params.get("prompt") ?? (mode === "free" || mode === "outline" ? mode : mode === "story" ? storyPromptForDay(new Date()).id : promptForDay(new Date()).id);
-  // A story's shape, focus and length from the address, each only when it is a known one (decision 92)
-  const [shape, focus, length] = [params.get("shape"), params.get("focus"), params.get("length")];
   // Inside the weekly check-in: its id and part, only when both are real (decision 100)
   const [checkInId, part] = [params.get("checkin"), params.get("part")];
   // (both checked)
@@ -94,8 +92,8 @@ export function RecordingFromAddress() {
       checkIn={checkIn}
       // A round of a 4/3/2 loop
       loop={loop}
-      // A story's set-up (Classic, no focus and full length when the address has none)
-      story={mode === "story" ? { shape: isStoryShape(shape) ? shape : "classic", focus: isStoryFocus(focus) ? focus : null, length: isStoryLength(length) ? length : "full" } : null}
+      // A story's set-up: its template (the suggested one when the address has none), any focus and its length (decisions 92 and 126)
+      story={mode === "story" ? storyTakeFromQuery(params, promptId) : null}
       // Full session or warm-up
       mode={mode}
       // The session being retried, if any

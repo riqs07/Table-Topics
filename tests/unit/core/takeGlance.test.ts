@@ -1,11 +1,10 @@
-// A take at a glance (decision 115): the fingerprint and its tiny copy, the best moment (including the "nothing good" case), the energy arc, a story's shape, a conversation's timeline, the usual zone
+// A take at a glance (decision 115): the fingerprint and its tiny copy, the best moment (including the "nothing good" case), the energy arc, a conversation's timeline, the usual zone
 import { describe, expect, it } from "vitest";
 // Load the pieces
 import { fingerprintHeadline, miniFingerprint, sessionMiniFingerprint, stripStretches, takeFingerprint } from "@/core/fingerprint";
 import { MINI_BINS, isMiniFingerprint, miniStretches } from "@/core/miniFingerprint";
 import { bestMoment } from "@/core/bestMoment";
 import { arcLine, energyArc } from "@/core/energyArc";
-import { quoteAt, storyShape } from "@/core/storyShape";
 import { conversationTimeline } from "@/core/conversationTimeline";
 import { usualZones } from "@/core/usualZone";
 import { pitchWords } from "@/core/pitchPhrases";
@@ -177,50 +176,6 @@ describe("the energy arc", () => {
   it("draws nothing without enough voice in each third", () => {
     // Silence
     expect(energyArc(Array(300).fill(0), Array(300).fill(null), 100)).toBeNull();
-  });
-});
-
-describe("a story's shape", () => {
-  // Finding a quote
-  it("finds a quote by its first words", () => {
-    // In order
-    expect(quoteAt(["so", "then", "the", "guard", "came", "through"], "the guard came through")).toBe(2);
-    // Missing
-    expect(quoteAt(["a", "b"], "zebra")).toBe(-1);
-  });
-
-  // From the coach's beats
-  it("places the parts from the coach's beats, in time when the words have times", () => {
-    // Twenty words at a second each
-    const transcript = "we were stuck outside reading at six with no news but then the guard came through and said two minutes since then I always carry a charger";
-    // Each word's time
-    const times = transcript.split(" ").map((_, index) => index);
-    // The shape
-    const shape = storyShape({ transcript, times, durationSec: 28, beats: [{ beat: "turn", quote: "but then the guard came through" }, { beat: "meaning", quote: "since then I always carry a charger" }] })!;
-    // Set-up, turn, point
-    expect(shape.parts.map((part) => [part.part, Math.round(part.share * 100), part.at])).toEqual([["setup", 36, 0], ["turn", 36, 10], ["point", 29, 20]]);
-    // From the coach
-    expect(shape.source).toBe("coach");
-    // The line
-    expect(shape.line).toBe("The turn came 36% of the way in.");
-  });
-
-  // From the phone's checks, and a long set-up
-  it("falls back to the phone's checks, in words, and suggests getting to the turn sooner", () => {
-    // A long set-up, then "but", then a point
-    const transcript = "so on saturday morning I got up early and made coffee and walked to the park and sat on a bench for a while but a dog stole my sandwich since then I always eat first";
-    // The shape
-    const shape = storyShape({ transcript, durationSec: 20 })!;
-    // From the phone, set-up first
-    expect([shape.source, shape.parts.map((part) => part.part)]).toEqual(["phone", ["setup", "turn", "point"]]);
-    // The line
-    expect(shape.line).toMatch(/^The set-up took \d+% of your story\. Get to the turn by the halfway mark: try “Start in the middle”\.$/);
-  });
-
-  // Nothing placed
-  it("is hidden when neither the coach nor the checks found a turn or a point", () => {
-    // A list of things
-    expect(storyShape({ transcript: "we went to the shop and bought bread and milk and eggs", durationSec: 6 })).toBeNull();
   });
 });
 

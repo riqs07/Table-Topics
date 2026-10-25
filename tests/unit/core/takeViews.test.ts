@@ -126,12 +126,12 @@ describe("takeViews: drills and lessons show only their own view", () => {
     expect(takeViews(take("conversation", 200))).toMatchObject({ rule: "focus", views: ["conversation"], lookCloser: false });
   });
 
-  // A story: its shape, then the length rule
-  it("shows a story's shape strip, plus the long-take views on a long story", () => {
+  // A story: the length rule only, its beats being on the results above (decision 126)
+  it("gives a story the length rule's views, with no shape strip", () => {
     // A short story
-    expect(takeViews(take("story", 45)).views).toEqual(["story-shape", "pitch-text"]);
+    expect(takeViews(take("story", 45)).views).toEqual(["pitch-text"]);
     // A long one
-    expect(takeViews(take("story", 170)).views).toEqual(["story-shape", "fingerprint", "lens-tabs", "best-moment", "energy-arc"]);
+    expect(takeViews(take("story", 170)).views).toEqual(["fingerprint", "lens-tabs", "best-moment", "energy-arc"]);
   });
 });
 

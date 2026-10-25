@@ -14,14 +14,14 @@ import type { LiveText, RecordingServices } from "@/audio/services";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository, type Repository } from "@/data/repository";
 // Load the story prompts
-import { STORY_GROUPS, storyPromptForDay } from "@/content/stories";
+import { STORY_GROUPS, findStoryTemplate, storyPromptForDay, suggestedTemplate } from "@/content/stories";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
 
 // A fixed "now"
 const NOW = new Date(2026, 9, 21, 18);
-// A told story's set-up
-const TAKE = { shape: "but-therefore", focus: "dialogue", length: "short" } as const;
+// A told story's set-up: a client win, with a Learn card's focus carried in (decision 126)
+const TAKE = { template: "client-win", focus: "dialogue", length: "short" } as const;
 // A flat telling
 const FLAT = "so basically we went to the shop on the corner and then we bought some bread and came home after";
 // A good telling
@@ -76,6 +76,18 @@ describe("StoriesScreen", () => {
     expect([await screen.findByText("Stories you tell land here, ready to tell again."), screen.getByRole("link", { name: "Record today’s moment" }).getAttribute("href"), STORY_GROUPS.every((group) => screen.getByText(group.name))]).toEqual([expect.anything(), "/session?mode=moment&prompt=moment", true]);
   });
 
+  // Today's story with its suggested template and Tell it, then the four templates, each starting today's story with it (decision 126)
+  it("offers today's story with its suggested template, and the templates", async () => {
+    // Draw it
+    render(<StoriesScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Today's card
+    const today = await screen.findByRole("region", { name: "Today’s story" });
+    // The templates
+    const templates = within(screen.getByRole("list", { name: "Templates" })).getAllByRole("link").map((link) => link.getAttribute("href"));
+    // Confirm the suggestion, Tell it, and the four templates' addresses
+    expect([within(today).getByText(/^Suggested template: /).textContent, within(today).getByRole("link", { name: "Tell it" }).getAttribute("href"), templates]).toEqual([`Suggested template: ${findStoryTemplate(suggestedTemplate(storyPromptForDay(NOW).id)).name}`, `/stories/tell?prompt=${storyPromptForDay(NOW).id}`, ["lesson", "client-win", "turning-point", "funny"].map((id) => `/stories/tell?prompt=${storyPromptForDay(NOW).id}&template=${id}`)]);
+  });
+
   // The library lists each story by title, how often, the takeaway and "Tell it again" from its latest telling; moment notes offer "Tell it properly"
   it("lists your stories with Tell it again, and your moments to tell properly", async () => {
     // Two tellings of one story, and a moment note
@@ -85,7 +97,7 @@ describe("StoriesScreen", () => {
     // The story's row
     const row = within(await screen.findByRole("list", { name: "Your stories" })).getByRole("listitem");
     // Confirm the title, count, takeaway, the retelling's address and the moment's
-    expect([within(row).getByText("Running late"), within(row).getByText(/Told twice/), within(row).getByText("Say her words exactly."), within(row).getByRole("link", { name: "Tell “Running late” again" }).getAttribute("href"), screen.getByRole("link", { name: /Tell it properly: the kettle sang at dawn/ }).getAttribute("href")]).toEqual([expect.anything(), expect.anything(), expect.anything(), "/session?mode=story&prompt=sp04&retryOf=b", "/stories/tell?moment=m1"]);
+    expect([within(row).getByText("Running late"), within(row).getByText(/Client win · Told twice/), within(row).getByText("Say her words exactly."), within(row).getByRole("link", { name: "Tell “Running late” again" }).getAttribute("href"), screen.getByRole("link", { name: /Tell it properly: the kettle sang at dawn/ }).getAttribute("href")]).toEqual([expect.anything(), expect.anything(), expect.anything(), "/session?mode=story&prompt=sp04&retryOf=b", "/stories/tell?moment=m1"]);
   });
 
   // A story's title can be changed
@@ -133,28 +145,28 @@ describe("StoriesScreen", () => {
 
 // Group the checks about setting up a story
 describe("TellStoryScreen", () => {
-  // Classic, no focus and full length by default; the choices change the address, and "Under a minute" picks short
-  it("sets up the shape, focus and length, and starts with them", async () => {
-    // Draw it for a bank prompt
+  // The template suggested for the prompt and full length by default, its beats and a worked example shown; the choices change the address (decision 126)
+  it("sets up the template and length, and starts with them", async () => {
+    // Draw it for a bank prompt (something that went wrong suggests a lesson learned)
     render(<TellStoryScreen storyId="sp01" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The start band
     const start = () => screen.getByRole("link", { name: /Start/ }).getAttribute("href");
-    // The default
-    const first = start();
-    // Pick a shape and a focus
-    fireEvent.click(screen.getByRole("button", { name: /But and so/ }));
-    // (focus)
-    fireEvent.click(screen.getByRole("button", { name: "Under a minute" }));
-    // Confirm the prompt, both addresses, the chosen buttons, and the shape's beats in the preview
-    expect([!!screen.getByText(/a plan fell apart/), first, start(), screen.getByRole("button", { name: /Short/ }).getAttribute("aria-pressed"), within(screen.getByRole("region", { name: "Your story's shape" })).getByText("What you wanted").textContent]).toEqual([true, "/session?mode=story&prompt=sp01&shape=classic&length=full", "/session?mode=story&prompt=sp01&shape=but-therefore&focus=minute&length=short", "true", "What you wanted"]);
+    // The default, with the suggested template chosen
+    const [first, suggested] = [start(), screen.getByRole("button", { name: /Lesson learned/ })];
+    // Pick another template and the short length
+    fireEvent.click(screen.getByRole("button", { name: /Client win/ }));
+    // (length)
+    fireEvent.click(screen.getByRole("button", { name: /Short/ }));
+    // Confirm the prompt, the suggestion, both addresses, the chosen button, the example of the chosen template, and no shapes, focuses or 4/3/2 switch
+    expect([!!screen.getByText(/a plan fell apart/), suggested.getAttribute("aria-pressed"), first, start(), screen.getByRole("button", { name: /Client win/ }).getAttribute("aria-pressed"), within(screen.getByRole("region", { name: "Example: Client win" })).getByText("(the result, with a number)").tagName, screen.queryByRole("button", { name: /But and so/ }), screen.queryByRole("button", { name: "Under a minute" }), screen.queryByRole("checkbox")]).toEqual([true, "false", "/session?mode=story&prompt=sp01&template=lesson&length=full", "/session?mode=story&prompt=sp01&template=client-win&length=short", "true", "B", null, null, null]);
   });
 
-  // A Learn card's link can start on a shape and a focus (decision 94); "Under a minute" from a link also starts short
-  it("starts on the shape and focus a Learn card's link names", async () => {
-    // Draw it as a link from a card would
-    render(<TellStoryScreen storyId="sp04" initialShape="then-now" initialFocus="minute" repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the chosen buttons and the address that starts the telling
-    expect([screen.getByRole("button", { name: /Then and now/ }).getAttribute("aria-pressed"), screen.getByRole("button", { name: "Under a minute" }).getAttribute("aria-pressed"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual(["true", "true", "/session?mode=story&prompt=sp04&shape=then-now&focus=minute&length=short"]);
+  // A link can start on a template (from the Stories page), and a Learn card's focus is carried in (decision 94); "Under a minute" starts short
+  it("starts on the template a link names, carrying a Learn card's focus", async () => {
+    // Draw it as a link would
+    render(<TellStoryScreen storyId="sp04" initialTemplate="turning-point" initialFocus="minute" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the chosen template and the address that starts the telling
+    expect([screen.getByRole("button", { name: /Turning point/ }).getAttribute("aria-pressed"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual(["true", "/session?mode=story&prompt=sp04&template=turning-point&focus=minute&length=short"]);
   });
 
   // Inside today's practice: short by default, with the step carried on
@@ -162,7 +174,7 @@ describe("TellStoryScreen", () => {
     // Draw it as step 4
     render(<TellStoryScreen storyId="sp01" planStep={4} repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the address and the way out
-    expect([screen.getByRole("link", { name: /Start/ }).getAttribute("href"), screen.getByRole("link", { name: "Close, back to Today" }).getAttribute("href")]).toEqual(["/session?mode=story&prompt=sp01&shape=classic&length=short&plan=4", "/"]);
+    expect([screen.getByRole("link", { name: /Start/ }).getAttribute("href"), screen.getByRole("link", { name: "Close, back to Today" }).getAttribute("href")]).toEqual(["/session?mode=story&prompt=sp01&template=lesson&length=short&plan=4", "/"]);
   });
 
   // A story from a moment note shows the note's words; a missing note explains instead
@@ -172,7 +184,7 @@ describe("TellStoryScreen", () => {
     // Draw it
     render(<TellStoryScreen storyId="moment-m1" repository={repository} now={NOW} />);
     // Confirm the words and the address
-    expect([await screen.findByText("the kettle sang at dawn"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([expect.anything(), "/session?mode=story&prompt=moment-m1&shape=classic&length=full"]);
+    expect([await screen.findByText("the kettle sang at dawn"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([expect.anything(), "/session?mode=story&prompt=moment-m1&template=lesson&length=full"]);
     // Remove it
     cleanup();
     // Draw one whose note is gone
@@ -184,8 +196,8 @@ describe("TellStoryScreen", () => {
 
 // Group the checks about telling a story
 describe("RecordingScreen, stories", () => {
-  // The prompt and the shape card show before planning; planning counts down with Ready; Ready records; stopping saves the set-up
-  it("plans with the shape in view, then tells and saves the set-up", async () => {
+  // The prompt, the template's beats and the three pointers show before planning; planning counts down with Ready; Ready records; stopping saves the set-up (decision 126)
+  it("plans with the template's beats in view, then tells and saves the set-up", async () => {
     // An empty repository
     const repository = createRepository(new MemoryStore());
     // Fake services that hear a good story
@@ -196,8 +208,8 @@ describe("RecordingScreen, stories", () => {
     let time = NOW.getTime();
     // Draw it
     render(<RecordingScreen promptId="sp04" mode="story" retryOf={null} story={TAKE} repository={repository} services={fake.services} clock={() => new Date(time)} navigate={navigate} />);
-    // Before planning: the prompt, the shape's beats and focus, and "Plan it"
-    expect([!!(await screen.findByText(/running late for something that mattered/)), within(screen.getByRole("region", { name: "Your story's shape" })).getAllByText("But…").length === 2, !!screen.getByText("Add one line of what someone said"), !!screen.getByRole("button", { name: /Plan it/ })]).toEqual([true, true, true, true]);
+    // Before planning: the prompt, the template's beats and the focus carried in, the pointers, and "Plan it"
+    expect([!!(await screen.findByText(/running late for something that mattered/)), !!within(screen.getByRole("region", { name: "Your beats" })).getByText("The result, with a number"), !!screen.getByText("Add one line of what someone said"), !!within(screen.getByRole("region", { name: "Three things every good story does" })).getByText("End on the point."), !!screen.getByRole("button", { name: /Plan it/ }), screen.queryByRole("link", { name: /Tell it three times/ })]).toEqual([true, true, true, true, true, null]);
     // Start planning
     fireEvent.click(screen.getByRole("button", { name: /Plan it/ }));
     // Ready while planning
@@ -222,7 +234,7 @@ describe("RecordingScreen, stories", () => {
     expect([saved?.mode, saved?.promptId, saved?.story, (await repository.getStory("sp04"))?.title]).toEqual(["story", "sp04", TAKE, "Running late"]);
   });
 
-  // Telling it again keeps the telling before's set-up, whatever the address says
+  // Telling it again keeps the telling before's set-up, whatever the address says (here an older story told with a shape, which still reads)
   it("keeps the set-up of the telling before", async () => {
     // A first telling with its set-up
     const repository = await repositoryWith(makeSession({ id: "a", mode: "story", promptId: "sp04", transcript: FLAT, story: { shape: "then-now", focus: "point", length: "short" }, feedback: { keep: "k", change: "c", retryCue: "End on what changed." }, feedbackStatus: "done" }));
@@ -235,42 +247,42 @@ describe("RecordingScreen, stories", () => {
 
 // Group the checks about a story's results
 describe("SessionScreen, stories", () => {
-  // A first telling: the prompt, What I heard with honest wording, the change from the checks, and Tell it again
-  it("shows what was heard, the change and Tell it again", async () => {
-    // A flat telling with no coach yet
+  // A first telling before the coach answers: the prompt, a plain headline, no rough checklist or beats, the change from the numbers, and Tell it again (decision 126)
+  it("shows the telling, the change and Tell it again, with no checklist", async () => {
+    // A flat telling with no coach
     const repository = await repositoryWith(makeSession({ id: "a", mode: "story", promptId: "sp04", transcript: FLAT, durationSec: 50, story: TAKE, feedbackStatus: "failed" }));
     // Draw it
     render(<SessionScreen sessionId="a" repository={repository} now={NOW} />);
-    // The checklist
-    const list = await screen.findByRole("list", { name: "What I heard" });
-    // Confirm the prompt, six unticked lines, the lead-in named, the rough-guess line, the focus-first change, and the retelling's address
-    expect([!!screen.getByText(/running late for something that mattered/), within(list).getAllByRole("listitem").map((item) => item.getAttribute("data-heard")), !!within(list).getByText("Opened with “so basically”."), !!screen.getByText(/Rough guesses/), !!screen.getAllByText("Say one line the way they said it.").length, screen.getByRole("link", { name: /Tell it again/ }).getAttribute("href")]).toEqual([true, ["false", "false", "false", "false", "false", "false"], true, true, true, "/session?mode=story&prompt=sp04&retryOf=a"]);
+    // Confirm the prompt, the headline, no checklist, rough-guess line or beats card, and the retelling's address
+    expect([!!(await screen.findByText(/running late for something that mattered/)), screen.getByRole("heading", { level: 1 }).textContent, screen.queryByRole("list", { name: "What I heard" }), screen.queryByText(/Rough guesses/), document.querySelector("[data-your-beats]"), screen.getByRole("link", { name: /Tell it again/ }).getAttribute("href")]).toEqual([true, "Your story.", null, null, null, "/session?mode=story&prompt=sp04&retryOf=a"]);
   });
 
-  // With the coach: your line and how it could sound, and the beats it heard
-  it("shows the coach's line and beats", async () => {
-    // A telling with story feedback
-    const repository = await repositoryWith(makeSession({ id: "a", mode: "story", promptId: "sp04", transcript: GOOD, story: TAKE, feedbackStatus: "done", feedback: { keep: "You opened in the action.", change: "Give her words a moment.", retryCue: "Slow down at her words.", story: { beats: [{ beat: "setting", quote: "outside Reading" }, { beat: "turn", quote: "but then" }], yours: "she goes don't worry", better: "Then she leans in: “Don't worry.” [how you felt]" } } }));
+  // With the coach: what worked at the top, your line and how it could sound, and each beat of the template strong, weak or missing (decision 126)
+  it("shows what worked, your line and your beats", async () => {
+    // A telling with story feedback on a client win
+    const repository = await repositoryWith(makeSession({ id: "a", mode: "story", promptId: "sp04", transcript: GOOD, story: TAKE, feedbackStatus: "done", feedback: { keep: "You opened in the action.", change: "Give her words a moment.", retryCue: "Slow down at her words.", story: { beats: [], templateBeats: [{ beat: "problem", status: "strong", quote: "the train stopped dead" }, { beat: "tried", status: "weak", quote: "but then" }, { beat: "result", status: "missing", quote: "" }, { beat: "matters", status: "strong", quote: "since then I always carry a charger" }], yours: "she goes don't worry", better: "Then she leans in: “Don't worry.” [how you felt]" } } }));
     // Draw it
     render(<SessionScreen sessionId="a" repository={repository} now={NOW} />);
     // The beats
-    const beats = await screen.findByRole("region", { name: "The beats" });
-    // Confirm the line, the gap set apart, and the beats heard and not
-    expect([!!screen.getByText("“she goes don't worry”"), screen.getByText("[how you felt]").tagName, within(beats).getByText(/2 of 5/).textContent, beats.querySelector("[data-beat='stakes']")?.textContent]).toEqual([true, "EM", "The beats the coach heard · 2 of 5", "What was at stake: not heard"]);
+    const beats = await screen.findByRole("region", { name: /Your beats/ });
+    // Confirm the headline, what worked at the top (and not again at the bottom), the line and its gap, and each beat's status and quote
+    expect([screen.getByRole("heading", { level: 1 }).textContent, document.querySelector("[data-story-worked]")?.textContent, screen.queryByText("What to keep."), !!screen.getByText("“she goes don't worry”"), screen.getByText("[how you felt]").tagName, [...beats.querySelectorAll("[data-beat]")].map((item) => `${item.getAttribute("data-beat")} ${item.getAttribute("data-status")}`), !!within(beats).getByText("“the train stopped dead”"), within(beats).getByRole("heading").textContent]).toEqual(["2 of 4 beats came through clearly.", "What workedYou opened in the action.", null, true, "EM", ["problem strong", "tried weak", "result missing", "matters strong"], true, "Your beats · Client win"]);
   });
 
-  // A retelling: how it compared, what it worked on, and each check last time and this time
+  // A retelling: how it compared, what it worked on, and the beats that came through last time and this time
   it("shows a retelling beside the telling before", async () => {
-    // A flat first telling and a good retelling
-    const repository = await repositoryWith(makeSession({ id: "a", mode: "story", promptId: "sp04", transcript: FLAT, createdAt: "2026-10-21T10:00:00.000Z", story: TAKE, feedback: { keep: "k", change: "c", retryCue: "Start in the middle." }, feedbackStatus: "done" }), makeSession({ id: "b", mode: "story", promptId: "sp04", retryOf: "a", transcript: GOOD, createdAt: "2026-10-21T10:05:00.000Z", story: TAKE, feedbackStatus: "failed" }));
+    // The beats as a status list
+    const beats = (statuses: ReadonlyArray<"strong" | "weak" | "missing">) => ["problem", "tried", "result", "matters"].map((beat, index) => ({ beat, status: statuses[index]!, quote: statuses[index] === "missing" ? "" : "words" }));
+    // A first telling and a clearer retelling
+    const repository = await repositoryWith(makeSession({ id: "a", mode: "story", promptId: "sp04", transcript: FLAT, createdAt: "2026-10-21T10:00:00.000Z", story: TAKE, feedback: { keep: "k", change: "c", retryCue: "Start in the middle.", story: { beats: [], templateBeats: beats(["strong", "missing", "missing", "weak"]), yours: "y", better: "b" } }, feedbackStatus: "done" }), makeSession({ id: "b", mode: "story", promptId: "sp04", retryOf: "a", transcript: GOOD, createdAt: "2026-10-21T10:05:00.000Z", story: TAKE, feedback: { keep: "k", change: "c", retryCue: "r", story: { beats: [], templateBeats: beats(["strong", "strong", "weak", "strong"]), yours: "y", better: "b" } }, feedbackStatus: "done" }));
     // Draw the retelling
     render(<SessionScreen sessionId="b" repository={repository} now={NOW} />);
     // The table
     const table = await screen.findByRole("table", { name: "Last time and this time" });
     // The first row
     const first = within(table).getAllByRole("row")[1]!;
-    // Confirm the headline, the cue, and the first check on both
-    expect([!!screen.getByRole("heading", { name: "6 of 6 this time, up from 0." }), !!screen.getByText("You were working on: Start in the middle."), within(first).getAllByRole("cell").map((cell) => cell.textContent)]).toEqual([true, true, ["–", "Heard"]]);
+    // Confirm the headline, the cue, and the beats on both
+    expect([!!screen.getByRole("heading", { name: "It landed better than last time." }), !!screen.getByText("You were working on: Start in the middle."), within(first).getAllByRole("cell").map((cell) => cell.textContent)]).toEqual([true, true, ["1 of 4", "3 of 4"]]);
   });
 });
 
@@ -293,18 +305,18 @@ describe("guided stories", () => {
     expect([!!within(section).getByText("You get the facts. You make it a story."), !!within(section).getByText("Just the facts"), !!within(section).getByText("With a twist"), within(section).getByRole("link", { name: "A day at the zoo" }).getAttribute("href")]).toEqual([true, true, true, "/stories/tell?prompt=gs13"]);
   });
 
-  // The set-up shows the facts, the twist and the nudges, starts on the story's own focus, and lets the user change it
-  it("sets up a guided story with its facts and its own focus", () => {
+  // The set-up shows the facts, the twist and the nudges, carries the story's own focus, and lets the user pick a template (decision 126)
+  it("sets up a guided story with its facts, its own focus and a template", () => {
     // Draw it for the zoo
     render(<TellStoryScreen storyId="gs13" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The facts card
     const card = screen.getByRole("region", { name: "Your facts" });
     // The start address before and after changing the focus
     const first = screen.getByRole("link", { name: /Start/ }).getAttribute("href");
-    // Pick another focus
-    fireEvent.click(screen.getByRole("button", { name: "One vivid detail" }));
-    // Confirm the title, a fact, the twist, a nudge, no separate shape card, the default focus and the changed one
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!within(card).getByText("You got a hot dog."), card.querySelector("[data-twist]")?.textContent, !!within(card).getByText("What did the gorilla do?"), screen.queryByRole("region", { name: "Your story's shape" }), first, screen.getByRole("link", { name: /Start/ }).getAttribute("href"), within(card).getByText("One vivid detail").textContent]).toEqual(["A day at the zoo", true, "TwistThe gorilla was staring right at you.", true, null, "/session?mode=story&prompt=gs13&shape=classic&focus=middle&length=full", "/session?mode=story&prompt=gs13&shape=classic&focus=detail&length=full", "One vivid detail"]);
+    // Pick another template
+    fireEvent.click(screen.getByRole("button", { name: /Funny moment/ }));
+    // Confirm the title, a fact, the twist, a nudge, no separate beats card, the default address with the story's focus, the changed one, and the template named on the card
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!within(card).getByText("You got a hot dog."), card.querySelector("[data-twist]")?.textContent, !!within(card).getByText("What did the gorilla do?"), screen.queryByRole("region", { name: "Your beats" }), first, screen.getByRole("link", { name: /Start/ }).getAttribute("href"), within(card).getByText("Funny moment").textContent]).toEqual(["A day at the zoo", true, "TwistThe gorilla was staring right at you.", true, null, "/session?mode=story&prompt=gs13&template=lesson&focus=middle&length=full", "/session?mode=story&prompt=gs13&template=funny&focus=middle&length=full", "Funny moment"]);
   });
 
   // While planning the facts card shows in place of the shape card; while telling, the facts on one line
@@ -314,7 +326,7 @@ describe("guided stories", () => {
     // Draw the telling page
     render(<RecordingScreen promptId="gs13" mode="story" retryOf={null} story={ZOO_TAKE} repository={createRepository(new MemoryStore())} services={fake.services} clock={() => NOW} navigate={() => {}} />);
     // Before planning: the title, the facts card, no shape card
-    expect([!!(await screen.findByText("A day at the zoo")), !!screen.getByText("Guided story"), !!within(screen.getByRole("region", { name: "Your facts" })).getByText("You saw a gorilla."), screen.queryByRole("region", { name: "Your story's shape" })]).toEqual([true, true, true, null]);
+    expect([!!(await screen.findByText("A day at the zoo")), !!screen.getByText("Guided story"), !!within(screen.getByRole("region", { name: "Your facts" })).getByText("You saw a gorilla."), screen.queryByRole("region", { name: "Your beats" })]).toEqual([true, true, true, null]);
     // Plan, then Ready
     fireEvent.click(screen.getByRole("button", { name: /Plan it/ }));
     // (ready)

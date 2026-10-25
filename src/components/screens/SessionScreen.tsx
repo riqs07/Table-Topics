@@ -110,16 +110,15 @@ import { readPassphrase } from "@/data/passphrase";
 import { usePageTitle } from "@/components/screens/usePageTitle";
 // Load the deeper-analysis notes (decision 91)
 import { noteFor } from "@/core/analysis/deep";
-// Load the story checks, beats and the retelling comparison (decision 92)
-import { heardList, storyChecks } from "@/core/storyChecks";
+// Load the story beats, the retelling comparison and the templates (decisions 92 and 126)
+import { beatsCompareRow, storyHeadline, templateBeatsOf } from "@/core/storyBeats";
 import { retellHeadline, storyCompareRows } from "@/core/storyLibrary";
-import { STORY_BEAT_NAMES, momentIdOf } from "@/content/stories";
+import { findStoryTemplate, momentIdOf } from "@/content/stories";
 // Load the guided stories and the comparison with their facts (decision 93)
 import { factsOf, findGuidedStory, type GuidedStory } from "@/content/guidedStories";
 import { compareWithFacts } from "@/core/guidedStory";
-import { STORY_BEATS } from "@/data/records";
 
-// The take's views, chosen focus first (pitch in the words, the lenses, the fingerprint, the best moment, the energy arc, a story's shape), loaded once the page is up so the take's first download stays small (decisions 81, 99, 111 and 115)
+// The take's views, chosen focus first (pitch in the words, the lenses, the fingerprint, the best moment, the energy arc), loaded once the page is up so the take's first download stays small (decisions 81, 99, 111 and 115)
 const TakeViews = dynamic(() => import("@/components/script/TakeViews").then((module) => module.TakeViews), { ssr: false });
 // Planned stress, loaded only for a take whose text has key words (decision 111)
 const PlannedStressCard = dynamic(() => import("@/components/script/PlannedStressCard").then((module) => module.PlannedStressCard), { ssr: false });
@@ -618,6 +617,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
               </>
             )}
           </div>
+          {/* A story's beats, as the coach heard them (decision 126) */}
+          {story && <YourBeats session={session} />}
           {/* A retold story: this telling beside the one before (decision 92) */}
           {story && original && <StoryBeforeAfter original={original} retold={session} pauseWords={view.pauseWords} />}
           {/* The same words told again: the last telling's pitch under this one's (decision 111) */}
@@ -677,7 +678,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* No notes yet: an optional fold to add them */}
           {session.selfReview === null && !smallTalk && <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} />}
           {/* What the coach said to keep, after the next step and the numbers */}
-          {session.feedback && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
+          {session.feedback && !story && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
           {/* One word swap from the coach's rubric, when it suggested one (decision 90) */}
           {wordSwap && <p className="mt-2 text-lede"><em>One word swap.</em> <span>“{wordSwap.said}” → “{wordSwap.stronger}”{wordSwap.why ? ` (${wordSwap.why})` : ""}</span></p>}
           {/* Where the take's deeper analysis stands, said quietly (decision 91) */}
@@ -709,7 +710,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           ) : warmup ? (
             <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
           ) : (
-            <ActionBand action={story ? "Tell it again" : "Try it again"} aside={story ? "same story, same shape" : rehearsed ? "same part of the talk" : session.mode === "bookend" ? "a lesson on the same end of a talk" : qa || (smallTalk && findSmallTalk(session.promptId)?.unit === "answering") ? "same question" : smallTalk ? "same one" : "same prompt"} href={retryHref} />
+            <ActionBand action={story ? "Tell it again" : "Try it again"} aside={story ? "same story, same template" : rehearsed ? "same part of the talk" : session.mode === "bookend" ? "a lesson on the same end of a talk" : qa || (smallTalk && findSmallTalk(session.promptId)?.unit === "answering") ? "same question" : smallTalk ? "same one" : "same prompt"} href={retryHref} />
           )}
         </aside>
       </div>
@@ -896,13 +897,9 @@ function SmallTalkBeats({ session, ticks }: { session: FullSession; ticks: React
   );
 }
 
-// A told story's "What I heard": the phone's checklist, honest about being rough, and once the coach has answered, the beats it heard (decision 92)
+// A told story's headline (decision 126): how the telling came across (against the one before, on a retelling; a guided story keeps its count of what was added, decision 93), what worked once the coach has answered, and for a guided story what was added beyond the facts (decision 93). The phone's rough checklist and the fixed beats are gone; the template's beats are in their own card below the change
 function StoryHeard({ session, original, moment }: { session: FullSession; original: FullSession | null; moment: boolean }) {
-  // The phone's checks
-  const checks = storyChecks(session.transcript);
-  // As a checklist
-  const lines = heardList(checks);
-  // The coach's beats, once arrived
+  // The coach's story notes, once arrived
   const coach = session.feedback?.story;
   // A guided story, if it is one (decision 93)
   const guided = findGuidedStory(session.promptId);
@@ -911,47 +908,48 @@ function StoryHeard({ session, original, moment }: { session: FullSession; origi
     <>
       {/* From a moment note: say so (a prompt from the bank is shown above instead) */}
       {moment && <p className="mt-5 text-footnote text-ink-muted md:mt-0">From your moment</p>}
-      {/* The headline: how a retelling compared, or the checklist's name */}
-      <h1 className={`font-display text-3xl font-semibold tracking-tight ${moment ? "mt-1" : "mt-5 md:mt-0"}`}>{original ? retellHeadline(original, session) : guided ? "What you added" : "What I heard"}</h1>
+      {/* The headline */}
+      <h1 className={`font-display text-3xl font-semibold tracking-tight ${moment ? "mt-1" : "mt-5 md:mt-0"}`}>{guided ? (original ? retellHeadline(original, session) : "What you added") : storyHeadline(session, original)}</h1>
+      {/* What worked, once the coach has answered */}
+      {session.feedback && <p data-story-worked className="mt-3 text-lede"><span className="mr-2 inline-flex rounded-full bg-accent/15 px-2.5 py-0.5 align-middle text-footnote font-semibold text-accent">What worked</span>{session.feedback.keep}</p>}
       {/* A guided story: what was added beyond the facts, and the facts kept (decision 93) */}
-      {guided ? <GuidedAdded story={guided} session={session} /> : (
-      // The checklist
-      <ul aria-label="What I heard" className={`mt-3 ${CARD_LIST}`}>
-        {/* One row per check */}
-        {lines.map((line) => (
-          // One check: its mark, name and what showed it
-          <li key={line.id} data-heard={line.heard} className="flex gap-3 py-2">
-            {/* The mark: filled when heard */}
-            <span aria-hidden="true" className={`mt-1 flex size-5 flex-none items-center justify-center border-2 ${line.heard ? "border-fill bg-fill text-fill-ink" : "border-rule"}`}>{line.heard && <CheckIcon weight="bold" className="size-3.5" />}</span>
-            {/* Name and note */}
-            <span className="text-lede"><strong className="font-display font-normal">{line.name}.</strong> <span className={line.heard ? "" : "text-ink-muted"}>{line.note}</span></span>
-          </li>
-        ))}
-      </ul>
-      )}
-      {/* A string of "and then" */}
-      {checks.andThen >= 2 && <p className="mt-2 text-footnote">“And then” came {checks.andThen} times. Try “but” or “so”.</p>}
-      {/* Honest about what this is */}
-      <p className="mt-2 text-footnote text-ink-muted">Rough guesses from the words the phone caught: a line said another way can be missed.</p>
+      {guided && <GuidedAdded story={guided} session={session} />}
       {/* For a guided story, the coach's word on how far the facts came to life (decision 93) */}
       {coach?.broughtToLife && <p data-brought-to-life className="mt-4 border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote text-ink-muted">Beyond the facts, the coach heard</span>{coach.broughtToLife}</p>}
-      {/* The coach's beats, once arrived */}
-      {coach && (
-        <section aria-label="The beats" className="mt-4">
-          {/* Small heading */}
-          <p className="text-footnote text-ink-muted">The beats the coach heard · {coach.beats.length} of {STORY_BEATS.length}</p>
-          {/* Each beat */}
-          <ul className="mt-1 flex flex-col gap-1 text-footnote">
-            {STORY_BEATS.map((beat) => {
-              // Its quote, if heard
-              const found = coach.beats.find((item) => item.beat === beat);
-              // One beat
-              return <li key={beat} data-beat={beat} className={`border-l-2 pl-3 ${found ? "border-accent" : "border-rule text-ink-muted"}`}><span className="font-semibold">{STORY_BEAT_NAMES[beat]}</span>{found ? `: “${found.quote}”` : ": not heard"}</li>;
-            })}
-          </ul>
-        </section>
-      )}
     </>
+  );
+}
+
+// The template's beats as the coach heard them (decision 126): each one strong, weak or missing, with the words that showed it
+function YourBeats({ session }: { session: FullSession }) {
+  // The beats
+  const beats = templateBeatsOf(session);
+  // The template's names for them
+  const template = findStoryTemplate(session.story?.template);
+  // Nothing to show
+  if (!beats) return null;
+  // Each status's mark and look
+  const looks = { strong: { mark: "✓", tile: "bg-fill text-fill-ink", word: "strong" }, weak: { mark: "!", tile: "bg-warm text-on-warm", word: "weak" }, missing: { mark: "–", tile: "bg-paper text-ink-muted", word: "missing" } } as const;
+  // The card
+  return (
+    <section aria-labelledby="your-beats" data-your-beats className={`mt-5 p-5 ${CARD}`}>
+      {/* Heading */}
+      <h2 id="your-beats" className="font-semibold">Your beats <span className="font-normal text-ink-muted">· {template.name}</span></h2>
+      {/* The beats */}
+      <ol className="mt-3 flex flex-col gap-3">
+        {beats.map((beat) => (
+          // One beat
+          <li key={beat.beat} data-beat={beat.beat} data-status={beat.status} className="flex items-start gap-3">
+            {/* Its mark */}
+            <span aria-hidden="true" className={`flex size-6 flex-none items-center justify-center rounded-full text-footnote font-semibold ${looks[beat.status].tile}`}>{looks[beat.status].mark}</span>
+            {/* Its name, how it came across, and the words */}
+            <span className="text-lede"><span>{template.beats.find((item) => item.id === beat.beat)?.name ?? beat.beat}</span><span className="sr-only">, {looks[beat.status].word}</span>{beat.quote && <span className="block text-footnote italic text-ink-muted">“{beat.quote}”</span>}</span>
+          </li>
+        ))}
+      </ol>
+      {/* The key */}
+      <p aria-hidden="true" className="mt-3 flex gap-3 text-footnote text-ink-muted"><span>✓ strong</span><span>! weak</span><span>– missing</span></p>
+    </section>
   );
 }
 
@@ -999,12 +997,12 @@ function GuidedAdded({ story, session }: { story: GuidedStory; session: FullSess
   );
 }
 
-// A retold story beside the telling before: what was being worked on, then each check and number on both (decision 92; the same table as a second try's)
+// A retold story beside the telling before: what was being worked on, then the beats that came through (a guided story: what was added and the facts kept) and each number on both (decisions 92, 93 and 126; the same table as a second try's)
 function StoryBeforeAfter({ original, retold, pauseWords }: { original: FullSession; retold: FullSession; pauseWords: boolean }) {
   // The cue the telling before gave
   const cue = (original.feedback ?? localChange(original)).retryCue;
   // The checks on both, then the usual numbers
-  const rows = [...storyCompareRows(original, retold), ...resultChanges(original, retold, { before: null, after: null }).filter((change) => pauseWords || change.label !== "pause words a minute")];
+  const rows = [...(findGuidedStory(retold.promptId) ? storyCompareRows(original, retold) : [beatsCompareRow(original, retold)].filter((row) => row !== null)), ...resultChanges(original, retold, { before: null, after: null }).filter((change) => pauseWords || change.label !== "pause words a minute")];
   // Draw it
   return (
     <section aria-label="Last time and this time" className="mt-5">

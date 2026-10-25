@@ -1,5 +1,5 @@
 "use client";
-// A long take at a glance (decision 115): its fingerprint (one strip of speech stretches, taller where louder, with pause-word ticks, pitch-peak dots and marks under pauses that split a sentence, and a plain headline), its best moment (the words, why, and a play button for just that window), its energy arc by thirds, and a story's shape strip. Colour roles only
+// A long take at a glance (decision 115): its fingerprint (one strip of speech stretches, taller where louder, with pause-word ticks, pitch-peak dots and marks under pauses that split a sentence, and a plain headline), its best moment (the words, why, and a play button for just that window), and its energy arc by thirds. Colour roles only
 
 // Load the shared card and label looks
 import { CARD, LABEL } from "@/components/script/textStyles";
@@ -13,7 +13,6 @@ import { smoothPath } from "@/core/pitchClean";
 import type { Fingerprint } from "@/core/fingerprint";
 import type { BestMoment } from "@/core/bestMoment";
 import type { EnergyArc } from "@/core/energyArc";
-import { SHAPE_NAMES, type StoryShape } from "@/core/storyShape";
 
 // The strip's picture: 326 across, 84 down (it stretches to the card)
 const STRIP = { width: 326, height: 84, middle: 40 } as const;
@@ -126,29 +125,3 @@ export function EnergyArcCard({ arc }: { arc: EnergyArc }) {
   );
 }
 
-// Each part's look on the strip
-const PART_LOOKS = { setup: "bg-accent/20 text-ink", turn: "bg-fill text-fill-ink", end: "bg-accent/55 text-ink", point: "bg-warm text-on-warm" } as const;
-
-// A story's shape strip
-export function StoryShapeStrip({ shape }: { shape: StoryShape }) {
-  // When the point came, when known
-  const point = shape.parts.find((part) => part.part === "point");
-  // The card
-  return (
-    <section aria-labelledby="story-shape-heading" data-story-shape className={`mt-5 flex flex-col gap-2.5 p-5 ${CARD}`}>
-      {/* What it is */}
-      <h2 id="story-shape-heading" className={LABEL}>Story shape</h2>
-      {/* The strip */}
-      <div role="img" aria-label={shape.parts.map((part) => `${SHAPE_NAMES[part.part]} ${Math.round(part.share * 100)}%`).join(", ")} className="flex h-8 overflow-hidden rounded-lg text-footnote font-semibold">
-        {/* Each part */}
-        {shape.parts.map((part) => <div key={part.part} data-part={part.part} style={{ flexGrow: Math.max(0.02, part.share), flexBasis: 0 }} className={`flex min-w-0 items-center overflow-hidden px-1.5 whitespace-nowrap ${PART_LOOKS[part.part]}`}>{part.share >= 0.12 ? SHAPE_NAMES[part.part] : ""}</div>)}
-      </div>
-      {/* The ends, in time when known */}
-      {point?.at !== null && point?.at !== undefined && <p className="flex justify-between text-footnote text-ink-muted"><span>0:00</span><span>Point: {formatClock(point.at)}</span></p>}
-      {/* The line */}
-      <p className="text-footnote leading-snug">{shape.line}</p>
-      {/* Where it came from */}
-      <p className="text-footnote text-ink-muted">{shape.source === "coach" ? "From the beats the coach heard." : "Rough: from the words the phone caught."}</p>
-    </section>
-  );
-}

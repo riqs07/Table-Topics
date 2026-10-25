@@ -27,38 +27,42 @@ async function tellRound(page: Page, round: number, seconds: number): Promise<vo
   await stop.click();
 }
 
-// Choose three rounds on a short story, tell all three, then compare them
-test("4/3/2: tell a short story three times, shorter each time, then compare the rounds", async ({ page }) => {
+// From the 4/3/2 page (decision 126), tell today's story three times, shorter each time, then compare the rounds
+test("4/3/2: tell today's story three times, shorter each time, then compare the rounds", async ({ page }) => {
   // The stand-in speech tells a story
   await useStandIns(page, STORY_SPOKEN);
   // A clock the check runs forward
   await page.clock.install({ time: new Date("2026-10-22T09:00:00") });
   // Past the welcome
   await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
-  // A story's set-up
-  await page.goto("/stories/tell?prompt=sp01");
-  // Short
-  await page.getByRole("button", { name: /Short/ }).click();
-  // Three times, with the short story's times shown
-  await expect(page.getByText("2:00, then 1:30, then 1:00")).toBeVisible();
-  // (switched on)
-  await page.getByRole("checkbox", { name: /Tell it three times, shorter each time/ }).check();
+  // Practice, then the drill under "More ways to practise"
+  await page.goto("/practice");
+  // (opened)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
+  // The rest of speaking on the spot
+  await page.getByRole("region", { name: "Speak on the spot" }).getByRole("button", { name: "See all" }).click();
+  // The drill's page
+  await page.getByRole("link", { name: /^4\/3\/2/ }).click();
+  // Today's story, with a full story's times shown
+  const row = page.getByRole("list", { name: "Today's 4/3/2" }).getByRole("link", { name: /^Story:/ });
+  // (the times)
+  await expect(row).toContainText("3:00, then 2:15, then 1:30");
   // Start
-  await page.getByRole("link", { name: /^Start/ }).click();
-  // Round 1: its 2:00 shown
-  await expect(page.locator("[data-loop-round]")).toContainText("Told three times · round 1 of 3 · 2:00");
-  // Told for 1:50
-  await tellRound(page, 1, 110);
-  // Round 2, a page of its own, 1:30
+  await row.click();
+  // Round 1: its 3:00 shown
+  await expect(page.locator("[data-loop-round]")).toContainText("Told three times · round 1 of 3 · 3:00");
+  // Told for 2:50
+  await tellRound(page, 1, 170);
+  // Round 2, a page of its own, 2:15
   await expect(page).toHaveURL(/loop=[^&]+&round=2/, { timeout: 15_000 });
   // (its time)
-  await expect(page.locator("[data-loop-round]")).toContainText("round 2 of 3 · 1:30");
-  // Told for 1:20
-  await tellRound(page, 2, 80);
-  // Round 3, 1:00
+  await expect(page.locator("[data-loop-round]")).toContainText("round 2 of 3 · 2:15");
+  // Told for 2:05
+  await tellRound(page, 2, 125);
+  // Round 3, 1:30
   await expect(page).toHaveURL(/round=3/, { timeout: 15_000 });
-  // Told for 0:55
-  await tellRound(page, 3, 55);
+  // Told for 1:25
+  await tellRound(page, 3, 85);
   // The question, once, after the last round
   await page.getByRole("button", { name: "Lively" }).click();
   // The results
@@ -68,7 +72,7 @@ test("4/3/2: tell a short story three times, shorter each time, then compare the
   // The table: a column per round, story checks and time against target
   await expect(page.getByRole("row", { name: /story checks/ })).toBeVisible();
   // (the times)
-  await expect(page.getByRole("row", { name: /time \/ target/ })).toHaveText(/^time \/ target1:5\d \/ 2:001:2\d \/ 1:300:5\d \/ 1:00$/);
+  await expect(page.getByRole("row", { name: /time \/ target/ })).toHaveText(/^time \/ target2:5\d \/ 3:002:0\d \/ 2:151:2\d \/ 1:30$/);
   // The curves on matching phrases, with the three rounds' key
   await expect(page.locator("[data-loop-curves]")).toContainText("Round 1Round 2Round 3");
   // Your stories lists it told three times

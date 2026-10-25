@@ -79,7 +79,7 @@ export function createClaudeCoach(apiKey: string, fetchFn?: typeof fetch): Coach
         // A missing or unreadable reply is an error
         if (!response.parsed_output) throw new Error(`The coach returned no usable feedback (stop reason: ${response.stop_reason}).`);
         // Hand back the checked feedback, the rubric with the story scores, and token counts
-        return { status: "ok", feedback: checkStoryFeedback(response.parsed_output), rubric: { ...checkRubric(response.parsed_output.rubric, COACH_MODEL), story: checkStoryRubric(response.parsed_output.storyRubric) }, usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
+        return { status: "ok", feedback: checkStoryFeedback(response.parsed_output, input.story), rubric: { ...checkRubric(response.parsed_output.rubric, COACH_MODEL), story: checkStoryRubric(response.parsed_output.storyRubric) }, usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens } };
       }
       // A follow-up question or a reply to a story goes to the conversation coach, with its own instructions and reply shape
       if (input.mode === "smalltalk" && unitOf(input.promptId ?? "") !== "answering") {

@@ -1,7 +1,7 @@
-// Storytelling (decision 92): the bank of story prompts, the optional story shapes, the one-focus drills, and the two lengths. Light, everyday and personal: never a prompt that asks for something painful
+// Storytelling (decision 92): the bank of story prompts, the four templates a story is told with (decision 126; the older shapes and focuses are kept so earlier stories still read), and the two lengths. Light, everyday and personal: never a prompt that asks for something painful
 
 // Load the story choice types kept on a session
-import type { StoryBeat, StoryFocus, StoryLength, StoryShape } from "@/data/records";
+import type { StoryBeat, StoryFocus, StoryLength, StoryShape, StoryTake, StoryTemplate } from "@/data/records";
 // Load the guided stories, the second kind of seed (decision 93)
 import { findGuidedStory } from "@/content/guidedStories";
 // Load the weekly check-in's story prompts, a third kind of seed from the app's own content (decision 100)
@@ -155,6 +155,73 @@ export function storyPromptForDay(day: Date, offset = 0): StoryPrompt {
   return STORY_PROMPTS[index]!;
 }
 
+// One beat of a template
+export interface TemplateBeat {
+  // Stable id within its template
+  id: string;
+  // Its name, as a prompt to fill
+  name: string;
+}
+
+// One story template (decision 126): what it is for, its beats in order, and a short example with each beat marked
+export interface StoryTemplateInfo {
+  // Stable id
+  id: StoryTemplate;
+  // Its name
+  name: string;
+  // What it is good for
+  forWhat: string;
+  // The beats, in order
+  beats: ReadonlyArray<TemplateBeat>;
+  // A short example, one piece per beat, in order
+  example: ReadonlyArray<string>;
+}
+
+// The templates, in the order the pages show them
+export const STORY_TEMPLATES: ReadonlyArray<StoryTemplateInfo> = [
+  // A lesson learned
+  { id: "lesson", name: "Lesson learned", forWhat: "For interviews and talks", beats: [{ id: "situation", name: "The situation" }, { id: "wrong", name: "What went wrong" }, { id: "did", name: "What I did" }, { id: "learned", name: "What I learned" }], example: ["The night before our launch, the demo server died.", "Nobody had a backup.", "I rebuilt it on my laptop at 2am.", "Now every demo has a plan B."] },
+  // A client win, for case studies
+  { id: "client-win", name: "Client win", forWhat: "For pitches and case studies", beats: [{ id: "problem", name: "The problem" }, { id: "tried", name: "What we tried" }, { id: "result", name: "The result, with a number" }, { id: "matters", name: "Why it matters" }], example: ["A café owner was spending ten hours a week on the rota.", "We set up a simple assistant that drafts it from staff availability.", "Now it takes forty minutes.", "That’s a day a week back for the part of the job she loves."] },
+  // A turning point
+  { id: "turning-point", name: "Turning point", forWhat: "For openings and about-me", beats: [{ id: "before", name: "How it was" }, { id: "moment", name: "The moment it changed" }, { id: "now", name: "How it is now" }], example: ["I used to dread speaking up in meetings.", "Then my manager asked me, in front of everyone, what I thought, and waited.", "Now I make sure I say one thing in every meeting."] },
+  // A funny moment
+  { id: "funny", name: "Funny moment", forWhat: "For toasts and small talk", beats: [{ id: "setup", name: "The set-up" }, { id: "twist", name: "The twist" }, { id: "line", name: "The line that lands" }], example: ["At my sister’s wedding, I was in charge of the rings.", "At the altar, I handed over two hard sweets from my pocket.", "She still calls me the ring bearer, with air quotes."] },
+];
+
+// The template each group of prompts suits best, suggested first (decision 126)
+const SUGGESTED_TEMPLATE: Readonly<Record<StoryGroupId, StoryTemplate>> = { wrong: "lesson", win: "client-win", first: "turning-point", person: "turning-point", place: "turning-point", surprise: "funny", lesson: "lesson", funny: "funny" };
+
+// Look up a template, falling back to Lesson learned
+export function findStoryTemplate(id: string | null | undefined): StoryTemplateInfo {
+  // The match, or the first
+  return STORY_TEMPLATES.find((template) => template.id === id) ?? STORY_TEMPLATES[0]!;
+}
+
+// Whether a value names a template
+export function isStoryTemplate(value: unknown): value is StoryTemplate {
+  // One of the listed ids
+  return STORY_TEMPLATES.some((template) => template.id === value);
+}
+
+// The template suggested for a story: by its prompt's group, or Lesson learned for a moment note or a guided story
+export function suggestedTemplate(storyId: string): StoryTemplate {
+  // The prompt, when it came from the bank
+  const prompt = findStoryPrompt(storyId);
+  // Its group's template, or the first
+  return prompt ? SUGGESTED_TEMPLATE[prompt.group] : "lesson";
+}
+
+// The three things every good story does, shown while planning (decision 126)
+export const STORY_POINTERS: ReadonlyArray<{ lead: string; rest: string }> = [
+  // Start in the action
+  { lead: "Start in the moment.", rest: "Skip the build-up." },
+  // A detail
+  { lead: "One specific detail.", rest: "A name, a number, a sound." },
+  // End on the point
+  { lead: "End on the point.", rest: "Then stop." },
+];
+
 // One story shape: a light structure shown as a small card while planning
 export interface StoryShapeInfo {
   // Stable id
@@ -263,3 +330,21 @@ export function momentTitle(transcript: string): string {
 
 // The beats the story coach listens for, in plain names (decision 92)
 export const STORY_BEAT_NAMES: Readonly<Record<StoryBeat, string>> = { setting: "Where and who", stakes: "What was at stake", turn: "The turn", ending: "How it ended", meaning: "What it meant" };
+
+// A story's set-up as address parts (decision 126): its template (or, for a story told before templates, its shape), any focus, and its length
+export function storyTakeQuery(take: StoryTake): string {
+  // The template, or an older story's shape
+  const how = take.template ? `&template=${take.template}` : take.shape ? `&shape=${take.shape}` : "";
+  // With the focus and length
+  return `${how}${take.focus ? `&focus=${take.focus}` : ""}&length=${take.length}`;
+}
+
+// A story's set-up from an address, each part only when it is a known one: the template asked for, else an older shape asked for, else the one suggested for the story (decision 126)
+export function storyTakeFromQuery(params: { get: (name: string) => string | null }, storyId: string): StoryTake {
+  // The parts asked for
+  const [template, shape, focus, length] = [params.get("template"), params.get("shape"), params.get("focus"), params.get("length")];
+  // The template, an older shape, or the suggested template
+  const how: Pick<StoryTake, "template" | "shape"> = isStoryTemplate(template) ? { template } : isStoryShape(shape) ? { shape } : { template: suggestedTemplate(storyId) };
+  // With the focus and length
+  return { ...how, focus: isStoryFocus(focus) ? focus : null, length: isStoryLength(length) ? length : "full" };
+}

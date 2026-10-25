@@ -17,8 +17,8 @@ export const STORY_COACH_REPLY = {
     change: "Give the guard's line its own moment: pause, then say her words.",
     // The cue for the next telling
     retryCue: "Slow down at the guard's words.",
-    // The story notes
-    story: { beats: [{ beat: "setting", quote: "outside Reading" }, { beat: "turn", quote: "but then the guard came through" }, { beat: "meaning", quote: "since then I always carry a charger" }], yours: "she goes don't worry love two minutes", better: "Then the guard leans in: “Don't worry, love. Two minutes.” [how you felt]" },
+    // The story notes: a client win's beats (decision 126)
+    story: { beats: [], templateBeats: [{ beat: "problem", status: "strong", quote: "the train stopped dead outside Reading" }, { beat: "tried", status: "weak", quote: "but then the guard came through" }, { beat: "result", status: "missing", quote: "" }, { beat: "matters", status: "strong", quote: "since then I always carry a charger" }], yours: "she goes don't worry love two minutes", better: "Then the guard leans in: “Don't worry, love. Two minutes.” [how you felt]" },
   },
   // The internal rubric with the story scores
   rubric: { pointFirst: { score: 2, quote: "the train stopped" }, answersQuestion: { score: 3, quote: "the train stopped" }, structure: { score: 2, quote: "" }, ending: { score: 3, quote: "since then" }, concreteExample: { score: 3, quote: "Reading" }, wordChoice: { score: 2, quote: "stopped dead" }, devices: ["story"], unnecessaryHedges: 0, wordSwaps: [], model: "stand-in", story: { hook: { score: 3, quote: "the train stopped dead" }, stakes: { score: 2, quote: "" }, detail: { score: 3, quote: "Reading" }, dialogue: { score: 2, quote: "she goes" }, turn: { score: 2, quote: "but then" }, point: { score: 3, quote: "since then" } } },
@@ -38,7 +38,7 @@ export const GUIDED_COACH_REPLY = {
     // The cue for the next telling
     retryCue: "Pause when the gorilla looks at you.",
     // The story notes, with what was brought to life
-    story: { beats: [{ beat: "setting", quote: "at the zoo on Saturday" }, { beat: "turn", quote: "but the gorilla was staring right at me" }, { beat: "meaning", quote: "since then I always eat before I see a gorilla" }], yours: "the gorilla was staring right at me", better: "Then the gorilla stops chewing and stares right at me. [what you did next]", broughtToLife: "You added the mustard, Saturday and how scared you were; the gorilla itself is still as flat as the fact." },
+    story: { beats: [], templateBeats: [{ beat: "situation", status: "strong", quote: "at the zoo on Saturday" }, { beat: "wrong", status: "strong", quote: "but the gorilla was staring right at me" }, { beat: "did", status: "missing", quote: "" }, { beat: "learned", status: "strong", quote: "since then I always eat before I see a gorilla" }], yours: "the gorilla was staring right at me", better: "Then the gorilla stops chewing and stares right at me. [what you did next]", broughtToLife: "You added the mustard, Saturday and how scared you were; the gorilla itself is still as flat as the fact." },
   },
   // The internal rubric with the story scores, the guided one too
   rubric: { ...STORY_COACH_REPLY.rubric, story: { ...STORY_COACH_REPLY.rubric.story, alive: { score: 2, quote: "sticky with mustard" } } },
@@ -154,6 +154,8 @@ export const ROUTES: ReadonlyArray<string> = [
   "/session?mode=read&prompt=jfk-inaugural-2",
   // Stories, setting up a story, a moment that does not exist, and telling one (decision 92)
   "/stories",
+  // The 4/3/2 drill (decision 126)
+  "/practice/four-three-two",
   "/stories/tell?prompt=sp01",
   "/stories/tell?moment=missing",
   "/session?mode=story&prompt=sp01&shape=but-therefore&focus=dialogue&length=short",
@@ -199,6 +201,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/talk?id=missing", current: "Practice" },
   // Stories belong to Practice (decision 92)
   { path: "/stories", current: "Practice" },
+  // The 4/3/2 drill belongs to Practice (decision 126)
+  { path: "/practice/four-three-two", current: "Practice" },
   // Your check-ins and their comparison belong to Today (decision 100)
   { path: "/check-in", current: "Today" },
   // (the comparison)

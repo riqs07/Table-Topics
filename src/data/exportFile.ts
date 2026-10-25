@@ -6,7 +6,7 @@ import { answerScale, isCheckInPart, isRatingAnswer, isRatingScale, isSessionMod
 // Load the story merge rule (decision 92)
 import { mergeStory } from "@/core/storyLibrary";
 // Load the story choice checks
-import { isStoryFocus, isStoryLength, isStoryShape } from "@/content/stories";
+import { isStoryFocus, isStoryLength, isStoryShape, isStoryTemplate } from "@/content/stories";
 // Load the rubric reader and the rubric merge (decision 90)
 import { readRubric } from "@/core/analysis/rubric";
 // (merge)
@@ -286,8 +286,8 @@ function isSession(value: unknown): value is SessionRecord {
     (value.conversation === undefined || (isObject(value.conversation) && Array.isArray(value.conversation.turns) && value.conversation.turns.every(isTurn) && (value.conversation.scenarioId === undefined || isText(value.conversation.scenarioId)) && (value.conversation.twist === undefined || isNumber(value.conversation.twist)) && (value.conversation.difficulty === undefined || ["easy", "normal", "hard"].includes(value.conversation.difficulty as string)) && (value.conversation.turnMode === undefined || ["tap", "auto", "live", "call"].includes(value.conversation.turnMode as string)))) &&
     // A check-in take's check-in, number and part (decision 100)
     (value.checkIn === undefined || (isObject(value.checkIn) && isText(value.checkIn.id) && /^ci-\d{4}-\d{2}-\d{2}$/.test(value.checkIn.id) && isNumber(value.checkIn.week) && value.checkIn.week >= 1 && isCheckInPart(value.checkIn.part))) &&
-    // A told story's set-up (only on stories, decision 92)
-    (value.story === undefined || (isObject(value.story) && isStoryShape(value.story.shape) && (value.story.focus === null || isStoryFocus(value.story.focus)) && isStoryLength(value.story.length))) &&
+    // A told story's set-up (only on stories, decision 92): a template, or an older story's shape (decision 126)
+    (value.story === undefined || (isObject(value.story) && (value.story.template === undefined || isStoryTemplate(value.story.template)) && (value.story.shape === undefined || isStoryShape(value.story.shape)) && (value.story.template !== undefined || value.story.shape !== undefined) && (value.story.focus === undefined || value.story.focus === null || isStoryFocus(value.story.focus)) && isStoryLength(value.story.length))) &&
     // The speaker's own call on the take, asked before its results (decision 116; usually missing)
     (value.selfRating === undefined || isSelfRating(value.selfRating)) &&
     // A 4/3/2 round's loop, round and target (decision 118; usually missing)

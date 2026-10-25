@@ -1,5 +1,7 @@
 # Plan: storytelling as a practice mode
 
+> **Update, decision 126 (2026-10-25):** the shapes and the one-focus choices below were replaced by four templates (Lesson learned, Client win, Turning point, Funny moment), the coach marks each template beat strong, weak or missing, the phone's checklist and the shape strip left the results, and 4/3/2 is its own drill page. The research below still stands; the shapes are kept only so older stories read.
+
 **Built 2026-10-21 (decision 92); guided stories added the same day (decision 93).** The user asked to "add emphasis on stories and story telling … create story telling as a practice mode". It is a first-class part of the app, not a drill: its own place on the Practice menu, its own page, a step in today's practice, a family on the speaking profile, and its own coach.
 
 ## The idea in one line

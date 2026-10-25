@@ -225,16 +225,16 @@ describe("fallbacks", () => {
 });
 
 describe("a story and a conversation", () => {
-  // A story's shape
-  it("shows a told story's shape strip from the coach's beats", async () => {
-    // The story, with the coach's beats
-    const session = madeSession("story", zoo, { mode: "story", promptId: "sp01", feedback: { keep: "k", change: "c", retryCue: "r", story: { beats: [{ beat: "turn", quote: "and a seagull stole it" }, { beat: "meaning", quote: "since then I always eat" }], yours: "", better: "" } } });
+  // A story has no shape strip any more (decision 126): its pitch in the words, as any take of its length
+  it("shows a told story's pitch in the words, with no shape strip", async () => {
+    // The story, with older coach beats
+    const session = madeSession("story", zoo, { mode: "story", promptId: "sp01", feedback: { keep: "k", change: "c", retryCue: "r", story: { beats: [{ beat: "turn", quote: "and a seagull stole it" }], yours: "", better: "" } } });
     // Drawn
     render(<SessionScreen sessionId="story" repository={await repositoryWith([session])} now={NOW} />);
-    // The strip
-    const strip = await screen.findByRole("region", { name: "Story shape" });
-    // Its parts and source
-    expect([[...strip.querySelectorAll("[data-part]")].map((part) => part.getAttribute("data-part")), !!within(strip).getByText("From the beats the coach heard.")]).toEqual([["setup", "turn", "point"], true]);
+    // The pitch in the words
+    await screen.findByRole("region", { name: "Your voice" });
+    // No strip
+    expect(screen.queryByRole("region", { name: "Story shape" })).toBeNull();
   });
 
   // A conversation's timeline

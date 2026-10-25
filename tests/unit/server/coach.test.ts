@@ -121,17 +121,17 @@ describe("createClaudeCoach", () => {
     expect([Object.keys(sent.output_config.format.schema.properties).includes("rubric"), JSON.stringify(sent.system).includes("Also fill in rubric"), result.status === "ok" ? Object.keys(result.feedback) : null, result.status === "ok" ? [result.rubric?.pointFirst.score, result.rubric?.wordSwaps[0]?.stronger, result.rubric?.model] : null]).toEqual([true, true, ["keep", "change", "retryCue"], [2, "the highlight", COACH_MODEL]]);
   });
 
-  // A told story goes to the story coach and comes back with its beats, one line made better, and the story scores (decision 92)
-  it("sends a story to the story coach and keeps its beats and story scores", async () => {
+  // A told story goes to the story coach and comes back with its template's beats, one line made better, and the story scores (decisions 92 and 126)
+  it("sends a story to the story coach and keeps its template's beats and story scores", async () => {
     // Make a fake network that remembers the request
     const network = fakeNetwork(recorded("story-response"));
     // Ask for feedback on a story from the bank, with its set-up
-    const result = await createClaudeCoach("sk-test", network).getFeedback({ ...INPUT, mode: "story", promptId: "sp04", story: { shape: "but-therefore", focus: "dialogue", length: "short" } });
+    const result = await createClaudeCoach("sk-test", network).getFeedback({ ...INPUT, mode: "story", promptId: "sp04", story: { template: "lesson", focus: "dialogue", length: "short" } });
     // Read the request body that was sent
     const sent = JSON.parse(String((network.mock.calls[0] as unknown as [string, RequestInit])[1].body));
     // The checked feedback
     const feedback = result.status === "ok" ? result.feedback : null;
-    // Confirm the story instructions, the prompt and set-up, the schema's story scores, the known beats only (in story order, empty quotes and made-up ids dropped), the better line, and the scores kept in range
-    expect([JSON.stringify(sent.system).includes("VoiceLab's storytelling coach"), JSON.stringify(sent.messages).includes("Running late") || JSON.stringify(sent.messages).includes("running late for something"), JSON.stringify(sent.messages).includes("never \\\"and then\\\""), Object.keys(sent.output_config.format.schema.properties).includes("storyRubric"), feedback?.story?.beats.map((item) => item.beat), feedback?.story?.better.startsWith("Then the guard"), result.status === "ok" ? [result.rubric?.story?.point.score, result.rubric?.story?.point.quote, result.rubric?.story?.hook.score] : null]).toEqual([true, true, true, true, ["setting", "turn", "meaning"], true, [3, "since then I always carry a charger", 3]]);
+    // Confirm the story instructions, the prompt and template, the schema's story scores, every beat of the template in order (a made-up id dropped, a beat left out counted missing, quotes trimmed), the better line, and the scores kept in range
+    expect([JSON.stringify(sent.system).includes("VoiceLab's storytelling coach"), JSON.stringify(sent.messages).includes("Running late") || JSON.stringify(sent.messages).includes("running late for something"), JSON.stringify(sent.messages).includes("Template: Lesson learned"), Object.keys(sent.output_config.format.schema.properties).includes("storyRubric"), feedback?.story?.templateBeats?.map((item) => `${item.beat} ${item.status} ${item.quote}`), feedback?.story?.better.startsWith("Then the guard"), result.status === "ok" ? [result.rubric?.story?.point.score, result.rubric?.story?.point.quote, result.rubric?.story?.hook.score] : null]).toEqual([true, true, true, true, ["situation strong the train stopped dead outside Reading", "wrong weak my phone was on two percent", "did missing ", "learned strong since then I always carry a charger"], true, [3, "since then I always carry a charger", 3]]);
   });
 });

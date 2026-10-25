@@ -1,7 +1,9 @@
-// A guided story's card (decision 93): the plain facts in order, the twist marked, the nudges toward what to add, and the shape and focus by name in one line; full while choosing and planning, one line beside the voice shape while telling. It takes the place of the shape card, so a phone shows one card, not two
+// A guided story's card (decision 93): the plain facts in order, the twist marked, the nudges toward what to add, and the template (or an older story's shape) and focus by name in one line; full while choosing and planning, one line beside the voice shape while telling. It takes the place of the shape card, so a phone shows one card, not two
 
-// Load the shape and focus lookups
-import { findStoryFocus, findStoryShape } from "@/content/stories";
+// Load the focus lookup
+import { findStoryFocus } from "@/content/stories";
+// Load the plan's name (the template, or an older story's shape)
+import { planBeats } from "@/components/script/StoryPlanCard";
 // Load the guided story type and its facts
 import { factsOf, type GuidedStory } from "@/content/guidedStories";
 // Load the story set-up type
@@ -11,8 +13,8 @@ import { CARD } from "@/components/script/textStyles";
 
 // Draw the card
 export function GuidedStoryCard({ story, take, compact = false }: { story: GuidedStory; take: StoryTake; compact?: boolean }) {
-  // The shape
-  const shape = findStoryShape(take.shape);
+  // The template or shape, by name
+  const shape = planBeats(take);
   // The focus, if any
   const focus = findStoryFocus(take.focus);
   // While telling: the facts on one line, and the focus under them
@@ -64,8 +66,8 @@ export function GuidedStoryCard({ story, take, compact = false }: { story: Guide
           {story.nudges.map((nudge) => <li key={nudge}>{nudge}</li>)}
         </ul>
       </div>
-      {/* The shape and the focus, by name (the facts are the beats here) */}
-      <p className="mt-4 border-t border-rule pt-3 text-footnote"><span className="text-ink-muted">Shape:</span> <span className="font-semibold">{shape.name}</span>{focus && <> · <span className="text-ink-muted">Focus:</span> <span className="font-semibold">{focus.name}</span></>}</p>
+      {/* The template and the focus, by name (the facts are the beats here) */}
+      <p className="mt-4 border-t border-rule pt-3 text-footnote"><span className="text-ink-muted">Template:</span> <span className="font-semibold">{shape.name}</span>{focus && <> · <span className="text-ink-muted">Focus:</span> <span className="font-semibold">{focus.name}</span></>}</p>
     </section>
   );
 }

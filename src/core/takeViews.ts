@@ -1,4 +1,4 @@
-// Focus first (decision 115): which views a take's results show. A drill or lesson shows only its own view; a story or a conversation shows its own picture; everything else goes by length (under a minute: the pitch in the words only; a minute to two: the same; over two minutes: the take's fingerprint, the lens tabs open, its best moment and its energy arc). "Look closer" opens the full lens tabs on every take with words to show. Pure, so every mode and every boundary is tested
+// Focus first (decision 115): which views a take's results show. A drill or lesson shows only its own view; a conversation shows its own picture (a story goes by length, its beats being on the results above, decision 126); everything else goes by length (under a minute: the pitch in the words only; a minute to two: the same; over two minutes: the take's fingerprint, the lens tabs open, its best moment and its energy arc). "Look closer" opens the full lens tabs on every take with words to show. Pure, so every mode and every boundary is tested
 
 // Load the record types
 import type { SessionMode, SessionRecord } from "@/data/records";
@@ -25,8 +25,6 @@ export type TakeView =
   | "shadow"
   // A clear-sounds drill's own word check (decision 80)
   | "word-check"
-  // A story's set-up, turn, end and point as one strip
-  | "story-shape"
   // A conversation's turns in two lanes
   | "conversation"
   // The whole take as one strip
@@ -156,8 +154,8 @@ export function takeViews(take: TakeFacts): TakeViewPlan {
   if (take.mode === "read") return focus(band, ["pitch-text", "planned-stress"], "pitch");
   // A conversation: the two lanes (no audio is kept, so nothing else)
   if (take.mode === "conversation") return focus(band, ["conversation"], "pitch", false);
-  // A story: its shape strip with the checklist, then the length rule
-  if (take.mode === "story") return { rule: "focus", band, views: ["story-shape", ...lengthViews(band)], lens: "pitch", lookCloser: true };
+  // A story: the length rule (its beats are on the results above, decision 126; the shape strip is gone)
+  if (take.mode === "story") return { rule: "focus", band, views: lengthViews(band), lens: "pitch", lookCloser: true };
   // Everything else by length
   return { rule: "length", band, views: lengthViews(band), lens: "pitch", lookCloser: true };
 }

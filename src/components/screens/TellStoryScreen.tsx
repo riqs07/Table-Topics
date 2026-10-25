@@ -1,5 +1,5 @@
 "use client";
-// Before telling a story (decision 92): the prompt, the moment, or a guided story's facts (decision 93), then an optional shape, one focus and a length; the planning minute and the telling happen on the recording page
+// Before telling a story (decisions 92 and 126): the prompt, the moment, or a guided story's facts (decision 93), then the template to tell it with (the one suited to the prompt chosen first, its beats and a short worked example shown) and a length; the planning minute and the telling happen on the recording page. The 4/3/2 loop is its own drill now (decision 126)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -10,23 +10,19 @@ import { ActionBand } from "@/components/script/ActionBand";
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared button looks
 import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
-// Load the plan card, to preview the chosen shape
-import { StoryPlanCard } from "@/components/script/StoryPlanCard";
+// Load the shared card look
+import { CARD } from "@/components/script/textStyles";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the story content
-import { STORY_FOCUSES, STORY_LENGTHS, STORY_SHAPES, findStoryPrompt, momentIdOf } from "@/content/stories";
+import { STORY_LENGTHS, STORY_TEMPLATES, findStoryPrompt, findStoryTemplate, momentIdOf, storyTakeQuery, suggestedTemplate } from "@/content/stories";
 // Load the record types
-import type { StoryFocus, StoryLength, StoryShape } from "@/data/records";
+import type { StoryFocus, StoryLength, StoryTake, StoryTemplate } from "@/data/records";
 // Load the guided stories and their card (decision 93)
 import { findGuidedStory } from "@/content/guidedStories";
 import { GuidedStoryCard } from "@/components/script/GuidedStoryCard";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
-// Load the switch row
-import { CheckRow } from "@/components/script/CheckRow";
-// Load the 4/3/2 loop's address and times (decision 118)
-import { loopHref, targetWords } from "@/core/fourThreeTwo";
 
 // What the screen is given
 interface TellStoryProps extends ScreenProps {
@@ -34,9 +30,9 @@ interface TellStoryProps extends ScreenProps {
   storyId: string;
   // Inside today's practice: which step this is, or null
   planStep?: number | null;
-  // A shape to start on, from a Learn card's link (decision 94), or null for Classic
-  initialShape?: StoryShape | null;
-  // A focus to start on, from a Learn card's link (decision 94), or null for the story's own
+  // A template to start on, from the Stories page or a link, or null for the one suggested
+  initialTemplate?: StoryTemplate | null;
+  // A focus carried in from a Learn card's link (decision 94), or null for the story's own
   initialFocus?: StoryFocus | null;
 }
 
@@ -44,13 +40,13 @@ interface TellStoryProps extends ScreenProps {
 const choice = (chosen: boolean) => `min-h-11 rounded-xl border-2 px-3 py-2 text-left ${PRESS} ${chosen ? "border-fill bg-fill text-fill-ink" : "border-rule bg-card"}`;
 
 // The address that starts the planning minute and the telling
-export function tellSessionHref(storyId: string, shape: StoryShape, focus: StoryFocus | null, length: StoryLength, planStep: number | null = null): string {
+export function tellSessionHref(storyId: string, take: StoryTake, planStep: number | null = null): string {
   // The seed and set-up, and the plan step when inside today's practice
-  return `/session?mode=story&prompt=${encodeURIComponent(storyId)}&shape=${shape}${focus ? `&focus=${focus}` : ""}&length=${length}${planStep ? `&plan=${planStep}` : ""}`;
+  return `/session?mode=story&prompt=${encodeURIComponent(storyId)}${storyTakeQuery(take)}${planStep ? `&plan=${planStep}` : ""}`;
 }
 
 // Draw the screen
-export function TellStoryScreen({ storyId, planStep = null, initialShape = null, initialFocus = null, ...props }: TellStoryProps) {
+export function TellStoryScreen({ storyId, planStep = null, initialTemplate = null, initialFocus = null, ...props }: TellStoryProps) {
   // The repository
   const { repo } = useScreenBasics(props);
   // The prompt from the bank, if the story came from one
@@ -61,14 +57,18 @@ export function TellStoryScreen({ storyId, planStep = null, initialShape = null,
   const momentId = momentIdOf(storyId);
   // The moment's words (null while loading or when there is none)
   const [moment, setMoment] = useState<{ status: "loading" | "found" | "missing"; text: string }>({ status: momentId ? "loading" : "missing", text: "" });
-  // The shape (Classic by default)
-  const [shape, setShape] = useState<StoryShape>(initialShape ?? "classic");
-  // The focus: the one the link asked for, else the one a guided story suits, else none (the user can change it)
-  const [focus, setFocus] = useState<StoryFocus | null>(initialFocus ?? guided?.focus ?? null);
+  // The template suggested for this story
+  const suggested = suggestedTemplate(storyId);
+  // The template (the one asked for, else the suggested one)
+  const [template, setTemplate] = useState<StoryTemplate>(initialTemplate ?? suggested);
+  // The focus carried in: the one the link asked for, else the one a guided story suits, else none
+  const focus: StoryFocus | null = initialFocus ?? guided?.focus ?? null;
   // The length (full by default; short inside today's practice, which keeps to a few minutes, or when the link asks for under a minute)
   const [length, setLength] = useState<StoryLength>(planStep || initialFocus === "minute" ? "short" : "full");
-  // Tell it three times, shorter each time (decision 118)
-  const [threeTimes, setThreeTimes] = useState(false);
+  // The chosen template's details
+  const chosen = findStoryTemplate(template);
+  // The set-up as it will be told
+  const take: StoryTake = { template, focus, length };
   // Name the tab
   usePageTitle("Tell a story");
 
@@ -93,14 +93,6 @@ export function TellStoryScreen({ storyId, planStep = null, initialShape = null,
     };
   }, [momentId, repo]);
 
-  // Pick a focus: "Under a minute" also picks the short length
-  function pickFocus(next: StoryFocus | null) {
-    // The focus
-    setFocus(next);
-    // A minute means the short length
-    if (next === "minute") setLength("short");
-  }
-
   // Where the close button leads
   const close = planStep ? { href: "/", label: "Close, back to Today" } : { href: "/stories", label: "Close, back to Stories" };
   // Neither a known prompt nor a moment note that exists
@@ -117,42 +109,37 @@ export function TellStoryScreen({ storyId, planStep = null, initialShape = null,
       ) : (
         <>
           {/* Where it came from */}
-          <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : guided ? "Guided story" : "Your story"}</p>
+          {(momentId || guided) && <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Guided story"}</p>}
           {/* The prompt, a guided story's title, or the moment in the user's words */}
-          <h1 className={`mt-1 font-display tracking-tight ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
-          {/* A guided story's facts and nudges, with the shape and focus as chosen below (decision 93) */}
-          {guided && <GuidedStoryCard story={guided} take={{ shape, focus, length }} />}
+          <h1 className={`${momentId || guided ? "mt-1" : "mt-6"} font-display tracking-tight ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
+          {/* A guided story's facts and nudges, with the template named (decision 93) */}
+          {guided && <GuidedStoryCard story={guided} take={take} />}
 
-          {/* The shape */}
-          <div role="group" aria-labelledby="shape-label" className="mt-8">
+          {/* The template */}
+          <div role="group" aria-labelledby="template-label" className="mt-8">
             {/* Label */}
-            <p id="shape-label" className="font-semibold">A shape <span className="font-normal text-ink-muted">(optional)</span></p>
-            {/* The shapes */}
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              {STORY_SHAPES.map((item) => (
-                // One shape, filled when chosen
-                <button key={item.id} type="button" aria-pressed={shape === item.id} onClick={() => setShape(item.id)} className={choice(shape === item.id)}>
-                  {/* Its name */}
+            <p id="template-label" className="font-semibold">Template</p>
+            {/* The templates, only the chosen one showing what it is for and its beats */}
+            <div className="mt-2 grid max-w-xl gap-2">
+              {STORY_TEMPLATES.map((item) => (
+                // One template, filled when chosen
+                <button key={item.id} type="button" aria-pressed={template === item.id} onClick={() => setTemplate(item.id)} className={choice(template === item.id)}>
+                  {/* Its name (the suggested one is chosen at the start, so it needs no label) */}
                   <span className="block font-semibold">{item.name}</span>
-                  {/* What it is */}
-                  <span className="block text-footnote opacity-80">{item.blurb}</span>
+                  {/* The chosen one: what it is for, and its beats in one line (the others' are a tap away, so the first screen stays short) */}
+                  {template === item.id && <><span className="block text-footnote opacity-80">{item.forWhat}</span><span className="mt-1 block text-footnote">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span></>}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* The focus */}
-          <div role="group" aria-labelledby="focus-label" className="mt-6">
-            {/* Label */}
-            <p id="focus-label" className="font-semibold">One thing to try <span className="font-normal text-ink-muted">(optional)</span></p>
-            {/* None, then the focuses */}
-            <div className="mt-2 flex flex-wrap gap-2">
-              {/* None */}
-              <button type="button" aria-pressed={focus === null} onClick={() => pickFocus(null)} className={choice(focus === null)}>Just tell it</button>
-              {/* Each focus */}
-              {STORY_FOCUSES.map((item) => <button key={item.id} type="button" aria-pressed={focus === item.id} onClick={() => pickFocus(item.id)} className={choice(focus === item.id)}>{item.name}</button>)}
-            </div>
-          </div>
+          {/* A short worked example of the chosen template, each beat named */}
+          <section aria-label={`Example: ${chosen.name}`} data-template-example className={`mt-4 max-w-xl p-4 ${CARD}`}>
+            {/* Heading */}
+            <p className="text-footnote font-semibold">Example · {chosen.name}</p>
+            {/* The example, beat by beat */}
+            <p className="mt-1 text-footnote">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-accent">({chosen.beats[index]!.name.toLowerCase()})</b> </span>)}</p>
+          </section>
 
           {/* The length */}
           <div role="group" aria-labelledby="length-label" className="mt-6">
@@ -172,16 +159,10 @@ export function TellStoryScreen({ storyId, planStep = null, initialShape = null,
             </div>
           </div>
 
-          {/* Tell it three times, shorter each time (decision 118) */}
-          <div className="mt-6 max-w-md"><CheckRow checked={threeTimes} onChange={(event) => setThreeTimes(event.target.checked)} detail={targetWords("story", length)}>Tell it three times, shorter each time</CheckRow></div>
-
-          {/* The plan as it will show while planning (a guided story's card above already shows it) */}
-          {!guided && <StoryPlanCard take={{ shape, focus, length }} />}
-
           {/* Push the band down */}
           <div className="flex-1" />
           {/* Start: a minute to plan, then tell it */}
-          <ActionBand action="Start" aside={threeTimes ? "three rounds, one sitting" : "up to a minute to plan"} href={threeTimes ? loopHref({ mode: "story", promptId: storyId, story: { shape, focus, length }, planStep }, "new", 1) : tellSessionHref(storyId, shape, focus, length, planStep)} />
+          <ActionBand action="Start" aside="a minute to plan" href={tellSessionHref(storyId, take, planStep)} />
         </>
       )}
     </main>

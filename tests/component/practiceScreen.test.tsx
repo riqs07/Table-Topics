@@ -82,7 +82,7 @@ describe("PracticeScreen", () => {
     // Open it
     fireEvent.click(all);
     // Confirm closed then open, with every row
-    expect([before, spot.getByRole("button", { name: "Show fewer" }).getAttribute("aria-expanded"), spot.getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent)]).toEqual([["false", null], "true", ["Rapid Fire", "Prepared speech", "Read aloud", "Free talk", "Short speech"]]);
+    expect([before, spot.getByRole("button", { name: "Show fewer" }).getAttribute("aria-expanded"), spot.getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent)]).toEqual([["false", null], "true", ["Rapid Fire", "Prepared speech", "Read aloud", "4/3/2", "Free talk", "Short speech"]]);
   });
 
   // The voice group shows what is next: the modes done least come first, so a done mode makes room (decision 108)

@@ -1,5 +1,5 @@
 "use client";
-// The views on a take's page, chosen focus first (decision 115): a drill or lesson shows only its own view, a story its shape strip, and everything else goes by length (under two minutes: the pitch in the words; over two minutes: the fingerprint, the lens tabs open, the best moment and the energy arc). "Look closer" opens the lens tabs in place on every take. Loaded after the page is up, so a take's first download stays small (decisions 99 and 111)
+// The views on a take's page, chosen focus first (decision 115): a drill or lesson shows only its own view, and everything else (a story too, decision 126) goes by length (under two minutes: the pitch in the words; over two minutes: the fingerprint, the lens tabs open, the best moment and the energy arc). "Look closer" opens the lens tabs in place on every take. Loaded after the page is up, so a take's first download stays small (decisions 99 and 111)
 
 // Load React's state, memo, effect and callback tools
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
@@ -10,7 +10,7 @@ import { ClarityLensView, LensEmpty, LookCloser, PaceLensView, PausesLensView, W
 // Load every chart, for the week of testing (decision 124)
 import { ChartTrial } from "@/components/script/ChartTrial";
 // Load the at-a-glance views
-import { BestMomentCard, EnergyArcCard, FingerprintCard, StoryShapeStrip } from "@/components/script/TakeGlance";
+import { BestMomentCard, EnergyArcCard, FingerprintCard } from "@/components/script/TakeGlance";
 // Load the shared heading look
 import { PRESS } from "@/components/script/Buttons";
 import { SECTION_HEADING } from "@/components/script/textStyles";
@@ -28,7 +28,6 @@ import { takePitch } from "@/core/takePitch";
 import { takeFingerprint } from "@/core/fingerprint";
 import { bestMoment } from "@/core/bestMoment";
 import { energyArc } from "@/core/energyArc";
-import { storyShape } from "@/core/storyShape";
 // Load the spacing of the readings
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the record types
@@ -142,10 +141,8 @@ export function TakeViews({ repo, session, sessions, usual, hide, fluency, pause
     const moment = plan.views.includes("best-moment") && phrases.length > 0 ? bestMoment({ phrases, fillers: fillerTimes(text), levels: session.loudness ?? [], tickMs: LOUDNESS_TICK_MS }) : null;
     // The energy arc, for a long take
     const arc = plan.views.includes("energy-arc") && session.loudness && session.pitch ? energyArc(session.loudness, session.pitch, LOUDNESS_TICK_MS) : null;
-    // The story's shape (word times only when they line up one to one with the words)
-    const shape = plan.views.includes("story-shape") ? storyShape({ transcript: session.transcript, times: session.spokenTimes && session.spokenTimes.length === session.transcript.split(/\s+/).filter((piece) => piece !== "").length ? session.spokenTimes : null, durationSec: session.durationSec, beats: session.feedback?.story?.beats ?? null }) : null;
     // Everything
-    return { text, pauses, pace, words, clarity, print, moment, arc, shape, phrases };
+    return { text, pauses, pace, words, clarity, print, moment, arc, phrases };
   }, [ready, session, serverWords, script, sessions, analysis, plan, pauseWords]);
   // Whether the lens tabs are open: open from the start on a long take
   const [open, setOpen] = useState(plan.views.includes("lens-tabs"));
@@ -235,8 +232,6 @@ export function TakeViews({ repo, session, sessions, usual, hide, fluency, pause
   // The views
   return (
     <>
-      {/* A story's shape */}
-      {found.shape && <StoryShapeStrip shape={found.shape} />}
       {/* A long take's fingerprint, at the top */}
       {found.print && <FingerprintCard print={found.print} />}
       {/* The lens tabs, open */}

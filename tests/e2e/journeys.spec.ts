@@ -952,8 +952,8 @@ async function tellStory(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
 }
 
-// Storytelling (decision 92): pick a prompt, choose a shape and a focus, plan, tell, see what was heard and the coach's line, tell it again and see both tellings side by side, then find it in Your stories
-test("Stories: pick a prompt, choose a shape, tell it, then tell it again and compare", async ({ page }) => {
+// Storytelling (decisions 92 and 126): pick a prompt, choose a template, plan with its beats, tell, see your beats and the coach's line, tell it again and see both tellings side by side, then find it in Your stories
+test("Stories: pick a prompt, choose a template, tell it, then tell it again and compare", async ({ page }) => {
   // The stand-in speech tells a story
   await useStandIns(page, STORY_SPOKEN);
   // Past the welcome, with the passphrase saved so the coach is asked
@@ -977,32 +977,30 @@ test("Stories: pick a prompt, choose a shape, tell it, then tell it again and co
   await page.getByRole("link", { name: "Tell me about a time a plan fell apart at the last minute." }).click();
   // The set-up page
   await expect(page).toHaveURL(/\/stories\/tell\?prompt=sp01/);
-  // Choose the "But and so" shape
-  await page.getByRole("button", { name: /But and so/ }).click();
-  // And one thing to try
-  await page.getByRole("button", { name: "Add one line of what someone said" }).click();
+  // Choose the Client win template
+  await page.getByRole("button", { name: /Client win/ }).click();
   // Short
   await page.getByRole("button", { name: /^Short/ }).click();
   // Start
   await page.getByRole("link", { name: /^Start/ }).click();
   // The telling page, with the set-up in the address
-  await expect(page).toHaveURL(/mode=story&prompt=sp01&shape=but-therefore&focus=dialogue&length=short/);
-  // The shape shows while planning
-  await expect(page.getByRole("region", { name: "Your story's shape" })).toContainText("What you wanted");
+  await expect(page).toHaveURL(/mode=story&prompt=sp01&template=client-win&length=short/);
+  // The template's beats show while planning
+  await expect(page.getByRole("region", { name: "Your beats" })).toContainText("The result, with a number");
   // Plan and tell
   await tellStory(page);
-  // What I heard: someone's words and the turn were heard
-  await expect(page.getByRole("list", { name: "What I heard" }).locator("[data-heard=true]")).not.toHaveCount(0);
+  // The headline from the beats, and what worked
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("2 of 4 beats came through clearly.");
   // The coach's line and how it could sound
   await expect(page.locator("[data-story-line]")).toContainText("Could sound like");
-  // The beats it heard
-  await expect(page.getByRole("region", { name: "The beats" })).toContainText("3 of 5");
+  // Each beat, the result missing
+  await expect(page.locator("[data-your-beats] [data-beat='result']")).toHaveAttribute("data-status", "missing");
   // Tell it again
   await page.getByRole("link", { name: /Tell it again/ }).click();
-  // Same story, same shape, last time's cue to carry in
+  // Same story, same template, last time's cue to carry in
   await expect(page.getByText("Slow down at the guard's words.")).toBeVisible();
-  // (the shape is kept)
-  await expect(page.getByRole("region", { name: "Your story's shape" })).toContainText("What you wanted");
+  // (the template is kept)
+  await expect(page.getByRole("region", { name: "Your beats" })).toContainText("The result, with a number");
   // Plan and tell again
   await tellStory(page);
   // Both tellings side by side
@@ -1047,8 +1045,8 @@ test("Stories: tell a saved moment properly, and find it in Your stories", async
   await page.getByRole("link", { name: /^Start/ }).click();
   // Plan and tell
   await tellStory(page);
-  // What I heard, from the phone, with its honest line
-  await expect(page.getByText(/Rough guesses/)).toBeVisible();
+  // The telling, with no coach and no rough checklist (decision 126)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your story.");
   // To Your stories
   await page.getByRole("link", { name: "Your stories", exact: true }).click();
   // The story is listed by the moment's first words, told once
@@ -1168,12 +1166,12 @@ test("Guided story: pick one, tell it, see what you added, then tell it again", 
   await page.getByText("With a twist", { exact: true }).click();
   // Pick the zoo
   await page.getByRole("link", { name: "A day at the zoo" }).click();
-  // The set-up page, starting on the story's own focus
+  // The set-up page
   await expect(page).toHaveURL(/\/stories\/tell\?prompt=gs13/);
   // The facts card with the twist
   await expect(page.getByRole("region", { name: "Your facts" })).toContainText("The gorilla was staring right at you.");
-  // (the focus it suits, chosen)
-  await expect(page.getByRole("button", { name: "Start in the middle" })).toHaveAttribute("aria-pressed", "true");
+  // (the focus it suits, carried in)
+  await expect(page.getByRole("link", { name: /^Start/ })).toHaveAttribute("href", /focus=middle/);
   // Short
   await page.getByRole("button", { name: /^Short/ }).click();
   // Start

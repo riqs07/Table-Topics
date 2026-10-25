@@ -2,6 +2,8 @@
 
 // Load the clock format
 import { formatClock } from "@/core/recordingRules";
+// Load the story set-up as address parts (decision 126)
+import { storyTakeQuery } from "@/content/stories";
 // Load the record types
 import type { SessionMode, SessionRecord, StoryLength, StoryTake } from "@/data/records";
 
@@ -48,7 +50,7 @@ export function targetWords(mode: LoopMode, length: StoryLength = "full"): strin
 // The address of a round: the same prompt and set-up, the loop ("new" before the first round is saved) and the round, and any retry and plan step
 export function loopHref(take: { mode: LoopMode; promptId: string; story?: StoryTake | null; retryOf?: string | null; planStep?: number | null }, loopId: string, round: number): string {
   // The story's set-up, when a story
-  const story = take.mode === "story" && take.story ? `&shape=${take.story.shape}${take.story.focus ? `&focus=${take.story.focus}` : ""}&length=${take.story.length}` : "";
+  const story = take.mode === "story" && take.story ? storyTakeQuery(take.story) : "";
   // The parts together
   return `/session?mode=${take.mode}&prompt=${encodeURIComponent(take.promptId)}${story}${take.retryOf ? `&retryOf=${encodeURIComponent(take.retryOf)}` : ""}&loop=${encodeURIComponent(loopId)}&round=${round}${take.planStep ? `&plan=${take.planStep}` : ""}`;
 }

@@ -8,7 +8,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TimerIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the Connect units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the next Connect unit (decision 95)
@@ -251,6 +251,8 @@ export function PracticeScreen(props: ScreenProps) {
               { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
               // Reading aloud, moved here from Build a skill (decision 93); the page holds the readings only now (decision 107)
               { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills", icon: BookOpenTextIcon },
+              // The 4/3/2 drill: the same content three times, shorter each time (decision 126)
+              { name: "4/3/2", detail: "Say it three times, shorter each time", href: "/practice/four-three-two", icon: TimerIcon },
               // Free talk: anything, as long as you like (decision 73), under "See all" (decision 108)
               { name: "Free talk", detail: "Talk about anything, as long as you like", href: "/session?mode=free&prompt=free", icon: MicrophoneStageIcon },
               // A short speech the user plans: topic and points (decision 73), here unless the focus put it first; under "See all" (decision 108)

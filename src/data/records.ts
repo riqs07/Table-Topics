@@ -43,7 +43,28 @@ export interface StoryFeedback {
   better: string;
   // For a guided story: what they brought to the facts beyond the facts themselves, and what is still flat, in a sentence or two (decision 93)
   broughtToLife?: string;
+  // Each beat of the template the story was told with, in order: strong, weak or missing, with the speaker's words (decision 126); missing on stories reviewed before templates
+  templateBeats?: TemplateBeatNote[];
 }
+
+// How one beat of a story template came across (decision 126)
+export type BeatStatus = "strong" | "weak" | "missing";
+
+// One beat of a story template, as the coach heard it (decision 126)
+export interface TemplateBeatNote {
+  // The beat's id within its template
+  beat: string;
+  // Strong, weak or missing
+  status: BeatStatus;
+  // The speaker's words that showed it, quoted exactly (empty when missing)
+  quote: string;
+}
+
+// The story templates a story is told with (decision 126): a lesson learned, a client win, a turning point, a funny moment
+export const STORY_TEMPLATE_IDS = ["lesson", "client-win", "turning-point", "funny"] as const;
+
+// One story template
+export type StoryTemplate = (typeof STORY_TEMPLATE_IDS)[number];
 
 // A story's optional shape (decision 92)
 export type StoryShape = "classic" | "but-therefore" | "then-now" | "small-moment";
@@ -56,10 +77,12 @@ export type StoryLength = "short" | "full";
 
 // What one telling of a story was set up with; the story itself is named by the session's prompt id (its seed: a prompt from the bank, or "moment-" and a moment note's id), so every telling of the same seed is a version of the same story (decision 92)
 export interface StoryTake {
-  // The shape shown while planning
-  shape: StoryShape;
-  // The focus, or null for none
-  focus: StoryFocus | null;
+  // The template it was told with (decision 126); missing on stories told before templates
+  template?: StoryTemplate;
+  // The shape shown while planning, on stories told before templates (decision 92; replaced by the template, decision 126)
+  shape?: StoryShape;
+  // The focus, or null for none: a guided story's suggested focus, and older stories' chosen one (the focus choices left the set-up page, decision 126)
+  focus?: StoryFocus | null;
   // The length chosen
   length: StoryLength;
 }

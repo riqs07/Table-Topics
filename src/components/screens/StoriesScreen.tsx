@@ -1,5 +1,5 @@
 "use client";
-// Stories (decision 92): today's story, guided stories with the facts given (decision 93), the user's own stories to tell again, their moment notes to tell properly, and the bank of story prompts
+// Stories (decisions 92 and 126): today's story with its suggested template, the user's own stories to tell again, the four templates (each starts today's story with it), then guided stories with the facts given (decision 93), moment notes to tell properly, and the bank of story prompts
 
 // Load React's state and effect tools
 import { useCallback, useEffect, useState } from "react";
@@ -15,7 +15,7 @@ import { FoldCard } from "@/components/script/FoldCard";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the story prompts and groups
-import { STORY_GROUPS, STORY_PROMPTS, momentTitle, storyPromptForDay } from "@/content/stories";
+import { STORY_GROUPS, STORY_PROMPTS, STORY_TEMPLATES, findStoryTemplate, momentTitle, storyPromptForDay, suggestedTemplate } from "@/content/stories";
 // Load the guided stories (decision 93)
 import { GUIDED_LEVELS, GUIDED_STORIES, guidedLevel } from "@/content/guidedStories";
 // Load the moment note's prompt
@@ -30,7 +30,7 @@ import { dayLabel } from "@/core/copy";
 import type { SessionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the shared heading and card looks
-import { CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -38,7 +38,7 @@ import { PAGE } from "@/components/script/layout";
 const MOMENTS_SHOWN = 5;
 
 // Where telling a prompt starts
-export const tellHref = (promptId: string) => `/stories/tell?prompt=${encodeURIComponent(promptId)}`;
+export const tellHref = (promptId: string, template?: string) => `/stories/tell?prompt=${encodeURIComponent(promptId)}${template ? `&template=${template}` : ""}`;
 
 // Where telling a moment note starts
 export const tellMomentHref = (momentId: string) => `/stories/tell?moment=${encodeURIComponent(momentId)}`;
@@ -105,7 +105,7 @@ function StoryRow({ story, repo, now, onRenamed }: { story: LibraryStory; repo: 
       {/* Why saving failed */}
       {error && <p role="alert" className="mt-1 text-footnote">{error}</p>}
       {/* How often, and when last */}
-      <p className="mt-1 text-footnote text-ink-muted">Told {story.tellings === 1 ? "once" : story.tellings === 2 ? "twice" : `${story.tellings} times`} · last {dayLabel(new Date(story.lastToldAt), now).toLowerCase()}</p>
+      <p className="mt-1 text-footnote text-ink-muted">{story.latest.story?.template ? `${findStoryTemplate(story.latest.story.template).name} · ` : ""}Told {story.tellings === 1 ? "once" : story.tellings === 2 ? "twice" : `${story.tellings} times`} · last {dayLabel(new Date(story.lastToldAt), now).toLowerCase()}</p>
       {/* The takeaway for next time */}
       <p className="mt-1 text-lede"><span className="text-footnote text-ink-muted">Next time: </span>{story.takeaway}</p>
       {/* Tell it again, and see the last telling */}
@@ -167,18 +167,61 @@ export function StoriesScreen(props: ScreenProps) {
       {/* The page's name and what it is for */}
       <PageTitle title="Stories">Tell a true story, then tell it again, a little better each time.</PageTitle>
 
-      {/* Today's story */}
+      {/* Today's story, with the template suggested for it (decision 126) */}
       {todays && (
-        <section aria-labelledby="today-story" className="mt-8">
+        <section aria-labelledby="today-story" className={`mt-8 p-5 ${CARD}`}>
           {/* Heading */}
-          <h2 id="today-story" className={SECTION_HEADING}>Today’s story</h2>
+          <h2 id="today-story" className="text-footnote font-semibold uppercase tracking-wide text-ink-muted">Today’s story</h2>
           {/* The prompt */}
-          <ul className={`mt-2 ${CARD_LIST}`}>
-            {/* One row */}
-            <li><RowLink href={tellHref(todays.id)}><span className="block font-display text-cue">{todays.text}</span></RowLink></li>
-          </ul>
+          <p className="mt-2 font-display text-cue font-semibold leading-tight">{todays.text}</p>
+          {/* The suggested template */}
+          <p className="mt-2 text-footnote text-ink-muted">Suggested template: {findStoryTemplate(suggestedTemplate(todays.id)).name}</p>
+          {/* Tell it */}
+          <Link href={tellHref(todays.id)} className={`mt-4 ${SECONDARY}`}>Tell it</Link>
         </section>
       )}
+
+      {/* Why loading failed */}
+      {loadError !== null && <p role="alert" className="mt-8 max-w-[48ch] text-lede">Your stories could not be loaded. The browser said: “{loadError}” <button type="button" onClick={reload} className={TEXT_LINK}>Try again</button></p>}
+
+      {/* Your stories */}
+      <section aria-labelledby="your-stories" className="mt-10">
+        {/* Heading */}
+        <h2 id="your-stories" className={SECTION_HEADING}>Your stories</h2>
+        {/* The list, or what will be here */}
+        {loaded && loaded.stories.length > 0 && today ? (
+          <ul aria-label="Your stories" className={`mt-2 ${CARD_LIST}`}>
+            {/* Each story */}
+            {loaded.stories.map((story) => <StoryRow key={`${story.id}-${story.title}`} story={story} repo={repo} now={today} onRenamed={reload} />)}
+          </ul>
+        ) : (
+          loaded && <p className="mt-2 max-w-[48ch] text-ink-muted">Stories you tell land here, ready to tell again.</p>
+        )}
+      </section>
+
+      {/* The templates: each starts today's story told with it (decision 126) */}
+      <section aria-labelledby="templates" className="mt-10">
+        {/* Heading */}
+        <h2 id="templates" className={SECTION_HEADING}>Templates</h2>
+        {/* What they are */}
+        <p className="mt-1 max-w-[48ch] text-ink-muted">A few beats to tell a story in. Pick one for today’s story.</p>
+        {/* Each template */}
+        <ul aria-label="Templates" className={`mt-2 ${CARD_LIST}`}>
+          {STORY_TEMPLATES.map((template) => (
+            // One template, starting today's story with it
+            <li key={template.id}>
+              <RowLink href={todays ? tellHref(todays.id, template.id) : "/stories"} label={`${template.name}: ${template.forWhat}`}>
+                {/* Its name */}
+                <span className="block font-semibold">{template.name}</span>
+                {/* What it is for */}
+                <span className="block text-footnote text-ink-muted">{template.forWhat}</span>
+                {/* Its beats */}
+                <span className="block text-footnote text-accent">{template.beats.map((beat) => beat.name).join(" → ")}</span>
+              </RowLink>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {/* Guided stories: the facts are given, the user makes them a story (decision 93) */}
       <section aria-labelledby="guided" id="guided-stories" className="mt-10 scroll-mt-6">
@@ -203,24 +246,6 @@ export function StoriesScreen(props: ScreenProps) {
             );
           })}
         </div>
-      </section>
-
-      {/* Why loading failed */}
-      {loadError !== null && <p role="alert" className="mt-8 max-w-[48ch] text-lede">Your stories could not be loaded. The browser said: “{loadError}” <button type="button" onClick={reload} className={TEXT_LINK}>Try again</button></p>}
-
-      {/* Your stories */}
-      <section aria-labelledby="your-stories" className="mt-10">
-        {/* Heading */}
-        <h2 id="your-stories" className={SECTION_HEADING}>Your stories</h2>
-        {/* The list, or what will be here */}
-        {loaded && loaded.stories.length > 0 && today ? (
-          <ul aria-label="Your stories" className={`mt-2 ${CARD_LIST}`}>
-            {/* Each story */}
-            {loaded.stories.map((story) => <StoryRow key={`${story.id}-${story.title}`} story={story} repo={repo} now={today} onRenamed={reload} />)}
-          </ul>
-        ) : (
-          loaded && <p className="mt-2 max-w-[48ch] text-ink-muted">Stories you tell land here, ready to tell again.</p>
-        )}
       </section>
 
       {/* From your moments */}

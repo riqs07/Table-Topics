@@ -7,6 +7,10 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { RecordingScreen } from "@/components/screens/RecordingScreen";
 import { TellStoryScreen } from "@/components/screens/TellStoryScreen";
 import { SessionScreen } from "@/components/screens/SessionScreen";
+import { FourThreeTwoScreen } from "@/components/screens/FourThreeTwoScreen";
+// Load the day's pickers and the suggested template
+import { promptForDay } from "@/content/prompts";
+import { storyPromptForDay, suggestedTemplate } from "@/content/stories";
 // Load the recording contracts
 import type { RecordingServices } from "@/audio/services";
 // Load the in-memory store and repository
@@ -64,32 +68,40 @@ async function recordRound(repository: Repository, loop: { id: string | null; ro
   return { navigate };
 }
 
-// The offer
-describe("the offer", () => {
-  // Before a prepared speech: the way into three rounds, with the times
-  it("offers three rounds before a prepared speech", async () => {
+// The drill's own page (decision 126): the 4/3/2 loop left the recording page and the story set-up
+describe("the 4/3/2 page", () => {
+  // Not offered before a prepared speech or on a story's set-up any more
+  it("is no longer offered on the recording page or the story set-up", async () => {
+    // A prepared speech before starting
+    const { unmount } = render(<RecordingScreen promptId="p008" mode="response" retryOf={null} repository={createRepository(new MemoryStore())} services={services()} navigate={vi.fn()} />);
+    // Drawn, with no offer
+    await screen.findByRole("button", { name: /Start thinking/ });
+    // (none)
+    expect(screen.queryByRole("link", { name: "Tell it three times, shorter each time" })).toBeNull();
+    // Closed
+    unmount();
+    // A story's set-up, with no switch
+    render(<TellStoryScreen storyId="sp01" repository={createRepository(new MemoryStore())} now={NOW} />);
     // Drawn
-    render(<RecordingScreen promptId="p008" mode="response" retryOf={null} repository={createRepository(new MemoryStore())} services={services()} navigate={vi.fn()} />);
-    // The offer
-    const offer = await screen.findByRole("link", { name: "Tell it three times, shorter each time" });
-    // Where it leads, and the times beside it
-    expect([offer.getAttribute("href"), offer.parentElement?.textContent]).toEqual(["/session?mode=response&prompt=p008&loop=new&round=1", "Tell it three times, shorter each time4:00, then 3:00, then 2:00"]);
+    await screen.findByRole("button", { name: /Lesson learned/ });
+    // (none)
+    expect(screen.queryByRole("checkbox", { name: /Tell it three times/ })).toBeNull();
   });
 
-  // A story's set-up: a switch, which changes where Start leads
-  it("offers three rounds on a story's set-up", async () => {
+  // Today's prepared speech and story, then the user's own stories with the set-up they were last told with
+  it("starts round 1 on today's speech, today's story, or one of your stories", async () => {
+    // A repository with one told story, a client win
+    const repository = createRepository(new MemoryStore());
+    // The telling
+    await repository.saveSession(makeSession({ id: "told", mode: "story", promptId: "sp06", story: { template: "client-win", focus: null, length: "short" } }));
     // Drawn
-    render(<TellStoryScreen storyId="sp01" repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Short
-    fireEvent.click(await screen.findByRole("button", { name: /Short/ }));
-    // The switch, with the short story's times
-    const toggle = screen.getByRole("checkbox", { name: /Tell it three times, shorter each time/ });
-    // (the times)
-    expect(screen.getByText("2:00, then 1:30, then 1:00")).toBeTruthy();
-    // On
-    fireEvent.click(toggle);
-    // Start leads to round 1 of a new loop
-    expect(screen.getByRole("link", { name: /Start/ }).getAttribute("href")).toBe("/session?mode=story&prompt=sp01&shape=classic&length=short&loop=new&round=1");
+    render(<FourThreeTwoScreen repository={repository} now={NOW} />);
+    // The day's two
+    const today = within(await screen.findByRole("list", { name: "Today's 4/3/2" })).getAllByRole("link").map((link) => link.getAttribute("href"));
+    // The user's story
+    const yours = within(await screen.findByRole("list", { name: "Your stories" })).getByRole("link");
+    // Each starts round 1 of a new loop: the speech, today's story with its suggested template, and the told story with its own set-up as a retelling
+    expect([today, yours.getAttribute("href")]).toEqual([[`/session?mode=response&prompt=${promptForDay(NOW, 1).id}&loop=new&round=1`, `/session?mode=story&prompt=${storyPromptForDay(NOW).id}&template=${suggestedTemplate(storyPromptForDay(NOW).id)}&length=full&loop=new&round=1`], "/session?mode=story&prompt=sp06&template=client-win&length=short&retryOf=told&loop=new&round=1"]);
   });
 });
 

@@ -31,7 +31,7 @@ import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 // Load the recording length rules
 import { LOUDNESS_TICK_MS, formatClock, loopWindow, maxSeconds, minSeconds, readingSeconds, speakingWindow, targetSeconds, thinkSeconds, timeSignal, timingCue, windowSignal, type SpeakingWindow, type TimeSignal } from "@/core/recordingRules";
 // Load the 4/3/2 loop's rounds and addresses (decision 118)
-import { isLoopMode, LOOP_ROUNDS, loopHref, roundTarget, targetWords } from "@/core/fourThreeTwo";
+import { isLoopMode, LOOP_ROUNDS, loopHref, roundTarget } from "@/core/fourThreeTwo";
 // Load the pause-word setting rule
 import { pauseWordsShown } from "@/core/pauseWords";
 // Load the space bar shortcut choice
@@ -47,7 +47,7 @@ import type { CheckInPart, RatingAnswer, RatingScale, SessionMode, SessionRecord
 import { CHECK_IN_PARTS, CHECK_IN_PART_INFO } from "@/core/checkIn";
 // Load the story prompts and moment seeds, and the plan card (decision 92)
 import { momentIdOf, seedText } from "@/content/stories";
-import { StoryPlanCard } from "@/components/script/StoryPlanCard";
+import { StoryPlanCard, StoryPointers } from "@/components/script/StoryPlanCard";
 // Load the guided stories and their card, shown in place of the shape card (decision 93)
 import { findGuidedStory } from "@/content/guidedStories";
 import { GuidedStoryCard } from "@/components/script/GuidedStoryCard";
@@ -129,7 +129,7 @@ interface RecordingScreenProps {
 }
 
 // A story's set-up when none is given: Classic, no focus, full length (decision 92)
-const DEFAULT_STORY: StoryTake = { shape: "classic", focus: null, length: "full" };
+const DEFAULT_STORY: StoryTake = { template: "lesson", focus: null, length: "full" };
 
 // What a story is about: the prompt from the bank, a guided story's title, or the moment note's words once loaded (decisions 92 and 93)
 function storyPromptText(promptId: string, momentText: string | null): { id: string; text: string } | undefined {
@@ -1588,15 +1588,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {!recording && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Open with why it matters, give each point an example, then close on one line.</p>}
             </section>
           )}
-          {/* A story, before and while planning: the prompt or the moment, then the shape and focus (decision 92) */}
+          {/* A story, before and while planning: the prompt or the moment, then the template's beats (decisions 92 and 126) */}
           {mode === "story" && !recording && (
             <section aria-label="Your story" className="mt-8 md:mt-0">
               {/* Where it came from */}
               <p className="text-footnote text-ink-muted">{momentIdOf(promptId) ? "From your moment" : thinking ? "Plan it in your head" : guidedStory ? "Guided story" : "Your story"}</p>
               {/* The prompt, set like a headline, or the moment in the user's words */}
               <h1 className={`relative mt-1 font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${momentIdOf(promptId) ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"}`}>{prompt?.text ?? "Your moment"}</h1>
-              {/* The shape and focus, or a guided story's facts with them (decision 93) */}
+              {/* The template's beats, or a guided story's facts (decisions 93 and 126) */}
               {guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />}
+              {/* The three things every good story does (decision 126) */}
+              {!guidedStory && <StoryPointers />}
               {/* How planning works, before it starts */}
               {!thinking && !busy && !(loop && loop.round > 1) && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Up to a minute to plan, then tell it out loud. Tap Ready when you are.</p>}
             </section>
@@ -1640,15 +1642,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
           {/* The one action for this stage, on the voice shape, in the column (beside text to read it sits in its own place instead; see below) */}
           {!script && !recording && shapeControl}
-          {/* A prepared speech or a story, before starting: the 4/3/2 loop as an option (decision 118) */}
-          {stage === "ready" && !loop && !checkIn && isLoopMode(mode) && (
-            <p data-loop-offer className="mt-3 flex flex-wrap items-baseline gap-x-2 text-footnote">
-              {/* The way in */}
-              <Link href={loopHref({ mode, promptId, story: mode === "story" ? storyTake : null, retryOf, planStep }, "new", 1)} className={TEXT_LINK}>Tell it three times, shorter each time</Link>
-              {/* The times */}
-              <span className="text-ink-muted">{targetWords(mode, storyTake.length)}</span>
-            </p>
-          )}
           {/* Push the footer down */}
           <div className="flex-1" />
 

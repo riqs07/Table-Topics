@@ -3,7 +3,7 @@
 // Load the schema library to check the request body
 import { z } from "zod";
 // Load the list of session kinds
-import { SESSION_MODES } from "@/data/records";
+import { SESSION_MODES, STORY_TEMPLATE_IDS } from "@/data/records";
 // Load the size limits shared with the app (decision 86)
 import { LONGEST_RECORDING_SECONDS, MAX_TURNS, NOTE_MAX_CHARS, REQUEST_TEXT_MAX_CHARS, TRANSCRIPT_MAX_CHARS, TURN_MAX_CHARS, requestTextLength } from "@/core/requestLimits";
 // Load the coach type
@@ -63,8 +63,8 @@ const RequestSchema = z.object({
     // The turns
     turns: z.array(z.object({ who: z.enum(["you", "them"]), text: z.string().max(TURN_MAX_CHARS).optional(), lineId: z.string().max(16).optional() })).max(MAX_TURNS),
   }).optional(),
-  // For a told story: its shape, focus and length, as known ids only (decision 92)
-  story: z.object({ shape: z.enum(["classic", "but-therefore", "then-now", "small-moment"]), focus: z.enum(["middle", "dialogue", "detail", "point", "minute"]).nullable(), length: z.enum(["short", "full"]) }).optional(),
+  // For a told story: its template (or an older story's shape), focus and length, as known ids only (decisions 92 and 126)
+  story: z.object({ template: z.enum(STORY_TEMPLATE_IDS).optional(), shape: z.enum(["classic", "but-therefore", "then-now", "small-moment"]).optional(), focus: z.enum(["middle", "dialogue", "detail", "point", "minute"]).nullable().optional(), length: z.enum(["short", "full"]) }).optional(),
   // All the text together within one cap, so the per-field caps cannot stack into one very costly call
 }).refine((body) => requestTextLength(body) <= REQUEST_TEXT_MAX_CHARS);
 

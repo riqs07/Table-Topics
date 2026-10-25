@@ -44,20 +44,20 @@ for (const href of KINDS) {
   });
 }
 
-// A card's link to tell a story starts on the shape and focus it names, and a made-up one falls back to the usual start
-test("a Learn link to tell a story starts on its shape and focus", async ({ page }) => {
-  // Open a story with a shape and a focus named
-  await page.goto("/stories/tell?prompt=sp04&shape=then-now&focus=middle");
-  // Confirm both are chosen
-  await expect(page.getByRole("button", { name: /Then and now/ })).toHaveAttribute("aria-pressed", "true");
+// A link to tell a story starts on the template it names and carries a Learn card's focus; a made-up one falls back to the suggested template (decision 126)
+test("a link to tell a story starts on its template and carries its focus", async ({ page }) => {
+  // Open a story with a template and a focus named
+  await page.goto("/stories/tell?prompt=sp04&template=turning-point&focus=middle");
+  // Confirm the template chosen and the focus carried into the telling
+  await expect(page.getByRole("button", { name: /Turning point/ })).toHaveAttribute("aria-pressed", "true");
   // (the focus)
-  await expect(page.getByRole("button", { name: "Start in the middle" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("link", { name: /^Start/ })).toHaveAttribute("href", /template=turning-point&focus=middle/);
   // Open it with names that do not exist
-  await page.goto("/stories/tell?prompt=sp04&shape=nonsense&focus=nonsense");
-  // Confirm Classic and no focus
-  await expect(page.getByRole("button", { name: /Classic/ })).toHaveAttribute("aria-pressed", "true");
-  // (no focus chosen)
-  await expect(page.getByRole("button", { name: "Start in the middle" })).toHaveAttribute("aria-pressed", "false");
+  await page.goto("/stories/tell?prompt=sp04&template=nonsense&focus=nonsense");
+  // Confirm the suggested template and no focus
+  await expect(page.getByRole("button", { name: /Lesson learned/ })).toHaveAttribute("aria-pressed", "true");
+  // (no focus)
+  await expect(page.getByRole("link", { name: /^Start/ })).not.toHaveAttribute("href", /focus=/);
 });
 
 // A link to the retired vocal fry card opens the corrected one (decision 94)

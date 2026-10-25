@@ -17,9 +17,9 @@ import { countPauseMarks } from "@/core/readAlong";
 // Load the Table Topics timing rules
 import { SPEECH_WINDOW, TOPIC_LIMIT, TOPIC_WINDOW_START, formatClock, thinkSeconds } from "@/core/recordingRules";
 // Load the record types
-import { STORY_BEATS, type ConnectionFeedback, type ConversationFeedback, type Feedback, type RubricRecord, type SessionMode, type SmallTalkFeedback, type StoryFeedback, type StoryFocus, type StoryRubric, type StoryShape, type StoryTake } from "@/data/records";
+import { type BeatStatus, type ConnectionFeedback, type ConversationFeedback, type Feedback, type RubricRecord, type SessionMode, type SmallTalkFeedback, type StoryFeedback, type StoryFocus, type StoryRubric, type StoryShape, type StoryTake, type TemplateBeatNote } from "@/data/records";
 // Load the story prompts (decision 92)
-import { findStoryPrompt } from "@/content/stories";
+import { findStoryPrompt, findStoryTemplate } from "@/content/stories";
 // Load the guided stories (decision 93)
 import { findGuidedStory } from "@/content/guidedStories";
 // Load the conversation personas, situations and recorded lines (decisions 83 and 84)
@@ -625,12 +625,12 @@ What makes a told story work, from research on narrative and from storytelling p
 - A turn: beats linked by "but" and "so" rather than "and then".
 - It ends on the point or the change (what it meant, what is different now), then stops.
 
-The beats you listen for, by id: setting (where and who), stakes (what was wanted or what went wrong), turn (the moment it changed), ending (how it came out), meaning (what it meant or what changed since).
+The speaker tells each story with a template: a short list of beats in order, such as a lesson learned (the situation, what went wrong, what I did, what I learned) or a client win (the problem, what we tried, the result with a number, why it matters). The message names the template and lists its beats by id.
 
 Reply with:
-- beats: each beat you heard, by its id, with the speaker's own words that showed it, quoted exactly. Leave out beats that are missing.
+- templateBeats: one entry for every beat of the template, in its order: the beat's id; status, which is strong (it came through clearly), weak (it was there but thin, vague or rushed) or missing; and quote, the speaker's own words that showed it, quoted exactly (empty when missing). Be honest: a beat said in passing is weak, not strong.
 - keep: one specific thing that worked, quoting them.
-- change: the one change that would most help the next telling. If the speaker chose a focus, prefer it when the transcript gives you something to work on. Show it with an example built from their words.
+- change: the one change that would most help the next telling, usually the weakest or a missing beat. If the speaker has a focus, prefer it when the transcript gives you something to work on. Show it with an example built from their words.
 - retryCue: one short sentence to read before telling it again, phrased as something to do.
 - yours: one of their sentences that the change applies to, quoted exactly.
 - better: how that sentence could sound, one or two sentences in their voice. Use only facts they said: never invent events, people, places, numbers, words someone said, or feelings. Where a detail is missing, leave a short gap in square brackets saying what to add, like [what she said].
@@ -670,6 +670,12 @@ const STORY_SHAPE_WORDS: Readonly<Record<StoryShape, string>> = { classic: "Clas
 // (focuses)
 const STORY_FOCUS_WORDS: Readonly<Record<StoryFocus, string>> = { middle: "start in the middle, with no lead-in", dialogue: "add one line of what someone said", detail: "one vivid, specific detail", point: "end on the point or the change", minute: "tell it in under a minute" };
 
+// The template a story was told with (Lesson learned for an older story told with a shape)
+function templateFor(story: StoryTake | undefined) {
+  // The template's details
+  return findStoryTemplate(story?.template);
+}
+
 // Build the per-story message for the story coach
 export function buildStoryMessage(input: CoachInput): string {
   // The prompt from the bank, when the story came from one (a story from the speaker's own moment note has none)
@@ -684,8 +690,9 @@ export function buildStoryMessage(input: CoachInput): string {
     ...(guided ? [`Guided story: ${guided.title}`, "The facts they were given, flat on purpose:", ...guided.facts.map((fact) => `- ${fact}`), ...(guided.twist ? [`The twist to build to: ${guided.twist}`] : []), `Nudges shown: ${guided.nudges.join(" ")}`] : [`Prompt: ${prompt ? prompt.text : "a moment from the speaker's own day"}`]),
     // How long, against the length they chose
     `Length: ${Math.round(input.durationSec)} seconds (they chose ${story?.length === "short" ? "a short story, about a minute" : "a full story, two to three minutes"})`,
-    // The shape shown while planning
-    `Shape shown while planning (optional for them): ${STORY_SHAPE_WORDS[story?.shape ?? "classic"]}`,
+    // The template they told it with, and its beats by id (decision 126; an older story's shape, when there is no template)
+    ...(story?.shape && !story.template ? [`Shape shown while planning (optional for them): ${STORY_SHAPE_WORDS[story.shape]}`] : []),
+    `Template: ${templateFor(story).name}. Its beats, in order, by id: ${templateFor(story).beats.map((beat) => `${beat.id} (${beat.name})`).join(", ")}`,
     // The focus, if any
     `Their focus this telling: ${story?.focus ? STORY_FOCUS_WORDS[story.focus] : "none"}`,
     // For a speaker who stammers, no comments on fluency
@@ -725,8 +732,8 @@ export const StoryRubricSchema = z.object({
 
 // The shape the story coach must return (sent to the model as a JSON schema)
 export const StoryFeedbackSchema = z.object({
-  // The beats heard, each with its quote
-  beats: z.array(z.object({ beat: z.string().describe("The beat's id: setting, stakes, turn, ending or meaning."), quote: z.string().describe("The speaker's words that showed it, quoted exactly.") })).describe("Each beat heard; leave out missing beats."),
+  // Every beat of the template, in order, as it came across (decision 126)
+  templateBeats: z.array(z.object({ beat: z.string().describe("The beat's id, as listed in the message."), status: z.enum(["strong", "weak", "missing"]).describe("Strong, weak or missing."), quote: z.string().describe("The speaker's words that showed it, quoted exactly; empty when missing.") })).describe("One entry per beat of the template, in its order."),
   // One thing that worked
   keep: z.string().describe("One specific thing that worked, quoting the speaker. At most two sentences."),
   // One change
@@ -753,22 +760,23 @@ export function checkStoryRubric(reply: Omit<z.infer<typeof StoryRubricSchema>, 
   return { hook: score(reply.hook), stakes: score(reply.stakes), detail: score(reply.detail), dialogue: score(reply.dialogue), turn: score(reply.turn), point: score(reply.point), ...(reply.alive ? { alive: score(reply.alive) } : {}) };
 }
 
-// Check and tidy the story coach's reply: only known beats, once each, with a quote, and a better line
-export function checkStoryFeedback(reply: Omit<z.infer<typeof StoryFeedbackSchema>, "rubric" | "storyRubric" | "broughtToLife"> & { broughtToLife?: string | null }): Feedback {
+// Check and tidy the story coach's reply: every beat of the template once, in its order (a beat it left out counts as missing; a quote only where the beat was heard), and a better line
+export function checkStoryFeedback(reply: Omit<z.infer<typeof StoryFeedbackSchema>, "rubric" | "storyRubric" | "broughtToLife"> & { broughtToLife?: string | null }, take?: StoryTake): Feedback {
   // The three shared parts, checked as usual
   const base = checkFeedback({ keep: reply.keep, change: reply.change, retryCue: reply.retryCue });
-  // The beats heard: known ids, with a quote, once each, in story order
-  const beats = STORY_BEATS.flatMap((beat) => {
-    // The first quote for this beat
-    const found = reply.beats.find((item) => item.beat.trim() === beat && item.quote.trim() !== "");
-    // Kept, or left out
-    return found ? [{ beat, quote: found.quote.trim() }] : [];
+  // Each beat of the template, from the coach's first entry for it
+  const templateBeats: TemplateBeatNote[] = templateFor(take).beats.map((beat) => {
+    // The coach's entry
+    const found = reply.templateBeats.find((item) => item.beat.trim() === beat.id);
+    // Its status, missing when not given or not a known one
+    const status: BeatStatus = found && (found.status === "strong" || found.status === "weak") ? found.status : "missing";
+    // The beat, with its quote only when heard
+    return { beat: beat.id, status, quote: status === "missing" ? "" : (found?.quote ?? "").trim() };
   });
-  // The line and its better version
   // What a guided story brought beyond its facts, when said (decision 93)
   const broughtToLife = (reply.broughtToLife ?? "").trim();
-  // The story notes
-  const story: StoryFeedback = { beats, yours: reply.yours.trim(), better: reply.better.trim(), ...(broughtToLife ? { broughtToLife } : {}) };
+  // The story notes (the older beats list stays empty on new reviews)
+  const story: StoryFeedback = { beats: [], templateBeats, yours: reply.yours.trim(), better: reply.better.trim(), ...(broughtToLife ? { broughtToLife } : {}) };
   // A better version is required
   if (!story.better) throw new Error("The coach's feedback was incomplete.");
   // Both together
