@@ -40,6 +40,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 25 | [plan-weekly-check-in.md](plan-weekly-check-in.md) | How does the weekly check-in work (four fixed parts, when it is due, the comparison, the reminders, storage), and what was not built? (Built, decision 100) | 4 min |
 | 26 | [plan-live-conversation.md](plan-live-conversation.md) | How do conversations feel live: turns that end by themselves, faster replies, and what was not approved? (Steps 1 and 2 built, decisions 101 and 102) | 4 min |
 | 27 | [handoff/voice-journal-starter.md](handoff/voice-journal-starter.md) | Starting a new voice journal app: what to reuse from VoiceLab, the mistakes to avoid from day one, and what to decide first? (For the next project's AI session) | 10 min |
+| 28 | [research/competitors-2026-10.md](research/competitors-2026-10.md) | Who does VoiceLab compete with, where are the holes in the market, who is the ICP, and how should it be pitched? | 15 min |
 
 ## Inspector checklist
 
