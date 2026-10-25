@@ -4,6 +4,8 @@
 import type { UnitId } from "@/content/smallTalk";
 // Load the saved turn type
 import type { ConversationTurn } from "@/data/records";
+// Load the goal type (decision 127)
+import type { ConversationGoal } from "@/content/conversations";
 
 // Above this share of the words, you did most of the talking
 const MOST_OF_IT = 0.65;
@@ -122,4 +124,24 @@ export function conversationHeadline(measures: ConversationMeasures): string {
   const questions = `${measures.questions} ${measures.questions === 1 ? "question" : "questions"}`;
   // The share and the questions
   return `You did ${Math.round(measures.share * 100)}% of the talking and asked ${questions}.`;
+}
+
+// How far a conversation got towards its goal (decision 127)
+export function goalProgress(goal: ConversationGoal, measures: ConversationMeasures): { done: number; target: number; met: boolean } {
+  // What is counted
+  const done = goal.kind === "questions" ? measures.questions : measures.followUps;
+  // Against the target
+  return { done, target: goal.target, met: done >= goal.target };
+}
+
+// The results headline from the goal: how many of the target, in plain words (decision 127)
+export function goalHeadline(goal: ConversationGoal, measures: ConversationMeasures): string {
+  // Nothing heard from you
+  if (measures.share === null || measures.turns === 0) return "Nothing was heard from you this time.";
+  // The count
+  const { done, target } = goalProgress(goal, measures);
+  // What it counts
+  const what = goal.kind === "questions" ? "questions back" : target === 1 ? "follow-up question" : "follow-up questions";
+  // The line, capped at the target
+  return `${Math.min(done, target)} of ${target} ${what}.`;
 }

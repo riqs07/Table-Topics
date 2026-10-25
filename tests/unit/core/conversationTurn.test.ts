@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the rules being checked
-import { WRITER_SYSTEM_PROMPT, cleanLine, isGoodbye, listeningLine, openingLine, scriptedNext, stageAt, writeMessage } from "@/core/conversationTurn";
+import { WRITER_SYSTEM_PROMPT, cleanLine, isGoodbye, listeningLine, openingLine, scriptedNext, stageFor, writeMessage, yourTurnCount } from "@/core/conversationTurn";
 // Load the personas and situations
 import { findPersona, findScenario } from "@/content/conversations";
 // Load the turn type
@@ -33,8 +33,8 @@ describe("writeMessage", () => {
     // Each
     expect([last(writeMessage(maya, party, 0, [], "open")), last(writeMessage(maya, party, 0, [], "wrap")), last(writeMessage(maya, party, 0, [], "end")), last(writeMessage(maya, party, 0, [], "talk", false))]).toEqual([
       "The conversation is starting and Maya speaks first: open it naturally for the situation.",
-      "About two and a half minutes have passed: start to wind down naturally. A goodbye is fine if it fits.",
-      "Time is up: Maya says a warm goodbye that fits the situation, after a short reaction if it fits.",
+      "This short conversation is nearly over: Maya reacts to what the person said, and may ask one last thing, but starts to find a natural reason to go that fits the situation (someone to see, a meeting starting, the coffee ready).",
+      "The conversation is over: Maya reacts briefly to what the person said, gives a natural reason to leave that fits the situation, and says a warm goodbye. No new question.",
       "Nothing of the person's last turn was caught: Maya asks them to say it again, briefly and in character.",
     ]);
   });
@@ -78,9 +78,9 @@ describe("scriptedNext", () => {
 
 // Group the checks about the small helpers
 describe("conversation helpers", () => {
-  // Openings and listening sounds in turn, goodbyes recognised, and the stage by time
+  // Openings and listening sounds in turn, goodbyes recognised, and the stage by your turns, with the clock as a cap (decision 127)
   it("takes openings and listening sounds in turn, and knows the stage", () => {
-    // First and second conversation, first and second of your turns, and three times
-    expect([openingLine(maya, 0).id, openingLine(maya, 1).id, listeningLine(maya, []).id, listeningLine(maya, [you("a")]).id, isGoodbye(maya, "maya-37"), isGoodbye(maya, "maya-07"), stageAt(30), stageAt(150), stageAt(181)]).toEqual(["maya-01", "maya-02", "maya-03", "maya-04", true, false, "talk", "wrap", "end"]);
+    // First and second conversation, first and second of your turns, then the stage after two, three and four of your turns and at 100 and 120 seconds
+    expect([openingLine(maya, 0).id, openingLine(maya, 1).id, listeningLine(maya, []).id, listeningLine(maya, [you("a")]).id, isGoodbye(maya, "maya-37"), isGoodbye(maya, "maya-07"), stageFor(2, 30), stageFor(3, 30), stageFor(1, 100), stageFor(4, 30), stageFor(0, 120), yourTurnCount([you("a"), them("maya-01"), you("b")])]).toEqual(["maya-01", "maya-02", "maya-03", "maya-04", true, false, "talk", "wrap", "wrap", "end", "end", 2]);
   });
 });

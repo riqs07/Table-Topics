@@ -167,7 +167,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           {/* The person */}
           <ul className={`mt-2 ${CARD_LIST}`}>
             {/* One row */}
-            <li><RowLink href={`/conversations/talk?id=${partner.id}&skill=${unitId}`} meta="3 min"><span className="block font-semibold">Talk with {partner.name}</span><span className="block text-footnote text-ink-muted">{partner.tagline}</span></RowLink></li>
+            <li><RowLink href={`/conversations/talk?id=${partner.id}&skill=${unitId}`} meta="1 min"><span className="block font-semibold">Talk with {partner.name}</span><span className="block text-footnote text-ink-muted">{partner.tagline}</span></RowLink></li>
           </ul>
         </section>
       )}

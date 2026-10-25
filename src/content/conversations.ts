@@ -588,6 +588,56 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
   },
 ];
 
+// The one goal a conversation drills, by its skill (decision 127): measured from your turns, so it can be shown before, counted during and checked after
+export interface ConversationGoal {
+  // What is counted: your questions, or your questions that pick up their words
+  kind: "questions" | "followUps";
+  // How many make the goal
+  target: number;
+  // The goal in a few words
+  text: string;
+  // How, in one line ("{name}" is the persona's name)
+  detail: string;
+}
+
+// The goal for each skill that has conversations
+const SKILL_GOALS: Readonly<Partial<Record<UnitId, ConversationGoal>>> = {
+  // Answering: they ask about you, so turn it round
+  answering: { kind: "questions", target: 2, text: "Ask two questions back.", detail: "{name} will ask about you. Answer, then turn it round." },
+  // Asking: follow-ups that pick up their words
+  asking: { kind: "followUps", target: 2, text: "Ask two follow-up questions.", detail: "Pick up a word {name} said and ask about it." },
+  // Listening: stay with their story
+  listening: { kind: "followUps", target: 1, text: "Ask one question about their story.", detail: "Stay with {name}’s story before you share your own." },
+  // News: ask about the moment
+  news: { kind: "followUps", target: 1, text: "Ask one question about their news.", detail: "React first, then ask about the moment." },
+};
+
+// A situation's goal (the answering goal for a skill without one)
+export function goalFor(scenario: Scenario): ConversationGoal {
+  // Its skill's, or the first
+  return SKILL_GOALS[scenario.unit] ?? SKILL_GOALS.answering!;
+}
+
+// Who a situation is with when it is picked rather than a person (decision 127): the people in turn, moving on one with each conversation
+export function personaFor(conversationsSoFar: number): Persona {
+  // In turn
+  return PERSONAS[conversationsSoFar % PERSONAS.length]!;
+}
+
+// Quick play's pick (decision 127): with written lines, the situation done least (the earliest in the list on a tie), with the next person in turn; with recorded lines only, the next person in turn in their own situation
+export function quickPick(done: ReadonlyArray<{ scenarioId?: string | undefined }>, written: boolean): { persona: Persona; scenario: Scenario } {
+  // The person
+  const persona = personaFor(done.length);
+  // Recorded lines exist only in each person's own situation
+  if (!written) return { persona, scenario: findScenario(persona.home)! };
+  // How often each situation was done
+  const count = (id: string) => done.filter((item) => item.scenarioId === id).length;
+  // The one done least
+  const scenario = [...SCENARIOS].sort((a, b) => count(a.id) - count(b.id))[0]!;
+  // Both
+  return { persona, scenario };
+}
+
 // Find a persona by id
 export function findPersona(id: string): Persona | undefined {
   // Look through every persona

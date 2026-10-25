@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the personas and situations being checked
-import { PERSONAS, SCENARIOS, findLine, findPersona, findScenario, pickSituation, scenarioText } from "@/content/conversations";
+import { PERSONAS, SCENARIOS, findLine, findPersona, findScenario, goalFor, pickSituation, quickPick, scenarioText } from "@/content/conversations";
 // Load the small-talk units
 import { UNITS } from "@/content/smallTalk";
 
@@ -97,5 +97,24 @@ describe("pickSituation", () => {
     const theo = findPersona("theo")!;
     // The same as with no skill at all
     expect([pickSituation(theo, 0, "room").scenario.id, pickSituation(theo, 3, "deeper").scenario.id]).toEqual([pickSituation(theo, 0).scenario.id, pickSituation(theo, 3).scenario.id]);
+  });
+});
+
+// Group the checks about goals and Quick play (decision 127)
+describe("goals and quick play", () => {
+  // Every situation has a goal from its skill, with a target of one or two
+  it("gives every situation a goal", () => {
+    // Each situation's goal
+    expect(SCENARIOS.every((scenario) => { const goal = goalFor(scenario); return goal.target >= 1 && goal.target <= 2 && goal.text.length > 0; })).toBe(true);
+  });
+
+  // People take turns; with the coach the situation done least comes next, without it the person's own
+  it("picks the next person and the situation done least", () => {
+    // Two at the party, one at the monday coffee machine
+    const done = [{ scenarioId: "party" }, { scenarioId: "party" }, { scenarioId: "monday" }];
+    // With and without the coach
+    const [written, recorded] = [quickPick(done, true), quickPick(done, false)];
+    // Confirm the third person (Priya, the fourth) both times, a situation not done yet, and Priya’s own without the coach
+    expect([written.persona.id, ["party", "monday"].includes(written.scenario.id), recorded.persona.id, recorded.scenario.id, quickPick([], true).scenario.id]).toEqual(["priya", false, "priya", "station", "party"]);
   });
 });

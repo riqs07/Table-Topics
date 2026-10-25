@@ -26,13 +26,15 @@ import { DEFAULT_TURN_ENDING, soundsLikeQuestion, startTurn, stepTurn, turnEndin
 // Load the iPhone check, where speech recognition is least reliable (decision 101)
 import { isIosSafari } from "@/data/storageSafety";
 // Load the personas and situations
-import { DIFFICULTIES, difficultyOf, findDifficulty, findLine, findPersona, findScenario, pickSituation, scenarioText, type Persona, type Scenario } from "@/content/conversations";
+import { DIFFICULTIES, difficultyOf, findDifficulty, findLine, findPersona, findScenario, goalFor, pickSituation, scenarioText, type ConversationGoal, type Persona, type Scenario } from "@/content/conversations";
+// Load the measures, for the goal's count (decision 127)
+import { goalProgress, measureConversation } from "@/core/conversationMeasures";
 // Load the small-talk unit type, for a conversation opened from a unit page
 import type { UnitId } from "@/content/smallTalk";
 // Load the saved recordings, for each recorded line's length
 import { voiceClip } from "@/content/voiceClips";
 // Load the turn rules
-import { CONVERSATION_LIMIT_SECONDS, isGoodbye, listeningLine, openingLine, scriptedNext, stageAt, type ConversationStage } from "@/core/conversationTurn";
+import { CONVERSATION_LIMIT_SECONDS, END_AFTER_TURNS, isGoodbye, listeningLine, openingLine, scriptedNext, stageFor, yourTurnCount, type ConversationStage } from "@/core/conversationTurn";
 // Load the clock formatter
 import { LOUDNESS_TICK_MS, formatClock } from "@/core/recordingRules";
 // Load where speech was heard in a turn, for its times (decision 120)
@@ -162,6 +164,10 @@ interface ConversationScreenProps extends ScreenProps {
   characterId: string;
   // Only situations practising this skill (from a unit page), or every situation
   skill?: UnitId;
+  // The situation picked for this conversation (Quick play or the situation list, decision 127), or none for the person's next one
+  situationId?: string | undefined;
+  // Start at once, without the Start button, when the page was opened by a tap (Quick play, decision 127)
+  autostart?: boolean;
   // The browser's microphone, transcriber, capture and voice
   services: RecordingServices;
   // Where to go once saved (the router in the app)
@@ -209,8 +215,18 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
   );
 }
 
+// The goal, counted from your turns so far (decision 127)
+function GoalChip({ goal, turns }: { goal: ConversationGoal; turns: ReadonlyArray<ConversationTurn> }) {
+  // How far
+  const progress = goalProgress(goal, measureConversation(turns));
+  // What it counts
+  const what = goal.kind === "questions" ? "Questions back" : "Follow-ups";
+  // The chip
+  return <p data-goal-chip className={`mt-2 inline-flex self-start rounded-full px-3 py-1 text-footnote font-semibold ${progress.met ? "bg-accent/15 text-accent" : "bg-paper text-ink-muted"}`}>{what}: {Math.min(progress.done, progress.target)} of {progress.target}{progress.met ? " ✓" : ""}</p>;
+}
+
 // The conversation itself
-function Conversation({ persona, skill, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, openLive = openLiveRoute, settleLive = settleLiveRoute, cutInSeconds, openCall = openCallRoute, startCall = startElevenLabsCall, settleCall = settleCallRoute, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
+function Conversation({ persona, skill, situationId, autostart = false, services, navigate, writeLine = askRoute, coachReady = passphraseSaved, clock: givenClock, listenDelayMs = LISTEN_DELAY_MS, undoMs = UNDO_MS, openLive = openLiveRoute, settleLive = settleLiveRoute, cutInSeconds, openCall = openCallRoute, startCall = startElevenLabsCall, settleCall = settleCallRoute, ...props }: Omit<ConversationScreenProps, "characterId"> & { persona: Persona }) {
   // The repository once in the browser
   const { repo } = useScreenBasics(props);
   // The clock
@@ -306,6 +322,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const { recording, stopping, levels, elapsed: turnSeconds, problem, start, stop } = useTakeRecorder({ services: recorderServices, clock, raw: false, words: true, onReading });
   // Where the conversation is
   const [phase, setPhaseState] = useState<Phase>("intro");
+  // Whether the settings were read, so Quick play starts with the right way of ending turns (decision 127)
+  const [settingsRead, setSettingsRead] = useState(false);
+  // Whether Quick play has started the conversation
+  const autostarted = useRef(false);
+  // The latest start, for Quick play
+  const beginRef = useRef<() => Promise<void>>(async () => undefined);
   // Move to a phase: kept where the live listener's events can read it, and the live socket told what to send at once (the microphone on your turn; while the persona talks only with headphones, to notice you talking over them; silence otherwise, so their voice from a speaker is never heard as yours)
   const setPhase = (next: Phase) => {
     // Kept
@@ -329,6 +351,15 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   const [fellBack, setFellBack] = useState(false);
   // Every turn so far (kept outside rendering, since the turns run across several awaits)
   const turns = useRef<ConversationTurn[]>([]);
+  // The same turns for drawing (the goal chip and the turn count, decision 127), kept in step with the ref
+  const [turnsShown, setTurnsShown] = useState<ConversationTurn[]>([]);
+  // Replace the turns, in the ref and for drawing
+  function setTurns(next: ConversationTurn[]) {
+    // The ref, read by the conversation's own steps
+    turns.current = next;
+    // For drawing
+    setTurnsShown(next);
+  }
   // When it started
   const startedAt = useRef<Date | null>(null);
   // Whether it is still running (false once ended or the page closes, so waiting steps stop)
@@ -362,8 +393,12 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
 
   // Written lines when the coach is set up and was reached; otherwise the recorded lines
   const written = coach && !fellBack;
-  // The situation: a new one each conversation with written lines, their own with recorded lines
-  const situation: { scenario: Scenario; twist: number } = written ? pickSituation(persona, (earlier ?? 0) + skipped, skill) : { scenario: findScenario(persona.home)!, twist: 0 };
+  // The situation picked for this conversation (decision 127), when it is a real one
+  const picked = situationId ? findScenario(situationId) : undefined;
+  // The situation: the one picked, else a new one each conversation with written lines; their own with recorded lines
+  const situation: { scenario: Scenario; twist: number } = written ? (picked && skipped === 0 ? { scenario: picked, twist: (earlier ?? 0) % picked.twists.length } : pickSituation(persona, (earlier ?? 0) + skipped, skill)) : { scenario: findScenario(persona.home)!, twist: 0 };
+  // Its goal (decision 127)
+  const goal = goalFor(situation.scenario);
   // The situation
   const { scenario, twist } = situation;
 
@@ -379,8 +414,11 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       if (!cancelled) headphonesRef.current = settings.headphones === true;
       // And the last difficulty chosen
       if (!cancelled) setDifficulty(difficultyOf(settings.conversationDifficulty));
+      // Read, so Quick play can start (decision 127)
+      if (!cancelled) setSettingsRead(true);
     }).catch(() => {
-      // Unreadable: the default stays
+      // Unreadable: the default stays, and Quick play can still start
+      if (!cancelled) setSettingsRead(true);
     });
     // Mark as closed when leaving
     return () => {
@@ -434,9 +472,9 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // Hung up
       void calling.live?.end().catch(() => undefined);
       // Settled
-      settleCall(conversationId.current, (Date.now() - calling.startedAt) / 1000);
+      settleCall(conversationId.current, (clock().getTime() - calling.startedAt) / 1000);
     }
-  }, [services, settleLive, settleCall]);
+  }, [clock, services, settleLive, settleCall]);
 
 
   // Seconds since the start
@@ -455,7 +493,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
   // Add a turn
   function add(turn: ConversationTurn): ConversationTurn {
     // To the list
-    turns.current = [...turns.current, turn];
+    setTurns([...turns.current, turn]);
     // Handed back, to be timed once said
     return turn;
   }
@@ -465,7 +503,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Nothing to time
     if (!turn) return;
     // That turn, timed
-    turns.current = turns.current.map((each) => (each === turn ? { ...each, ...roundTimes(times) } : each));
+    setTurns(turns.current.map((each) => (each === turn ? { ...each, ...roundTimes(times) } : each)));
   }
 
   // Choose how hard the persona makes it, remembered for next time
@@ -778,9 +816,9 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // The grant
     const grant = started.grant;
     // The overrides: the persona, situation, difficulty, house rules, first line and voice
-    const { overrides, maxDurationSeconds } = buildCallOverrides({ persona, scenario, twist, difficulty, voice, maxDurationSeconds: grant.grantedSeconds });
+    const { overrides, maxDurationSeconds } = buildCallOverrides({ persona, scenario, twist, difficulty, voice, maxDurationSeconds: Math.min(grant.grantedSeconds, CONVERSATION_LIMIT_SECONDS + LIMIT_GRACE_SECONDS) });
     // Kept (a fresh transcript for a first try)
-    call.current = calling ?? { live: null, transcript: new CallTranscript(clock().getTime()), startedAt: Date.now(), timer: null, heard: false, retried: !voice, ending: false };
+    call.current = calling ?? { live: null, transcript: new CallTranscript(clock().getTime()), startedAt: clock().getTime(), timer: null, heard: false, retried: !voice, ending: false };
     // Starting can fail
     try {
       // Started
@@ -838,9 +876,9 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Forgotten
     call.current = null;
     // Settled
-    settleCall(conversationId.current, (Date.now() - calling.startedAt) / 1000);
+    settleCall(conversationId.current, (clock().getTime() - calling.startedAt) / 1000);
     // The transcript, with its times
-    turns.current = calling.transcript.finish(clock().getTime());
+    setTurns(calling.transcript.finish(clock().getTime()));
     // Saved
     await save();
   }
@@ -921,7 +959,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Quiet now
     services.stopSpeaking?.();
     // The conversation as it was before that turn
-    turns.current = turns.current.slice(0, point.length);
+    setTurns(turns.current.slice(0, point.length));
     // Their last line back on screen
     setCaption([...turns.current].reverse().find((turn) => turn.who === "them")?.text ?? "");
     // Your words so far, joined to what comes next
@@ -965,7 +1003,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // A reopened turn started when its first part did
     if (before?.at !== undefined) yourTimes.at = Math.min(yourTimes.at, before.at);
     // Nothing caught after time is up: never ask again (the turn would end itself at once, over and over), so say goodbye and save
-    if (!text && stageAt(secondsIn()) === "end") return farewell();
+    if (!text && stageFor(yourTurnCount(turns.current), secondsIn()) === "end") return farewell();
     // Nothing caught: they ask you to say it again, then it is your turn again
     if (!text) {
       // Say why on screen
@@ -973,7 +1011,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       // With written lines, a line for it, kept out of the conversation
       if (written) {
         // Asked for
-        const again = await ask(stageAt(secondsIn()), false);
+        const again = await ask(stageFor(yourTurnCount(turns.current), secondsIn()), false);
         // Moved on
         if (stale()) return;
         // The connection dropped
@@ -999,8 +1037,8 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     add({ who: "you", text, seconds, ...roundTimes(yourTimes) });
     // Ended by itself: offer to carry on
     if (how === "auto") offerResume(length, text, seconds, yourTimes.at);
-    // How far in
-    const stage = stageAt(secondsIn());
+    // How far in: your turns so far (this one included) and the time (decision 127)
+    const stage = stageFor(yourTurnCount(turns.current), secondsIn());
     // Their reply ends the conversation
     let ended: boolean;
     // Written: ask for the next line
@@ -1034,7 +1072,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Not saving
     saving.current = false;
     // From the beginning
-    turns.current = [];
+    setTurns([]);
     // Now
     startedAt.current = clock();
     // From zero
@@ -1224,7 +1262,23 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     doneRef.current = done;
     // (and end)
     endRef.current = end;
+    // (and the start, for Quick play)
+    beginRef.current = begin;
   });
+
+  // Quick play (decision 127): start at once once the settings and earlier conversations are read, but only when the page was opened by a tap, so the persona's voice is allowed to play; otherwise Start is shown as usual
+  useEffect(() => {
+    // Not asked, already done, not ready, or no speech-to-text
+    if (!autostart || autostarted.current || !settingsRead || earlier === null || phase !== "intro" || !supported) return;
+    // Whether this page has had a tap (kept across the app's own page changes)
+    const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+    // No tap yet: Start stays
+    if (!activation?.hasBeenActive) return;
+    // Once
+    autostarted.current = true;
+    // Start
+    void beginRef.current();
+  }, [autostart, settingsRead, earlier, phase, supported]);
 
   // Whether the conversation is under way
   const talking = phase === "them" || phase === "thinking" || phase === "you";
@@ -1300,30 +1354,34 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
     // Dark while you speak (the stage, decision 69)
     <main id="main" data-area={recording ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
       {/* Title, the time, and the way out (none mid-conversation; End saves it instead) */}
-      <Masthead title="Conversation" nav={false} close={talking || phase === "call" || phase === "saving" ? null : { href: "/conversations", label: "Close, back to Conversations" }}>{talking || phase === "call" ? `${formatClock(elapsed)} of ${formatClock(CONVERSATION_LIMIT_SECONDS)}` : ""}</Masthead>
+      <Masthead title="Conversation" nav={false} close={talking || phase === "call" || phase === "saving" ? null : { href: "/conversations", label: "Close, back to Conversations" }}>{phase === "call" ? `${formatClock(elapsed)} of ${formatClock(CONVERSATION_LIMIT_SECONDS)}` : talking ? `Turn ${Math.min(END_AFTER_TURNS, yourTurnCount(turnsShown) + 1)} of ${END_AFTER_TURNS}` : ""}</Masthead>
 
       {/* Before starting: the situation and what to practise (once the earlier conversations are counted) */}
       {phase === "intro" && earlier !== null && (
         <section aria-labelledby="talk-heading" className="mt-8 md:max-w-2xl">
-          {/* The situation */}
-          <p className="text-footnote font-semibold text-accent">{scenario.title}</p>
-          {/* Who to talk with */}
-          <h1 id="talk-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">Talk with {persona.name}</h1>
+          {/* What this is */}
+          <p className="text-footnote font-semibold text-accent">Talk with someone</p>
+          {/* The situation (decision 127) */}
+          <h1 id="talk-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">{scenario.title}</h1>
           {/* Where you are */}
           <p className="mt-3 max-w-[48ch] text-lede">{named(scenario.setting)}</p>
-          {/* What to practise */}
-          <div className={`mt-5 p-4 ${CARD}`}>
+          {/* Who it is with, picked for you */}
+          <p data-talking-with className="mt-3 text-footnote text-ink-muted">You’ll talk with <span className="font-semibold text-ink">{persona.name}</span> · {persona.tagline}</p>
+          {/* The one goal (decision 127) */}
+          <div data-goal className={`mt-5 p-4 ${CARD}`}>
             {/* Small heading */}
-            <p className="text-footnote text-ink-muted">Practise</p>
-            {/* The skill */}
-            <p className="mt-1 text-lede">{named(scenario.practise)}</p>
+            <p className="text-footnote font-semibold text-accent">Your goal</p>
+            {/* The goal */}
+            <p className="mt-1 font-display text-cue font-semibold leading-tight">{goal.text}</p>
+            {/* How */}
+            <p className="mt-1 text-footnote">{named(goal.detail)}</p>
           </div>
           {/* How hard, with written lines (decision 120) */}
           {written && <DifficultyPicker chosen={difficulty} name={persona.name} onChoose={chooseDifficulty} />}
           {/* The coach could not be reached */}
           {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
           {/* How it works */}
-          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">About 3 minutes. {persona.name} speaks first. {callChosen ? "A phone call (beta, change this in Settings): no turns to end, and you can talk over each other." : liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. {callChosen ? "During the call your voice goes to ElevenLabs and is not kept." : liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
+          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">A few exchanges, about a minute. {persona.name} speaks first. {callChosen ? "A phone call (beta, change this in Settings): no turns to end, and you can talk over each other." : liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. {callChosen ? "During the call your voice goes to ElevenLabs and is not kept." : liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
           {/* No speech-to-text in this browser */}
           {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
           {/* Start, or another situation */}
@@ -1332,7 +1390,7 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
               {/* Start */}
               <button type="button" onClick={() => void begin()} className={PRIMARY}>Start</button>
               {/* Another situation, when lines are written */}
-              {written && <button type="button" onClick={() => setSkipped(skipped + 1)} className={QUIET}>Another situation</button>}
+              {written && !picked && <button type="button" onClick={() => setSkipped(skipped + 1)} className={QUIET}>Another situation</button>}
             </p>
           )}
         </section>
@@ -1341,8 +1399,10 @@ function Conversation({ persona, skill, services, navigate, writeLine = askRoute
       {/* The conversation */}
       {(talking || phase === "saving") && (
         <section aria-labelledby="line-heading" className="mt-8 flex flex-col md:max-w-2xl">
-          {/* Who, and where */}
-          <p className="text-footnote font-semibold text-accent">{persona.name} · {scenario.title}{liveOn ? <span data-live="on"> · Live</span> : null}</p>
+          {/* Who is talking, and where (decision 127) */}
+          <p className="text-footnote font-semibold text-accent"><span data-who-talking>{phase === "you" ? "Your turn" : `${persona.name} is talking`}</span> · {scenario.title}{liveOn ? <span data-live="on"> · Live</span> : null}</p>
+          {/* The goal, counted as you go (decision 127) */}
+          {phase !== "saving" && <GoalChip goal={goal} turns={turnsShown} />}
           {/* Live could not start or dropped: why, in one line (decision 119) */}
           {liveNote && <p role="status" data-live-note className="mt-2 max-w-[48ch] text-footnote text-ink-muted">{liveNote}</p>}
           {/* A call could not start: why, in one line (decision 121) */}

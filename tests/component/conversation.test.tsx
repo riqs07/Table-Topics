@@ -99,7 +99,7 @@ describe("ConversationScreen", () => {
     // Draw it
     render(<ConversationScreen characterId="maya" services={fakeServices(clock, ["I went climbing on Saturday", "It was great, what about you"], said)} navigate={navigate} writeLine={fakeWriter(["Oh hi! I'm Maya.", "No way! How was it?", "Lovely to meet you!"], asked)} coachReady={() => true} repository={repository} now={NOW} clock={clock.now} />);
     // The situation and what to practise
-    expect([(await screen.findByText("At the office party")).tagName, !!screen.getByText(/Maya joined your team two weeks ago/), !!screen.getByRole("button", { name: "Another situation" })]).toEqual(["P", true, true]);
+    expect([(await screen.findByText("At the office party")).tagName, !!screen.getByText(/Maya joined your team two weeks ago/), !!screen.getByRole("button", { name: "Another situation" })]).toEqual(["H1", true, true]);
     // Start
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
     // Your turn: Done
@@ -124,6 +124,47 @@ describe("ConversationScreen", () => {
       ["Oh hi! I'm Maya.", "I went climbing on Saturday", "No way! How was it?", "It was great, what about you", "Lovely to meet you!"],
       `/sessions?id=${session?.id}`,
     ]);
+  });
+
+  // A situation from the address: its goal shown, a chip counting it, started straight away after a tap elsewhere in the app, winding down after your third turn and saying goodbye after your fourth (decision 127)
+  it("plays a chosen situation for a few exchanges towards its goal", async () => {
+    // The browser has seen a tap already (Quick play), so it may start by itself
+    Object.defineProperty(navigator, "userActivation", { value: { hasBeenActive: true }, configurable: true });
+    // The clock
+    const clock = fakeClock();
+    // What was asked
+    const asked: LineRequest[] = [];
+    // Where it went next
+    const navigate = vi.fn();
+    // Your four turns: two pick up Priya's words
+    const heard = ["Oh hey Priya", "What news did you get", "Wow that is big", "When do you start the new job"];
+    // Draw Theo at the station, starting at once
+    render(<ConversationScreen characterId="theo" situationId="station" autostart services={fakeServices(clock, heard, [])} navigate={navigate} writeLine={fakeWriter(["Hi! Guess what, I got news.", "I got the new job!", "Next month, actually.", "Ah, my train is here. Bye!", "Bye!"], asked)} coachReady={() => true} repository={createRepository(new MemoryStore())} now={NOW} clock={clock.now} />);
+    // Started without a tap: your turn comes, with the goal's chip
+    fireEvent.click(await screen.findByRole("button", { name: "Done" }));
+    // The chip after the first turn
+    const chip = await screen.findByText(/^Follow-ups:/);
+    // Three more turns
+    for (const line of ["I got the new job!", "Next month, actually.", "Ah, my train is here. Bye!"]) {
+      // Their reply
+      await screen.findByRole("heading", { name: line });
+      // Done
+      fireEvent.click(await screen.findByRole("button", { name: "Done" }));
+    }
+    // Saved and opened
+    await waitFor(() => expect(navigate).toHaveBeenCalled());
+    // The situation, the goal's words (gone with the saved page), and the stages by your turns
+    expect([asked[0]?.scenarioId, asked.map((request) => request.stage), chip.textContent]).toEqual(["station", ["open", "talk", "talk", "wrap", "end"], expect.stringMatching(/^Follow-ups: \d of 1/)]);
+    // Back to a browser that has not been tapped
+    Object.defineProperty(navigator, "userActivation", { value: undefined, configurable: true });
+  });
+
+  // A chosen situation shows its goal before starting, has no "Another situation", and waits for Start without a tap first
+  it("shows the chosen situation's goal and waits without a tap", async () => {
+    // Draw Theo at the station, asked to start, in a browser not tapped yet
+    render(<ConversationScreen characterId="theo" situationId="station" autostart services={fakeServices(fakeClock(), [], [])} navigate={vi.fn()} writeLine={fakeWriter([], [])} coachReady={() => true} repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The heading, the goal, who you talk with, Start still there, and no other situation
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText("Ask one question about their news."), !!screen.getByText("Theo"), !!(await screen.findByRole("button", { name: "Start" })), screen.queryByRole("button", { name: "Another situation" })]).toEqual(["Bumping into each other", true, true, true, null]);
   });
 
   // Each conversation is in the next situation, and "Another situation" moves on again
@@ -339,21 +380,37 @@ describe("ConversationScreen", () => {
 
 // Group the checks about the list, the results and History
 describe("conversations elsewhere", () => {
-  // Four personas, each with what they are like and how often
-  it("lists the four personas with how often each was talked with", async () => {
-    // A repository with one talk with Theo
+  // Quick play goes to the situation done least, with its person, and starts; the list chooses one, grouped by skill, with its goal (decision 127)
+  it("offers Quick play and a list of situations", async () => {
+    // A repository with one talk at the office party
     const repository = createRepository(new MemoryStore());
     // Once
-    await repository.saveSession(makeSession({ id: "c1", mode: "conversation", promptId: "theo" }));
-    // Draw it
-    render(<ConversationsScreen repository={repository} now={NOW} />);
-    // The rows
-    const rows = within(await screen.findByRole("list", { name: "People to talk with" })).getAllByRole("link");
-    // Their addresses, a tagline, and the count
-    expect([rows.map((row) => row.getAttribute("href")), !!screen.getByText("Quiet and thoughtful. Opens up to good questions"), !!(await screen.findByText("once"))]).toEqual([["/conversations/talk?id=maya", "/conversations/talk?id=theo", "/conversations/talk?id=chris", "/conversations/talk?id=priya"], true, true]);
+    await repository.saveSession(makeSession({ id: "c1", mode: "conversation", promptId: "maya", conversation: { turns: [], scenarioId: "party" } }));
+    // Draw it, with the coach
+    render(<ConversationsScreen repository={repository} now={NOW} coachReady={() => true} />);
+    // Quick play: the next person, a situation not done yet, starting at once
+    const quick = await screen.findByRole("link", { name: "Quick play" });
+    // The list's groups
+    const groups = Array.from(screen.getByLabelText("Or choose a situation").querySelectorAll("optgroup")).map((group) => group.getAttribute("label"));
+    // Choose the station
+    fireEvent.change(screen.getByLabelText("Or choose a situation"), { target: { value: "station" } });
+    // Confirm Quick play's address, the groups, and the chosen one's goal and address (Priya lives there)
+    expect([quick.getAttribute("href"), groups, screen.getByText(/^Goal: /, { selector: "[data-picked-goal]" }).textContent, screen.getByRole("link", { name: "Start this one" }).getAttribute("href")]).toEqual(["/conversations/talk?id=theo&situation=monday&start=1", ["Answering", "Asking", "Listening", "News"], "Goal: Ask one question about their news.", "/conversations/talk?id=priya&situation=station&start=1"]);
   });
 
-  // The results: who and where, the share and questions, the coach's change with one of your lines made better, the whole conversation, and talk again; History names who it was with
+  // Without the coach, only the situations with recorded lines, and Quick play goes to the next person's own
+  it("offers only recorded situations without the coach", async () => {
+    // Draw it, without the coach
+    render(<ConversationsScreen repository={createRepository(new MemoryStore())} now={NOW} coachReady={() => false} />);
+    // Quick play
+    const quick = await screen.findByRole("link", { name: "Quick play" });
+    // The options
+    const options = Array.from(screen.getByLabelText("Or choose a situation").querySelectorAll("option")).map((option) => option.getAttribute("value")).filter(Boolean);
+    // Confirm
+    expect([quick.getAttribute("href"), options, !!screen.getByText(/unlock every situation/)]).toEqual(["/conversations/talk?id=maya&situation=party&start=1", ["party", "meeting", "coffee", "station"], true]);
+  });
+
+  // The results: who and where, the goal first then the share and questions (decision 127), the coach's change with one of your lines made better, the whole conversation, and talk again; History names who it was with
   it("shows a saved conversation and names it in History", async () => {
     // A conversation with Theo before the cooking class, reviewed
     const session = makeSession({ id: "c1", mode: "conversation", promptId: "theo", durationSec: 95, feedbackStatus: "done", feedback: { keep: "You asked about the radios.", change: "Pick up his words.", retryCue: "Ask about the last thing he said.", conversation: { yours: "do you like your job", better: "What do you look for at the flea markets?" } }, conversation: { scenarioId: "class", twist: 0, turns: [{ who: "them", text: "Well… I fix up old radios.", seconds: 3 }, { who: "you", text: "oh what kind of radios", seconds: 2 }] } });
@@ -368,7 +425,7 @@ describe("conversations elsewhere", () => {
     // The turns
     const turns = within(screen.getByRole("list", { name: "The conversation" })).getAllByRole("listitem").map((item) => item.textContent);
     // Each part
-    expect([!!screen.getByText("With Theo · Before an evening class · 1:35"), headline.textContent, !!screen.getByText("“do you like your job”"), !!screen.getByText("What do you look for at the flea markets?"), turns, screen.getByRole("link", { name: /Talk again/ }).getAttribute("href")]).toEqual([true, "You did 45% of the talking and asked 1 question.", true, true, ["TheoWell… I fix up old radios.", "Youoh what kind of radios"], "/conversations/talk?id=theo"]);
+    expect([!!screen.getByText("With Theo · Before an evening class · 1:35"), headline.textContent, !!screen.getByText("Goal: Ask two follow-up questions."), !!screen.getByText("You did 45% of the talking and asked 1 question."), !!screen.getByText("“do you like your job”"), !!screen.getByText("What do you look for at the flea markets?"), turns, screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, "1 of 2 follow-up questions.", true, true, true, true, ["TheoWell… I fix up old radios.", "Youoh what kind of radios"], "/conversations/talk?id=theo&situation=class&start=1"]);
     // Close it
     cleanup();
     // Draw History

@@ -7,10 +7,14 @@ import { findDifficulty, findLine, scenarioText, type ConversationLine, type Per
 // Load the saved turn type
 import type { ConversationDifficulty, ConversationTurn } from "@/data/records";
 
-// A conversation ends by this many seconds: the persona says goodbye after your next turn
-export const CONVERSATION_LIMIT_SECONDS = 180;
-// From this many seconds, the persona starts to wrap up
-export const WRAP_UP_SECONDS = 150;
+// A conversation is a few exchanges, not a set time (decision 127): after this many turns of yours the persona starts to wind down, finding a natural reason to go
+export const WRAP_AFTER_TURNS = 3;
+// After this many turns of yours the persona says goodbye
+export const END_AFTER_TURNS = 4;
+// A safety net on the clock: the persona says goodbye after your next turn from this many seconds, however few exchanges there were
+export const CONVERSATION_LIMIT_SECONDS = 120;
+// From this many seconds, the persona starts to wrap up whatever the count
+export const WRAP_UP_SECONDS = 100;
 // The longest line kept, in characters (about 45 words)
 export const LONGEST_LINE = 280;
 
@@ -68,10 +72,10 @@ const STAGE_LINES: Readonly<Record<ConversationStage, string>> = {
   open: "The conversation is starting and {name} speaks first: open it naturally for the situation.",
   // Under way
   talk: "Write what {name} says next.",
-  // Winding down
-  wrap: "About two and a half minutes have passed: start to wind down naturally. A goodbye is fine if it fits.",
-  // Over
-  end: "Time is up: {name} says a warm goodbye that fits the situation, after a short reaction if it fits.",
+  // Winding down (decision 127)
+  wrap: "This short conversation is nearly over: {name} reacts to what the person said, and may ask one last thing, but starts to find a natural reason to go that fits the situation (someone to see, a meeting starting, the coffee ready).",
+  // Over (decision 127)
+  end: "The conversation is over: {name} reacts briefly to what the person said, gives a natural reason to leave that fits the situation, and says a warm goodbye. No new question.",
 };
 
 // The message asking the writer for the persona's next line
@@ -119,10 +123,20 @@ export function cleanLine(line: string): { spoken: string; shown: string } {
   return { spoken: fits, shown };
 }
 
-// The stage for the time spent so far
-export function stageAt(seconds: number): ConversationStage {
-  // Over, winding down, or under way
-  return seconds >= CONVERSATION_LIMIT_SECONDS ? "end" : seconds >= WRAP_UP_SECONDS ? "wrap" : "talk";
+// The stage after some turns of yours and some time (decision 127): a few exchanges, with the clock as a safety net
+export function stageFor(yourTurns: number, seconds: number): ConversationStage {
+  // Over: enough exchanges, or the safety net
+  if (yourTurns >= END_AFTER_TURNS || seconds >= CONVERSATION_LIMIT_SECONDS) return "end";
+  // Winding down
+  if (yourTurns >= WRAP_AFTER_TURNS || seconds >= WRAP_UP_SECONDS) return "wrap";
+  // Under way
+  return "talk";
+}
+
+// How many turns of yours a conversation has had
+export function yourTurnCount(turns: ReadonlyArray<ConversationTurn>): number {
+  // Your turns
+  return turns.filter((turn) => turn.who === "you").length;
 }
 
 // The ids of the recorded lines already said

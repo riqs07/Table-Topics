@@ -631,13 +631,11 @@ test("Conversation: talk with Maya, then see the conversation", async ({ page })
   await page.goto("/practice");
   // Talk with someone
   await page.getByRole("link", { name: /^Talk with someone/ }).click();
-  // Maya
-  await page.getByRole("link", { name: /^Maya/ }).click();
-  // The scene first
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Talk with Maya");
-  // Start: she says her opening, then it is your turn
-  await page.getByRole("button", { name: "Start" }).click();
-  // Your turn
+  // Quick play: the first person in their own situation, starting by itself after the taps so far (decision 127)
+  await page.getByRole("link", { name: "Quick play" }).click();
+  // The situation and its goal, on the way in
+  await expect(page.getByText(/At the office party/).first()).toBeVisible();
+  // Your turn, with no Start tapped
   const done = page.getByRole("button", { name: "Done" });
   // After her opening line
   await expect(done).toBeVisible({ timeout: 20_000 });
@@ -657,12 +655,14 @@ test("Conversation: talk with Maya, then see the conversation", async ({ page })
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The conversation, with your words
   await expect(page.getByRole("list", { name: "The conversation" })).toContainText("I went climbing");
-  // Talk again
-  await expect(page.locator("[data-action-band]")).toContainText("Talk again");
+  // The goal first: questions back at the party
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("questions back");
+  // Try the same situation again
+  await expect(page.locator("[data-action-band]")).toContainText("Try it again");
 });
 
-// A conversation with the coach set up (decision 84): a new situation, each line written for it and played in the persona's voice (the route stood in, with a real recording as the audio), and the situation on the results
-test("Conversation with the coach: Theo in a new situation, written lines", async ({ page }) => {
+// A conversation with the coach set up (decisions 84 and 127): a situation chosen from the list, started by itself, each line written for it and played in the persona's voice (the route stood in, with a real recording as the audio), and the situation on the results
+test("Conversation with the coach: a chosen situation, written lines", async ({ page }) => {
   // The stand-in speech answers him
   await useStandIns(page, "what do you do outside of work");
   // The passphrase is saved, so lines are written
@@ -682,19 +682,15 @@ test("Conversation with the coach: Theo in a new situation, written lines", asyn
   });
   // The coach, stood in
   await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You asked an open question.", change: "Follow up on the radios.", retryCue: "Ask about his last detail.", conversation: { yours: "what do you do outside of work", better: "What do you get up to outside work?" } } } }));
-  // Theo, from the list
+  // The page of situations
   await page.goto("/conversations");
-  // His row
-  await page.getByRole("link", { name: /^Theo/ }).click();
-  // His own situation first, with another on offer
-  await expect(page.getByText("Early for a meeting", { exact: true })).toBeVisible();
-  // Another situation
-  await page.getByRole("button", { name: "Another situation" }).click();
-  // The next one
-  await expect(page.getByText("Before an evening class", { exact: true })).toBeVisible();
-  // Start
-  await page.getByRole("button", { name: "Start" }).click();
-  // His written opening
+  // Choose the evening class
+  await page.getByLabel("Or choose a situation").selectOption("class");
+  // Its goal
+  await expect(page.locator("[data-picked-goal]")).toHaveText("Goal: Ask two follow-up questions.");
+  // Start it: nobody lives there, so the first person in turn (Maya) answers, and it starts by itself
+  await page.getByRole("link", { name: "Start this one" }).click();
+  // The written opening
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Oh. Hey. Early too?", { timeout: 20_000 });
   // Your turn
   const done = page.getByRole("button", { name: "Done" });
@@ -704,8 +700,10 @@ test("Conversation with the coach: Theo in a new situation, written lines", asyn
   await page.waitForTimeout(2_000);
   // Done
   await done.click();
-  // His reply
+  // The reply, and the goal's chip counting
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Well… I fix up old radios.", { timeout: 20_000 });
+  // The chip
+  await expect(page.locator("[data-goal-chip]")).toContainText("Follow-ups:");
   // Your turn again
   await expect(done).toBeVisible({ timeout: 20_000 });
   // End it
@@ -713,7 +711,7 @@ test("Conversation with the coach: Theo in a new situation, written lines", asyn
   // Saved, and opened on its results with the situation and the coach's line
   await expect(page.getByText("It could sound like")).toBeVisible({ timeout: 15_000 });
   // The situation on the results, and what was asked for
-  await expect(page.getByText(/With Theo · Before an evening class/)).toBeVisible();
+  await expect(page.getByText(/With Maya · Before an evening class/)).toBeVisible();
   // Every request was for the class, starting with the opening
   expect([sent.map((request) => request.scenarioId), sent[0]?.stage]).toEqual([["class", "class"], "open"]);
 });

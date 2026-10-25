@@ -15,7 +15,7 @@ describe("call overrides", () => {
     // Hard, with the second twist
     const prompt = callPrompt({ persona: THEO, scenario: MEETING, twist: 1, difficulty: "hard" });
     // Each part
-    expect([prompt.includes("Character: Theo"), prompt.includes(THEO.background), prompt.includes(MEETING.twists[1]!.replace("{name}", "Theo")), prompt.includes(`Difficulty: ${findDifficulty("hard").rule}`), prompt.includes("never mention practice, the app, a skill or that you are an AI"), prompt.includes("at most 40 words"), prompt.includes("After about 2.5 minutes"), prompt.includes("by 3 minutes"), /\{name\}/.test(prompt)]).toEqual([true, true, true, true, true, true, true, true, false]);
+    expect([prompt.includes("Character: Theo"), prompt.includes(THEO.background), prompt.includes(MEETING.twists[1]!.replace("{name}", "Theo")), prompt.includes(`Difficulty: ${findDifficulty("hard").rule}`), prompt.includes("never mention practice, the app, a skill or that you are an AI"), prompt.includes("at most 40 words"), prompt.includes("After the person has answered you 3 times"), prompt.includes("Never go past 2 minutes"), /\{name\}/.test(prompt)]).toEqual([true, true, true, true, true, true, true, true, false]);
   });
 
   // Normal adds no difficulty line

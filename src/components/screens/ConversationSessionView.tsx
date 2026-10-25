@@ -9,9 +9,9 @@ import { ActionBand } from "@/components/script/ActionBand";
 // Load the shared card look
 import { CARD } from "@/components/script/textStyles";
 // Load the personas and situations
-import { findPersona, findScenario } from "@/content/conversations";
+import { findPersona, findScenario, goalFor } from "@/content/conversations";
 // Load the conversation measures and the note from them
-import { conversationHeadline, localConversationNote, measureConversation } from "@/core/conversationMeasures";
+import { conversationHeadline, goalHeadline, goalProgress, localConversationNote, measureConversation } from "@/core/conversationMeasures";
 // Load the clock formatter
 import { formatClock } from "@/core/recordingRules";
 // Load the day label
@@ -42,6 +42,10 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
   const own = localConversationNote(name, scenario?.unit ?? "answering", measures);
   // The change and cue to show
   const shown = session.feedback ?? own;
+  // The situation's goal, and how far it got (decision 127)
+  const goal = scenario ? goalFor(scenario) : null;
+  // Its progress
+  const progress = goal ? goalProgress(goal, measures) : null;
   // Where the session belongs
   const home = sessionHome(session.mode, session.promptId, plan !== null);
   // Draw it
@@ -53,8 +57,23 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
       <section aria-labelledby="conversation-heading" className="mt-8 md:max-w-2xl">
         {/* Who, and how long */}
         <p className="text-footnote font-semibold text-accent">With {name}{scenario ? ` · ${scenario.title}` : ""}{session.conversation?.difficulty && session.conversation.difficulty !== "normal" ? ` · ${session.conversation.difficulty === "hard" ? "Hard" : "Easy"}` : ""} · {formatClock(session.durationSec)}</p>
-        {/* The share and the questions */}
-        <h1 id="conversation-heading" className="mt-1 font-display text-3xl font-semibold tracking-tight">{conversationHeadline(measures)}</h1>
+        {/* The goal first, when the situation has one (decision 127); otherwise the share and the questions */}
+        <h1 id="conversation-heading" className="mt-1 font-display text-3xl font-semibold tracking-tight">{goal ? goalHeadline(goal, measures) : conversationHeadline(measures)}</h1>
+        {/* The goal's dots, its words, and the share and questions underneath */}
+        {goal && progress && (
+          <div data-goal-result className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {/* One dot per part of the goal, filled when done */}
+            <span aria-hidden="true" className="inline-flex gap-1">
+              {Array.from({ length: progress.target }, (_, index) => (
+                <span key={index} className={`inline-block h-3 w-3 rounded-full ${index < progress.done ? "bg-accent" : "border-2 border-rule"}`} />
+              ))}
+            </span>
+            {/* The goal */}
+            <span className="text-footnote text-ink-muted">Goal: {goal.text}</span>
+            {/* The share and questions, now second */}
+            {measures.turns > 0 && measures.share !== null && <span className="text-footnote text-ink-muted">{conversationHeadline(measures)}</span>}
+          </div>
+        )}
         {/* The one change */}
         <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`}>
           {/* The pill, and where it comes from until the coach's note arrives */}
@@ -104,7 +123,7 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
       {/* Push the band down */}
       <div className="flex-1" />
       {/* Today's next step, or talk again */}
-      {plan ? (plan.next ? <ActionBand action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <ActionBand action="Finish today’s practice" aside="back to Today" href="/" />) : <ActionBand action="Talk again" aside={`with ${name}`} href={`/conversations/talk?id=${session.promptId}`} />}
+      {plan ? (plan.next ? <ActionBand action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <ActionBand action="Finish today’s practice" aside="back to Today" href="/" />) : <ActionBand action="Try it again" aside={scenario ? scenario.title : `with ${name}`} href={scenario ? `/conversations/talk?id=${session.promptId}&situation=${scenario.id}&start=1` : `/conversations/talk?id=${session.promptId}`} />}
     </>
   );
 }

@@ -1,7 +1,9 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the measures being checked
-import { asksQuestion, conversationHeadline, localConversationNote, measureConversation } from "@/core/conversationMeasures";
+import { asksQuestion, conversationHeadline, goalHeadline, goalProgress, localConversationNote, measureConversation } from "@/core/conversationMeasures";
+// Load the situations' goals
+import { findScenario, goalFor } from "@/content/conversations";
 // Load the turn type
 import type { ConversationTurn } from "@/data/records";
 
@@ -53,5 +55,18 @@ describe("conversationHeadline", () => {
   it("says the share and the questions", () => {
     // Three cases
     expect([conversationHeadline({ share: 0.456, questions: 2, followUps: 1, turns: 4 }), conversationHeadline({ share: 0.5, questions: 1, followUps: 0, turns: 2 }), conversationHeadline({ share: null, questions: 0, followUps: 0, turns: 0 })]).toEqual(["You did 46% of the talking and asked 2 questions.", "You did 50% of the talking and asked 1 question.", "Nothing was heard from you this time."]);
+  });
+});
+
+// Group the checks about a situation's goal (decision 127)
+describe("goal progress", () => {
+  // Questions back are counted for answering, follow-ups otherwise, capped in words at the target
+  it("counts the goal and says how far it got", () => {
+    // The office party (answering: two questions back) and the station (news: one follow-up)
+    const [party, station] = [goalFor(findScenario("party")!), goalFor(findScenario("station")!)];
+    // Three questions, one picking up their words
+    const measures = { share: 0.5, questions: 3, followUps: 1, turns: 4 };
+    // Each
+    expect([goalProgress(party, measures), goalHeadline(party, measures), goalProgress(station, { ...measures, followUps: 0 }), goalHeadline(station, { ...measures, followUps: 0 }), goalHeadline(station, { share: null, questions: 0, followUps: 0, turns: 0 })]).toEqual([{ done: 3, target: 2, met: true }, "2 of 2 questions back.", { done: 0, target: 1, met: false }, "0 of 1 follow-up question.", "Nothing was heard from you this time."]);
   });
 });

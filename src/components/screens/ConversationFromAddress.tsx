@@ -1,5 +1,5 @@
 "use client";
-// Reads who to talk with, and optionally which skill to practise, from the address (/conversations/talk?id=&skill=) and shows the conversation (decisions 83 and 84)
+// Reads who to talk with, and optionally the skill, the situation and whether to start at once, from the address (/conversations/talk?id=&skill=&situation=&start=1), and shows the conversation (decisions 83, 84 and 127)
 
 // Load Next.js's tools for reading the address and changing page
 import { useRouter, useSearchParams } from "next/navigation";
@@ -18,6 +18,8 @@ export function ConversationFromAddress() {
   const router = useRouter();
   // A skill named in the address, if it is one
   const skill = UNITS.find((unit) => unit.id === params.get("skill"))?.id as UnitId | undefined;
-  // The person, keyed by id so another person starts fresh
-  return <ConversationScreen key={params.get("id") ?? ""} characterId={params.get("id") ?? ""} {...(skill ? { skill } : {})} services={browserRecordingServices} navigate={(path) => router.push(path)} />;
+  // A situation named in the address (the screen checks it is real)
+  const situation = params.get("situation") ?? undefined;
+  // The person and situation, keyed so another one starts fresh
+  return <ConversationScreen key={`${params.get("id") ?? ""}:${situation ?? ""}`} characterId={params.get("id") ?? ""} {...(skill ? { skill } : {})} situationId={situation} autostart={params.get("start") === "1"} services={browserRecordingServices} navigate={(path) => router.push(path)} />;
 }
