@@ -10,6 +10,8 @@ import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, Recordi
 import { prepareQuestionVoice, speakAudio, speakQuestion, stopQuestionVoice, unlockQuestionVoice } from "@/audio/questionVoice";
 // Load the timing tone player
 import { createCuePlayer } from "@/audio/timingTones";
+// Load the reading metronome
+import { createMetronome } from "@/audio/metronome";
 
 // The minimal shape of the browser's speech recognizer that the app uses
 interface SpeechRecognizer {
@@ -306,4 +308,6 @@ export const browserRecordingServices: RecordingServices = {
   createCapture: (stream) => new MediaCapture(stream),
   // Timing tones and buzzes
   createCuePlayer: () => createCuePlayer(),
+  // The reading metronome
+  createMetronome: () => createMetronome(),
 };

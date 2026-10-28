@@ -413,6 +413,76 @@ describe("RecordingScreen", () => {
     expect(screen.getByTestId("passage").textContent).toContain(PASSAGES[0]!.body.split(" ").slice(0, 4).join(" "));
   });
 
+  // A metronome that notes what the screen asks of it (decision 128)
+  function fakeMetronome() {
+    // Each call, in order
+    const calls: string[] = [];
+    // The metronome
+    const metronome = { prime: () => void calls.push("prime"), start: (tempo: number) => void calls.push(`start ${tempo}`), stop: () => void calls.push("stop"), close: () => void calls.push("close") };
+    // Hand back the calls and a maker for the services
+    return { calls, createMetronome: () => metronome };
+  }
+
+  // Reading aloud offers a metronome, off at 82 beats a minute until switched on; it ticks before and while reading, stops while paused, and its choice is remembered (decision 128)
+  it("offers a metronome at 82 beats a minute when reading aloud", async () => {
+    // Start with nothing saved
+    localStorage.removeItem("voicelab-metronome");
+    // A metronome that notes its calls
+    const tick = fakeMetronome();
+    // Draw a read-aloud session with it
+    draw({ mode: "read", promptId: PASSAGES[0]!.id, services: { ...fakeServices().services, createMetronome: tick.createMetronome } });
+    // The switch, off at first, with no tempo shown
+    const toggle = await screen.findByRole("checkbox", { name: /Metronome/ });
+    // Confirm off and silent
+    expect([(toggle as HTMLInputElement).checked, screen.queryByRole("slider"), tick.calls]).toEqual([false, null, []]);
+    // Switch it on
+    fireEvent.click(toggle);
+    // The tempo slider
+    const slider = screen.getByRole("slider", { name: "Metronome beats per minute" }) as HTMLInputElement;
+    // Confirm it shows 82 and ticks at 82 straight away
+    expect([slider.value, !!screen.getByText("82 beats a minute"), tick.calls]).toEqual(["82", true, ["prime", "start 82"]]);
+    // Slow it to 70
+    fireEvent.change(slider, { target: { value: "70" } });
+    // Start reading
+    fireEvent.click(screen.getByRole("button", { name: /Start reading/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Pause
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    // Confirm the slower tempo, still ticking while recording, quiet while paused, and the choice saved
+    await waitFor(() => expect([tick.calls.includes("start 70"), tick.calls.at(-1), JSON.parse(localStorage.getItem("voicelab-metronome") ?? "null")]).toEqual([true, "stop", { on: true, tempo: 70 }]));
+    // Clear it for other checks
+    localStorage.removeItem("voicelab-metronome");
+  });
+
+  // Switched on last time, the metronome starts with the Start tap (sound needs a tap), and other kinds of session have none (decision 128)
+  it("starts a saved metronome with the start tap, and only when reading aloud", async () => {
+    // Switched on at 90 last time
+    localStorage.setItem("voicelab-metronome", JSON.stringify({ on: true, tempo: 90 }));
+    // A metronome that notes its calls
+    const tick = fakeMetronome();
+    // Draw a read-aloud session with it
+    draw({ mode: "read", promptId: PASSAGES[0]!.id, services: { ...fakeServices().services, createMetronome: tick.createMetronome } });
+    // Confirm it shows on at 90, but nothing sounds before a tap
+    expect([((await screen.findByRole("checkbox", { name: /Metronome/ })) as HTMLInputElement).checked, (screen.getByRole("slider") as HTMLInputElement).value, tick.calls]).toEqual([true, "90", []]);
+    // Start reading
+    fireEvent.click(screen.getByRole("button", { name: /Start reading/ }));
+    // Wait for recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Confirm it was woken in the tap and ticks at 90
+    expect(tick.calls.slice(0, 2)).toEqual(["prime", "start 90"]);
+    // Clear the screen
+    cleanup();
+    // Draw an ordinary prompt with the same services
+    draw({ services: { ...fakeServices().services, createMetronome: tick.createMetronome } });
+    // Wait for it
+    await screen.findByText(PROMPTS[0]!.text);
+    // Confirm no metronome there
+    expect(screen.queryByRole("checkbox", { name: /Metronome/ })).toBeNull();
+    // Clear it for other checks
+    localStorage.removeItem("voicelab-metronome");
+  });
+
   // While reading, the words already read light up and the next word is marked
   it("lights up the words as they are read", async () => {
     // Draw a read-aloud session on the Gettysburg Address

@@ -39,6 +39,12 @@ import { readSpaceShortcut } from "@/data/spaceShortcut";
 // Load the timing tones choice and player type
 import { readTimingTones } from "@/data/timingTones";
 import type { CuePlayer } from "@/audio/timingTones";
+// Load the reading metronome: its saved choice, tempo range and player type (decision 128)
+import { readMetronome, saveMetronome, type MetronomeChoice } from "@/data/metronome";
+import { DEFAULT_TEMPO, MAX_TEMPO, MIN_TEMPO } from "@/core/metronome";
+import type { Metronome } from "@/audio/metronome";
+// Load the switch row
+import { CheckRow } from "@/components/script/CheckRow";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
@@ -373,6 +379,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [paused, setPaused] = useState(false);
   // Timing tones, when switched on in Settings: made during the start tap, since browsers only let sound start from one (decision 77)
   const cues = useRef<CuePlayer | null>(null);
+  // The reading metronome, made during a tap, since browsers only let sound start from one (decision 128)
+  const metronome = useRef<Metronome | null>(null);
+  // The metronome choice saved in this browser, read only in the browser so the first draw matches the server's (T4)
+  const savedMetronomeOn = useSyncExternalStore(subscribeToNothing, () => readMetronome().on, () => false);
+  const savedTempo = useSyncExternalStore(subscribeToNothing, () => readMetronome().tempo, () => DEFAULT_TEMPO);
+  // A choice made on this screen, which wins over the saved one
+  const [metronomeChange, setMetronomeChange] = useState<MetronomeChoice | null>(null);
+  // The choice in force
+  const metronomeChoice = metronomeChange ?? { on: savedMetronomeOn, tempo: savedTempo };
   // The timing light at the last cue check, to hear when it changes
   const lastSignal = useRef<TimeSignal>("none");
   // A take that was just discarded, kept for a few seconds so it can be undone (decision 77)
@@ -1098,6 +1113,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Wake its sound
       cues.current.prime();
     }
+    // The metronome, if switched on for reading aloud: get its sound ready now, during the tap (decision 128)
+    if (mode === "read" && metronomeChoice.on && services.createMetronome) {
+      // Make it once
+      metronome.current ??= services.createMetronome();
+      // Wake its sound
+      metronome.current.prime();
+      // Tick from now (the effect below only hears changes, and it may already count as ticking)
+      metronome.current.start(metronomeChoice.tempo);
+    }
     // The start itself: a small-talk question is asked aloud first (a moment, situation or flat question read on a card is not; decision 95), a Table Topic or prepared speech counts down, anything else records
     const go = smallTalk && findUnit(smallTalk.unit).drill === "heard" ? () => void ask(smallTalk.question) : think > 0 ? beginThinking : () => void start();
     // The first ever recording: explain the microphone, and start once it is allowed
@@ -1111,7 +1135,40 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     }
     // Otherwise start now
     go();
-  }, [ask, beginThinking, needsPrimer, services, smallTalk, start, think]);
+  }, [ask, beginThinking, metronomeChoice.on, metronomeChoice.tempo, mode, needsPrimer, services, smallTalk, start, think]);
+
+  // Switch the metronome on or off, and remember it (decision 128)
+  const switchMetronome = useCallback(
+    (on: boolean) => {
+      // Switching on is a tap: make the player and wake its sound now
+      if (on && services.createMetronome) {
+        // Make it once
+        metronome.current ??= services.createMetronome();
+        // Wake its sound
+        metronome.current.prime();
+      }
+      // The new choice
+      const choice = { on, tempo: metronomeChoice.tempo };
+      // Remember it in this browser
+      saveMetronome(choice);
+      // Show it
+      setMetronomeChange(choice);
+    },
+    [metronomeChoice.tempo, services],
+  );
+
+  // Change the metronome's tempo, and remember it (decision 128)
+  const changeTempo = useCallback(
+    (tempo: number) => {
+      // The new choice
+      const choice = { on: metronomeChoice.on, tempo };
+      // Remember it in this browser
+      saveMetronome(choice);
+      // Show it
+      setMetronomeChange(choice);
+    },
+    [metronomeChoice.on],
+  );
 
   // From the explanation: let the browser ask now, then start
   const allowMicrophone = useCallback(async () => {
@@ -1183,6 +1240,26 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   useEffect(() => () => void finishLatest.current(), []);
   // Stop the thinking countdown when the screen closes
   useEffect(() => endThinking, [endThinking]);
+
+  // The metronome ticks while it is on and the reader is getting ready or reading, never while paused or once the take is done (decision 128)
+  const ticking = mode === "read" && metronomeChoice.on && !paused && (stage === "ready" || stage === "starting" || stage === "recording" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded");
+  // Start or stop it to match (it exists only once a tap has made it)
+  useEffect(() => {
+    // Tick at the chosen tempo
+    if (ticking) metronome.current?.start(metronomeChoice.tempo);
+    // Or stay quiet
+    else metronome.current?.stop();
+  }, [ticking, metronomeChoice.tempo]);
+  // Let its sound go when the screen closes
+  useEffect(
+    () => () => {
+      // Stop and close it, if one was made
+      metronome.current?.close();
+      // Forget it
+      metronome.current = null;
+    },
+    [],
+  );
 
   // Keep the screen on while thinking and speaking, so the phone does not lock mid-speech (decision 76)
   const holdAwake = stage === "thinking" || stage === "recording";
@@ -1460,6 +1537,24 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {!recording && <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">{script.title}</h1>}
               {/* Who said it, or that it is a practice passage */}
               {!recording && script.source && <p className="mt-1 text-ink-muted">{script.source}</p>}
+              {/* Reading aloud: the metronome, before and while reading (decision 128) */}
+              {mode === "read" && services.createMetronome && (
+                <div data-metronome className="mt-4 flex max-w-[52ch] flex-wrap items-center gap-x-6 gap-y-1">
+                  {/* On or off */}
+                  <CheckRow checked={metronomeChoice.on} onChange={(event) => switchMetronome(event.target.checked)} detail={!recording && metronomeChoice.on ? "A quiet tick to read in time with. Headphones keep it out of the recording." : undefined}>
+                    Metronome
+                  </CheckRow>
+                  {/* The tempo, while on */}
+                  {metronomeChoice.on && (
+                    <label className="flex items-center gap-3 text-footnote text-ink-muted">
+                      {/* The slider */}
+                      <input type="range" min={MIN_TEMPO} max={MAX_TEMPO} step={1} value={metronomeChoice.tempo} onChange={(event) => changeTempo(Number(event.target.value))} aria-label="Metronome beats per minute" className="h-11 w-36 accent-accent" />
+                      {/* The tempo in words */}
+                      <span className="tabular-nums">{metronomeChoice.tempo} beats a minute</span>
+                    </label>
+                  )}
+                </div>
+              )}
               {/* A lesson's tip, before starting */}
               {!recording && lesson && (
                 <div className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4">
