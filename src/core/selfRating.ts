@@ -1,7 +1,7 @@
-// Rate yourself before the results (decision 116): the one quick question asked after a take ("How did that feel?", three taps or skip) and which kinds of practice are asked. Kept apart from the comparison (ratingCompare.ts) so the recording page loads only this small part. Pure
+// Rate yourself (decision 116): the answers a take could be rated with ("How did that feel?", pace or liveliness). The question is no longer asked after a take (decision 129); these are kept so takes rated before then still show their line on the results and count on Your progress. Pure
 
 // Load the record types
-import type { RatingAnswer, RatingScale, SelfRating, SessionMode } from "@/data/records";
+import type { RatingAnswer, RatingScale, SelfRating } from "@/data/records";
 
 // Where a value sits against the usual band: above it, inside it, or below it
 export type BandSide = "above" | "inside" | "below";
@@ -17,9 +17,6 @@ export interface RatingOption {
   // The side of the usual band it claims
   side: BandSide;
 }
-
-// The question asked before the results
-export const RATING_QUESTION = "How did that feel?";
 
 // The three answers on each scale, in the order shown
 export const RATING_OPTIONS: Readonly<Record<RatingScale, ReadonlyArray<RatingOption>>> = {
@@ -42,18 +39,6 @@ export const RATING_OPTIONS: Readonly<Record<RatingScale, ReadonlyArray<RatingOp
     { answer: "lively", label: "Lively", said: "lively", side: "above" },
   ],
 };
-
-// The scale a kind of practice is rated on, or null when it is not asked: stories by how lively they sounded; Rapid Fire, prepared speeches, free talk, short speeches and reading aloud by pace (word lists, which have no pace to speak of, and every other kind are not asked; a check-in's parts are these kinds)
-export function ratingScaleFor(mode: SessionMode, options: { wordList?: boolean } = {}): RatingScale | null {
-  // A story: lively or flat
-  if (mode === "story") return "liveliness";
-  // Reading aloud, except a list of tricky words
-  if (mode === "read") return options.wordList ? null : "pace";
-  // The speaking kinds
-  if (mode === "talk" || mode === "response" || mode === "free" || mode === "outline") return "pace";
-  // Nothing else is asked
-  return null;
-}
 
 // The option for a saved rating
 export function ratingOption(rating: SelfRating): RatingOption | undefined {

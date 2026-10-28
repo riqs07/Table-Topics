@@ -45,10 +45,12 @@ import { DEFAULT_TEMPO, MAX_TEMPO, MIN_TEMPO } from "@/core/metronome";
 import type { Metronome } from "@/audio/metronome";
 // Load the switch row
 import { CheckRow } from "@/components/script/CheckRow";
+// Load the choice of showing a story's template while telling (decision 130)
+import { readStoryTemplateShown, saveStoryTemplateShown } from "@/data/storyTemplateShown";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
-import type { CheckInPart, RatingAnswer, RatingScale, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
+import type { CheckInPart, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
 // Load the check-in's parts, for a take inside the weekly check-in (decision 100)
 import { CHECK_IN_PARTS, CHECK_IN_PART_INFO } from "@/core/checkIn";
 // Load the story prompts and moment seeds, and the plan card (decision 92)
@@ -94,9 +96,6 @@ import { holdScreenAwake } from "@/audio/wakeLock";
 import { requestPersistentStorage } from "@/data/storageSafety";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
-// Load the question asked before the results, and which kinds are asked (decision 116)
-import { ratingScaleFor } from "@/core/selfRating";
-import { SelfRatingAsk } from "@/components/script/SelfRatingAsk";
 
 // What the screen is given
 interface RecordingScreenProps {
@@ -158,7 +157,7 @@ const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
 ];
 
 // Where the screen is in the flow
-type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | "speech-dropped" | "rating" | { problem: RecordingProblem };
+type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | "speech-dropped" | { problem: RecordingProblem };
 
 // How many recent moment notes to show beside a question about what you have been up to
 const RECENT_MOMENTS = 3;
@@ -388,6 +387,12 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [metronomeChange, setMetronomeChange] = useState<MetronomeChoice | null>(null);
   // The choice in force
   const metronomeChoice = metronomeChange ?? { on: savedMetronomeOn, tempo: savedTempo };
+  // Whether a story's template shows while telling: the saved choice, read only in the browser so the first draw matches the server's (T4), until changed on this screen (decision 130)
+  const savedTemplateShown = useSyncExternalStore(subscribeToNothing, readStoryTemplateShown, () => true);
+  // A choice made on this screen, which wins over the saved one
+  const [templateShownChange, setTemplateShownChange] = useState<boolean | null>(null);
+  // The choice in force
+  const templateShown = templateShownChange ?? savedTemplateShown;
   // The timing light at the last cue check, to hear when it changes
   const lastSignal = useRef<TimeSignal>("none");
   // A take that was just discarded, kept for a few seconds so it can be undone (decision 77)
@@ -410,8 +415,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [saveError, setSaveError] = useState("");
   // Where a take saved after the speech service dropped can be seen (shown with the explanation instead of going there at once)
   const [droppedHref, setDroppedHref] = useState("");
-  // A saved take waiting for the question before its results: the take, where its results are, and what is asked (decision 116)
-  const [ratingAsk, setRatingAsk] = useState<{ sessionId: string; next: string; scale: RatingScale } | null>(null);
   // Whether the screen is still open, so a start that was waiting (the question being said, the microphone being allowed) stops if the page closes
   const mounted = useRef(true);
   // Open while drawn, closed when the screen goes
@@ -710,18 +713,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         // Done
         return;
       }
-      // The question before the results, for the kinds that are asked (decision 116)
-      const scale = ratingScaleFor(mode, { wordList: passage?.kind === "words" });
-      // Asked: the take is saved, the question shows, and the results open after it (in a 4/3/2 loop, only after the last round)
-      if (scale && !(loop && loop.round < LOOP_ROUNDS)) {
-        // What to ask, and where to go after
-        setRatingAsk({ sessionId: session.id, next, scale });
-        // Ask
-        setStage("rating");
-        // Done
-        return;
-      }
-      // Go there
+      // Go there (no question first: "How did that feel?" was dropped in decision 129)
       navigate(next);
     } catch (error) {
       // Keep the details in the browser console for debugging
@@ -733,17 +725,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [checkIn, clock, fetchFn, loop, loopTarget, mode, navigate, outline, passage?.kind, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
-
-  // Save the answer to the question before the results on the take, then open the results (a failure is said by the question, which offers the way on; decision 116)
-  const answerRating = useCallback(async (answer: RatingAnswer) => {
-    // Nothing waiting
-    if (!ratingAsk) return;
-    // Saved on the take
-    await repo.setSelfRating(ratingAsk.sessionId, { scale: ratingAsk.scale, answer, ratedAt: clock().toISOString() });
-    // The results
-    navigate(ratingAsk.next);
-  }, [clock, navigate, ratingAsk, repo]);
+  }, [checkIn, clock, fetchFn, loop, loopTarget, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
 
   // Stop recording, then keep the take
   const stop = useCallback(async () => {
@@ -1367,19 +1349,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     );
   }
 
-  // After a take is saved, before its results: how did that feel? (decision 116)
-  if (stage === "rating" && ratingAsk) {
-    // Draw the question on its own
-    return (
-      <main id="main" className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
-        {/* Title, no way out but the question's own */}
-        <Masthead title={title} nav={false} close={null}>{""}</Masthead>
-        {/* The question */}
-        <div className="md:pt-8"><SelfRatingAsk scale={ratingAsk.scale} onAnswer={answerRating} onSkip={() => navigate(ratingAsk.next)} /></div>
-      </main>
-    );
-  }
-
   // The voice shape for this stage (the bottom band went with decision 75): large in the column, or small beside text to read
   const shapeControl = (
     <>
@@ -1455,8 +1424,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
           {recording && angles.length > 0 && <Hints angles={angles} compact />}
-          {/* A story keeps its shape and focus in view while telling (decision 92) */}
-          {recording && mode === "story" && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} compact /> : <StoryPlanCard take={storyTake} compact />)}
           {/* Push the way out down */}
           <div className="hidden flex-1 md:block" />
           {/* Leave while thinking (while recording, Pause and Discard sit by the shape) */}
@@ -1485,6 +1452,25 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           )}
           {/* The question being answered, above the shape */}
           {recording && prompt && !smallTalk && !script && <p className="mt-3 max-w-[30ch] font-display text-cue font-semibold tracking-tight">{prompt.text}</p>}
+          {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
+          {recording && mode === "story" && (
+            <div data-story-template className="mt-3">
+              {/* Show or hide, remembered in this browser */}
+              <CheckRow
+                checked={templateShown}
+                onChange={(event) => {
+                  // Remember it
+                  saveStoryTemplateShown(event.target.checked);
+                  // Show it
+                  setTemplateShownChange(event.target.checked);
+                }}
+              >
+                {guidedStory ? "Show the facts" : "Show the template"}
+              </CheckRow>
+              {/* The template's beats in order (with any focus), or the guided story's facts */}
+              {templateShown && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />)}
+            </div>
+          )}
           {/* Beside text to read, the controls sit at the top (the shape floats in the corner) */}
           {recording && script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
           {/* A discarded take, which can be brought back for a few seconds */}

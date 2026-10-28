@@ -340,10 +340,3 @@ export const test = base.extend<{ consoleErrors: string[] }>({
 // Re-export expect so checks import everything from here
 export { expect };
 
-// Skip the question asked before a take's results (decision 116), for checks about something else
-export async function skipRating(page: Page): Promise<void> {
-  // The question shows once the take is saved
-  await expect(page.getByRole("heading", { name: "How did that feel?" })).toBeVisible({ timeout: 15_000 });
-  // One tap on Skip
-  await page.getByRole("button", { name: "Skip" }).click();
-}

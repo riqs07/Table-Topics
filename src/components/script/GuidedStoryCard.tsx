@@ -1,35 +1,23 @@
-// A guided story's card (decision 93): the plain facts in order, the twist marked, the nudges toward what to add, and the template (or an older story's shape) and focus by name in one line; full while choosing and planning, one line beside the voice shape while telling. It takes the place of the shape card, so a phone shows one card, not two
+// A guided story's card (decision 93): the plain facts in order, the twist marked, the nudges toward what to add, and the template (or an older story's shape) and focus by name in one line; shown while choosing and planning, and while telling unless switched off (decision 130). It takes the place of the shape card, so a phone shows one card, not two
 
 // Load the focus lookup
 import { findStoryFocus } from "@/content/stories";
 // Load the plan's name (the template, or an older story's shape)
 import { planBeats } from "@/components/script/StoryPlanCard";
-// Load the guided story type and its facts
-import { factsOf, type GuidedStory } from "@/content/guidedStories";
+// Load the guided story type
+import type { GuidedStory } from "@/content/guidedStories";
 // Load the story set-up type
 import type { StoryTake } from "@/data/records";
 // Load the shared card look
 import { CARD } from "@/components/script/textStyles";
 
 // Draw the card
-export function GuidedStoryCard({ story, take, compact = false }: { story: GuidedStory; take: StoryTake; compact?: boolean }) {
+export function GuidedStoryCard({ story, take }: { story: GuidedStory; take: StoryTake }) {
   // The template or shape, by name
   const shape = planBeats(take);
   // The focus, if any
   const focus = findStoryFocus(take.focus);
-  // While telling: the facts on one line, and the focus under them
-  if (compact) {
-    // The margin version
-    return (
-      <div data-guided-card="compact" className="mt-6 border-t border-rule pt-3">
-        {/* The facts on one line, the twist included */}
-        <p>{factsOf(story).join(" · ")}</p>
-        {/* The focus */}
-        {focus && <p className="mt-2 font-semibold text-ink">{focus.name}</p>}
-      </div>
-    );
-  }
-  // While choosing and planning: the facts numbered, the twist, the nudges, then the shape and focus by name
+  // The facts numbered, the twist, the nudges, then the shape and focus by name
   return (
     <section aria-label="Your facts" data-guided-card="full" className={`mt-6 max-w-md p-4 ${CARD}`}>
       {/* Small heading */}

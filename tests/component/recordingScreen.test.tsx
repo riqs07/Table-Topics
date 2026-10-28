@@ -538,8 +538,6 @@ describe("RecordingScreen", () => {
     // Stop
     fireEvent.click(stop);
     // Wait for the page change
-    // Skip the question before the results (decision 116)
-    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // The saved session, with its readings
     const saved = await repository.getFullSession((await repository.listSessions())[0]!.id);
@@ -560,8 +558,6 @@ describe("RecordingScreen", () => {
     // Stop
     fireEvent.click(stop);
     // Wait for the page change
-    // Skip the question before the results (decision 116)
-    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // Confirm no fillers were counted
     expect((await repository.listSessions())[0]?.fillersPerMinute).toBe(0);
@@ -1459,8 +1455,6 @@ describe("RecordingScreen", () => {
     clock.advance(20_000);
     fireEvent.click(stop);
     // Wait for the page change
-    // Skip the question before the results (decision 116)
-    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // Confirm it was saved as free talk
     expect((await repository.listSessions())[0]).toMatchObject({ mode: "free", promptId: "free" });
@@ -1525,8 +1519,6 @@ describe("RecordingScreen", () => {
     clock.advance(20_000);
     fireEvent.click(stop);
     // Wait for the page change
-    // Skip the question before the results (decision 116)
-    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // Confirm the plan was saved with the session
     expect((await repository.listSessions())[0]).toMatchObject({ mode: "outline", outline });
