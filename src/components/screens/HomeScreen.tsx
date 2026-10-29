@@ -45,8 +45,8 @@ import { firstFinishToday } from "@/data/dayCelebrated";
 import { practiceSessions } from "@/core/sessionHome";
 // Load the hand-drawn welcome (decision 134)
 import { Drawing } from "@/components/script/Drawing";
-// Load the blob scenes, and which one each step shows (decision 137)
-import { Scene } from "@/components/scenes/Scene";
+// Load the step's scene as its mark, and which scene each step shows (decision 137)
+import { SceneMark } from "@/components/scenes/SceneMark";
 import { stepScene } from "@/components/scenes/sceneFor";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
@@ -492,8 +492,8 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                     <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
                       {/* The whole row starts the step: a rounded tile, warm when next */}
                       <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
-                        {/* Its mark (when the day is first done, the ticks grow in one by one, unless motion is unwelcome) */}
-                        <span className={data?.celebrate ? "motion-safe:animate-pop" : undefined} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}><PathMark mark={mark} number={index + 1} /></span>
+                        {/* Its mark: its scene where its kind has one, else its number (decision 137), each in the same width so the words line up; when the day is first done, the marks grow in one by one, unless motion is unwelcome */}
+                        <span className={`flex w-14 flex-none justify-center ${data?.celebrate ? "motion-safe:animate-pop" : ""}`} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}>{scene ? <SceneMark scene={scene} mark={mark} faded={!!(plan.done[index] || plan.skipped[index])} /> : <PathMark mark={mark} number={index + 1} />}</span>
                         {/* What it is */}
                         <span className="min-w-0 flex-1">
                           {/* Its name and time */}
@@ -503,8 +503,6 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                           {/* How it went, once done */}
                           {result && <span className="block text-footnote text-ink-muted">{result}</span>}
                         </span>
-                        {/* Its scene on the right: moving on the next step, still on the others, faded once done or put off (decision 137) */}
-                        {scene && <span aria-hidden="true" data-step-scene={scene} className={`flex size-12 flex-none items-center justify-center rounded-xl ${mark === "next" ? "bg-card" : "bg-warm-tint"} ${plan.done[index] || plan.skipped[index] ? "opacity-55" : ""}`}><Scene name={scene} motion={mark === "next" ? "loop" : "still"} className="size-12" /></span>}
                       </Link>
                     </li>
                   );
