@@ -7,8 +7,8 @@ import type { Page } from "@playwright/test";
 async function rapidFire(page: Page): Promise<void> {
   // Reveal the topic and start the countdown
   await page.getByRole("button", { name: /Show my topic/ }).click();
-  // The countdown passes
-  await page.clock.runFor(11_000);
+  // The topic draw (decision 133) and the countdown pass
+  await page.clock.runFor(14_000);
   // Recording
   const stop = page.getByRole("button", { name: /Stop/ });
   // (shown)

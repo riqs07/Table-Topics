@@ -14,7 +14,7 @@ import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
-import { STRUCTURE_HINT, findPrompt } from "@/content/prompts";
+import { STRUCTURE_HINT, TABLE_TOPICS, findPrompt } from "@/content/prompts";
 // Load the text to read by id (a full speech's text loads only when a part of one is asked for)
 import { useReading } from "@/components/screens/useReading";
 // Load the lesson lookup
@@ -47,6 +47,9 @@ import { DEFAULT_TEMPO, MAX_TEMPO, MIN_TEMPO } from "@/core/metronome";
 import type { Metronome } from "@/audio/metronome";
 // Load the switch row
 import { CheckRow } from "@/components/script/CheckRow";
+// Load the Rapid Fire topic draw and its order (decision 133)
+import { TopicDraw } from "@/components/script/TopicDraw";
+import { drawSteps } from "@/core/topicDraw";
 // Load the choice of showing a story's template while telling (decision 130)
 import { readStoryTemplateShown, saveStoryTemplateShown } from "@/data/storyTemplateShown";
 // Load the shared browser repository
@@ -135,6 +138,12 @@ interface RecordingScreenProps {
   loop?: { id: string | null; round: number } | null;
   // A take inside a guided course: its part and try, or its prompt coming back days later; saved on the take, which then goes back to the course (decision 131)
   course?: CourseTake | null;
+}
+
+// Whether motion is welcome (no "reduce motion" setting), for the Rapid Fire topic draw (decision 133); not in a browser, or unable to tell, means no
+function motionWelcome(): boolean {
+  // Asked of the browser
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
 }
 
 // A story's set-up when none is given: Classic, no focus, full length (decision 92)
@@ -399,6 +408,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [templateShownChange, setTemplateShownChange] = useState<boolean | null>(null);
   // The choice in force
   const templateShown = templateShownChange ?? savedTemplateShown;
+  // A Rapid Fire topic being drawn: the topics flicking past, the real one last; null when no draw is under way (decision 133)
+  const [draw, setDraw] = useState<string[] | null>(null);
   // The timing light at the last cue check, to hear when it changes
   const lastSignal = useRef<TimeSignal>("none");
   // A take that was just discarded, kept for a few seconds so it can be undone (decision 77)
@@ -445,6 +456,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [qaQuestion, setQaQuestion] = useState<string | null>(null);
   // The prompt to speak to (for reading aloud, its title; for a Q&A answer, the question)
   const prompt = mode === "qa" ? (qaQuestion ? { id: promptId, text: qaQuestion } : undefined) : mode === "story" ? storyPromptText(promptId, momentText) : findPrompt(promptId);
+  // Its words, which stay the same between draws (for the Rapid Fire topic draw, decision 133)
+  const promptText = prompt?.text ?? null;
   // The passage, when reading aloud or doing a pause drill
   const passage = useReading(mode === "read" || mode === "pause" ? promptId : null).passage;
   // The user's own talk, when rehearsing (loaded from storage below)
@@ -1092,6 +1105,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
   // Start this kind of session: the countdown or thinking time if it has one, otherwise recording; the explanation first if needed
   const begin = useCallback(() => {
+    // A topic draw is already under way: nothing to start
+    if (draw) return;
     // A new take lets any discarded one go
     discarded.current = null;
     // Timing tones, if switched on: get the sound ready now, during the tap
@@ -1111,7 +1126,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       metronome.current.start(metronomeChoice.tempo);
     }
     // The start itself: a small-talk question is asked aloud first (a moment, situation or flat question read on a card is not; decision 95), a Table Topic or prepared speech counts down, anything else records
-    const go = smallTalk && findUnit(smallTalk.unit).drill === "heard" ? () => void ask(smallTalk.question) : think > 0 ? beginThinking : () => void start();
+    // A Rapid Fire topic seen for the first time is drawn first, where motion is welcome; the countdown starts once it lands (decision 133)
+    const drawFirst = mode === "talk" && stage === "ready" && promptText !== null && motionWelcome();
+    // The start: the question asked, the draw, the countdown, or recording
+    const go = smallTalk && findUnit(smallTalk.unit).drill === "heard" ? () => void ask(smallTalk.question) : drawFirst ? () => setDraw(drawSteps(promptText!, TABLE_TOPICS.map((topic) => topic.text), Date.now())) : think > 0 ? beginThinking : () => void start();
     // The first ever recording: explain the microphone, and start once it is allowed
     if (needsPrimer) {
       // Remember the start for afterwards
@@ -1123,7 +1141,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     }
     // Otherwise start now
     go();
-  }, [ask, beginThinking, metronomeChoice.on, metronomeChoice.tempo, mode, needsPrimer, services, smallTalk, start, think]);
+  }, [ask, beginThinking, draw, metronomeChoice.on, metronomeChoice.tempo, mode, needsPrimer, promptText, services, smallTalk, stage, start, think]);
+
+  // The drawn topic has landed: the countdown starts (decision 133)
+  const landTopic = useCallback(() => {
+    // The draw is over
+    setDraw(null);
+    // Count down
+    beginThinking();
+  }, [beginThinking]);
 
   // Switch the metronome on or off, and remember it (decision 128)
   const switchMetronome = useCallback(
@@ -1265,7 +1291,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Whether this kind of session has a timing light
   const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "story" || mode === "qa" || ((mode === "rehearse" || mode === "outline") && !!goalSeconds);
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
-  const busy = recording || thinking || stage === "asking" || stage === "starting" || stage === "saving";
+  const busy = recording || thinking || !!draw || stage === "asking" || stage === "starting" || stage === "saving";
   // Where this kind of session belongs, for the close button (practising hides the tab bar); a check-in part goes back to the check-in (decision 100)
   const home = checkIn ? { section: "today" as const, href: "/check-in/run", label: "Close, back to your check-in" } : sessionHome(mode, promptId, planStep !== null);
   // Asking or listening, in small talk
@@ -1323,7 +1349,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
   const showPrompt = !recording && !!prompt && !script && !smallTalk && mode !== "story" && (mode !== "talk" || thinking || topicSeen);
   // A Table Topic's briefing, shown before the question is first seen
-  const showBriefing = mode === "talk" && stage === "ready";
+  const showBriefing = mode === "talk" && stage === "ready" && !draw;
   // This prompt's angles, for a Record Response
   const angles = mode === "response" ? (findPrompt(promptId)?.angles ?? []) : [];
   // Seconds left in a Rapid Fire countdown, as shown
@@ -1361,11 +1387,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       {/* While recording: the live voice shape, with the clock inside, which stops the take (and takes focus as recording starts, so the keyboard and screen readers land on it) */}
       {recording && <VoiceBlob levels={levels} signal={signal} clock={formatClock(elapsed)} onStop={() => void stop()} compact={!!script} paused={paused} focusOnMount />}
       {/* Ready, or ready again: the start shape */}
-      {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
+      {!draw && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
         <StartBlob compact={!!script} onStart={begin} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : loop && loop.round > 1 ? `Start round ${loop.round}` : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "story" ? "Plan it" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={loop && loop.round > 1 ? lengthText : mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : mode === "story" ? "up to a minute, then tell it" : lengthText} />
       )}
       {/* Thinking about a Record Response: start speaking early */}
       {thinking && (mode === "response" || mode === "story") && <StartBlob compact={!!script} onStart={() => void start()} label="Ready" detail={mode === "story" ? "start telling" : "start speaking"} />}
+      {/* A Rapid Fire topic being drawn: the shape waits (decision 133) */}
+      {draw && <StatusBlob compact={!!script} label="Get ready" detail="picking a topic" live={false} />}
       {/* A Table Topic's countdown: no early start, just the time left */}
       {thinking && mode === "talk" && <StatusBlob compact={!!script} label="Get ready" detail={`starting in ${countdown}`} live={false} />}
       {/* What the countdown says to screen readers: at the start and in the last three seconds only */}
@@ -1642,6 +1670,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               )}
             </>
           )}
+          {/* A Rapid Fire topic being drawn, in the headline's place (decision 133) */}
+          {draw && <TopicDraw steps={draw} onDone={landTopic} />}
           {/* Before recording: the prompt and, on a retry, last time's cue */}
           {showPrompt && prompt && (
             <>

@@ -284,6 +284,30 @@ describe("RecordingScreen", () => {
     await screen.findByRole("button", { name: /Stop/ });
   }
 
+  // Where motion is welcome, the topic is drawn first: other topics flick past, the briefing goes, and the countdown starts only once the real topic lands (decision 133)
+  it("draws the Rapid Fire topic before the countdown when motion is welcome", async () => {
+    // Fake timers that still let promises run
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // A browser with no "reduce motion" setting
+    const matchMedia = vi.fn((query: string) => ({ matches: query.includes("no-preference"), media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+    // (in place)
+    vi.stubGlobal("matchMedia", matchMedia);
+    // Draw a Table Topic
+    draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id });
+    // Show the topic
+    fireEvent.click(await screen.findByRole("button", { name: /Show my topic/ }));
+    // The draw
+    const spinner = document.querySelector("[data-topic-draw]");
+    // What shows first: another topic, no briefing, no countdown, and the spoken status
+    const first = [spinner?.getAttribute("data-topic-draw"), spinner?.querySelector("[data-topic-shown]")?.textContent === TABLE_TOPICS[0]!.text, screen.queryByText(/Your topic is hidden/), screen.queryByText(/starting in/), !!screen.getByText("Picking your topic…")];
+    // The draw runs its course
+    await act(async () => vi.advanceTimersByTime(2_500));
+    // Confirm the first moment, then the draw gone, the topic as the headline, and the countdown at its full ten seconds
+    expect([first, document.querySelector("[data-topic-draw]"), screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/starting in 10/)]).toEqual([["spinning", false, null, null, true], null, TABLE_TOPICS[0]!.text, true]);
+    // Put the browser back
+    vi.unstubAllGlobals();
+  });
+
   // A Table Topic briefs first and keeps the question hidden until it starts
   it("briefs the user before a Table Topic without showing the question", async () => {
     // Draw a Table Topic
