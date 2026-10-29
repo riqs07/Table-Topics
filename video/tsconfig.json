@@ -1,0 +1,29 @@
+// TypeScript settings for the videos (checked on their own: pnpm typecheck in this folder)
+{
+  "compilerOptions": {
+    // Modern browsers
+    "target": "ES2022",
+    // Browser and modern JavaScript types
+    "lib": ["dom", "dom.iterable", "es2022"],
+    // Remotion's bundler compiles; TypeScript only checks
+    "noEmit": true,
+    // Skip third-party type files
+    "skipLibCheck": true,
+    // Every strict check, as in the app
+    "strict": true,
+    // A missing entry may be undefined
+    "noUncheckedIndexedAccess": true,
+    // Modern modules, found the way bundlers find them
+    "module": "esnext",
+    // (resolution)
+    "moduleResolution": "bundler",
+    // JSON files such as the prepared timings
+    "resolveJsonModule": true,
+    // The JSX transform React 19 uses
+    "jsx": "react-jsx",
+    // The app's code under "@", as in the app
+    "paths": { "@/*": ["../src/*"] }
+  },
+  // This folder's code and the settings file
+  "include": ["src", "remotion.config.ts"]
+}

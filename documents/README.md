@@ -2,7 +2,7 @@
 
 **Purpose:** One place for every decision about what VoiceLab is, how it is built, and the rules we build by.
 **Audience:** A human inspector. Each file is short and can be read on its own.
-**Last updated:** 2026-10-22
+**Last updated:** 2026-10-29
 
 ## What VoiceLab is (30 seconds)
 
@@ -18,6 +18,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 4 | [architecture/decisions.md](architecture/decisions.md) | Why did we choose each technology? | 2 min |
 | 4a | [architecture/performance.md](architecture/performance.md) | How fast are the pages with a year of practice, before and after decisions 98 and 99? | 3 min |
 | 5 | [design/design-system.md](design/design-system.md) | How do you control colors, fonts, and feel? | 2 min |
+| 5a | [design/art-style.md](design/art-style.md) | How are the blob, scenes, course tiles and videos drawn and animated, and how do you add one that fits? | 5 min |
 | 6 | [standards/coding-standards.md](standards/coding-standards.md) | How must code be written and tested? | 3 min |
 | 7 | [roadmap.md](roadmap.md) | In what order is it built, and where do you step in? | 3 min |
 | 8 | [checkpoints.md](checkpoints.md) | Exactly what do I need from you, and when? | 3 min |

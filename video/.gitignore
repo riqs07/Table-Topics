@@ -1,0 +1,6 @@
+# Installed packages
+node_modules/
+# Rendered videos and stills
+out/
+# Made by scripts/prepare.mjs from the app's CSS and the voiceover
+src/generated/

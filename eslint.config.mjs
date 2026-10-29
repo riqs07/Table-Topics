@@ -17,8 +17,8 @@ const eslintConfig = [
     },
   },
   {
-    // Skip build output, installed packages, and generated files
-    ignores: [".next/**", "node_modules/**", "out/**", "coverage/**", "next-env.d.ts"],
+    // Skip build output, installed packages, generated files, and the videos (their own project, decision 143)
+    ignores: [".next/**", "node_modules/**", "out/**", "coverage/**", "next-env.d.ts", "video/**"],
   },
 ];
 

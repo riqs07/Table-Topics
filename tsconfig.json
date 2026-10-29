@@ -44,6 +44,6 @@
   },
   // Check all TypeScript files plus types Next.js generates
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
-  // Never check installed packages
-  "exclude": ["node_modules"]
+  // Never check installed packages; the videos are checked on their own (video/tsconfig.json)
+  "exclude": ["node_modules", "video"]
 }

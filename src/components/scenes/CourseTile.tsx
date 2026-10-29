@@ -8,8 +8,8 @@ import { BLOB, Face, Move, type FaceName, type SceneMotion } from "@/components/
 // The tiles there are
 export type CourseTileName = "stop-freezing" | "buy-a-beat" | "point-first" | "point-reason-example" | "land-it" | "the-run";
 
-// The blob with its shaded side and a highlight, at a place and size (r is its radius in the tile's 200 units)
-function Body({ x, y, r, face }: { x: number; y: number; r: number; face: FaceName }) {
+// The blob with its shaded side and a highlight, at a place and size (r is its radius in the tile's 200 units), with one of the scene faces or, for a face drawn elsewhere (the talking blob in the videos), its own features in the blob's 100 units
+export function Body({ x, y, r, face, children }: { x: number; y: number; r: number; face?: FaceName; children?: ReactNode }) {
   // Drawn in the blob's own units, then placed
   return (
     <g transform={`translate(${x} ${y}) scale(${r / 100})`}>
@@ -21,8 +21,8 @@ function Body({ x, y, r, face }: { x: number; y: number; r: number; face: FaceNa
       <ellipse className="fill-art-cream opacity-50" cx="-50" cy="-54" rx="20" ry="12" transform="rotate(-35 -50 -54)" />
       {/* The face */}
       <g className="text-on-warm">
-        {/* Its features */}
-        <Face face={face} />
+        {/* Its features: the features given, or the scene face named */}
+        {children ?? (face && <Face face={face} />)}
       </g>
     </g>
   );
