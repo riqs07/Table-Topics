@@ -42,7 +42,7 @@ A course guides the user through modes the app already has, with short teaching 
 ## Still to do
 
 1. **The real content.** The draft course's words are placeholders, marked "draft lessons" on the course page. Each part needs its final teaching, model answers, and where they fit, videos (with the stretch to play).
-2. **More courses** for the other focus areas (see the brainstorm: "Answer like you meant it", "Explain it simply", "Ready by the day", "Beyond 'good, you?'", and others).
+2. **More courses** for the other focus areas. All six are outlined in [course-outlines.md](course-outlines.md), for review before the words are written.
 3. **Better measures.** Time to the first word and time to the point would suit "Stop freezing" better than pause words; both need the word times kept with the readings.
 4. **Course pages on Today.** Whether a finished course should offer the next one on Today, not only on its own page.
 
