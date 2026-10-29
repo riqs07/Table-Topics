@@ -272,7 +272,7 @@ test("Today's practice: day one speaks first, then the card, then on to the pick
   await expect(page).toHaveURL(/plan=3/);
   // Back on Today, two steps are done and the next is the first pick
   await page.goto("/");
-  // Step 3 is the one to carry on with (no band names it since decision 137)
+  // Step 3 is the one to carry on with (no band names it since decision 138)
   await expect(page.locator("[aria-current='step']")).toHaveAttribute("aria-label", /^Step 3:/);
 });
 
@@ -728,7 +728,7 @@ test("Learn: read a card one screen at a time", async ({ page }) => {
   await expect(page.getByRole("list", { name: "Cards" })).toContainText("Done");
 });
 
-// A mission: take it on in Learn (no prediction since decision 104; no longer on Today since decision 137), debrief it, and see how it went
+// A mission: take it on in Learn (no prediction since decision 104; no longer on Today since decision 138), debrief it, and see how it went
 test("Mission: try, debrief, see how it went", async ({ page }) => {
   // Open Learn, where missions live
   await page.goto("/learn");

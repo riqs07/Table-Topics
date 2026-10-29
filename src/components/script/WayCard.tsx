@@ -1,4 +1,4 @@
-// One kind of practice as a card with its blob scene (decision 136), used for Practice's main ways and Today's lesson and Quick play tiles (decision 137)
+// One kind of practice as a card with its blob scene (decision 136), used for Practice's main ways and Today's lesson and Quick play tiles (decision 138)
 
 // Load Next.js's link component
 import Link from "next/link";

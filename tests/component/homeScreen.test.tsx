@@ -236,8 +236,24 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
     // The steps
     const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
-    // Confirm the four steps, the card's address, no empty bar or "0 of 4" yet, and that the first step starts free talk inside the plan (no band below; decision 137)
+    // Confirm the four steps, the card's address, no empty bar or "0 of 4" yet, and that the first step starts free talk inside the plan (no band below; decision 138)
     expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.queryByText(/^0 of/), steps[0]?.getAttribute("href")]).toEqual([["Step 1: Free talk", "Step 2: Learn", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=2`, null, FIRST_STEP]);
+  });
+
+  // Each step's mark is its blob scene where its kind has one, in place of the number: the next one moving, the others still; a Learn card keeps its number (decision 137)
+  it("shows each step's scene, the next one moving", async () => {
+    // The welcome was already skipped
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // Draw the screen
+    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
+    // The steps
+    const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
+    // The first two steps' scene and how much it moves
+    const scenes = steps.slice(0, 2).map((step) => [step.querySelector("[data-step-scene]")?.getAttribute("data-step-scene") ?? null, step.querySelector("[data-scene]")?.getAttribute("data-motion") ?? null]);
+    // The marks' visible text: none on a scene, the number on a step without one
+    const numbers = steps.slice(0, 2).map((step) => step.querySelector("[data-step-scene]") ? null : step.querySelector("span")?.textContent);
+    // Confirm free talk's scene moving in place of its number, and the Learn card keeping its number
+    expect([scenes, numbers]).toEqual([[["free-talk", "loop"], [null, null]], [null, "2"]]);
   });
 
   // A talk with a date takes the first pick, and a past date does not count
@@ -299,7 +315,11 @@ describe("HomeScreen", () => {
     await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", createdAt: new Date(2026, 9, 13, 8).toISOString() }));
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // Confirm the heading, the done mark, no band, step 1 marked as the current step instead (decision 137), and no suggestions yet
+    // The warm-up's mark is its scene: reading aloud, still and faded now it is done, with the tick said as "Done" (decision 137)
+    const warmScene = (await screen.findByRole("link", { name: "Step 2: Warm up" })).querySelector("[data-step-scene]");
+    // Confirm it
+    expect([warmScene?.getAttribute("data-step-scene"), warmScene?.querySelector("[data-scene]")?.getAttribute("data-motion"), !!warmScene?.querySelector(".opacity-55"), warmScene?.textContent]).toEqual(["read-aloud", "still", true, "Done"]);
+    // Confirm the heading, the done mark, no band, step 1 marked as the current step instead (decision 138), and no suggestions yet
     expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), screen.queryByRole("link", { name: /^Continue/ }), screen.getByRole("link", { current: "step" }).getAttribute("aria-label"), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, null, "Step 1: Learn", null]);
   });
 
@@ -317,7 +337,7 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={repository} now={NOW} />);
     // The warm-up's row
     const row = await screen.findByRole("link", { name: "Step 2: Warm up" });
-    // Confirm the mark, and that no band offers to start (removed by decision 137)
+    // Confirm the mark, and that no band offers to start (removed by decision 138)
     expect([!!within(row).getByText("Skipped for today"), screen.queryByRole("link", { name: /^Start today’s practice/ })]).toEqual([true, null]);
   });
 

@@ -45,6 +45,9 @@ import { firstFinishToday } from "@/data/dayCelebrated";
 import { practiceSessions } from "@/core/sessionHome";
 // Load the hand-drawn welcome (decision 134)
 import { Drawing } from "@/components/script/Drawing";
+// Load the step's scene as its mark, and which scene each step shows (decision 137)
+import { SceneMark } from "@/components/scenes/SceneMark";
+import { stepScene } from "@/components/scenes/sceneFor";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 // Load what the user wants to get better at most: the reader, the words for it, and saving it (decision 97)
@@ -60,7 +63,7 @@ const STEP_COUNTS: Readonly<Record<number, string>> = { 1: "One", 2: "Two", 3: "
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the mission days, which count towards the run
 import { missionDays } from "@/core/missions";
-// Load the scene tile and the icons for Today's two tiles (decision 137)
+// Load the scene tile and the icons for Today's two tiles (decision 138)
 import { WayCard } from "@/components/script/WayCard";
 import { ShuffleIcon, UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared heading and card looks
@@ -472,13 +475,15 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                   const parts = step.kind === "checkin" && plan.checkIn ? plan.checkIn.parts.filter((part) => part.status !== "open").length : 0;
                   // That line (or, for a step put off today, saying so; for the check-in, its parts)
                   const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : step.kind === "course" && plan.done[index] ? "Part done" : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
+                  // Its blob scene, if its kind has one (decision 137)
+                  const scene = stepScene(step);
                   // One step
                   return (
                     <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
-                      {/* The whole row starts the step: a rounded tile, warm when next (and marked as the current step, since no band names it; decision 137) */}
+                      {/* The whole row starts the step: a rounded tile, warm when next (and marked as the current step, since no band names it; decision 138) */}
                       <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} aria-current={mark === "next" ? "step" : undefined} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
-                        {/* Its mark (when the day is first done, the ticks grow in one by one, unless motion is unwelcome) */}
-                        <span className={data?.celebrate ? "motion-safe:animate-pop" : undefined} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}><PathMark mark={mark} number={index + 1} /></span>
+                        {/* Its mark: its scene where its kind has one, else its number (decision 137), each in the same width so the words line up; when the day is first done, the marks grow in one by one, unless motion is unwelcome */}
+                        <span className={`flex w-14 flex-none justify-center ${data?.celebrate ? "motion-safe:animate-pop" : ""}`} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}>{scene ? <SceneMark scene={scene} mark={mark} faded={!!(plan.done[index] || plan.skipped[index])} /> : <PathMark mark={mark} number={index + 1} />}</span>
                         {/* What it is */}
                         <span className="min-w-0 flex-1">
                           {/* Its name and time */}
@@ -517,7 +522,7 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
             </Link>
           )}
 
-          {/* Beside today's steps, as two scene tiles: the lesson the user is on, and Quick play, a kind of practice at random (decisions 135 and 137) */}
+          {/* Beside today's steps, as two scene tiles: the lesson the user is on, and Quick play, a kind of practice at random (decisions 135 and 138) */}
           {plan && data && (
             <section aria-labelledby="also-today" className="mt-8">
               {/* Run-in heading */}
@@ -573,7 +578,7 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
 
           {/* Push the action down */}
           <div className="flex-1" />
-          {/* Once the day is done, the one main action: with a focus, its next thing; otherwise everything in Practice (decision 97). While steps are left there is no band: the next step is the warm row in the list (decision 137) */}
+          {/* Once the day is done, the one main action: with a focus, its next thing; otherwise everything in Practice (decision 97). While steps are left there is no band: the next step is the warm row in the list (decision 138) */}
           {plan && nextIndex === -1 && (plan.suggestion ? <ActionBand action={plan.suggestion.action} aside={`for ${plan.suggestion.phrase}`} href={plan.suggestion.href} /> : <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />)}
         </div>
       </div>}

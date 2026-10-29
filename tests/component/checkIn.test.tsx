@@ -76,7 +76,7 @@ describe("Today on a check-in day", () => {
     for (const part of ["read", "pitch"] as const) await saveTake(repository, NOW, part, 1);
     // Drawn
     render(<HomeScreen repository={repository} now={NOW} />);
-    // Confirm the step's line (the step itself carries on; there is no band, decision 137)
+    // Confirm the step's line (the step itself carries on; there is no band, decision 138)
     expect([!!(await screen.findByText("2 of 4 parts")), screen.getByRole("link", { name: /^Step 1:/ }).getAttribute("href")]).toEqual([true, "/check-in/run?plan=1"]);
   });
 

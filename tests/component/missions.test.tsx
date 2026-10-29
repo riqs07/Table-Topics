@@ -41,7 +41,7 @@ function fakeServices(words: string): RecordingServices {
 
 // Group the checks about missions on screen
 describe("missions", () => {
-  // Today no longer shows the mission (decision 137); it stays on Learn (decision 66)
+  // Today no longer shows the mission (decision 138); it stays on Learn (decision 66)
   it("leaves the mission off Today; it lives on Learn", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
@@ -49,7 +49,7 @@ describe("missions", () => {
     render(<HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Wait for today's steps
     await screen.findByRole("list", { name: "Steps" });
-    // Confirm there is no mission card (removed from Today by decision 137)
+    // Confirm there is no mission card (removed from Today by decision 138)
     expect(screen.queryByRole("region", { name: "Today’s mission" })).toBeNull();
   });
 

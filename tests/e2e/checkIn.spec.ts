@@ -94,7 +94,7 @@ test("Weekly check-in: a first one, a second a week later, then compare and hear
   await page.goto("/");
   // (its headline)
   await expect(page.getByRole("heading", { name: "Check-in day." })).toBeVisible();
-  // Start it from Today: the check-in is the current step (no band since decision 137)
+  // Start it from Today: the check-in is the current step (no band since decision 138)
   await page.locator("[aria-current='step']").click();
   // The second check-in
   await expect(page.getByRole("heading", { name: "Check-in 2." })).toBeVisible();
