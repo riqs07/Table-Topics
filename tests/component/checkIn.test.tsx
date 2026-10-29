@@ -65,7 +65,7 @@ describe("Today on a check-in day", () => {
     // Day two
     render(<HomeScreen repository={await dayTwo()} now={NOW} />);
     // Confirm the headline, the two steps and the band
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, within(screen.getByRole("list", { name: "Steps" })).getAllByRole("listitem").length, screen.getByRole("link", { name: /^Start check-in/ }).getAttribute("href")]).toEqual(["Your first check-in.", 2, "/check-in/run?plan=1"]);
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, within(screen.getByRole("list", { name: "Steps" })).getAllByRole("listitem").length, screen.getByRole("link", { name: /^Step 1:/ }).getAttribute("href")]).toEqual(["Your first check-in.", 2, "/check-in/run?plan=1"]);
   });
 
   // Part-way through, the band says continue and the step counts the parts
@@ -76,8 +76,8 @@ describe("Today on a check-in day", () => {
     for (const part of ["read", "pitch"] as const) await saveTake(repository, NOW, part, 1);
     // Drawn
     render(<HomeScreen repository={repository} now={NOW} />);
-    // Confirm the band and the step's line
-    expect([!!(await screen.findByRole("link", { name: /^Continue check-in/ })), !!screen.getByText("2 of 4 parts")]).toEqual([true, true]);
+    // Confirm the step's line (the step itself carries on; there is no band, decision 138)
+    expect([!!(await screen.findByText("2 of 4 parts")), screen.getByRole("link", { name: /^Step 1:/ }).getAttribute("href")]).toEqual([true, "/check-in/run?plan=1"]);
   });
 
   // The reminder to look back: shown a week after the first, put aside for good with Not now

@@ -236,11 +236,11 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
     // The steps
     const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
-    // Confirm the four steps, the card's address, no empty bar or "0 of 4" yet, and that the main action starts free talk inside the plan
-    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.queryByText(/^0 of/), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Free talk", "Step 2: Learn", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=2`, null, FIRST_STEP]);
+    // Confirm the four steps, the card's address, no empty bar or "0 of 4" yet, and that the first step starts free talk inside the plan (no band below; decision 138)
+    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.queryByText(/^0 of/), steps[0]?.getAttribute("href")]).toEqual([["Step 1: Free talk", "Step 2: Learn", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=2`, null, FIRST_STEP]);
   });
 
-  // Each step's mark is its blob scene where its kind has one, in place of the number: the next one moving, the others still; a Learn card has the light bulb (decisions 137 and 138)
+  // Each step's mark is its blob scene where its kind has one, in place of the number: the next one moving, the others still; a Learn card has the light bulb (decisions 137 and 139)
   it("shows each step's scene, the next one moving", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
@@ -319,8 +319,8 @@ describe("HomeScreen", () => {
     const warmScene = (await screen.findByRole("link", { name: "Step 2: Warm up" })).querySelector("[data-step-scene]");
     // Confirm it
     expect([warmScene?.getAttribute("data-step-scene"), warmScene?.querySelector("[data-scene]")?.getAttribute("data-motion"), !!warmScene?.querySelector(".opacity-55"), warmScene?.textContent]).toEqual(["read-aloud", "still", true, "Done"]);
-    // Confirm the heading, the done mark, the action back to the card, and no suggestions yet
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), !!screen.getByRole("link", { name: /^Continue: step 1/ }), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, true, null]);
+    // Confirm the heading, the done mark, no band, step 1 marked as the current step instead (decision 138), and no suggestions yet
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), screen.queryByRole("link", { name: /^Continue/ }), screen.getByRole("link", { current: "step" }).getAttribute("aria-label"), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, null, "Step 1: Learn", null]);
   });
 
   // A step put off with "Can't speak now?" is marked, not done, and the next open step is offered; once only put-off steps are left, the rest can wait (decision 77)
@@ -337,8 +337,8 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={repository} now={NOW} />);
     // The warm-up's row
     const row = await screen.findByRole("link", { name: "Step 2: Warm up" });
-    // Confirm the mark, and the action, which still starts at the card, saying so beside it
-    expect([!!within(row).getByText("Skipped for today"), !!screen.getByRole("link", { name: /^Start today’s practice/ }), !!screen.getByText("Step 1 · a Learn card")]).toEqual([true, true, true]);
+    // Confirm the mark, and that no band offers to start (removed by decision 138)
+    expect([!!within(row).getByText("Skipped for today"), screen.queryByRole("link", { name: /^Start today’s practice/ })]).toEqual([true, null]);
   });
 
   // Today shows only today's steps; everything else is in Practice
@@ -366,7 +366,7 @@ describe("HomeScreen", () => {
     // Its two rows
     const [lesson, quick] = within(also).getAllByRole("link");
     // Confirm the lesson (its unit, number and title, and where it goes) and Quick play (a Rapid Fire question, without saying which)
-    expect([lesson!.textContent, lesson!.getAttribute("href"), quick!.textContent, /^\/session\?mode=talk&prompt=t\d+$/.test(quick!.getAttribute("href") ?? "")]).toEqual(["Your lesson · AnsweringOne moment2/6", "/session?mode=smalltalk&prompt=stl2", "Quick playA random kind of practice", true]);
+    expect([lesson!.textContent, lesson!.getAttribute("href"), quick!.textContent, /^\/session\?mode=talk&prompt=t\d+$/.test(quick!.getAttribute("href") ?? "")]).toEqual(["One momentYour lesson · Answering 2/6", "/session?mode=smalltalk&prompt=stl2", "Quick playA random kind of practice", true]);
   });
 
   // When the lesson is already one of today's steps, it is not linked twice; Quick play stays, with its default random source

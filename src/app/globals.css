@@ -375,7 +375,7 @@
   .vl-scene .s-tick { transform-box: fill-box; transform-origin: center; animation: vl-s-tick 3s ease-out infinite both; }
   /* Sound waves */
   .vl-scene .s-wave { animation: vl-s-wave 1.6s ease-out infinite both; }
-  /* Learn: lifting to look up (decision 138) */
+  /* Learn: lifting to look up (decision 139) */
   .vl-scene .s-look { animation: vl-s-look 3s ease-in-out infinite; }
   /* (the glow coming on) */
   .vl-scene .s-glow { animation: vl-s-glow 3s ease-in-out infinite both; }

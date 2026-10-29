@@ -1,4 +1,4 @@
-// Which blob scene stands for a thing elsewhere in the app (decision 137): a focus area at the welcome, and a step of today's practice. Steps whose kind has no scene yet (lessons, pause and voice drills, the check-in) get none and keep their number; a Learn card has the light bulb (decision 138)
+// Which blob scene stands for a thing elsewhere in the app (decision 137): a focus area at the welcome, and a step of today's practice. Steps whose kind has no scene yet (lessons, pause and voice drills, the check-in) get none and keep their number; a Learn card has the light bulb (decision 139)
 
 // Load the scene names
 import type { SceneName } from "@/components/scenes/Scene";
@@ -49,7 +49,7 @@ export function stepScene(step: Pick<PlanStep, "kind" | "label" | "mode">): Scen
   if (step.kind === "warmup") return "warm-up";
   // A round of quick scenarios: a conversation
   if (step.kind === "scenarios") return "conversation";
-  // A Learn card: the light bulb (decision 138)
+  // A Learn card: the light bulb (decision 139)
   if (step.kind === "card") return "learn";
   // The check-in has none yet
   if (step.kind === "checkin") return null;

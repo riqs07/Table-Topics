@@ -272,8 +272,8 @@ test("Today's practice: day one speaks first, then the card, then on to the pick
   await expect(page).toHaveURL(/plan=3/);
   // Back on Today, two steps are done and the next is the first pick
   await page.goto("/");
-  // The action carries on from step 3
-  await expect(page.locator("[data-action-band]")).toContainText("Continue: step 3");
+  // Step 3 is the one to carry on with (no band names it since decision 138)
+  await expect(page.locator("[aria-current='step']")).toHaveAttribute("aria-label", /^Step 3:/);
 });
 
 // The welcome's question steers the app: pick telling stories, still start by speaking, then Today, Practice and Learn follow it (decision 97)
@@ -728,16 +728,10 @@ test("Learn: read a card one screen at a time", async ({ page }) => {
   await expect(page.getByRole("list", { name: "Cards" })).toContainText("Done");
 });
 
-// A mission: take it on from Today in Learn (no prediction since decision 104), debrief it, and see how it went
+// A mission: take it on in Learn (no prediction since decision 104; no longer on Today since decision 138), debrief it, and see how it went
 test("Mission: try, debrief, see how it went", async ({ page }) => {
-  // Start at Today
-  await page.goto("/");
-  // Skip the welcome question
-  await page.getByRole("link", { name: "Start", exact: true }).click();
-  // Back to Today from the first step
-  await page.getByRole("link", { name: "Close, back to Today" }).click();
-  // Today's mission leads to Learn, where it is taken on
-  await page.getByRole("region", { name: "Today’s mission" }).getByRole("link", { name: "Take it on in Learn" }).click();
+  // Open Learn, where missions live
+  await page.goto("/learn");
   // Learn's mission card
   const card = page.getByRole("region", { name: "Today’s mission" });
   // No 1 to 5 prediction to make

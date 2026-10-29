@@ -396,7 +396,7 @@ const SCENES: Record<SceneName, () => ReactNode> = {
       <Move loop="s-talk" origin="93px 61px" delay={2}><path className={`${LINE} fill-warm-tint`} d="M74 34h30a6 6 0 0 1 6 6v8a6 6 0 0 1-6 6h-4v7l-7-7H74a6 6 0 0 1-6-6v-8a6 6 0 0 1 6-6z" /></Move>
     </>
   ),
-  // Learn (decision 138): looking up as a light bulb comes on, like the bulb on the Learn tab
+  // Learn (decision 139): looking up as a light bulb comes on, like the bulb on the Learn tab
   "learn": () => (
     <>
       {/* The shadow */}
