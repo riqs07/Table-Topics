@@ -2,7 +2,7 @@
 // The Settings screen: your history (folded), light or dark, how long recordings are kept, the coach, export and import, and deleting everything
 
 // Load React's state and effect tools
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState, useSyncExternalStore, type ChangeEvent } from "react";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
@@ -60,6 +60,9 @@ import { turnEndingOf, type TurnEnding } from "@/core/endOfTurn";
 import { UsageSection } from "@/components/script/UsageSection";
 // Load the month's conversation minutes check (decision 102)
 import { conversationMinutes, type ConversationMinutes } from "@/data/conversationClient";
+// Load the switch for the developer link to every mode (decision 132), and the never-firing subscription for reading it only in the browser
+import { readDevTools } from "@/data/devTools";
+import { subscribeToNothing } from "@/components/screens/screenBasics";
 
 // How far a long export or import has got, as a whole percentage
 const PROGRESS_PERCENT = (progress: Progress) => (progress.total > 0 ? Math.floor((progress.done / progress.total) * 100) : 100);
@@ -298,6 +301,8 @@ interface SettingsScreenProps extends ScreenProps {
 export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
+  // Whether the developer link to every mode was switched on in this browser, read only in the browser so the first draw matches the server's (decision 132)
+  const devLink = useSyncExternalStore(subscribeToNothing, readDevTools, () => false);
   // The passphrase being typed (starts with the saved one)
   const [passphrase, setPassphrase] = useState(() => (typeof window === "undefined" ? "" : readPassphrase()));
   // How many sessions are waiting for feedback
@@ -795,6 +800,14 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         <ColorModeChoice />
       </Section>}
       </Group>
+
+      {/* Every mode on one page, for development: always on a local build, on a released one only once switched on from that page (decision 132) */}
+      {(DEVELOPMENT || devLink) && (
+        <Section title="Developer">
+          {/* The list */}
+          <div className={`px-5 ${CARD}`}><RowLink href="/dev/modes" meta="every mode">All modes</RowLink></div>
+        </Section>
+      )}
 
       {/* Development-only tools */}
       {DEVELOPMENT && (

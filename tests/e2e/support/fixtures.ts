@@ -180,6 +180,8 @@ export const ROUTES: ReadonlyArray<string> = [
   "/courses/revisit?id=sf-beat-1&take=missing",
   "/courses/part?id=missing",
   "/courses/course?id=missing",
+  // Every mode on one page, for development (decision 132)
+  "/dev/modes",
 ];
 
 // Pages that carry the main navigation, with the section each one marks as current
