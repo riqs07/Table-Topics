@@ -432,4 +432,20 @@ describe("HomeScreen", () => {
     // Confirm the link, that it is gone, and that the day was remembered
     expect([link, screen.queryByRole("region", { name: "Keep your practice safe" }), localStorage.getItem("voicelab-safety-dismissed")]).toEqual(["/settings#your-data", null, "2026-10-13"]);
   });
+
+  // With thinking on your feet as the focus, the course's next part is a step of its own; a part finished days ago brings its prompt back under the steps (decision 131)
+  it("adds the course's next part as a step, and brings a prompt back", async () => {
+    // A user past day one
+    const repository = await pastDayOne();
+    // The focus, and the first part finished four days ago with a take
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["spot"], courses: { "sf-beat-1": { doneAt: new Date(2026, 9, 9, 10).toISOString(), takeId: "old" } } });
+    // Draw Today
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The course step
+    const step = await screen.findByRole("link", { name: /Course: Stop freezing/ });
+    // The comeback
+    const back = document.querySelector("[data-revisit]");
+    // Confirm the step's address and title, and the comeback's question and address
+    expect([step.getAttribute("href")?.startsWith("/courses/part?id=sf-beat-2"), step.textContent?.includes("Start within two seconds"), back?.textContent?.includes("Cats or dogs?"), back?.getAttribute("href")]).toEqual([true, true, true, "/session?mode=talk&prompt=t003&course=sf-beat-1&revisit=1"]);
+  });
 });

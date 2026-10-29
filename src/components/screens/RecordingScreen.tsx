@@ -32,6 +32,8 @@ import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 import { LOUDNESS_TICK_MS, formatClock, loopWindow, maxSeconds, minSeconds, readingSeconds, speakingWindow, targetSeconds, thinkSeconds, timeSignal, timingCue, windowSignal, type SpeakingWindow, type TimeSignal } from "@/core/recordingRules";
 // Load the 4/3/2 loop's rounds and addresses (decision 118)
 import { isLoopMode, LOOP_ROUNDS, loopHref, roundTarget } from "@/core/fourThreeTwo";
+// Load the guided course rules: a part by id and where a course take goes once saved (decision 131)
+import { afterTakeHref, findPart } from "@/core/courses";
 // Load the pause-word setting rule
 import { pauseWordsShown } from "@/core/pauseWords";
 // Load the space bar shortcut choice
@@ -50,7 +52,7 @@ import { readStoryTemplateShown, saveStoryTemplateShown } from "@/data/storyTemp
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
-import type { CheckInPart, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
+import type { CheckInPart, CourseTake, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
 // Load the check-in's parts, for a take inside the weekly check-in (decision 100)
 import { CHECK_IN_PARTS, CHECK_IN_PART_INFO } from "@/core/checkIn";
 // Load the story prompts and moment seeds, and the plan card (decision 92)
@@ -131,6 +133,8 @@ interface RecordingScreenProps {
   checkIn?: { id: string; part: CheckInPart } | null;
   // A round of a 4/3/2 loop: the loop's id (null before the first round is saved) and the round, 1 to 3 (decision 118)
   loop?: { id: string | null; round: number } | null;
+  // A take inside a guided course: its part and try, or its prompt coming back days later; saved on the take, which then goes back to the course (decision 131)
+  course?: CourseTake | null;
 }
 
 // A story's set-up when none is given: Classic, no focus, full length (decision 92)
@@ -333,7 +337,9 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null, checkIn = null, loop: givenLoop = null }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null, checkIn = null, loop: givenLoop = null, course = null }: RecordingScreenProps) {
+  // The course part this take belongs to, when inside a course (decision 131)
+  const coursePlace = course ? findPart(course.part) : undefined;
   // A 4/3/2 round, only for the kinds it is offered for (decision 118)
   const loop = givenLoop && isLoopMode(mode) ? givenLoop : null;
   // The loop's id: from the address, or made when the first round is saved (kept, so a second save attempt keeps it)
@@ -697,13 +703,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}), ...(mode === "story" ? { story: storyTake } : {}), ...(checkIn ? { checkIn } : {}), ...(loop && loopTarget !== null ? { loop: { id: (loopId.current ??= crypto.randomUUID()), round: loop.round, targetSec: loopTarget } } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}), ...(mode === "story" ? { story: storyTake } : {}), ...(checkIn ? { checkIn } : {}), ...(loop && loopTarget !== null ? { loop: { id: (loopId.current ??= crypto.randomUUID()), round: loop.round, targetSec: loopTarget } } : {}), ...(course ? { course } : {}) }, clock());
       // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
       void requestPersistentStorage();
       // Send the audio for deeper analysis when that setting is on (no wait, and it never fails: its outcome is kept as a quiet note on the take; decision 91)
       void requestDeepAnalysis(repo, session, { passphrase: readPassphrase(), now: clock(), ...(fetchFn ? { fetchFn } : {}) });
       // A moment note goes straight back to the Small talk page, where it is listed; a check-in part goes on to the next part (decision 100); a 4/3/2 round before the last goes on to the next round (decision 118); anything else opens its page (feedback is requested there)
-      const next = mode === "moment" ? "/small-talk/unit?id=answering#moments" : checkIn ? "/check-in/run" : loop && loop.round < LOOP_ROUNDS && isLoopMode(mode) ? loopHref({ mode, promptId, story: mode === "story" ? storyTake : null, planStep }, loopId.current!, loop.round + 1) : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`;
+      const next = course ? afterTakeHref(course, session.id) : mode === "moment" ? "/small-talk/unit?id=answering#moments" : checkIn ? "/check-in/run" : loop && loop.round < LOOP_ROUNDS && isLoopMode(mode) ? loopHref({ mode, promptId, story: mode === "story" ? storyTake : null, planStep }, loopId.current!, loop.round + 1) : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`;
       // The speech service dropped: say so first, with the way to the take
       if (dropped) {
         // Where it is
@@ -725,7 +731,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [checkIn, clock, fetchFn, loop, loopTarget, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
+  }, [checkIn, clock, course, fetchFn, loop, loopTarget, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
 
   // Stop recording, then keep the take
   const stop = useCallback(async () => {
@@ -1387,6 +1393,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       {/* Inside the weekly check-in, which part this is (decision 100) */}
       {checkIn && <p className="mt-3 text-footnote font-medium text-accent">Weekly check-in · part {CHECK_IN_PARTS.indexOf(checkIn.part) + 1} of {CHECK_IN_PARTS.length}</p>}
       {/* A 4/3/2 round: which, and its time (decision 118) */}
+      {/* Inside a guided course: the part, the try (or the comeback), and the one goal (decision 131) */}
+      {coursePlace?.part.practice && course && (
+        <div data-course-take className="mt-3 max-w-[52ch] text-footnote">
+          {/* Where this take sits */}
+          <p className="font-medium text-accent">{coursePlace.course.title} · lesson {coursePlace.lessonNumber}, part {coursePlace.partNumber} · {course.revisit ? "back again" : `try ${course.attempt} of ${coursePlace.part.practice.tries}`}</p>
+          {/* The goal, before speaking */}
+          {!busy && <p className="mt-1"><span className="font-semibold">Goal:</span> {coursePlace.part.practice.goal}</p>}
+        </div>
+      )}
       {loop && loopTarget !== null && <p data-loop-round className="mt-3 text-footnote font-medium text-accent">Told three times · round {loop.round} of {LOOP_ROUNDS} · {formatClock(loopTarget)}{loop.round > 1 && !busy ? ". Same content, less time." : ""}</p>}
       {/* Inside today's practice, which step this is */}
       {planStep && (

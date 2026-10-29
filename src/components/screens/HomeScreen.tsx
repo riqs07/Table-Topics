@@ -5,6 +5,8 @@
 import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
+// Load the icon for a course prompt coming back (decision 131)
+import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { PRESS, PRIMARY, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
@@ -442,7 +444,7 @@ export function HomeScreen(props: ScreenProps) {
                   // How far the check-in has got, in parts (decision 100)
                   const parts = step.kind === "checkin" && plan.checkIn ? plan.checkIn.parts.filter((part) => part.status !== "open").length : 0;
                   // That line (or, for a step put off today, saying so; for the check-in, its parts)
-                  const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
+                  const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : step.kind === "course" && plan.done[index] ? "Part done" : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
                   // One step
                   return (
                     <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
@@ -469,6 +471,23 @@ export function HomeScreen(props: ScreenProps) {
               {/* Once done, and no practice time chosen yet: a way to choose one (decision 78) */}
               {allDone && data && !data.anchor && <p><Link href="/settings#practice-time" className={TEXT_LINK}>Choose when you’ll practise tomorrow</Link></p>}
             </section>
+          )}
+
+          {/* A course prompt coming back: the same question again, then both answers side by side (decision 131) */}
+          {plan?.revisit && (
+            <Link href={plan.revisit.href} data-revisit className={`mt-6 flex items-center gap-3 rounded-2xl border border-rule px-4 py-3 ${PRESS} hover:bg-paper`}>
+              {/* The mark */}
+              <span aria-hidden="true" className="flex size-9 flex-none items-center justify-center rounded-xl bg-warm-tint text-warm-ink"><ArrowCounterClockwiseIcon className="size-5" /></span>
+              {/* What it is */}
+              <span className="min-w-0 flex-1">
+                {/* Heading and where it comes from */}
+                <span className="block text-footnote text-ink-muted">Back again · from {plan.revisit.from}</span>
+                {/* The question */}
+                <span className="block leading-snug">{plan.revisit.question}</span>
+                {/* What happens */}
+                <span className="block text-footnote text-ink-muted">Answer it again, then hear both side by side.</span>
+              </span>
+            </Link>
           )}
 
           {/* The reminder to hear the first check-in beside the latest (decision 100) */}

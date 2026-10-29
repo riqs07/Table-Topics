@@ -29,6 +29,8 @@ export function contentSecurityPolicy(development: boolean): string {
     "form-action 'self'",
     // No other site may frame the app
     "frame-ancestors 'none'",
+    // A course part's video plays in YouTube's privacy-enhanced player, the only page the app frames (decision 131)
+    "frame-src https://www.youtube-nocookie.com",
     // The service worker comes from this site
     "worker-src 'self'",
     // The install manifest comes from this site

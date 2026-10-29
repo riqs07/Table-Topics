@@ -296,8 +296,8 @@ test("Focus: the welcome's pick steers Today, Practice and Learn", async ({ page
   await page.goto("/practice");
   // The rest of the ways to practise, opened (decision 125)
   await page.getByRole("button", { name: "More ways to practise" }).click();
-  // (its first heading)
-  await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^Tell stories\s*Your focus$/);
+  // (the first group's heading; the courses sit above the groups, decision 131)
+  await expect(page.locator("#more-practice").getByRole("heading", { level: 2 }).first()).toHaveText(/^Tell stories\s*Your focus$/);
   // Learn opens with the focus sets
   await page.goto("/learn");
   // (its group)

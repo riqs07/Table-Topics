@@ -45,6 +45,11 @@ import { PAGE } from "@/components/script/layout";
 import { Fragment, type ReactNode } from "react";
 // Load what the user wants to get better at most, and the order it gives the groups (decision 97)
 import { focusAreas, orderPracticeGroups, readPracticeFocus, type FocusAreaId, type PracticeGroupId } from "@/core/practiceFocus";
+// Load the guided courses, their card and progress (decision 131)
+import { COURSES } from "@/content/courses";
+import { CourseRow } from "@/components/screens/CoursesScreen";
+import { useCourseData } from "@/components/screens/useCourseData";
+import { CourseLoadFailed } from "@/components/script/CourseLoadFailed";
 
 // The groups in their usual order
 const USUAL_ORDER: ReadonlyArray<PracticeGroupId> = ["on-the-spot", "stories", "conversation", "voice"];
@@ -135,6 +140,8 @@ export function PracticeScreen(props: ScreenProps) {
   const [unit, setUnit] = useState<UnitProgress>(() => nextUnit([]));
   // What the user wants to get better at most, once read (none until then, so the page starts in its usual order; decision 97)
   const [focus, setFocus] = useState<FocusAreaId[]>([]);
+  // Progress through the guided courses (decision 131)
+  const courseData = useCourseData(repo, today);
   // Whether the rest of the ways to practise are open (decision 125)
   const [more, setMore] = useState(false);
 
@@ -330,6 +337,26 @@ export function PracticeScreen(props: ScreenProps) {
       <Masthead title="VoiceLab" section="practice" />
       {/* The page's name, and how it relates to Today */}
       <PageTitle title="Practice">Pick one and speak. Your steps for the day are on Today.</PageTitle>
+
+      {/* Guided courses, the focus's first (decision 131) */}
+      <section aria-labelledby="courses" className="mt-6">
+        {/* Heading, and the list of every course */}
+        <div className="flex items-baseline justify-between gap-4">
+          {/* Heading */}
+          <h2 id="courses" className={SECTION_HEADING}>Courses</h2>
+          {/* Every course */}
+          <Link href="/courses" className={`${TEXT_LINK} text-footnote`}>All courses</Link>
+        </div>
+        {/* The cards, once progress is read */}
+        {courseData.status === "ready" && (
+          <ul className="mt-3 grid gap-3 md:grid-cols-2">
+            {/* Each course, the focus's first */}
+            {[...COURSES].sort((a, b) => Number(focus.includes(b.focus)) - Number(focus.includes(a.focus))).map((course) => <li key={course.id}><CourseRow course={course} progress={courseData.progress} note={focus.includes(course.focus) ? "For your focus" : undefined} /></li>)}
+          </ul>
+        )}
+        {/* Progress that could not be read */}
+        {courseData.status === "failed" && <CourseLoadFailed retry={courseData.retry} />}
+      </section>
 
       {/* The five that do the most work (decision 125) */}
       <ul aria-label="Main ways to practise" className={`mt-6 ${CARD_LIST}`}>

@@ -1,7 +1,7 @@
 # Roadmap
 
 **Purpose:** The order VoiceLab is built in. Every milestone starts with tests, and every milestone lists where you step in.
-**Last updated:** 2026-10-21
+**Last updated:** 2026-10-29
 
 Checkpoint IDs (C#) are defined in [checkpoints.md](checkpoints.md). The riskiest assumptions are tested first (milestone 1), because their answers can reshape later milestones, especially 5 and 10.
 
@@ -59,6 +59,10 @@ The menu is organised by job (Today, Talks, Practice, Skills, History, Settings)
 ## Done: storytelling (built 2026-10-21, decision 92)
 
 A first-class Stories mode: a 40-prompt bank, your moment notes as seeds, optional shapes and one focus, a planning minute, story checks on the phone and a story coach, "Tell it again" with both tellings side by side, and "Your stories". The plan is in [plan-storytelling.md](plan-storytelling.md). Later: more Learn cards on stories (a separate change), and the story checks' word lists tuned once real tellings show what they miss.
+
+## Built: guided courses, the flow (2026-10-29, decision 131)
+
+Courses for each focus, made of lessons in short parts that use the modes the app already has; the next part is an added step on Today, and a part's prompt comes back days later for a side-by-side comparison. Built with one draft course ("Stop freezing"); the real content, more courses and videos are next. The plan is in [plan-courses.md](plan-courses.md).
 
 ## To revisit after the MVP (agreed 2026-10-14)
 

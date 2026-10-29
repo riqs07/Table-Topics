@@ -16,6 +16,10 @@ import { readPracticeFocus } from "@/core/practiceFocus";
 import { checkInId, checkInSchedule, firstUseOf, groupCheckIns, isFinished, partStatuses, readCheckInSettings, weekFor } from "@/core/checkIn";
 // Load the record types
 import type { CheckInPart, SessionRecord, TalkRecord } from "@/data/records";
+// Load the guided course rules: progress read safely, and prompts due to come back (decision 131)
+import { readCourseProgress, revisitsDue, takeHref } from "@/core/courses";
+// Load the prompt lookup, for a comeback's question
+import { findPrompt } from "@/content/prompts";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -51,6 +55,8 @@ export interface LoadedPlan {
   suggestion: { action: string; href: string; phrase: string } | null;
   // On a check-in day: today's check-in, its number, whether it is the first or the day after a missed one, and how each part stands (decision 100)
   checkIn: { id: string; week: number; baseline: boolean; late: boolean; parts: Array<{ part: CheckInPart; status: "done" | "skipped" | "open" }> } | null;
+  // A course part's prompt due to come back, with where to answer it (decision 131; null when none is due)
+  revisit: { partId: string; question: string; from: string; href: string } | null;
 }
 
 // Load today's practice (reads only; the weekly focus is worked out without saving it)
@@ -76,11 +82,19 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   // Today's check-in, on a check-in day
   const checkIn = schedule.due ? { id, week: weekFor(checkIns, id), baseline: schedule.baseline, late: schedule.late, parts: partStatuses(started) } : null;
   // The steps
-  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [], practiceFocus: readPracticeFocus(settings.practiceFocus) ?? [], checkIn };
+  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [], practiceFocus: readPracticeFocus(settings.practiceFocus) ?? [], checkIn, courses: readCourseProgress(settings.courses) };
   // The steps
   const steps = dailyPlan(input);
   // Hand back the steps, what is done, today's sessions, more to do afterwards, and the check-in (only when it is in the steps: never on day one)
-  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? [], isFinished(started)), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps), suggestion: todaysFocusSuggestion(input), checkIn: steps.some((step) => step.kind === "checkin") ? checkIn : null };
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? [], isFinished(started), input.courses), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps), suggestion: todaysFocusSuggestion(input), checkIn: steps.some((step) => step.kind === "checkin") ? checkIn : null, revisit: revisitFor(input.courses, now) };
+}
+
+// The course prompt due to come back today, the oldest first, with its question and where to answer it (decision 131)
+export function revisitFor(courses: Parameters<typeof revisitsDue>[0], now: Date): LoadedPlan["revisit"] {
+  // The oldest due
+  const due = revisitsDue(courses, now)[0];
+  // Its question, where it comes from, and the recorder's address
+  return due?.part.practice ? { partId: due.part.id, question: findPrompt(due.part.practice.promptId)?.text ?? due.part.title, from: `${due.course.title}, lesson ${due.lessonNumber}`, href: takeHref(due.part, 1, true)! } : null;
 }
 
 // Put a step off for today ("Can't speak now?"): it is not done, it is just not offered next; another day's skips are dropped (decision 77)

@@ -3,15 +3,15 @@
 // Load the kind-of-session type
 import type { SessionMode } from "@/data/records";
 
-// Where a step of the day's practice comes from: the Learn card, the warm-up, one of the bank's three groups (speaking on the spot, delivery skills, conversation), or the weekly check-in (decision 100)
-export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection" | "checkin";
+// Where a step of the day's practice comes from: the Learn card, the warm-up, one of the bank's three groups (speaking on the spot, delivery skills, conversation), the weekly check-in (decision 100), or a guided course (decision 131)
+export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection" | "checkin" | "course";
 
 // One step of today's practice
 export interface PlanStep {
   // Its lane
   lane: PlanLane;
-  // A recorded session, a Learn card, a round of quick scenarios (decision 72), a warm-up routine, which records nothing (decision 80), or the weekly check-in, four recordings in a row (decision 100)
-  kind: "session" | "card" | "scenarios" | "warmup" | "checkin";
+  // A recorded session, a Learn card, a round of quick scenarios (decision 72), a warm-up routine, which records nothing (decision 80), the weekly check-in, four recordings in a row (decision 100), or the next part of a guided course (decision 131)
+  kind: "session" | "card" | "scenarios" | "warmup" | "checkin" | "course";
   // The step's short name, such as "Warm up"
   label: string;
   // What it is, such as "Inaugural Address, part 3 of 12"
