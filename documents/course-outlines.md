@@ -1,7 +1,7 @@
 # Course Outlines: One Course for Each Focus Area
 
 **Purpose:** The shape of the six guided courses (one per focus area) before their words are written: what each course promises, its lessons, its parts, and the mode each part practises on. Agree the shape here first, then write each course in full in `src/content/courses.ts`.
-**Status:** Outline for the user to review (2026-10-29). Nothing here is built yet, apart from the draft of "Stop freezing".
+**Status:** Written and built (decision 144, 2026-10-29): every course below is in `src/content/courses.ts` with its final words. The words there are the source of truth; this outline is kept for the shape and the reasoning. Changes made while writing: Ready by the day practises on talk tasks written for the course and links to Rehearse my talk (its own-talk parts are for later); voice drills, the warm-up, shadowing, Talk with someone and the 4/3/2 drill are links under a part's idea rather than recorded inside the course; Beyond "good, you?" has six lessons (the conversation itself is the link in its last lesson); A voice they lean in for's "Fill the room" has one part.
 **Read with:** [plan-courses.md](plan-courses.md) (how courses work), [design/art-style.md](design/art-style.md) (tiles and videos, which come after the words).
 
 ## How to read this
@@ -157,7 +157,7 @@ The same rules apply to every course:
 
 ## What the engine needs
 
-Courses can now practise only on Rapid Fire, prepared speech and free talk (`PartPractice.mode` in `courses.ts`), compared on pause words, pace or length. Building courses 3 to 6 needs these, roughly in this order:
+**Done (decision 144):** parts can now record stories (with their set-up), readings, pause drills, small-talk questions and lessons, as well as Rapid Fire, prepared speech and free talk; practices with their own screens are links under the idea. **Still open:** the user's own talk inside a part, and the new measures. The table as planned:
 
 | Change | Needed for | Size (rough) |
 |---|---|---|
@@ -167,10 +167,6 @@ Courses can now practise only on Rapid Fire, prepared speech and free talk (`Par
 | A part on the user's own talk (Rehearse my talk and its ladder), with a sample talk when there is none | Ready by the day | Medium: no fixed prompt, so the comeback compares runs of the same talk |
 | New measures: time to the first word, pauses taken, pitch at line ends, questions asked, talk share | Better comparisons in courses 1, 5 and 6 | Varies; most are already measured somewhere and only need adding to `CourseMeasure` |
 
-## Questions for you
+## Questions for you (answered 2026-10-29)
 
-1. **The six courses and their names:** keep, rename or swap any?
-2. **Stop freezing:** add "Back on track" as a sixth lesson?
-3. **Ready by the day:** the user's own talk when they have one, and a sample talk otherwise?
-4. **Order of writing:** as suggested above, or another?
-5. **See it:** our own model answers only, or also short YouTube clips (the player is already built) until the course videos exist?
+The user left the content to Claude ("I trust you to make the content for now"). As built: the six names kept; "Back on track" added to Stop freezing; Ready by the day on sample talk tasks with links to the user's own talk; the writing order as suggested; See it uses our own model answers only, until the course videos exist.

@@ -22,9 +22,7 @@ import { useCourseData } from "@/components/screens/useCourseData";
 import { useAudioUrl } from "@/components/screens/useAudioUrl";
 import { usePageTitle } from "@/components/screens/usePageTitle";
 // Load the course rules
-import { compareLine, findPart, takeHref } from "@/core/courses";
-// Load the prompt lookup
-import { findPrompt } from "@/content/prompts";
+import { compareLine, findPart, practicePromptText, takeHref } from "@/core/courses";
 // Load progress saving
 import { markRevisited } from "@/data/courses";
 // Load the record and repository types
@@ -84,7 +82,7 @@ export function CourseRevisitScreen({ partId, takeId, ...props }: ScreenProps & 
     void markRevisited(repo, partId, now.id, new Date()).catch(() => {});
   }, [before, now, partId, repo]);
   // The question
-  const question = place?.part.practice ? findPrompt(place.part.practice.promptId)?.text : undefined;
+  const question = place?.part.practice ? practicePromptText(place.part.practice) : undefined;
 
   // Draw the page
   return (

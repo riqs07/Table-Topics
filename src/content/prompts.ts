@@ -357,6 +357,40 @@ export interface Passage extends Prompt {
   stress?: ReadonlyArray<string>;
 }
 
+// Prompts written for the guided courses (decision 144): work questions answered on the spot or prepared, and talk tasks for people without a talk of their own yet. Found like any prompt, but never picked for a day, so they stay fresh when a course reaches them
+export const COURSE_PROMPTS: ReadonlyArray<Prompt> = [
+  // Work, on the spot: a status asked in passing
+  { id: "cw01", text: "Your manager stops you in the corridor: “How’s the project going?”" },
+  // Work, on the spot: an opinion asked for in a meeting
+  { id: "cw02", text: "In a meeting, someone turns to you: “What do you think we should do about the late deliveries?”" },
+  // Work, on the spot: a question you cannot answer yet
+  { id: "cw03", text: "A client asks: “When exactly will it be ready?” You don’t know yet. Answer anyway." },
+  // Work, on the spot: kind disagreement
+  { id: "cw05", text: "A colleague suggests moving the weekly meeting to 8am on Mondays. You’re not sure it’s a good idea. Say so, kindly." },
+  // Work, on the spot: explaining to a child
+  { id: "cw06", text: "A ten-year-old asks you: “So what do you actually do all day?”" },
+  // Work, on the spot: an awkward question in Q&A
+  { id: "cw07", text: "After your update, someone asks: “Why did it take so much longer than planned?”" },
+  // Work, prepared: the 60-second update
+  { id: "cw11", text: "Give your team a 60-second update on something you’re working on.", angles: ["Done: what is finished", "Next: what comes next, and when", "Need: what you need, and from whom"], talkKind: "update" },
+  // Work, prepared: bad news, bottom line first
+  { id: "cw12", text: "Your project is running a week late. Tell your manager.", angles: ["Where it stands, in one sentence", "Why, in one or two lines", "What you need, or what you’ll do"], talkKind: "update" },
+  // Work, prepared: explain a process to a newcomer
+  { id: "cw13", text: "Explain one tool or process you use at work to someone on their first day.", angles: ["What it is for, in one line", "One comparison to something they know", "The one thing to watch out for"], talkKind: "explain" },
+  // Work, prepared: pitch a small idea
+  { id: "cw14", text: "Pitch one small idea that would save your team time.", angles: ["The problem, in a line they feel", "Your idea, in a line they can picture", "Your ask: what, by when"], talkKind: "persuade" },
+  // A talk: its one message
+  { id: "ct01", text: "Think of a talk you might give (a toast, a team talk, a talk on a hobby). Say its one message in one sentence, then why it matters.", angles: ["The one thing they should remember", "Why it matters to them", "The three points that support it"], talkKind: "explain" },
+  // A talk: the opening
+  { id: "ct02", text: "Open a two-minute talk on a hobby you love. Start with a hook, not your name.", angles: ["A question, a moment or a number", "Why it matters to them", "What the talk will cover"], talkKind: "persuade" },
+  // A talk: the close
+  { id: "ct03", text: "Close a talk on why everyone should learn one skill. End on a line people will remember.", angles: ["Your point once more, in a few words", "One thing to do, or one image to keep", "Your last line, then a pause"], talkKind: "persuade" },
+  // A talk: from keywords only
+  { id: "ct04", text: "Give a one-minute toast for a friend’s birthday, from three keywords you choose now.", angles: ["How you met", "One story that shows who they are", "The toast itself"], talkKind: "toast" },
+  // A talk: the whole short talk
+  { id: "ct06", text: "Give a two-minute talk on a lesson you learned the hard way.", angles: ["A hook: the moment it went wrong", "Three points: what happened, what you did, what you learned", "A close that brings back your opening"], talkKind: "story" },
+];
+
 // Texts to read aloud: public-domain speeches (all U.S. works from before 1962 or official addresses by U.S. presidents) and passages written for practice. DRAFT: approved at checkpoint C13; speech texts to be checked against a published source
 export const PASSAGES: ReadonlyArray<Passage> = [
   // Passage 1
@@ -517,5 +551,5 @@ export function findPassage(id: string): Passage | undefined {
 // Find any prompt (Record Response, Table Topic, opening or close, warm-up, or the title of a passage, drill, word list, or lesson) by its saved id
 export function findPrompt(id: string): Prompt | undefined {
   // Look in every list
-  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...BOOKENDS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS, ...SMALL_TALK_PROMPTS, CHECK_IN_PASSAGE, ...CHECK_IN_QUESTIONS].find((prompt) => prompt.id === id);
+  return [...PROMPTS, ...RETIRED_PROMPTS, ...TABLE_TOPICS, ...COURSE_PROMPTS, ...BOOKENDS, ...WARMUP_PROMPTS, ...PASSAGES, ...PAUSE_DRILLS, ...TRICKY_WORDS, ...LESSONS, ...SMALL_TALK_PROMPTS, CHECK_IN_PASSAGE, ...CHECK_IN_QUESTIONS].find((prompt) => prompt.id === id);
 }

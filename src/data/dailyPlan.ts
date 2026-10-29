@@ -17,9 +17,7 @@ import { checkInId, checkInSchedule, firstUseOf, groupCheckIns, isFinished, part
 // Load the record types
 import type { CheckInPart, SessionRecord, TalkRecord } from "@/data/records";
 // Load the guided course rules: progress read safely, and prompts due to come back (decision 131)
-import { readCourseProgress, revisitsDue, takeHref } from "@/core/courses";
-// Load the prompt lookup, for a comeback's question
-import { findPrompt } from "@/content/prompts";
+import { practicePromptText, readCourseProgress, revisitsDue, takeHref } from "@/core/courses";
 // Load the repository type
 import type { Repository } from "@/data/repository";
 
@@ -94,7 +92,7 @@ export function revisitFor(courses: Parameters<typeof revisitsDue>[0], now: Date
   // The oldest due
   const due = revisitsDue(courses, now)[0];
   // Its question, where it comes from, and the recorder's address
-  return due?.part.practice ? { partId: due.part.id, question: findPrompt(due.part.practice.promptId)?.text ?? due.part.title, from: `${due.course.title}, lesson ${due.lessonNumber}`, href: takeHref(due.part, 1, true)! } : null;
+  return due?.part.practice ? { partId: due.part.id, question: practicePromptText(due.part.practice) ?? due.part.title, from: `${due.course.title}, lesson ${due.lessonNumber}`, href: takeHref(due.part, 1, true)! } : null;
 }
 
 // Put a step off for today ("Can't speak now?"): it is not done, it is just not offered next; another day's skips are dropped (decision 77)

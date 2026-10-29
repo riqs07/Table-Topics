@@ -23,6 +23,8 @@ import { usePageTitle } from "@/components/screens/usePageTitle";
 import { MEASURE_NAMES, compareLine, coursePlaces, findPart, measureText, measureValue, partHref, partSteps, takeHref, type PartPlace, type PartStep } from "@/core/courses";
 // Load progress saving
 import { markPartDone } from "@/data/courses";
+// Load the Learn card finder, for the research behind an idea
+import { findCard } from "@/content/learn";
 // Load the record type
 import type { SessionRecord } from "@/data/records";
 
@@ -180,6 +182,8 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
   const following = steps[steps.indexOf(step) + 1];
   // The address of the step after this one
   const nextHref = following ? partHref(part.id, following) : partHref(part.id, "wrap");
+  // The Learn card behind the idea, when it names one that exists
+  const card = part.learn.card ? findCard(part.learn.card) : undefined;
   // The way out: back to the course
   const close = { href: `/courses/course?id=${course.id}`, label: `Close, back to ${course.title}` };
 
@@ -208,6 +212,15 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
               {/* The better way */}
               {part.learn.tryThis && <><p className={`text-footnote font-semibold uppercase tracking-wide text-accent ${part.learn.instead ? "mt-3 border-t border-rule pt-3" : ""}`}>Try</p><p className="mt-1 font-display text-cue">{part.learn.tryThis}</p></>}
             </section>
+          )}
+          {/* The research behind it, and a practice the course cannot record itself, when the part has them */}
+          {(card || part.learn.link) && (
+            <ul aria-label="More on this" className="mt-5 flex max-w-[52ch] flex-col gap-2">
+              {/* The Learn card */}
+              {card && <li><Link data-course-card={card.id} href={`/learn/card?id=${card.id}`} className={TEXT_LINK}>Why it works: {card.keyLine}</Link></li>}
+              {/* The practice elsewhere */}
+              {part.learn.link && <li><Link data-course-link href={part.learn.link.href} className={TEXT_LINK}>{part.learn.link.label}</Link></li>}
+            </ul>
           )}
           {/* Push the way on down */}
           <div className="flex-1" />

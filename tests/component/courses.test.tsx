@@ -14,6 +14,8 @@ import { MemoryStore } from "@/data/memoryStore";
 import { createRepository, type Repository } from "@/data/repository";
 // Load progress saving and reading
 import { loadCourseProgress, markPartDone } from "@/data/courses";
+// Load the course lookups, to finish a whole course in a check
+import { coursePlaces, findCourse } from "@/core/courses";
 // Load the recording contracts
 import type { RecordingServices } from "@/audio/services";
 // Load the session builder
@@ -60,8 +62,8 @@ describe("CourseScreen", () => {
     await screen.findByText("Pause, don’t fill");
     // Every part is a link, the next marked "Up next"
     const parts = document.querySelectorAll("[data-course-part]");
-    // Confirm the title, the draft note, 10 parts, the next part's note, and Continue to it
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/draft lessons/), parts.length, document.querySelector(`[data-course-part="${BEAT2}"]`)?.textContent?.includes("Up next"), screen.getByRole("link", { name: /Continue/ }).getAttribute("href")]).toEqual(["Stop freezing", true, 10, true, `/courses/part?id=${BEAT2}`]);
+    // Confirm the title, no draft note (the words are final, decision 144), 16 parts, the next part's note, and Continue to it
+    expect([screen.getByRole("heading", { level: 1 }).textContent, screen.queryByText(/draft lessons/), parts.length, document.querySelector(`[data-course-part="${BEAT2}"]`)?.textContent?.includes("Up next"), screen.getByRole("link", { name: /Continue/ }).getAttribute("href")]).toEqual(["Stop freezing", null, 16, true, `/courses/part?id=${BEAT2}`]);
   });
 
   // The course's tile moves gently at the top; each lesson's tile plays a few rounds and rests (decision 142)
@@ -81,7 +83,7 @@ describe("CourseScreen", () => {
     // Two takes
     const takes = [makeSession({ id: "t1", createdAt: "2026-10-20T10:00:00Z", fillersPerMinute: 4, course: { part: BEAT1, attempt: 1 } }), makeSession({ id: "t2", createdAt: "2026-10-26T10:00:00Z", fillersPerMinute: 1, course: { part: "sf-run-1", attempt: 2 } })];
     // Every part done
-    const all = ["sf-beat-1", "sf-beat-2", "sf-point-1", "sf-point-2", "sf-point-3", "sf-pre-1", "sf-pre-2", "sf-land-1", "sf-land-2", "sf-run-1"].map((id): [string, string | null, string] => [id, null, "2026-10-26T10:00:00Z"]);
+    const all = coursePlaces(findCourse("stop-freezing")!).map((place): [string, string | null, string] => [place.part.id, null, "2026-10-26T10:00:00Z"]);
     // Draw it
     render(<CourseScreen courseId="stop-freezing" repository={await seeded(all, takes)} now={NOW} />);
     // Confirm the section, its hand-drawn celebration (decision 134) and its line, and no Continue
@@ -113,6 +115,22 @@ describe("CourseScreen", () => {
 
 // Group the checks about a part's steps
 describe("CoursePartScreen", () => {
+  // The research behind an idea and a practice the course cannot record itself show as links under the idea (decision 144)
+  it("links to the Learn card and to a practice elsewhere", () => {
+    // A part with a card
+    render(<CoursePartScreen partId={BEAT1} repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Its card link
+    const card = screen.getByRole("link", { name: /^Why it works/ });
+    // The text and address
+    const first = [card.textContent, card.getAttribute("href")];
+    // Clear
+    cleanup();
+    // A part with a link to Rehearse my talk
+    render(<CoursePartScreen partId="rd-msg-1" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the card link, and the practice link with no card link beside it
+    expect([...first, screen.getByRole("link", { name: /Rehearse my talk/ }).getAttribute("href"), screen.queryByRole("link", { name: /^Why it works/ })]).toEqual(["Why it works: Keep the pause, drop the “um”.", "/learn/card?id=voice-silent-pause", "/rehearse", null]);
+  });
+
   // Learn, then See it, then Try it: each step's way on
   it("goes through learn, see and try", () => {
     // A part with all three
@@ -182,9 +200,9 @@ describe("CoursePartScreen", () => {
   // The last part of the course goes back to the course
   it("goes back to the course after the last part", async () => {
     // A take on the last part
-    const repository = await seeded([], [makeSession({ id: "z", createdAt: "2026-10-28T10:00:00Z", course: { part: "sf-run-1", attempt: 1 } })]);
+    const repository = await seeded([], [makeSession({ id: "z", createdAt: "2026-10-28T10:00:00Z", course: { part: "sf-run-2", attempt: 1 } })]);
     // Its wrap-up
-    render(<CoursePartScreen partId="sf-run-1" step="wrap" repository={repository} now={NOW} />);
+    render(<CoursePartScreen partId="sf-run-2" step="wrap" repository={repository} now={NOW} />);
     // Confirm the way back
     expect((await screen.findByRole("link", { name: /Back to the course/ })).getAttribute("href")).toBe("/courses/course?id=stop-freezing");
   });
@@ -228,7 +246,7 @@ describe("CoursesScreen", () => {
     // One part done
     render(<CoursesScreen repository={await seeded([[BEAT1, "a", "2026-10-27T10:00:00Z"]])} now={NOW} />);
     // Confirm the card and its count
-    const card = await screen.findByRole("link", { name: "Stop freezing, 1 of 10" });
+    const card = await screen.findByRole("link", { name: "Stop freezing, 1 of 16" });
     // Confirm where it leads, and its tile in place of the icon (decision 142)
     expect([card.getAttribute("href"), card.querySelector("[data-course-tile]")?.getAttribute("data-course-tile")]).toEqual(["/courses/course?id=stop-freezing", "stop-freezing"]);
   });

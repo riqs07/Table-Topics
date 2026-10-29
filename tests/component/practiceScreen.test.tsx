@@ -170,7 +170,7 @@ describe("PracticeScreen", () => {
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
     // The course card
-    const card = await screen.findByRole("link", { name: "Stop freezing, 1 of 10" });
+    const card = await screen.findByRole("link", { name: "Stop freezing, 1 of 16" });
     // Confirm it leads to the course, says it is for the focus, and the list of all courses is linked
     await waitFor(() => expect([card.getAttribute("href"), card.textContent?.includes("For your focus"), screen.getByRole("link", { name: "All courses" }).getAttribute("href")]).toEqual(["/courses/course?id=stop-freezing", true, "/courses"]));
   });
