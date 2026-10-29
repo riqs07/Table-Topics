@@ -290,6 +290,18 @@ describe("RecordingScreen", () => {
     expect([before, during]).toEqual([["rapid-fire", "Rapid FireA surprise question, 1 to 2 minutes", true], false]);
   });
 
+  // Reading aloud opens with the reading scene above the passage's title (decision 141)
+  it("shows the reading scene before reading aloud", async () => {
+    // Reading aloud
+    draw({ mode: "read", promptId: PASSAGES[0]!.id });
+    // Wait for the passage's title
+    await screen.findByRole("heading", { level: 1, name: PASSAGES[0]!.title });
+    // Its panel
+    const panel = document.querySelector("[data-scene-panel]") as HTMLElement;
+    // Confirm the scene and that it says how long
+    expect([panel.getAttribute("data-scene-panel"), panel.textContent?.startsWith("Read aloudAim for")]).toEqual(["read-aloud", true]);
+  });
+
   // A reading has no scene panel
   it("leaves the panel off other modes", async () => {
     // A plain session

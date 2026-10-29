@@ -45,6 +45,7 @@ import { practiceSessions } from "@/core/sessionHome";
 import { Drawing } from "@/components/script/Drawing";
 // Load the step's scene as its mark, and which scene each step shows (decision 137)
 import { SceneMark } from "@/components/scenes/SceneMark";
+import { onlyOnce } from "@/components/scenes/SharedScene";
 import { stepScene } from "@/components/scenes/sceneFor";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
@@ -348,6 +349,8 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
   const nextIndex = plan ? nextStepIndex(plan.done, plan.skipped) : -1;
   // Whether every step is done (put-off steps are not done; decision 77)
   const allDone = !!plan && plan.done.every(Boolean);
+  // The steps' scenes that appear once on Today, which may glide into their screens (a repeated name would cancel the glide; decision 141)
+  const uniqueScenes = onlyOnce(plan ? plan.steps.map(stepScene) : []);
   // Steps done
   const doneCount = plan ? plan.done.filter(Boolean).length : 0;
   // The run's lines, unless hidden
@@ -483,7 +486,7 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                       {/* The whole row starts the step: a rounded tile, warm when next (and marked as the current step, since no band names it; decision 138) */}
                       <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} aria-current={mark === "next" ? "step" : undefined} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
                         {/* Its mark: its scene where its kind has one, else its number (decision 137), each in the same width so the words line up; when the day is first done, the marks grow in one by one, unless motion is unwelcome */}
-                        <span className={`flex w-14 flex-none justify-center ${data?.celebrate ? "motion-safe:animate-pop" : ""}`} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}>{scene ? <SceneMark scene={scene} mark={mark} faded={!!(plan.done[index] || plan.skipped[index])} justDone={justDone} arriving={arriving} /> : <span className={justDone || arriving ? "motion-safe:animate-pop" : undefined} style={justDone || arriving ? { animationDelay: justDone ? "900ms" : "1400ms" } : undefined}><PathMark mark={mark} number={index + 1} /></span>}</span>
+                        <span className={`flex w-14 flex-none justify-center ${data?.celebrate ? "motion-safe:animate-pop" : ""}`} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}>{scene ? <SceneMark scene={scene} mark={mark} faded={!!(plan.done[index] || plan.skipped[index])} justDone={justDone} arriving={arriving} shared={uniqueScenes.has(scene)} /> : <span className={justDone || arriving ? "motion-safe:animate-pop" : undefined} style={justDone || arriving ? { animationDelay: justDone ? "900ms" : "1400ms" } : undefined}><PathMark mark={mark} number={index + 1} /></span>}</span>
                         {/* What it is */}
                         <span className="min-w-0 flex-1">
                           {/* Its name and time */}

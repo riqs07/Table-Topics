@@ -4,20 +4,22 @@
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the scenes
 import { Scene, type SceneName } from "@/components/scenes/Scene";
+// Load the carried-over scene wrapper (decision 141)
+import { SharedScene } from "@/components/scenes/SharedScene";
 // Load the mark type the number tiles use
 import type { LessonMark } from "@/core/lessonPath";
 
 // Draw the mark
-export function SceneMark({ scene, mark, faded, justDone = false, arriving = false }: { scene: SceneName; mark: LessonMark; faded: boolean; justDone?: boolean; arriving?: boolean }) {
+export function SceneMark({ scene, mark, faded, justDone = false, arriving = false, shared = false }: { scene: SceneName; mark: LessonMark; faded: boolean; justDone?: boolean; arriving?: boolean; shared?: boolean }) {
   // Whether it is the next step
   const next = mark === "next";
   // The tile with its scene, and the tick once done
   return (
-    <span data-step-scene={scene} data-tick={justDone ? "done" : arriving ? "arriving" : undefined} className="relative flex flex-none">
+    <span data-step-scene={scene} data-tick={justDone ? "done" : arriving ? "arriving" : undefined} data-shared={shared ? "" : undefined} className="relative flex flex-none">
       {/* The tile and its scene (settling after its tick-off moment, or growing in as the next step) */}
       <span aria-hidden="true" className={`flex items-center justify-center ${next ? "size-14 rounded-2xl bg-card" : "size-12 rounded-xl bg-warm-tint"} ${faded ? "opacity-55" : ""} ${justDone ? "vl-just-done" : arriving ? "vl-arriving" : ""}`}>
-        {/* The scene, moving only on the next step */}
-        <Scene name={scene} motion={next ? "loop" : "still"} className={next ? "size-14" : "size-12"} />
+        {/* The scene, moving only on the next step (carried into the step's screen when it is the only one of its kind on Today, decision 141) */}
+        {shared ? <SharedScene scene={scene}><Scene name={scene} motion={next ? "loop" : "still"} className={next ? "size-14" : "size-12"} /></SharedScene> : <Scene name={scene} motion={next ? "loop" : "still"} className={next ? "size-14" : "size-12"} />}
       </span>
       {/* Sparks round a step just done, flashing once */}
       {justDone && (

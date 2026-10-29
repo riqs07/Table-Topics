@@ -1578,8 +1578,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {/* Reading aloud, a lesson, or a rehearsal: the title (and source or tip) before starting, and the text throughout */}
           {script && (
             <>
+              {/* Reading aloud, before starting: the reading scene, carried over from Today or Practice (decision 141) */}
+              {mode === "read" && stage === "ready" && !busy && <ScenePanel scene="read-aloud" name="Read aloud" line={`Aim for ${lengthText}`} className="mt-8 md:mt-0" />}
               {/* Title and source, before starting */}
-              {!recording && <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">{script.title}</h1>}
+              {!recording && <h1 className={`${mode === "read" && stage === "ready" && !busy ? "mt-5" : "mt-8 md:mt-0"} font-display text-statement tracking-tight`}>{script.title}</h1>}
               {/* Who said it, or that it is a practice passage */}
               {!recording && script.source && <p className="mt-1 text-ink-muted">{script.source}</p>}
               {/* Reading aloud: the metronome, before and while reading (decision 128) */}

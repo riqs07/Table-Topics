@@ -252,6 +252,10 @@ describe("HomeScreen", () => {
     const scenes = steps.slice(0, 3).map((step) => [step.querySelector("[data-step-scene]")?.getAttribute("data-step-scene") ?? null, step.querySelector("[data-scene]")?.getAttribute("data-motion") ?? null]);
     // The marks' visible text: none on a scene, the number on a step without one
     const numbers = steps.slice(0, 3).map((step) => step.querySelector("[data-step-scene]") ? null : step.querySelector("span")?.textContent);
+    // Each of those scenes appears once on Today, so each may glide into its screen (decision 141)
+    const shared = steps.slice(0, 3).map((step) => step.querySelector("[data-step-scene]")?.hasAttribute("data-shared"));
+    // Confirm all three carry their name
+    expect(shared).toEqual([true, true, true]);
     // Confirm free talk's scene moving in place of its number, then the Learn card's bulb and the Rapid Fire pick still, with no numbers showing
     expect([scenes, numbers]).toEqual([[["free-talk", "loop"], ["learn", "still"], ["rapid-fire", "still"]], [null, null, null]]);
   });

@@ -11,6 +11,16 @@ export function sceneTransitionName(scene: SceneName): string {
   return `scene-${scene}`;
 }
 
+// The scenes that appear exactly once in a list, the only ones that may carry their name
+export function onlyOnce(scenes: ReadonlyArray<SceneName | null>): Set<SceneName> {
+  // How many times each appears
+  const counts = new Map<SceneName, number>();
+  // Count them
+  for (const scene of scenes) if (scene) counts.set(scene, (counts.get(scene) ?? 0) + 1);
+  // Those seen once
+  return new Set([...counts].filter(([, count]) => count === 1).map(([scene]) => scene));
+}
+
 // Wrap a scene so it morphs into the same scene on the next page
 export function SharedScene({ scene, children }: { scene: SceneName; children: ReactNode }) {
   // A named morph, and nothing on unrelated transitions

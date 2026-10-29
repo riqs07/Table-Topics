@@ -69,3 +69,14 @@ describe("sceneTransitionName", () => {
     expect([sceneTransitionName("rapid-fire"), sceneTransitionName("free-talk")]).toEqual(["scene-rapid-fire", "scene-free-talk"]);
   });
 });
+
+// Group the checks about which scenes may carry their name on a page (decision 141)
+describe("onlyOnce", () => {
+  // Only the scenes that appear once; repeated ones and gaps are left out
+  it("keeps the scenes that appear once", async () => {
+    // Load it
+    const { onlyOnce } = await import("@/components/scenes/SharedScene");
+    // Confirm
+    expect([...onlyOnce(["read-aloud", null, "rapid-fire", "read-aloud", "story"])].sort()).toEqual(["rapid-fire", "story"]);
+  });
+});
