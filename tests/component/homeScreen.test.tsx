@@ -367,8 +367,8 @@ describe("HomeScreen", () => {
     expect([screen.queryByText(/of the last 7 days/), screen.queryByRole("list", { name: "The last seven days" })]).toEqual([null, null]);
   });
 
-  // From three sessions, "Your week": three weeks of fillers, one suggestion and the way to History; and the practice time when chosen (decision 78)
-  it("shows your week and your practice time", async () => {
+  // The practice time when chosen (decision 78); "Your week" is no longer on Today, even with three sessions (it moved to Settings, decision 128)
+  it("shows your practice time and leaves your week to Settings", async () => {
     // A repository with three sessions over two weeks and a practice time
     const repository = emptyRepository();
     // Two weeks ago, last week and yesterday
@@ -377,10 +377,10 @@ describe("HomeScreen", () => {
     await repository.saveSettings({ ...(await repository.getSettings(NOW)), anchor: "after my morning coffee" });
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // The card (drawn twice: in the margin on a computer and under the mission on a phone)
-    const card = within((await screen.findAllByRole("region", { name: "Your week" }))[0]!);
-    // Confirm the weeks, the suggestion, the history link and the time
-    expect([card.getAllByRole("listitem").map((item) => item.getAttribute("aria-label")), !!card.getByText(/Fewer pause words than last week/), card.getByRole("link", { name: "All your history" }).getAttribute("href"), !!screen.getByText("after my morning coffee")]).toEqual([["Two weeks ago: 4.0", "Last week: 3.0", "This week: 2.0"], true, "/history", true]);
+    // Wait for the practice time
+    const time = await screen.findByText("after my morning coffee");
+    // Confirm the time and no "Your week" card
+    expect([!!time, screen.queryByRole("region", { name: "Your week" })]).toEqual([true, null]);
   });
 
   // When a week has passed, the next focus is shown and saved

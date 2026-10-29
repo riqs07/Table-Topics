@@ -1,4 +1,4 @@
-// "Your week" on Today (decision 78): pause words a minute over three weeks as three bars, exactly one suggestion, and the way to the full history
+// "Your week" in Settings under Your progress (decision 78; moved from Today, decision 128): pause words a minute over three weeks as three bars, exactly one suggestion, and the way to the full history
 
 // Load the link component for moving between pages
 import Link from "next/link";
@@ -18,8 +18,8 @@ export function YourWeekCard({ week }: { week: YourWeek }) {
   // The card
   return (
     <section aria-labelledby="your-week" className={`p-5 text-ink ${CARD}`}>
-      {/* Run-in heading */}
-      <h2 id="your-week" className={SECTION_HEADING}>Your week</h2>
+      {/* Run-in heading, under the page group's heading */}
+      <h3 id="your-week" className={SECTION_HEADING}>Your week</h3>
       {/* The bars, unless pause words are hidden (decision 79) */}
       {week.weeks.length > 0 && (
         <>
