@@ -1,4 +1,4 @@
-// The blob scenes (decision 135): the voice shape's blob doing each kind of practice, drawn in theme colours so they follow every theme and dark mode. Each has its own small loop (in globals.css, only when motion is welcome); "loop" keeps it going, "few" plays it three times and settles, "still" leaves only the blinks. Decorative: the words beside a scene carry the meaning
+// The blob scenes (decision 136): the voice shape's blob doing each kind of practice, drawn in theme colours so they follow every theme and dark mode. Each has its own small loop (in globals.css, only when motion is welcome); "loop" keeps it going, "few" plays it three times and settles, "still" leaves only the blinks. Decorative: the words beside a scene carry the meaning
 
 // Load React's type for inline styles
 import type { CSSProperties, ReactNode } from "react";

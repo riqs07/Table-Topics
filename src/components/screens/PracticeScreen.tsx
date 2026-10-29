@@ -39,7 +39,7 @@ import { storyPromptForDay } from "@/content/stories";
 import { SECTION_HEADING, CARD, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared link look and press effect
 import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
-// Load the blob scenes (decision 135)
+// Load the blob scenes (decision 136)
 import { Scene, type SceneMotion, type SceneName } from "@/components/scenes/Scene";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
@@ -66,7 +66,7 @@ interface Way {
   href: string | null;
   // Its icon
   icon: Icon;
-  // Its blob scene, where it has one (decision 135)
+  // Its blob scene, where it has one (decision 136)
   scene?: SceneName;
 }
 
@@ -75,7 +75,7 @@ function WayRow({ way }: { way: Way }) {
   // The words, shared by both forms
   const words = (
     <>
-      {/* Its scene (still, apart from blinking; decision 135), or the icon, on a faint tile as on the course cards */}
+      {/* Its scene (still, apart from blinking; decision 136), or the icon, on a faint tile as on the course cards */}
       <span aria-hidden="true" className={`flex size-12 flex-none items-center justify-center rounded-[14px] ${way.href ? "bg-warm-tint text-warm-ink" : "bg-paper text-ink-muted"}`}>
         {/* The scene or the icon */}
         {way.scene ? <Scene name={way.scene} motion="still" className="size-12" /> : <way.icon className="size-6" />}
@@ -102,7 +102,7 @@ function WayRow({ way }: { way: Way }) {
   );
 }
 
-// One of the main ways as a card with its blob scene (decision 135): the big one across the top (its scene always moving, "Your focus" when the focus chose it), or one of the smaller ones below (their scenes play a few rounds, then rest); the whole card a link, quiet while it cannot start
+// One of the main ways as a card with its blob scene (decision 136): the big one across the top (its scene always moving, "Your focus" when the focus chose it), or one of the smaller ones below (their scenes play a few rounds, then rest); the whole card a link, quiet while it cannot start
 function WayCard({ way, big = false, forFocus = false, delay = 0 }: { way: Way; big?: boolean; forFocus?: boolean; delay?: number }) {
   // How much its scene moves
   const motion: SceneMotion = big ? "loop" : "few";
@@ -278,7 +278,7 @@ export function PracticeScreen(props: ScreenProps) {
 
   // The picked areas' groups, to mark them
   const focusGroups = focusAreas(focus).map((area) => area.practiceGroup);
-  // The main ways split into the big card (the focus's, or Rapid Fire) and the rest (decision 135)
+  // The main ways split into the big card (the focus's, or Rapid Fire) and the rest (decision 136)
   const main = featureFirst(core, focusGroups);
   // Each group, by its id, so the focus can put its groups first
   const groups: Record<PracticeGroupId, ReactNode> = {
@@ -401,7 +401,7 @@ export function PracticeScreen(props: ScreenProps) {
         {courseData.status === "failed" && <CourseLoadFailed retry={courseData.retry} />}
       </section>
 
-      {/* The five that do the most work (decision 125), as scene cards: the focus's one big across the top, the other four two by two (decision 135) */}
+      {/* The five that do the most work (decision 125), as scene cards: the focus's one big across the top, the other four two by two (decision 136) */}
       {main && (
         <ul aria-label="Main ways to practise" className="mt-6 grid grid-cols-2 gap-3">
           {/* The big one */}

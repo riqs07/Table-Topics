@@ -1,5 +1,5 @@
 "use client";
-// The Home screen: today's practice only, with a short line on the streak and the week's focus (everything else is in Practice)
+// The Home screen: today's practice, with a short line on the streak and the week's focus, the Connect lesson the user is on and Quick play (everything else is in Practice; decision 135)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -79,6 +79,10 @@ import { markNudgeDismissed, readSafetyFacts } from "@/data/storageSafety";
 import { CHECK_IN_MINUTES, CHECK_IN_PARTS, groupCheckIns, readCheckInSettings, resurfaceDue, sinceWords } from "@/core/checkIn";
 // Load the way to put the reminder aside
 import { markReminderSeen } from "@/data/checkIns";
+// Load the Quick play pick's type (types only; its code and content load after the page has shown, decision 88)
+import type { QuickPlayPick } from "@/core/quickPlay";
+// Load the saved passphrase, which means the coach can write lines for any conversation
+import { readPassphrase } from "@/data/passphrase";
 
 // A step in a few words for the action band, so its side text never reads like a tab name ("a Learn card", "Warm up")
 function stepWords(step: PlanStep): string {
@@ -118,10 +122,28 @@ interface HomeData {
   practiceFocus: FocusAreaId[] | undefined;
   // The reminder to hear the first check-in beside the latest, when one is due (decision 100)
   reminder: { days: number } | null;
+  // The Connect lesson the user is on, or none once every lesson is done (decision 135)
+  lesson: CurrentLesson | null;
+  // Quick play's pick for this visit: a kind of practice at random (decision 135)
+  quick: QuickPlayPick;
+}
+
+// The Connect lesson the user is on: the first lesson not yet answered, in the units' order (decision 95)
+interface CurrentLesson {
+  // Its unit's name
+  unit: string;
+  // Its number in the unit
+  number: number;
+  // Lessons in the unit
+  total: number;
+  // Its title
+  title: string;
+  // What it uses, to tell it apart from today's steps
+  promptId: string;
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
-async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
+async function loadHome(repository: Repository, now: Date, random: () => number): Promise<HomeData> {
   // Start fetching the plan's code at once, so it arrives while the saved data is read (a failure shows when the plan is loaded below)
   void import("@/data/dailyPlan").catch(() => undefined);
   // Read every session that counts (private moment notes are left out)
@@ -136,6 +158,10 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
   const talks = await repository.listTalks();
   // Today's practice (after the focus is saved, so both agree)
   const plan = await loadDailyPlanLater(repository, now);
+  // The lesson and Quick play's code, fetched after the page has shown like the plan's (decision 88)
+  const [{ nextUnit }, { quickPlay }] = await Promise.all([import("@/core/units"), import("@/core/quickPlay")]);
+  // The unit the user is in, with its next lesson
+  const unit = nextUnit(sessions);
   // Put everything together
   return {
     // How many sessions there are
@@ -167,6 +193,11 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     // What the user wants to get better at most
     practiceFocus: readPracticeFocus(settings.practiceFocus),
     // The reminder to look back, from the sessions already read; held back while today's check-in waits, so Today asks one thing at a time
+    // The lesson the user is on
+    lesson: unit.nextLesson ? { unit: unit.unit.name, number: unit.nextLesson.number, total: unit.lessonsTotal, title: unit.nextLesson.title, promptId: unit.nextLesson.id } : null,
+    // A kind of practice at random, with conversations picked as their own Quick play picks them
+    quick: quickPlay({ conversations: sessions.filter((session) => session.mode === "conversation").map((session) => ({ scenarioId: session.conversation?.scenarioId })), written: readPassphrase() !== "" }, random),
+    // The reminder to look back (below)
     reminder: plan.checkIn && !plan.done[plan.steps.findIndex((step) => step.kind === "checkin")] ? null : resurfaceDue({ today: now, checkIns: groupCheckIns(sessions, readCheckInSettings(settings.checkIn)), settings: readCheckInSettings(settings.checkIn) }),
   };
 }
@@ -254,7 +285,7 @@ function FocusAsk({ onAnswer }: { onAnswer: (picks: FocusAreaId[]) => Promise<vo
 }
 
 // Draw the Home screen
-export function HomeScreen(props: ScreenProps) {
+export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { random?: () => number }) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
   // Saved data, once loaded
@@ -271,7 +302,7 @@ export function HomeScreen(props: ScreenProps) {
     // Ignore the result if the screen closes first
     let cancelled = false;
     // Load and store the data
-    loadHome(repo, today).then((loaded) => {
+    loadHome(repo, today, random).then((loaded) => {
       // Keep it only if the screen is still open
       if (!cancelled) setData(loaded);
     }).catch((error: unknown) => {
@@ -283,7 +314,7 @@ export function HomeScreen(props: ScreenProps) {
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo, today, attempt]);
+  }, [repo, today, attempt, random]);
 
   // Try loading again after a problem
   function retryLoad() {
@@ -336,6 +367,8 @@ export function HomeScreen(props: ScreenProps) {
   const checkInWaiting = nextStep?.kind === "checkin";
   // This week's focus, once there is practice it can be about (with none yet, "This week: strong opening." read as a verdict on nothing; round 4)
   const showFocus = !!data && !data.showWelcome && data.run.any;
+  // The lesson the user is on, unless it is already one of today's open steps (one link to it is enough)
+  const lesson = plan && data?.lesson && !plan.steps.some((step, index) => step.promptId === data.lesson?.promptId && !plan.done[index]) ? data.lesson : null;
   // Whether the margin has anything in it; with nothing, the page is one centred column instead of an empty left column on a computer
   const margin = !!data && !data.showWelcome && (runLines.length > 0 || (!data.hideStreak && data.run.any) || showFocus || !!data.anchor || !!data.week || !!data.practiceFocus?.length);
 
@@ -492,6 +525,37 @@ export function HomeScreen(props: ScreenProps) {
                 <span className="block text-footnote text-ink-muted">Answer it again, then hear both side by side.</span>
               </span>
             </Link>
+          )}
+
+          {/* Beside today's steps: the lesson the user is on, and Quick play, a kind of practice at random (decision 135) */}
+          {plan && data && (
+            <section aria-labelledby="also-today" className="mt-8">
+              {/* Run-in heading */}
+              <h2 id="also-today" className={SECTION_HEADING}>Also today</h2>
+              {/* The two rows */}
+              <ul className={`mt-3 divide-y divide-rule px-4 ${CARD}`}>
+                {/* The lesson the user is on, straight into it */}
+                {lesson && (
+                  <li>
+                    <RowLink href={`/session?mode=smalltalk&prompt=${lesson.promptId}`} meta={`${lesson.number}/${lesson.total}`}>
+                      {/* Its unit */}
+                      <span className="block text-footnote text-ink-muted">Your lesson · {lesson.unit}</span>
+                      {/* Its title (its number is in the count beside it, as on the course cards) */}
+                      <span className="block">{lesson.title}</span>
+                    </RowLink>
+                  </li>
+                )}
+                {/* Quick play: what it is, not what it picked, so the pick stays a surprise */}
+                <li>
+                  <RowLink href={data.quick.href}>
+                    {/* Its name */}
+                    <span className="block text-footnote text-ink-muted">Quick play</span>
+                    {/* What it does */}
+                    <span className="block">A random kind of practice</span>
+                  </RowLink>
+                </li>
+              </ul>
+            </section>
           )}
 
           {/* The reminder to hear the first check-in beside the latest (decision 100) */}

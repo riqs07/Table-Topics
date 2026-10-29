@@ -12,7 +12,7 @@ afterEach(cleanup);
 // Every scene
 const NAMES: SceneName[] = ["rapid-fire", "prepared-speech", "read-aloud", "four-three-two", "free-talk", "short-speech", "your-talk", "story", "tell-again", "guided-stories", "moment", "conversation", "warm-up"];
 
-// Group the checks about the blob scenes (decision 135)
+// Group the checks about the blob scenes (decision 136)
 describe("Scene", () => {
   // Each scene draws the warm blob and at least one moving part, hidden from screen readers, on the 120 square
   it("draws every scene with a blob and something that moves", () => {

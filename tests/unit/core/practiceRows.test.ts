@@ -37,7 +37,7 @@ describe("practice rows", () => {
   });
 });
 
-// Group the checks about the big card on Practice (decision 135)
+// Group the checks about the big card on Practice (decision 136)
 describe("featureFirst", () => {
   // The main ways, as Practice lists them
   const MAIN = ["Rapid Fire", "Prepared speech", "Tell a story", "Talk with someone", "Read aloud"].map((name) => ({ name }));

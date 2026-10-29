@@ -58,7 +58,7 @@ export function nextClearSound(counts: ReadonlyMap<string, number>): { id: strin
   return { id, href: TRICKY_WORDS.some((list) => list.id === id) ? `/session?mode=read&prompt=${id}` : `/voice/drill?id=${id}` };
 }
 
-// Which of the main ways stands for each practice group, for the big card at the top of Practice (decision 135)
+// Which of the main ways stands for each practice group, for the big card at the top of Practice (decision 136)
 export const FEATURED_BY_GROUP: Readonly<Record<PracticeGroupId, string>> = {
   // Thinking on my feet, speaking at work, a talk coming up
   "on-the-spot": "Rapid Fire",

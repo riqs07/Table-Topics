@@ -64,7 +64,7 @@ A first-class Stories mode: a 40-prompt bank, your moment notes as seeds, option
 
 Courses for each focus, made of lessons in short parts that use the modes the app already has; the next part is an added step on Today, and a part's prompt comes back days later for a side-by-side comparison. Built with one draft course ("Stop freezing"); the real content, more courses and videos are next. The plan is in [plan-courses.md](plan-courses.md).
 
-## Built: livelier look (2026-10-29, decisions 134 and 135)
+## Built: livelier look (2026-10-29, decisions 134 and 136)
 
 The voice shape has a face in six moods, Open Peeps people greet new users and celebrate a finished course, and Practice's main ways are blob scene cards that move. Still to draw: scenes for the voice drills and the conversation units.
 
@@ -72,7 +72,7 @@ The voice shape has a face in six moods, Open Peeps people greet new users and c
 
 Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:
 
-- The amount of animation on Practice (decision 135): one scene always moving, four playing a few rounds. Cut back (small cards still, then the big card) if it proves distracting or slows phones.
+- The amount of animation on Practice (decision 136): one scene always moving, four playing a few rounds. Cut back (small cards still, then the big card) if it proves distracting or slows phones.
 - The Table Topic timings (currently the Toastmasters contest rules) and the 10-second countdown (fixed, or random between 5 and 10).
 - Record Response thinking time (2 minutes), its 3:00 goal, and when its light turns yellow.
 - The hint format: the fixed structure (point, reason, example, point) and the per-prompt angles.

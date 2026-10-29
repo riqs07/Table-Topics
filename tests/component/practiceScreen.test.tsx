@@ -195,7 +195,7 @@ describe("PracticeScreen", () => {
     expect([headings.slice(0, 5), spot.slice(0, 3)]).toEqual([["Your voiceYour focus", "Speak on the spotYour focus", "Tell stories", "Everyday conversation"], ["Your talk", "Short speech", "Rapid Fire"]]);
   });
 
-  // The main ways are scene cards: with no focus Rapid Fire is the big one, moving all the time, and the other four play a few rounds then rest (decision 135)
+  // The main ways are scene cards: with no focus Rapid Fire is the big one, moving all the time, and the other four play a few rounds then rest (decision 136)
   it("shows the main ways as scene cards, Rapid Fire big with no focus", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
@@ -207,7 +207,7 @@ describe("PracticeScreen", () => {
     expect([cards, screen.queryByText("Your focus")]).toEqual([[["big", "Rapid Fire", "rapid-fire", "loop"], ["small", "Prepared speech", "prepared-speech", "few"], ["small", "Tell a story", "story", "few"], ["small", "Talk with someone", "conversation", "few"], ["small", "Read aloud", "read-aloud", "few"]], null]);
   });
 
-  // With a focus, its main way is the big card and says so, still named by its own name (decision 135)
+  // With a focus, its main way is the big card and says so, still named by its own name (decision 136)
   it("makes the focus's main way the big card", async () => {
     // A repository with telling stories picked
     const repository = createRepository(new MemoryStore());

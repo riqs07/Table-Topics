@@ -310,7 +310,7 @@
   }
 }
 
-/* The blob scenes (decision 135): parts turn and grow around points given in the drawing's own units */
+/* The blob scenes (decision 136): parts turn and grow around points given in the drawing's own units */
 .vl-scene * {
   /* Pivot points measured in the drawing's square */
   transform-box: view-box;
