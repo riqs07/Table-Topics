@@ -67,6 +67,20 @@ describe("SessionScreen", () => {
     expect(screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")).toBe("/session?prompt=p001&retryOf=s1");
   });
 
+  // The blob reacts to the take under the topic: a personal best with its banner (decision 141)
+  it("shows the blob's reaction, with a banner for a personal best", async () => {
+    // Three earlier Rapid Fire takes, then a better one
+    const earlier = [2.3, 3.1, 4].map((rate, index) => makeSession({ id: `e${index}`, mode: "talk", promptId: "t001", durationSec: 70, fillersPerMinute: rate, createdAt: `2026-10-0${index + 1}T10:00:00.000Z` }));
+    // The new take
+    const session = makeSession({ id: "best", mode: "talk", promptId: "t002", durationSec: 77, fillersPerMinute: 1.1, feedback: FEEDBACK, feedbackStatus: "done", createdAt: "2026-10-12T10:00:00.000Z" });
+    // Draw the screen
+    render(<SessionScreen sessionId="best" repository={await repositoryWith(...earlier, session)} now={NOW} />);
+    // The reaction
+    const reaction = await screen.findByText("Your fewest pause words yet.");
+    // Confirm the line, the celebrating blob and the banner's numbers
+    expect([!!reaction, document.querySelector("[data-take-reaction]")?.getAttribute("data-take-reaction"), !!document.querySelector("[data-take-reaction] [data-blob-character='celebrating']"), screen.getByRole("region", { name: "New personal best" }).textContent]).toEqual([true, "best", true, "New personal best1.1 pause words a minute (was 2.3)"]);
+  });
+
   // The headline number follows the session's weekly focus
   it("shows words a minute as the headline in pace week", async () => {
     // A finished first try in pace week

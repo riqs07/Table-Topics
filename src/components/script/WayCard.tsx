@@ -6,6 +6,8 @@ import Link from "next/link";
 import type { Icon } from "@phosphor-icons/react";
 // Load the blob scenes
 import { Scene, type SceneMotion, type SceneName } from "@/components/scenes/Scene";
+// Load the carried-over scene wrapper (decision 141)
+import { SharedScene } from "@/components/scenes/SharedScene";
 // Load the pressed look
 import { PRESS } from "@/components/script/Buttons";
 // Load the card look
@@ -26,14 +28,14 @@ export interface Way {
 }
 
 // One kind of practice as a card with its blob scene (decision 136): the big one across the top (its scene always moving, "Your focus" when the focus chose it), or one of the smaller ones below (their scenes play a few rounds, then rest); the whole card a link, quiet while it cannot start
-export function WayCard({ way, big = false, forFocus = false, delay = 0 }: { way: Way; big?: boolean; forFocus?: boolean; delay?: number }) {
+export function WayCard({ way, big = false, forFocus = false, delay = 0, shared = false }: { way: Way; big?: boolean; forFocus?: boolean; delay?: number; shared?: boolean }) {
   // How much its scene moves
   const motion: SceneMotion = big ? "loop" : "few";
   // The scene's place: a white tile beside the words on the big card, a tinted panel above them on a small one
   const art = (
     <span aria-hidden="true" className={big ? "flex size-28 flex-none items-center justify-center rounded-[18px] bg-card" : "flex h-26 items-center justify-center rounded-2xl bg-warm-tint"}>
-      {/* The scene */}
-      {way.scene ? <Scene name={way.scene} motion={motion} className={big ? "size-26" : "size-24"} /> : <way.icon className="size-10 text-warm-ink" />}
+      {/* The scene (carried into the screen it opens where asked, decision 141), or the icon */}
+      {way.scene ? (shared ? <SharedScene scene={way.scene}><Scene name={way.scene} motion={motion} className={big ? "size-26" : "size-24"} /></SharedScene> : <Scene name={way.scene} motion={motion} className={big ? "size-26" : "size-24"} />) : <way.icon className="size-10 text-warm-ink" />}
     </span>
   );
   // The words: the name first (so the link is named by it), then what it is, with the focus mark shown above them

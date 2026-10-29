@@ -354,9 +354,9 @@ export function PracticeScreen(props: ScreenProps) {
       {main && (
         <ul aria-label="Main ways to practise" className="mt-6 grid grid-cols-2 gap-3">
           {/* The big one */}
-          <li className="col-span-2"><WayCard way={main.featured} big forFocus={main.forFocus} /></li>
+          <li className="col-span-2"><WayCard way={main.featured} big forFocus={main.forFocus} shared /></li>
           {/* The others, arriving one after another */}
-          {main.rest.map((way, index) => <li key={way.name}><WayCard way={way} delay={(index + 1) * 70} /></li>)}
+          {main.rest.map((way, index) => <li key={way.name}><WayCard way={way} delay={(index + 1) * 70} shared /></li>)}
         </ul>
       )}
 

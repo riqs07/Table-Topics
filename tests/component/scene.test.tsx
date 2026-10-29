@@ -58,3 +58,14 @@ describe("Scene", () => {
     expect([container.querySelectorAll("path.fill-warm").length, container.querySelectorAll("path.fill-accent").length, !!container.querySelector(".text-accent-ink")]).toEqual([1, 1, true]);
   });
 });
+
+// Group the checks about the carried-over scene's name (decision 141)
+describe("sceneTransitionName", () => {
+  // One name per scene, so the Practice card and the start screen pair up
+  it("names each scene's transition after it", async () => {
+    // Load it
+    const { sceneTransitionName } = await import("@/components/scenes/SharedScene");
+    // Confirm
+    expect([sceneTransitionName("rapid-fire"), sceneTransitionName("free-talk")]).toEqual(["scene-rapid-fire", "scene-free-talk"]);
+  });
+});

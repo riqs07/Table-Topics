@@ -66,6 +66,9 @@ import { useCountUp } from "@/components/script/useCountUp";
 import { markFillers } from "@/core/fillers";
 // Load the then-and-now helpers
 import { earlierTake, practiceDay } from "@/core/compare";
+// Load the blob's reaction to a take (decision 141)
+import { takeReaction } from "@/core/takeReaction";
+import { TakeReactionView } from "@/components/script/TakeReaction";
 // Load the pause finder
 import { findPauses, pauseDrillSentence } from "@/core/pauses";
 // Load the reading check
@@ -546,6 +549,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
               <p className="mt-1 max-w-[40ch] font-display text-cue">{asked.text}</p>
             </div>
           )}
+          {/* The blob's reaction to the take, after it (not for the quick follow-ups; decision 141) */}
+          {!quick && <TakeReactionView reaction={takeReaction(session, all, view.pauseWords)} />}
           {/* The focus number as a sentence (or the focus's name when no number measures it) */}
           {reading ? (
             <>

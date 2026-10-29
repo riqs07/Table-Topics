@@ -41,6 +41,10 @@ import { spokenSentence, stepNote, weekSentence } from "@/core/daySummary";
 import { dayKey } from "@/core/dates";
 // Load the once-a-day completion flag, kept in this browser
 import { firstFinishToday } from "@/data/dayCelebrated";
+// Load the record of steps already ticked off today (decision 141)
+import { newlyTicked } from "@/data/stepsTicked";
+// Load a step's key
+import { stepKey } from "@/core/planSteps";
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
 // Load the hand-drawn welcome (decision 134)
@@ -111,6 +115,8 @@ interface HomeData {
   weekLine: string;
   // Whether to play the small completion moment (the first time Today shows the day done)
   celebrate: boolean;
+  // The steps done since Today last showed them, to tick off with a small moment (none on the day's finish, which has its own; decision 141)
+  ticked: string[];
   // The one reminder to keep practice safe, if any (decision 64)
   nudge: SafetyNudge;
   // What the user wants to get better at most: missing until asked, empty when left open (decision 97)
@@ -181,6 +187,8 @@ async function loadHome(repository: Repository, now: Date, random: () => number)
     weekLine: weekSentence(sessions, now),
     // The moment, once a day, when every step is done
     celebrate: plan.done.length > 0 && plan.done.every(Boolean) && firstFinishToday(dayKey(now)),
+    // The steps to tick off now: done since Today last showed them, unless the whole day is done
+    ticked: plan.done.length > 0 && plan.done.every(Boolean) ? [] : newlyTicked(dayKey(now), plan.steps.filter((_, index) => plan.done[index]).map(stepKey)),
     // The one reminder to keep practice safe, if any
     nudge: safetyNudge(await readSafetyFacts(sessions.length, now)),
     // What the user wants to get better at most
@@ -477,13 +485,17 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                   const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : step.kind === "course" && plan.done[index] ? "Part done" : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
                   // Its blob scene, if its kind has one (decision 137)
                   const scene = stepScene(step);
+                  // Whether it was done since Today last showed it, and whether it takes over as the next step after one was (decision 141)
+                  const justDone = !!data?.ticked.includes(stepKey(step));
+                  // (taking over)
+                  const arriving = mark === "next" && !!data?.ticked.length;
                   // One step
                   return (
                     <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
                       {/* The whole row starts the step: a rounded tile, warm when next (and marked as the current step, since no band names it; decision 138) */}
                       <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} aria-current={mark === "next" ? "step" : undefined} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
                         {/* Its mark: its scene where its kind has one, else its number (decision 137), each in the same width so the words line up; when the day is first done, the marks grow in one by one, unless motion is unwelcome */}
-                        <span className={`flex w-14 flex-none justify-center ${data?.celebrate ? "motion-safe:animate-pop" : ""}`} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}>{scene ? <SceneMark scene={scene} mark={mark} faded={!!(plan.done[index] || plan.skipped[index])} /> : <PathMark mark={mark} number={index + 1} />}</span>
+                        <span className={`flex w-14 flex-none justify-center ${data?.celebrate ? "motion-safe:animate-pop" : ""}`} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}>{scene ? <SceneMark scene={scene} mark={mark} faded={!!(plan.done[index] || plan.skipped[index])} justDone={justDone} arriving={arriving} /> : <span className={justDone || arriving ? "motion-safe:animate-pop" : undefined} style={justDone || arriving ? { animationDelay: justDone ? "900ms" : "1400ms" } : undefined}><PathMark mark={mark} number={index + 1} /></span>}</span>
                         {/* What it is */}
                         <span className="min-w-0 flex-1">
                           {/* Its name and time */}

@@ -95,6 +95,10 @@ import { autoGainApplied } from "@/audio/microphoneSettings";
 import { levelScale } from "@/core/voiceLevels";
 // Load the voice shape in its forms
 import { StartBlob, StatusBlob, TakeControls, VoiceBlob } from "@/components/script/VoiceShapes";
+// Load the start screen's scene panel (decision 141)
+import { ScenePanel } from "@/components/scenes/ScenePanel";
+// Load the scene names
+import type { SceneName } from "@/components/scenes/Scene";
 // Load the screen hold
 import { holdScreenAwake } from "@/audio/wakeLock";
 // Load the request that keeps saved practice from being cleared
@@ -147,6 +151,16 @@ function motionWelcome(): boolean {
 }
 
 // A story's set-up when none is given: Classic, no focus, full length (decision 92)
+// The modes whose start screen shows their scene, with the mode's name and what it is (decision 141)
+const READY_SCENES: Partial<Record<SessionMode, { scene: SceneName; name: string; line: string }>> = {
+  // Rapid Fire
+  talk: { scene: "rapid-fire", name: "Rapid Fire", line: "A surprise question, 1 to 2 minutes" },
+  // A prepared speech
+  response: { scene: "prepared-speech", name: "Prepared speech", line: "Plan for 2 minutes, speak for 2 to 4" },
+  // Free talk
+  free: { scene: "free-talk", name: "Free talk", line: "Talk about anything, as long as you like" },
+};
+
 const DEFAULT_STORY: StoryTake = { template: "lesson", focus: null, length: "full" };
 
 // What a story is about: the prompt from the bank, a guided story's title, or the moment note's words once loaded (decisions 92 and 93)
@@ -1479,6 +1493,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
         {/* Main column */}
         <div className="flex flex-1 flex-col">
+          {/* Before starting a Rapid Fire, a prepared speech or free talk: the mode's scene, carried over from the Practice card (decision 141) */}
+          {stage === "ready" && !busy && !script && !smallTalk && !problem && !loop && READY_SCENES[mode] && <ScenePanel {...READY_SCENES[mode]!} />}
           {/* While recording: one status line (recording or paused, and the timing words), the question, and, beside text to read, the controls (decision 77) */}
           {recording && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

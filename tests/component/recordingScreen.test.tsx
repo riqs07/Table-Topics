@@ -272,6 +272,34 @@ describe("RecordingScreen", () => {
     expect((await repository.listSessions())[0]).toMatchObject({ mode: "warmup", durationSec: 30 });
   });
 
+  // Before starting, Rapid Fire, a prepared speech and free talk show their scene panel, carried over from Practice; once the topic is being picked it goes, and other modes have none (decision 141)
+  it("shows the mode's scene panel before starting", async () => {
+    // Rapid Fire
+    const talk = draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id });
+    // Its panel, named for the morph
+    const panel = await waitFor(() => document.querySelector("[data-scene-panel]") as HTMLElement);
+    // What it shows before starting
+    const before = [panel.getAttribute("data-scene-panel"), panel.textContent, !!panel.querySelector("[data-scene][data-motion='few']")];
+    // Show the topic
+    fireEvent.click(screen.getByRole("button", { name: /Show my topic/ }));
+    // Let the screen move on
+    talk.clock.advance(100);
+    // Whether it is still there
+    const during = !!document.querySelector("[data-scene-panel]");
+    // Confirm it before, and gone once the topic is coming
+    expect([before, during]).toEqual([["rapid-fire", "Rapid FireA surprise question, 1 to 2 minutes", true], false]);
+  });
+
+  // A reading has no scene panel
+  it("leaves the panel off other modes", async () => {
+    // A plain session
+    draw();
+    // Wait for the start shape
+    await screen.findByRole("button", { name: /Start/ });
+    // Confirm none
+    expect(document.querySelector("[data-scene-panel]")).toBeNull();
+  });
+
   // Start a Table Topic: the briefing, then the topic with its 10-second countdown, then recording by itself
   async function startTableTopic(clock: { advance: (ms: number) => void }) {
     // Show the topic

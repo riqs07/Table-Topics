@@ -323,6 +323,31 @@ describe("HomeScreen", () => {
     expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), screen.queryByRole("link", { name: /^Continue/ }), screen.getByRole("link", { current: "step" }).getAttribute("aria-label"), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, null, "Step 1: Learn", null]);
   });
 
+  // A step done since Today last showed it ticks off once: it carries the moment, the next step grows in; the next visit plays nothing (decision 141)
+  it("ticks off a newly done step once", async () => {
+    // A repository where today's warm-up was read, past day one
+    const repository = await pastDayOne();
+    // The warm-up, this morning
+    await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", createdAt: new Date(2026, 9, 13, 8).toISOString() }));
+    // The welcome was seen
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // The marks carrying a moment, as [step, kind]
+    const ticks = async () => {
+      // Draw the screen
+      const view = render(<HomeScreen repository={repository} now={NOW} />);
+      // The steps
+      const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
+      // Each step's moment, if any
+      const found = steps.flatMap((step) => { const tick = step.querySelector("[data-tick]")?.getAttribute("data-tick"); return tick ? [[step.getAttribute("aria-label"), tick]] : []; });
+      // Clear the screen
+      view.unmount();
+      // Hand them back
+      return found;
+    };
+    // Confirm step 1 (the Learn card) taking over and the warm-up ticked off, then nothing on the next visit
+    expect([await ticks(), await ticks()]).toEqual([[["Step 1: Learn", "arriving"], ["Step 2: Warm up", "done"]], []]);
+  });
+
   // A step put off with "Can't speak now?" is marked, not done, and the next open step is offered; once only put-off steps are left, the rest can wait (decision 77)
   it("passes over a step put off for today", async () => {
     // A repository with the warm-up put off today, past day one

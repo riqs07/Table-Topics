@@ -437,6 +437,42 @@
 /* Wave: show, move out, fade */
 @keyframes vl-s-wave { 0% { opacity: 0; transform: none; } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(6px); } }
 
+/* Ticking off a step on Today (decision 141): only when motion is welcome; otherwise the marks show their end state at once */
+@media (prefers-reduced-motion: no-preference) {
+  /* The step just done: starts at the next step's size, hops, then settles and fades */
+  .vl-just-done { animation: vl-tick-settle 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  /* Its scene hops twice */
+  .vl-just-done .vl-scene { animation: vl-tick-hop 0.45s ease-in-out 2; }
+  /* Its sparks flash once */
+  .vl-tick-sparks { animation: vl-tick-sparks 1s ease-out both; }
+  /* The step taking over grows into place after the tick */
+  .vl-arriving { animation: vl-tick-arrive 0.6s 1.3s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+}
+/* Settle: the next step's size and full colour, held, then the done size and faded */
+@keyframes vl-tick-settle { 0%, 45% { transform: scale(1.17); opacity: 1; } 100% { transform: none; opacity: 0.55; } }
+/* Hop: up and back */
+@keyframes vl-tick-hop { 0%, 100% { transform: none; } 50% { transform: translateY(-6px); } }
+/* Sparks: pop out, then fade */
+@keyframes vl-tick-sparks { 0% { opacity: 0; transform: scale(0.5); } 25% { opacity: 1; transform: scale(1.1); } 70% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
+/* Arrive: from the open size, a small overshoot, to the next step's size */
+@keyframes vl-tick-arrive { 0% { transform: scale(0.857); } 70% { transform: scale(1.06); } 100% { transform: none; } }
+
+/* A Practice card's scene gliding into the screen it opens (decision 141): a little slower than the browser's default, easing to a stop */
+::view-transition-group(.vl-scene-morph) {
+  /* How long */
+  animation-duration: 450ms;
+  /* Fast, then settling */
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* With reduced motion, pages change at once */
+@media (prefers-reduced-motion: reduce) {
+  /* No glide and no fade */
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
+    /* Off */
+    animation: none !important;
+  }
+}
+
 /* Named type sizes for the script-page direction (used as text-footnote, text-prompt, ...) */
 @theme {
   /* Footnotes and asides */
