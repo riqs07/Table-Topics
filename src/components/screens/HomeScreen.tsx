@@ -43,6 +43,8 @@ import { dayKey } from "@/core/dates";
 import { firstFinishToday } from "@/data/dayCelebrated";
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
+// Load the hand-drawn welcome (decision 134)
+import { Drawing } from "@/components/script/Drawing";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 // Load what the user wants to get better at most: the reader, the words for it, and saving it (decision 97)
@@ -396,6 +398,8 @@ export function HomeScreen(props: ScreenProps) {
           {/* A first visit: one question, then straight to the right place */}
           {data?.showWelcome && (
             <section aria-label="Welcome" className="mt-8 md:mt-0">
+              {/* Someone mid-explanation, to say hello (decision 134) */}
+              <Drawing name="welcome" className="mb-4 block h-40 motion-safe:animate-rise md:h-52" />
               {/* The greeting */}
               <h1 className="font-display text-prompt font-semibold tracking-tight motion-safe:animate-rise md:text-prompt-xl">Welcome to VoiceLab</h1>
               {/* What it is, and what VoiceLab keeps (the speech recognition is explained before the microphone is first used; decision 97) */}

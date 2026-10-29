@@ -105,8 +105,8 @@ describe("HomeScreen", () => {
     const start = await screen.findByRole("link", { name: "Start" });
     // The choices
     const choices = within(screen.getByRole("group", { name: "What do you want to get better at most?" })).getAllByRole("button");
-    // Confirm the heading, what VoiceLab keeps, what a session gives, the question with six choices, no tabs, and that Start leads into the first step
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/VoiceLab keeps your recordings on this device/), !!screen.getByText("Every take ends with one change to try."), screen.getByRole("heading", { level: 2, name: "What do you want to get better at most?" }).tagName, choices.map((choice) => choice.firstChild?.textContent), screen.queryByRole("navigation", { name: "Main" }), start.getAttribute("href")]).toEqual(["Welcome to VoiceLab", true, true, "H2", ["Telling stories", "Small talk and conversations", "Thinking on my feet", "How I sound", "Speaking at work", "A talk coming up"], null, FIRST_STEP]);
+    // Confirm the hand-drawn greeter (decision 134), the heading, what VoiceLab keeps, what a session gives, the question with six choices, no tabs, and that Start leads into the first step
+    expect([document.querySelector("[data-drawing='welcome']")?.getAttribute("alt"), screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/VoiceLab keeps your recordings on this device/), !!screen.getByText("Every take ends with one change to try."), screen.getByRole("heading", { level: 2, name: "What do you want to get better at most?" }).tagName, choices.map((choice) => choice.firstChild?.textContent), screen.queryByRole("navigation", { name: "Main" }), start.getAttribute("href")]).toEqual(["", "Welcome to VoiceLab", true, true, "H2", ["Telling stories", "Small talk and conversations", "Thinking on my feet", "How I sound", "Speaking at work", "A talk coming up"], null, FIRST_STEP]);
     // Pick three: the third replaces the first
     for (const name of [/^Telling stories/, /^How I sound/, /^Speaking at work/]) await userEvent.click(screen.getByRole("button", { name }));
     // Confirm two are picked
@@ -277,8 +277,8 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={repository} now={NOW} />);
     // The steps
     const steps = await screen.findByRole("list", { name: "Steps" });
-    // Confirm the headline, the summary, each step's line, no filler counts, and the moment playing
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 2 minutes 40 today. Second day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/pause words a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length]).toEqual(["Done for today.", true, true, true, null, 4]);
+    // Confirm the headline, the summary, each step's line, no filler counts, the moment playing, and the blob celebrating in it (decision 134)
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 2 minutes 40 today. Second day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/pause words a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length, document.querySelector("[data-done-face] [data-blob-mood]")?.getAttribute("data-blob-mood")]).toEqual(["Done for today.", true, true, true, null, 4, "celebrating"]);
     // The suggestions to keep going
     const more = within(screen.getByRole("region", { name: "Keep going" })).getAllByRole("link");
     // Confirm three or four, none of them today's steps, the last another card

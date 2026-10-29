@@ -368,7 +368,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
           ) : starting ? (
             <StatusBlob compact={false} label="Starting…" detail="allow the microphone" />
           ) : blocked ? null : (
-            <StartBlob compact={false} onStart={() => void begin()} label={notice || problem ? "Try again" : "Record"} detail={stage === "slow" ? "the slow round" : `take ${takes.length + 1} of ${drill.takes.length}`} />
+            <StartBlob compact={false} onStart={() => void begin()} mood={notice || problem ? "hmm" : "ready"} label={notice || problem ? "Try again" : "Record"} detail={stage === "slow" ? "the slow round" : `take ${takes.length + 1} of ${drill.takes.length}`} />
           )}
         </section>
       )}

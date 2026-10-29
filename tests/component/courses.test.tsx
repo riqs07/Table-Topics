@@ -72,8 +72,8 @@ describe("CourseScreen", () => {
     const all = ["sf-beat-1", "sf-beat-2", "sf-point-1", "sf-point-2", "sf-point-3", "sf-pre-1", "sf-pre-2", "sf-land-1", "sf-land-2", "sf-run-1"].map((id): [string, string | null, string] => [id, null, "2026-10-26T10:00:00Z"]);
     // Draw it
     render(<CourseScreen courseId="stop-freezing" repository={await seeded(all, takes)} now={NOW} />);
-    // Confirm the section and its line, and no Continue
-    expect([(await screen.findByRole("heading", { name: "Course complete" })).textContent, screen.getByText(/Fewer pause words/).textContent, screen.queryByRole("link", { name: /Continue/ })]).toEqual(["Course complete", "Fewer pause words: 4 a minute, then 1.", null]);
+    // Confirm the section, its hand-drawn celebration (decision 134) and its line, and no Continue
+    expect([(await screen.findByRole("heading", { name: "Course complete" })).textContent, !!document.querySelector("[data-course-done] [data-drawing='courseDone']"), screen.getByText(/Fewer pause words/).textContent, screen.queryByRole("link", { name: /Continue/ })]).toEqual(["Course complete", true, "Fewer pause words: 4 a minute, then 1.", null]);
   });
 
   // A course that does not exist

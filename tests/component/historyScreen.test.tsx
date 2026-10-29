@@ -37,8 +37,8 @@ describe("HistoryScreen", () => {
   it("shows an empty state for a new user", async () => {
     // Draw the screen with no data
     render(<HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the empty line, a real main heading even when empty, and the way back to your progress, where History is reached from (decision 109)
-    expect([!!(await screen.findByText(/Nothing here yet/)), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to your progress" }).getAttribute("href")]).toEqual([true, "History", "/profile"]);
+    // Confirm the empty line, the sleeping blob (decision 134), a real main heading even when empty, and the way back to your progress, where History is reached from (decision 109)
+    expect([!!(await screen.findByText(/Nothing here yet/)), !!document.querySelector("[data-blob-character='sleepy']"), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to your progress" }).getAttribute("href")]).toEqual([true, true, "History", "/profile"]);
   });
 
   // The empty state offers one thing to do

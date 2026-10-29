@@ -26,6 +26,8 @@ import { COURSES, type Course } from "@/content/courses";
 // Load the record and repository types
 import type { SessionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
+// Load the hand-drawn celebration (decision 134)
+import { Drawing } from "@/components/script/Drawing";
 
 // One take to play, with its label
 function TakePlayer({ repo, take, label }: { repo: Repository; take: SessionRecord; label: string }) {
@@ -53,6 +55,8 @@ function CourseDone({ repo, course, takes }: { repo: Repository; course: Course;
   // The section
   return (
     <section aria-labelledby="course-done" data-course-done className={`mt-6 p-5 ${CARD}`}>
+      {/* Someone delighted, arms open (decision 134) */}
+      <Drawing name="courseDone" className="mx-auto mb-3 block h-44" />
       {/* Heading */}
       <h2 id="course-done" className={SECTION_HEADING}>Course complete</h2>
       {/* First against latest, when there are two takes */}
