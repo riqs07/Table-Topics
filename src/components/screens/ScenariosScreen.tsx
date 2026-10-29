@@ -27,6 +27,8 @@ import type { PlanNav } from "@/components/screens/planNav";
 // Load the plan loader (the plan's code loads after the page shows; decision 88)
 import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
 import { planHref } from "@/core/planSteps";
+// Load the panel with a step's scene, carried over from Today (decision 141)
+import { ScenePanel } from "@/components/scenes/ScenePanel";
 
 // Draw the page
 export function ScenariosScreen({ services = browserRecordingServices, planStep = null, ...props }: ScreenProps & { services?: RecordingServices; planStep?: number | null }) {
@@ -99,6 +101,8 @@ export function ScenariosScreen({ services = browserRecordingServices, planStep 
     <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
       {/* Title, with a way back to Learn */}
       <Masthead title="Scenarios" nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/learn", label: "Close, back to Learn" }}>{plan ? `Step ${plan.step} of ${plan.total}` : round && !finished ? `${index + 1} of ${round.length}` : ""}</Masthead>
+      {/* Opened from Today, before the first answer: the conversation scene, carried over from the step */}
+      {planStep && index === 0 && !finished && <ScenePanel scene="conversation" line="Choose the best reply, then say it." />}
       {/* One scenario */}
       {scenario && !finished && (
         <section key={scenario.id} aria-label={scenario.title} className="mt-6">

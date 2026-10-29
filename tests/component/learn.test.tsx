@@ -124,6 +124,24 @@ describe("Learn", () => {
     await waitFor(async () => expect((await repository.getSettings(NOW)).learn?.["body-93"]?.readAt).toBeTruthy());
   });
 
+  // Opened from Today, a card's first screen shows the Learn scene its step glides into; from Learn it does not (decision 141)
+  it("shows the Learn scene only when opened from Today", async () => {
+    // From Today, as step 2
+    const fromToday = render(<CardScreen cardId="body-93" repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} planStep={2} />);
+    // Its panel, once the card shows
+    const panel = (await screen.findByRole("heading", { level: 1 })) && document.querySelector("[data-scene-panel]");
+    // What it shows
+    const shown = [panel?.getAttribute("data-scene-panel"), panel?.textContent];
+    // Clear it away
+    fromToday.unmount();
+    // From Learn
+    render(<CardScreen cardId="body-93" repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} />);
+    // Wait for the card
+    await screen.findByRole("heading", { level: 1 });
+    // Confirm the panel from Today only
+    expect([shown, document.querySelector("[data-scene-panel]")]).toEqual([["learn", "One idea, about a minute to read."], null]);
+  });
+
   // Inside today's practice, a card says which step it is and ends with the way on
   it("shows its step inside today's practice and finishes it", async () => {
     // A user with three earlier practice days, so the plan has four steps, the card last
@@ -214,6 +232,22 @@ describe("Learn", () => {
     }
     // Confirm the result: the first three scenarios' first replies are a best, a misstep and a misstep
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("1 of 3 best.");
+  });
+
+  // Opened from Today, the first scenario sits under the conversation scene its step glides into; from Learn there is none (decision 141)
+  it("shows the conversation scene only when opened from Today", async () => {
+    // From Today, as step 3
+    const fromToday = render(<ScenariosScreen repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} planStep={3} />);
+    // The panel
+    const shown = (await waitFor(() => document.querySelector("[data-scene-panel]") as HTMLElement)).getAttribute("data-scene-panel");
+    // Clear it away
+    fromToday.unmount();
+    // From Learn
+    render(<ScenariosScreen repository={createRepository(new MemoryStore())} now={NOW} services={fakeServices("")} />);
+    // Wait for the first scenario's choices
+    await screen.findAllByRole("button");
+    // Confirm the panel from Today only
+    expect([shown, document.querySelector("[data-scene-panel]")]).toEqual(["conversation", null]);
   });
 
   // Inside today's practice (decision 72): the way out leads to Today, and the end moves on to the next step

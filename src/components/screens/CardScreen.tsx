@@ -33,6 +33,8 @@ import { planHref } from "@/core/planSteps";
 import { markCardRead } from "@/data/learnProgress";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
+// Load the panel with a step's scene, carried over from Today (decision 141)
+import { ScenePanel } from "@/components/scenes/ScenePanel";
 
 // The words for each verdict
 const VERDICT_WORDS: Readonly<Record<Verdict, string>> = {
@@ -155,6 +157,8 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   const screens = [
     // 1. The question or belief
     <div key="question">
+      {/* Opened from Today: the Learn scene, carried over from the step */}
+      {planStep && <ScenePanel scene="learn" line="One idea, about a minute to read." className="mb-6" />}
       {/* What kind of card, when it is not a plain explainer (the set's name is already the page title; decision 79) */}
       {card.kind !== "explainer" && <Kicker>{card.kind === "myth-or-fact" ? "Myth or fact?" : "Try it"}</Kicker>}
       {/* The question, set like a headline */}

@@ -163,6 +163,14 @@ const READY_SCENES: Partial<Record<SessionMode, { scene: SceneName; name: string
   free: { scene: "free-talk", name: "Free talk", line: "Talk about anything, as long as you like" },
 };
 
+// Opened from Today, the screens whose step shows a scene there carry it over too: small talk and rehearsing your talk (decision 141)
+const TODAY_SCENES: Partial<Record<SessionMode, { scene: SceneName; name?: string; line: string }>> = {
+  // Small talk (its own screen already names the question)
+  smalltalk: { scene: "conversation", line: "A quick chat, about a minute." },
+  // Rehearsing your talk
+  rehearse: { scene: "your-talk", name: "Your talk", line: "Run it start to finish" },
+};
+
 const DEFAULT_STORY: StoryTake = { template: "lesson", focus: null, length: "full" };
 
 // What a story is about: the prompt from the bank, a guided story's title, or the moment note's words once loaded (decisions 92 and 93)
@@ -1498,6 +1506,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           <div className="flex flex-1 flex-col">
             {/* Before starting a Rapid Fire, a prepared speech or free talk: the mode's scene, carried over from the Practice card (decision 141) */}
             {stage === "ready" && !busy && !script && !smallTalk && !problem && !loop && READY_SCENES[mode] && <ScenePanel {...READY_SCENES[mode]!} />}
+            {/* Opened from Today, small talk and rehearsing show their step's scene the same way */}
+            {stage === "ready" && !busy && !problem && !loop && planStep !== null && TODAY_SCENES[mode] && <ScenePanel {...TODAY_SCENES[mode]!} className="mt-3 mb-6 md:mt-0" />}
             {/* While recording: one status line (recording or paused, and the timing words), the question, and, beside text to read, the controls (decision 77) */}
             {recording && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

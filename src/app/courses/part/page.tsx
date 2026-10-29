@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 // Load the frame shown while the address is read (decision 76)
 import { PageFallback } from "@/components/script/PageFallback";
+// Load the fade round a step started from Today (decision 141)
+import { PageFade } from "@/components/scenes/SharedScene";
 // Load the screen that reads the address
 import { CoursePartFromAddress } from "@/components/screens/CourseFromAddress";
 
@@ -12,11 +14,13 @@ export const metadata: Metadata = { title: "Lesson · VoiceLab" };
 
 // Draw the page
 export default function CoursePartPage() {
-  // The screen, once the address is read
+  // The screen, once the address is read, fading in when opened from Today
   return (
-    <Suspense fallback={<PageFallback title="Lesson" />}>
-      {/* The screen */}
-      <CoursePartFromAddress />
-    </Suspense>
+    <PageFade>
+      <Suspense fallback={<PageFallback title="Lesson" />}>
+        {/* The screen */}
+        <CoursePartFromAddress />
+      </Suspense>
+    </PageFade>
   );
 }
