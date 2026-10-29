@@ -10,7 +10,7 @@ import { Scene, type SceneName } from "@/components/scenes/Scene";
 afterEach(cleanup);
 
 // Every scene
-const NAMES: SceneName[] = ["rapid-fire", "prepared-speech", "read-aloud", "four-three-two", "free-talk", "short-speech", "your-talk", "story", "tell-again", "guided-stories", "moment", "conversation", "warm-up"];
+const NAMES: SceneName[] = ["rapid-fire", "prepared-speech", "read-aloud", "four-three-two", "free-talk", "short-speech", "your-talk", "story", "tell-again", "guided-stories", "moment", "conversation", "warm-up", "learn"];
 
 // Group the checks about the blob scenes (decision 136)
 describe("Scene", () => {

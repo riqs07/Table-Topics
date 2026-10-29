@@ -240,7 +240,7 @@ describe("HomeScreen", () => {
     expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.queryByText(/^0 of/), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Free talk", "Step 2: Learn", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=2`, null, FIRST_STEP]);
   });
 
-  // Each step's mark is its blob scene where its kind has one, in place of the number: the next one moving, the others still; a Learn card keeps its number (decision 137)
+  // Each step's mark is its blob scene where its kind has one, in place of the number: the next one moving, the others still; a Learn card has the light bulb (decisions 137 and 138)
   it("shows each step's scene, the next one moving", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
@@ -249,11 +249,11 @@ describe("HomeScreen", () => {
     // The steps
     const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
     // The first two steps' scene and how much it moves
-    const scenes = steps.slice(0, 2).map((step) => [step.querySelector("[data-step-scene]")?.getAttribute("data-step-scene") ?? null, step.querySelector("[data-scene]")?.getAttribute("data-motion") ?? null]);
+    const scenes = steps.slice(0, 3).map((step) => [step.querySelector("[data-step-scene]")?.getAttribute("data-step-scene") ?? null, step.querySelector("[data-scene]")?.getAttribute("data-motion") ?? null]);
     // The marks' visible text: none on a scene, the number on a step without one
-    const numbers = steps.slice(0, 2).map((step) => step.querySelector("[data-step-scene]") ? null : step.querySelector("span")?.textContent);
-    // Confirm free talk's scene moving in place of its number, and the Learn card keeping its number
-    expect([scenes, numbers]).toEqual([[["free-talk", "loop"], [null, null]], [null, "2"]]);
+    const numbers = steps.slice(0, 3).map((step) => step.querySelector("[data-step-scene]") ? null : step.querySelector("span")?.textContent);
+    // Confirm free talk's scene moving in place of its number, then the Learn card's bulb and the Rapid Fire pick still, with no numbers showing
+    expect([scenes, numbers]).toEqual([[["free-talk", "loop"], ["learn", "still"], ["rapid-fire", "still"]], [null, null, null]]);
   });
 
   // A talk with a date takes the first pick, and a past date does not count

@@ -32,12 +32,13 @@ describe("sceneFor", () => {
       stepScene(step("warmup", "voice")),
       stepScene(step("scenarios", null)),
       stepScene(step("course", "talk")),
-    ]).toEqual(["rapid-fire", "prepared-speech", "read-aloud", "story", "guided-stories", "free-talk", "conversation", "warm-up", "conversation", "rapid-fire"]);
+      stepScene(step("card", null, "Learn")),
+    ]).toEqual(["rapid-fire", "prepared-speech", "read-aloud", "story", "guided-stories", "free-talk", "conversation", "warm-up", "conversation", "rapid-fire", "learn"]);
   });
 
-  // Kinds with no scene yet keep a plain row
-  it("gives none to lessons, drills, cards and the check-in", () => {
+  // Kinds with no scene yet keep their number
+  it("gives none to lessons, drills and the check-in", () => {
     // Confirm each
-    expect([stepScene(step("session", "lesson")), stepScene(step("session", "pause")), stepScene(step("session", "voice")), stepScene(step("card", null)), stepScene(step("checkin", null)), stepScene(step("session", null))]).toEqual([null, null, null, null, null, null]);
+    expect([stepScene(step("session", "lesson")), stepScene(step("session", "pause")), stepScene(step("session", "voice")), stepScene(step("checkin", null)), stepScene(step("session", null))]).toEqual([null, null, null, null, null]);
   });
 });

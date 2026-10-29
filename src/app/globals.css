@@ -375,6 +375,12 @@
   .vl-scene .s-tick { transform-box: fill-box; transform-origin: center; animation: vl-s-tick 3s ease-out infinite both; }
   /* Sound waves */
   .vl-scene .s-wave { animation: vl-s-wave 1.6s ease-out infinite both; }
+  /* Learn: lifting to look up (decision 138) */
+  .vl-scene .s-look { animation: vl-s-look 3s ease-in-out infinite; }
+  /* (the glow coming on) */
+  .vl-scene .s-glow { animation: vl-s-glow 3s ease-in-out infinite both; }
+  /* (the bulb lighting up) */
+  .vl-scene .s-bulb { animation: vl-s-bulb 3s ease-in-out infinite; }
   /* A scene asked to calm down plays its loop three times, then rests (the blinks carry on) */
   .vl-scene[data-motion="few"] .s-move { animation-iteration-count: 3; }
   /* A still scene keeps only its blinks */
@@ -422,6 +428,12 @@
 @keyframes vl-s-gust { 0% { stroke-dashoffset: 40; opacity: 0; } 20% { opacity: 1; } 100% { stroke-dashoffset: -40; opacity: 0; } }
 /* Tick: pop on, stay, go */
 @keyframes vl-s-tick { 0% { transform: scale(0); } 10% { transform: scale(1.4); } 16%, 85% { transform: none; } 100% { transform: scale(0); } }
+/* Look: still, then lifted while the bulb is lit */
+@keyframes vl-s-look { 0%, 30% { transform: none; } 45%, 85% { transform: translateY(-4px); } 100% { transform: none; } }
+/* Glow: off, then on with a small swell, then off */
+@keyframes vl-s-glow { 0%, 35% { opacity: 0; transform: scale(0.7); } 45% { opacity: 1; transform: scale(1.1); } 55%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; transform: scale(0.7); } }
+/* Bulb: white glass, warm while lit */
+@keyframes vl-s-bulb { 0%, 35% { fill: var(--color-card); } 45%, 85% { fill: var(--color-warm); } 100% { fill: var(--color-card); } }
 /* Wave: show, move out, fade */
 @keyframes vl-s-wave { 0% { opacity: 0; transform: none; } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(6px); } }
 

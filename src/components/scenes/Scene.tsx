@@ -4,7 +4,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 // The scenes there are, one per kind of practice that has one
-export type SceneName = "rapid-fire" | "prepared-speech" | "read-aloud" | "four-three-two" | "free-talk" | "short-speech" | "your-talk" | "story" | "tell-again" | "guided-stories" | "moment" | "conversation" | "warm-up";
+export type SceneName = "rapid-fire" | "prepared-speech" | "read-aloud" | "four-three-two" | "free-talk" | "short-speech" | "your-talk" | "story" | "tell-again" | "guided-stories" | "moment" | "conversation" | "warm-up" | "learn";
 
 // How much a scene moves: all the time, a few rounds then rest, or only blinking
 export type SceneMotion = "loop" | "few" | "still";
@@ -13,7 +13,7 @@ export type SceneMotion = "loop" | "few" | "still";
 const BLOB = "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z";
 
 // The blob's faces, each drawn 48 by 34 and placed on the outline
-type FaceName = "ready" | "wow" | "sing" | "happy" | "down" | "up" | "puff" | "side" | "side-left";
+type FaceName = "ready" | "wow" | "sing" | "happy" | "down" | "up" | "wonder" | "puff" | "side" | "side-left";
 
 // One face's features, in the current colour
 function Face({ face }: { face: FaceName }) {
@@ -73,6 +73,17 @@ function Face({ face }: { face: FaceName }) {
           <circle className="fill-current" cx="38" cy="6" r="5" />
           {/* The mouth */}
           <path className="stroke-current" d="M18 27h12" />
+        </>
+      )}
+      {/* Wondering: looking up and to the right, smiling */}
+      {face === "wonder" && (
+        <>
+          {/* The eyes */}
+          <circle className="fill-current" cx="16" cy="6" r="5" />
+          {/* (the other) */}
+          <circle className="fill-current" cx="40" cy="6" r="5" />
+          {/* The smile */}
+          <path className="stroke-current" d="M16 26q8 6 16 0" />
         </>
       )}
       {/* Puffing: eyes shut, a little round mouth and pink cheeks */}
@@ -383,6 +394,28 @@ const SCENES: Record<SceneName, () => ReactNode> = {
       </Move>
       {/* Their bubble, half a turn later */}
       <Move loop="s-talk" origin="93px 61px" delay={2}><path className={`${LINE} fill-warm-tint`} d="M74 34h30a6 6 0 0 1 6 6v8a6 6 0 0 1-6 6h-4v7l-7-7H74a6 6 0 0 1-6-6v-8a6 6 0 0 1 6-6z" /></Move>
+    </>
+  ),
+  // Learn (decision 138): looking up as a light bulb comes on, like the bulb on the Learn tab
+  "learn": () => (
+    <>
+      {/* The shadow */}
+      <Shadow x={46} y={105} width={24} />
+      {/* The blob, lifting a little as the idea comes */}
+      <Move loop="s-look"><Blob x={46} y={76} r={26} face="wonder" /></Move>
+      {/* The glow and its rays, coming on */}
+      <Move loop="s-glow" origin="88px 34px">
+        {/* The glow */}
+        <circle className="fill-warm opacity-30" cx="88" cy="34" r="22" />
+        {/* The rays */}
+        <path className={LINE} d="M88 6v-4M108 34h4M64 34h-4M103 19l3-3M73 19l-3-3" />
+      </Move>
+      {/* The bulb's glass, lighting up */}
+      <circle className={`${LINE} s-move s-bulb fill-card`} cx="88" cy="34" r="14" />
+      {/* Its filament */}
+      <path className={LINE} d="M84 34l4 5 4-5" />
+      {/* Its base */}
+      <rect className={`${LINE} fill-accent`} x="82" y="48" width="12" height="9" rx="2" />
     </>
   ),
   // The warm-up: cheeks puffing, gusts of air blowing out
