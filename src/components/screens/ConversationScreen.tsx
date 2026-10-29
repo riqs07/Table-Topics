@@ -1427,13 +1427,13 @@ function Conversation({ persona, skill, situationId, autostart = false, services
           ) : phase === "them" ? (
             <StartBlob compact={false} label={persona.name} detail="is talking · tap to talk" ariaLabel={`Interrupt ${persona.name} and start your turn`} onStart={interrupt} />
           ) : phase === "thinking" ? (
-            <StatusBlob compact={false} label={persona.name} detail={caption ? "is listening" : "is about to speak"} />
+            <StatusBlob compact={false} label={persona.name} detail={caption ? "is listening" : "is about to speak"} mood={caption ? "listening" : "thinking"} />
           ) : recording ? (
             <VoiceBlob levels={levels} signal="none" clock={formatClock(turnSeconds)} onStop={() => void done()} compact={false} action="Done" />
           ) : stopping ? (
             <StatusBlob compact={false} label="One moment…" detail="catching your words" />
           ) : problem ? (
-            <StartBlob compact={false} onStart={() => void yourTurn()} label="Try again" detail="your turn" />
+            <StartBlob compact={false} onStart={() => void yourTurn()} mood="hmm" label="Try again" detail="your turn" />
           ) : (
             <StatusBlob compact={false} label="Your turn" detail="allow the microphone" />
           )}

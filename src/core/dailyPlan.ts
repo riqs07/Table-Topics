@@ -27,6 +27,8 @@ import { stepKey, type PlanLane, type PlanStep } from "@/core/planSteps";
 export { nextStepIndex, planHref, planMinutes, stepKey, type PlanLane, type PlanStep } from "@/core/planSteps";
 // Load the user's focus: which area leads today, and its kinds of practice (decision 97)
 import { focusForDay, type FocusArea, type FocusAreaId, type PickKind } from "@/core/practiceFocus";
+// Load the guided course rules: which course to offer and its next part (decision 131)
+import { courseToOffer, nextPart, partHref, partMinutes, type CourseProgress } from "@/core/courses";
 // Load the voice picks and names (decision 80)
 import { VOICE_ROTATION, nextShadowPassage, nextVoiceDrill, warmupRoutine } from "@/core/voicePicks";
 import { VOICE_MODE_NAMES } from "@/content/voice";
@@ -49,6 +51,8 @@ export interface PlanInput {
   practiceFocus?: ReadonlyArray<FocusAreaId>;
   // Today's weekly check-in, when today is a check-in day: its id and number (decision 100; missing or null otherwise)
   checkIn?: { id: string; week: number; baseline: boolean } | null;
+  // Progress through guided courses (decision 131; only parts finished before today are used, so the plan stays the same all day)
+  courses?: CourseProgress;
 }
 
 // The order speeches are offered in when none is under way: short and familiar first
@@ -386,18 +390,32 @@ function checkInStep(checkIn: NonNullable<PlanInput["checkIn"]>): PlanStep {
   return { lane: "checkin", kind: "checkin", label: checkIn.baseline ? "Your first check-in" : "Weekly check-in", title: "Read, pitch, story and a surprise question", mode: null, promptId: checkIn.id, minutes: 6, href: "/check-in/run" };
 }
 
-// Today's steps: the Learn card (when there is one), the warm-up reading, then two picks from the bank; on day one, free talk comes first in place of the reading. On a check-in day the check-in takes the place of the reading and both picks, and the Learn card stays (decision 100)
+// The next part of the course offered today, as a step of its own, or none when there is no course to offer (decision 131)
+function courseStep(input: PlanInput): PlanStep[] {
+  // Today's start: parts finished today do not move the step on, so the plan stays the same all day
+  const start = startOfDay(input.day);
+  // Progress
+  const progress = input.courses ?? {};
+  // The course: one started, else one for the focus
+  const course = courseToOffer(input.practiceFocus ?? [], progress, start);
+  // Its next part
+  const place = course ? nextPart(course, progress, start) : null;
+  // The step, or none
+  return course && place ? [{ lane: "course", kind: "course", label: `Course: ${course.title}`, title: `Lesson ${place.lessonNumber}, ${place.lesson.title} · part ${place.partNumber}: ${place.part.title}`, mode: null, promptId: place.part.id, minutes: partMinutes(place.part), href: partHref(place.part.id) }] : [];
+}
+
+// Today's steps: the Learn card (when there is one), the warm-up reading, then two picks from the bank, then a guided course's next part when there is a course to offer (an added step, decision 131); on day one, free talk comes first in place of the reading. On a check-in day the check-in takes the place of the reading and both picks, and the Learn card stays (decision 100)
 export function dailyPlan(input: PlanInput): PlanStep[] {
   // Sessions before today, so the plan stays the same all day
   const before = beforeToday(input.sessions, input.day);
   // The day's Learn card, when there is one
   const card = learnStep(input);
   // Day one: free talk, the card, then the two picks
-  if (before.length === 0) return [FIRST_TALK, ...(card ? [card] : []), ...picks(input, before, true)];
+  if (before.length === 0) return [FIRST_TALK, ...(card ? [card] : []), ...picks(input, before, true), ...courseStep(input)];
   // A check-in day: the check-in, then the card (the check-in already reads aloud, speaks on the spot and tells a story, so the reading and the picks would only make the day long)
   if (input.checkIn) return [checkInStep(input.checkIn), ...(card ? [card] : [])];
   // The card, the warm-up, then the two picks
-  return [...(card ? [card] : []), warmUp(before), ...picks(input, before, inFirstDays(before))];
+  return [...(card ? [card] : []), warmUp(before), ...picks(input, before, inFirstDays(before)), ...courseStep(input)];
 }
 
 // More to do once today's practice is done: from each group, the next kind after today's (or its first, if it was not picked), skipping anything already in the plan, then another Learn card; at most four
@@ -420,8 +438,8 @@ export function moreToDo(input: PlanInput, plan: ReadonlyArray<PlanStep>): PlanS
   return [...practice, ...learn].slice(0, 4);
 }
 
-// Which steps were done today: a session today of the same kind and prompt, a card read today (or, on older progress, its recall answered today), a round of scenarios answered today, a warm-up finished today, or today's check-in with every part done or skipped
-export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}, scenarios: Readonly<Record<string, ScenarioProgress>> = {}, warmupDays: ReadonlyArray<string> = [], checkInFinished = false): boolean[] {
+// Which steps were done today: a session today of the same kind and prompt, a card read today (or, on older progress, its recall answered today), a round of scenarios answered today, a warm-up finished today, today's check-in with every part done or skipped, or a course part finished today
+export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}, scenarios: Readonly<Record<string, ScenarioProgress>> = {}, warmupDays: ReadonlyArray<string> = [], checkInFinished = false, courses: CourseProgress = {}): boolean[] {
   // Today's sessions
   const today = sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(day));
   // Each step
@@ -430,6 +448,8 @@ export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyAr
     if (step.kind === "warmup") return warmupDays.includes(dayKey(day));
     // The check-in: every part done or skipped (decision 100)
     if (step.kind === "checkin") return checkInFinished;
+    // A course part: finished today (decision 131)
+    if (step.kind === "course") return !!courses[step.promptId] && dayKey(new Date(courses[step.promptId]!.doneAt)) === dayKey(day);
     // Scenarios: a round's worth answered today
     if (step.kind === "scenarios") return Object.values(scenarios).filter((item) => dayKey(new Date(item.lastAt)) === dayKey(day)).length >= QUICK_COUNT;
     // A card's progress

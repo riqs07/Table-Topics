@@ -133,18 +133,18 @@ describe("the rounds", () => {
     expect(screen.getByRole("button", { name: /Start round 2/ }).textContent).toContain("3:00 this round");
   });
 
-  // The last round asks the question, then opens its results
-  it("asks the question after round 3, then opens the results", async () => {
+  // The last round opens its results straight away
+  it("opens the results straight after round 3", async () => {
     // A repository
     const repository = createRepository(new MemoryStore());
     // Round 3, 1:55
     const { navigate } = await recordRound(repository, { id: "L1", round: 3 }, 115);
-    // The question
-    fireEvent.click(await screen.findByRole("button", { name: "About right" }));
-    // The results
+    // The results, with no question first (decision 129)
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/sessions\?id=/)));
-    // Saved as round 3 with its 2:00 target and the answer
-    expect((await repository.listSessions())[0]).toMatchObject({ loop: { id: "L1", round: 3, targetSec: 120 }, selfRating: { scale: "pace", answer: "right" } });
+    // Saved as round 3 with its 2:00 target and no answer
+    const [saved] = await repository.listSessions();
+    // (and no question on screen)
+    expect([saved?.loop, saved?.selfRating, screen.queryByRole("heading", { name: "How did that feel?" })]).toEqual([{ id: "L1", round: 3, targetSec: 120 }, undefined, null]);
   });
 });
 

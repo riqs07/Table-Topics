@@ -212,6 +212,8 @@ export interface SessionRecord {
   selfRating?: SelfRating;
   // For a round of a 4/3/2 loop: the loop it belongs to, which round, and its target length (decision 118); missing on every other take
   loop?: LoopTake;
+  // For a take inside a guided course: which part, which try, and whether it is the part's prompt coming back days later (decision 131); missing on every other take
+  course?: CourseTake;
 }
 
 // The scales a take can be rated on before its results (decision 116): its pace, or (for a story) how lively it sounded
@@ -252,6 +254,28 @@ export interface SelfRating {
   answer: RatingAnswer;
   // When it was tapped (ISO text)
   ratedAt: string;
+}
+
+// A take inside a guided course (decision 131): the part it belongs to, and which try it was, or the part's prompt coming back days later
+export interface CourseTake {
+  // The part's id (unique across every course)
+  part: string;
+  // Which try, from 1 (a revisit counts as 1)
+  attempt: number;
+  // Whether it is the part's prompt coming back days later
+  revisit?: boolean;
+}
+
+// One part of a guided course, done (decision 131): when, the last try's take (to compare with when its prompt comes back), and that comeback once done
+export interface CoursePartProgress {
+  // When the part was finished (ISO text)
+  doneAt: string;
+  // The last try's take, or null for a part with no practice
+  takeId: string | null;
+  // When its prompt came back and was answered again (ISO text; missing until then)
+  revisitedAt?: string;
+  // That answer's take (missing until then)
+  revisitTakeId?: string;
 }
 
 // One round of a 4/3/2 loop: the same content three times in one sitting, each round shorter (decision 118)
@@ -502,6 +526,8 @@ export interface SettingsRecord {
   headphones?: boolean;
   // How hard the persona makes a conversation, the last one chosen before starting (decision 120; missing means normal)
   conversationDifficulty?: ConversationDifficulty;
+  // Guided courses: each finished part by its id (decision 131; missing until the first part is finished)
+  courses?: Record<string, CoursePartProgress>;
 }
 
 // Where a measure came from (decision 90): the phone itself, a transcription service, the voice worker, or the coach's rubric

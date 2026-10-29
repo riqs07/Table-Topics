@@ -379,3 +379,45 @@ describe("the plan with a focus", () => {
     expect([storyStep(more[0]?.label), more.length <= 4, todaysFocusSuggestion(input)?.action, todaysFocusSuggestion(input)?.href.startsWith("/stories/tell?prompt="), todaysFocusSuggestion({ ...input, practiceFocus: [] }), focusSuggestion(area("talk"), DAY).href]).toEqual([true, true, "Tell another story", true, null, "/rehearse"]);
   });
 });
+
+// Group the checks about a guided course in the plan (decision 131)
+describe("a course in the plan", () => {
+  // The day the checks run on, and a moment that morning
+  const [day, morning] = [dayAfter(0), new Date(2026, 9, 16, 7)];
+
+  // With a matching focus, the course's next part is added after the picks; without a focus, nothing is added
+  it("adds the next part of the course for the focus", () => {
+    // Thinking on your feet, and no focus
+    const [withFocus, without] = [regularPlan(day, { practiceFocus: ["spot"] }), regularPlan(day)];
+    // The last step
+    const last = withFocus.at(-1)!;
+    // Confirm one more step, the course's first part, its address, and none without a focus
+    expect([withFocus.length - regularPlan(day, { practiceFocus: ["spot"], courses: { "sf-beat-1": { doneAt: "2026-09-01T10:00:00Z", takeId: null }, ...Object.fromEntries(["sf-beat-2", "sf-point-1", "sf-point-2", "sf-point-3", "sf-pre-1", "sf-pre-2", "sf-land-1", "sf-land-2", "sf-run-1"].map((id) => [id, { doneAt: "2026-09-01T10:00:00Z", takeId: null }])) } }).length, last.kind, last.lane, last.promptId, last.href, without.some((step) => step.kind === "course")]).toEqual([1, "course", "course", "sf-beat-1", "/courses/part?id=sf-beat-1", false]);
+  });
+
+  // A started course is offered whatever the focus
+  it("keeps offering a course once started", () => {
+    // Stories as the focus, the course started before today
+    const plan = regularPlan(day, { practiceFocus: ["stories"], courses: { "sf-beat-1": { doneAt: "2026-10-10T10:00:00Z", takeId: "a" } } });
+    // Confirm the next part
+    expect(plan.at(-1)?.promptId).toBe("sf-beat-2");
+  });
+
+  // A part finished today keeps the step (the plan stays the same all day) and marks it done
+  it("stays the same all day and is done once the part is finished", () => {
+    // The part finished this morning
+    const courses = { "sf-beat-1": { doneAt: morning.toISOString(), takeId: "a" } };
+    // The plan with and without it
+    const [before, after] = [regularPlan(day, { practiceFocus: ["spot"] }), regularPlan(day, { practiceFocus: ["spot"], courses })];
+    // Confirm the same plan, and the course step done
+    expect([JSON.stringify(before) === JSON.stringify(after), planProgress(after, regular, day, {}, {}, [], false, courses).at(-1)]).toEqual([true, true]);
+  });
+
+  // A check-in day keeps to the check-in
+  it("adds no course on a check-in day", () => {
+    // A check-in day
+    const plan = regularPlan(day, { practiceFocus: ["spot"], checkIn: { id: "ci-2026-10-16", week: 2, baseline: false } });
+    // Confirm no course step
+    expect(plan.some((step) => step.kind === "course")).toBe(false);
+  });
+});

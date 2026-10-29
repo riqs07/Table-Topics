@@ -9,6 +9,8 @@ import { MicrophoneIcon } from "@phosphor-icons/react/dist/ssr";
 import { PRESS, QUIET } from "@/components/script/Buttons";
 // Load the timing light type
 import type { TimeSignal } from "@/core/recordingRules";
+// Load the blob's face and its moods (decision 134)
+import { BlobFace, type BlobMood } from "@/components/script/BlobFace";
 
 // The voice shape's colour at each timing state: warm until the window opens, then the light's own colour
 const BLOB_FILL: Record<TimeSignal, string> = {
@@ -70,6 +72,8 @@ export function VoiceBlob({ levels, signal, clock, onStop, compact, paused = fal
       <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-6"} rounded-full transition-[transform,background-color,opacity] duration-150 ease-out ${paused ? "opacity-60" : "motion-safe:animate-morph"} ${BLOB_FILL[signal]}`} style={{ transform: `scale(${paused ? 0.82 : scale})` }} />
       {/* The clock, and the action */}
       <span className="relative flex flex-col items-center text-on-warm">
+        {/* The face, listening (asleep while paused), on the large shape only (decision 134) */}
+        {!compact && <BlobFace mood={paused ? "sleepy" : "listening"} className="mb-2 w-12" />}
         {/* The clock (the button is named by its action alone) */}
         <span aria-hidden="true" className={`font-display font-semibold tabular-nums tracking-tight ${compact ? "text-xl" : "text-prompt-xl"}`}>{clock}</span>
         {/* The action */}
@@ -92,8 +96,8 @@ export function TakeControls({ paused, onPause, onResume, onDiscard }: { paused:
   );
 }
 
-// Before recording, or to start early: the same shape, still, as a round start button, with what it does and a short detail (decisions 74 and 75)
-export function StartBlob({ label, detail, onStart, compact, ariaLabel }: { label: string; detail: string; onStart: () => void; compact: boolean; ariaLabel?: string }) {
+// Before recording, or to start early: the same shape, still, as a round start button, with what it does and a short detail (decisions 74 and 75); on the large shape a face in place of the microphone, ready, or puzzled when trying again (decision 134)
+export function StartBlob({ label, detail, onStart, compact, ariaLabel, mood = "ready" }: { label: string; detail: string; onStart: () => void; compact: boolean; ariaLabel?: string; mood?: BlobMood }) {
   // A round button with a quiet halo, the warm shape, a microphone and the words (named in full when the words alone would not say what it does)
   return (
     <button type="button" onClick={onStart} aria-label={ariaLabel} data-variant="start" className={`flex items-center justify-center rounded-full ${PRESS} ${shapePlace(compact, "size-56")}`}>
@@ -103,8 +107,8 @@ export function StartBlob({ label, detail, onStart, compact, ariaLabel }: { labe
       <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-4"} rounded-full bg-warm shadow-card motion-safe:animate-morph`} />
       {/* The microphone and the words */}
       <span className="relative flex max-w-[80%] flex-col items-center gap-0.5 text-center text-on-warm">
-        {/* The microphone */}
-        <MicrophoneIcon aria-hidden="true" weight="fill" className={compact ? "size-5 md:size-6" : "size-9"} />
+        {/* The microphone on the small shape, the face on the large one */}
+        {compact ? <MicrophoneIcon aria-hidden="true" weight="fill" className="size-5 md:size-6" /> : <BlobFace mood={mood} className="mb-1.5 w-11" />}
         {/* What it does */}
         <span className={`font-semibold leading-tight ${compact ? "text-tab" : "font-display text-xl"}`}>{label}</span>
         {/* The detail (left out of the small corner shape) */}
@@ -114,8 +118,8 @@ export function StartBlob({ label, detail, onStart, compact, ariaLabel }: { labe
   );
 }
 
-// While waiting (a countdown, a question being said, the microphone starting, saving): the still shape with what is happening, not a button
-export function StatusBlob({ label, detail, compact, live = true }: { label: string; detail: string; compact: boolean; live?: boolean }) {
+// While waiting (a countdown, a question being said, the microphone starting, saving): the still shape with what is happening, not a button; on the large shape a face, thinking unless told otherwise (decision 134)
+export function StatusBlob({ label, detail, compact, live = true, mood = "thinking" }: { label: string; detail: string; compact: boolean; live?: boolean; mood?: BlobMood }) {
   // The shape, quieter, with the words announced politely (unless they change too often to read out, like a countdown, which announces itself separately)
   return (
     <div role={live ? "status" : undefined} className={`flex items-center justify-center rounded-full ${shapePlace(compact, "size-56")}`}>
@@ -125,6 +129,8 @@ export function StatusBlob({ label, detail, compact, live = true }: { label: str
       <span aria-hidden="true" className={`absolute ${compact ? "inset-2" : "inset-4"} rounded-full bg-warm opacity-70 motion-safe:animate-morph`} />
       {/* The words */}
       <span className="relative flex max-w-[80%] flex-col items-center text-center text-on-warm">
+        {/* The face, on the large shape only */}
+        {!compact && <BlobFace mood={mood} className="mb-1.5 w-11" />}
         {/* What is happening */}
         <span className={`font-semibold leading-tight ${compact ? "text-tab" : "font-display text-xl"}`}>{label}</span>
         {/* The detail */}

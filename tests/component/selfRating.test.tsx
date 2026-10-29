@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Checks for rating yourself before the results (decision 116): the question after a take, its answers, skip and a failed save; the comparison line on the results; the calibration line on Your progress
+// Checks for rating yourself (decision 116): no question after a take any more (decision 129), and for takes rated before then, the comparison line on the results and the calibration line on Your progress
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and acting like a user
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -11,7 +11,7 @@ import { ProfileScreen } from "@/components/screens/ProfileScreen";
 import type { RecordingServices } from "@/audio/services";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
-import { createRepository, type Repository } from "@/data/repository";
+import { createRepository } from "@/data/repository";
 // Load the session builder
 import { makeSession } from "../support/fixtures";
 
@@ -44,108 +44,39 @@ function fakeClock() {
   return { now: () => new Date(time), advance: (ms: number) => void (time += ms) };
 }
 
-// Draw free talk, record 40 seconds and stop, ready for the question
-async function recordFreeTalk(repository: Repository) {
-  // The clock
-  const clock = fakeClock();
-  // Where the screen sends the user
-  const navigate = vi.fn();
-  // Draw it
-  render(<RecordingScreen promptId="free" mode="free" retryOf={null} repository={repository} services={services()} clock={clock.now} navigate={navigate} />);
-  // Start
-  fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
-  // Wait for the stop
-  const stop = await screen.findByRole("button", { name: /Stop/ });
-  // Forty seconds
-  clock.advance(40_000);
-  // Stop
-  fireEvent.click(stop);
-  // The question shows
-  await screen.findByRole("heading", { name: "How did that feel?" });
-  // Hand back what the checks need
-  return { navigate };
-}
-
-// The question after a take
-describe("RecordingScreen, the question before the results", () => {
-  // An answer is saved on the take, then the results open
-  it("saves a tapped answer on the take, then opens the results", async () => {
-    // An empty repository
-    const repository = createRepository(new MemoryStore());
-    // Record and stop
-    const { navigate } = await recordFreeTalk(repository);
-    // Not gone on yet
-    expect(navigate).not.toHaveBeenCalled();
-    // Three answers on the pace scale
-    expect(["Rushed", "About right", "Slow"].map((name) => screen.getByRole("button", { name }).tagName)).toEqual(["BUTTON", "BUTTON", "BUTTON"]);
-    // Tap one
-    fireEvent.click(screen.getByRole("button", { name: "Rushed" }));
-    // The results open
-    await waitFor(() => expect(navigate).toHaveBeenCalled());
-    // The saved take
-    const [saved] = await repository.listSessions();
-    // Its answer, and the page it opened
-    expect([saved!.selfRating?.scale, saved!.selfRating?.answer, navigate.mock.calls[0]![0]]).toEqual(["pace", "rushed", `/sessions?id=${saved!.id}`]);
-  });
-
-  // Skip goes straight on, saving nothing
-  it("goes on without an answer when skipped", async () => {
-    // An empty repository
-    const repository = createRepository(new MemoryStore());
-    // Record and stop
-    const { navigate } = await recordFreeTalk(repository);
-    // Skip
-    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
-    // Gone on
-    await waitFor(() => expect(navigate).toHaveBeenCalled());
-    // Nothing saved for the answer
-    expect((await repository.listSessions())[0]!.selfRating).toBeUndefined();
-  });
-
-  // A failed save is said, with the way on
-  it("says when the answer cannot be saved, and still offers the results", async () => {
-    // A repository that cannot save an answer
-    const base = createRepository(new MemoryStore());
-    // (its answer saving fails)
-    const repository: Repository = { ...base, setSelfRating: async () => { throw new Error("The disk is full."); } };
-    // Quiet the warning in the test output
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    // Record and stop
-    const { navigate } = await recordFreeTalk(repository);
-    // Tap an answer
-    fireEvent.click(screen.getByRole("button", { name: "Slow" }));
-    // Said plainly
-    expect((await screen.findByRole("alert")).textContent).toContain("Your answer could not be saved. Your take is saved.");
-    // Not gone on by itself
-    expect(navigate).not.toHaveBeenCalled();
-    // The way on
-    fireEvent.click(screen.getByRole("button", { name: "See your results" }));
-    // Gone on
-    expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/sessions\?id=/));
-    // Put the console back
-    warn.mockRestore();
-  });
-
-  // A story is asked about how lively it sounded
-  it("asks a story flat, OK or lively", async () => {
-    // The clock and the way on
-    const [clock, navigate] = [fakeClock(), vi.fn()];
-    // Draw a story
-    render(<RecordingScreen promptId="sp01" mode="story" retryOf={null} repository={createRepository(new MemoryStore())} services={services()} clock={clock.now} navigate={navigate} story={{ shape: "classic", focus: null, length: "short" }} />);
-    // Plan it, then start telling
-    fireEvent.click(await screen.findByRole("button", { name: /Plan it/ }));
-    // Ready
-    fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
-    // Wait for the stop
-    const stop = await screen.findByRole("button", { name: /Stop/ });
-    // Fifty seconds
-    clock.advance(50_000);
-    // Stop
-    fireEvent.click(stop);
-    // The story's answers
-    await screen.findByRole("heading", { name: "How did that feel?" });
-    // Flat, OK, lively
-    expect(["Flat", "OK", "Lively"].every((name) => screen.queryByRole("button", { name }) !== null)).toBe(true);
+// The results open straight after a take, with no question first (decision 129)
+describe("RecordingScreen, no question before the results", () => {
+  // Free talk and a story, the kinds that used to be asked
+  it("opens the results straight after a take", async () => {
+    // The pages each take opened, and whether a question showed
+    const seen: Array<[boolean, string]> = [];
+    // Each kind in turn
+    for (const mode of ["free", "story"] as const) {
+      // An empty repository, a clock and the way on
+      const [repository, clock, navigate] = [createRepository(new MemoryStore()), fakeClock(), vi.fn()];
+      // Draw it
+      render(<RecordingScreen promptId={mode === "free" ? "free" : "sp01"} mode={mode} retryOf={null} repository={repository} services={services()} clock={clock.now} navigate={navigate} />);
+      // A story is planned first
+      if (mode === "story") fireEvent.click(await screen.findByRole("button", { name: /Plan it/ }));
+      // Start
+      fireEvent.click(await screen.findByRole("button", { name: mode === "story" ? /Ready/ : /Start speaking/ }));
+      // Wait for the stop
+      const stop = await screen.findByRole("button", { name: /Stop/ });
+      // Forty seconds
+      clock.advance(40_000);
+      // Stop
+      fireEvent.click(stop);
+      // The results open
+      await waitFor(() => expect(navigate).toHaveBeenCalled());
+      // The saved take
+      const [saved] = await repository.listSessions();
+      // Note whether the question showed, and the page
+      seen.push([screen.queryByRole("heading", { name: "How did that feel?" }) !== null, navigate.mock.calls[0]![0] === `/sessions?id=${saved!.id}` ? "results" : String(navigate.mock.calls[0]![0])]);
+      // Clear the screen
+      cleanup();
+    }
+    // Confirm no question and straight to the results, both times
+    expect(seen).toEqual([[false, "results"], [false, "results"]]);
   });
 });
 

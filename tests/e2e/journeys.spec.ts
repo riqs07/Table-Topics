@@ -1,5 +1,5 @@
 // Whole journeys with the stand-in microphone: record, save, and read the result (rules T1, T3, T11)
-import { GUIDED_SPOKEN, STORY_SPOKEN, expect, skipRating, test, useGuidedCoach, useStandIns, useStoryCoach } from "./support/fixtures";
+import { GUIDED_SPOKEN, STORY_SPOKEN, expect, test, useGuidedCoach, useStandIns, useStoryCoach } from "./support/fixtures";
 // Load Node's file reader, for a real recording to stand in for a written line's audio
 import { readFileSync } from "node:fs";
 // Load the page type, for the story helper
@@ -37,8 +37,6 @@ test("Rapid Fire: from the welcome through Practice, countdown, recording, saved
   await page.waitForTimeout(11_500);
   // Stop recording
   await stop.click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // The saved session opens (bug B1: never stuck on "Saving…")
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The results show at once, with the one change and the player (decision 67)
@@ -75,8 +73,6 @@ test("Analysis: record a Rapid Fire take, see all its measures, then the profile
   await page.waitForTimeout(11_500);
   // Stop recording
   await stop.click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // The saved session opens
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // Follow the link to every measure of this take
@@ -212,8 +208,6 @@ test("Read aloud: words light up as they are read, then the reading is saved", a
   await page.waitForTimeout(8_000);
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // The results open at once
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The saved reading says how far it got (stopped early, so not a low percentage)
@@ -240,8 +234,6 @@ test("Whole speech: open it from Skills, read part 1, then go on to part 2", asy
   await page.waitForTimeout(11_500);
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // The results open at once
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // Go on to part 2
@@ -268,8 +260,6 @@ test("Today's practice: day one speaks first, then the card, then on to the pick
   await page.waitForTimeout(11_500);
   // Stop
   await page.getByRole("button", { name: /Stop/ }).click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // On to the card
   await page.getByRole("link", { name: /^Next: step 2/ }).click({ timeout: 15_000 });
   // Step 2 of 4: the Learn card
@@ -306,8 +296,8 @@ test("Focus: the welcome's pick steers Today, Practice and Learn", async ({ page
   await page.goto("/practice");
   // The rest of the ways to practise, opened (decision 125)
   await page.getByRole("button", { name: "More ways to practise" }).click();
-  // (its first heading)
-  await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^Tell stories\s*Your focus$/);
+  // (the first group's heading; the courses sit above the groups, decision 131)
+  await expect(page.locator("#more-practice").getByRole("heading", { level: 2 }).first()).toHaveText(/^Tell stories\s*Your focus$/);
   // Learn opens with the focus sets
   await page.goto("/learn");
   // (its group)
@@ -377,8 +367,6 @@ test("works when another app left a database called voicelab", async ({ page }) 
   await page.waitForTimeout(11_500);
   // Stop recording
   await stop.click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // It saves in VoiceLab's own database, untroubled by the other one
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
 });
@@ -835,8 +823,6 @@ async function recordRapidFire(page: import("@playwright/test").Page) {
   await page.waitForTimeout(11_500);
   // Stop recording
   await stop.click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // The saved session opens
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
 }
@@ -944,8 +930,6 @@ async function tellStory(page: Page): Promise<void> {
   await page.waitForTimeout(11_500);
   // Stop
   await stop.click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // The take opens (never stuck on "Saving…")
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
 }

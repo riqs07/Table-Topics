@@ -292,6 +292,8 @@ function isSession(value: unknown): value is SessionRecord {
     (value.selfRating === undefined || isSelfRating(value.selfRating)) &&
     // A 4/3/2 round's loop, round and target (decision 118; usually missing)
     (value.loop === undefined || (isObject(value.loop) && isText(value.loop.id) && isNumber(value.loop.round) && value.loop.round >= 1 && value.loop.round <= 3 && isNumber(value.loop.targetSec) && value.loop.targetSec > 0)) &&
+    // A take inside a guided course: its part, try and whether it is a comeback (decision 131; usually missing)
+    (value.course === undefined || (isObject(value.course) && isText(value.course.part) && isNumber(value.course.attempt) && value.course.attempt >= 1 && (value.course.revisit === undefined || typeof value.course.revisit === "boolean"))) &&
     // Section of a rehearsal (missing on most sessions)
     (value.sectionIndex === undefined || value.sectionIndex === null || isNumber(value.sectionIndex)) &&
     // Feedback and its status

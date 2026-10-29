@@ -49,6 +49,8 @@ import type { MissionRecord, SessionRecord } from "@/data/records";
 import { MiniFingerprint } from "@/components/script/MiniFingerprint";
 // Load the shared heading look
 import { CARD, SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
+// Load the blob character, for the empty page (decision 134)
+import { BlobCharacter } from "@/components/script/BlobFace";
 
 // What the list can show (decision 79)
 type HistoryFilter = "all" | "speaking" | "reading";
@@ -254,6 +256,8 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
       {/* Empty state */}
       {sessions && sessions.length === 0 && (
         <div className="mt-6">
+          {/* The blob, asleep until there is something to show (decision 134) */}
+          <BlobCharacter mood="sleepy" className="mb-6 size-32" />
           {/* What will appear */}
           <p className="text-lede text-ink-muted">Nothing here yet. Your first recording will start the page.</p>
           {/* The one thing to do */}

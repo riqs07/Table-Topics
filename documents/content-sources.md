@@ -48,3 +48,14 @@ How each line was read is in the comment above it in `src/content/voiceClips.ts`
 The shadowing passages from Kennedy, Lincoln and Franklin Roosevelt are read by Graham, not by the original speakers, and the shadowing page says so. ElevenLabs does not allow voices that imitate public figures. Archive recordings of the originals could not be reached from the build environment.
 
 ElevenLabs' terms depend on the plan: paid plans include a commercial licence; the free plan asks for credit to ElevenLabs and allows non-commercial use only. Check the plan in use before sharing the app.
+
+## Drawings
+
+The hand-drawn people (decision 134) are Open Peeps characters by Pablo Stanley (openpeeps.com), released under CC0, so they may be used, changed and shipped with no credit required. Each was put together on 2026-10-29 with the react-peeps package (MIT), drawn in ink on white, saved as an SVG file with its frame fitted to the drawing, and is not a dependency of the app.
+
+| File | Where | Parts |
+|---|---|---|
+| `public/illustrations/peep-welcome.svg` | The welcome on Today | Bust "Explaining", face "SmileBig", hair "Afro" |
+| `public/illustrations/peep-course-done.svg` | A finished course | Bust "Whatever", face "SmileBig", hair "BunCurly" |
+
+To make another: render a `Peep` from react-peeps with `strokeColor` the theme's ink and `backgroundColor` white, add the SVG namespace and a width and height to its root, fit the view box to the drawing, and add it to `DRAWINGS` in `src/components/script/Drawing.tsx` (a test checks the file and its size).

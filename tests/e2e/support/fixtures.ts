@@ -169,6 +169,19 @@ export const ROUTES: ReadonlyArray<string> = [
   "/check-in/compare?a=ci-1999-01-01&b=missing",
   // A check-in part, opened directly
   "/session?mode=outline&prompt=ci-pitch&checkin=ci-2026-10-13&part=pitch",
+  // Guided courses: the list, a course, a part at each step, a course take, a comeback that does not exist, and a part and course that do not exist (decision 131)
+  "/courses",
+  "/courses/course?id=stop-freezing",
+  "/courses/part?id=sf-point-1",
+  "/courses/part?id=sf-point-1&step=see",
+  "/courses/part?id=sf-point-1&step=try",
+  "/courses/part?id=sf-point-1&step=wrap",
+  "/session?mode=talk&prompt=t004&course=sf-point-1&try=1",
+  "/courses/revisit?id=sf-beat-1&take=missing",
+  "/courses/part?id=missing",
+  "/courses/course?id=missing",
+  // Every mode on one page, for development (decision 132)
+  "/dev/modes",
 ];
 
 // Pages that carry the main navigation, with the section each one marks as current
@@ -203,6 +216,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/stories", current: "Practice" },
   // The 4/3/2 drill belongs to Practice (decision 126)
   { path: "/practice/four-three-two", current: "Practice" },
+  // The list of courses belongs to Practice (decision 131)
+  { path: "/courses", current: "Practice" },
   // Your check-ins and their comparison belong to Today (decision 100)
   { path: "/check-in", current: "Today" },
   // (the comparison)
@@ -340,10 +355,3 @@ export const test = base.extend<{ consoleErrors: string[] }>({
 // Re-export expect so checks import everything from here
 export { expect };
 
-// Skip the question asked before a take's results (decision 116), for checks about something else
-export async function skipRating(page: Page): Promise<void> {
-  // The question shows once the take is saved
-  await expect(page.getByRole("heading", { name: "How did that feel?" })).toBeVisible({ timeout: 15_000 });
-  // One tap on Skip
-  await page.getByRole("button", { name: "Skip" }).click();
-}

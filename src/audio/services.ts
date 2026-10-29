@@ -2,6 +2,7 @@
 
 // Load the timing tone player type
 import type { CuePlayer } from "@/audio/timingTones";
+import type { Metronome } from "@/audio/metronome";
 
 // Why recording had to stop
 export type RecordingProblem =
@@ -71,4 +72,6 @@ export interface RecordingServices {
   createCapture(stream: MediaStream): AudioCapture;
   // Make a player for timing tones (optional: without it, the light is only seen; decision 77)
   createCuePlayer?(): CuePlayer;
+  // Make the reading metronome (optional: without it, reading aloud has no metronome; decision 128)
+  createMetronome?(): Metronome;
 }

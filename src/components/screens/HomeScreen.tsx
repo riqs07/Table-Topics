@@ -1,10 +1,12 @@
 "use client";
-// The Home screen: today's practice, with a short line on the streak and the week's focus, the Connect lesson the user is on and Quick play (everything else is in Practice; decision 128)
+// The Home screen: today's practice, with a short line on the streak and the week's focus, the Connect lesson the user is on and Quick play (everything else is in Practice; decision 135)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
+// Load the icon for a course prompt coming back (decision 131)
+import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { PRESS, PRIMARY, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
@@ -41,6 +43,8 @@ import { dayKey } from "@/core/dates";
 import { firstFinishToday } from "@/data/dayCelebrated";
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
+// Load the hand-drawn welcome (decision 134)
+import { Drawing } from "@/components/script/Drawing";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 // Load what the user wants to get better at most: the reader, the words for it, and saving it (decision 97)
@@ -118,9 +122,9 @@ interface HomeData {
   practiceFocus: FocusAreaId[] | undefined;
   // The reminder to hear the first check-in beside the latest, when one is due (decision 100)
   reminder: { days: number } | null;
-  // The Connect lesson the user is on, or none once every lesson is done (decision 128)
+  // The Connect lesson the user is on, or none once every lesson is done (decision 135)
   lesson: CurrentLesson | null;
-  // Quick play's pick for this visit: a kind of practice at random (decision 128)
+  // Quick play's pick for this visit: a kind of practice at random (decision 135)
   quick: QuickPlayPick;
 }
 
@@ -427,6 +431,8 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
           {/* A first visit: one question, then straight to the right place */}
           {data?.showWelcome && (
             <section aria-label="Welcome" className="mt-8 md:mt-0">
+              {/* Someone mid-explanation, to say hello (decision 134) */}
+              <Drawing name="welcome" className="mb-4 block h-40 motion-safe:animate-rise md:h-52" />
               {/* The greeting */}
               <h1 className="font-display text-prompt font-semibold tracking-tight motion-safe:animate-rise md:text-prompt-xl">Welcome to VoiceLab</h1>
               {/* What it is, and what VoiceLab keeps (the speech recognition is explained before the microphone is first used; decision 97) */}
@@ -475,7 +481,7 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                   // How far the check-in has got, in parts (decision 100)
                   const parts = step.kind === "checkin" && plan.checkIn ? plan.checkIn.parts.filter((part) => part.status !== "open").length : 0;
                   // That line (or, for a step put off today, saying so; for the check-in, its parts)
-                  const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
+                  const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : step.kind === "course" && plan.done[index] ? "Part done" : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
                   // One step
                   return (
                     <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
@@ -504,7 +510,24 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
             </section>
           )}
 
-          {/* Beside today's steps: the lesson the user is on, and Quick play, a kind of practice at random (decision 128) */}
+          {/* A course prompt coming back: the same question again, then both answers side by side (decision 131) */}
+          {plan?.revisit && (
+            <Link href={plan.revisit.href} data-revisit className={`mt-6 flex items-center gap-3 rounded-2xl border border-rule px-4 py-3 ${PRESS} hover:bg-paper`}>
+              {/* The mark */}
+              <span aria-hidden="true" className="flex size-9 flex-none items-center justify-center rounded-xl bg-warm-tint text-warm-ink"><ArrowCounterClockwiseIcon className="size-5" /></span>
+              {/* What it is */}
+              <span className="min-w-0 flex-1">
+                {/* Heading and where it comes from */}
+                <span className="block text-footnote text-ink-muted">Back again · from {plan.revisit.from}</span>
+                {/* The question */}
+                <span className="block leading-snug">{plan.revisit.question}</span>
+                {/* What happens */}
+                <span className="block text-footnote text-ink-muted">Answer it again, then hear both side by side.</span>
+              </span>
+            </Link>
+          )}
+
+          {/* Beside today's steps: the lesson the user is on, and Quick play, a kind of practice at random (decision 135) */}
           {plan && data && (
             <section aria-labelledby="also-today" className="mt-8">
               {/* Run-in heading */}

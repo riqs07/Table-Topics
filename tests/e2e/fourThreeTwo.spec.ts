@@ -63,8 +63,6 @@ test("4/3/2: tell today's story three times, shorter each time, then compare the
   await expect(page).toHaveURL(/round=3/, { timeout: 15_000 });
   // Told for 1:25
   await tellRound(page, 3, 85);
-  // The question, once, after the last round
-  await page.getByRole("button", { name: "Lively" }).click();
   // The results
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The three rounds compared: the line
