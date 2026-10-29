@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load what is being checked
-import { ROWS_SHOWN, VOICE_ROWS, nextClearSound, splitRows, voiceRowsByNeed } from "@/core/practiceRows";
+import { FEATURED_BY_GROUP, ROWS_SHOWN, VOICE_ROWS, featureFirst, nextClearSound, splitRows, voiceRowsByNeed } from "@/core/practiceRows";
 // Load the content
 import { PAUSE_DRILLS, TRICKY_WORDS } from "@/content/prompts";
 import { VOICE_DRILLS } from "@/content/voice";
@@ -34,5 +34,33 @@ describe("practice rows", () => {
     const everything = new Map([...allDrills, ...TRICKY_WORDS.map((list) => [list.id, 1] as const), [drills[1]!.id, 2] as const]);
     // Confirm the first drill, then the first word list, then the first done least
     expect([nextClearSound(new Map()), nextClearSound(allDrills), nextClearSound(everything)]).toEqual([{ id: drills[0]!.id, href: `/voice/drill?id=${drills[0]!.id}` }, { id: TRICKY_WORDS[0]!.id, href: `/session?mode=read&prompt=${TRICKY_WORDS[0]!.id}` }, { id: drills[0]!.id, href: `/voice/drill?id=${drills[0]!.id}` }]);
+  });
+});
+
+// Group the checks about the big card on Practice (decision 135)
+describe("featureFirst", () => {
+  // The main ways, as Practice lists them
+  const MAIN = ["Rapid Fire", "Prepared speech", "Tell a story", "Talk with someone", "Read aloud"].map((name) => ({ name }));
+  // Just the names of a split
+  const names = (split: ReturnType<typeof featureFirst<{ name: string }>>) => split && [split.featured.name, split.rest.map((row) => row.name), split.forFocus];
+
+  // With no focus, the first way is big, not marked
+  it("puts the first way first when there is no focus", () => {
+    // Confirm
+    expect(names(featureFirst(MAIN, []))).toEqual(["Rapid Fire", ["Prepared speech", "Tell a story", "Talk with someone", "Read aloud"], false]);
+  });
+
+  // The first focus group's way is big and marked, the rest keep their order
+  it("puts the focus's way first, the rest in their usual order", () => {
+    // Confirm stories, and conversation before voice
+    expect([names(featureFirst(MAIN, ["stories"])), names(featureFirst(MAIN, ["conversation", "voice"]))]).toEqual([["Tell a story", ["Rapid Fire", "Prepared speech", "Talk with someone", "Read aloud"], true], ["Talk with someone", ["Rapid Fire", "Prepared speech", "Tell a story", "Read aloud"], true]]);
+  });
+
+  // A focus whose way is not on the list falls through to the next, then to the first; an empty list gives nothing
+  it("skips a focus way that is missing, and handles an empty list", () => {
+    // A list without Read aloud
+    const short = MAIN.filter((row) => row.name !== FEATURED_BY_GROUP.voice);
+    // Confirm the fall-throughs and the empty case
+    expect([names(featureFirst(short, ["voice", "stories"])), names(featureFirst(short, ["voice"])), featureFirst([], ["stories"])]).toEqual([["Tell a story", ["Rapid Fire", "Prepared speech", "Talk with someone"], true], ["Rapid Fire", ["Prepared speech", "Tell a story", "Talk with someone"], false], null]);
   });
 });

@@ -310,6 +310,121 @@
   }
 }
 
+/* The blob scenes (decision 135): parts turn and grow around points given in the drawing's own units */
+.vl-scene * {
+  /* Pivot points measured in the drawing's square */
+  transform-box: view-box;
+}
+/* Numbers drawn in a scene use the display face, bold (set here so the drawing never carries a text class of its own) */
+.vl-scene text {
+  /* The display face */
+  font-family: var(--vl-font-display);
+  /* Bold */
+  font-weight: 700;
+}
+/* The blob's eyes squash from their own middle */
+.vl-scene .s-blink {
+  /* Measured from the eye itself */
+  transform-box: fill-box;
+  /* From its middle */
+  transform-origin: center;
+}
+/* Every movement only when motion is welcome; with reduced motion each scene is a still drawing */
+@media (prefers-reduced-motion: no-preference) {
+  /* Eyes blink now and then */
+  .vl-scene .s-blink { animation: vl-s-blink 4.6s infinite; }
+  /* A gentle bob */
+  .vl-scene .s-bob { animation: vl-s-bob 2.6s ease-in-out infinite; }
+  /* Rapid Fire: the jump, the bolt and its lines */
+  .vl-scene .s-jolt { animation: vl-s-jolt 2.4s ease-out infinite; }
+  /* (the bolt) */
+  .vl-scene .s-zap { animation: vl-s-zap 2.4s ease-out infinite; }
+  /* (the lines) */
+  .vl-scene .s-flick { animation: vl-s-flick 2.4s ease-out infinite; }
+  /* Notes writing themselves in */
+  .vl-scene .s-write { stroke-dasharray: 24; animation: vl-s-write 3s ease-in-out infinite both; }
+  /* A pencil scribbling */
+  .vl-scene .s-scribble { animation: vl-s-scribble 0.3s ease-in-out infinite alternate; }
+  /* Eyes reading along */
+  .vl-scene .s-read { animation: vl-s-read 1.6s ease-in-out infinite alternate; }
+  /* A page turning */
+  .vl-scene .s-page { animation: vl-s-page 3.2s ease-in-out infinite; }
+  /* A hop */
+  .vl-scene .s-hop { animation: vl-s-hop 1.8s ease-in-out infinite both; }
+  /* A sway, side to side */
+  .vl-scene .s-sway { animation: vl-s-sway 1.4s ease-in-out infinite alternate; }
+  /* A note floating up */
+  .vl-scene .s-note { animation: vl-s-note 2.4s ease-out infinite both; }
+  /* A flame flickering */
+  .vl-scene .s-flame { animation: vl-s-flame 0.9s ease-in-out infinite; }
+  /* A spark rising */
+  .vl-scene .s-spark { animation: vl-s-spark 1.8s ease-out infinite both; }
+  /* A loop turning */
+  .vl-scene .s-orbit { animation: vl-s-orbit 6s linear infinite; }
+  /* Signs swinging */
+  .vl-scene .s-swing { animation: vl-s-swing 2.4s ease-in-out infinite alternate; }
+  /* A speech bubble popping up, then away */
+  .vl-scene .s-talk { animation: vl-s-talk 4s ease-out infinite both; }
+  /* The sun rising, then setting */
+  .vl-scene .s-rise { animation: vl-s-rise 5s ease-in-out infinite both; }
+  /* Puffing up */
+  .vl-scene .s-puff { animation: vl-s-puff 1.8s ease-in-out infinite; }
+  /* A gust of air */
+  .vl-scene .s-gust { stroke-dasharray: 40; animation: vl-s-gust 1.8s linear infinite both; }
+  /* A point ticking on */
+  .vl-scene .s-tick { transform-box: fill-box; transform-origin: center; animation: vl-s-tick 3s ease-out infinite both; }
+  /* Sound waves */
+  .vl-scene .s-wave { animation: vl-s-wave 1.6s ease-out infinite both; }
+  /* A scene asked to calm down plays its loop three times, then rests (the blinks carry on) */
+  .vl-scene[data-motion="few"] .s-move { animation-iteration-count: 3; }
+  /* A still scene keeps only its blinks */
+  .vl-scene[data-motion="still"] .s-move { animation: none; }
+}
+/* Blink: open, then shut for a moment */
+@keyframes vl-s-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+/* Bob: up a little and back */
+@keyframes vl-s-bob { 0%, 100% { transform: none; } 50% { transform: translateY(-3px); } }
+/* Jolt: still, then a quick jump as the bolt strikes */
+@keyframes vl-s-jolt { 0%, 60%, 82%, 100% { transform: none; } 68% { transform: translateY(-7px); } }
+/* Zap: faint, then a bright flash that settles */
+@keyframes vl-s-zap { 0%, 58% { opacity: 0.35; transform: scale(0.88); } 68% { opacity: 1; transform: scale(1.18); } 80%, 94% { opacity: 1; transform: none; } 100% { opacity: 0.35; transform: scale(0.88); } }
+/* Flick: the lines show with the flash */
+@keyframes vl-s-flick { 0%, 62% { opacity: 0; } 70%, 84% { opacity: 1; } 100% { opacity: 0; } }
+/* Write: a line drawing itself in, holding, then clearing */
+@keyframes vl-s-write { 0% { stroke-dashoffset: 24; } 30%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 24; } }
+/* Scribble: a small rock back and forth */
+@keyframes vl-s-scribble { from { transform: rotate(-8deg); } to { transform: rotate(6deg); } }
+/* Read: along the line and back */
+@keyframes vl-s-read { from { transform: translateX(-10px); } to { transform: translateX(10px); } }
+/* Page: flat, then over to the other side */
+@keyframes vl-s-page { 0%, 50% { transform: scaleX(1); } 80%, 100% { transform: scaleX(-1); } }
+/* Hop: a quick jump, then rest */
+@keyframes vl-s-hop { 0%, 40%, 100% { transform: none; } 20% { transform: translateY(-9px); } }
+/* Sway: lean one way, then the other */
+@keyframes vl-s-sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+/* Note: appear low, float up, fade */
+@keyframes vl-s-note { 0% { opacity: 0; transform: translateY(8px); } 25%, 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-4px, -14px); } }
+/* Flame: stretch and lean, then shrink */
+@keyframes vl-s-flame { 0%, 100% { transform: none; } 33% { transform: scale(1.05, 1.12) skewX(-4deg); } 66% { transform: scale(0.97, 0.94) skewX(3deg); } }
+/* Spark: appear, rise, fade */
+@keyframes vl-s-spark { 0% { opacity: 0; transform: none; } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(3px, -20px); } }
+/* Orbit: once round */
+@keyframes vl-s-orbit { to { transform: rotate(360deg); } }
+/* Swing: rock gently */
+@keyframes vl-s-swing { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+/* Talk: pop up, hold, then shrink away */
+@keyframes vl-s-talk { 0% { transform: scale(0); } 8% { transform: scale(1.08); } 12%, 44% { transform: none; } 52%, 100% { transform: scale(0); } }
+/* Rise: come up, stay, go down */
+@keyframes vl-s-rise { 0% { opacity: 0; transform: translateY(16px); } 30%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(16px); } }
+/* Puff: swell, then let go */
+@keyframes vl-s-puff { 0%, 100% { transform: none; } 45% { transform: scale(1.08); } }
+/* Gust: draw in from one end, out at the other */
+@keyframes vl-s-gust { 0% { stroke-dashoffset: 40; opacity: 0; } 20% { opacity: 1; } 100% { stroke-dashoffset: -40; opacity: 0; } }
+/* Tick: pop on, stay, go */
+@keyframes vl-s-tick { 0% { transform: scale(0); } 10% { transform: scale(1.4); } 16%, 85% { transform: none; } 100% { transform: scale(0); } }
+/* Wave: show, move out, fade */
+@keyframes vl-s-wave { 0% { opacity: 0; transform: none; } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(6px); } }
+
 /* Named type sizes for the script-page direction (used as text-footnote, text-prompt, ...) */
 @theme {
   /* Footnotes and asides */
