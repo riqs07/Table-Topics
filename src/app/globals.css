@@ -463,7 +463,23 @@
   animation-duration: 450ms;
   /* Fast, then settling */
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Above the fading pages: otherwise the new page's panel covers the scene as it fades in, and the scene seems to fade, vanish and pop back */
+  z-index: 1;
 }
+/* Round a glide, the old page fades out quickly (decision 141) */
+::view-transition-old(.vl-page-out) {
+  /* Out in 150 ms */
+  animation: vl-page-fade 150ms ease-in both reverse;
+}
+/* The new page fades in a beat later, rising a little, so the scene travels over a quiet page; it starts before the old one has quite gone, so the screen is never blank */
+::view-transition-new(.vl-page-in) {
+  /* In over 280 ms, after 100 ms */
+  animation: vl-page-rise 280ms 100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+/* Fade: from clear to seen */
+@keyframes vl-page-fade { from { opacity: 0; } to { opacity: 1; } }
+/* Rise: from a little lower and clear */
+@keyframes vl-page-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 /* With reduced motion, pages change at once */
 @media (prefers-reduced-motion: reduce) {
   /* No glide and no fade */

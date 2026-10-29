@@ -2,6 +2,8 @@
 // Read aloud (once "Build a skill"): every text to read aloud, the next part to read first, then one folded row per group (decision 79); the lessons moved to Learn's Speaking skills set (decision 107), so this page keeps the readings only, at its old /skills address
 
 // Load React's state and effect tools
+// Load the page fade round a glide (decision 141)
+import { PageFade } from "@/components/scenes/SharedScene";
 import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
@@ -155,38 +157,40 @@ export function SkillsScreen(props: ScreenProps) {
   ];
   // Draw the page
   return (
-    <main id="main" className={PAGE}>
-      {/* Heading and navigation */}
-      <Masthead title="Practice" section="skills" />
-      {/* The page's name */}
-      <PageTitle title="Read aloud">Famous speeches and plain passages, at your own pace.</PageTitle>
-      {/* The scene, carried over from the Practice card (decision 141) */}
-      <ScenePanel scene="read-aloud" line="A part at a time, about a minute each." className="mt-6" />
+    <PageFade>
+      <main id="main" className={PAGE}>
+        {/* Heading and navigation */}
+        <Masthead title="Practice" section="skills" />
+        {/* The page's name */}
+        <PageTitle title="Read aloud">Famous speeches and plain passages, at your own pace.</PageTitle>
+        {/* The scene, carried over from the Practice card (decision 141) */}
+        <ScenePanel scene="read-aloud" line="A part at a time, about a minute each." className="mt-6" />
 
-      {/* Up next: the next part to read (decision 79) */}
-      <section aria-labelledby="up-next" className="mt-6">
-        {/* Heading */}
-        <h2 id="up-next" className={SECTION_HEADING}>Up next</h2>
-        {/* The next part */}
-        <ul className={`mt-2 ${CARD_LIST}`}>
-          {/* The next part to read */}
-          {nextReading && <li><RowLink href={`/session?mode=read&prompt=${partId(nextReading.speech, nextReading.part)}`} meta="about 1 min"><span className="block text-footnote text-ink-muted">Read aloud · part {nextReading.part} of {nextReading.speech.parts.length}</span><span className="block font-semibold">{nextReading.speech.title}</span></RowLink></li>}
-        </ul>
-      </section>
+        {/* Up next: the next part to read (decision 79) */}
+        <section aria-labelledby="up-next" className="mt-6">
+          {/* Heading */}
+          <h2 id="up-next" className={SECTION_HEADING}>Up next</h2>
+          {/* The next part */}
+          <ul className={`mt-2 ${CARD_LIST}`}>
+            {/* The next part to read */}
+            {nextReading && <li><RowLink href={`/session?mode=read&prompt=${partId(nextReading.speech, nextReading.part)}`} meta="about 1 min"><span className="block text-footnote text-ink-muted">Read aloud · part {nextReading.part} of {nextReading.speech.parts.length}</span><span className="block font-semibold">{nextReading.speech.title}</span></RowLink></li>}
+          </ul>
+        </section>
 
-      {/* Every text, one row per group that opens its own list */}
-      <section aria-labelledby="everything" className="mt-8">
-        {/* Heading */}
-        <h2 id="everything" className={SECTION_HEADING}>Everything</h2>
-        {/* The groups */}
-        <div className="mt-2 flex flex-col gap-2">
-          {/* Each group */}
-          {groups.map((group) => (
-            // A folded group: its row, then its list once opened
-            <FoldCard key={group.id} id={group.id} name={group.name} detail={group.detail} count={group.count}>{group.list}</FoldCard>
-          ))}
-        </div>
-      </section>
-    </main>
+        {/* Every text, one row per group that opens its own list */}
+        <section aria-labelledby="everything" className="mt-8">
+          {/* Heading */}
+          <h2 id="everything" className={SECTION_HEADING}>Everything</h2>
+          {/* The groups */}
+          <div className="mt-2 flex flex-col gap-2">
+            {/* Each group */}
+            {groups.map((group) => (
+              // A folded group: its row, then its list once opened
+              <FoldCard key={group.id} id={group.id} name={group.name} detail={group.detail} count={group.count}>{group.list}</FoldCard>
+            ))}
+          </div>
+        </section>
+      </main>
+    </PageFade>
   );
 }

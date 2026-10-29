@@ -2,6 +2,8 @@
 // The recording screen: shows the prompt, records speech with a live transcript and level meter, and saves the session
 
 // Load React's state, effect, reference, and callback tools
+// Load the page fade round a glide (decision 141)
+import { PageFade } from "@/components/scenes/SharedScene";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 // Load Next.js's link component
 import Link from "next/link";
@@ -1424,380 +1426,382 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Draw the page
   return (
     // One column on a phone, margin plus main column on a computer; dark green while the clock runs (the stage, decision 69)
-    <main id="main" data-area={recording || thinking ? "stage" : undefined} className={`mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 ${script ? "pb-40 md:pb-10" : "pb-10"}`}>
-      {/* Navigation (hidden while recording), title and keyboard hint */}
-      <Masthead title={title} nav={false} close={busy ? null : home}>
-        {/* The keyboard hint, only on devices with a mouse or trackpad (so never on a phone or tablet) */}
-        <span data-keyboard-hint className="hidden keyboard:inline">{hint}</span>
-        {/* Before reading on a phone: the length, small, in place of the big clock */}
-        {(script || smallTalk) && !busy && <span className="keyboard:hidden md:hidden">{lengthText}</span>}
-      </Masthead>
-      {/* Inside the weekly check-in, which part this is (decision 100) */}
-      {checkIn && <p className="mt-3 text-footnote font-medium text-accent">Weekly check-in · part {CHECK_IN_PARTS.indexOf(checkIn.part) + 1} of {CHECK_IN_PARTS.length}</p>}
-      {/* A 4/3/2 round: which, and its time (decision 118) */}
-      {/* Inside a guided course: the part, the try (or the comeback), and the one goal (decision 131) */}
-      {coursePlace?.part.practice && course && (
-        <div data-course-take className="mt-3 max-w-[52ch] text-footnote">
-          {/* Where this take sits */}
-          <p className="font-medium text-accent">{coursePlace.course.title} · lesson {coursePlace.lessonNumber}, part {coursePlace.partNumber} · {course.revisit ? "back again" : `try ${course.attempt} of ${coursePlace.part.practice.tries}`}</p>
-          {/* The goal, before speaking */}
-          {!busy && <p className="mt-1"><span className="font-semibold">Goal:</span> {coursePlace.part.practice.goal}</p>}
-        </div>
-      )}
-      {loop && loopTarget !== null && <p data-loop-round className="mt-3 text-footnote font-medium text-accent">Told three times · round {loop.round} of {LOOP_ROUNDS} · {formatClock(loopTarget)}{loop.round > 1 && !busy ? ". Same content, less time." : ""}</p>}
-      {/* Inside today's practice, which step this is */}
-      {planStep && (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 text-footnote">
-          {/* The step */}
-          <p className="font-medium text-accent">Today’s practice · step {planStep}{plan ? ` of ${plan.steps.length}` : ""}</p>
-          {/* Before speaking: a way to put the step off without it counting as done (decision 77) */}
-          {skippable && !busy && (
-            <span className="flex flex-wrap gap-x-4">
-              {/* A minute of warm-up first, on the reading step (decision 80) */}
-              {warmUpFirst && <Link href={warmUpFirst} className={`${TEXT_LINK} text-accent`}>Warm up first</Link>}
-              {/* Put it off */}
-              <button type="button" onClick={() => void skipForToday()} aria-label="Can’t speak now? Skip this step for today" className={`${TEXT_LINK} text-ink-muted`}>Can’t speak now?</button>
-            </span>
-          )}
-        </div>
-      )}
+    <PageFade>
+      <main id="main" data-area={recording || thinking ? "stage" : undefined} className={`mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 ${script ? "pb-40 md:pb-10" : "pb-10"}`}>
+        {/* Navigation (hidden while recording), title and keyboard hint */}
+        <Masthead title={title} nav={false} close={busy ? null : home}>
+          {/* The keyboard hint, only on devices with a mouse or trackpad (so never on a phone or tablet) */}
+          <span data-keyboard-hint className="hidden keyboard:inline">{hint}</span>
+          {/* Before reading on a phone: the length, small, in place of the big clock */}
+          {(script || smallTalk) && !busy && <span className="keyboard:hidden md:hidden">{lengthText}</span>}
+        </Masthead>
+        {/* Inside the weekly check-in, which part this is (decision 100) */}
+        {checkIn && <p className="mt-3 text-footnote font-medium text-accent">Weekly check-in · part {CHECK_IN_PARTS.indexOf(checkIn.part) + 1} of {CHECK_IN_PARTS.length}</p>}
+        {/* A 4/3/2 round: which, and its time (decision 118) */}
+        {/* Inside a guided course: the part, the try (or the comeback), and the one goal (decision 131) */}
+        {coursePlace?.part.practice && course && (
+          <div data-course-take className="mt-3 max-w-[52ch] text-footnote">
+            {/* Where this take sits */}
+            <p className="font-medium text-accent">{coursePlace.course.title} · lesson {coursePlace.lessonNumber}, part {coursePlace.partNumber} · {course.revisit ? "back again" : `try ${course.attempt} of ${coursePlace.part.practice.tries}`}</p>
+            {/* The goal, before speaking */}
+            {!busy && <p className="mt-1"><span className="font-semibold">Goal:</span> {coursePlace.part.practice.goal}</p>}
+          </div>
+        )}
+        {loop && loopTarget !== null && <p data-loop-round className="mt-3 text-footnote font-medium text-accent">Told three times · round {loop.round} of {LOOP_ROUNDS} · {formatClock(loopTarget)}{loop.round > 1 && !busy ? ". Same content, less time." : ""}</p>}
+        {/* Inside today's practice, which step this is */}
+        {planStep && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 text-footnote">
+            {/* The step */}
+            <p className="font-medium text-accent">Today’s practice · step {planStep}{plan ? ` of ${plan.steps.length}` : ""}</p>
+            {/* Before speaking: a way to put the step off without it counting as done (decision 77) */}
+            {skippable && !busy && (
+              <span className="flex flex-wrap gap-x-4">
+                {/* A minute of warm-up first, on the reading step (decision 80) */}
+                {warmUpFirst && <Link href={warmUpFirst} className={`${TEXT_LINK} text-accent`}>Warm up first</Link>}
+                {/* Put it off */}
+                <button type="button" onClick={() => void skipForToday()} aria-label="Can’t speak now? Skip this step for today" className={`${TEXT_LINK} text-ink-muted`}>Can’t speak now?</button>
+              </span>
+            )}
+          </div>
+        )}
 
-      {/* Margin and main column on a computer */}
-      <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
-        {/* Margin: time, length, prompt reminder, discard */}
-        <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${script && !busy ? "flex max-md:mt-0" : smallTalk && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
-          {/* The clock, large, only while thinking about a prepared speech (a Table Topic counts down in the shape; while recording the clock is in the shape; decision 77) */}
-          {thinking && mode !== "talk" && <p className="font-display text-prompt-xl font-semibold text-ink tabular-nums">{formatClock(Math.ceil(thinkLeft))}</p>}
-          {/* The length to aim for, or what the countdown is for (the countdown's own words are in the shape) */}
-          {!(thinking && mode === "talk") && <p className={`mt-1 ${recording || ((script || smallTalk) && !busy) ? "max-md:hidden" : ""}`}>{thinking ? "To think" : mode === "free" ? "No time limit" : `Aim for ${lengthText}`}</p>}
-          {/* Beside text to read, the voice shape has its own place, never over the text: a bar at the bottom centre of a phone (the page leaves room for it below the text), and under the length in this margin on a computer, staying in view as the text scrolls (decision 89) */}
-          {script && (
-            <div data-shape-place className="max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:flex max-md:justify-center max-md:border-t max-md:border-rule max-md:bg-paper-raised max-md:pt-3 max-md:pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:sticky md:top-10 md:mt-6">
-              {/* The shape for this stage */}
-              {shapeControl}
-            </div>
-          )}
-          {/* A lesson keeps its tip in view while speaking */}
-          {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
-          {/* A Record Response keeps its hints in view while speaking */}
-          {recording && angles.length > 0 && <Hints angles={angles} compact />}
-          {/* Push the way out down */}
-          <div className="hidden flex-1 md:block" />
-          {/* Leave while thinking (while recording, Pause and Discard sit by the shape) */}
-          {thinking && (
-            <button type="button" onClick={() => void discard()} className={`${QUIET} mt-4 self-start md:mb-10`}>
-              Leave without speaking
-            </button>
-          )}
-        </aside>
+        {/* Margin and main column on a computer */}
+        <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
+          {/* Margin: time, length, prompt reminder, discard */}
+          <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${script && !busy ? "flex max-md:mt-0" : smallTalk && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
+            {/* The clock, large, only while thinking about a prepared speech (a Table Topic counts down in the shape; while recording the clock is in the shape; decision 77) */}
+            {thinking && mode !== "talk" && <p className="font-display text-prompt-xl font-semibold text-ink tabular-nums">{formatClock(Math.ceil(thinkLeft))}</p>}
+            {/* The length to aim for, or what the countdown is for (the countdown's own words are in the shape) */}
+            {!(thinking && mode === "talk") && <p className={`mt-1 ${recording || ((script || smallTalk) && !busy) ? "max-md:hidden" : ""}`}>{thinking ? "To think" : mode === "free" ? "No time limit" : `Aim for ${lengthText}`}</p>}
+            {/* Beside text to read, the voice shape has its own place, never over the text: a bar at the bottom centre of a phone (the page leaves room for it below the text), and under the length in this margin on a computer, staying in view as the text scrolls (decision 89) */}
+            {script && (
+              <div data-shape-place className="max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:flex max-md:justify-center max-md:border-t max-md:border-rule max-md:bg-paper-raised max-md:pt-3 max-md:pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:sticky md:top-10 md:mt-6">
+                {/* The shape for this stage */}
+                {shapeControl}
+              </div>
+            )}
+            {/* A lesson keeps its tip in view while speaking */}
+            {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
+            {/* A Record Response keeps its hints in view while speaking */}
+            {recording && angles.length > 0 && <Hints angles={angles} compact />}
+            {/* Push the way out down */}
+            <div className="hidden flex-1 md:block" />
+            {/* Leave while thinking (while recording, Pause and Discard sit by the shape) */}
+            {thinking && (
+              <button type="button" onClick={() => void discard()} className={`${QUIET} mt-4 self-start md:mb-10`}>
+                Leave without speaking
+              </button>
+            )}
+          </aside>
 
-        {/* Main column */}
-        <div className="flex flex-1 flex-col">
-          {/* Before starting a Rapid Fire, a prepared speech or free talk: the mode's scene, carried over from the Practice card (decision 141) */}
-          {stage === "ready" && !busy && !script && !smallTalk && !problem && !loop && READY_SCENES[mode] && <ScenePanel {...READY_SCENES[mode]!} />}
-          {/* While recording: one status line (recording or paused, and the timing words), the question, and, beside text to read, the controls (decision 77) */}
-          {recording && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              {/* Recording or paused */}
-              <p role="status" className="flex items-center gap-2 text-footnote font-semibold text-warm">
-                {/* The warm dot (breathes only while recording and when motion is welcome) */}
-                <span aria-hidden="true" className={`inline-block size-3 rounded-full bg-warm ${paused ? "" : "motion-safe:animate-breathe"}`} />
-                {/* The word */}
-                {paused ? "Paused" : "Recording"}
-              </p>
-              {/* The timing words, or (without a light, on a phone, where the margin moves below) the length to aim for */}
-              {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} storyLength={storyTake.length} given={roundWindow} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
-            </div>
-          )}
-          {/* The question being answered, above the shape */}
-          {recording && prompt && !smallTalk && !script && <p className="mt-3 max-w-[30ch] font-display text-cue font-semibold tracking-tight">{prompt.text}</p>}
-          {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
-          {recording && mode === "story" && (
-            <div data-story-template className="mt-3">
-              {/* Show or hide, remembered in this browser */}
-              <CheckRow
-                checked={templateShown}
-                onChange={(event) => {
-                  // Remember it
-                  saveStoryTemplateShown(event.target.checked);
-                  // Show it
-                  setTemplateShownChange(event.target.checked);
-                }}
-              >
-                {guidedStory ? "Show the facts" : "Show the template"}
-              </CheckRow>
-              {/* The template's beats in order (with any focus), or the guided story's facts */}
-              {templateShown && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />)}
-            </div>
-          )}
-          {/* Beside text to read, the controls sit at the top (the shape floats in the corner) */}
-          {recording && script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
-          {/* A discarded take, which can be brought back for a few seconds */}
-          {stage === "discarded" && (
-            <div role="status" className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 md:mt-0">
-              {/* What happened */}
-              <span className="min-w-0 flex-1">Take discarded.</span>
-              {/* Bring it back */}
-              <button type="button" onClick={() => void undoDiscard()} className={SECONDARY}>Undo</button>
-            </div>
-          )}
-          {/* A take that was not kept, and why: first in the column, above any text to read, scrolled to and focused (so it is never left off screen below a long passage) */}
-          {notKept && (
-            <div ref={notice} tabIndex={-1} role="alert" data-testid="not-kept" className="mt-6 max-w-[48ch] rounded-2xl bg-warm-tint p-4 text-lede text-warm-ink outline-none md:mt-0">
-              {/* Nothing heard */}
-              {stage === "nothing-heard" && <p>I did not catch any words. Check that the right microphone is selected, then try again.</p>}
-              {/* Too short */}
-              {stage === "too-short" && <p>That was under {shortest} seconds, too short to measure, so it was not saved. Take your time and keep going a little longer.</p>}
-              {/* Saving failed */}
-              {stage === "save-failed" && <p>This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
-            </div>
-          )}
-          {/* A problem, explained plainly (first in the column, so a phone shows it above any text to read) */}
-          {problem && <p role="alert" className="mt-6 max-w-[48ch] text-lede md:mt-0">{PROBLEM_TEXT[problem]}</p>}
-          {/* A blocked microphone: how to allow it on each kind of device, then try again */}
-          {problem === "microphone-blocked" && (
-            <>
-              {/* The steps */}
-              <ul aria-label="How to allow the microphone" className="mt-3 max-w-[52ch] list-disc space-y-2 pl-5 text-lede">
-                {/* One per device */}
-                {ALLOW_STEPS.map((step) => <li key={step}>{step}</li>)}
-              </ul>
-              {/* Then */}
-              <p className="mt-3 max-w-[52ch] text-lede">Then press Try again.</p>
-            </>
-          )}
-          {/* Before a Table Topic: the briefing instead of the question */}
-          {showBriefing && (
-            <>
-              {/* The headline */}
-              <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0 md:max-w-[18ch]">Your topic is hidden until you start.</h1>
-              {/* How it works, once */}
-              <p className="mt-4 max-w-[48ch] text-lede">You get {think} seconds to think, then recording starts by itself. Aim for 1 to 2 minutes: the light turns green at 1:00, yellow at 1:30 and red at 2:00.</p>
-            </>
-          )}
-          {/* Reading aloud, a lesson, or a rehearsal: the title (and source or tip) before starting, and the text throughout */}
-          {script && (
-            <>
-              {/* Reading aloud, before starting: the reading scene, carried over from Today or Practice (decision 141) */}
-              {mode === "read" && stage === "ready" && !busy && <ScenePanel scene="read-aloud" name="Read aloud" line={`Aim for ${lengthText}`} className="mt-8 md:mt-0" />}
-              {/* Title and source, before starting */}
-              {!recording && <h1 className={`${mode === "read" && stage === "ready" && !busy ? "mt-5" : "mt-8 md:mt-0"} font-display text-statement tracking-tight`}>{script.title}</h1>}
-              {/* Who said it, or that it is a practice passage */}
-              {!recording && script.source && <p className="mt-1 text-ink-muted">{script.source}</p>}
-              {/* Reading aloud: the metronome, before and while reading (decision 128) */}
-              {mode === "read" && services.createMetronome && (
-                <div data-metronome className="mt-4 flex max-w-[52ch] flex-wrap items-center gap-x-6 gap-y-1">
-                  {/* On or off */}
-                  <CheckRow checked={metronomeChoice.on} onChange={(event) => switchMetronome(event.target.checked)} detail={!recording && metronomeChoice.on ? "A quiet tick to read in time with. Headphones keep it out of the recording." : undefined}>
-                    Metronome
-                  </CheckRow>
-                  {/* The tempo, while on */}
-                  {metronomeChoice.on && (
-                    <label className="flex items-center gap-3 text-footnote text-ink-muted">
-                      {/* The slider */}
-                      <input type="range" min={MIN_TEMPO} max={MAX_TEMPO} step={1} value={metronomeChoice.tempo} onChange={(event) => changeTempo(Number(event.target.value))} aria-label="Metronome beats per minute" className="h-11 w-36 accent-accent" />
-                      {/* The tempo in words */}
-                      <span className="tabular-nums">{metronomeChoice.tempo} beats a minute</span>
-                    </label>
-                  )}
-                </div>
-              )}
-              {/* A lesson's tip, before starting */}
-              {!recording && lesson && (
-                <div className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4">
-                  {/* Small heading */}
-                  <p className="text-footnote text-ink-muted">The tip</p>
-                  {/* The tip itself */}
-                  <p className="mt-1 text-lede">{lesson.tip}</p>
-                </div>
-              )}
-              {/* When rehearsing, the memory ladder: full text, cue words, or nothing */}
-              {mode === "rehearse" && (
-                <div role="group" aria-label="How much text to show" className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
-                  {/* One button per rung */}
-                  {LADDER_RUNGS.map((rung) => (
-                    // The current rung is plain; the others are links-style buttons
-                    <button key={rung.ladder} type="button" aria-pressed={ladder === rung.ladder} onClick={() => setLadder(rung.ladder)} className={ladder === rung.ladder ? "text-ink" : "text-ink-muted underline underline-offset-4"}>
-                      {rung.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {/* For a pause drill, how it works */}
-              {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Pause for a second at each ‖.</p>}
-              {/* A lesson, a pause drill or a list of tricky words: what good looks like and how it will be shown, before starting (decision 117) */}
-              {!recording && (lesson?.goal ?? passage?.goal) && <p data-goal className="mt-3 max-w-[52ch] text-footnote"><span className="font-semibold">Goal:</span> {lesson?.goal ?? passage?.goal}</p>}
-              {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
-              {!textHidden && (
-<ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
-              )}
-            </>
-          )}
-          {/* Small talk: a lesson's idea and examples before answering, then the question and the recipe throughout */}
-          {smallTalk && (
-            <>
-              {/* In a lesson, before answering: the idea, then a flat answer beside a better one */}
-              {smallTalk.lesson && !busy && (
-                <section aria-label="The lesson" className="mt-8 md:mt-0">
-                  {/* Its title, as one piece of text so it reads (and is counted) as written */}
-                  <h2 className="font-display text-statement tracking-tight">{`Lesson ${smallTalk.lesson.number}: ${smallTalk.lesson.title}`}</h2>
-                  {/* The idea */}
-                  <p className="mt-3 max-w-[52ch] text-lede">{smallTalk.lesson.idea}</p>
-                  {/* Why it works, from the research, folded so the lesson stays short (decision 95) */}
-                  {smallTalk.lesson.why && <details className="mt-2 max-w-[52ch] text-footnote text-ink-muted"><summary className="cursor-pointer">Why it works</summary><p className="mt-1">{smallTalk.lesson.why}</p></details>}
-                  {/* What they said, or the moment, situation or flat question, in the example (a described moment is not quoted) */}
-                  {smallTalk.lesson.example && <p className="mt-4 max-w-[52ch] text-lede"><span className="block text-footnote text-ink-muted">{findUnit(smallTalk.unit).words.example}</span>{findUnit(smallTalk.unit).drill === "situation" ? smallTalk.lesson.example : `“${smallTalk.lesson.example}”`}</p>}
-                  {/* The flat answer */}
-                  {smallTalk.lesson.flat && (
-                    <p className="mt-4 max-w-[52ch] border-l-2 border-rule pl-4 text-lede text-ink-muted"><span className="block text-footnote">Flat</span>{`“${smallTalk.lesson.flat}”`}</p>
-                  )}
-                  {/* The better answer */}
-                  <p className="mt-3 max-w-[52ch] border-l-2 border-accent pl-4 text-lede"><span className="block text-footnote text-ink-muted">{smallTalk.lesson.flat ? "Better" : "For example"}</span>{`“${smallTalk.lesson.good}”`}</p>
-                  {/* Then */}
-                  <p className="mt-6 text-footnote text-ink-muted">Your turn</p>
-                </section>
-              )}
-              {/* Who is speaking, or what is shown: the unit's cue (none for an everyday question or a hidden story) */}
-              {cue && <p className={`text-footnote text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>{cue}</p>}
-              {/* A story to listen to, not shown */}
-              {storyHidden ? (
-                <h1 className="mt-8 font-display text-prompt tracking-tight md:mt-0 md:max-w-[18ch]">Listen to their story.</h1>
-              ) : (
-                // The question, remark or story, set like a headline (a story, moment or situation a size smaller; a described moment without quote marks)
-                <h1 className={`relative font-display tracking-tight ${described ? "" : "before:absolute before:-left-[0.42em] before:text-accent before:content-['“']"} ${smallTalk.unit === "listening" || described ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"} ${smallTalk.lesson && !busy ? "mt-1" : cue ? "mt-1" : "mt-8 md:mt-0"}`}>
-                  {smallTalk.question}
+          {/* Main column */}
+          <div className="flex flex-1 flex-col">
+            {/* Before starting a Rapid Fire, a prepared speech or free talk: the mode's scene, carried over from the Practice card (decision 141) */}
+            {stage === "ready" && !busy && !script && !smallTalk && !problem && !loop && READY_SCENES[mode] && <ScenePanel {...READY_SCENES[mode]!} />}
+            {/* While recording: one status line (recording or paused, and the timing words), the question, and, beside text to read, the controls (decision 77) */}
+            {recording && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {/* Recording or paused */}
+                <p role="status" className="flex items-center gap-2 text-footnote font-semibold text-warm">
+                  {/* The warm dot (breathes only while recording and when motion is welcome) */}
+                  <span aria-hidden="true" className={`inline-block size-3 rounded-full bg-warm ${paused ? "" : "motion-safe:animate-breathe"}`} />
+                  {/* The word */}
+                  {paused ? "Paused" : "Recording"}
+                </p>
+                {/* The timing words, or (without a light, on a phone, where the margin moves below) the length to aim for */}
+                {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} storyLength={storyTake.length} given={roundWindow} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
+              </div>
+            )}
+            {/* The question being answered, above the shape */}
+            {recording && prompt && !smallTalk && !script && <p className="mt-3 max-w-[30ch] font-display text-cue font-semibold tracking-tight">{prompt.text}</p>}
+            {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
+            {recording && mode === "story" && (
+              <div data-story-template className="mt-3">
+                {/* Show or hide, remembered in this browser */}
+                <CheckRow
+                  checked={templateShown}
+                  onChange={(event) => {
+                    // Remember it
+                    saveStoryTemplateShown(event.target.checked);
+                    // Show it
+                    setTemplateShownChange(event.target.checked);
+                  }}
+                >
+                  {guidedStory ? "Show the facts" : "Show the template"}
+                </CheckRow>
+                {/* The template's beats in order (with any focus), or the guided story's facts */}
+                {templateShown && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />)}
+              </div>
+            )}
+            {/* Beside text to read, the controls sit at the top (the shape floats in the corner) */}
+            {recording && script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
+            {/* A discarded take, which can be brought back for a few seconds */}
+            {stage === "discarded" && (
+              <div role="status" className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 md:mt-0">
+                {/* What happened */}
+                <span className="min-w-0 flex-1">Take discarded.</span>
+                {/* Bring it back */}
+                <button type="button" onClick={() => void undoDiscard()} className={SECONDARY}>Undo</button>
+              </div>
+            )}
+            {/* A take that was not kept, and why: first in the column, above any text to read, scrolled to and focused (so it is never left off screen below a long passage) */}
+            {notKept && (
+              <div ref={notice} tabIndex={-1} role="alert" data-testid="not-kept" className="mt-6 max-w-[48ch] rounded-2xl bg-warm-tint p-4 text-lede text-warm-ink outline-none md:mt-0">
+                {/* Nothing heard */}
+                {stage === "nothing-heard" && <p>I did not catch any words. Check that the right microphone is selected, then try again.</p>}
+                {/* Too short */}
+                {stage === "too-short" && <p>That was under {shortest} seconds, too short to measure, so it was not saved. Take your time and keep going a little longer.</p>}
+                {/* Saving failed */}
+                {stage === "save-failed" && <p>This recording could not be saved. The browser said: “{saveError}” Try again; if it keeps happening, check that this site may store data on this device.</p>}
+              </div>
+            )}
+            {/* A problem, explained plainly (first in the column, so a phone shows it above any text to read) */}
+            {problem && <p role="alert" className="mt-6 max-w-[48ch] text-lede md:mt-0">{PROBLEM_TEXT[problem]}</p>}
+            {/* A blocked microphone: how to allow it on each kind of device, then try again */}
+            {problem === "microphone-blocked" && (
+              <>
+                {/* The steps */}
+                <ul aria-label="How to allow the microphone" className="mt-3 max-w-[52ch] list-disc space-y-2 pl-5 text-lede">
+                  {/* One per device */}
+                  {ALLOW_STEPS.map((step) => <li key={step}>{step}</li>)}
+                </ul>
+                {/* Then */}
+                <p className="mt-3 max-w-[52ch] text-lede">Then press Try again.</p>
+              </>
+            )}
+            {/* Before a Table Topic: the briefing instead of the question */}
+            {showBriefing && (
+              <>
+                {/* The headline */}
+                <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0 md:max-w-[18ch]">Your topic is hidden until you start.</h1>
+                {/* How it works, once */}
+                <p className="mt-4 max-w-[48ch] text-lede">You get {think} seconds to think, then recording starts by itself. Aim for 1 to 2 minutes: the light turns green at 1:00, yellow at 1:30 and red at 2:00.</p>
+              </>
+            )}
+            {/* Reading aloud, a lesson, or a rehearsal: the title (and source or tip) before starting, and the text throughout */}
+            {script && (
+              <>
+                {/* Reading aloud, before starting: the reading scene, carried over from Today or Practice (decision 141) */}
+                {mode === "read" && stage === "ready" && !busy && <ScenePanel scene="read-aloud" name="Read aloud" line={`Aim for ${lengthText}`} className="mt-8 md:mt-0" />}
+                {/* Title and source, before starting */}
+                {!recording && <h1 className={`${mode === "read" && stage === "ready" && !busy ? "mt-5" : "mt-8 md:mt-0"} font-display text-statement tracking-tight`}>{script.title}</h1>}
+                {/* Who said it, or that it is a practice passage */}
+                {!recording && script.source && <p className="mt-1 text-ink-muted">{script.source}</p>}
+                {/* Reading aloud: the metronome, before and while reading (decision 128) */}
+                {mode === "read" && services.createMetronome && (
+                  <div data-metronome className="mt-4 flex max-w-[52ch] flex-wrap items-center gap-x-6 gap-y-1">
+                    {/* On or off */}
+                    <CheckRow checked={metronomeChoice.on} onChange={(event) => switchMetronome(event.target.checked)} detail={!recording && metronomeChoice.on ? "A quiet tick to read in time with. Headphones keep it out of the recording." : undefined}>
+                      Metronome
+                    </CheckRow>
+                    {/* The tempo, while on */}
+                    {metronomeChoice.on && (
+                      <label className="flex items-center gap-3 text-footnote text-ink-muted">
+                        {/* The slider */}
+                        <input type="range" min={MIN_TEMPO} max={MAX_TEMPO} step={1} value={metronomeChoice.tempo} onChange={(event) => changeTempo(Number(event.target.value))} aria-label="Metronome beats per minute" className="h-11 w-36 accent-accent" />
+                        {/* The tempo in words */}
+                        <span className="tabular-nums">{metronomeChoice.tempo} beats a minute</span>
+                      </label>
+                    )}
+                  </div>
+                )}
+                {/* A lesson's tip, before starting */}
+                {!recording && lesson && (
+                  <div className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4">
+                    {/* Small heading */}
+                    <p className="text-footnote text-ink-muted">The tip</p>
+                    {/* The tip itself */}
+                    <p className="mt-1 text-lede">{lesson.tip}</p>
+                  </div>
+                )}
+                {/* When rehearsing, the memory ladder: full text, cue words, or nothing */}
+                {mode === "rehearse" && (
+                  <div role="group" aria-label="How much text to show" className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
+                    {/* One button per rung */}
+                    {LADDER_RUNGS.map((rung) => (
+                      // The current rung is plain; the others are links-style buttons
+                      <button key={rung.ladder} type="button" aria-pressed={ladder === rung.ladder} onClick={() => setLadder(rung.ladder)} className={ladder === rung.ladder ? "text-ink" : "text-ink-muted underline underline-offset-4"}>
+                        {rung.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* For a pause drill, how it works */}
+                {!recording && mode === "pause" && <p className="mt-4 max-w-[52ch] text-lede">Pause for a second at each ‖.</p>}
+                {/* A lesson, a pause drill or a list of tricky words: what good looks like and how it will be shown, before starting (decision 117) */}
+                {!recording && (lesson?.goal ?? passage?.goal) && <p data-goal className="mt-3 max-w-[52ch] text-footnote"><span className="font-semibold">Goal:</span> {lesson?.goal ?? passage?.goal}</p>}
+                {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
+                {!textHidden && (
+  <ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
+                )}
+              </>
+            )}
+            {/* Small talk: a lesson's idea and examples before answering, then the question and the recipe throughout */}
+            {smallTalk && (
+              <>
+                {/* In a lesson, before answering: the idea, then a flat answer beside a better one */}
+                {smallTalk.lesson && !busy && (
+                  <section aria-label="The lesson" className="mt-8 md:mt-0">
+                    {/* Its title, as one piece of text so it reads (and is counted) as written */}
+                    <h2 className="font-display text-statement tracking-tight">{`Lesson ${smallTalk.lesson.number}: ${smallTalk.lesson.title}`}</h2>
+                    {/* The idea */}
+                    <p className="mt-3 max-w-[52ch] text-lede">{smallTalk.lesson.idea}</p>
+                    {/* Why it works, from the research, folded so the lesson stays short (decision 95) */}
+                    {smallTalk.lesson.why && <details className="mt-2 max-w-[52ch] text-footnote text-ink-muted"><summary className="cursor-pointer">Why it works</summary><p className="mt-1">{smallTalk.lesson.why}</p></details>}
+                    {/* What they said, or the moment, situation or flat question, in the example (a described moment is not quoted) */}
+                    {smallTalk.lesson.example && <p className="mt-4 max-w-[52ch] text-lede"><span className="block text-footnote text-ink-muted">{findUnit(smallTalk.unit).words.example}</span>{findUnit(smallTalk.unit).drill === "situation" ? smallTalk.lesson.example : `“${smallTalk.lesson.example}”`}</p>}
+                    {/* The flat answer */}
+                    {smallTalk.lesson.flat && (
+                      <p className="mt-4 max-w-[52ch] border-l-2 border-rule pl-4 text-lede text-ink-muted"><span className="block text-footnote">Flat</span>{`“${smallTalk.lesson.flat}”`}</p>
+                    )}
+                    {/* The better answer */}
+                    <p className="mt-3 max-w-[52ch] border-l-2 border-accent pl-4 text-lede"><span className="block text-footnote text-ink-muted">{smallTalk.lesson.flat ? "Better" : "For example"}</span>{`“${smallTalk.lesson.good}”`}</p>
+                    {/* Then */}
+                    <p className="mt-6 text-footnote text-ink-muted">Your turn</p>
+                  </section>
+                )}
+                {/* Who is speaking, or what is shown: the unit's cue (none for an everyday question or a hidden story) */}
+                {cue && <p className={`text-footnote text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>{cue}</p>}
+                {/* A story to listen to, not shown */}
+                {storyHidden ? (
+                  <h1 className="mt-8 font-display text-prompt tracking-tight md:mt-0 md:max-w-[18ch]">Listen to their story.</h1>
+                ) : (
+                  // The question, remark or story, set like a headline (a story, moment or situation a size smaller; a described moment without quote marks)
+                  <h1 className={`relative font-display tracking-tight ${described ? "" : "before:absolute before:-left-[0.42em] before:text-accent before:content-['“']"} ${smallTalk.unit === "listening" || described ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"} ${smallTalk.lesson && !busy ? "mt-1" : cue ? "mt-1" : "mt-8 md:mt-0"}`}>
+                    {smallTalk.question}
+                  </h1>
+                )}
+                {/* A hidden story: why, and that it comes back in the results */}
+                {storyHidden && !busy && <p className="mt-3 max-w-[48ch] text-lede">It is not shown, so you listen the way you would in person. Then respond out loud. You will see it afterwards.</p>}
+                {/* While it is said aloud */}
+                {stage === "asking" && <p role="status" className="mt-3 text-ink-muted">{unit ? "Listen. Recording starts when they finish." : "Listen to the question. Recording starts when it ends."}</p>}
+                {/* The recipe */}
+                <RecipeStrip level={stripLevel(earlierAnswers, smallTalk.unit)} focus={smallTalk.lesson?.beat ?? null} lesson={!!smallTalk.lesson} />
+                {/* For a question about what you have been up to: your own moments from this week, as material */}
+                {recentMoments.length > 0 && (
+                  <section aria-label="Your moments this week" className="mt-5 max-w-[52ch]">
+                    {/* Small heading */}
+                    <p className="text-footnote text-ink-muted">From your moments this week</p>
+                    {/* Each moment, in the words it was said */}
+                    <ul className="mt-1 space-y-1 text-footnote">
+                      {/* One moment */}
+                      {recentMoments.map((moment) => <li key={moment.id} className="border-l-2 border-rule pl-3">{moment.transcript}</li>)}
+                    </ul>
+                  </section>
+                )}
+              </>
+            )}
+            {/* A Rapid Fire topic being drawn, in the headline's place (decision 133) */}
+            {draw && <TopicDraw steps={draw} onDone={landTopic} />}
+            {/* Before recording: the prompt and, on a retry, last time's cue */}
+            {showPrompt && prompt && (
+              <>
+                {/* A Rapid Fire topic already seen: say it is the same one for the next try */}
+                {topicSeen && <p className="mt-6 text-footnote text-ink-muted">Same topic for your next try</p>}
+                {/* The prompt, set like a headline (focusable from code, so it can be read out the moment a Rapid Fire topic is revealed) */}
+                <h1 ref={promptHeading} tabIndex={-1} className={`relative font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[16ch] md:text-prompt-xl ${topicSeen ? "mt-1" : "mt-8 md:mt-0"}`}>
+                  {prompt.text}
                 </h1>
-              )}
-              {/* A hidden story: why, and that it comes back in the results */}
-              {storyHidden && !busy && <p className="mt-3 max-w-[48ch] text-lede">It is not shown, so you listen the way you would in person. Then respond out loud. You will see it afterwards.</p>}
-              {/* While it is said aloud */}
-              {stage === "asking" && <p role="status" className="mt-3 text-ink-muted">{unit ? "Listen. Recording starts when they finish." : "Listen to the question. Recording starts when it ends."}</p>}
-              {/* The recipe */}
-              <RecipeStrip level={stripLevel(earlierAnswers, smallTalk.unit)} focus={smallTalk.lesson?.beat ?? null} lesson={!!smallTalk.lesson} />
-              {/* For a question about what you have been up to: your own moments from this week, as material */}
-              {recentMoments.length > 0 && (
-                <section aria-label="Your moments this week" className="mt-5 max-w-[52ch]">
-                  {/* Small heading */}
-                  <p className="text-footnote text-ink-muted">From your moments this week</p>
-                  {/* Each moment, in the words it was said */}
-                  <ul className="mt-1 space-y-1 text-footnote">
-                    {/* One moment */}
-                    {recentMoments.map((moment) => <li key={moment.id} className="border-l-2 border-rule pl-3">{moment.transcript}</li>)}
-                  </ul>
-                </section>
-              )}
-            </>
-          )}
-          {/* A Rapid Fire topic being drawn, in the headline's place (decision 133) */}
-          {draw && <TopicDraw steps={draw} onDone={landTopic} />}
-          {/* Before recording: the prompt and, on a retry, last time's cue */}
-          {showPrompt && prompt && (
-            <>
-              {/* A Rapid Fire topic already seen: say it is the same one for the next try */}
-              {topicSeen && <p className="mt-6 text-footnote text-ink-muted">Same topic for your next try</p>}
-              {/* The prompt, set like a headline (focusable from code, so it can be read out the moment a Rapid Fire topic is revealed) */}
-              <h1 ref={promptHeading} tabIndex={-1} className={`relative font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[16ch] md:text-prompt-xl ${topicSeen ? "mt-1" : "mt-8 md:mt-0"}`}>
-                {prompt.text}
-              </h1>
-            </>
-          )}
-          {/* Free talk, before starting: what it is (decision 73) */}
-          {mode === "free" && !recording && (
-            <>
-              {/* The invitation */}
-              <h1 className="mt-8 font-display text-prompt font-semibold tracking-tight md:mt-0 md:max-w-[16ch] md:text-prompt-xl">Talk about anything.</h1>
-              {/* A few ideas, and that there is no clock to beat */}
-              <p className="mt-4 max-w-[48ch] text-lede">Your day, an idea, something you’d explain to a friend. Stop when you’re done.</p>
-            </>
-          )}
-          {/* A short speech: the topic and the points, before and while speaking (smaller while speaking, so the voice shape stays in view) */}
-          {mode === "outline" && outline && (
-            <section aria-label="Your plan" className={recording ? "mt-6 md:mt-0" : "mt-8 md:mt-0"}>
-              {/* The topic */}
-              <h1 className={`font-display font-semibold tracking-tight ${recording ? "text-cue" : "text-statement md:max-w-[20ch]"}`}>{outline.topic}</h1>
-              {/* The points, numbered */}
-              <ol aria-label="Your points" className={`mt-3 flex max-w-[52ch] flex-col gap-2 ${recording ? "text-footnote" : "text-lede"}`}>
-                {/* Each point */}
-                {outline.points.map((point, index) => (
-                  // One point on a rounded tile
-                  <li key={index} className="flex items-start gap-3 rounded-2xl bg-card px-3 py-2">
-                    {/* Its number */}
-                    <span aria-hidden="true" className="flex size-7 flex-none items-center justify-center rounded-lg bg-warm-tint text-footnote font-semibold text-warm-ink">{index + 1}</span>
-                    {/* The point */}
-                    <span className="pt-0.5">{point}</span>
-                  </li>
-                ))}
-              </ol>
-              {/* Before starting, how to use them */}
-              {!recording && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Open with why it matters, give each point an example, then close on one line.</p>}
-            </section>
-          )}
-          {/* A story, before and while planning: the prompt or the moment, then the template's beats (decisions 92 and 126) */}
-          {mode === "story" && !recording && (
-            <section aria-label="Your story" className="mt-8 md:mt-0">
-              {/* Where it came from */}
-              <p className="text-footnote text-ink-muted">{momentIdOf(promptId) ? "From your moment" : thinking ? "Plan it in your head" : guidedStory ? "Guided story" : "Your story"}</p>
-              {/* The prompt, set like a headline, or the moment in the user's words */}
-              <h1 className={`relative mt-1 font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${momentIdOf(promptId) ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"}`}>{prompt?.text ?? "Your moment"}</h1>
-              {/* The template's beats, or a guided story's facts (decisions 93 and 126) */}
-              {guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />}
-              {/* The three things every good story does (decision 126) */}
-              {!guidedStory && <StoryPointers />}
-              {/* How planning works, before it starts */}
-              {!thinking && !busy && !(loop && loop.round > 1) && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Up to a minute to plan, then tell it out loud. Tap Ready when you are.</p>}
-            </section>
-          )}
-          {/* Thinking about a Record Response: the hints */}
-          {thinking && angles.length > 0 && <Hints angles={angles} compact={false} />}
-          {/* On a retry, the cue to carry in */}
-          {!recording && (retryCue || ownNote) && (
-            <div className="mt-6 max-w-md rounded-2xl bg-warm-tint p-4">
-              {/* Small heading */}
-              <p className="text-footnote text-ink-muted">Before you start</p>
-              {/* The user's own note first, in their words */}
-              {ownNote && <p className="mt-1 font-display text-cue">{ownNote}</p>}
-              {/* The coach's cue, under it when both exist */}
-              {retryCue && <p className={ownNote ? "mt-2 text-lede text-ink-muted" : "mt-1 font-display text-cue"}>{ownNote ? `${cueFromCoach ? "Coach" : "From your numbers"}: ${retryCue}` : retryCue}</p>}
-            </div>
-          )}
+              </>
+            )}
+            {/* Free talk, before starting: what it is (decision 73) */}
+            {mode === "free" && !recording && (
+              <>
+                {/* The invitation */}
+                <h1 className="mt-8 font-display text-prompt font-semibold tracking-tight md:mt-0 md:max-w-[16ch] md:text-prompt-xl">Talk about anything.</h1>
+                {/* A few ideas, and that there is no clock to beat */}
+                <p className="mt-4 max-w-[48ch] text-lede">Your day, an idea, something you’d explain to a friend. Stop when you’re done.</p>
+              </>
+            )}
+            {/* A short speech: the topic and the points, before and while speaking (smaller while speaking, so the voice shape stays in view) */}
+            {mode === "outline" && outline && (
+              <section aria-label="Your plan" className={recording ? "mt-6 md:mt-0" : "mt-8 md:mt-0"}>
+                {/* The topic */}
+                <h1 className={`font-display font-semibold tracking-tight ${recording ? "text-cue" : "text-statement md:max-w-[20ch]"}`}>{outline.topic}</h1>
+                {/* The points, numbered */}
+                <ol aria-label="Your points" className={`mt-3 flex max-w-[52ch] flex-col gap-2 ${recording ? "text-footnote" : "text-lede"}`}>
+                  {/* Each point */}
+                  {outline.points.map((point, index) => (
+                    // One point on a rounded tile
+                    <li key={index} className="flex items-start gap-3 rounded-2xl bg-card px-3 py-2">
+                      {/* Its number */}
+                      <span aria-hidden="true" className="flex size-7 flex-none items-center justify-center rounded-lg bg-warm-tint text-footnote font-semibold text-warm-ink">{index + 1}</span>
+                      {/* The point */}
+                      <span className="pt-0.5">{point}</span>
+                    </li>
+                  ))}
+                </ol>
+                {/* Before starting, how to use them */}
+                {!recording && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Open with why it matters, give each point an example, then close on one line.</p>}
+              </section>
+            )}
+            {/* A story, before and while planning: the prompt or the moment, then the template's beats (decisions 92 and 126) */}
+            {mode === "story" && !recording && (
+              <section aria-label="Your story" className="mt-8 md:mt-0">
+                {/* Where it came from */}
+                <p className="text-footnote text-ink-muted">{momentIdOf(promptId) ? "From your moment" : thinking ? "Plan it in your head" : guidedStory ? "Guided story" : "Your story"}</p>
+                {/* The prompt, set like a headline, or the moment in the user's words */}
+                <h1 className={`relative mt-1 font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${momentIdOf(promptId) ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"}`}>{prompt?.text ?? "Your moment"}</h1>
+                {/* The template's beats, or a guided story's facts (decisions 93 and 126) */}
+                {guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />}
+                {/* The three things every good story does (decision 126) */}
+                {!guidedStory && <StoryPointers />}
+                {/* How planning works, before it starts */}
+                {!thinking && !busy && !(loop && loop.round > 1) && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">Up to a minute to plan, then tell it out loud. Tap Ready when you are.</p>}
+              </section>
+            )}
+            {/* Thinking about a Record Response: the hints */}
+            {thinking && angles.length > 0 && <Hints angles={angles} compact={false} />}
+            {/* On a retry, the cue to carry in */}
+            {!recording && (retryCue || ownNote) && (
+              <div className="mt-6 max-w-md rounded-2xl bg-warm-tint p-4">
+                {/* Small heading */}
+                <p className="text-footnote text-ink-muted">Before you start</p>
+                {/* The user's own note first, in their words */}
+                {ownNote && <p className="mt-1 font-display text-cue">{ownNote}</p>}
+                {/* The coach's cue, under it when both exist */}
+                {retryCue && <p className={ownNote ? "mt-2 text-lede text-ink-muted" : "mt-1 font-display text-cue"}>{ownNote ? `${cueFromCoach ? "Coach" : "From your numbers"}: ${retryCue}` : retryCue}</p>}
+              </div>
+            )}
 
-          {/* While recording: the meter and the words */}
-          {recording && (
-            <>
-              {/* The live voice shape, with the clock inside (beside text to read, it sits in its own place; see below) */}
-              {!script && shapeControl}
-              {/* Pause and discard, under the shape */}
-              {!script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
-              {/* Words so far, the latest few lines, older ones fading (not while reading: the text itself is on screen) */}
-              {(!script || textHidden) && <div className="mt-6 flex max-h-[3.7em] flex-col justify-end overflow-hidden text-cue [mask-image:linear-gradient(to_bottom,transparent,black_45%)]"><LiveWords text={text} marks={pauseWords} /></div>}
-            </>
-          )}
+            {/* While recording: the meter and the words */}
+            {recording && (
+              <>
+                {/* The live voice shape, with the clock inside (beside text to read, it sits in its own place; see below) */}
+                {!script && shapeControl}
+                {/* Pause and discard, under the shape */}
+                {!script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
+                {/* Words so far, the latest few lines, older ones fading (not while reading: the text itself is on screen) */}
+                {(!script || textHidden) && <div className="mt-6 flex max-h-[3.7em] flex-col justify-end overflow-hidden text-cue [mask-image:linear-gradient(to_bottom,transparent,black_45%)]"><LiveWords text={text} marks={pauseWords} /></div>}
+              </>
+            )}
 
 
-          {/* The speech service dropped mid-take: what was heard is saved, with the way to it */}
-          {stage === "speech-dropped" && (
-            <div role="alert" className="mt-6 max-w-[48ch] text-lede">
-              {/* What happened */}
-              <p>The browser’s speech service dropped, so recording stopped there. Everything heard up to then is saved, with the audio.</p>
-              {/* The way to the take */}
-              <p className="mt-4"><Link href={droppedHref} className={SECONDARY}>See your take</Link></p>
-            </div>
-          )}
+            {/* The speech service dropped mid-take: what was heard is saved, with the way to it */}
+            {stage === "speech-dropped" && (
+              <div role="alert" className="mt-6 max-w-[48ch] text-lede">
+                {/* What happened */}
+                <p>The browser’s speech service dropped, so recording stopped there. Everything heard up to then is saved, with the audio.</p>
+                {/* The way to the take */}
+                <p className="mt-4"><Link href={droppedHref} className={SECONDARY}>See your take</Link></p>
+              </div>
+            )}
 
-          {/* The one action for this stage, on the voice shape, in the column (beside text to read it sits in its own place instead; see below) */}
-          {!script && !recording && shapeControl}
-          {/* Push the footer down */}
-          <div className="flex-1" />
+            {/* The one action for this stage, on the voice shape, in the column (beside text to read it sits in its own place instead; see below) */}
+            {!script && !recording && shapeControl}
+            {/* Push the footer down */}
+            <div className="flex-1" />
 
-          {/* A way home when stuck on a problem */}
-          {problem && (
-            <Footnote>
-              <Link href="/" className={TEXT_LINK}>Back to Today</Link>
-            </Footnote>
-          )}
+            {/* A way home when stuck on a problem */}
+            {problem && (
+              <Footnote>
+                <Link href="/" className={TEXT_LINK}>Back to Today</Link>
+              </Footnote>
+            )}
 
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </PageFade>
   );
 }

@@ -2,6 +2,8 @@
 // Practice, slimmer (decision 125): the five kinds of practice that do the most work first (Rapid Fire, a prepared speech, a story, talking with someone and reading aloud; the weekly check-in comes to Today on its day, decision 100), and everything else one tap away under "More ways to practise". Inside it, as before: every kind of practice in one place, grouped, the groups of what the user wants to get better at first (decision 97; the conversation units as the next one and "See all", decision 95; stories second, decision 92; Read aloud with speaking on the spot and the openings drill reached from Today instead, decision 93), each row leading to its own screen (today's steps live on Today; decision 48; your talks hidden for now, decision 49; Q&A practice removed, decision 61); each group shows its first few rows, the most relevant first, with "See all" for the rest, decision 108
 
 // Load Next.js's link component
+// Load the page fade round a glide (decision 141)
+import { PageFade } from "@/components/scenes/SharedScene";
 import Link from "next/link";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
@@ -324,50 +326,52 @@ export function PracticeScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main id="main" className={PAGE}>
-      {/* Heading and navigation */}
-      <Masthead title="VoiceLab" section="practice" />
-      {/* The page's name, and how it relates to Today */}
-      <PageTitle title="Practice">Pick one and speak. Your steps for the day are on Today.</PageTitle>
+    <PageFade>
+      <main id="main" className={PAGE}>
+        {/* Heading and navigation */}
+        <Masthead title="VoiceLab" section="practice" />
+        {/* The page's name, and how it relates to Today */}
+        <PageTitle title="Practice">Pick one and speak. Your steps for the day are on Today.</PageTitle>
 
-      {/* Guided courses, the focus's first (decision 131) */}
-      <section aria-labelledby="courses" className="mt-6">
-        {/* Heading, and the list of every course */}
-        <div className="flex items-baseline justify-between gap-4">
-          {/* Heading */}
-          <h2 id="courses" className={SECTION_HEADING}>Courses</h2>
-          {/* Every course */}
-          <Link href="/courses" className={`${TEXT_LINK} text-footnote`}>All courses</Link>
-        </div>
-        {/* The cards, once progress is read */}
-        {courseData.status === "ready" && (
-          <ul className="mt-3 grid gap-3 md:grid-cols-2">
-            {/* Each course, the focus's first */}
-            {[...COURSES].sort((a, b) => Number(focus.includes(b.focus)) - Number(focus.includes(a.focus))).map((course) => <li key={course.id}><CourseRow course={course} progress={courseData.progress} note={focus.includes(course.focus) ? "For your focus" : undefined} /></li>)}
+        {/* Guided courses, the focus's first (decision 131) */}
+        <section aria-labelledby="courses" className="mt-6">
+          {/* Heading, and the list of every course */}
+          <div className="flex items-baseline justify-between gap-4">
+            {/* Heading */}
+            <h2 id="courses" className={SECTION_HEADING}>Courses</h2>
+            {/* Every course */}
+            <Link href="/courses" className={`${TEXT_LINK} text-footnote`}>All courses</Link>
+          </div>
+          {/* The cards, once progress is read */}
+          {courseData.status === "ready" && (
+            <ul className="mt-3 grid gap-3 md:grid-cols-2">
+              {/* Each course, the focus's first */}
+              {[...COURSES].sort((a, b) => Number(focus.includes(b.focus)) - Number(focus.includes(a.focus))).map((course) => <li key={course.id}><CourseRow course={course} progress={courseData.progress} note={focus.includes(course.focus) ? "For your focus" : undefined} /></li>)}
+            </ul>
+          )}
+          {/* Progress that could not be read */}
+          {courseData.status === "failed" && <CourseLoadFailed retry={courseData.retry} />}
+        </section>
+
+        {/* The five that do the most work (decision 125), as scene cards: the focus's one big across the top, the other four two by two (decision 136) */}
+        {main && (
+          <ul aria-label="Main ways to practise" className="mt-6 grid grid-cols-2 gap-3">
+            {/* The big one */}
+            <li className="col-span-2"><WayCard way={main.featured} big forFocus={main.forFocus} shared /></li>
+            {/* The others, arriving one after another */}
+            {main.rest.map((way, index) => <li key={way.name}><WayCard way={way} delay={(index + 1) * 70} shared /></li>)}
           </ul>
         )}
-        {/* Progress that could not be read */}
-        {courseData.status === "failed" && <CourseLoadFailed retry={courseData.retry} />}
-      </section>
 
-      {/* The five that do the most work (decision 125), as scene cards: the focus's one big across the top, the other four two by two (decision 136) */}
-      {main && (
-        <ul aria-label="Main ways to practise" className="mt-6 grid grid-cols-2 gap-3">
-          {/* The big one */}
-          <li className="col-span-2"><WayCard way={main.featured} big forFocus={main.forFocus} shared /></li>
-          {/* The others, arriving one after another */}
-          {main.rest.map((way, index) => <li key={way.name}><WayCard way={way} delay={(index + 1) * 70} shared /></li>)}
-        </ul>
-      )}
+        {/* Everything else, one tap away */}
+        <button type="button" aria-expanded={more} aria-controls="more-practice" onClick={() => setMore(!more)} className={`mt-4 ${TEXT_LINK}`}>{more ? "Fewer ways to practise" : "More ways to practise"}</button>
 
-      {/* Everything else, one tap away */}
-      <button type="button" aria-expanded={more} aria-controls="more-practice" onClick={() => setMore(!more)} className={`mt-4 ${TEXT_LINK}`}>{more ? "Fewer ways to practise" : "More ways to practise"}</button>
+        {/* The groups, the focus's first (decision 97), once opened */}
+        <div id="more-practice">{more && orderPracticeGroups(focus, USUAL_ORDER).map((id) => <Fragment key={id}>{groups[id]}</Fragment>)}</div>
 
-      {/* The groups, the focus's first (decision 97), once opened */}
-      <div id="more-practice">{more && orderPracticeGroups(focus, USUAL_ORDER).map((id) => <Fragment key={id}>{groups[id]}</Fragment>)}</div>
-
-      {/* This week's challenge off the page */}
-      {today && <WeeklyChallenge repo={repo} today={today} />}
-    </main>
+        {/* This week's challenge off the page */}
+        {today && <WeeklyChallenge repo={repo} today={today} />}
+      </main>
+    </PageFade>
   );
 }

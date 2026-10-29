@@ -3,6 +3,8 @@
 
 // Load React's state and effect tools
 // Load the scene panel (decision 141)
+// Load the page fade round a glide (decision 141)
+import { PageFade } from "@/components/scenes/SharedScene";
 import { ScenePanel } from "@/components/scenes/ScenePanel";
 import { useEffect, useState } from "react";
 // Load Next.js's link component
@@ -102,73 +104,75 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
 
   // Draw the page
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
-      {/* Title, with a way back */}
-      <Masthead title="Tell a story" nav={false} close={close} />
-      {/* A story that cannot be found */}
-      {unknown ? (
-        <p role="alert" className="mt-6 max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
-      ) : (
-        <>
-          {/* The scene, carried over from the Practice card: the signpost for a guided story, the campfire otherwise (decision 141) */}
-          <ScenePanel scene={guided ? "guided-stories" : "story"} name={guided ? "Guided story" : "Tell a story"} line="Plan it in a minute, then tell it." className="mt-6" />
-          {/* Where it came from */}
-          {(momentId || guided) && <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Guided story"}</p>}
-          {/* The prompt, a guided story's title, or the moment in the user's words */}
-          <h1 className={`${momentId || guided ? "mt-1" : "mt-6"} font-display tracking-tight ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
-          {/* A guided story's facts and nudges, with the template named (decision 93) */}
-          {guided && <GuidedStoryCard story={guided} take={take} />}
+    <PageFade>
+      <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
+        {/* Title, with a way back */}
+        <Masthead title="Tell a story" nav={false} close={close} />
+        {/* A story that cannot be found */}
+        {unknown ? (
+          <p role="alert" className="mt-6 max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
+        ) : (
+          <>
+            {/* The scene, carried over from the Practice card: the signpost for a guided story, the campfire otherwise (decision 141) */}
+            <ScenePanel scene={guided ? "guided-stories" : "story"} name={guided ? "Guided story" : "Tell a story"} line="Plan it in a minute, then tell it." className="mt-6" />
+            {/* Where it came from */}
+            {(momentId || guided) && <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Guided story"}</p>}
+            {/* The prompt, a guided story's title, or the moment in the user's words */}
+            <h1 className={`${momentId || guided ? "mt-1" : "mt-6"} font-display tracking-tight ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
+            {/* A guided story's facts and nudges, with the template named (decision 93) */}
+            {guided && <GuidedStoryCard story={guided} take={take} />}
 
-          {/* The template */}
-          <div role="group" aria-labelledby="template-label" className="mt-8">
-            {/* Label */}
-            <p id="template-label" className="font-semibold">Template</p>
-            {/* The templates, only the chosen one showing what it is for and its beats */}
-            <div className="mt-2 grid max-w-xl gap-2">
-              {STORY_TEMPLATES.map((item) => (
-                // One template, filled when chosen
-                <button key={item.id} type="button" aria-pressed={template === item.id} onClick={() => setTemplate(item.id)} className={choice(template === item.id)}>
-                  {/* Its name (the suggested one is chosen at the start, so it needs no label) */}
-                  <span className="block font-semibold">{item.name}</span>
-                  {/* The chosen one: what it is for, and its beats in one line (the others' are a tap away, so the first screen stays short) */}
-                  {template === item.id && <><span className="block text-footnote opacity-80">{item.forWhat}</span><span className="mt-1 block text-footnote">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span></>}
-                </button>
-              ))}
+            {/* The template */}
+            <div role="group" aria-labelledby="template-label" className="mt-8">
+              {/* Label */}
+              <p id="template-label" className="font-semibold">Template</p>
+              {/* The templates, only the chosen one showing what it is for and its beats */}
+              <div className="mt-2 grid max-w-xl gap-2">
+                {STORY_TEMPLATES.map((item) => (
+                  // One template, filled when chosen
+                  <button key={item.id} type="button" aria-pressed={template === item.id} onClick={() => setTemplate(item.id)} className={choice(template === item.id)}>
+                    {/* Its name (the suggested one is chosen at the start, so it needs no label) */}
+                    <span className="block font-semibold">{item.name}</span>
+                    {/* The chosen one: what it is for, and its beats in one line (the others' are a tap away, so the first screen stays short) */}
+                    {template === item.id && <><span className="block text-footnote opacity-80">{item.forWhat}</span><span className="mt-1 block text-footnote">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span></>}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* A short worked example of the chosen template, each beat named */}
-          <section aria-label={`Example: ${chosen.name}`} data-template-example className={`mt-4 max-w-xl p-4 ${CARD}`}>
-            {/* Heading */}
-            <p className="text-footnote font-semibold">Example · {chosen.name}</p>
-            {/* The example, beat by beat */}
-            <p className="mt-1 text-footnote">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-accent">({chosen.beats[index]!.name.toLowerCase()})</b> </span>)}</p>
-          </section>
+            {/* A short worked example of the chosen template, each beat named */}
+            <section aria-label={`Example: ${chosen.name}`} data-template-example className={`mt-4 max-w-xl p-4 ${CARD}`}>
+              {/* Heading */}
+              <p className="text-footnote font-semibold">Example · {chosen.name}</p>
+              {/* The example, beat by beat */}
+              <p className="mt-1 text-footnote">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-accent">({chosen.beats[index]!.name.toLowerCase()})</b> </span>)}</p>
+            </section>
 
-          {/* The length */}
-          <div role="group" aria-labelledby="length-label" className="mt-6">
-            {/* Label */}
-            <p id="length-label" className="font-semibold">How long?</p>
-            {/* The two lengths */}
-            <div className="mt-2 grid max-w-sm grid-cols-2 gap-2">
-              {STORY_LENGTHS.map((item) => (
-                // One length, filled when chosen
-                <button key={item.id} type="button" aria-pressed={length === item.id} onClick={() => setLength(item.id)} className={choice(length === item.id)}>
-                  {/* Its name */}
-                  <span className="block font-semibold">{item.name}</span>
-                  {/* How long */}
-                  <span className="block text-footnote opacity-80">{item.detail}</span>
-                </button>
-              ))}
+            {/* The length */}
+            <div role="group" aria-labelledby="length-label" className="mt-6">
+              {/* Label */}
+              <p id="length-label" className="font-semibold">How long?</p>
+              {/* The two lengths */}
+              <div className="mt-2 grid max-w-sm grid-cols-2 gap-2">
+                {STORY_LENGTHS.map((item) => (
+                  // One length, filled when chosen
+                  <button key={item.id} type="button" aria-pressed={length === item.id} onClick={() => setLength(item.id)} className={choice(length === item.id)}>
+                    {/* Its name */}
+                    <span className="block font-semibold">{item.name}</span>
+                    {/* How long */}
+                    <span className="block text-footnote opacity-80">{item.detail}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Push the band down */}
-          <div className="flex-1" />
-          {/* Start: a minute to plan, then tell it */}
-          <ActionBand action="Start" aside="a minute to plan" href={tellSessionHref(storyId, take, planStep)} />
-        </>
-      )}
-    </main>
+            {/* Push the band down */}
+            <div className="flex-1" />
+            {/* Start: a minute to plan, then tell it */}
+            <ActionBand action="Start" aside="a minute to plan" href={tellSessionHref(storyId, take, planStep)} />
+          </>
+        )}
+      </main>
+    </PageFade>
   );
 }

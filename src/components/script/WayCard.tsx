@@ -7,7 +7,7 @@ import type { Icon } from "@phosphor-icons/react";
 // Load the blob scenes
 import { Scene, type SceneMotion, type SceneName } from "@/components/scenes/Scene";
 // Load the carried-over scene wrapper (decision 141)
-import { SharedScene } from "@/components/scenes/SharedScene";
+import { GLIDE, SharedScene } from "@/components/scenes/SharedScene";
 // Load the pressed look
 import { PRESS } from "@/components/script/Buttons";
 // Load the card look
@@ -55,7 +55,7 @@ export function WayCard({ way, big = false, forFocus = false, delay = 0, shared 
   const arrive = { animationDelay: `${delay}ms` };
   // A card that starts it, or a quiet one
   return way.href ? (
-    <Link href={way.href} data-way-card={big ? "big" : "small"} style={arrive} className={`${look} ${PRESS} motion-safe:animate-rise hover:text-accent`}>
+    <Link href={way.href} transitionTypes={shared && way.scene ? GLIDE : undefined} data-way-card={big ? "big" : "small"} style={arrive} className={`${look} ${PRESS} motion-safe:animate-rise hover:text-accent`}>
       {/* The scene and the words */}
       {art}{words}
     </Link>
