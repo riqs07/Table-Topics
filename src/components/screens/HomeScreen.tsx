@@ -17,12 +17,6 @@ import { streakLines } from "@/core/copy";
 import { currentFocus, type Focus } from "@/core/focus";
 // Load the streak calculator
 import { practiceRun, type PracticeRun } from "@/core/streak";
-// Load the week's summary
-import { yourWeek, type YourWeek } from "@/core/yourWeek";
-// Load the pause-word setting rule
-import { pauseWordsShown } from "@/core/pauseWords";
-// Load the card that shows it
-import { YourWeekCard } from "@/components/script/YourWeekCard";
 // Load the seven-day strip
 import { weekStrip, type StripDay } from "@/core/weekStrip";
 // Load the repository type
@@ -101,8 +95,6 @@ interface HomeData {
   hideStreak: boolean;
   // When the user practises, in their words, or empty
   anchor: string;
-  // Fillers over three weeks and one suggestion, once there are three sessions
-  week: YourWeek | null;
   // The last seven days, marked where there was practice
   strip: StripDay[];
   // This week's focus
@@ -173,8 +165,6 @@ async function loadHome(repository: Repository, now: Date, random: () => number)
     hideStreak: settings.hideStreak === true,
     // The practice time in the user's words
     anchor: settings.anchor?.trim() ?? "",
-    // The week's summary
-    week: yourWeek(sessions, now, { pauseWords: pauseWordsShown(settings) }),
     // The last seven days
     strip: weekStrip([...sessions.map((session) => new Date(session.createdAt)), ...missionDays(settings.missions ?? [])], now),
     // This week's focus
@@ -371,7 +361,7 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
   // The lesson the user is on, unless it is already one of today's open steps (one link to it is enough)
   const lesson = plan && data?.lesson && !plan.steps.some((step, index) => step.promptId === data.lesson?.promptId && !plan.done[index]) ? data.lesson : null;
   // Whether the margin has anything in it; with nothing, the page is one centred column instead of an empty left column on a computer
-  const margin = !!data && !data.showWelcome && (runLines.length > 0 || (!data.hideStreak && data.run.any) || showFocus || !!data.anchor || !!data.week || !!data.practiceFocus?.length);
+  const margin = !!data && !data.showWelcome && (runLines.length > 0 || (!data.hideStreak && data.run.any) || showFocus || !!data.anchor || !!data.practiceFocus?.length);
 
   // Draw the page
   return (
@@ -423,8 +413,6 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
           {data && !data.showWelcome && !!data.practiceFocus?.length && <p className="mt-1">Getting better at: <em className="text-ink">{focusPhrase(data.practiceFocus)}</em>.</p>}
           {/* When the user practises, in their words (decision 78) */}
           {data && !data.showWelcome && data.anchor && <p className="mt-1">Your time: <em className="text-ink">{data.anchor}</em>.</p>}
-          {/* On a computer, the week's summary in this column */}
-          {data && !data.showWelcome && data.week && <div className="mt-8 hidden md:block"><YourWeekCard week={data.week} /></div>}
         </aside>}
 
         {/* Main column */}
@@ -562,8 +550,6 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
             </div>
           )}
 
-          {/* On a phone, the week's summary under the steps (on a computer it sits in the margin) */}
-          {data && !data.showWelcome && data.week && <div className="mt-8 md:hidden"><YourWeekCard week={data.week} /></div>}
 
           {/* Once done: more to do, for anyone who wants to keep going */}
           {plan && nextIndex === -1 && plan.more.length > 0 && (

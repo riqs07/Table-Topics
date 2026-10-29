@@ -1,4 +1,4 @@
-// "Your week" on Today (decision 78): pause words a minute over the last three weeks and exactly one suggestion, once there are three sessions
+// "Your week" in Settings (decision 78; moved from Today, decision 140): pause words a minute over the last three weeks and exactly one suggestion, once there are three sessions
 
 // Load the calendar-day helpers
 import { addDays, startOfDay } from "@/core/dates";

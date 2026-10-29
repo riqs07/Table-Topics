@@ -35,6 +35,44 @@ async function repositoryWithOneSession() {
 
 // Group the checks about the Settings screen
 describe("SettingsScreen", () => {
+  // From three sessions, "Your week" under Your progress: three weeks of pause words, one suggestion and the way to History (decisions 78 and 140)
+  it("shows your week under your progress", async () => {
+    // A repository with three sessions over two weeks
+    const repository = createRepository(new MemoryStore());
+    // Two weeks ago, last week and today
+    for (const [index, day] of [29, 6, 12].entries()) await repository.saveSession(makeSession({ id: `w${index}`, mode: "talk", fillersPerMinute: 4 - index, createdAt: new Date(2026, day > 20 ? 8 : 9, day, 9).toISOString() }));
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // The card, inside the progress group
+    const card = within(await within(screen.getByRole("region", { name: "Your progress" })).findByRole("region", { name: "Your week" }));
+    // Confirm the weeks, the suggestion and the history link
+    expect([card.getAllByRole("listitem").map((item) => item.getAttribute("aria-label")), !!card.getByText(/Fewer pause words than last week/), card.getByRole("link", { name: "All your history" }).getAttribute("href")]).toEqual([["Two weeks ago: 4.0", "Last week: 3.0", "This week: 2.0"], true, "/history"]);
+  });
+
+  // Fewer than three sessions: no card yet
+  it("leaves your week out before three sessions", async () => {
+    // Draw the screen with one session
+    render(<SettingsScreen repository={await repositoryWithOneSession()} now={NOW} />);
+    // Wait for the settings to load
+    await screen.findByText("Your practice time");
+    // Confirm no card
+    expect(screen.queryByRole("region", { name: "Your week" })).toBeNull();
+  });
+
+  // A storage failure while reading sessions leaves the card out and keeps the page working
+  it("leaves your week out when the sessions cannot be read", async () => {
+    // A repository whose session list fails
+    const repository = await repositoryWithOneSession();
+    // (the failure)
+    vi.spyOn(repository, "listSessions").mockRejectedValue(new Error("database closed"));
+    // Draw the screen
+    render(<SettingsScreen repository={repository} now={NOW} />);
+    // The rest of the page still loads
+    await screen.findByText("Your practice time");
+    // Confirm no card
+    expect(screen.queryByRole("region", { name: "Your week" })).toBeNull();
+  });
+
   // Exporting saves a file and remembers the day, which Settings shows (decision 64)
   it("says when the last copy was saved", async () => {
     // Start from nothing saved

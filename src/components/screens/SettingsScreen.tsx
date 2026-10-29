@@ -48,6 +48,12 @@ import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the choice of what to get better at most, and the reader for the saved one (decision 97)
 import { FocusPicker } from "@/components/script/FocusPicker";
 import { readPracticeFocus } from "@/core/practiceFocus";
+// Load the week's summary, the pause-word setting rule, the filter that leaves out private moment notes, and the card (moved here from Today, decision 140)
+import { yourWeek } from "@/core/yourWeek";
+import { pauseWordsShown } from "@/core/pauseWords";
+import { practiceSessions } from "@/core/sessionHome";
+import { YourWeekCard } from "@/components/script/YourWeekCard";
+import type { SessionRecord } from "@/data/records";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 // Load the deeper-analysis status check (decision 91)
@@ -309,6 +315,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   const [pendingCount, setPendingCount] = useState(0);
   // Saved settings, once loaded
   const [settings, setSettings] = useState<SettingsRecord | null>(null);
+  // The sessions that count for "Your week", once loaded (private moment notes are left out)
+  const [sessions, setSessions] = useState<SessionRecord[]>([]);
   // A message to show after an action
   const [message, setMessage] = useState("");
   // A long export or import under way: what it is doing and how far it has got (decision 99)
@@ -355,6 +363,13 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     void readStorageUsed().then((bytes) => {
       // Keep it only if the screen is still open
       if (!cancelled) setStorageUsed(bytes);
+    });
+    // Read the sessions for "Your week"
+    repo.listSessions().then((all) => {
+      // Keep the ones that count, only if the screen is still open
+      if (!cancelled) setSessions(practiceSessions(all));
+    }).catch(() => {
+      // The card stays hidden; a storage problem is explained by the settings message above
     });
     // Count sessions waiting for feedback, through the database's lookup (decision 99)
     repo.listPendingSessions().then((pending) => {
@@ -507,6 +522,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       const counts = await importExport(repo, parseExport(await file.text()), today ?? new Date(), { onProgress: (progress) => setWorking({ what: "Importing", progress }) });
       // Show the joined settings, so a later change here never writes back the old copy (decision 86)
       setSettings(await repo.getSettings(today ?? new Date()));
+      // The imported sessions count for "Your week" too
+      setSessions(practiceSessions(await repo.listSessions()));
       // And the new waiting count
       setPendingCount((await repo.listPendingSessions()).length);
       // Say what came in, and that what was here was kept
@@ -560,6 +577,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       setSettings(await repo.getSettings(today ?? new Date()));
       // Nothing waits for the coach now
       setPendingCount(0);
+      // No sessions left for "Your week"
+      setSessions([]);
       // Say what happened
       setMessage("Everything is deleted.");
     } catch (error) {
@@ -578,6 +597,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     setMessage("Sample sessions added. Open “Show your practice history” above to see them.");
   }
 
+  // The week's summary, following the pause-word setting as it changes
+  const week = today && settings ? yourWeek(sessions, today, { pauseWords: pauseWordsShown(settings) }) : null;
+
   // Draw the page
   return (
     // A single readable column
@@ -590,10 +612,12 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Result of the last action, read out to screen readers (takes no room until there is one) */}
       <p role="status" className={message ? "mt-4 text-accent" : "sr-only"}>{message}</p>
 
-      {/* How you are doing: one way in, the profile, which holds the coach summary, check-ins, measures and the way to History (decisions 90 and 109) */}
+      {/* How you are doing: the profile, which holds the coach summary, check-ins, measures and the way to History (decisions 90 and 109), and "Your week" (decision 140) */}
       <Group id="group-progress" title="Your progress">
-        {/* The one row */}
+        {/* The profile's row */}
         <div className={`mt-4 px-5 ${CARD}`}><RowLink href="/profile">Your speaking profile and history</RowLink></div>
+        {/* Pause words over three weeks and one suggestion, once there are three sessions (moved here from Today, decision 140) */}
+        {today && settings && week && <div className="mt-4"><YourWeekCard week={week} /></div>}
       </Group>
 
       {/* Practice: what to work on, when, the check-in day and conversation turns, with the rarely changed options folded (decision 110) */}
