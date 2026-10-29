@@ -175,6 +175,35 @@ describe("PracticeScreen", () => {
     await waitFor(() => expect([card.getAttribute("href"), card.textContent?.includes("For your focus"), screen.getByRole("link", { name: "All courses" }).getAttribute("href")]).toEqual(["/courses/course?id=stop-freezing", true, "/courses"]));
   });
 
+  // One course only, so the main ways to practise stay near the top: the focus's course, or the first course without a focus (decision 144)
+  it("shows one course: the focus's, or the first", async () => {
+    // The addresses of the course cards drawn, once there are as many as expected
+    const courseLinks = (count: number) => {
+      // Every link to a course
+      const hrefs = [...document.querySelectorAll("a[href^='/courses/course?id=']")].map((link) => link.getAttribute("href"));
+      // Not yet drawn
+      if (hrefs.length < count) throw new Error("not yet");
+      // Drawn
+      return hrefs;
+    };
+    // A repository with telling stories picked
+    const repository = createRepository(new MemoryStore());
+    // The focus
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["stories"] });
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // The course cards, once drawn
+    const focused = await waitFor(() => courseLinks(1));
+    // Clear
+    cleanup();
+    // No focus
+    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The course cards, once drawn
+    const plain = await waitFor(() => courseLinks(1));
+    // Confirm one each: the stories course, then Stop freezing
+    expect([focused, plain]).toEqual([["/courses/course?id=stories-that-land"], ["/courses/course?id=stop-freezing"]]);
+  });
+
   // With a focus, its group comes first and says so; a talk coming up brings back "Your talk" and the short speech first (decision 97)
   it("puts the focus group first", async () => {
     // A repository with two areas picked
