@@ -1,10 +1,12 @@
 "use client";
-// The Home screen: today's practice only, with a short line on the streak and the week's focus (everything else is in Practice)
+// The Home screen: today's practice, with a short line on the streak and the week's focus, the Connect lesson the user is on and Quick play (everything else is in Practice; decision 135)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
+// Load the icon for a course prompt coming back (decision 131)
+import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { PRESS, PRIMARY, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
@@ -24,7 +26,7 @@ import type { LoadedPlan } from "@/data/dailyPlan";
 // Load the plan loader (the plan's code and content load beside the saved data, not with the page; decision 88)
 import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
 // Load the plan's time and addresses
-import { nextStepIndex, planHref, planMinutes, type PlanStep } from "@/core/planSteps";
+import { nextStepIndex, planHref, planMinutes } from "@/core/planSteps";
 // Load the done and next marks on a path
 import { PathMark } from "@/components/script/PathMark";
 // Load the day's summary wording
@@ -35,6 +37,11 @@ import { dayKey } from "@/core/dates";
 import { firstFinishToday } from "@/data/dayCelebrated";
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
+// Load the hand-drawn welcome (decision 134)
+import { Drawing } from "@/components/script/Drawing";
+// Load the step's scene as its mark, and which scene each step shows (decision 137)
+import { SceneMark } from "@/components/scenes/SceneMark";
+import { stepScene } from "@/components/scenes/sceneFor";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 // Load what the user wants to get better at most: the reader, the words for it, and saving it (decision 97)
@@ -48,11 +55,11 @@ const STEP_COUNTS: Readonly<Record<number, string>> = { 1: "One", 2: "Two", 3: "
 
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
-// Load the mission card and rules
-import { MissionCard } from "@/components/script/MissionCard";
-import { missionDays, missionToday } from "@/core/missions";
-// Load the record type for mission tries
-import type { MissionRecord } from "@/data/records";
+// Load the mission days, which count towards the run
+import { missionDays } from "@/core/missions";
+// Load the scene tile and the icons for Today's two tiles (decision 138)
+import { WayCard } from "@/components/script/WayCard";
+import { ShuffleIcon, UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared heading and card looks
 import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the end-of-day moment
@@ -69,12 +76,10 @@ import { markNudgeDismissed, readSafetyFacts } from "@/data/storageSafety";
 import { CHECK_IN_MINUTES, CHECK_IN_PARTS, groupCheckIns, readCheckInSettings, resurfaceDue, sinceWords } from "@/core/checkIn";
 // Load the way to put the reminder aside
 import { markReminderSeen } from "@/data/checkIns";
-
-// A step in a few words for the action band, so its side text never reads like a tab name ("a Learn card", "Warm up")
-function stepWords(step: PlanStep): string {
-  // A card, the check-in, or the step's own name
-  return step.kind === "card" ? "a Learn card" : step.kind === "checkin" ? "your check-in" : step.label;
-}
+// Load the Quick play pick's type (types only; its code and content load after the page has shown, decision 88)
+import type { QuickPlayPick } from "@/core/quickPlay";
+// Load the saved passphrase, which means the coach can write lines for any conversation
+import { readPassphrase } from "@/data/passphrase";
 
 // Everything Home shows that comes from saved data
 interface HomeData {
@@ -98,18 +103,34 @@ interface HomeData {
   weekLine: string;
   // Whether to play the small completion moment (the first time Today shows the day done)
   celebrate: boolean;
-  // Every mission try, oldest first
-  missions: MissionRecord[];
   // The one reminder to keep practice safe, if any (decision 64)
   nudge: SafetyNudge;
   // What the user wants to get better at most: missing until asked, empty when left open (decision 97)
   practiceFocus: FocusAreaId[] | undefined;
   // The reminder to hear the first check-in beside the latest, when one is due (decision 100)
   reminder: { days: number } | null;
+  // The Connect lesson the user is on, or none once every lesson is done (decision 135)
+  lesson: CurrentLesson | null;
+  // Quick play's pick for this visit: a kind of practice at random (decision 135)
+  quick: QuickPlayPick;
+}
+
+// The Connect lesson the user is on: the first lesson not yet answered, in the units' order (decision 95)
+interface CurrentLesson {
+  // Its unit's name
+  unit: string;
+  // Its number in the unit
+  number: number;
+  // Lessons in the unit
+  total: number;
+  // Its title
+  title: string;
+  // What it uses, to tell it apart from today's steps
+  promptId: string;
 }
 
 // Load and prepare everything Home shows, saving the weekly focus if it moved on
-async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
+async function loadHome(repository: Repository, now: Date, random: () => number): Promise<HomeData> {
   // Start fetching the plan's code at once, so it arrives while the saved data is read (a failure shows when the plan is loaded below)
   void import("@/data/dailyPlan").catch(() => undefined);
   // Read every session that counts (private moment notes are left out)
@@ -124,6 +145,10 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
   const talks = await repository.listTalks();
   // Today's practice (after the focus is saved, so both agree)
   const plan = await loadDailyPlanLater(repository, now);
+  // The lesson and Quick play's code, fetched after the page has shown like the plan's (decision 88)
+  const [{ nextUnit }, { quickPlay }] = await Promise.all([import("@/core/units"), import("@/core/quickPlay")]);
+  // The unit the user is in, with its next lesson
+  const unit = nextUnit(sessions);
   // Put everything together
   return {
     // How many sessions there are
@@ -144,8 +169,6 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     plan,
     // The days practised this week
     weekLine: weekSentence(sessions, now),
-    // Mission tries
-    missions: settings.missions ?? [],
     // The moment, once a day, when every step is done
     celebrate: plan.done.length > 0 && plan.done.every(Boolean) && firstFinishToday(dayKey(now)),
     // The one reminder to keep practice safe, if any
@@ -153,6 +176,11 @@ async function loadHome(repository: Repository, now: Date): Promise<HomeData> {
     // What the user wants to get better at most
     practiceFocus: readPracticeFocus(settings.practiceFocus),
     // The reminder to look back, from the sessions already read; held back while today's check-in waits, so Today asks one thing at a time
+    // The lesson the user is on
+    lesson: unit.nextLesson ? { unit: unit.unit.name, number: unit.nextLesson.number, total: unit.lessonsTotal, title: unit.nextLesson.title, promptId: unit.nextLesson.id } : null,
+    // A kind of practice at random, with conversations picked as their own Quick play picks them
+    quick: quickPlay({ conversations: sessions.filter((session) => session.mode === "conversation").map((session) => ({ scenarioId: session.conversation?.scenarioId })), written: readPassphrase() !== "" }, random),
+    // The reminder to look back (below)
     reminder: plan.checkIn && !plan.done[plan.steps.findIndex((step) => step.kind === "checkin")] ? null : resurfaceDue({ today: now, checkIns: groupCheckIns(sessions, readCheckInSettings(settings.checkIn)), settings: readCheckInSettings(settings.checkIn) }),
   };
 }
@@ -240,7 +268,7 @@ function FocusAsk({ onAnswer }: { onAnswer: (picks: FocusAreaId[]) => Promise<vo
 }
 
 // Draw the Home screen
-export function HomeScreen(props: ScreenProps) {
+export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { random?: () => number }) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
   // Saved data, once loaded
@@ -257,7 +285,7 @@ export function HomeScreen(props: ScreenProps) {
     // Ignore the result if the screen closes first
     let cancelled = false;
     // Load and store the data
-    loadHome(repo, today).then((loaded) => {
+    loadHome(repo, today, random).then((loaded) => {
       // Keep it only if the screen is still open
       if (!cancelled) setData(loaded);
     }).catch((error: unknown) => {
@@ -269,7 +297,7 @@ export function HomeScreen(props: ScreenProps) {
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo, today, attempt]);
+  }, [repo, today, attempt, random]);
 
   // Try loading again after a problem
   function retryLoad() {
@@ -322,6 +350,8 @@ export function HomeScreen(props: ScreenProps) {
   const checkInWaiting = nextStep?.kind === "checkin";
   // This week's focus, once there is practice it can be about (with none yet, "This week: strong opening." read as a verdict on nothing; round 4)
   const showFocus = !!data && !data.showWelcome && data.run.any;
+  // The lesson the user is on, unless it is already one of today's open steps (one link to it is enough)
+  const lesson = plan && data?.lesson && !plan.steps.some((step, index) => step.promptId === data.lesson?.promptId && !plan.done[index]) ? data.lesson : null;
   // Whether the margin has anything in it; with nothing, the page is one centred column instead of an empty left column on a computer
   const margin = !!data && !data.showWelcome && (runLines.length > 0 || (!data.hideStreak && data.run.any) || showFocus || !!data.anchor || !!data.practiceFocus?.length);
 
@@ -382,6 +412,8 @@ export function HomeScreen(props: ScreenProps) {
           {/* A first visit: one question, then straight to the right place */}
           {data?.showWelcome && (
             <section aria-label="Welcome" className="mt-8 md:mt-0">
+              {/* Someone mid-explanation, to say hello (decision 134) */}
+              <Drawing name="welcome" className="mb-4 block h-40 motion-safe:animate-rise md:h-52" />
               {/* The greeting */}
               <h1 className="font-display text-prompt font-semibold tracking-tight motion-safe:animate-rise md:text-prompt-xl">Welcome to VoiceLab</h1>
               {/* What it is, and what VoiceLab keeps (the speech recognition is explained before the microphone is first used; decision 97) */}
@@ -430,14 +462,16 @@ export function HomeScreen(props: ScreenProps) {
                   // How far the check-in has got, in parts (decision 100)
                   const parts = step.kind === "checkin" && plan.checkIn ? plan.checkIn.parts.filter((part) => part.status !== "open").length : 0;
                   // That line (or, for a step put off today, saying so; for the check-in, its parts)
-                  const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
+                  const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : step.kind === "course" && plan.done[index] ? "Part done" : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
+                  // Its blob scene, if its kind has one (decision 137)
+                  const scene = stepScene(step);
                   // One step
                   return (
                     <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
-                      {/* The whole row starts the step: a rounded tile, warm when next */}
-                      <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
-                        {/* Its mark (when the day is first done, the ticks grow in one by one, unless motion is unwelcome) */}
-                        <span className={data?.celebrate ? "motion-safe:animate-pop" : undefined} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}><PathMark mark={mark} number={index + 1} /></span>
+                      {/* The whole row starts the step: a rounded tile, warm when next (and marked as the current step, since no band names it; decision 138) */}
+                      <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} aria-current={mark === "next" ? "step" : undefined} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
+                        {/* Its mark: its scene where its kind has one, else its number (decision 137), each in the same width so the words line up; when the day is first done, the marks grow in one by one, unless motion is unwelcome */}
+                        <span className={`flex w-14 flex-none justify-center ${data?.celebrate ? "motion-safe:animate-pop" : ""}`} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}>{scene ? <SceneMark scene={scene} mark={mark} faded={!!(plan.done[index] || plan.skipped[index])} /> : <PathMark mark={mark} number={index + 1} />}</span>
                         {/* What it is */}
                         <span className="min-w-0 flex-1">
                           {/* Its name and time */}
@@ -459,6 +493,38 @@ export function HomeScreen(props: ScreenProps) {
             </section>
           )}
 
+          {/* A course prompt coming back: the same question again, then both answers side by side (decision 131) */}
+          {plan?.revisit && (
+            <Link href={plan.revisit.href} data-revisit className={`mt-6 flex items-center gap-3 rounded-2xl border border-rule px-4 py-3 ${PRESS} hover:bg-paper`}>
+              {/* The mark */}
+              <span aria-hidden="true" className="flex size-9 flex-none items-center justify-center rounded-xl bg-warm-tint text-warm-ink"><ArrowCounterClockwiseIcon className="size-5" /></span>
+              {/* What it is */}
+              <span className="min-w-0 flex-1">
+                {/* Heading and where it comes from */}
+                <span className="block text-footnote text-ink-muted">Back again · from {plan.revisit.from}</span>
+                {/* The question */}
+                <span className="block leading-snug">{plan.revisit.question}</span>
+                {/* What happens */}
+                <span className="block text-footnote text-ink-muted">Answer it again, then hear both side by side.</span>
+              </span>
+            </Link>
+          )}
+
+          {/* Beside today's steps, as two scene tiles: the lesson the user is on, and Quick play, a kind of practice at random (decisions 135 and 138) */}
+          {plan && data && (
+            <section aria-labelledby="also-today" className="mt-8">
+              {/* Run-in heading */}
+              <h2 id="also-today" className={SECTION_HEADING}>Also today</h2>
+              {/* The tiles, two by two */}
+              <ul className="mt-3 grid grid-cols-2 gap-3">
+                {/* The lesson the user is on, straight into it (its unit and place under its title) */}
+                {lesson && <li><WayCard way={{ name: lesson.title, detail: `Your lesson · ${lesson.unit} ${lesson.number}/${lesson.total}`, href: `/session?mode=smalltalk&prompt=${lesson.promptId}`, icon: UsersThreeIcon, scene: "conversation" }} /></li>}
+                {/* Quick play: what it is, not what it picked, so the pick stays a surprise */}
+                <li><WayCard way={{ name: "Quick play", detail: "A random kind of practice", href: data.quick.href, icon: ShuffleIcon }} delay={70} /></li>
+              </ul>
+            </section>
+          )}
+
           {/* The reminder to hear the first check-in beside the latest (decision 100) */}
           {data?.reminder && today && <ReminderCard days={data.reminder.days} onSeen={async () => { await markReminderSeen(repo, data.reminder!.days, today); setData({ ...data, reminder: null }); }} />}
 
@@ -472,12 +538,6 @@ export function HomeScreen(props: ScreenProps) {
             </div>
           )}
 
-          {/* Today's mission: a small real-world try, under the steps (the task and a link; the prediction lives on Learn, decisions 62 and 66) */}
-          {plan && data && today && (
-            <div className="mt-8">
-              <MissionCard key={data.missions.length} repo={repo} now={today} state={missionToday(data.missions, today)} onChange={(missions) => setData({ ...data, missions })} compact />
-            </div>
-          )}
 
           {/* Once done: more to do, for anyone who wants to keep going */}
           {plan && nextIndex === -1 && plan.more.length > 0 && (
@@ -504,14 +564,8 @@ export function HomeScreen(props: ScreenProps) {
 
           {/* Push the action down */}
           <div className="flex-1" />
-          {/* The main action: start or carry on with today's practice, or practise more once it is done */}
-          {plan && (nextIndex === -1 ? (
-            // Once done: with a focus, its one next thing; otherwise everything in Practice (decision 97)
-            plan.suggestion ? <ActionBand action={plan.suggestion.action} aside={`for ${plan.suggestion.phrase}`} href={plan.suggestion.href} /> : <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />
-          ) : (
-            // The band; which step it starts is said beside it once a step is done or put off (on a fresh day the first step is the highlighted row just above; decision 113)
-            <ActionBand action={checkInWaiting ? (plan.checkIn?.parts.some((part) => part.status !== "open") ? "Continue check-in" : "Start check-in") : doneCount === 0 ? "Start today’s practice" : `Continue: step ${nextIndex + 1}`} aside={nextStep ? (checkInWaiting ? `about ${CHECK_IN_MINUTES} min` : doneCount > 0 || plan.skipped.some(Boolean) ? `Step ${nextIndex + 1} · ${stepWords(nextStep)}` : "") : ""} href={planHref(plan.steps[nextIndex]!, nextIndex + 1)} />
-          ))}
+          {/* Once the day is done, the one main action: with a focus, its next thing; otherwise everything in Practice (decision 97). While steps are left there is no band: the next step is the warm row in the list (decision 138) */}
+          {plan && nextIndex === -1 && (plan.suggestion ? <ActionBand action={plan.suggestion.action} aside={`for ${plan.suggestion.phrase}`} href={plan.suggestion.href} /> : <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />)}
         </div>
       </div>}
     </main>

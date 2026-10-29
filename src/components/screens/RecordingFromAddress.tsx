@@ -21,6 +21,8 @@ import { CHECK_IN_PITCH } from "@/content/checkIn";
 import { checkInDayOf } from "@/core/checkIn";
 // Load the reader for a short speech's plan
 import { outlineFromQuery } from "@/core/outline";
+// Load the course take reader (decision 131)
+import { courseTakeFromQuery } from "@/core/courses";
 // Load the story choice checks and today's story prompt (decision 92)
 import { storyPromptForDay, storyTakeFromQuery } from "@/content/stories";
 // Load the text loader, so a speech part's text is loaded before the screen shows (decision 88)
@@ -83,7 +85,7 @@ export function RecordingFromAddress() {
   return (
     <RecordingScreen
       // A fresh screen for each round of a 4/3/2 loop, which moves on within this page (decision 118)
-      key={loop ? `loop-${loop.id ?? "new"}-${loop.round}` : "take"}
+      key={loop ? `loop-${loop.id ?? "new"}-${loop.round}` : params.get("course") ? `course-${params.get("course")}-${params.get("revisit") ? "back" : (params.get("try") ?? "1")}` : "take"}
       // The prompt
       promptId={promptId}
       // A short speech's topic, points and length
@@ -92,6 +94,7 @@ export function RecordingFromAddress() {
       checkIn={checkIn}
       // A round of a 4/3/2 loop
       loop={loop}
+      course={courseTakeFromQuery(params)}
       // A story's set-up: its template (the suggested one when the address has none), any focus and its length (decisions 92 and 126)
       story={mode === "story" ? storyTakeFromQuery(params, promptId) : null}
       // Full session or warm-up

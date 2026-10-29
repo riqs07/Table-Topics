@@ -351,7 +351,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
           ) : starting ? (
             <StatusBlob compact={false} label="Starting…" detail="allow the microphone" />
           ) : (
-            <StartBlob compact={false} onStart={() => void begin()} label={notice || problem ? "Try again" : "Say it back"} detail={model[step] !== undefined ? "the same way" : "after listening"} />
+            <StartBlob compact={false} onStart={() => void begin()} mood={notice || problem ? "hmm" : "ready"} label={notice || problem ? "Try again" : "Say it back"} detail={model[step] !== undefined ? "the same way" : "after listening"} />
           )}
           {/* The whole passage can be left out */}
           {step === passage.phrases.length && !take && !recording && !starting && !stopping && <p className="mt-2"><button type="button" onClick={next} className={`${TEXT_LINK} text-ink-muted`}>Finish without the whole passage</button></p>}

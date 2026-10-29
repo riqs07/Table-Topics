@@ -57,8 +57,8 @@ describe("PracticeScreen", () => {
     await openMore();
     // A group's rows as [name, address] ("See all" first, where it is a link)
     const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
-    // Confirm the stories group, second on the page, with today's story, telling one again and guided stories, the moments under "See all" (decision 92)
-    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"]], 1]);
+    // Confirm the stories group, second of the groups (the courses' heading sits above them, decision 131), with today's story, telling one again and guided stories, the moments under "See all" (decision 92)
+    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses").indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"]], 1]);
     // Confirm the other groups: the voice group's warm-up and the first two modes (clear sounds with the word lists as one row), and speaking on the spot's three
     expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Speak on the spot")]).toEqual([
       [[undefined, "/small-talk"], ["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
@@ -161,6 +161,20 @@ describe("PracticeScreen", () => {
     expect([screen.queryByRole("region", { name: "Your talks" }), screen.queryByText("Pitch"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/rehearse")]).toEqual([null, null, false]);
   });
 
+  // The guided courses sit at the top, the focus's marked, each with its progress (decision 131)
+  it("lists the courses at the top, the focus's marked, each with its progress (decision 131)", async () => {
+    // A repository with thinking on your feet picked and one part done
+    const repository = createRepository(new MemoryStore());
+    // The focus and the progress
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["spot"], courses: { "sf-beat-1": { doneAt: NOW.toISOString(), takeId: null } } });
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // The course card
+    const card = await screen.findByRole("link", { name: "Stop freezing, 1 of 10" });
+    // Confirm it leads to the course, says it is for the focus, and the list of all courses is linked
+    await waitFor(() => expect([card.getAttribute("href"), card.textContent?.includes("For your focus"), screen.getByRole("link", { name: "All courses" }).getAttribute("href")]).toEqual(["/courses/course?id=stop-freezing", true, "/courses"]));
+  });
+
   // With a focus, its group comes first and says so; a talk coming up brings back "Your talk" and the short speech first (decision 97)
   it("puts the focus group first", async () => {
     // A repository with two areas picked
@@ -172,13 +186,41 @@ describe("PracticeScreen", () => {
     // Open the rest, where the groups are
     await openMore();
     // Wait for the order to follow the focus
-    await waitFor(() => expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)[0]).toBe("Your voiceYour focus"));
+    await waitFor(() => expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses")[0]).toBe("Your voiceYour focus"));
     // The headings in order
-    const headings = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses");
     // The on-the-spot rows' names
     const spot = within(screen.getByRole("region", { name: /^Speak on the spot/ })).getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent);
     // Confirm the order, the marks, and the first rows
     expect([headings.slice(0, 5), spot.slice(0, 3)]).toEqual([["Your voiceYour focus", "Speak on the spotYour focus", "Tell stories", "Everyday conversation"], ["Your talk", "Short speech", "Rapid Fire"]]);
+  });
+
+  // The main ways are scene cards: with no focus Rapid Fire is the big one, moving all the time, and the other four play a few rounds then rest (decision 136)
+  it("shows the main ways as scene cards, Rapid Fire big with no focus", async () => {
+    // Draw the page
+    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The list
+    const list = await screen.findByRole("list", { name: "Main ways to practise" });
+    // Each card's size, name, scene and how much it moves
+    const cards = [...list.querySelectorAll("[data-way-card]")].map((card) => [card.getAttribute("data-way-card"), card.querySelector(".font-display")?.textContent, card.querySelector("[data-scene]")?.getAttribute("data-scene"), card.querySelector("[data-scene]")?.getAttribute("data-motion")]);
+    // Confirm the big one first, then the four, with no focus mark
+    expect([cards, screen.queryByText("Your focus")]).toEqual([[["big", "Rapid Fire", "rapid-fire", "loop"], ["small", "Prepared speech", "prepared-speech", "few"], ["small", "Tell a story", "story", "few"], ["small", "Talk with someone", "conversation", "few"], ["small", "Read aloud", "read-aloud", "few"]], null]);
+  });
+
+  // With a focus, its main way is the big card and says so, still named by its own name (decision 136)
+  it("makes the focus's main way the big card", async () => {
+    // A repository with telling stories picked
+    const repository = createRepository(new MemoryStore());
+    // The focus
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["stories"] });
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // Wait for the big card to follow the focus
+    await waitFor(() => expect(document.querySelector("[data-way-card='big'] .font-display")?.textContent).toBe("Tell a story"));
+    // The big card
+    const big = document.querySelector("[data-way-card='big']") as HTMLElement;
+    // Confirm its mark, its link's name starting with the way's name, and the others in their usual order
+    expect([within(big).getByText("Your focus").textContent, screen.getByRole("link", { name: /^Tell a story/ }) === big, [...document.querySelectorAll("[data-way-card='small'] .font-display")].map((name) => name.textContent)]).toEqual(["Your focus", true, ["Rapid Fire", "Prepared speech", "Talk with someone", "Read aloud"]]);
   });
 
   // This week's challenge off the page lives here, and ticking it saves it as done

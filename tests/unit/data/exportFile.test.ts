@@ -421,6 +421,24 @@ describe("parseExport", () => {
     expect(await fresh.getSession("l3")).toMatchObject({ selfRating: session.selfRating, loop: session.loop });
   });
 
+  // A take inside a guided course goes out and comes back; a broken one is refused (decision 131)
+  it("carries a take's course part, and refuses a broken one", async () => {
+    // A second try of a course part
+    const session = makeSession({ id: "c2", mode: "talk", promptId: "t003", course: { part: "sf-beat-1", attempt: 2 } });
+    // Saved
+    const repository = createRepository(new MemoryStore());
+    // (saved)
+    await repository.saveSession(session);
+    // Exported and read back
+    const file = parseExport(JSON.stringify(await buildExport(repository, NOW)));
+    // The file with the course changed
+    const changed = (course: unknown) => JSON.stringify({ ...file, sessions: file.sessions.map((item) => ({ ...item, course })) });
+    // Whether a file is refused
+    const refused = (text: string) => { try { parseExport(text); return false; } catch { return true; } };
+    // Kept; a try of 0, a missing part and a non-boolean comeback are refused
+    expect([file.sessions[0]?.course, refused(changed({ part: "sf-beat-1", attempt: 0 })), refused(changed({ attempt: 1 })), refused(changed({ part: "p", attempt: 1, revisit: "yes" }))]).toEqual([session.course, true, true, true]);
+  });
+
   // A damaged file with a broken session
   it("rejects a file with a damaged record", () => {
     // Build a file whose session is missing its transcript

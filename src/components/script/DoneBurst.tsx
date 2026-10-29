@@ -1,7 +1,7 @@
-// The end-of-day moment: a full ring, a warm badge with a tick, and sparks flying out once (decision 69); with reduced motion only the still ring and badge show
+// The end-of-day moment: a full ring, the warm blob celebrating in the middle (decision 134; a tick before), and sparks flying out once (decision 69); with reduced motion only the still ring and blob show
 
-// Load the tick
-import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the blob's face
+import { BlobFace } from "@/components/script/BlobFace";
 // Load the type for inline custom properties
 import type { CSSProperties } from "react";
 
@@ -53,10 +53,15 @@ export function DoneBurst({ celebrate }: { celebrate: boolean }) {
         {/* Its full sweep, drawn round when it first shows */}
         <circle cx="60" cy="60" r="48" fill="none" strokeWidth="12" strokeLinecap="round" strokeDasharray="302" className={`stroke-accent ${celebrate ? "motion-safe:animate-ring" : ""}`} style={{ "--vl-ring-len": "302" } as CSSProperties} />
       </svg>
-      {/* The warm badge with its tick */}
-      <span className={`relative flex size-20 items-center justify-center rounded-full bg-warm text-on-warm ${celebrate ? "motion-safe:animate-pop" : ""}`} style={celebrate ? { animationDelay: "500ms" } : undefined}>
-        {/* The tick */}
-        <CheckIcon weight="bold" className="size-10" />
+      {/* The warm blob, popping in the first time */}
+      <span className={`relative flex size-24 items-center justify-center ${celebrate ? "motion-safe:animate-pop" : ""}`} style={celebrate ? { animationDelay: "500ms" } : undefined}>
+        {/* Its shape, slowly changing outline */}
+        <span className="absolute inset-0 rounded-full bg-warm motion-safe:animate-morph" />
+        {/* Its face, celebrating, with a few hops the first time */}
+        <span data-done-face className={`relative flex w-11 text-on-warm ${celebrate ? "motion-safe:animate-hop" : ""}`}>
+          {/* The face */}
+          <BlobFace mood="celebrating" className="w-full" />
+        </span>
       </span>
     </div>
   );

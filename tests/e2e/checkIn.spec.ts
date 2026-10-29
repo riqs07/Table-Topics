@@ -1,5 +1,5 @@
 // The weekly check-in end to end (decision 100): the first check-in's four parts with the stand-in microphone, then a week later (the page's clock moved on) the second from Today, the comparison of the two with both recordings playing, and the reminder to look back
-import { expect, skipRating, test, useStandIns } from "./support/fixtures";
+import { expect, test, useStandIns } from "./support/fixtures";
 // Load the page type, for the helpers
 import type { Page } from "@playwright/test";
 
@@ -53,8 +53,6 @@ async function recordNextPart(page: Page, start: RegExp): Promise<void> {
   await page.waitForTimeout(11_000);
   // Stop
   await stop.click();
-  // Skip the question before the results (decision 116)
-  await skipRating(page);
   // Back on the check-in, never stuck on "Saving…"
   await expect(page).toHaveURL(/\/check-in\/run/, { timeout: 15_000 });
 }
@@ -96,8 +94,8 @@ test("Weekly check-in: a first one, a second a week later, then compare and hear
   await page.goto("/");
   // (its headline)
   await expect(page.getByRole("heading", { name: "Check-in day." })).toBeVisible();
-  // Start it from Today
-  await page.getByRole("link", { name: /^Start check-in/ }).click();
+  // Start it from Today: the check-in is the current step (no band since decision 138)
+  await page.locator("[aria-current='step']").click();
   // The second check-in
   await expect(page.getByRole("heading", { name: "Check-in 2." })).toBeVisible();
   // Each part again

@@ -42,6 +42,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 27 | [handoff/voice-journal-starter.md](handoff/voice-journal-starter.md) | Starting a new voice journal app: what to reuse from VoiceLab, the mistakes to avoid from day one, and what to decide first? (For the next project's AI session) | 10 min |
 | 28 | [research/competitors-2026-10.md](research/competitors-2026-10.md) | Who does VoiceLab compete with, where are the holes in the market, who is the ICP, and how should it be pitched? | 15 min |
 | 29 | [research/flirting-dynamics-2026-10.md](research/flirting-dynamics-2026-10.md) | What does the science say about flirting (signals, attraction, misreading interest, rejection, myths), how does it relate to deeper connection, and what could VoiceLab teach without a dating persona? | 12 min |
+| 30 | [plan-courses.md](plan-courses.md) | How do guided courses work (courses, lessons, parts, the prompt that comes back), what did the user decide, and what is still draft? | 4 min |
 
 ## Inspector checklist
 

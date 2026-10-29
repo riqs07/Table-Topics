@@ -6,6 +6,8 @@ import { SHADOW_PASSAGES, VOICE_DRILLS } from "@/content/voice";
 import { PAUSE_DRILLS, TRICKY_WORDS } from "@/content/prompts";
 // Load the rule for which item comes next
 import { nextToPractise } from "@/core/skillNext";
+// Load the practice groups' ids
+import type { PracticeGroupId } from "@/core/practiceFocus";
 
 // How many rows a group shows at once, and one more for a group the user picked as their focus
 export const ROWS_SHOWN = 3;
@@ -54,4 +56,28 @@ export function nextClearSound(counts: ReadonlyMap<string, number>): { id: strin
   const id = nextToPractise(VOICE_ROW_IDS.clear, counts) ?? VOICE_ROW_IDS.clear[0]!;
   // A word list is read aloud; a drill opens its own page
   return { id, href: TRICKY_WORDS.some((list) => list.id === id) ? `/session?mode=read&prompt=${id}` : `/voice/drill?id=${id}` };
+}
+
+// Which of the main ways stands for each practice group, for the big card at the top of Practice (decision 136)
+export const FEATURED_BY_GROUP: Readonly<Record<PracticeGroupId, string>> = {
+  // Thinking on my feet, speaking at work, a talk coming up
+  "on-the-spot": "Rapid Fire",
+  // Telling stories
+  "stories": "Tell a story",
+  // Small talk and conversations
+  "conversation": "Talk with someone",
+  // How I sound
+  "voice": "Read aloud",
+};
+
+// The main ways split into the one shown big and the rest, in their usual order: the first focus group's way when there is one (marked as the focus), otherwise the first way
+export function featureFirst<Row extends { name: string }>(rows: ReadonlyArray<Row>, groups: ReadonlyArray<PracticeGroupId>): { featured: Row; rest: Row[]; forFocus: boolean } | null {
+  // Nothing to show
+  if (rows.length === 0) return null;
+  // The focus groups' ways that are on the list, first group first
+  const picked = groups.map((group) => rows.find((row) => row.name === FEATURED_BY_GROUP[group])).find((row) => row !== undefined);
+  // That one, or the first
+  const featured = picked ?? rows[0]!;
+  // It, the others, and whether it came from the focus
+  return { featured, rest: rows.filter((row) => row !== featured), forFocus: picked !== undefined };
 }

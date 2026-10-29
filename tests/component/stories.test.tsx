@@ -214,24 +214,54 @@ describe("RecordingScreen, stories", () => {
     fireEvent.click(screen.getByRole("button", { name: /Plan it/ }));
     // Ready while planning
     fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
-    // Recording, with the timing words and the shape's beats on one line
+    // Recording, with the timing words and the template's beats in view
     await screen.findByRole("button", { name: /Stop/ });
     // The words heard
     await fake.say({ final: GOOD, interim: "" });
-    // Confirm the timing light and the compact plan
-    expect([!!document.querySelector("[data-signal]"), !!document.querySelector("[data-story-plan='compact']")]).toEqual([true, true]);
+    // Confirm the timing light, the switch on, and the template's beats shown (decision 130)
+    expect([!!document.querySelector("[data-signal]"), (screen.getByRole("checkbox", { name: "Show the template" }) as HTMLInputElement).checked, !!within(screen.getByRole("region", { name: "Your beats" })).getByText("The result, with a number")]).toEqual([true, true, true]);
     // Forty seconds pass
     time += 40_000;
     // Stop
     fireEvent.click(screen.getByRole("button", { name: /Stop/ }));
     // It opens the take
-    // Skip the question before the results (decision 116)
-    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     await waitFor(() => expect(navigate).toHaveBeenCalled());
     // The saved take
     const [saved] = await repository.listSessions();
     // Confirm its kind, story, set-up and record
     expect([saved?.mode, saved?.promptId, saved?.story, (await repository.getStory("sp04"))?.title]).toEqual(["story", "sp04", TAKE, "Running late"]);
+  });
+
+  // While telling, the template can be hidden for someone who tells without it, and the choice is remembered for the next story (decision 130)
+  it("hides the template while telling when switched off, and remembers it", async () => {
+    // Start with nothing saved
+    localStorage.removeItem("voicelab-story-template");
+    // Draw a story
+    render(<RecordingScreen promptId="sp04" mode="story" retryOf={null} story={TAKE} repository={createRepository(new MemoryStore())} services={fakeServices(GOOD).services} clock={() => NOW} navigate={() => {}} />);
+    // Plan, then Ready
+    fireEvent.click(await screen.findByRole("button", { name: /Plan it/ }));
+    // (ready)
+    fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
+    // Recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Switch the template off
+    fireEvent.click(screen.getByRole("checkbox", { name: "Show the template" }));
+    // What shows now, and what is stored
+    const hidden = [screen.queryByRole("region", { name: "Your beats" }), localStorage.getItem("voicelab-story-template")];
+    // Clear the screen
+    cleanup();
+    // The next story
+    render(<RecordingScreen promptId="sp01" mode="story" retryOf={null} story={TAKE} repository={createRepository(new MemoryStore())} services={fakeServices(GOOD).services} clock={() => NOW} navigate={() => {}} />);
+    // Plan, then Ready
+    fireEvent.click(await screen.findByRole("button", { name: /Plan it/ }));
+    // (ready)
+    fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
+    // Recording
+    await screen.findByRole("button", { name: /Stop/ });
+    // Confirm hidden and saved, then still off with no beats on the next story
+    expect([hidden, (screen.getByRole("checkbox", { name: "Show the template" }) as HTMLInputElement).checked, screen.queryByRole("region", { name: "Your beats" })]).toEqual([[null, "off"], false, null]);
+    // Clear it for other checks
+    localStorage.removeItem("voicelab-story-template");
   });
 
   // Telling it again keeps the telling before's set-up, whatever the address says (here an older story told with a shape, which still reads)
@@ -319,7 +349,7 @@ describe("guided stories", () => {
     expect([screen.getByRole("heading", { level: 1 }).textContent, !!within(card).getByText("You got a hot dog."), card.querySelector("[data-twist]")?.textContent, !!within(card).getByText("What did the gorilla do?"), screen.queryByRole("region", { name: "Your beats" }), first, screen.getByRole("link", { name: /Start/ }).getAttribute("href"), within(card).getByText("Funny moment").textContent]).toEqual(["A day at the zoo", true, "TwistThe gorilla was staring right at you.", true, null, "/session?mode=story&prompt=gs13&template=lesson&focus=middle&length=full", "/session?mode=story&prompt=gs13&template=funny&focus=middle&length=full", "Funny moment"]);
   });
 
-  // While planning the facts card shows in place of the shape card; while telling, the facts on one line
+  // While planning the facts card shows in place of the shape card; while telling too, under a switch (decision 130)
   it("keeps the facts in view while planning and telling", async () => {
     // Fake services
     const fake = fakeServices(ZOO_ALIVE);
@@ -333,8 +363,8 @@ describe("guided stories", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Ready/ }));
     // Recording
     await screen.findByRole("button", { name: /Stop/ });
-    // Confirm the facts on one line beside the voice shape
-    expect(document.querySelector("[data-guided-card='compact']")?.textContent).toContain("You went to the zoo. · You got a hot dog.");
+    // Confirm the switch says facts, and the facts are in view
+    expect([(screen.getByRole("checkbox", { name: "Show the facts" }) as HTMLInputElement).checked, !!within(screen.getByRole("region", { name: "Your facts" })).getByText("You got a hot dog.")]).toEqual([true, true]);
   });
 
   // The results show what was added beyond the facts, any fact missed, and the coach's word on bringing them to life

@@ -1,4 +1,4 @@
-// "Your week" in Settings under Your progress (decision 78; moved from Today, decision 128): pause words a minute over three weeks as three bars, exactly one suggestion, and the way to the full history
+// "Your week" in Settings under Your progress (decision 78; moved from Today, decision 140): pause words a minute over three weeks as three bars, exactly one suggestion, and the way to the full history
 
 // Load the link component for moving between pages
 import Link from "next/link";

@@ -6,6 +6,8 @@ import type { ChallengeRecord, LearnCardProgress, MissionRecord, ScenarioProgres
 import { readPracticeFocus } from "@/core/practiceFocus";
 // Load the check-in settings' reader and join (decision 100)
 import { mergeCheckInSettings, readCheckInSettings } from "@/core/checkIn";
+// Load the safe reader for guided course progress (decision 131)
+import { readCourseProgress } from "@/core/courses";
 
 // The most warm-up days kept (the same as when they are saved)
 const WARMUP_DAYS_KEPT = 60;
@@ -97,6 +99,8 @@ export function mergeSettings(existing: SettingsRecord, incoming: SettingsRecord
   const wordsToWatch = joinMaps(existing.wordsToWatch, incoming.wordsToWatch, (a, b) => Math.max(a, b));
   // Mission tries: both, the further-on where both have one
   const missions = joinMissions(existing.missions, incoming.missions);
+  // Guided course parts: both, read safely; where both have one, the one answered again, otherwise the later (decision 131)
+  const courses = joinMaps(readCourseProgress(existing.courses), readCourseProgress(incoming.courses), (a, b) => (!!b.revisitedAt !== !!a.revisitedAt ? (b.revisitedAt ? b : a) : b.doneAt > a.doneAt ? b : a));
   // Warm-up days: both, the latest few
   const warmupDays = existing.warmupDays || incoming.warmupDays ? [...new Set([...(existing.warmupDays ?? []), ...(incoming.warmupDays ?? [])])].sort().slice(-WARMUP_DAYS_KEPT) : undefined;
   // Steps put off: the later day's list
@@ -108,5 +112,5 @@ export function mergeSettings(existing: SettingsRecord, incoming: SettingsRecord
   // (without the file's unchecked copy)
   delete merged.checkIn;
   // Each joined part, only where there is one
-  return { ...merged, ...(checkIn ? { checkIn } : {}), ...(practiceFocus ? { practiceFocus } : {}), ...(learn ? { learn } : {}), ...(scenarios ? { scenarios } : {}), ...(wordsToWatch ? { wordsToWatch } : {}), ...(missions ? { missions } : {}), ...(warmupDays ? { warmupDays } : {}), ...(skipped ? { skipped } : {}) };
+  return { ...merged, ...(checkIn ? { checkIn } : {}), ...(practiceFocus ? { practiceFocus } : {}), ...(learn ? { learn } : {}), ...(scenarios ? { scenarios } : {}), ...(wordsToWatch ? { wordsToWatch } : {}), ...(missions ? { missions } : {}), ...(courses && Object.keys(courses).length > 0 ? { courses } : {}), ...(warmupDays ? { warmupDays } : {}), ...(skipped ? { skipped } : {}) };
 }

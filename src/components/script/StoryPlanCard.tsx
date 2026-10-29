@@ -1,4 +1,4 @@
-// The story's plan as a small card (decisions 92 and 126): the template's beats in order (or, for a story told before templates, its shape's), any focus for this telling, and the three things every good story does; full while choosing and planning, one line beside the voice shape while telling
+// The story's plan as a small card (decisions 92 and 126): the template's beats in order (or, for a story told before templates, its shape's), any focus for this telling, and the three things every good story does; shown while choosing and planning, and while telling unless switched off (decision 130)
 
 // Load the template, shape and focus lookups, and the pointers
 import { STORY_POINTERS, findStoryFocus, findStoryShape, findStoryTemplate } from "@/content/stories";
@@ -39,24 +39,12 @@ export function StoryPointers() {
 }
 
 // Draw the card
-export function StoryPlanCard({ take, compact = false }: { take: StoryTake; compact?: boolean }) {
+export function StoryPlanCard({ take }: { take: StoryTake }) {
   // The beats
   const plan = planBeats(take);
   // The focus, if any
   const focus = findStoryFocus(take.focus);
-  // While telling: the beats on one line, and the focus under them
-  if (compact) {
-    // The margin version
-    return (
-      <div data-story-plan="compact" className="mt-6 border-t border-rule pt-3">
-        {/* The beats on one line */}
-        <p>{plan.beats.join(" · ")}</p>
-        {/* The focus */}
-        {focus && <p className="mt-2 font-semibold text-ink">{focus.name}</p>}
-      </div>
-    );
-  }
-  // While choosing and planning: the name, the beats numbered, and the focus with its tip
+  // The name, the beats numbered, and the focus with its tip
   return (
     <section aria-label="Your beats" data-story-plan="full" className={`mt-6 max-w-md p-4 ${CARD}`}>
       {/* Name and what it is for */}

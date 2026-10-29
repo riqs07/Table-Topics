@@ -2,7 +2,7 @@
 // The Settings screen: your history (folded), light or dark, how long recordings are kept, the coach, export and import, and deleting everything
 
 // Load React's state and effect tools
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState, useSyncExternalStore, type ChangeEvent } from "react";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
@@ -48,7 +48,7 @@ import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the choice of what to get better at most, and the reader for the saved one (decision 97)
 import { FocusPicker } from "@/components/script/FocusPicker";
 import { readPracticeFocus } from "@/core/practiceFocus";
-// Load the week's summary, the pause-word setting rule, the filter that leaves out private moment notes, and the card (moved here from Today, decision 128)
+// Load the week's summary, the pause-word setting rule, the filter that leaves out private moment notes, and the card (moved here from Today, decision 140)
 import { yourWeek } from "@/core/yourWeek";
 import { pauseWordsShown } from "@/core/pauseWords";
 import { practiceSessions } from "@/core/sessionHome";
@@ -66,6 +66,9 @@ import { turnEndingOf, type TurnEnding } from "@/core/endOfTurn";
 import { UsageSection } from "@/components/script/UsageSection";
 // Load the month's conversation minutes check (decision 102)
 import { conversationMinutes, type ConversationMinutes } from "@/data/conversationClient";
+// Load the switch for the developer link to every mode (decision 132), and the never-firing subscription for reading it only in the browser
+import { readDevTools } from "@/data/devTools";
+import { subscribeToNothing } from "@/components/screens/screenBasics";
 
 // How far a long export or import has got, as a whole percentage
 const PROGRESS_PERCENT = (progress: Progress) => (progress.total > 0 ? Math.floor((progress.done / progress.total) * 100) : 100);
@@ -304,6 +307,8 @@ interface SettingsScreenProps extends ScreenProps {
 export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
   // The repository, and today's date once in the browser
   const { repo, today } = useScreenBasics(props);
+  // Whether the developer link to every mode was switched on in this browser, read only in the browser so the first draw matches the server's (decision 132)
+  const devLink = useSyncExternalStore(subscribeToNothing, readDevTools, () => false);
   // The passphrase being typed (starts with the saved one)
   const [passphrase, setPassphrase] = useState(() => (typeof window === "undefined" ? "" : readPassphrase()));
   // How many sessions are waiting for feedback
@@ -607,11 +612,11 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Result of the last action, read out to screen readers (takes no room until there is one) */}
       <p role="status" className={message ? "mt-4 text-accent" : "sr-only"}>{message}</p>
 
-      {/* How you are doing: the profile, which holds the coach summary, check-ins, measures and the way to History (decisions 90 and 109), and "Your week" (decision 128) */}
+      {/* How you are doing: the profile, which holds the coach summary, check-ins, measures and the way to History (decisions 90 and 109), and "Your week" (decision 140) */}
       <Group id="group-progress" title="Your progress">
         {/* The profile's row */}
         <div className={`mt-4 px-5 ${CARD}`}><RowLink href="/profile">Your speaking profile and history</RowLink></div>
-        {/* Pause words over three weeks and one suggestion, once there are three sessions (moved here from Today, decision 128) */}
+        {/* Pause words over three weeks and one suggestion, once there are three sessions (moved here from Today, decision 140) */}
         {today && settings && week && <div className="mt-4"><YourWeekCard week={week} /></div>}
       </Group>
 
@@ -819,6 +824,14 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         <ColorModeChoice />
       </Section>}
       </Group>
+
+      {/* Every mode on one page, for development: always on a local build, on a released one only once switched on from that page (decision 132) */}
+      {(DEVELOPMENT || devLink) && (
+        <Section title="Developer">
+          {/* The list */}
+          <div className={`px-5 ${CARD}`}><RowLink href="/dev/modes" meta="every mode">All modes</RowLink></div>
+        </Section>
+      )}
 
       {/* Development-only tools */}
       {DEVELOPMENT && (

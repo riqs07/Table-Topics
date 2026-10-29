@@ -13,8 +13,6 @@ import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIco
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the next Connect unit (decision 95)
 import { nextUnit, type UnitProgress } from "@/core/units";
-// Load the icon type
-import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load this week's challenge
@@ -26,7 +24,7 @@ import { nextShadowPassage, nextVoiceDrill } from "@/core/voicePicks";
 // Load the voice drills, for clear sounds' next one's name
 import { VOICE_DRILLS } from "@/content/voice";
 // Load what Practice shows at once: the rows split, the voice modes by need, and clear sounds' next item (decision 108)
-import { nextClearSound, splitRows, voiceRowsByNeed, type VoiceRowId } from "@/core/practiceRows";
+import { featureFirst, nextClearSound, splitRows, voiceRowsByNeed, type VoiceRowId } from "@/core/practiceRows";
 // Load the rule for which comes next
 import { nextToPractise } from "@/core/skillNext";
 // Load React's state and effect tools
@@ -35,41 +33,38 @@ import { useEffect, useState } from "react";
 import { MOMENT_PROMPT } from "@/content/smallTalk";
 // Load today's story prompt (decision 92)
 import { storyPromptForDay } from "@/content/stories";
-// Load the shared heading look
+// Load the shared heading and card looks
 import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
-// Load the shared link look
+// Load the shared link look and press effect
 import { TEXT_LINK } from "@/components/script/Buttons";
+// Load the blob scenes (decision 136)
+import { Scene } from "@/components/scenes/Scene";
+// Load the scene card and the shape of one kind of practice (shared with Today)
+import { WayCard, type Way } from "@/components/script/WayCard";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 // Load React's fragment, to place the groups in order
 import { Fragment, type ReactNode } from "react";
 // Load what the user wants to get better at most, and the order it gives the groups (decision 97)
 import { focusAreas, orderPracticeGroups, readPracticeFocus, type FocusAreaId, type PracticeGroupId } from "@/core/practiceFocus";
+// Load the guided courses, their card and progress (decision 131)
+import { COURSES } from "@/content/courses";
+import { CourseRow } from "@/components/screens/CoursesScreen";
+import { useCourseData } from "@/components/screens/useCourseData";
+import { CourseLoadFailed } from "@/components/script/CourseLoadFailed";
 
 // The groups in their usual order
 const USUAL_ORDER: ReadonlyArray<PracticeGroupId> = ["on-the-spot", "stories", "conversation", "voice"];
-
-// One kind of practice on the page
-interface Way {
-  // Its name
-  name: string;
-  // What it is, in a few words, with its length
-  detail: string;
-  // Where it starts (none while it cannot start yet)
-  href: string | null;
-  // Its icon
-  icon: Icon;
-}
 
 // One row: icon, name and detail, the whole row a link (quiet and not a link while it cannot start)
 function WayRow({ way }: { way: Way }) {
   // The words, shared by both forms
   const words = (
     <>
-      {/* The icon on a faint tile, as on the course cards */}
-      <span aria-hidden="true" className={`flex size-11 flex-none items-center justify-center rounded-[14px] ${way.href ? "bg-warm-tint text-warm-ink" : "bg-paper text-ink-muted"}`}>
-        {/* The icon */}
-        <way.icon className="size-6" />
+      {/* Its scene (still, apart from blinking; decision 136), or the icon, on a faint tile as on the course cards */}
+      <span aria-hidden="true" className={`flex size-12 flex-none items-center justify-center rounded-[14px] ${way.href ? "bg-warm-tint text-warm-ink" : "bg-paper text-ink-muted"}`}>
+        {/* The scene or the icon */}
+        {way.scene ? <Scene name={way.scene} motion="still" className="size-12" /> : <way.icon className="size-6" />}
       </span>
       {/* Name and detail */}
       <span className="min-w-0 flex-1">
@@ -135,6 +130,8 @@ export function PracticeScreen(props: ScreenProps) {
   const [unit, setUnit] = useState<UnitProgress>(() => nextUnit([]));
   // What the user wants to get better at most, once read (none until then, so the page starts in its usual order; decision 97)
   const [focus, setFocus] = useState<FocusAreaId[]>([]);
+  // Progress through the guided courses (decision 131)
+  const courseData = useCourseData(repo, today);
   // Whether the rest of the ways to practise are open (decision 125)
   const [more, setMore] = useState(false);
 
@@ -217,19 +214,21 @@ export function PracticeScreen(props: ScreenProps) {
   // The five that do the most work, always shown (decision 125)
   const core: Way[] = [
     // A surprise question
-    { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon },
+    { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon, scene: "rapid-fire" },
     // A prepared speech
-    { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
+    { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon, scene: "prepared-speech" },
     // Today's story, with the user's own stories a tap further
-    { name: "Tell a story", detail: story ? `Today: ${story.title}` : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon },
+    { name: "Tell a story", detail: story ? `Today: ${story.title}` : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon, scene: "story" },
     // A whole conversation, out loud
-    { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon },
+    { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon, scene: "conversation" },
     // Reading aloud
-    { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills", icon: BookOpenTextIcon },
+    { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills", icon: BookOpenTextIcon, scene: "read-aloud" },
   ];
 
   // The picked areas' groups, to mark them
   const focusGroups = focusAreas(focus).map((area) => area.practiceGroup);
+  // The main ways split into the big card (the focus's, or Rapid Fire) and the rest (decision 136)
+  const main = featureFirst(core, focusGroups);
   // Each group, by its id, so the focus can put its groups first
   const groups: Record<PracticeGroupId, ReactNode> = {
     // The "on-the-spot" group
@@ -242,21 +241,21 @@ export function PracticeScreen(props: ScreenProps) {
             title="Speak on the spot"
             ways={[
               // With "a talk coming up" as a focus: your own talk, rehearsed (the talk pages hidden from the menu by decision 49 come back for this focus only; decision 97)
-              ...(focus.includes("talk") ? [{ name: "Your talk", detail: "Rehearse a talk you’re giving", href: "/rehearse", icon: PresentationIcon }] : []),
+              ...(focus.includes("talk") ? [{ name: "Your talk", detail: "Rehearse a talk you’re giving", href: "/rehearse", icon: PresentationIcon, scene: "your-talk" } satisfies Way] : []),
               // With speaking at work or a talk as a focus, the short speech comes first: an update, a pitch, a plan (decision 97)
-              ...(focus.includes("work") || focus.includes("talk") ? [{ name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon }] : []),
+              ...(focus.includes("work") || focus.includes("talk") ? [{ name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon, scene: "short-speech" } satisfies Way] : []),
               // Rapid Fire (once called Table Topic; decision 85)
-              { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon },
+              { name: "Rapid Fire", detail: "A surprise question, 1 to 2 minutes", href: topic ? `/session?mode=talk&prompt=${topic.id}` : null, icon: LightningIcon, scene: "rapid-fire" },
               // A prepared speech
-              { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon },
+              { name: "Prepared speech", detail: "Plan for 2 minutes, speak for 2 to 4", href: prompt ? `/session?mode=response&prompt=${prompt.id}` : null, icon: NotePencilIcon, scene: "prepared-speech" },
               // Reading aloud, moved here from Build a skill (decision 93); the page holds the readings only now (decision 107)
-              { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills", icon: BookOpenTextIcon },
+              { name: "Read aloud", detail: "Famous speeches and passages", href: "/skills", icon: BookOpenTextIcon, scene: "read-aloud" },
               // The 4/3/2 drill: the same content three times, shorter each time (decision 126)
-              { name: "4/3/2", detail: "Say it three times, shorter each time", href: "/practice/four-three-two", icon: TimerIcon },
+              { name: "4/3/2", detail: "Say it three times, shorter each time", href: "/practice/four-three-two", icon: TimerIcon, scene: "four-three-two" },
               // Free talk: anything, as long as you like (decision 73), under "See all" (decision 108)
-              { name: "Free talk", detail: "Talk about anything, as long as you like", href: "/session?mode=free&prompt=free", icon: MicrophoneStageIcon },
+              { name: "Free talk", detail: "Talk about anything, as long as you like", href: "/session?mode=free&prompt=free", icon: MicrophoneStageIcon, scene: "free-talk" },
               // A short speech the user plans: topic and points (decision 73), here unless the focus put it first; under "See all" (decision 108)
-              ...(focus.includes("work") || focus.includes("talk") ? [] : [{ name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon }]),
+              ...(focus.includes("work") || focus.includes("talk") ? [] : [{ name: "Short speech", detail: "Your topic and a few points, then speak", href: "/practice/outline", icon: ListNumbersIcon, scene: "short-speech" } satisfies Way]),
             ]}
           />
       </>
@@ -272,13 +271,13 @@ export function PracticeScreen(props: ScreenProps) {
             more={{ href: "/stories", label: "See all" }}
             ways={[
               // Today's story prompt
-              { name: "Today’s story", detail: story ? story.title : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon },
+              { name: "Today’s story", detail: story ? story.title : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon, scene: "story" },
               // The user's own stories, told again
-              { name: "Tell one again", detail: "Your stories, a little better each time", href: "/stories#your-stories", icon: ArrowCounterClockwiseIcon },
+              { name: "Tell one again", detail: "Your stories, a little better each time", href: "/stories#your-stories", icon: ArrowCounterClockwiseIcon, scene: "tell-again" },
               // A guided story: the facts are given (decision 93)
-              { name: "Guided stories", detail: "You get the facts, you make it a story", href: "/stories#guided-stories", icon: SignpostIcon },
+              { name: "Guided stories", detail: "You get the facts, you make it a story", href: "/stories#guided-stories", icon: SignpostIcon, scene: "guided-stories" },
               // A moment note, told properly
-              { name: "From your moments", detail: "A one-moment note, told properly", href: "/stories#from-moments", icon: SunHorizonIcon },
+              { name: "From your moments", detail: "A one-moment note, told properly", href: "/stories#from-moments", icon: SunHorizonIcon, scene: "moment" },
             ]}
           />
       </>
@@ -294,11 +293,11 @@ export function PracticeScreen(props: ScreenProps) {
             more={{ href: "/small-talk", label: "See all" }}
             ways={[
               // A whole conversation with one of four people (decision 83)
-              { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon },
+              { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon, scene: "conversation" },
               // The next unit, straight to its page, with its next lesson or what you do in it
               { name: unit.unit.name, detail: unit.nextLesson ? `Next: lesson ${unit.nextLesson.number}, ${unit.nextLesson.title}` : unit.unit.youDo, href: `/small-talk/unit?id=${unit.unit.id}`, icon: UNIT_ICONS[unit.unit.id] },
               // One moment a day
-              { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon },
+              { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon, scene: "moment" },
             ]}
           />
       </>
@@ -314,7 +313,7 @@ export function PracticeScreen(props: ScreenProps) {
             more={{ href: "/voice", label: "See all" }}
             ways={[
               // A warm-up, nothing recorded
-              { name: "Warm-up", detail: "Three moves, one minute, nothing recorded", href: "/voice/warmup", icon: WindIcon },
+              { name: "Warm-up", detail: "Three moves, one minute, nothing recorded", href: "/voice/warmup", icon: WindIcon, scene: "warm-up" },
               // Then the modes, the one done least first, so the rows shown are what is next (decision 108)
               ...voiceRowsByNeed(counts ?? new Map()).map((row) => voiceWays[row]),
             ]}
@@ -331,11 +330,35 @@ export function PracticeScreen(props: ScreenProps) {
       {/* The page's name, and how it relates to Today */}
       <PageTitle title="Practice">Pick one and speak. Your steps for the day are on Today.</PageTitle>
 
-      {/* The five that do the most work (decision 125) */}
-      <ul aria-label="Main ways to practise" className={`mt-6 ${CARD_LIST}`}>
-        {/* Each one */}
-        {core.map((way) => <li key={way.name}><WayRow way={way} /></li>)}
-      </ul>
+      {/* Guided courses, the focus's first (decision 131) */}
+      <section aria-labelledby="courses" className="mt-6">
+        {/* Heading, and the list of every course */}
+        <div className="flex items-baseline justify-between gap-4">
+          {/* Heading */}
+          <h2 id="courses" className={SECTION_HEADING}>Courses</h2>
+          {/* Every course */}
+          <Link href="/courses" className={`${TEXT_LINK} text-footnote`}>All courses</Link>
+        </div>
+        {/* The cards, once progress is read */}
+        {courseData.status === "ready" && (
+          <ul className="mt-3 grid gap-3 md:grid-cols-2">
+            {/* Each course, the focus's first */}
+            {[...COURSES].sort((a, b) => Number(focus.includes(b.focus)) - Number(focus.includes(a.focus))).map((course) => <li key={course.id}><CourseRow course={course} progress={courseData.progress} note={focus.includes(course.focus) ? "For your focus" : undefined} /></li>)}
+          </ul>
+        )}
+        {/* Progress that could not be read */}
+        {courseData.status === "failed" && <CourseLoadFailed retry={courseData.retry} />}
+      </section>
+
+      {/* The five that do the most work (decision 125), as scene cards: the focus's one big across the top, the other four two by two (decision 136) */}
+      {main && (
+        <ul aria-label="Main ways to practise" className="mt-6 grid grid-cols-2 gap-3">
+          {/* The big one */}
+          <li className="col-span-2"><WayCard way={main.featured} big forFocus={main.forFocus} /></li>
+          {/* The others, arriving one after another */}
+          {main.rest.map((way, index) => <li key={way.name}><WayCard way={way} delay={(index + 1) * 70} /></li>)}
+        </ul>
+      )}
 
       {/* Everything else, one tap away */}
       <button type="button" aria-expanded={more} aria-controls="more-practice" onClick={() => setMore(!more)} className={`mt-4 ${TEXT_LINK}`}>{more ? "Fewer ways to practise" : "More ways to practise"}</button>

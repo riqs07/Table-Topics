@@ -14,7 +14,7 @@ import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
 import type { AudioCapture, LiveText, LiveTranscriber, RecordingProblem, RecordingServices } from "@/audio/services";
 // Load the prompt lookup
-import { STRUCTURE_HINT, findPrompt } from "@/content/prompts";
+import { STRUCTURE_HINT, TABLE_TOPICS, findPrompt } from "@/content/prompts";
 // Load the text to read by id (a full speech's text loads only when a part of one is asked for)
 import { useReading } from "@/components/screens/useReading";
 // Load the lesson lookup
@@ -32,6 +32,8 @@ import { memoryLadder, talkSections, type Ladder } from "@/core/eventPrep";
 import { LOUDNESS_TICK_MS, formatClock, loopWindow, maxSeconds, minSeconds, readingSeconds, speakingWindow, targetSeconds, thinkSeconds, timeSignal, timingCue, windowSignal, type SpeakingWindow, type TimeSignal } from "@/core/recordingRules";
 // Load the 4/3/2 loop's rounds and addresses (decision 118)
 import { isLoopMode, LOOP_ROUNDS, loopHref, roundTarget } from "@/core/fourThreeTwo";
+// Load the guided course rules: a part by id and where a course take goes once saved (decision 131)
+import { afterTakeHref, findPart } from "@/core/courses";
 // Load the pause-word setting rule
 import { pauseWordsShown } from "@/core/pauseWords";
 // Load the space bar shortcut choice
@@ -39,10 +41,21 @@ import { readSpaceShortcut } from "@/data/spaceShortcut";
 // Load the timing tones choice and player type
 import { readTimingTones } from "@/data/timingTones";
 import type { CuePlayer } from "@/audio/timingTones";
+// Load the reading metronome: its saved choice, tempo range and player type (decision 128)
+import { readMetronome, saveMetronome, type MetronomeChoice } from "@/data/metronome";
+import { DEFAULT_TEMPO, MAX_TEMPO, MIN_TEMPO } from "@/core/metronome";
+import type { Metronome } from "@/audio/metronome";
+// Load the switch row
+import { CheckRow } from "@/components/script/CheckRow";
+// Load the Rapid Fire topic draw and its order (decision 133)
+import { TopicDraw } from "@/components/script/TopicDraw";
+import { drawSteps } from "@/core/topicDraw";
+// Load the choice of showing a story's template while telling (decision 130)
+import { readStoryTemplateShown, saveStoryTemplateShown } from "@/data/storyTemplateShown";
 // Load the shared browser repository
 import { browserRepository } from "@/data/browserRepository";
 // Load the record and repository types
-import type { CheckInPart, RatingAnswer, RatingScale, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
+import type { CheckInPart, CourseTake, SessionMode, SessionRecord, StoryTake, TalkRecord } from "@/data/records";
 // Load the check-in's parts, for a take inside the weekly check-in (decision 100)
 import { CHECK_IN_PARTS, CHECK_IN_PART_INFO } from "@/core/checkIn";
 // Load the story prompts and moment seeds, and the plan card (decision 92)
@@ -88,9 +101,6 @@ import { holdScreenAwake } from "@/audio/wakeLock";
 import { requestPersistentStorage } from "@/data/storageSafety";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
-// Load the question asked before the results, and which kinds are asked (decision 116)
-import { ratingScaleFor } from "@/core/selfRating";
-import { SelfRatingAsk } from "@/components/script/SelfRatingAsk";
 
 // What the screen is given
 interface RecordingScreenProps {
@@ -126,6 +136,14 @@ interface RecordingScreenProps {
   checkIn?: { id: string; part: CheckInPart } | null;
   // A round of a 4/3/2 loop: the loop's id (null before the first round is saved) and the round, 1 to 3 (decision 118)
   loop?: { id: string | null; round: number } | null;
+  // A take inside a guided course: its part and try, or its prompt coming back days later; saved on the take, which then goes back to the course (decision 131)
+  course?: CourseTake | null;
+}
+
+// Whether motion is welcome (no "reduce motion" setting), for the Rapid Fire topic draw (decision 133); not in a browser, or unable to tell, means no
+function motionWelcome(): boolean {
+  // Asked of the browser
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
 }
 
 // A story's set-up when none is given: Classic, no focus, full length (decision 92)
@@ -152,7 +170,7 @@ const LADDER_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
 ];
 
 // Where the screen is in the flow
-type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | "speech-dropped" | "rating" | { problem: RecordingProblem };
+type Stage = "ready" | "mic-primer" | "asking" | "thinking" | "starting" | "recording" | "saving" | "save-failed" | "nothing-heard" | "too-short" | "discarded" | "speech-dropped" | { problem: RecordingProblem };
 
 // How many recent moment notes to show beside a question about what you have been up to
 const RECENT_MOMENTS = 3;
@@ -328,7 +346,9 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null, checkIn = null, loop: givenLoop = null }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null, checkIn = null, loop: givenLoop = null, course = null }: RecordingScreenProps) {
+  // The course part this take belongs to, when inside a course (decision 131)
+  const coursePlace = course ? findPart(course.part) : undefined;
   // A 4/3/2 round, only for the kinds it is offered for (decision 118)
   const loop = givenLoop && isLoopMode(mode) ? givenLoop : null;
   // The loop's id: from the address, or made when the first round is saved (kept, so a second save attempt keeps it)
@@ -373,6 +393,23 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [paused, setPaused] = useState(false);
   // Timing tones, when switched on in Settings: made during the start tap, since browsers only let sound start from one (decision 77)
   const cues = useRef<CuePlayer | null>(null);
+  // The reading metronome, made during a tap, since browsers only let sound start from one (decision 128)
+  const metronome = useRef<Metronome | null>(null);
+  // The metronome choice saved in this browser, read only in the browser so the first draw matches the server's (T4)
+  const savedMetronomeOn = useSyncExternalStore(subscribeToNothing, () => readMetronome().on, () => false);
+  const savedTempo = useSyncExternalStore(subscribeToNothing, () => readMetronome().tempo, () => DEFAULT_TEMPO);
+  // A choice made on this screen, which wins over the saved one
+  const [metronomeChange, setMetronomeChange] = useState<MetronomeChoice | null>(null);
+  // The choice in force
+  const metronomeChoice = metronomeChange ?? { on: savedMetronomeOn, tempo: savedTempo };
+  // Whether a story's template shows while telling: the saved choice, read only in the browser so the first draw matches the server's (T4), until changed on this screen (decision 130)
+  const savedTemplateShown = useSyncExternalStore(subscribeToNothing, readStoryTemplateShown, () => true);
+  // A choice made on this screen, which wins over the saved one
+  const [templateShownChange, setTemplateShownChange] = useState<boolean | null>(null);
+  // The choice in force
+  const templateShown = templateShownChange ?? savedTemplateShown;
+  // A Rapid Fire topic being drawn: the topics flicking past, the real one last; null when no draw is under way (decision 133)
+  const [draw, setDraw] = useState<string[] | null>(null);
   // The timing light at the last cue check, to hear when it changes
   const lastSignal = useRef<TimeSignal>("none");
   // A take that was just discarded, kept for a few seconds so it can be undone (decision 77)
@@ -395,8 +432,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [saveError, setSaveError] = useState("");
   // Where a take saved after the speech service dropped can be seen (shown with the explanation instead of going there at once)
   const [droppedHref, setDroppedHref] = useState("");
-  // A saved take waiting for the question before its results: the take, where its results are, and what is asked (decision 116)
-  const [ratingAsk, setRatingAsk] = useState<{ sessionId: string; next: string; scale: RatingScale } | null>(null);
   // Whether the screen is still open, so a start that was waiting (the question being said, the microphone being allowed) stops if the page closes
   const mounted = useRef(true);
   // Open while drawn, closed when the screen goes
@@ -421,6 +456,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [qaQuestion, setQaQuestion] = useState<string | null>(null);
   // The prompt to speak to (for reading aloud, its title; for a Q&A answer, the question)
   const prompt = mode === "qa" ? (qaQuestion ? { id: promptId, text: qaQuestion } : undefined) : mode === "story" ? storyPromptText(promptId, momentText) : findPrompt(promptId);
+  // Its words, which stay the same between draws (for the Rapid Fire topic draw, decision 133)
+  const promptText = prompt?.text ?? null;
   // The passage, when reading aloud or doing a pause drill
   const passage = useReading(mode === "read" || mode === "pause" ? promptId : null).passage;
   // The user's own talk, when rehearsing (loaded from storage below)
@@ -679,13 +716,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         return;
       }
       // Save the session with its audio
-      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}), ...(mode === "story" ? { story: storyTake } : {}), ...(checkIn ? { checkIn } : {}), ...(loop && loopTarget !== null ? { loop: { id: (loopId.current ??= crypto.randomUUID()), round: loop.round, targetSec: loopTarget } } : {}) }, clock());
+      const session = await saveRecording(repo, { id: crypto.randomUUID(), transcript: result.transcript, durationSec: result.durationSec, audio: result.audio, promptId, mode, retryOf, loudness: result.loudness, pitch: result.pitch, autoGain: result.autoGain, spokenTimes: result.spokenTimes, ...(textForFillers.current !== null ? { script: textForFillers.current } : {}), ...(result.scriptTimes ? { scriptTimes: result.scriptTimes } : {}), ...(mode === "rehearse" ? { sectionIndex: section } : {}), ...(mode === "qa" && qaQuestion ? { question: qaQuestion } : {}), ...(mode === "outline" && outline ? { outline } : {}), ...(mode === "story" ? { story: storyTake } : {}), ...(checkIn ? { checkIn } : {}), ...(loop && loopTarget !== null ? { loop: { id: (loopId.current ??= crypto.randomUUID()), round: loop.round, targetSec: loopTarget } } : {}), ...(course ? { course } : {}) }, clock());
       // Now there is practice worth keeping, ask the browser not to clear it (no wait; decision 64)
       void requestPersistentStorage();
       // Send the audio for deeper analysis when that setting is on (no wait, and it never fails: its outcome is kept as a quiet note on the take; decision 91)
       void requestDeepAnalysis(repo, session, { passphrase: readPassphrase(), now: clock(), ...(fetchFn ? { fetchFn } : {}) });
       // A moment note goes straight back to the Small talk page, where it is listed; a check-in part goes on to the next part (decision 100); a 4/3/2 round before the last goes on to the next round (decision 118); anything else opens its page (feedback is requested there)
-      const next = mode === "moment" ? "/small-talk/unit?id=answering#moments" : checkIn ? "/check-in/run" : loop && loop.round < LOOP_ROUNDS && isLoopMode(mode) ? loopHref({ mode, promptId, story: mode === "story" ? storyTake : null, planStep }, loopId.current!, loop.round + 1) : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`;
+      const next = course ? afterTakeHref(course, session.id) : mode === "moment" ? "/small-talk/unit?id=answering#moments" : checkIn ? "/check-in/run" : loop && loop.round < LOOP_ROUNDS && isLoopMode(mode) ? loopHref({ mode, promptId, story: mode === "story" ? storyTake : null, planStep }, loopId.current!, loop.round + 1) : `/sessions?id=${session.id}${planStep ? `&plan=${planStep}` : ""}`;
       // The speech service dropped: say so first, with the way to the take
       if (dropped) {
         // Where it is
@@ -695,18 +732,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         // Done
         return;
       }
-      // The question before the results, for the kinds that are asked (decision 116)
-      const scale = ratingScaleFor(mode, { wordList: passage?.kind === "words" });
-      // Asked: the take is saved, the question shows, and the results open after it (in a 4/3/2 loop, only after the last round)
-      if (scale && !(loop && loop.round < LOOP_ROUNDS)) {
-        // What to ask, and where to go after
-        setRatingAsk({ sessionId: session.id, next, scale });
-        // Ask
-        setStage("rating");
-        // Done
-        return;
-      }
-      // Go there
+      // Go there (no question first: "How did that feel?" was dropped in decision 129)
       navigate(next);
     } catch (error) {
       // Keep the details in the browser console for debugging
@@ -718,17 +744,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Explain
       setStage("save-failed");
     }
-  }, [checkIn, clock, fetchFn, loop, loopTarget, mode, navigate, outline, passage?.kind, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
-
-  // Save the answer to the question before the results on the take, then open the results (a failure is said by the question, which offers the way on; decision 116)
-  const answerRating = useCallback(async (answer: RatingAnswer) => {
-    // Nothing waiting
-    if (!ratingAsk) return;
-    // Saved on the take
-    await repo.setSelfRating(ratingAsk.sessionId, { scale: ratingAsk.scale, answer, ratedAt: clock().toISOString() });
-    // The results
-    navigate(ratingAsk.next);
-  }, [clock, navigate, ratingAsk, repo]);
+  }, [checkIn, clock, course, fetchFn, loop, loopTarget, mode, navigate, outline, planStep, promptId, qaQuestion, repo, retryOf, section, shortest, storyTake]);
 
   // Stop recording, then keep the take
   const stop = useCallback(async () => {
@@ -1089,6 +1105,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
   // Start this kind of session: the countdown or thinking time if it has one, otherwise recording; the explanation first if needed
   const begin = useCallback(() => {
+    // A topic draw is already under way: nothing to start
+    if (draw) return;
     // A new take lets any discarded one go
     discarded.current = null;
     // Timing tones, if switched on: get the sound ready now, during the tap
@@ -1098,8 +1116,20 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       // Wake its sound
       cues.current.prime();
     }
+    // The metronome, if switched on for reading aloud: get its sound ready now, during the tap (decision 128)
+    if (mode === "read" && metronomeChoice.on && services.createMetronome) {
+      // Make it once
+      metronome.current ??= services.createMetronome();
+      // Wake its sound
+      metronome.current.prime();
+      // Tick from now (the effect below only hears changes, and it may already count as ticking)
+      metronome.current.start(metronomeChoice.tempo);
+    }
     // The start itself: a small-talk question is asked aloud first (a moment, situation or flat question read on a card is not; decision 95), a Table Topic or prepared speech counts down, anything else records
-    const go = smallTalk && findUnit(smallTalk.unit).drill === "heard" ? () => void ask(smallTalk.question) : think > 0 ? beginThinking : () => void start();
+    // A Rapid Fire topic seen for the first time is drawn first, where motion is welcome; the countdown starts once it lands (decision 133)
+    const drawFirst = mode === "talk" && stage === "ready" && promptText !== null && motionWelcome();
+    // The start: the question asked, the draw, the countdown, or recording
+    const go = smallTalk && findUnit(smallTalk.unit).drill === "heard" ? () => void ask(smallTalk.question) : drawFirst ? () => setDraw(drawSteps(promptText!, TABLE_TOPICS.map((topic) => topic.text), Date.now())) : think > 0 ? beginThinking : () => void start();
     // The first ever recording: explain the microphone, and start once it is allowed
     if (needsPrimer) {
       // Remember the start for afterwards
@@ -1111,7 +1141,48 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     }
     // Otherwise start now
     go();
-  }, [ask, beginThinking, needsPrimer, services, smallTalk, start, think]);
+  }, [ask, beginThinking, draw, metronomeChoice.on, metronomeChoice.tempo, mode, needsPrimer, promptText, services, smallTalk, stage, start, think]);
+
+  // The drawn topic has landed: the countdown starts (decision 133)
+  const landTopic = useCallback(() => {
+    // The draw is over
+    setDraw(null);
+    // Count down
+    beginThinking();
+  }, [beginThinking]);
+
+  // Switch the metronome on or off, and remember it (decision 128)
+  const switchMetronome = useCallback(
+    (on: boolean) => {
+      // Switching on is a tap: make the player and wake its sound now
+      if (on && services.createMetronome) {
+        // Make it once
+        metronome.current ??= services.createMetronome();
+        // Wake its sound
+        metronome.current.prime();
+      }
+      // The new choice
+      const choice = { on, tempo: metronomeChoice.tempo };
+      // Remember it in this browser
+      saveMetronome(choice);
+      // Show it
+      setMetronomeChange(choice);
+    },
+    [metronomeChoice.tempo, services],
+  );
+
+  // Change the metronome's tempo, and remember it (decision 128)
+  const changeTempo = useCallback(
+    (tempo: number) => {
+      // The new choice
+      const choice = { on: metronomeChoice.on, tempo };
+      // Remember it in this browser
+      saveMetronome(choice);
+      // Show it
+      setMetronomeChange(choice);
+    },
+    [metronomeChoice.on],
+  );
 
   // From the explanation: let the browser ask now, then start
   const allowMicrophone = useCallback(async () => {
@@ -1184,6 +1255,26 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Stop the thinking countdown when the screen closes
   useEffect(() => endThinking, [endThinking]);
 
+  // The metronome ticks while it is on and the reader is getting ready or reading, never while paused or once the take is done (decision 128)
+  const ticking = mode === "read" && metronomeChoice.on && !paused && (stage === "ready" || stage === "starting" || stage === "recording" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded");
+  // Start or stop it to match (it exists only once a tap has made it)
+  useEffect(() => {
+    // Tick at the chosen tempo
+    if (ticking) metronome.current?.start(metronomeChoice.tempo);
+    // Or stay quiet
+    else metronome.current?.stop();
+  }, [ticking, metronomeChoice.tempo]);
+  // Let its sound go when the screen closes
+  useEffect(
+    () => () => {
+      // Stop and close it, if one was made
+      metronome.current?.close();
+      // Forget it
+      metronome.current = null;
+    },
+    [],
+  );
+
   // Keep the screen on while thinking and speaking, so the phone does not lock mid-speech (decision 76)
   const holdAwake = stage === "thinking" || stage === "recording";
   // Hold it for as long as that lasts
@@ -1200,7 +1291,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Whether this kind of session has a timing light
   const hasLight = mode === "talk" || mode === "response" || mode === "smalltalk" || mode === "story" || mode === "qa" || ((mode === "rehearse" || mode === "outline") && !!goalSeconds);
   // Whether a take is under way (no way out but discard, and no clock in the masthead)
-  const busy = recording || thinking || stage === "asking" || stage === "starting" || stage === "saving";
+  const busy = recording || thinking || !!draw || stage === "asking" || stage === "starting" || stage === "saving";
   // Where this kind of session belongs, for the close button (practising hides the tab bar); a check-in part goes back to the check-in (decision 100)
   const home = checkIn ? { section: "today" as const, href: "/check-in/run", label: "Close, back to your check-in" } : sessionHome(mode, promptId, planStep !== null);
   // Asking or listening, in small talk
@@ -1258,7 +1349,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // A Table Topic keeps its question hidden until the countdown begins (and while recording it sits in the margin)
   const showPrompt = !recording && !!prompt && !script && !smallTalk && mode !== "story" && (mode !== "talk" || thinking || topicSeen);
   // A Table Topic's briefing, shown before the question is first seen
-  const showBriefing = mode === "talk" && stage === "ready";
+  const showBriefing = mode === "talk" && stage === "ready" && !draw;
   // This prompt's angles, for a Record Response
   const angles = mode === "response" ? (findPrompt(promptId)?.angles ?? []) : [];
   // Seconds left in a Rapid Fire countdown, as shown
@@ -1290,30 +1381,19 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     );
   }
 
-  // After a take is saved, before its results: how did that feel? (decision 116)
-  if (stage === "rating" && ratingAsk) {
-    // Draw the question on its own
-    return (
-      <main id="main" className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
-        {/* Title, no way out but the question's own */}
-        <Masthead title={title} nav={false} close={null}>{""}</Masthead>
-        {/* The question */}
-        <div className="md:pt-8"><SelfRatingAsk scale={ratingAsk.scale} onAnswer={answerRating} onSkip={() => navigate(ratingAsk.next)} /></div>
-      </main>
-    );
-  }
-
   // The voice shape for this stage (the bottom band went with decision 75): large in the column, or small beside text to read
   const shapeControl = (
     <>
       {/* While recording: the live voice shape, with the clock inside, which stops the take (and takes focus as recording starts, so the keyboard and screen readers land on it) */}
       {recording && <VoiceBlob levels={levels} signal={signal} clock={formatClock(elapsed)} onStop={() => void stop()} compact={!!script} paused={paused} focusOnMount />}
       {/* Ready, or ready again: the start shape */}
-      {(stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
-        <StartBlob compact={!!script} onStart={begin} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : loop && loop.round > 1 ? `Start round ${loop.round}` : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "story" ? "Plan it" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={loop && loop.round > 1 ? lengthText : mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : mode === "story" ? "up to a minute, then tell it" : lengthText} />
+      {!draw && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
+        <StartBlob compact={!!script} onStart={begin} mood={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "hmm" : "ready"} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : loop && loop.round > 1 ? `Start round ${loop.round}` : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "story" ? "Plan it" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={loop && loop.round > 1 ? lengthText : mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : mode === "story" ? "up to a minute, then tell it" : lengthText} />
       )}
       {/* Thinking about a Record Response: start speaking early */}
       {thinking && (mode === "response" || mode === "story") && <StartBlob compact={!!script} onStart={() => void start()} label="Ready" detail={mode === "story" ? "start telling" : "start speaking"} />}
+      {/* A Rapid Fire topic being drawn: the shape waits (decision 133) */}
+      {draw && <StatusBlob compact={!!script} label="Get ready" detail="picking a topic" live={false} />}
       {/* A Table Topic's countdown: no early start, just the time left */}
       {thinking && mode === "talk" && <StatusBlob compact={!!script} label="Get ready" detail={`starting in ${countdown}`} live={false} />}
       {/* What the countdown says to screen readers: at the start and in the last three seconds only */}
@@ -1341,6 +1421,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       {/* Inside the weekly check-in, which part this is (decision 100) */}
       {checkIn && <p className="mt-3 text-footnote font-medium text-accent">Weekly check-in · part {CHECK_IN_PARTS.indexOf(checkIn.part) + 1} of {CHECK_IN_PARTS.length}</p>}
       {/* A 4/3/2 round: which, and its time (decision 118) */}
+      {/* Inside a guided course: the part, the try (or the comeback), and the one goal (decision 131) */}
+      {coursePlace?.part.practice && course && (
+        <div data-course-take className="mt-3 max-w-[52ch] text-footnote">
+          {/* Where this take sits */}
+          <p className="font-medium text-accent">{coursePlace.course.title} · lesson {coursePlace.lessonNumber}, part {coursePlace.partNumber} · {course.revisit ? "back again" : `try ${course.attempt} of ${coursePlace.part.practice.tries}`}</p>
+          {/* The goal, before speaking */}
+          {!busy && <p className="mt-1"><span className="font-semibold">Goal:</span> {coursePlace.part.practice.goal}</p>}
+        </div>
+      )}
       {loop && loopTarget !== null && <p data-loop-round className="mt-3 text-footnote font-medium text-accent">Told three times · round {loop.round} of {LOOP_ROUNDS} · {formatClock(loopTarget)}{loop.round > 1 && !busy ? ". Same content, less time." : ""}</p>}
       {/* Inside today's practice, which step this is */}
       {planStep && (
@@ -1378,8 +1467,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
           {/* A Record Response keeps its hints in view while speaking */}
           {recording && angles.length > 0 && <Hints angles={angles} compact />}
-          {/* A story keeps its shape and focus in view while telling (decision 92) */}
-          {recording && mode === "story" && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} compact /> : <StoryPlanCard take={storyTake} compact />)}
           {/* Push the way out down */}
           <div className="hidden flex-1 md:block" />
           {/* Leave while thinking (while recording, Pause and Discard sit by the shape) */}
@@ -1408,6 +1495,25 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
           )}
           {/* The question being answered, above the shape */}
           {recording && prompt && !smallTalk && !script && <p className="mt-3 max-w-[30ch] font-display text-cue font-semibold tracking-tight">{prompt.text}</p>}
+          {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
+          {recording && mode === "story" && (
+            <div data-story-template className="mt-3">
+              {/* Show or hide, remembered in this browser */}
+              <CheckRow
+                checked={templateShown}
+                onChange={(event) => {
+                  // Remember it
+                  saveStoryTemplateShown(event.target.checked);
+                  // Show it
+                  setTemplateShownChange(event.target.checked);
+                }}
+              >
+                {guidedStory ? "Show the facts" : "Show the template"}
+              </CheckRow>
+              {/* The template's beats in order (with any focus), or the guided story's facts */}
+              {templateShown && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />)}
+            </div>
+          )}
           {/* Beside text to read, the controls sit at the top (the shape floats in the corner) */}
           {recording && script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
           {/* A discarded take, which can be brought back for a few seconds */}
@@ -1460,6 +1566,24 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               {!recording && <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">{script.title}</h1>}
               {/* Who said it, or that it is a practice passage */}
               {!recording && script.source && <p className="mt-1 text-ink-muted">{script.source}</p>}
+              {/* Reading aloud: the metronome, before and while reading (decision 128) */}
+              {mode === "read" && services.createMetronome && (
+                <div data-metronome className="mt-4 flex max-w-[52ch] flex-wrap items-center gap-x-6 gap-y-1">
+                  {/* On or off */}
+                  <CheckRow checked={metronomeChoice.on} onChange={(event) => switchMetronome(event.target.checked)} detail={!recording && metronomeChoice.on ? "A quiet tick to read in time with. Headphones keep it out of the recording." : undefined}>
+                    Metronome
+                  </CheckRow>
+                  {/* The tempo, while on */}
+                  {metronomeChoice.on && (
+                    <label className="flex items-center gap-3 text-footnote text-ink-muted">
+                      {/* The slider */}
+                      <input type="range" min={MIN_TEMPO} max={MAX_TEMPO} step={1} value={metronomeChoice.tempo} onChange={(event) => changeTempo(Number(event.target.value))} aria-label="Metronome beats per minute" className="h-11 w-36 accent-accent" />
+                      {/* The tempo in words */}
+                      <span className="tabular-nums">{metronomeChoice.tempo} beats a minute</span>
+                    </label>
+                  )}
+                </div>
+              )}
               {/* A lesson's tip, before starting */}
               {!recording && lesson && (
                 <div className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4">
@@ -1546,6 +1670,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               )}
             </>
           )}
+          {/* A Rapid Fire topic being drawn, in the headline's place (decision 133) */}
+          {draw && <TopicDraw steps={draw} onDone={landTopic} />}
           {/* Before recording: the prompt and, on a retry, last time's cue */}
           {showPrompt && prompt && (
             <>

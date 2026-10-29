@@ -35,7 +35,7 @@ async function repositoryWithOneSession() {
 
 // Group the checks about the Settings screen
 describe("SettingsScreen", () => {
-  // From three sessions, "Your week" under Your progress: three weeks of pause words, one suggestion and the way to History (decisions 78 and 128)
+  // From three sessions, "Your week" under Your progress: three weeks of pause words, one suggestion and the way to History (decisions 78 and 140)
   it("shows your week under your progress", async () => {
     // A repository with three sessions over two weeks
     const repository = createRepository(new MemoryStore());

@@ -1,7 +1,7 @@
-// Checks for rating yourself before the results (decision 116): which kinds are asked, the comparison only against a confident measure, each answer, and the calibration count
+// Checks for rating yourself (decision 116; no longer asked after a take since decision 129, but older ratings still show): the comparison only against a confident measure, each answer, and the calibration count
 import { describe, expect, it } from "vitest";
 // Load the question's rules
-import { RATING_OPTIONS, ratingOption, ratingScaleFor } from "@/core/selfRating";
+import { RATING_OPTIONS, ratingOption } from "@/core/selfRating";
 // Load the comparison and the calibration
 import { bandSide, calibration, CALIBRATION_MIN, compareRating, MIN_EARLIER_TAKES, ratingValue, usualBand } from "@/core/ratingCompare";
 // Load the session builder
@@ -24,20 +24,8 @@ function ratedTake(wpm: number, answer: RatingAnswer, overrides: Partial<Session
   return makeSession({ id: "now", mode: "talk", createdAt: at(10), wordsPerMinute: wpm, durationSec: 60, selfRating: { scale: "pace", answer, ratedAt: at(10) }, ...overrides });
 }
 
-// Which kinds are asked
-describe("ratingScaleFor", () => {
-  // Every main speaking kind by pace, stories by liveliness
-  it("asks the main kinds and leaves the rest alone", () => {
-    // Pace for the speaking kinds and reading aloud
-    expect(["talk", "response", "free", "outline", "read"].map((mode) => ratingScaleFor(mode as SessionRecord["mode"]))).toEqual(["pace", "pace", "pace", "pace", "pace"]);
-    // Liveliness for a story
-    expect(ratingScaleFor("story")).toBe("liveliness");
-    // Not a voice drill, a pause drill, a lesson, small talk, a rehearsal or a moment
-    expect(["voice", "pause", "lesson", "smalltalk", "rehearse", "moment", "conversation"].map((mode) => ratingScaleFor(mode as SessionRecord["mode"]))).toEqual([null, null, null, null, null, null, null]);
-    // Not a list of tricky words
-    expect(ratingScaleFor("read", { wordList: true })).toBeNull();
-  });
-
+// The answers on each scale
+describe("RATING_OPTIONS", () => {
   // Each scale has three answers, each claiming a different side
   it("gives three answers per scale, one for each side of the usual", () => {
     // Pace and liveliness
