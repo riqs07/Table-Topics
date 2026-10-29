@@ -50,6 +50,16 @@ describe("WarmupScreen", () => {
     await waitFor(async () => expect((await repository.getSettings(NOW)).warmupDays).toEqual([dayKey(NOW)]));
   });
 
+  // Before starting, the warm-up shows its scene, which Today's warm-up step glides into (decision 141)
+  it("shows the warm-up scene before starting", async () => {
+    // Draw it
+    render(<WarmupScreen repository={createRepository(new MemoryStore())} now={NOW} moveSeconds={1} />);
+    // Wait for the routine
+    await screen.findByRole("list", { name: "Moves" });
+    // Confirm the scene
+    expect(document.querySelector("[data-scene-panel]")?.getAttribute("data-scene-panel")).toBe("warm-up");
+  });
+
   // Only a recording page may follow, so the address cannot send anyone elsewhere
   it("ignores a following page that is not a recording", async () => {
     // Draw it with an outside address, one-second moves

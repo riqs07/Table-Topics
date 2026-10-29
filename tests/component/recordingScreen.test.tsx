@@ -302,6 +302,22 @@ describe("RecordingScreen", () => {
     expect([panel.getAttribute("data-scene-panel"), panel.textContent?.startsWith("Read aloudAim for")]).toEqual(["read-aloud", true]);
   });
 
+  // Opened from Today, small talk shows the conversation scene its step glides into; opened elsewhere it does not (decision 141)
+  it("shows small talk's scene only when opened from Today", async () => {
+    // From Today, as step 3
+    draw({ mode: "smalltalk", promptId: "st01", planStep: 3 });
+    // The panel
+    const shown = (await waitFor(() => document.querySelector("[data-scene-panel]") as HTMLElement)).getAttribute("data-scene-panel");
+    // Clear it away
+    cleanup();
+    // Not from Today
+    draw({ mode: "smalltalk", promptId: "st01" });
+    // Wait for the start shape
+    await screen.findByRole("button", { name: /Hear the question/ });
+    // Confirm the panel from Today only
+    expect([shown, document.querySelector("[data-scene-panel]")]).toEqual(["conversation", null]);
+  });
+
   // A reading has no scene panel
   it("leaves the panel off other modes", async () => {
     // A plain session

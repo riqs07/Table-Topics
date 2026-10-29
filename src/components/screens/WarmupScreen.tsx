@@ -23,6 +23,8 @@ import { topWordsToWatch } from "@/core/wordsToWatch";
 import { markWarmupDone } from "@/data/dailyPlan";
 // Load the set names
 import type { WarmupSet } from "@/content/voice";
+// Load the panel with a step's scene, carried over from Today (decision 141)
+import { ScenePanel } from "@/components/scenes/ScenePanel";
 
 // How long each move lasts, in seconds
 const MOVE_SECONDS = 20;
@@ -129,6 +131,8 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
       {/* Before starting: the routine */}
       {move < 0 && (
         <section aria-labelledby="warmup-heading" className="mt-8 md:max-w-2xl">
+          {/* The warm-up scene (carried over from Today's step) */}
+          <ScenePanel scene="warm-up" line="Loosen up before you speak." className="mb-6" />
           {/* What it is */}
           <h1 id="warmup-heading" className="font-display text-statement font-semibold tracking-tight">A one-minute warm-up.</h1>
           {/* How it works */}
