@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 // Load the test helpers from the test runner
+// Load the guided stories, for one to open
+import { GUIDED_STORIES } from "@/content/guidedStories";
 import { afterEach, describe, expect, it, vi } from "vitest";
 // Load the tools for drawing a screen and acting like a user
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -322,6 +324,25 @@ const ZOO_FLAT = "I went to the zoo and then I got a hot dog and then I saw a go
 const ZOO_ALIVE = "The hot dog was sticky with mustard at the zoo on Saturday but the gorilla was staring right at me and she goes don't move and I was terrified and since then I always eat first";
 // The zoo's set-up
 const ZOO_TAKE = { shape: "classic", focus: "middle", length: "short" } as const;
+
+// Group the checks about the story screen's scene (decision 141)
+describe("the story scene", () => {
+  // A story opens with the campfire, a guided story with the signpost
+  it("opens with the story's scene", async () => {
+    // A told story
+    const told = render(<TellStoryScreen storyId="sp01" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Its panel
+    const first = (await waitFor(() => document.querySelector("[data-scene-panel]") as HTMLElement)).getAttribute("data-scene-panel");
+    // Clear it
+    told.unmount();
+    // A guided one
+    render(<TellStoryScreen storyId={GUIDED_STORIES[0]!.id} repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Its panel
+    const second = (await waitFor(() => document.querySelector("[data-scene-panel]") as HTMLElement)).getAttribute("data-scene-panel");
+    // Confirm both
+    expect([first, second]).toEqual(["story", "guided-stories"]);
+  });
+});
 
 // Group the checks about guided stories (decision 93)
 describe("guided stories", () => {

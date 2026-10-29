@@ -398,6 +398,16 @@ describe("conversations elsewhere", () => {
     expect([quick.getAttribute("href"), groups, screen.getByText(/^Goal: /, { selector: "[data-picked-goal]" }).textContent, screen.getByRole("link", { name: "Start this one" }).getAttribute("href")]).toEqual(["/conversations/talk?id=theo&situation=monday&start=1", ["Answering", "Asking", "Listening", "News"], "Goal: Ask one question about their news.", "/conversations/talk?id=priya&situation=station&start=1"]);
   });
 
+  // The page opens with the conversation scene, carried over from the Practice card (decision 141)
+  it("opens with the conversation scene", async () => {
+    // Draw it
+    render(<ConversationsScreen repository={createRepository(new MemoryStore())} now={NOW} coachReady={() => false} />);
+    // Wait for it to settle
+    await screen.findByRole("link", { name: "Quick play" });
+    // Confirm the panel and its scene
+    expect([document.querySelector("[data-scene-panel]")?.getAttribute("data-scene-panel"), !!document.querySelector("[data-scene-panel] [data-scene='conversation']")]).toEqual(["conversation", true]);
+  });
+
   // Without the coach, only the situations with recorded lines, and Quick play goes to the next person's own
   it("offers only recorded situations without the coach", async () => {
     // Draw it, without the coach

@@ -2,6 +2,8 @@
 // Before telling a story (decisions 92 and 126): the prompt, the moment, or a guided story's facts (decision 93), then the template to tell it with (the one suited to the prompt chosen first, its beats and a short worked example shown) and a length; the planning minute and the telling happen on the recording page. The 4/3/2 loop is its own drill now (decision 126)
 
 // Load React's state and effect tools
+// Load the scene panel (decision 141)
+import { ScenePanel } from "@/components/scenes/ScenePanel";
 import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
@@ -108,6 +110,8 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
         <p role="alert" className="mt-6 max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
       ) : (
         <>
+          {/* The scene, carried over from the Practice card: the signpost for a guided story, the campfire otherwise (decision 141) */}
+          <ScenePanel scene={guided ? "guided-stories" : "story"} name={guided ? "Guided story" : "Tell a story"} line="Plan it in a minute, then tell it." className="mt-6" />
           {/* Where it came from */}
           {(momentId || guided) && <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Guided story"}</p>}
           {/* The prompt, a guided story's title, or the moment in the user's words */}

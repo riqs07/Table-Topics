@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { Masthead } from "@/components/script/Masthead";
 // Load the page title
 import { PageTitle } from "@/components/script/PageTitle";
+// Load the scene panel (decision 141)
+import { ScenePanel } from "@/components/scenes/ScenePanel";
 // Load the main and second button links
 import { PrimaryLink, SecondaryLink } from "@/components/script/Buttons";
 // Load the card look and the small label look
@@ -72,6 +74,8 @@ export function ConversationsScreen({ coachReady = passphraseSaved, ...props }: 
       <Masthead title="Practice" section="practice" />
       {/* The page's name */}
       <PageTitle title="Talk with someone">A few exchanges out loud, about a minute. Then see how you did on one goal.</PageTitle>
+      {/* The scene, carried over from the Practice card (decision 141) */}
+      <ScenePanel scene="conversation" line="Pick someone." className="mt-6" />
       {/* Quick play */}
       <section aria-label="Quick play" className={`mt-6 p-5 ${CARD}`}>
         {/* What it does */}

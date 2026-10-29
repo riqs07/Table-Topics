@@ -9,6 +9,8 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
+// Load the scene panel (decision 141)
+import { ScenePanel } from "@/components/scenes/ScenePanel";
 // Load the whole-row link
 import { PRESS, RowLink } from "@/components/script/Buttons";
 // Load the shared screen starting points
@@ -158,6 +160,8 @@ export function SkillsScreen(props: ScreenProps) {
       <Masthead title="Practice" section="skills" />
       {/* The page's name */}
       <PageTitle title="Read aloud">Famous speeches and plain passages, at your own pace.</PageTitle>
+      {/* The scene, carried over from the Practice card (decision 141) */}
+      <ScenePanel scene="read-aloud" line="A part at a time, about a minute each." className="mt-6" />
 
       {/* Up next: the next part to read (decision 79) */}
       <section aria-labelledby="up-next" className="mt-6">

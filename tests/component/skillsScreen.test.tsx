@@ -72,4 +72,14 @@ describe("SkillsScreen", () => {
     // Confirm the link, the progress, and a commencement address
     expect([inaugural.getAttribute("href"), inaugural.textContent?.includes("1 read"), !!commencement.getByRole("link", { name: /A Strategy of Peace/ })]).toEqual(["/speech?id=jfk-inaugural", true, true]);
   });
+
+  // The page opens with the reading scene, carried over from the Practice card (decision 141)
+  it("opens with the reading scene", async () => {
+    // Draw it
+    render(<SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Wait for the page
+    await screen.findByRole("heading", { name: "Up next" });
+    // Confirm the panel
+    expect(document.querySelector("[data-scene-panel]")?.getAttribute("data-scene-panel")).toBe("read-aloud");
+  });
 });
