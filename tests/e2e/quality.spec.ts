@@ -138,8 +138,8 @@ test("keeps the read-aloud shape off the text at both widths", async ({ page }) 
   expect([(phoneText?.width ?? 0) > 300, (phoneText?.y ?? 0) + (phoneText?.height ?? 0) <= (phoneShape?.y ?? 0)]).toEqual([true, true]);
 });
 
-// At the end of a page with a floating action band, nothing is left under it (round 4)
-for (const path of ["/", "/learn", "/small-talk/unit?id=answering"]) {
+// At the end of a page with a floating action band, nothing is left under it (round 4; Today left the list when its band became finished-day only, decision 137)
+for (const path of ["/learn", "/small-talk/unit?id=answering"]) {
   test(`leaves nothing under the action band at the end of the page: ${path}`, async ({ page }) => {
     // A phone-sized window
     await page.setViewportSize({ width: 390, height: 844 });

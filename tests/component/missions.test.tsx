@@ -41,16 +41,16 @@ function fakeServices(words: string): RecordingServices {
 
 // Group the checks about missions on screen
 describe("missions", () => {
-  // Today shows the mission's task and a link to Connect, without the 1 to 5 prediction (decision 62)
-  it("shows a short mission on Today that leads to Connect", async () => {
+  // Today no longer shows the mission (decision 137); it stays on Learn (decision 66)
+  it("leaves the mission off Today; it lives on Learn", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
     // Draw Today
     render(<HomeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // The card
-    const card = await screen.findByRole("region", { name: "Today’s mission" });
-    // Confirm the task and the link, and no scale or accept button
-    expect([!!within(card).getByText(/Ask one follow-up question/), within(card).getByRole("link", { name: "Take it on in Learn" }).getAttribute("href"), within(card).queryByRole("group"), within(card).queryByRole("button", { name: "I’ll try it" })]).toEqual([true, "/learn#missions", null, null]);
+    // Wait for today's steps
+    await screen.findByRole("list", { name: "Steps" });
+    // Confirm there is no mission card (removed from Today by decision 137)
+    expect(screen.queryByRole("region", { name: "Today’s mission" })).toBeNull();
   });
 
   // Learn offers the first mission with a habit to drop and no 1 to 5 prediction (decision 104); accepted, it waits for its debrief
