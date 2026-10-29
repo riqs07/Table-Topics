@@ -240,6 +240,20 @@ describe("HomeScreen", () => {
     expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.queryByText(/^0 of/), screen.getByRole("link", { name: /^Start today’s practice/ }).getAttribute("href")]).toEqual([["Step 1: Free talk", "Step 2: Learn", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=2`, null, FIRST_STEP]);
   });
 
+  // Each step shows its blob scene where its kind has one: the next one moving, the others still; a Learn card has none (decision 137)
+  it("shows each step's scene, the next one moving", async () => {
+    // The welcome was already skipped
+    localStorage.setItem("voicelab-welcome-seen", "yes");
+    // Draw the screen
+    render(<HomeScreen repository={emptyRepository()} now={NOW} />);
+    // The steps
+    const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
+    // The first two steps' scene and how much it moves
+    const scenes = steps.slice(0, 2).map((step) => [step.querySelector("[data-step-scene]")?.getAttribute("data-step-scene") ?? null, step.querySelector("[data-scene]")?.getAttribute("data-motion") ?? null]);
+    // Confirm free talk moving as the next step, and the Learn card without a scene
+    expect(scenes).toEqual([["free-talk", "loop"], [null, null]]);
+  });
+
   // A talk with a date takes the first pick, and a past date does not count
   it("puts the next talk with a date in the first pick", async () => {
     // A repository with a talk a week away and one whose date has passed
@@ -299,6 +313,10 @@ describe("HomeScreen", () => {
     await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", createdAt: new Date(2026, 9, 13, 8).toISOString() }));
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
+    // The warm-up's scene: reading aloud, still and faded now it is done (decision 137)
+    const warmScene = (await screen.findByRole("link", { name: "Step 2: Warm up" })).querySelector("[data-step-scene]");
+    // Confirm it
+    expect([warmScene?.getAttribute("data-step-scene"), warmScene?.querySelector("[data-scene]")?.getAttribute("data-motion"), warmScene?.classList.contains("opacity-55")]).toEqual(["read-aloud", "still", true]);
     // Confirm the heading, the done mark, the action back to the card, and no suggestions yet
     expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), !!screen.getByRole("link", { name: /^Continue: step 1/ }), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, true, null]);
   });

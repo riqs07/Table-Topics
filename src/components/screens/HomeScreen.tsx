@@ -45,6 +45,9 @@ import { firstFinishToday } from "@/data/dayCelebrated";
 import { practiceSessions } from "@/core/sessionHome";
 // Load the hand-drawn welcome (decision 134)
 import { Drawing } from "@/components/script/Drawing";
+// Load the blob scenes, and which one each step shows (decision 137)
+import { Scene } from "@/components/scenes/Scene";
+import { stepScene } from "@/components/scenes/sceneFor";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 // Load what the user wants to get better at most: the reader, the words for it, and saving it (decision 97)
@@ -482,6 +485,8 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                   const parts = step.kind === "checkin" && plan.checkIn ? plan.checkIn.parts.filter((part) => part.status !== "open").length : 0;
                   // That line (or, for a step put off today, saying so; for the check-in, its parts)
                   const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : step.kind === "course" && plan.done[index] ? "Part done" : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
+                  // Its blob scene, if its kind has one (decision 137)
+                  const scene = stepScene(step);
                   // One step
                   return (
                     <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
@@ -498,6 +503,8 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                           {/* How it went, once done */}
                           {result && <span className="block text-footnote text-ink-muted">{result}</span>}
                         </span>
+                        {/* Its scene on the right: moving on the next step, still on the others, faded once done or put off (decision 137) */}
+                        {scene && <span aria-hidden="true" data-step-scene={scene} className={`flex size-12 flex-none items-center justify-center rounded-xl ${mark === "next" ? "bg-card" : "bg-warm-tint"} ${plan.done[index] || plan.skipped[index] ? "opacity-55" : ""}`}><Scene name={scene} motion={mark === "next" ? "loop" : "still"} className="size-12" /></span>}
                       </Link>
                     </li>
                   );
