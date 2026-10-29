@@ -16,7 +16,7 @@ import { PAGE } from "@/components/script/layout";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the people, the situations, the goal for each and the quick pick
-import { PERSONAS, SCENARIOS, goalFor, personaFor, quickPick, type Persona, type Scenario } from "@/content/conversations";
+import { PERSONAS, SCENARIOS, conversationAddress, goalFor, personaFor, quickPick } from "@/content/conversations";
 // Load the small-talk skills, to group the situations
 import { UNITS } from "@/content/smallTalk";
 // Load the saved passphrase, which means the coach can write lines for any situation
@@ -24,12 +24,6 @@ import { readPassphrase } from "@/data/passphrase";
 
 // Whether the coach passphrase is saved (one function, so the reading effect runs once)
 const passphraseSaved = () => readPassphrase() !== "";
-
-// The address that opens a situation with a person, and starts it straight away
-export function conversationAddress(persona: Persona, scenario: Scenario): string {
-  // Who, where, and start
-  return `/conversations/talk?id=${persona.id}&situation=${scenario.id}&start=1`;
-}
 
 // Draw the page
 export function ConversationsScreen({ coachReady = passphraseSaved, ...props }: ScreenProps & { coachReady?: () => boolean }) {

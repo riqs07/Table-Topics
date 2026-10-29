@@ -638,6 +638,12 @@ export function quickPick(done: ReadonlyArray<{ scenarioId?: string | undefined 
   return { persona, scenario };
 }
 
+// The address that opens a situation with a person, and starts it straight away
+export function conversationAddress(persona: Persona, scenario: Scenario): string {
+  // Who, where, and start
+  return `/conversations/talk?id=${persona.id}&situation=${scenario.id}&start=1`;
+}
+
 // Find a persona by id
 export function findPersona(id: string): Persona | undefined {
   // Look through every persona

@@ -333,6 +333,40 @@ describe("HomeScreen", () => {
     expect(screen.queryByRole("heading", { name: "Or practise on your own" })).toBeNull();
   });
 
+  // The Connect lesson the user is on, straight into it, and Quick play, a kind of practice at random (decision 128)
+  it("shows the lesson you are on and a Quick play", async () => {
+    // Past day one, with the first small-talk lesson answered two days ago
+    const repository = await pastDayOne();
+    // The answer
+    await repository.saveSession(makeSession({ id: "lesson-1", mode: "smalltalk", promptId: "stl1", createdAt: new Date(2026, 9, 11, 9).toISOString() }));
+    // Draw the screen, with a random source that lands on Rapid Fire
+    render(<HomeScreen repository={repository} now={NOW} random={() => 0.1} />);
+    // The section beside the steps
+    const also = await screen.findByRole("region", { name: "Also today" });
+    // Its two rows
+    const [lesson, quick] = within(also).getAllByRole("link");
+    // Confirm the lesson (its unit, number and title, and where it goes) and Quick play (a Rapid Fire question, without saying which)
+    expect([lesson!.textContent, lesson!.getAttribute("href"), quick!.textContent, /^\/session\?mode=talk&prompt=t\d+$/.test(quick!.getAttribute("href") ?? "")]).toEqual(["Your lesson · AnsweringOne moment2/6", "/session?mode=smalltalk&prompt=stl2", "Quick playA random kind of practice", true]);
+  });
+
+  // When the lesson is already one of today's steps, it is not linked twice; Quick play stays, with its default random source
+  it("leaves the lesson out when it is one of today's steps", async () => {
+    // Friday 16 October, whose plan has the first small-talk lesson as its last step
+    const friday = new Date(2026, 9, 16, 10);
+    // A session the day before, and a check-in then, so the usual plan
+    const repository = emptyRepository();
+    // The session
+    await repository.saveSession(makeSession({ id: "thursday", createdAt: new Date(2026, 9, 15, 9).toISOString() }));
+    // The check-in
+    await checkInSkippedOn(repository, new Date(2026, 9, 15, 9), friday);
+    // Draw the screen, leaving the random source to its default
+    render(<HomeScreen repository={repository} now={friday} />);
+    // The section beside the steps
+    const also = await screen.findByRole("region", { name: "Also today" });
+    // Confirm the lesson is a step, and the section holds only Quick play
+    expect([!!within(screen.getByRole("list", { name: "Steps" })).getByRole("link", { name: /Small-talk lesson 1/ }), within(also).getAllByRole("link").map((link) => link.textContent)]).toEqual([true, ["Quick playA random kind of practice"]]);
+  });
+
   // A returning user sees days in the last week, and the run only from a week of practice (decision 78)
   it("leads with days in the last week, adding the run from day 7", async () => {
     // Make a repository with sessions on the last three days
