@@ -284,14 +284,16 @@ test("Focus: the welcome's pick steers Today, Practice and Learn", async ({ page
   await page.getByRole("button", { name: /^Telling stories/ }).click();
   // Start
   await page.getByRole("link", { name: "Start", exact: true }).click();
-  // Day one still starts by speaking (decision 78)
-  await expect(page.getByText("Today’s practice · step 1 of 4")).toBeVisible();
+  // Day one still starts by speaking (decision 78), with the stories course's first part as a fifth step (decision 144)
+  await expect(page.getByText("Today’s practice · step 1 of 5")).toBeVisible();
   // Back on Today
   await page.goto("/");
   // The focus is named, and the first pick is a story
   await expect(page.getByText("Getting better at:")).toContainText("telling stories");
   // (the third step)
   await expect(page.getByRole("link", { name: /^Step 3: (Story|Guided story)$/ })).toBeVisible();
+  // (the stories course's first part, last)
+  await expect(page.getByRole("link", { name: "Step 5: Course: Stories that land" })).toHaveAttribute("href", /^\/courses\/part\?id=sl-find-1/);
   // Practice puts Tell stories first
   await page.goto("/practice");
   // The rest of the ways to practise, opened (decision 125)

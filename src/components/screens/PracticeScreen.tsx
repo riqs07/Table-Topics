@@ -51,6 +51,8 @@ import { Fragment, type ReactNode } from "react";
 import { focusAreas, orderPracticeGroups, readPracticeFocus, type FocusAreaId, type PracticeGroupId } from "@/core/practiceFocus";
 // Load the guided courses, their card and progress (decision 131)
 import { COURSES } from "@/content/courses";
+// Load the rule for which course to offer, the same one Today uses (decision 144)
+import { courseToOffer } from "@/core/courses";
 import { CourseRow } from "@/components/screens/CoursesScreen";
 import { useCourseData } from "@/components/screens/useCourseData";
 import { CourseLoadFailed } from "@/components/script/CourseLoadFailed";
@@ -333,7 +335,7 @@ export function PracticeScreen(props: ScreenProps) {
         {/* The page's name, and how it relates to Today */}
         <PageTitle title="Practice">Pick one and speak. Your steps for the day are on Today.</PageTitle>
 
-        {/* Guided courses, the focus's first (decision 131) */}
+        {/* Guided courses: the one to carry on with, or the focus's, with the rest a tap away, so the main ways to practise stay near the top (decisions 131 and 144) */}
         <section aria-labelledby="courses" className="mt-6">
           {/* Heading, and the list of every course */}
           <div className="flex items-baseline justify-between gap-4">
@@ -345,8 +347,8 @@ export function PracticeScreen(props: ScreenProps) {
           {/* The cards, once progress is read */}
           {courseData.status === "ready" && (
             <ul className="mt-3 grid gap-3 md:grid-cols-2">
-              {/* Each course, the focus's first */}
-              {[...COURSES].sort((a, b) => Number(focus.includes(b.focus)) - Number(focus.includes(a.focus))).map((course) => <li key={course.id}><CourseRow course={course} progress={courseData.progress} note={focus.includes(course.focus) ? "For your focus" : undefined} /></li>)}
+              {/* One course: a started one, else the focus's first unfinished, else the focus's, else the first */}
+              {[courseToOffer(focus, courseData.progress) ?? COURSES.find((course) => focus.includes(course.focus)) ?? COURSES[0]!].map((course) => <li key={course.id}><CourseRow course={course} progress={courseData.progress} note={focus.includes(course.focus) ? "For your focus" : undefined} /></li>)}
             </ul>
           )}
           {/* Progress that could not be read */}

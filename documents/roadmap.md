@@ -62,7 +62,7 @@ A first-class Stories mode: a 40-prompt bank, your moment notes as seeds, option
 
 ## Built: guided courses, the flow (2026-10-29, decision 131)
 
-Courses for each focus, made of lessons in short parts that use the modes the app already has; the next part is an added step on Today, and a part's prompt comes back days later for a side-by-side comparison. Built with one draft course ("Stop freezing"); the real content, more courses and videos are next. The plan is in [plan-courses.md](plan-courses.md).
+Courses for each focus, made of lessons in short parts that use the modes the app already has; the next part is an added step on Today, and a part's prompt comes back days later for a side-by-side comparison. Six courses, one for each focus area, with their final words (decision 144); tiles for the five new courses and the videos are next. The plan is in [plan-courses.md](plan-courses.md).
 
 ## Built: livelier look (2026-10-29, decisions 134 and 136)
 

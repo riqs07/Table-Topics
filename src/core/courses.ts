@@ -6,6 +6,11 @@ import { COURSES, type Course, type CourseLesson, type CourseMeasure, type Cours
 import type { CoursePartProgress, CourseTake, SessionRecord } from "@/data/records";
 // Load the focus area type
 import type { FocusAreaId } from "@/core/practiceFocus";
+// Load the prompt finders, for a part's question
+import { findPrompt } from "@/content/prompts";
+import { findStoryPrompt, storyTakeQuery } from "@/content/stories";
+// Load the practice type
+import type { PartPractice } from "@/content/courses";
 
 // Progress across every course: each finished part by its id
 export type CourseProgress = Readonly<Record<string, CoursePartProgress>>;
@@ -136,8 +141,14 @@ export function partHref(partId: string, step: PartStep = "learn", attempt = 1):
 export function takeHref(part: CoursePart, attempt: number, revisit = false): string | null {
   // No practice: nothing to record
   if (!part.practice) return null;
-  // The kind of session and its prompt, with the course part and the try (or the comeback)
-  return `/session?mode=${part.practice.mode}&prompt=${part.practice.promptId}&course=${part.id}${revisit ? "&revisit=1" : `&try=${attempt}`}`;
+  // The kind of session and its prompt (and a story's set-up), with the course part and the try (or the comeback)
+  return `/session?mode=${part.practice.mode}&prompt=${part.practice.promptId}${part.practice.mode === "story" && part.practice.story ? storyTakeQuery(part.practice.story) : ""}&course=${part.id}${revisit ? "&revisit=1" : `&try=${attempt}`}`;
+}
+
+// The words of a part's prompt (a question, a story prompt, a passage's or lesson's title), or undefined when its id is unknown
+export function practicePromptText(practice: PartPractice): string | undefined {
+  // A story prompt from the story bank, anything else from the prompt lists
+  return practice.mode === "story" ? findStoryPrompt(practice.promptId)?.text : findPrompt(practice.promptId)?.text;
 }
 
 // Where a take inside a course goes once saved: the comparison for a comeback, the next try, or the wrap-up

@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { dailyPlan, focusSuggestion, moreToDo, nextStepIndex, planHref, planMinutes, planProgress, planSkipped, stepKey, todaysFocusSuggestion } from "@/core/dailyPlan";
 // Load the focus areas (decision 97)
 import { FOCUS_AREAS, type FocusAreaId } from "@/core/practiceFocus";
+// Load the course lookups, to finish a whole course in a check
+import { coursePlaces, findCourse } from "@/core/courses";
 // Load the Learn rules, for a card read
 import { firstRead } from "@/core/learn";
 // Load the cards
@@ -284,7 +286,7 @@ describe("the plan with a focus", () => {
   // An area by its id
   const area = (id: FocusAreaId) => FOCUS_AREAS.find((item) => item.id === id)!;
   // The plan for a regular user with a focus
-  const focused = (day: Date, practiceFocus: FocusAreaId[], extra: Partial<Parameters<typeof dailyPlan>[0]> = {}) => regularPlan(day, { practiceFocus, ...extra });
+  const focused = (day: Date, practiceFocus: FocusAreaId[], extra: Partial<Parameters<typeof dailyPlan>[0]> = {}) => regularPlan(day, { practiceFocus, ...extra }).filter((step) => step.kind !== "course");
   // The kinds of practice a step is, by its label
   const storyStep = (label: string | undefined) => label === "Story" || label === "Guided story";
 
@@ -392,7 +394,15 @@ describe("a course in the plan", () => {
     // The last step
     const last = withFocus.at(-1)!;
     // Confirm one more step, the course's first part, its address, and none without a focus
-    expect([withFocus.length - regularPlan(day, { practiceFocus: ["spot"], courses: { "sf-beat-1": { doneAt: "2026-09-01T10:00:00Z", takeId: null }, ...Object.fromEntries(["sf-beat-2", "sf-point-1", "sf-point-2", "sf-point-3", "sf-pre-1", "sf-pre-2", "sf-land-1", "sf-land-2", "sf-run-1"].map((id) => [id, { doneAt: "2026-09-01T10:00:00Z", takeId: null }])) } }).length, last.kind, last.lane, last.promptId, last.href, without.some((step) => step.kind === "course")]).toEqual([1, "course", "course", "sf-beat-1", "/courses/part?id=sf-beat-1", false]);
+    expect([withFocus.length - regularPlan(day, { practiceFocus: ["spot"], courses: Object.fromEntries(coursePlaces(findCourse("stop-freezing")!).map((place) => [place.part.id, { doneAt: "2026-09-01T10:00:00Z", takeId: null }])) }).length, last.kind, last.lane, last.promptId, last.href, without.some((step) => step.kind === "course")]).toEqual([1, "course", "course", "sf-beat-1", "/courses/part?id=sf-beat-1", false]);
+  });
+
+  // Every focus area now has a course, so each one's first part is offered (decision 144)
+  it("offers each focus its own course", () => {
+    // Each focus's course step
+    const firsts = FOCUS_AREAS.map((area) => regularPlan(day, { practiceFocus: [area.id] }).find((step) => step.kind === "course")?.promptId);
+    // Confirm the first part of each course, in the focus areas' order
+    expect(firsts).toEqual(["sl-find-1", "bg-hook-1", "sf-beat-1", "vo-breath-1", "ex-bottom-1", "rd-msg-1"]);
   });
 
   // A started course is offered whatever the focus

@@ -1,10 +1,10 @@
 # Plan: guided courses
 
-**Status:** The flow is built with draft content (decision 131, 2026-10-29). The real lessons, more courses and the videos come next. Mockups: the "Guided courses: Thinking on my feet" canvas (approved in conversation on 2026-10-28, with the changes below).
+**Status:** Built, with six courses, one for each focus area, and their final words (decisions 131 and 144, 2026-10-29). The course tiles (beyond Stop freezing's) and the videos come next. Mockups: the "Guided courses: Thinking on my feet" canvas (approved in conversation on 2026-10-28, with the changes below).
 
 ## The idea
 
-A course guides the user through modes the app already has, with short teaching in between. It belongs to one focus area, so the welcome question ("What do you want to get better at most?") decides which course is offered first. The first course is **Stop freezing**, for thinking on your feet.
+A course guides the user through modes the app already has, with short teaching in between. It belongs to one focus area, so the welcome question ("What do you want to get better at most?") decides which course is offered first. The courses: **Stop freezing** (thinking on my feet), **Explain it simply** (speaking at work), **Ready by the day** (a talk coming up), **Stories that land** (telling stories), **Beyond “good, you?”** (small talk and conversations) and **A voice they lean in for** (how I sound). Their outlines are in [course-outlines.md](course-outlines.md).
 
 ## What the user decided (2026-10-28)
 
@@ -31,20 +31,21 @@ A course guides the user through modes the app already has, with short teaching 
 
 ## How it is built
 
-- **Content:** `src/content/courses.ts`. A part has `learn` (headline, body, an optional "instead of / try"), an optional `see` (a YouTube video with its start and end, a model answer with its highlight, or both), and an optional `practice` (the mode, a fixed prompt so it can come back, the goal, one or two tries, and the measure the tries are compared on: pause words, pace or length).
+- **Content:** `src/content/courses.ts`. A part has `learn` (headline, body, an optional "instead of / try"), an optional `see` (a YouTube video with its start and end, a model answer with its highlight, or both), and an optional `practice` (the mode, a fixed prompt so it can come back, the goal, one or two tries, and the measure the tries are compared on: pause words, pace or length). The mode can be Rapid Fire, a prepared speech, free talk, a story (with its template, shape, focus and length), a reading, a pause drill, a small-talk question or a lesson, all recorded on `/session` (decision 144). `learn` can also name the Learn card with the research behind the idea (`card`, shown as "Why it works: …") and a practice with its own screen (`link`: a voice drill, the warm-up, shadowing, Talk with someone, Rehearse my talk, the 4/3/2 drill). Prompts written for the courses are `COURSE_PROMPTS` in `src/content/prompts.ts` (never picked for a day).
 - **Rules:** `src/core/courses.ts` (the next part, which course to offer, the steps, addresses, comebacks due, comparing two takes).
 - **Progress:** `courses` in the settings record, one entry per finished part (`src/data/courses.ts`); each take recorded inside a course carries `course: { part, attempt, revisit? }`.
-- **Pages:** `/courses` (every course), `/courses/course?id=…` (lessons and parts, all open, the next marked; the before-and-after once done), `/courses/part?id=…&step=…&try=…` (one step at a time), `/courses/revisit?id=…&take=…` (both answers side by side). Practice lists the courses at the top, the focus's first.
+- **Pages:** `/courses` (every course), `/courses/course?id=…` (lessons and parts, all open, the next marked; the before-and-after once done), `/courses/part?id=…&step=…&try=…` (one step at a time), `/courses/revisit?id=…&take=…` (both answers side by side). Practice shows one course at the top (a started one, else the focus's, else the first; the same rule as Today) with a link to all courses, so its main ways to practise stay near the top (decision 144).
 - **Recording:** the usual recording page, opened with `&course=…&try=…` (or `&revisit=1`). It shows the course line and the goal, saves the course take, and goes back to the part (the next try or the wrap-up) instead of the results.
 - **Today:** a course already started, or else the first course for one of the user's focus areas, adds its next part as a step of its own (lane `course`); a part finished today keeps the step and marks it done, so the plan stays the same all day. A comeback due shows as a "Back again" card under the steps.
 - **Videos:** YouTube's privacy-enhanced player (`youtube-nocookie.com`), the only site the app frames; the content policy allows it.
 
 ## Still to do
 
-1. **The real content.** The draft course's words are placeholders, marked "draft lessons" on the course page. Each part needs its final teaching, model answers, and where they fit, videos (with the stretch to play).
-2. **More courses** for the other focus areas (see the brainstorm: "Answer like you meant it", "Explain it simply", "Ready by the day", "Beyond 'good, you?'", and others).
-3. **Better measures.** Time to the first word and time to the point would suit "Stop freezing" better than pause words; both need the word times kept with the readings.
-4. **Course pages on Today.** Whether a finished course should offer the next one on Today, not only on its own page.
+1. **Tiles** for the five new courses, their lessons, and Stop freezing's "Back on track" (the test in `tests/unit/content/tileFor.test.ts` lists them until they are drawn).
+2. **Videos** for each course (the first, "Buy a beat", is made; decision 143).
+3. **Your own talk inside Ready by the day.** Its parts practise on talk tasks written for the course and link to Rehearse my talk; recording a part on the user's own talk needs a part without a fixed prompt.
+4. **Better measures.** Time to the first word and time to the point would suit "Stop freezing" better than pause words; both need the word times kept with the readings.
+5. **Course pages on Today.** Whether a finished course should offer the next one on Today, not only on its own page.
 
 ## Open questions
 

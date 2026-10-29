@@ -172,6 +172,13 @@ export const ROUTES: ReadonlyArray<string> = [
   // Guided courses: the list, a course, a part at each step, a course take, a comeback that does not exist, and a part and course that do not exist (decision 131)
   "/courses",
   "/courses/course?id=stop-freezing",
+  "/courses/course?id=explain-it-simply",
+  "/courses/course?id=ready-by-the-day",
+  "/courses/course?id=stories-that-land",
+  "/courses/course?id=beyond-good-you",
+  "/courses/course?id=voice-lean-in",
+  "/courses/part?id=rd-msg-1",
+  "/session?mode=story&prompt=sp03&shape=but-therefore&length=full&course=sl-but-1&try=1",
   "/courses/part?id=sf-point-1",
   "/courses/part?id=sf-point-1&step=see",
   "/courses/part?id=sf-point-1&step=try",

@@ -18,6 +18,8 @@ import { SCENARIOS } from "@/content/scenarios";
 import { saveScenarioAnswer } from "@/data/scenarioProgress";
 // Load the plan loader, to know today's picks
 import { loadDailyPlan } from "@/data/dailyPlan";
+// Load course progress saving, to finish a course part in a check
+import { markPartDone } from "@/data/courses";
 // Load a sample session builder
 import { checkInSkippedOn, makeSession, makeTalk } from "../support/fixtures";
 
@@ -121,8 +123,8 @@ describe("HomeScreen", () => {
     cleanup();
     // The later visit
     render(<HomeScreen repository={repository} now={NOW} />);
-    // Confirm no welcome and no question card, and the focus named in the margin
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, screen.queryByRole("region", { name: "What do you want to get better at most?" }), !!(await screen.findByText("how I sound and speaking at work"))]).toEqual(["Four short steps.", null, true]);
+    // Confirm no welcome and no question card (five steps now: the four and the voice course's first part, decision 144), and the focus named in the margin
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, screen.queryByRole("region", { name: "What do you want to get better at most?" }), !!(await screen.findByText("how I sound and speaking at work"))]).toEqual(["A few short steps.", null, true]);
   });
 
   // Start with nothing picked still starts speaking, and records the question as answered so Today does not ask again
@@ -205,6 +207,8 @@ describe("HomeScreen", () => {
       if (step.kind === "scenarios") for (const scenario of SCENARIOS.slice(0, 3)) await saveScenarioAnswer(repository, scenario.id, "best", NOW);
       // A warm-up routine, finished today
       else if (step.kind === "warmup") await repository.saveSettings({ ...(await repository.getSettings(NOW)), warmupDays: ["2026-10-13"] });
+      // The stories course's part (decision 144), finished today
+      else if (step.kind === "course") await markPartDone(repository, step.promptId, null, NOW);
       // A session
       else await repository.saveSession(makeSession({ id: `done-${step.promptId}`, mode: step.mode!, promptId: step.promptId, createdAt: new Date(2026, 9, 13, 9).toISOString() }));
     }

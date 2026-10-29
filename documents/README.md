@@ -44,7 +44,8 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 28 | [research/competitors-2026-10.md](research/competitors-2026-10.md) | Who does VoiceLab compete with, where are the holes in the market, who is the ICP, and how should it be pitched? | 15 min |
 | 29 | [research/flirting-dynamics-2026-10.md](research/flirting-dynamics-2026-10.md) | What does the science say about flirting (signals, attraction, misreading interest, rejection, myths), how does it relate to deeper connection, and what could VoiceLab teach without a dating persona? | 12 min |
 | 30 | [plan-courses.md](plan-courses.md) | How do guided courses work (courses, lessons, parts, the prompt that comes back), what did the user decide, and what is still draft? | 4 min |
-| 31 | [plan-launch-and-scale.md](plan-launch-and-scale.md) | What has to change for 1,000 users and the App Store: accounts, the database and cloud storage, security, privacy and retention, licences, cost? (Draft for later) | 10 min |
+| 31 | [course-outlines.md](course-outlines.md) | What are the six courses (one per focus area), their lessons and parts, and why each is shaped that way? (Built, decision 144) | 8 min |
+| 32 | [plan-launch-and-scale.md](plan-launch-and-scale.md) | What has to change for 1,000 users and the App Store: accounts, the database and cloud storage, security, privacy and retention, licences, cost? (Draft for later) | 10 min |
 
 ## Inspector checklist
 
