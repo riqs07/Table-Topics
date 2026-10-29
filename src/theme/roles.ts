@@ -40,6 +40,22 @@ export const ROLES = [
   "light-yellow",
   // Table Topics timing light: finish now (red)
   "light-red",
+  // The blob's shaded side on course tiles (decision 142)
+  "warm-shade",
+  // Course tile colours (decision 142): bright, flat grounds and props, only ever behind or around the blob, never for text
+  "art-sky",
+  // (sunny yellow)
+  "art-sun",
+  // (pink)
+  "art-bloom",
+  // (green)
+  "art-leaf",
+  // (purple)
+  "art-plum",
+  // (coral red)
+  "art-coral",
+  // (cream: pages, ice and highlights, light in both modes)
+  "art-cream",
 ] as const;
 
 // One color role name

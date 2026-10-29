@@ -78,6 +78,22 @@ export const THEMES = {
         "light-yellow": "#a87a00",
         // Table Topics timing light (red)
         "light-red": "#c0392b",
+        // The blob's shaded side on course tiles
+        "warm-shade": "#cf7440",
+        // Course tile colours: sky, sun, bloom, leaf, plum, coral and cream
+        "art-sky": "#4a68e0",
+        // (sun)
+        "art-sun": "#f4b73b",
+        // (bloom)
+        "art-bloom": "#e86aae",
+        // (leaf)
+        "art-leaf": "#7cc46a",
+        // (plum)
+        "art-plum": "#8a63e0",
+        // (coral)
+        "art-coral": "#ec6a55",
+        // (cream)
+        "art-cream": "#fff6e6",
       },
       // Night colors: warm charcoal, not blue-black
       dark: {
@@ -119,6 +135,22 @@ export const THEMES = {
         "light-yellow": "#e8b923",
         // Table Topics timing light (red)
         "light-red": "#f26b5b",
+        // The blob's shaded side on course tiles
+        "warm-shade": "#c46a38",
+        // Course tile colours: sky, sun, bloom, leaf, plum, coral and cream
+        "art-sky": "#3f5bc9",
+        // (sun)
+        "art-sun": "#e0a530",
+        // (bloom)
+        "art-bloom": "#d45c9d",
+        // (leaf)
+        "art-leaf": "#66ad57",
+        // (plum)
+        "art-plum": "#7656cc",
+        // (coral)
+        "art-coral": "#d85c48",
+        // (cream)
+        "art-cream": "#f3e9d6",
       },
     },
     // Readable body face and a soft serif for headings and prompts
@@ -177,6 +209,22 @@ export const THEMES = {
         "light-yellow": "#a87a00",
         // Table Topics timing light (red)
         "light-red": "#c0392b",
+        // The blob's shaded side on course tiles
+        "warm-shade": "#d9844c",
+        // Course tile colours: sky, sun, bloom, leaf, plum, coral and cream
+        "art-sky": "#4a68e0",
+        // (sun)
+        "art-sun": "#f4b73b",
+        // (bloom)
+        "art-bloom": "#e86aae",
+        // (leaf)
+        "art-leaf": "#7cc46a",
+        // (plum)
+        "art-plum": "#8a63e0",
+        // (coral)
+        "art-coral": "#ec6a55",
+        // (cream)
+        "art-cream": "#fff6e6",
       },
       // Night colors
       dark: {
@@ -218,6 +266,22 @@ export const THEMES = {
         "light-yellow": "#e8b923",
         // Table Topics timing light (red)
         "light-red": "#f26b5b",
+        // The blob's shaded side on course tiles
+        "warm-shade": "#c46a38",
+        // Course tile colours: sky, sun, bloom, leaf, plum, coral and cream
+        "art-sky": "#3f5bc9",
+        // (sun)
+        "art-sun": "#e0a530",
+        // (bloom)
+        "art-bloom": "#d45c9d",
+        // (leaf)
+        "art-leaf": "#66ad57",
+        // (plum)
+        "art-plum": "#7656cc",
+        // (coral)
+        "art-coral": "#d85c48",
+        // (cream)
+        "art-cream": "#f3e9d6",
       },
     },
     // One editorial serif for everything (script-page direction)
@@ -288,6 +352,22 @@ export const THEMES = {
         "light-yellow": "#a87a00",
         // Table Topics timing light (red)
         "light-red": "#c0392b",
+        // The blob's shaded side on course tiles
+        "warm-shade": "#8f8f8f",
+        // Course tile colours: sky, sun, bloom, leaf, plum, coral and cream
+        "art-sky": "#6e6e6e",
+        // (sun)
+        "art-sun": "#c8c8c8",
+        // (bloom)
+        "art-bloom": "#a0a0a0",
+        // (leaf)
+        "art-leaf": "#b8b8b8",
+        // (plum)
+        "art-plum": "#7a7a7a",
+        // (coral)
+        "art-coral": "#909090",
+        // (cream)
+        "art-cream": "#f4f4f4",
       },
       // Night colors
       dark: {
@@ -329,6 +409,22 @@ export const THEMES = {
         "light-yellow": "#e8b923",
         // Table Topics timing light (red)
         "light-red": "#f26b5b",
+        // The blob's shaded side on course tiles
+        "warm-shade": "#6e6e6e",
+        // Course tile colours: sky, sun, bloom, leaf, plum, coral and cream
+        "art-sky": "#555555",
+        // (sun)
+        "art-sun": "#9a9a9a",
+        // (bloom)
+        "art-bloom": "#7c7c7c",
+        // (leaf)
+        "art-leaf": "#8c8c8c",
+        // (plum)
+        "art-plum": "#5e5e5e",
+        // (coral)
+        "art-coral": "#707070",
+        // (cream)
+        "art-cream": "#e6e6e6",
       },
     },
     // The phone's own fonts

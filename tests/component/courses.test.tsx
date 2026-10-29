@@ -64,6 +64,18 @@ describe("CourseScreen", () => {
     expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/draft lessons/), parts.length, document.querySelector(`[data-course-part="${BEAT2}"]`)?.textContent?.includes("Up next"), screen.getByRole("link", { name: /Continue/ }).getAttribute("href")]).toEqual(["Stop freezing", true, 10, true, `/courses/part?id=${BEAT2}`]);
   });
 
+  // The course's tile moves gently at the top; each lesson's tile plays a few rounds and rests (decision 142)
+  it("shows the course's tile and one for each lesson", async () => {
+    // Draw it
+    render(<CourseScreen courseId="stop-freezing" repository={await seeded()} now={NOW} />);
+    // Wait for the parts
+    await screen.findByText("Pause, don’t fill");
+    // Each tile's name and how much it moves
+    const tiles = [...document.querySelectorAll("[data-course-tile]")].map((tile) => [tile.getAttribute("data-course-tile"), tile.getAttribute("data-motion")]);
+    // Confirm the course's, then the five lessons' in order
+    expect(tiles).toEqual([["stop-freezing", "loop"], ["buy-a-beat", "few"], ["point-first", "few"], ["point-reason-example", "few"], ["land-it", "few"], ["the-run", "few"]]);
+  });
+
   // Every part done: the course is complete, with first and latest takes
   it("says the course is complete once every part is done", async () => {
     // Two takes
@@ -216,7 +228,9 @@ describe("CoursesScreen", () => {
     // One part done
     render(<CoursesScreen repository={await seeded([[BEAT1, "a", "2026-10-27T10:00:00Z"]])} now={NOW} />);
     // Confirm the card and its count
-    expect((await screen.findByRole("link", { name: "Stop freezing, 1 of 10" })).getAttribute("href")).toBe("/courses/course?id=stop-freezing");
+    const card = await screen.findByRole("link", { name: "Stop freezing, 1 of 10" });
+    // Confirm where it leads, and its tile in place of the icon (decision 142)
+    expect([card.getAttribute("href"), card.querySelector("[data-course-tile]")?.getAttribute("data-course-tile")]).toEqual(["/courses/course?id=stop-freezing", "stop-freezing"]);
   });
 });
 

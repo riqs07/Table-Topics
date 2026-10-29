@@ -10,13 +10,13 @@ export type SceneName = "rapid-fire" | "prepared-speech" | "read-aloud" | "four-
 export type SceneMotion = "loop" | "few" | "still";
 
 // The blob's outline, 100 across, centred on 0 (a slightly uneven round, like the voice shape)
-const BLOB = "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z";
+export const BLOB = "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z";
 
 // The blob's faces, each drawn 48 by 34 and placed on the outline
-type FaceName = "ready" | "wow" | "sing" | "happy" | "down" | "up" | "wonder" | "puff" | "side" | "side-left";
+export type FaceName = "ready" | "wow" | "sing" | "happy" | "down" | "up" | "wonder" | "puff" | "side" | "side-left";
 
 // One face's features, in the current colour
-function Face({ face }: { face: FaceName }) {
+export function Face({ face }: { face: FaceName }) {
   // How far the open-eyed faces look to the side: right, left or ahead
   const shift = face === "side" ? 5 : face === "side-left" ? -4 : 0;
   // Placed on the outline's upper middle
@@ -126,7 +126,7 @@ function Shadow({ x, y = 105, width }: { x: number; y?: number; width: number })
 }
 
 // A part that moves: its loop's class, and where it turns or grows from, with a delay if any
-function Move({ loop, origin, delay, children }: { loop: string; origin?: string; delay?: number; children: ReactNode }) {
+export function Move({ loop, origin, delay, children }: { loop: string; origin?: string; delay?: number; children: ReactNode }) {
   // Where it pivots, and when it starts
   const style: CSSProperties = { transformOrigin: origin, animationDelay: delay ? `${delay}s` : undefined };
   // A group carrying the loop

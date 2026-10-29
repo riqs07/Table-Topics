@@ -16,6 +16,9 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 // Load the course data and the tab title helper
 import { useCourseData } from "@/components/screens/useCourseData";
 import { usePageTitle } from "@/components/screens/usePageTitle";
+// Load the course tiles and which one stands for a course (decision 142)
+import { CourseTile } from "@/components/scenes/CourseTile";
+import { courseTile } from "@/components/scenes/tileFor";
 // Load the course rules
 import { courseCount, coursePlaces, type CourseProgress } from "@/core/courses";
 // Load the courses
@@ -25,8 +28,10 @@ import { COURSES, type Course } from "@/content/courses";
 export function CourseRow({ course, progress, note }: { course: Course; progress: CourseProgress; note?: string }) {
   // How far through
   const count = courseCount(course, progress);
+  // Its tile, if it has one
+  const tile = courseTile(course.id);
   // The card
-  return <CourseCard href={`/courses/course?id=${course.id}`} name={course.title} blurb={course.blurb} icon={LightningIcon} done={count.done} total={count.total} note={note ?? (count.done > 0 && count.done < count.total ? "In progress" : undefined)} count={`${course.lessons.length} lessons · ${coursePlaces(course).length} parts`} />;
+  return <CourseCard href={`/courses/course?id=${course.id}`} name={course.title} blurb={course.blurb} icon={LightningIcon} art={tile ? <CourseTile name={tile} motion="few" className="size-18" /> : undefined} done={count.done} total={count.total} note={note ?? (count.done > 0 && count.done < count.total ? "In progress" : undefined)} count={`${course.lessons.length} lessons · ${coursePlaces(course).length} parts`} />;
 }
 
 // Draw the list

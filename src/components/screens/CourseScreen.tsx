@@ -26,6 +26,9 @@ import { COURSES, type Course } from "@/content/courses";
 // Load the record and repository types
 import type { SessionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
+// Load the course tiles and which one stands for a course or lesson (decision 142)
+import { CourseTile } from "@/components/scenes/CourseTile";
+import { courseTile, lessonTile } from "@/components/scenes/tileFor";
 // Load the hand-drawn celebration (decision 134)
 import { Drawing } from "@/components/script/Drawing";
 
@@ -111,10 +114,18 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
     <main id="main" className={PAGE}>
       {/* Title and a way back to Practice */}
       <Masthead title="Course" nav={false} close={{ href: "/practice", label: "Close, back to Practice" }} />
-      {/* The course */}
-      <p className="mt-6 text-footnote font-semibold text-accent">Course{course.draft ? " · draft lessons" : ""}</p>
-      {/* Its name */}
-      <h1 className="mt-1 font-display text-statement tracking-tight">{course.title}</h1>
+      {/* The course's tile beside its label and name, when it has one (decision 142) */}
+      <div className="mt-6 flex items-center gap-4">
+        {/* The tile, moving gently */}
+        {courseTile(course.id) && <CourseTile name={courseTile(course.id)!} className="size-24 flex-none md:size-28" />}
+        {/* The label and name */}
+        <div className="min-w-0">
+          {/* The course */}
+          <p className="text-footnote font-semibold text-accent">Course{course.draft ? " · draft lessons" : ""}</p>
+          {/* Its name */}
+          <h1 className="mt-1 font-display text-statement tracking-tight">{course.title}</h1>
+        </div>
+      </div>
       {/* What it does, and how it is paced */}
       <p className="mt-2 max-w-[52ch] text-lede">{course.blurb} {course.lessons.length} lessons, each in a few short parts. Do as many as you like.</p>
       {/* What you can do by the end */}
@@ -142,10 +153,18 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
             {course.lessons.map((lesson, lessonIndex) => (
               // One lesson with its parts
               <li key={lesson.id}>
-                {/* Its heading and count */}
-                <h2 className={SECTION_HEADING}>{lessonIndex + 1}. {lesson.title}</h2>
-                {/* Its line and how far through */}
-                <p className="text-footnote text-ink-muted">{lesson.blurb} · {lessonCount(lesson, progress).done} of {lesson.parts.length} {lesson.parts.length === 1 ? "part" : "parts"} done</p>
+                {/* Its tile beside its heading, line and count (decision 142) */}
+                <div className="flex items-center gap-3">
+                  {/* The tile, playing a few rounds then resting */}
+                  {lessonTile(course.id, lesson.id) && <CourseTile name={lessonTile(course.id, lesson.id)!} motion="few" className="size-16 flex-none" />}
+                  {/* The words */}
+                  <div className="min-w-0">
+                    {/* Its heading and count */}
+                    <h2 className={SECTION_HEADING}>{lessonIndex + 1}. {lesson.title}</h2>
+                    {/* Its line and how far through */}
+                    <p className="text-footnote text-ink-muted">{lesson.blurb} · {lessonCount(lesson, progress).done} of {lesson.parts.length} {lesson.parts.length === 1 ? "part" : "parts"} done</p>
+                  </div>
+                </div>
                 {/* Its parts */}
                 <ol className="mt-2 divide-y divide-rule">
                   {/* Each part, open to start whatever is done */}

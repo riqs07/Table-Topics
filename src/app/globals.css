@@ -52,6 +52,22 @@
   --color-light-yellow: var(--vl-light-yellow);
   /* Table Topics timing light (red) */
   --color-light-red: var(--vl-light-red);
+  /* The blob's shaded side on course tiles (decision 142) */
+  --color-warm-shade: var(--vl-warm-shade);
+  /* Course tile colours (decision 142) */
+  --color-art-sky: var(--vl-art-sky);
+  /* (sun) */
+  --color-art-sun: var(--vl-art-sun);
+  /* (bloom) */
+  --color-art-bloom: var(--vl-art-bloom);
+  /* (leaf) */
+  --color-art-leaf: var(--vl-art-leaf);
+  /* (plum) */
+  --color-art-plum: var(--vl-art-plum);
+  /* (coral) */
+  --color-art-coral: var(--vl-art-coral);
+  /* (cream) */
+  --color-art-cream: var(--vl-art-cream);
   /* Running text, as font-body */
   --font-body: var(--vl-font-body);
   /* Headings and prompts, as font-display */
@@ -381,6 +397,32 @@
   .vl-scene .s-glow { animation: vl-s-glow 3s ease-in-out infinite both; }
   /* (the bulb lighting up) */
   .vl-scene .s-bulb { animation: vl-s-bulb 3s ease-in-out infinite; }
+  /* Course tiles (decision 142): slow, small movements, so a page of them stays calm */
+  .vl-scene .t-float { animation: vl-t-float 3.6s ease-in-out infinite; }
+  /* Breathing in and out */
+  .vl-scene .t-breathe { animation: vl-t-breathe 4s ease-in-out infinite; }
+  /* A sign that swells a little */
+  .vl-scene .t-pulse { animation: vl-t-pulse 4s ease-in-out infinite; }
+  /* Pieces drifting away and back */
+  .vl-scene .t-drift { animation: vl-t-drift 5s ease-in-out infinite alternate; }
+  /* Breath or air rising and fading */
+  .vl-scene .t-air { animation: vl-t-air 4s ease-out infinite both; }
+  /* An arrow quivering in the target */
+  .vl-scene .t-wobble { animation: vl-t-wobble 2.4s ease-in-out infinite alternate; }
+  /* Arms waving */
+  .vl-scene .t-wave { animation: vl-t-wave 1.8s ease-in-out infinite alternate; }
+  /* Blocks lifting one after another */
+  .vl-scene .t-step { animation: vl-t-step 3s ease-in-out infinite both; }
+  /* A parachute drifting and swaying */
+  .vl-scene .t-glide { animation: vl-t-glide 4s ease-in-out infinite alternate; }
+  /* Speed lines streaking past */
+  .vl-scene .t-speed { animation: vl-t-speed 1.6s linear infinite both; }
+  /* A flag rippling */
+  .vl-scene .t-flag { animation: vl-t-flag 1.4s ease-in-out infinite alternate; }
+  /* Feet pattering */
+  .vl-scene .t-patter { animation: vl-t-patter 0.5s ease-in-out infinite alternate; }
+  /* Sparkles twinkling from their own middle */
+  .vl-scene .t-twinkle { transform-box: fill-box; transform-origin: center; animation: vl-t-twinkle 4s ease-in-out infinite both; }
   /* A scene asked to calm down plays its loop three times, then rests (the blinks carry on) */
   .vl-scene[data-motion="few"] .s-move { animation-iteration-count: 3; }
   /* A still scene keeps only its blinks */
@@ -436,6 +478,32 @@
 @keyframes vl-s-bulb { 0%, 35% { fill: var(--color-card); } 45%, 85% { fill: var(--color-warm); } 100% { fill: var(--color-card); } }
 /* Wave: show, move out, fade */
 @keyframes vl-s-wave { 0% { opacity: 0; transform: none; } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(6px); } }
+/* Course tile loops (decision 142) */
+@keyframes vl-t-float { 0%, 100% { transform: none; } 50% { transform: translateY(-3px); } }
+/* Breathe: grow a little from the base, then settle */
+@keyframes vl-t-breathe { 0%, 100% { transform: none; } 45%, 55% { transform: scale(1.05); } }
+/* Pulse: swell and brighten */
+@keyframes vl-t-pulse { 0%, 100% { transform: none; opacity: 0.85; } 50% { transform: scale(1.08); opacity: 1; } }
+/* Drift: a few pixels away, turning a touch */
+@keyframes vl-t-drift { from { transform: none; } to { transform: translate(4px, -4px) rotate(8deg); } }
+/* Air: rise and fade */
+@keyframes vl-t-air { 0% { opacity: 0; transform: none; } 30% { opacity: 0.9; } 100% { opacity: 0; transform: translate(8px, -8px); } }
+/* Wobble: a few degrees each way */
+@keyframes vl-t-wobble { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+/* Wave: an arm swinging */
+@keyframes vl-t-wave { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+/* Step: lift and land */
+@keyframes vl-t-step { 0%, 40%, 100% { transform: none; } 20% { transform: translateY(-5px); } }
+/* Glide: drift down and across, swaying */
+@keyframes vl-t-glide { from { transform: translate(-3px, -4px) rotate(-4deg); } to { transform: translate(3px, 4px) rotate(4deg); } }
+/* Speed: streak from right to left and fade */
+@keyframes vl-t-speed { 0% { opacity: 0; transform: translateX(8px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(-10px); } }
+/* Flag: ripple */
+@keyframes vl-t-flag { from { transform: skewY(-6deg); } to { transform: skewY(5deg); } }
+/* Patter: a small lift */
+@keyframes vl-t-patter { from { transform: none; } to { transform: translateY(-3px); } }
+/* Twinkle: grow, shine and shrink */
+@keyframes vl-t-twinkle { 0%, 100% { transform: scale(0.6); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
 
 /* Ticking off a step on Today (decision 141): only when motion is welcome; otherwise the marks show their end state at once */
 @media (prefers-reduced-motion: no-preference) {
