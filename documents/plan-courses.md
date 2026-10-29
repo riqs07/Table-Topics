@@ -1,6 +1,6 @@
 # Plan: guided courses
 
-**Status:** Built, with six courses, one for each focus area, and their final words (decisions 131 and 144, 2026-10-29). The course tiles (beyond Stop freezing's) and the videos come next. Mockups: the "Guided courses: Thinking on my feet" canvas (approved in conversation on 2026-10-28, with the changes below).
+**Status:** Built, with six courses, one for each focus area, and their final words (decisions 131 and 144, 2026-10-29). Every course and lesson has its tile, and every course a 15-second short (decision 145). Mockups: the "Guided courses: Thinking on my feet" canvas (approved in conversation on 2026-10-28, with the changes below).
 
 ## The idea
 
@@ -41,8 +41,8 @@ A course guides the user through modes the app already has, with short teaching 
 
 ## Still to do
 
-1. **Tiles** for the five new courses, their lessons, and Stop freezing's "Back on track" (the test in `tests/unit/content/tileFor.test.ts` lists them until they are drawn).
-2. **Videos** for each course (the first, "Buy a beat", is made; decision 143).
+1. **Done (decision 145):** a tile for every course and lesson, and a 15-second short for each course (`video/`).
+2. **Lesson videos** for the "See it" step (the course shorts introduce a course; a lesson's video would teach its idea, like "Buy a beat").
 3. **Your own talk inside Ready by the day.** Its parts practise on talk tasks written for the course and link to Rehearse my talk; recording a part on the user's own talk needs a part without a fixed prompt.
 4. **Better measures.** Time to the first word and time to the point would suit "Stop freezing" better than pause words; both need the word times kept with the readings.
 5. **Course pages on Today.** Whether a finished course should offer the next one on Today, not only on its own page.

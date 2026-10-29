@@ -829,7 +829,12 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {(DEVELOPMENT || devLink) && (
         <Section title="Developer">
           {/* The list */}
-          <div className={`px-5 ${CARD}`}><RowLink href="/dev/modes" meta="every mode">All modes</RowLink></div>
+          <div className={`px-5 ${CARD}`}>
+            {/* Every mode */}
+            <RowLink href="/dev/modes" meta="every mode">All modes</RowLink>
+            {/* Every course tile at 240 and 64 px (decision 145) */}
+            <RowLink href="/dev/tiles" meta="every tile">All tiles</RowLink>
+          </div>
         </Section>
       )}
 

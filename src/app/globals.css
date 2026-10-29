@@ -423,6 +423,23 @@
   .vl-scene .t-patter { animation: vl-t-patter 0.5s ease-in-out infinite alternate; }
   /* Sparkles twinkling from their own middle */
   .vl-scene .t-twinkle { transform-box: fill-box; transform-origin: center; animation: vl-t-twinkle 4s ease-in-out infinite both; }
+  /* More tile loops (decision 145) */
+  /* A slow sway from a pivot */
+  .vl-scene .t-sway { animation: vl-t-sway 3s ease-in-out infinite alternate; }
+  /* A nod: a small tip forward and back */
+  .vl-scene .t-nod { animation: vl-t-nod 2.8s ease-in-out infinite both; }
+  /* A hop up and down, then a rest */
+  .vl-scene .t-hop { animation: vl-t-hop 2.4s ease-in-out infinite both; }
+  /* A slide side to side */
+  .vl-scene .t-slide { animation: vl-t-slide 3s ease-in-out infinite alternate; }
+  /* A ring spreading out and fading, like sound */
+  .vl-scene .t-ring { animation: vl-t-ring 3s ease-out infinite both; }
+  /* A metronome's swing */
+  .vl-scene .t-swing { animation: vl-t-swing 1.4s ease-in-out infinite alternate; }
+  /* A glow coming and going */
+  .vl-scene .t-glow { animation: vl-t-glow 2.4s ease-in-out infinite alternate; }
+  /* A quick pop now and then */
+  .vl-scene .t-pop { animation: vl-t-pop 3s ease-in-out infinite both; }
   /* A scene asked to calm down plays its loop three times, then rests (the blinks carry on) */
   .vl-scene[data-motion="few"] .s-move { animation-iteration-count: 3; }
   /* A still scene keeps only its blinks */
@@ -504,6 +521,22 @@
 @keyframes vl-t-patter { from { transform: none; } to { transform: translateY(-3px); } }
 /* Twinkle: grow, shine and shrink */
 @keyframes vl-t-twinkle { 0%, 100% { transform: scale(0.6); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+/* Sway: tip one way, then the other (decision 145) */
+@keyframes vl-t-sway { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+/* Nod: tip forward, then back */
+@keyframes vl-t-nod { 0%, 60%, 100% { transform: none; } 30% { transform: rotate(6deg); } }
+/* Hop: up, then a rest on the ground */
+@keyframes vl-t-hop { 0%, 50%, 100% { transform: none; } 25% { transform: translateY(-5px); } }
+/* Slide: left to right */
+@keyframes vl-t-slide { from { transform: translateX(-4px); } to { transform: translateX(4px); } }
+/* Ring: grow a little and fade */
+@keyframes vl-t-ring { 0% { opacity: 0; transform: scale(0.9); } 30% { opacity: 0.9; } 100% { opacity: 0; transform: scale(1.08); } }
+/* Swing: side to side from the pivot */
+@keyframes vl-t-swing { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+/* Glow: dim to bright */
+@keyframes vl-t-glow { from { opacity: 0.45; } to { opacity: 1; } }
+/* Pop: a quick swell, then still */
+@keyframes vl-t-pop { 0%, 30%, 100% { transform: none; } 12% { transform: scale(1.08); } }
 
 /* Ticking off a step on Today (decision 141): only when motion is welcome; otherwise the marks show their end state at once */
 @media (prefers-reduced-motion: no-preference) {

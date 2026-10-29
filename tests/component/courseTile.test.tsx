@@ -4,13 +4,13 @@ import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a component
 import { cleanup, render } from "@testing-library/react";
 // Load what is being checked
-import { CourseTile, type CourseTileName } from "@/components/scenes/CourseTile";
+import { COURSE_TILE_NAMES, CourseTile } from "@/components/scenes/CourseTile";
 
 // Remove the drawn component after each check
 afterEach(cleanup);
 
 // Every tile
-const NAMES: CourseTileName[] = ["stop-freezing", "buy-a-beat", "point-first", "point-reason-example", "land-it", "the-run"];
+const NAMES = COURSE_TILE_NAMES;
 
 // Group the checks about the course tiles (decision 142)
 describe("CourseTile", () => {

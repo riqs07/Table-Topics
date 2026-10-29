@@ -74,8 +74,8 @@ describe("CourseScreen", () => {
     await screen.findByText("Pause, don’t fill");
     // Each tile's name and how much it moves
     const tiles = [...document.querySelectorAll("[data-course-tile]")].map((tile) => [tile.getAttribute("data-course-tile"), tile.getAttribute("data-motion")]);
-    // Confirm the course's, then the five lessons' in order
-    expect(tiles).toEqual([["stop-freezing", "loop"], ["buy-a-beat", "few"], ["point-first", "few"], ["point-reason-example", "few"], ["land-it", "few"], ["the-run", "few"]]);
+    // Confirm the course's, then the six lessons' in order
+    expect(tiles).toEqual([["stop-freezing", "loop"], ["buy-a-beat", "few"], ["point-first", "few"], ["point-reason-example", "few"], ["land-it", "few"], ["back-on-track", "few"], ["the-run", "few"]]);
   });
 
   // Every part done: the course is complete, with first and latest takes

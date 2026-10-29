@@ -1,8 +1,8 @@
 # Art Style: the Blob, Scenes, Course Tiles and Videos
 
 **Purpose:** The rules that keep VoiceLab's drawings looking like one family, and the recipe for adding more. Read this before drawing a new scene, tile or video.
-**Last updated:** 2026-10-29 (decisions 134, 136, 142 and 143)
-**Code:** `src/components/scenes/Scene.tsx` (the blob, its faces, the scenes), `src/components/scenes/CourseTile.tsx` (course tiles), `src/components/script/BlobFace.tsx` (the voice shape's face), `video/` (short videos). The motion lives in `src/app/globals.css` under "The blob scenes (decision 136)".
+**Last updated:** 2026-10-29 (decisions 134, 136, 142, 143 and 145)
+**Code:** `src/components/scenes/Scene.tsx` (the blob, its faces, the scenes), `src/components/scenes/CourseTile.tsx` (course tiles: the registry), `src/components/scenes/tiles/` (the shaded `Body`, `Twinkle` and each course's drawings, one file per course; decision 145), `src/components/script/BlobFace.tsx` (the voice shape's face), `video/` (short videos). The motion lives in `src/app/globals.css` under "The blob scenes (decision 136)".
 
 ## 1. The character: the blob
 
@@ -12,7 +12,7 @@ The blob is VoiceLab's one recurring character. Everything else is a prop around
 |------|--------|
 | **One outline, never redrawn** | Always draw the body from `BLOB` in `Scene.tsx` (a slightly uneven round, 100 units across its radius). Place and size it with `translate(x y) scale(r / 100)`. Do not draw a new circle or a new blob path: the slight unevenness is what makes it recognisable |
 | **Its colours** | Body `warm`; shaded side `warm-shade`; face `on-warm`. A second person in a scene is the same outline in `accent` with an `accent-ink` face. It is never another colour |
-| **Shading (course tiles and videos)** | Use `Body` from `CourseTile.tsx`, which draws (1) the body in `warm-shade`, (2) the body in `warm` over it, nudged `translate(-9 -8) scale(0.93)` so the shade shows as a crescent at the lower right, and (3) an `art-cream` highlight at 50%: an ellipse at (-50, -54), 20 by 12, turned -35°. The light always comes from the upper left. Scenes (the small ink-line drawings) stay flat, with no shading |
+| **Shading (course tiles and videos)** | Use `Body` from `tiles/parts.tsx` (re-exported by `CourseTile.tsx`; a second person is `Body` with `accent`, the accent colour with a darker crescent from `on-warm` at 25%, so the shade stays dark in both themes), which draws (1) the body in `warm-shade`, (2) the body in `warm` over it, nudged `translate(-9 -8) scale(0.93)` so the shade shows as a crescent at the lower right, and (3) an `art-cream` highlight at 50%: an ellipse at (-50, -54), 20 by 12, turned -35°. The light always comes from the upper left. Scenes (the small ink-line drawings) stay flat, with no shading |
 | **The face** | Two dark ovals for eyes and one simple mouth, in the blob's upper middle. No nose, no eyebrows except to show worry or puzzlement, no outlines. Use a face from `Face` (`ready`, `wow`, `sing`, `happy`, `down`, `up`, `wonder`, `puff`, `side`, `side-left`); a new face goes into `Face` so every drawing can use it. Eyes blink (`s-blink`) |
 | **Personality** | Friendly and a little earnest. It can be surprised, puzzled, nervous or proud, never cross, mocking or sad. When it gets something wrong, it looks puzzled ("hmm"), not ashamed: VoiceLab never makes the user feel judged |
 | **Limbs** | Only when they show something. Arms are short ellipses (about 10 by 16 tile units) in `warm`, the far arm in `warm-shade`, tucked behind the body at its sides (not on top, or they read as ears). Feet are flat `warm-shade` ovals, only when it runs or stands on something. No hands, fingers or legs |
@@ -60,16 +60,16 @@ The drawings move to feel alive, not to grab attention. A page full of them must
 | **Turn from the right place** | Give `Move` an `origin` at the real pivot (an arm's shoulder, an arrow's tip, a flag's pole), in the drawing's own units |
 | **Seamless loops** | A loop starts and ends at rest, or uses `alternate`, so it never jumps |
 | **Budget** | On one screen, one drawing loops (`motion="loop"`), the others play three rounds and rest (`"few"`), and rows only blink (`"still"`). With reduced motion, every drawing is still |
-| **Where** | Keyframes live in `globals.css` inside the "only when motion is welcome" block: scenes use `s-*`, tiles use `t-*`. Reuse one before adding one. The loops so far: `t-float`, `t-breathe`, `t-pulse`, `t-drift`, `t-air`, `t-wobble`, `t-wave`, `t-step`, `t-glide`, `t-speed`, `t-flag`, `t-patter`, `t-twinkle` |
+| **Where** | Keyframes live in `globals.css` inside the "only when motion is welcome" block: scenes use `s-*`, tiles use `t-*`. Reuse one before adding one. The loops so far: `t-float`, `t-breathe`, `t-pulse`, `t-drift`, `t-air`, `t-wobble`, `t-wave`, `t-step`, `t-glide`, `t-speed`, `t-flag`, `t-patter`, `t-twinkle`, and (decision 145) `t-sway`, `t-nod`, `t-hop`, `t-slide`, `t-ring`, `t-swing`, `t-glow`, `t-pop` |
 
 ## 6. Adding a new course tile (recipe)
 
-1. Name it after the lesson's idea (`"point-first"`) and add it to `CourseTileName` in `CourseTile.tsx`.
-2. Give it a ground and lean in `GROUNDS` (a different ground from its neighbours in the course).
-3. Draw it in `TILES`, following section 3. Comment every line, as everywhere.
+1. Name it after the lesson's idea (`"point-first"`) and add it to its course's file in `src/components/scenes/tiles/` (a new course gets a new file, spread into `TILES` in `CourseTile.tsx`; `CourseTileName` follows from the keys).
+2. Give it a ground (`fill`) and lean (`tilt`): a different ground from its neighbours in the course, leaning the other way.
+3. Draw it in `draw`, following section 3. Comment every line, as everywhere.
 4. Map the course or lesson to it in `src/components/scenes/tileFor.ts`. The test `tests/unit/content/tileFor.test.ts` fails until every course and lesson has a tile.
 5. Add the name to the list in `tests/component/courseTile.test.tsx`.
-6. **Look at it.** Render the course page and screenshot every tile at 240 px side by side (light and dark), and take eight frames 0.4 s apart to check the motion stays small and pivots in the right place. Check it at 64 px.
+6. **Look at it.** Open `/dev/tiles` (or `/dev/tiles?course=…`; `&still=1` stills the motion) while developing: every tile at 240 px beside the same tile at 64 px. Screenshot it in light and dark, and take eight frames 0.4 s apart to check the motion stays small and pivots in the right place.
 7. Record it in the decision for that course and in `design-system.md`.
 
 The same steps, with `Scene.tsx` and `sceneFor.ts`, add a scene.
@@ -94,3 +94,13 @@ Videos are made in `video/` with Remotion, which renders React to MP4. They use 
 - **Props:** pop in with a spring when the word is said; leave in 0.2 s (a slow exit leaves specks behind the next idea).
 - **Captions:** every phrase, in a cream box (44 px corners) near the bottom, Fraunces at 74 px, the word being said in `accent`.
 - **Voice:** warm and friendly, at an even pace (the first video uses ElevenLabs' "Mira"). Write the script in the app's voice: short sentences, one idea each, no jargon.
+
+### Course shorts (decision 145)
+
+Every course has a 15-second short (`video/src/CourseShort.tsx`, one component; the words are in `video/src/shorts.ts`). The shape, for any new course:
+
+- **About 12 seconds of voice, then a 2.5 to 3 second end card.** A hook (the problem, with a bubble prop), the course's name with its tile, three lessons named with their tiles popping in, and a short close. Each phrase is one idea.
+- **Tiles take the stage:** while a tile is shown (with a label such as "Lesson 2 · Point first"), the blob steps down and shrinks underneath and keeps talking. The background never matches the tile's ground; the video picks another colour if a phrase's does.
+- **Voice:** "Mira – Bright & Friendly Narrator" (ElevenLabs, `eleven_v4`), each phrase on its own line with a direction tag where it helps (`[curious]`, `[worried]`, `[warm]`, `[confident]`, `[cheerful]`). When the voice pauses inside a line, or adds a sound of its own (a sigh), set the line's `span` or give the sound its own caption, so the phrases still line up.
+- **End card:** the course tile, "VoiceLab", the course's name and one line on it ("6 short lessons · practise out loud").
+

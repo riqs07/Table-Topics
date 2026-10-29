@@ -1,7 +1,7 @@
 // "Buy a beat" as a vertical short (proof of concept, decision 143): the blob talks through lesson 1 of Stop freezing, with props, word-by-word captions and an end card. Timings come from the voiceover (scripts/prepare.mjs)
 
 // Load React's tools
-import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import type { ReactNode } from "react";
 // Load Remotion's building blocks
 import { AbsoluteFill, Audio, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 // Load the app's course tiles
@@ -10,6 +10,8 @@ import { CourseTile } from "@/components/scenes/CourseTile";
 import { TalkingBlob, type Mood } from "./TalkingBlob";
 // Load the theme as CSS, and the helper for inline colours
 import { THEME_CSS, role, tint } from "./theme";
+// Load the shared video pieces
+import { BODY, Bubble, Chip, DISPLAY, Place, Synced } from "./kit";
 // Load the app's scene animations as plain CSS
 import "./generated/scene.css";
 // Load the voiceover's phrases and loudness
@@ -50,31 +52,6 @@ export const END_SECONDS = 2.8;
 // The whole video's length in frames
 export const DURATION_FRAMES = Math.ceil((voice.duration + END_SECONDS) * voice.fps);
 
-// The display face and the body face
-const DISPLAY = "'Fraunces Variable', Georgia, serif";
-// (body)
-const BODY = "Atkinson, system-ui, sans-serif";
-
-// Keep the app's CSS animations (the tiles' loops) in step with the frame being drawn: pause them and set their time from the frame, so every render is the same
-function Synced({ children, style }: { children: ReactNode; style?: CSSProperties }) {
-  // This stretch's frame, and the frame rate
-  const [frame, { fps }] = [useCurrentFrame(), useVideoConfig()];
-  // The wrapper
-  const ref = useRef<HTMLDivElement>(null);
-  // On every frame, before it is drawn
-  useLayoutEffect(() => {
-    // Each animation inside
-    for (const animation of ref.current?.getAnimations({ subtree: true }) ?? []) {
-      // Held still
-      animation.pause();
-      // At this frame's time
-      animation.currentTime = (frame / fps) * 1000;
-    }
-  }, [frame, fps]);
-  // The wrapper around the drawing
-  return <div ref={ref} style={style}>{children}</div>;
-}
-
 // Which phrase is on at a time in seconds (the last one started), or -1 before the first
 function phraseAt(seconds: number): number {
   // The last phrase whose start has passed
@@ -97,31 +74,6 @@ function usePresence(from: number, to: number): number {
   const shown = Math.min(useSpringFrom(from), interpolate(seconds, [to, to + 0.2], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
   // Never below none
   return Math.max(0, shown);
-}
-
-// Something placed by its middle at x, y on the 1080 by 1920 frame, scaled and turned
-function Place({ x, y, scale = 1, rotate = 0, children }: { x: number; y: number; scale?: number; rotate?: number; children: ReactNode }) {
-  // Absolutely placed, centred on its point
-  return <div style={{ position: "absolute", left: x, top: y, transform: `translate(-50%, -50%) scale(${scale}) rotate(${rotate}deg)` }}>{children}</div>;
-}
-
-// A cream speech bubble holding a word or sign
-function Bubble({ children, color, size = 220 }: { children: ReactNode; color: string; size?: number }) {
-  // The rounded bubble with a little tail, and its content in the display face
-  return (
-    <div style={{ position: "relative", minWidth: size, height: size * 0.8, padding: "0 40px", borderRadius: size * 0.3, background: role("art-cream"), color, fontFamily: DISPLAY, fontWeight: 700, fontSize: size * 0.42, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 12px 0 ${tint("on-warm", 8)}` }}>
-      {/* The content */}
-      {children}
-      {/* The tail */}
-      <div style={{ position: "absolute", bottom: -size * 0.12, left: "28%", width: size * 0.22, height: size * 0.22, background: role("art-cream"), transform: "rotate(45deg)", borderRadius: 8 }} />
-    </div>
-  );
-}
-
-// A small cream label, such as "sounds sure"
-function Chip({ children }: { children: ReactNode }) {
-  // Rounded, in the body face
-  return <div style={{ padding: "14px 34px", borderRadius: 999, background: role("art-cream"), color: role("on-warm"), fontFamily: BODY, fontWeight: 700, fontSize: 44, whiteSpace: "nowrap" }}>{children}</div>;
 }
 
 // The background: each phrase's colour fading in over the last, with two soft circles drifting

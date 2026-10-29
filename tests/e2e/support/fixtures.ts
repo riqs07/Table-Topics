@@ -189,6 +189,8 @@ export const ROUTES: ReadonlyArray<string> = [
   "/courses/course?id=missing",
   // Every mode on one page, for development (decision 132)
   "/dev/modes",
+  // Every course tile on one page, for development (decision 145)
+  "/dev/tiles",
 ];
 
 // Pages that carry the main navigation, with the section each one marks as current
