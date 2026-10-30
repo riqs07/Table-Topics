@@ -104,6 +104,10 @@ describe("dailyPlan", () => {
     const regular2 = regularPicks.flat();
     // The names of the four kinds
     const names = NEEDED_TYPES.map((type) => type.name);
+    // A new user with telling stories as the focus (the focus's picks leave it out in the first days too)
+    const freshFocused = Array.from({ length: 21 }, (_, offset) => dailyPlan({ day: dayAfter(offset), sessions: [], focusId: "pausing", nextTalk: null, practiceFocus: ["stories"] })).flat();
+    // Confirm none for the new user, with or without the stories focus
+    expect([fresh.some((step) => NEEDED_TYPES.some((type) => type.name === step.label)), freshFocused.some((step) => NEEDED_TYPES.some((type) => type.name === step.label))]).toEqual([false, false]);
     // Confirm none for the new user, every kind for the regular one, each told with its own prompt and address
     expect([fresh.some((step) => names.includes(step.label)), names.every((name) => regular2.some((step) => step.label === name)), regular2.filter((step) => names.includes(step.label)).every((step) => step.mode === "story" && step.href === `/stories/tell?prompt=${step.promptId}`)]).toEqual([false, true, true]);
   });

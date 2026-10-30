@@ -337,8 +337,8 @@ function focusPick(input: PlanInput, before: ReadonlyArray<SessionRecord>, first
   const today = focusForDay(input.practiceFocus, dayNumber(input.day));
   // No focus
   if (!today) return null;
-  // The leading area's kinds (without the long ones in the first days; never empty, as every area has a short kind)
-  const kinds = today.pick.picks.filter((kind) => !firstDays || !NOT_FIRST_DAYS.includes(kind));
+  // The leading area's kinds (without the long ones in the first days, nor a story you'll need, which the lanes swap for Rapid Fire then; never empty, as every area has a short kind)
+  const kinds = today.pick.picks.filter((kind) => !firstDays || (!NOT_FIRST_DAYS.includes(kind) && !FIRST_DAYS_SWAP[kind]));
   // Its kind today, taking turns by how often it has led
   const kind = kinds[(((today.turn + offset) % kinds.length) + kinds.length) % kinds.length]!;
   // The step, in the kind's own lane
