@@ -1,4 +1,4 @@
-// A guided course part end to end (decision 131), with the stand-in microphone and a faked clock: Practice → the course → a part's steps → two Rapid Fire tries → the wrap-up, then the part shows done on the course page
+// A guided course part end to end (decision 131), with the stand-in microphone and a faked clock: the Courses tab (decision 148) → the course → a part's steps → two Rapid Fire tries → the wrap-up, then the part shows done on the course page
 import { expect, test, useStandIns } from "./support/fixtures";
 // Load the page type
 import type { Page } from "@playwright/test";
@@ -19,16 +19,18 @@ async function rapidFire(page: Page): Promise<void> {
   await stop.click();
 }
 
-// From Practice, one part of a course: learn, see it, two tries, and the wrap-up
-test("Course: a part from Practice through two tries to the wrap-up", async ({ page }) => {
+// From the Courses tab, one part of a course: learn, see it, two tries, and the wrap-up
+test("Course: a part from the Courses tab through two tries to the wrap-up", async ({ page }) => {
   // The stand-in microphone and speech
   await useStandIns(page);
   // A clock the check runs forward
   await page.clock.install({ time: new Date("2026-10-28T09:00:00") });
   // Past the welcome
   await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
-  // Practice
-  await page.goto("/practice");
+  // Today, then the Courses tab (decision 148)
+  await page.goto("/");
+  // (the tab)
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Courses" }).click();
   // The course's card
   await page.getByRole("link", { name: /^Stop freezing/ }).click();
   // The course page, with lesson 2's first part

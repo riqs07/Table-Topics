@@ -97,9 +97,9 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
     return (
       <main id="main" className={PAGE}>
         {/* Title and close */}
-        <Masthead title="Course" nav={false} close={{ href: "/practice", label: "Close, back to Practice" }} />
+        <Masthead title="Course" nav={false} close={{ href: "/courses", label: "Close, back to Courses" }} />
         {/* The message */}
-        <p className="mt-8 text-lede">This course could not be found. <Link href="/practice" className="underline underline-offset-4">Back to Practice</Link></p>
+        <p className="mt-8 text-lede">This course could not be found. <Link href="/courses" className="underline underline-offset-4">Back to Courses</Link></p>
       </main>
     );
   }
@@ -113,7 +113,7 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
   return (
     <main id="main" className={PAGE}>
       {/* Title and a way back to Practice */}
-      <Masthead title="Course" nav={false} close={{ href: "/practice", label: "Close, back to Practice" }} />
+      <Masthead title="Course" nav={false} close={{ href: "/courses", label: "Close, back to Courses" }} />
       {/* The course's tile beside its label and name, when it has one (decision 142) */}
       <div className="mt-6 flex items-center gap-4">
         {/* The tile, moving gently */}

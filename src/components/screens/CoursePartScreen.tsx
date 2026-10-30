@@ -165,9 +165,9 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
     return (
       <main id="main" className={PAGE}>
         {/* Title and close */}
-        <Masthead title="Lesson" nav={false} close={{ href: "/practice", label: "Close, back to Practice" }} />
+        <Masthead title="Lesson" nav={false} close={{ href: "/courses", label: "Close, back to Courses" }} />
         {/* The message */}
-        <p className="mt-8 text-lede">This lesson could not be found. <Link href="/practice" className="underline underline-offset-4">Back to Practice</Link></p>
+        <p className="mt-8 text-lede">This lesson could not be found. <Link href="/courses" className="underline underline-offset-4">Back to Courses</Link></p>
       </main>
     );
   }

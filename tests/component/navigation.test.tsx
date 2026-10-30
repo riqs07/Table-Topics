@@ -35,8 +35,8 @@ const NOW = new Date(2026, 9, 15, 10);
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
-// Where the four tabs must lead, in order (Settings is the gear in the title row)
-const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Learn", "/learn"]];
+// Where the tabs must lead, in order (Settings is the gear in the title row; Courses added, decision 148)
+const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Courses", "/courses"], ["Learn", "/learn"]];
 
 // Read the main navigation's links as [name, address] pairs, and which one is marked as the current page
 async function readNavigation() {
@@ -76,8 +76,8 @@ describe("main navigation", () => {
     ["a talk's page", "Practice", async () => <TalkScreen talkId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
     // Stories belong to Practice (decision 92)
     ["Stories", "Practice", async () => <StoriesScreen repository={createRepository(new MemoryStore())} now={NOW} />],
-    // The list of guided courses (decision 131)
-    ["Courses", "Practice", async () => <CoursesScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    // The guided courses have their own tab (decision 148)
+    ["Courses", "Courses", async () => <CoursesScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Your check-ins and their comparison belong to Today (decision 100)
     ["Your check-ins", "Today", async () => <CheckInScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // (the comparison)

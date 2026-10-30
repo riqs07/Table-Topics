@@ -3,7 +3,7 @@
 // Load Next.js's link component
 import Link from "next/link";
 // Load the tab icons
-import { GearIcon, LightbulbIcon, MicrophoneIcon, SunIcon, XIcon } from "@phosphor-icons/react/dist/ssr";
+import { GearIcon, GraduationCapIcon, LightbulbIcon, MicrophoneIcon, SunIcon, XIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the type for content passed in
@@ -12,14 +12,16 @@ import type { ReactNode } from "react";
 import { PRESS } from "./Buttons";
 
 // The sections a page can belong to (Settings is the gear in the title row, not a tab; Skills is a page inside Practice)
-export type Section = "today" | "practice" | "skills" | "learn" | "settings";
+export type Section = "today" | "practice" | "skills" | "courses" | "learn" | "settings";
 
-// Each tab's name and address, in order: four, always labelled (decision 48; History moved into Settings, decision 56)
+// Each tab's name and address, in order, always labelled (decision 48; History moved into Settings, decision 56; Courses added before Learn, which it is to replace, decision 148)
 const SECTIONS: ReadonlyArray<{ id: Section; name: string; href: string; icon: Icon }> = [
   // Today's practice
   { id: "today", name: "Today", href: "/", icon: SunIcon },
   // Every kind of practice, picked freely (Skills' lessons and readings are a page inside it)
   { id: "practice", name: "Practice", href: "/practice", icon: MicrophoneIcon },
+  // The guided courses (decision 148)
+  { id: "courses", name: "Courses", href: "/courses", icon: GraduationCapIcon },
   // What research says, in short cards
   { id: "learn", name: "Learn", href: "/learn", icon: LightbulbIcon },
 ];
@@ -49,7 +51,7 @@ export function Masthead({ title, children, section, nav = true, close = null }:
         <span className="font-display text-xl font-semibold tracking-tight md:text-2xl">{title}</span>
         {/* The main navigation: a tab bar fixed to the bottom of a phone, tabs in this bar on a computer (decision 79), the current one in a filled pill */}
         {nav && (
-          <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:ml-4 md:flex md:flex-1 md:gap-x-2 md:border-0 md:bg-transparent md:p-0">
+          <nav aria-label="Main" data-tabbar className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-rule bg-paper-raised pb-[env(safe-area-inset-bottom)] md:static md:ml-4 md:flex md:flex-1 md:gap-x-2 md:border-0 md:bg-transparent md:p-0">
             {/* One link per section */}
             {SECTIONS.map((item) => {
               // Whether this is the current section

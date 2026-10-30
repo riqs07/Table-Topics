@@ -226,8 +226,8 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/stories", current: "Practice" },
   // The 4/3/2 drill belongs to Practice (decision 126)
   { path: "/practice/four-three-two", current: "Practice" },
-  // The list of courses belongs to Practice (decision 131)
-  { path: "/courses", current: "Practice" },
+  // The courses have their own tab (decision 148)
+  { path: "/courses", current: "Courses" },
   // Your check-ins and their comparison belong to Today (decision 100)
   { path: "/check-in", current: "Today" },
   // (the comparison)
@@ -242,6 +242,8 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Today", path: "/" },
   // Practice
   { name: "Practice", path: "/practice" },
+  // Courses (decision 148)
+  { name: "Courses", path: "/courses" },
   // Learn
   { name: "Learn", path: "/learn" },
   // Settings

@@ -251,6 +251,36 @@ describe("CourseRevisitScreen", () => {
 
 // Group the checks about the list of courses
 describe("CoursesScreen", () => {
+  // The Courses tab puts your course first: one started, else the first for your focus; with neither, every course under one heading (decision 148)
+  it("puts your course first", async () => {
+    // The address of each course card in a section
+    const hrefs = (name: string) => within(screen.getByRole("region", { name })).getAllByRole("link").map((link) => link.getAttribute("href"));
+    // A repository with telling stories picked
+    const focused = createRepository(new MemoryStore());
+    // The focus
+    await focused.saveSettings({ ...(await focused.getSettings(NOW)), practiceFocus: ["stories"] });
+    // Draw it
+    render(<CoursesScreen repository={focused} now={NOW} />);
+    // Your course, once the focus is read
+    await waitFor(() => expect(hrefs("Your course")).toEqual(["/courses/course?id=stories-that-land"]));
+    // The rest
+    const rest = hrefs("More courses");
+    // Clear
+    cleanup();
+    // Stop freezing started, with no focus
+    render(<CoursesScreen repository={await seeded([[BEAT1, "a", "2026-10-27T10:00:00Z"]])} now={NOW} />);
+    // Confirm the started course first, saying so
+    await waitFor(() => expect([hrefs("Your course"), screen.getByRole("region", { name: "Your course" }).textContent?.includes("Carry on")]).toEqual([["/courses/course?id=stop-freezing"], true]));
+    // Clear
+    cleanup();
+    // Nothing started and no focus
+    render(<CoursesScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Every course under one heading
+    const all = await waitFor(() => hrefs("All courses"));
+    // Confirm the rest left out the focus's course, and all six with no "Your course"
+    expect([rest.length, rest.includes("/courses/course?id=stories-that-land"), all.length, screen.queryByRole("region", { name: "Your course" })]).toEqual([5, false, 6, null]);
+  });
+
   // Each course with how far through
   it("lists the courses", async () => {
     // One part done
