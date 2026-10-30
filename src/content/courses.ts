@@ -4,6 +4,8 @@
 import type { FocusAreaId } from "@/core/practiceFocus";
 // Load the kinds of session a part can record, and a story's set-up
 import type { SessionMode, StoryTake } from "@/data/records";
+// Load the lesson clips made so far, by course part (decision 147)
+import { LESSON_CLIP_FILES } from "@/content/lessonClips";
 
 // What a part's practice is compared on between tries, and when its prompt comes back: pause words, pace or length (more measures, such as time to the point, come with the real content)
 export type CourseMeasure = "fillers" | "pace" | "length";
@@ -97,8 +99,8 @@ export interface Course {
   lessons: ReadonlyArray<CourseLesson>;
 }
 
-// The courses, in the order Practice shows them: one for each focus area (decision 144)
-export const COURSES: ReadonlyArray<Course> = [
+// The courses as written, in the order Practice shows them: one for each focus area (decision 144)
+const WRITTEN: ReadonlyArray<Course> = [
   // Thinking on your feet: the first course (decisions 131 and 144)
   {
     id: "stop-freezing",
@@ -376,7 +378,7 @@ export const COURSES: ReadonlyArray<Course> = [
         blurb: "Small moments count.",
         parts: [
           // Small moments
-          { id: "sl-find-1", title: "Small moments count", see: { clip: { src: "/lessons/small-moments.mp4", poster: "/lessons/small-moments-poster.jpg", title: "Small moments count", transcript: "Think nothing interesting ever happens to you? Most people do. But good stories aren’t big events. They’re small moments, when something changed. So today, notice three kinds. A surprise: something you didn’t expect. A small win: something that went right. And a line someone said, in their own words. Tonight, write one of them down. Just one line. Don’t polish it. Just the moment. Do that for a week, and you’ll have more stories than you can tell." } }, learn: { headline: "Good stories come from small moments.", body: "You don’t need a shipwreck. A story is a moment when something changed, however small: the stranger who helped with the car, the recipe that failed, the call you kept putting off. Look for the moment, not the drama.", card: "story-small-moments" }, practice: { mode: "story", promptId: "sp06", story: { length: "full" }, goal: "Tell one small moment, and say what changed.", tries: 1, measure: "length" } },
+          { id: "sl-find-1", title: "Small moments count", learn: { headline: "Good stories come from small moments.", body: "You don’t need a shipwreck. A story is a moment when something changed, however small: the stranger who helped with the car, the recipe that failed, the call you kept putting off. Look for the moment, not the drama.", card: "story-small-moments" }, practice: { mode: "story", promptId: "sp06", story: { length: "full" }, goal: "Tell one small moment, and say what changed.", tries: 1, measure: "length" } },
           // One thing, not a list
           { id: "sl-find-2", title: "One thing, told well", learn: { headline: "Pick one thing and tell it well.", body: "Asked about your weekend, the list (“Saw friends, did some chores, watched a film”) closes the topic. One moment, told well, opens it.", instead: "“Oh, you know, saw some friends, did some chores.”", tryThis: "“I finally fixed the bike. It took three videos and one very patient neighbour.”", card: "story-one-thing" }, practice: { mode: "smalltalk", promptId: "st02", goal: "Pick one thing from your weekend and tell it as a moment.", tries: 2, measure: "length" } },
         ],
@@ -618,3 +620,14 @@ export const COURSES: ReadonlyArray<Course> = [
     ],
   },
 ];
+
+// A part with its lesson clip added to "See it", when one has been made for it (decision 147)
+function withClip(part: CoursePart): CoursePart {
+  // The clip, if any
+  const clip = LESSON_CLIP_FILES[part.id];
+  // Added beside anything else the part shows
+  return clip ? { ...part, see: { ...part.see, clip } } : part;
+}
+
+// The courses, each lesson's first part carrying its clip
+export const COURSES: ReadonlyArray<Course> = WRITTEN.map((course) => ({ ...course, lessons: course.lessons.map((lesson) => ({ ...lesson, parts: lesson.parts.map(withClip) })) }));

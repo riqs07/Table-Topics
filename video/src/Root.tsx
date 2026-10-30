@@ -11,8 +11,11 @@ import { BuyABeat, DURATION_FRAMES } from "./BuyABeat";
 // Load the course shorts, their length and their list (decision 145)
 import { CourseShort, SHORT_FRAMES } from "./CourseShort";
 import { SHORTS } from "./shorts";
-// Load the first lesson clip, its length and its frame (decision 146)
-import { LESSON_HEIGHT, LESSON_WIDTH, SMALL_MOMENTS_FRAMES, SmallMoments } from "./lessons/SmallMoments";
+// Load the lesson clips, their frame and their lengths (decisions 146 and 147)
+import { LESSON_HEIGHT, LESSON_WIDTH, LessonClip, clipFrames } from "./lessons/LessonClip";
+import { LESSON_CLIPS } from "./lessons/clips";
+// Load the lesson voiceovers made so far, so a clip without one is left out
+import voices from "./generated/lessons/index.json";
 
 // Hold the render until both faces are ready, so no frame is drawn in a fallback font
 const waiting = delayRender("Loading fonts");
@@ -31,7 +34,7 @@ export function Root() {
       {/* Each course's 15-second short, named after the course */}
       {SHORTS.map((short) => <Composition key={short.id} id={`short-${short.id}`} component={CourseShort} defaultProps={{ id: short.id }} durationInFrames={SHORT_FRAMES} fps={30} width={1080} height={1920} />)}
       {/* The lesson clips: 4:5, for a part's "See it" step */}
-      <Composition id="lesson-small-moments" component={SmallMoments} durationInFrames={SMALL_MOMENTS_FRAMES} fps={30} width={LESSON_WIDTH} height={LESSON_HEIGHT} />
+      {LESSON_CLIPS.filter((clip) => clip.id in voices).map((clip) => <Composition key={clip.id} id={`lesson-${clip.id}`} component={LessonClip} defaultProps={{ id: clip.id }} durationInFrames={clipFrames(clip.id)} fps={30} width={LESSON_WIDTH} height={LESSON_HEIGHT} />)}
     </>
   );
 }

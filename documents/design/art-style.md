@@ -113,4 +113,6 @@ A lesson clip teaches one idea inside a course part's "See it" step. It is not a
 - **Captions:** one short phrase at a time, in a cream box near the bottom. The voice pauses often in a calm read, so each pause is its own caption.
 - **Teach from the Learn cards,** and end on something to do: a closing card such as "Today, notice … Tonight: write one line".
 - **Reuse the drawings:** the lesson's own tile appears once; simple props (cards that turn over, a notebook line writing itself) do the explaining.
+- **The blob gives its own example (decision 147):** one beat where it tells, in the first person, an ordinary moment that shows the lesson's idea ("Here’s mine…"), on a cream story card titled "My moment", "My update" or similar, its key words writing themselves in. No real people, brands, places or news.
+- **Made from data:** a clip is its lines, beats and closing card in `video/src/lessons/clips/`; the pictures are a bubble, the tile, a burst struck through, "instead of" then "try", cards turning over, numbered steps, a page of lines, and the example card. Text that fits: card labels up to 18 characters, step labels 16, list lines 40, contrast lines 70, example quotes 60.
 

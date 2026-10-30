@@ -74,14 +74,16 @@ for (const file of readdirSync(COURSES).filter((name) => name.endsWith(".mp3")).
   // Said
   console.log(`${file}: ${short.phrases.length} phrases over ${short.duration.toFixed(2)} s.`);
 }
-// Each lesson clip's voiceover (public/lessons/<clip id>.mp3), split the same way
+// Each lesson clip's voiceover (public/lessons/<clip id>.mp3), split the same way, all saved in one file by clip id
+const lessons = {};
+// (each in turn)
 for (const file of readdirSync(LESSONS).filter((name) => name.endsWith(".mp3")).sort()) {
-  // Its timings and loudness
-  const clip = measure(path.join(LESSONS, file), { noise: -38, gap: 0.2 });
-  // Saved by clip id
-  writeFileSync(path.join(OUT, "lessons", file.replace(/\.mp3$/, ".json")), JSON.stringify(clip));
-  // Said
-  console.log(`lesson ${file}: ${clip.phrases.length} phrases over ${clip.duration.toFixed(2)} s.`);
+  // Its timings and loudness, by id
+  lessons[file.replace(/\.mp3$/, "")] = measure(path.join(LESSONS, file), { noise: -38, gap: 0.2 });
 }
+// Saved
+writeFileSync(path.join(OUT, "lessons", "index.json"), JSON.stringify(lessons));
+// Said
+console.log(`Lesson clips: ${Object.keys(lessons).length} voiceovers.`);
 // And the scene CSS
 console.log("Prepared the scene CSS.");

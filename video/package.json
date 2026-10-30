@@ -9,6 +9,7 @@
     "render": "node scripts/prepare.mjs && remotion render src/index.ts BuyABeat out/buy-a-beat.mp4",
     "still": "node scripts/prepare.mjs && remotion still src/index.ts BuyABeat out/still.png",
     "render-shorts": "node scripts/prepare.mjs && node scripts/render-shorts.mjs",
+    "render-lessons": "node scripts/prepare.mjs && node scripts/render-lessons.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

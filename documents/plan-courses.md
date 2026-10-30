@@ -42,7 +42,7 @@ A course guides the user through modes the app already has, with short teaching 
 ## Still to do
 
 1. **Done (decision 145):** a tile for every course and lesson, and a 15-second short for each course (`video/`).
-2. **Lesson clips** for the "See it" step (decision 146): the first, "Small moments count", plays in Stories that land, lesson 1, part 1. The plan is one per lesson, made the same way (`video/src/lessons/`).
+2. **Done (decisions 146 and 147):** a lesson clip in every lesson's first part, with the blob's own example (`video/src/lessons/clips/`, listed for the app in `src/content/lessonClips.ts`).
 3. **Your own talk inside Ready by the day.** Its parts practise on talk tasks written for the course and link to Rehearse my talk; recording a part on the user's own talk needs a part without a fixed prompt.
 4. **Better measures.** Time to the first word and time to the point would suit "Stop freezing" better than pause words; both need the word times kept with the readings.
 5. **Course pages on Today.** Whether a finished course should offer the next one on Today, not only on its own page.

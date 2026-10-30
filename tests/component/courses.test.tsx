@@ -115,14 +115,14 @@ describe("CourseScreen", () => {
 
 // Group the checks about a part's steps
 describe("CoursePartScreen", () => {
-  // A part's own lesson clip plays in See it: tap to play, nothing loaded first, with its words to read instead (decision 146)
+  // A part's own lesson clip plays in See it: tap to play, nothing loaded first, with its words to read instead (decisions 146 and 147)
   it("shows a part's lesson clip with its words to read", () => {
     // The first part of Stories that land, at See it
     render(<CoursePartScreen partId="sl-find-1" step="see" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The clip
     const video = document.querySelector("[data-lesson-clip] video");
     // Confirm the heading, the clip's file, still, controls and that it loads nothing first, and the words to read
-    expect([screen.getByRole("heading", { level: 1 }).textContent, video?.getAttribute("src"), video?.getAttribute("poster"), video?.hasAttribute("controls"), video?.getAttribute("preload"), screen.getByText("Read it instead").tagName, !!screen.getByText(/write one of them down/)]).toEqual(["Watch it", "/lessons/small-moments.mp4", "/lessons/small-moments-poster.jpg", true, "none", "SUMMARY", true]);
+    expect([screen.getByRole("heading", { level: 1 }).textContent, video?.getAttribute("src"), video?.getAttribute("poster"), video?.hasAttribute("controls"), video?.getAttribute("preload"), screen.getByText("Read it instead").tagName, !!screen.getByText(/write one of them down/)]).toEqual(["Watch it", "/lessons/stories-that-land-find.mp4", "/lessons/stories-that-land-find-poster.jpg", true, "none", "SUMMARY", true]);
   });
 
 

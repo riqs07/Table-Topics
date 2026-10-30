@@ -33,16 +33,20 @@ pnpm render-shorts
 
 The videos are written to `out/shorts/<course id>.mp4`. One on its own: `npx remotion render src/index.ts short-stop-freezing out/stop-freezing.mp4`.
 
-## Lesson clips (decision 146)
+## Lesson clips (decisions 146 and 147)
 
-A lesson clip is a 30 to 45 second, 4:5 explainer for a course part's "See it" step. The first, "Small moments count", is `src/lessons/SmallMoments.tsx`, its voiceover `public/lessons/small-moments.mp3`. Render it, then copy it and a still into the app:
+Every lesson has a 30 to 45 second, 4:5 clip for its first part's "See it" step. A clip is data in `src/lessons/clips/<course>.ts` (its lines, beats and closing card; types in `src/lessons/types.ts`), drawn by `src/lessons/LessonClip.tsx`. Its voiceover is `public/lessons/<clip id>.mp3`; `src/lessons/align.ts` times the lines and words from the voice's own pauses.
+
+To make or remake one: write its data, read its voice prompt (`npx tsx` a script calling `voicePrompt(findClip(id))` from `src/lessons/clips`), voice it with ElevenLabs ("Mira – Bright & Friendly Narrator", `eleven_v4`) into `public/lessons/<id>.mp3`, then:
 
 ```bash
-npx remotion render src/index.ts lesson-small-moments out/lessons/small-moments.mp4 --crf=26
+pnpm render-lessons <clip id>
 ```
 
+That renders it at 864 by 1080 and copies it, with a still of its closing card, into the app's `public/lessons/`. Then, from the app's folder, list the clips for the app:
+
 ```bash
-cp out/lessons/small-moments.mp4 ../public/lessons/ && ffmpeg -y -ss 34.6 -i out/lessons/small-moments.mp4 -frames:v 1 -q:v 4 ../public/lessons/small-moments-poster.jpg
+npx tsx video/scripts/export-clips.ts
 ```
 
 ## A new video
