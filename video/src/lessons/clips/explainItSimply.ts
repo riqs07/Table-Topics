@@ -202,7 +202,8 @@ export const EXPLAIN_IT_SIMPLY_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "“If we keep them on one shared page, that hour comes back.”", mood: "happy" },
       { text: "“Can we try it for a month, starting next week?”", mood: "ready" },
       { text: "They said yes before I’d finished my coffee.", mood: "happy" },
-      { text: "Your turn. Problem, idea, ask.", mood: "happy", tag: "[warm]" },
+      { text: "Your turn.", mood: "happy", tag: "[warm]" },
+      { text: "Problem, idea, ask.", mood: "happy" },
     ],
     beats: [
       // The idea
@@ -214,7 +215,7 @@ export const EXPLAIN_IT_SIMPLY_CLIPS: ReadonlyArray<LessonClipDef> = [
       // The blob's own pitch
       { from: 6, to: 10, ground: "art-bloom", visual: { kind: "example", title: "My pitch", quote: "Lost hour. One shared page. Try it for a month?" } },
       // Your turn
-      { from: 11, to: 11, ground: "art-coral", visual: { kind: "bubble", text: "yes!" } },
+      { from: 11, to: 12, ground: "art-coral", visual: { kind: "bubble", text: "yes!" } },
     ],
     close: { heading: "Problem, idea, ask", items: [{ sign: "1", label: "The problem" }, { sign: "2", label: "Your idea" }, { sign: "3", label: "Your ask" }], action: "Pitch one small idea" },
   },

@@ -16,7 +16,8 @@ export const STOP_FREEZING_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "Someone asks you a question out of nowhere.", mood: "wow", tag: "[curious]" },
       { text: "And out comes “um, so, uh…”", mood: "worried", tag: "[playful]" },
       { text: "Here’s the thing.", mood: "ready", tag: "[warm]" },
-      { text: "A pause sounds sure. An “um” sounds lost.", mood: "ready" },
+      { text: "A pause sounds sure.", mood: "ready" },
+      { text: "An “um” sounds lost.", mood: "worried" },
       { text: "Silence feels long to you, and short to everyone else.", mood: "ready", tag: "[thoughtful]" },
       { text: "So buy a beat.", mood: "happy" },
       { text: "Take one breath before your first word.", mood: "closed", tag: "[calm]" },
@@ -31,13 +32,13 @@ export const STOP_FREEZING_CLIPS: ReadonlyArray<LessonClipDef> = [
       // The surprise, and the fillers
       { from: 0, to: 1, ground: "art-sky", visual: { kind: "bubble", text: "um" } },
       // An "um" sounds lost; a pause sounds sure
-      { from: 2, to: 4, ground: "art-plum", visual: { kind: "contrast", instead: "“Um, so, uh, I think…”", tryThis: "(a breath) “I think…”", tryAt: 3 } },
+      { from: 2, to: 5, ground: "art-plum", visual: { kind: "contrast", instead: "“Um, so, uh, I think…”", tryThis: "(a breath) “I think…”", tryAt: 3 } },
       // The lesson's name
-      { from: 5, to: 5, ground: "art-sun", visual: { kind: "tile" } },
+      { from: 6, to: 6, ground: "art-sun", visual: { kind: "tile" } },
       // What to do
-      { from: 6, to: 7, ground: "art-coral", visual: { kind: "steps", items: [{ label: "Breathe in", at: 6 }, { label: "Pause, not “um”", at: 7 }] } },
+      { from: 7, to: 8, ground: "art-coral", visual: { kind: "steps", items: [{ label: "Breathe in", at: 7 }, { label: "Pause, not “um”", at: 8 }] } },
       // The blob's own answer
-      { from: 8, to: 12, ground: "art-bloom", visual: { kind: "example", title: "My answer", quote: "(a breath) “Autumn. Easily.”" } },
+      { from: 9, to: 13, ground: "art-bloom", visual: { kind: "example", title: "My answer", quote: "(a breath) “Autumn. Easily.”" } },
     ],
     close: { heading: "Before you answer", items: [{ sign: "1", label: "Take a breath" }, { sign: "2", label: "Then speak" }, { sign: "…", label: "Pause, not “um”" }], action: "Try it on your next answer" },
   },
@@ -92,10 +93,12 @@ export const STOP_FREEZING_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "And one example from your own life.", mood: "happy" },
       { text: "Three beats fill a minute, and keep you from wandering.", mood: "ready", tag: "[thoughtful]" },
       { text: "Here’s mine.", mood: "happy", tag: "[cheerful]" },
-      { text: "What would I name a boat? Second Wind.", mood: "happy" },
+      { text: "What would I name a boat?", mood: "up" },
+      { text: "Second Wind.", mood: "happy" },
       { text: "Because boats are for people who finally have time again.", mood: "ready" },
       { text: "My uncle bought his the year he retired, and called it exactly that.", mood: "happy" },
-      { text: "Run dry? Go back into your example.", mood: "ready", tag: "[warm]" },
+      { text: "Run dry?", mood: "up", tag: "[warm]" },
+      { text: "Go back into your example.", mood: "ready" },
       { text: "Where you were, who was there, what someone said.", mood: "ready" },
       { text: "Then say your point again, and stop.", mood: "happy", tag: "[confident]" },
     ],
@@ -107,9 +110,9 @@ export const STOP_FREEZING_CLIPS: ReadonlyArray<LessonClipDef> = [
       // The lesson's name
       { from: 5, to: 5, ground: "art-leaf", visual: { kind: "tile" } },
       // The blob's own answer
-      { from: 6, to: 9, ground: "art-bloom", visual: { kind: "example", title: "My answer", quote: "Second Wind. Time again. My uncle’s boat." } },
+      { from: 6, to: 10, ground: "art-bloom", visual: { kind: "example", title: "My answer", quote: "Second Wind. Time again. My uncle’s boat." } },
       // Making it a minute
-      { from: 10, to: 12, ground: "art-coral", visual: { kind: "list", title: "Make it a minute", items: [{ label: "Where", text: "The harbour, at dawn", at: 11 }, { label: "Who", text: "My uncle, grinning", at: 11 }, { label: "Said", text: "“Finally.”", at: 11 }] } },
+      { from: 11, to: 14, ground: "art-coral", visual: { kind: "list", title: "Make it a minute", items: [{ label: "Where", text: "The harbour, at dawn", at: 13 }, { label: "Who", text: "My uncle, grinning", at: 13 }, { label: "Said", text: "“Finally.”", at: 13 }] } },
     ],
     close: { heading: "Three beats", items: [{ sign: "1", label: "Point" }, { sign: "2", label: "Reason" }, { sign: "3", label: "Example" }], action: "Then your point again" },
   },
@@ -127,7 +130,8 @@ export const STOP_FREEZING_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "That undoes a good answer.", mood: "ready" },
       { text: "Instead, finish where you started.", mood: "ready", tag: "[warm]" },
       { text: "Say your point once more, in a few words.", mood: "happy" },
-      { text: "Then stop. Let the silence mark the end.", mood: "closed", tag: "[calm]" },
+      { text: "Then stop.", mood: "closed", tag: "[calm]" },
+      { text: "Let the silence mark the end.", mood: "closed" },
       { text: "Here’s mine.", mood: "happy", tag: "[cheerful]" },
       { text: "Asked for the best snack, I talked about crisps for a minute.", mood: "ready" },
       { text: "Then I landed it: “So: crisps. Every time.”", mood: "happy" },
@@ -141,11 +145,11 @@ export const STOP_FREEZING_CLIPS: ReadonlyArray<LessonClipDef> = [
       // Trailing off, and landing it instead
       { from: 2, to: 5, ground: "art-plum", visual: { kind: "contrast", instead: "“…so yeah, that’s kind of it.”", tryThis: "Your point again, in a few words.", tryAt: 4 } },
       // The lesson's name
-      { from: 6, to: 6, ground: "art-leaf", visual: { kind: "tile" } },
+      { from: 6, to: 7, ground: "art-leaf", visual: { kind: "tile" } },
       // The blob's own landing
-      { from: 7, to: 10, ground: "art-sun", visual: { kind: "example", title: "How I landed it", quote: "“So: crisps. Every time.”" } },
+      { from: 8, to: 11, ground: "art-sun", visual: { kind: "example", title: "How I landed it", quote: "“So: crisps. Every time.”" } },
       // The quiet after
-      { from: 11, to: 12, ground: "art-coral", visual: { kind: "cards", items: [{ sign: "…", label: "Long to you", at: 11 }, { sign: ".", label: "Full stop to them", at: 12 }] } },
+      { from: 12, to: 13, ground: "art-coral", visual: { kind: "cards", items: [{ sign: "…", label: "Long to you", at: 12 }, { sign: ".", label: "Full stop to them", at: 13 }] } },
     ],
     close: { heading: "Land it", items: [{ sign: "1", label: "Point again" }, { sign: "2", label: "Then stop" }], action: "End on purpose today" },
   },
@@ -202,9 +206,12 @@ export const STOP_FREEZING_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "Then do it again, straight away.", mood: "ready", tag: "[confident]" },
       { text: "The second go is usually the better one.", mood: "happy" },
       { text: "Here’s mine.", mood: "happy", tag: "[cheerful]" },
-      { text: "Tea or coffee? A breath. “Tea. Strong, one sugar.”", mood: "ready" },
+      { text: "Tea or coffee?", mood: "up" },
+      { text: "A breath.", mood: "closed" },
+      { text: "“Tea. Strong, one sugar.”", mood: "happy" },
       { text: "Because it’s what my gran made me after school.", mood: "happy" },
-      { text: "So: tea. Every time.", mood: "happy", tag: "[confident]" },
+      { text: "So: tea.", mood: "happy", tag: "[confident]" },
+      { text: "Every time.", mood: "happy" },
       { text: "Now you. Two in a row, out loud.", mood: "happy", tag: "[cheerful]" },
     ],
     beats: [
@@ -215,7 +222,7 @@ export const STOP_FREEZING_CLIPS: ReadonlyArray<LessonClipDef> = [
       // The lesson's name
       { from: 6, to: 7, ground: "art-leaf", visual: { kind: "tile" } },
       // The blob's own run
-      { from: 8, to: 12, ground: "art-bloom", visual: { kind: "example", title: "My run", quote: "“Tea. Strong, one sugar.” … So: tea." } },
+      { from: 8, to: 15, ground: "art-bloom", visual: { kind: "example", title: "My run", quote: "“Tea. Strong, one sugar.” … So: tea." } },
     ],
     close: { heading: "The run", items: [{ sign: "1", label: "Breathe, point" }, { sign: "2", label: "One example" }, { sign: "3", label: "Land it" }], action: "Two in a row, out loud" },
   },

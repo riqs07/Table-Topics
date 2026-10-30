@@ -57,8 +57,7 @@ export const READY_BY_THE_DAY_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "That spends your best moment on nothing.", mood: "ready" },
       { text: "Open with a hook instead.", mood: "happy", tag: "[warm]" },
       { text: "A question.", mood: "ready" },
-      { text: "A moment.", mood: "wow" },
-      { text: "Or a number.", mood: "ready" },
+      { text: "A moment. Or a number.", mood: "wow" },
       { text: "Then say why it matters to them.", mood: "ready" },
       { text: "Here’s how I’d open a talk on gardening.", mood: "happy", tag: "[cheerful]" },
       { text: "“Last spring, I killed eleven tomato plants.”", mood: "wow", tag: "[playful]" },
@@ -73,11 +72,11 @@ export const READY_BY_THE_DAY_CLIPS: ReadonlyArray<LessonClipDef> = [
       // Throat-clearing, then a hook
       { from: 1, to: 3, ground: "art-plum", visual: { kind: "contrast", instead: "“Hi, I’m Sam, and today I’ll talk about…”", tryThis: "“Last night, a third of you slept under six hours.”", tryAt: 3 } },
       // Three kinds of hook
-      { from: 4, to: 7, ground: "art-sun", visual: { kind: "cards", items: [{ sign: "?", label: "A question", at: 4 }, { sign: "!", label: "A moment", at: 5 }, { sign: "11", label: "A number", at: 6 }] } },
+      { from: 4, to: 6, ground: "art-sun", visual: { kind: "cards", items: [{ sign: "?", label: "A question", at: 4 }, { sign: "!", label: "A moment", at: 5 }, { sign: "11", label: "A number", at: 5 }] } },
       // The blob's own opening
-      { from: 8, to: 10, ground: "art-bloom", visual: { kind: "example", title: "My opening", quote: "“Last spring, I killed eleven tomato plants.”" } },
+      { from: 7, to: 9, ground: "art-bloom", visual: { kind: "example", title: "My opening", quote: "“Last spring, I killed eleven tomato plants.”" } },
       // Name later, opening by heart
-      { from: 11, to: 13, ground: "art-leaf", visual: { kind: "tile" } },
+      { from: 10, to: 12, ground: "art-leaf", visual: { kind: "tile" } },
     ],
     close: { heading: "Your first line", items: [{ sign: "?", label: "A question" }, { sign: "!", label: "A moment" }, { sign: "11", label: "A number" }], action: "Learn your opening by heart" },
   },
@@ -97,7 +96,8 @@ export const READY_BY_THE_DAY_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "It tells them the talk is complete.", mood: "happy" },
       { text: "Here’s mine, from that gardening talk.", mood: "happy", tag: "[cheerful]" },
       { text: "I opened with eleven dead tomato plants.", mood: "ready", tag: "[playful]" },
-      { text: "So I close: “Twelve plants. One survivor. Go and grow something.”", mood: "happy" },
+      { text: "So I close:", mood: "ready" },
+      { text: "“Twelve plants. One survivor. Go and grow something.”", mood: "happy" },
       { text: "And take questions before your close, not after.", mood: "ready", tag: "[warm]" },
       { text: "Then your last line, a pause, and “Thank you.”", mood: "happy" },
       { text: "The last word should be yours.", mood: "happy", tag: "[cheerful]" },
@@ -110,11 +110,11 @@ export const READY_BY_THE_DAY_CLIPS: ReadonlyArray<LessonClipDef> = [
       // Back to the start
       { from: 3, to: 5, ground: "art-sun", visual: { kind: "tile" } },
       // The blob's own close
-      { from: 6, to: 8, ground: "art-bloom", visual: { kind: "example", title: "My last line", quote: "“Twelve plants. One survivor. Go and grow something.”" } },
+      { from: 6, to: 9, ground: "art-bloom", visual: { kind: "example", title: "My last line", quote: "“Twelve plants. One survivor. Go and grow something.”" } },
       // The order at the end
-      { from: 9, to: 10, ground: "art-sky", visual: { kind: "steps", items: [{ label: "Questions", at: 9 }, { label: "Last line", at: 10 }, { label: "Pause", at: 10 }, { label: "Thank you", at: 10 }] } },
+      { from: 10, to: 11, ground: "art-sky", visual: { kind: "steps", items: [{ label: "Questions", at: 10 }, { label: "Last line", at: 11 }, { label: "Pause", at: 11 }, { label: "Thank you", at: 11 }] } },
       // Yours
-      { from: 11, to: 11, ground: "art-coral", visual: { kind: "bubble", text: "Fin" } },
+      { from: 12, to: 12, ground: "art-coral", visual: { kind: "bubble", text: "Fin" } },
     ],
     close: { heading: "End on purpose", items: [{ sign: "1", label: "Echo the start" }, { sign: "?", label: "Questions first" }, { sign: "!", label: "Last word yours" }], action: "Plan your last line now" },
   },
@@ -171,7 +171,9 @@ export const READY_BY_THE_DAY_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "I drop my shoulders and take one slow breath.", mood: "closed", tag: "[calm]" },
       { text: "Then I tell myself, by name: “Blob, you know this.”", mood: "ready" },
       { text: "And if it wobbles on the day?", mood: "up", tag: "[curious]" },
-      { text: "Pause. Breathe. Say your last point again.", mood: "closed", tag: "[calm]" },
+      { text: "Pause.", mood: "closed", tag: "[calm]" },
+      { text: "Breathe.", mood: "closed" },
+      { text: "Say your last point again.", mood: "ready" },
       { text: "Then carry on. Most people won’t even notice.", mood: "happy" },
       { text: "They see far less than you feel.", mood: "happy", tag: "[cheerful]" },
     ],
@@ -185,9 +187,9 @@ export const READY_BY_THE_DAY_CLIPS: ReadonlyArray<LessonClipDef> = [
       // The blob's own last minute
       { from: 5, to: 7, ground: "art-bloom", visual: { kind: "example", title: "My last minute", quote: "Shoulders down. One breath. “Blob, you know this.”" } },
       // If it wobbles
-      { from: 8, to: 10, ground: "art-sun", visual: { kind: "steps", items: [{ label: "Pause", at: 9 }, { label: "Breathe", at: 9 }, { label: "Last point", at: 9 }] } },
+      { from: 8, to: 12, ground: "art-sun", visual: { kind: "steps", items: [{ label: "Pause", at: 9 }, { label: "Breathe", at: 10 }, { label: "Last point", at: 11 }] } },
       // Less than you feel
-      { from: 11, to: 11, ground: "art-coral", visual: { kind: "bubble", text: "phew" } },
+      { from: 13, to: 13, ground: "art-coral", visual: { kind: "bubble", text: "phew" } },
     ],
     close: { heading: "Before you speak", items: [{ sign: "tick", label: "Shoulders down" }, { sign: "1", label: "One slow breath" }, { sign: "!", label: "Coach by name" }], action: "Breathe, then your first line" },
   },
@@ -206,12 +208,11 @@ export const READY_BY_THE_DAY_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "Use your full voice.", mood: "happy" },
       { text: "And time the whole thing.", mood: "ready" },
       { text: "If it runs long, cut a point. Don’t plan to speak faster.", mood: "ready" },
-      { text: "Here’s my dry run from last week.", mood: "happy", tag: "[cheerful]" },
-      { text: "Four minutes over. So I cut my second story.", mood: "wow" },
+      { text: "Here’s my dry run from last week. Four minutes over.", mood: "wow", tag: "[cheerful]" },
+      { text: "So I cut my second story.", mood: "ready" },
       { text: "It hurt. The talk got better.", mood: "happy" },
       { text: "Then give it once to someone you trust.", mood: "ready", tag: "[warm]" },
-      { text: "Ask them what they remember,", mood: "ready" },
-      { text: "and where they drifted.", mood: "ready" },
+      { text: "Ask them what they remember, and where they drifted.", mood: "ready" },
       { text: "That’s your message check, and your cutting list.", mood: "happy", tag: "[cheerful]" },
     ],
     beats: [
@@ -224,7 +225,7 @@ export const READY_BY_THE_DAY_CLIPS: ReadonlyArray<LessonClipDef> = [
       // The blob's own dry run
       { from: 7, to: 9, ground: "art-bloom", visual: { kind: "example", title: "My dry run", quote: "Four minutes over. I cut my second story." } },
       // One trusted listener
-      { from: 10, to: 13, ground: "art-plum", visual: { kind: "cards", items: [{ sign: "!", label: "What they remember", at: 11 }, { sign: "?", label: "Where they drifted", at: 12 }] } },
+      { from: 10, to: 12, ground: "art-plum", visual: { kind: "cards", items: [{ sign: "!", label: "What they remember", at: 11 }, { sign: "?", label: "Where they drifted", at: 11 }] } },
     ],
     close: { heading: "Dress rehearsal", items: [{ sign: "tick", label: "Stand and time it" }, { sign: "1", label: "One listener" }], action: "Do one full run today" },
   },

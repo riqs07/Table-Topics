@@ -19,8 +19,7 @@ export const BEYOND_GOOD_YOU_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "Instead, answer with a hook.", mood: "happy", tag: "[cheerful]" },
       { text: "One thing that happened, with a detail they can ask about.", mood: "ready" },
       { text: "A name.", mood: "wow" },
-      { text: "A place.", mood: "ready" },
-      { text: "Or a number.", mood: "happy" },
+      { text: "A place. Or a number.", mood: "happy" },
       { text: "Here’s mine from last weekend.", mood: "happy", tag: "[cheerful]" },
       { text: "“Good, actually. I tried the climbing wall on King Street, and got stuck halfway up.”", mood: "ready" },
       { text: "Now they’ve got two things to ask about.", mood: "happy" },
@@ -35,11 +34,11 @@ export const BEYOND_GOOD_YOU_CLIPS: ReadonlyArray<LessonClipDef> = [
       // The lesson
       { from: 4, to: 4, ground: "art-leaf", visual: { kind: "tile" } },
       // The kinds of detail
-      { from: 5, to: 7, ground: "art-sun", visual: { kind: "cards", items: [{ sign: "Sam", label: "A name", at: 5 }, { sign: "St", label: "A place", at: 6 }, { sign: "3", label: "A number", at: 7 }] } },
+      { from: 5, to: 6, ground: "art-sun", visual: { kind: "cards", items: [{ sign: "Sam", label: "A name", at: 5 }, { sign: "St", label: "A place", at: 6 }, { sign: "3", label: "A number", at: 6 }] } },
       // The blob's own answer
-      { from: 8, to: 11, ground: "art-bloom", visual: { kind: "example", title: "My answer", quote: "Climbing wall, King Street. Stuck halfway up!" } },
+      { from: 7, to: 10, ground: "art-bloom", visual: { kind: "example", title: "My answer", quote: "Climbing wall, King Street. Stuck halfway up!" } },
       // The habit
-      { from: 12, to: 12, ground: "art-coral", visual: { kind: "bubble", text: "hook" } },
+      { from: 11, to: 11, ground: "art-coral", visual: { kind: "bubble", text: "hook" } },
     ],
     close: { heading: "Next time, add a hook", items: [{ sign: "1", label: "One moment" }, { sign: "Sam", label: "A detail to ask" }, { sign: "?", label: "Hand it back" }], action: "Give them one thing to grab" },
   },
@@ -132,7 +131,8 @@ export const BEYOND_GOOD_YOU_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "For both of you.", mood: "happy" },
       { text: "Here’s mine from a class last month.", mood: "happy", tag: "[cheerful]" },
       { text: "Someone said they’d moved here from the coast.", mood: "ready" },
-      { text: "I asked, “What made you choose here?”", mood: "ready" },
+      { text: "I asked,", mood: "ready" },
+      { text: "“What made you choose here?”", mood: "ready" },
       { text: "She laughed and said, “Honestly? A really good bakery.”", mood: "wow" },
       { text: "And we talked for an hour.", mood: "happy" },
       { text: "So swap one fact question for a why.", mood: "ready", tag: "[warm]" },
@@ -145,9 +145,9 @@ export const BEYOND_GOOD_YOU_CLIPS: ReadonlyArray<LessonClipDef> = [
       // The lesson
       { from: 5, to: 6, ground: "art-sun", visual: { kind: "tile" } },
       // The blob's why question
-      { from: 7, to: 11, ground: "art-bloom", visual: { kind: "example", title: "My why question", quote: "“What made you choose here?” “A good bakery.”" } },
+      { from: 7, to: 12, ground: "art-bloom", visual: { kind: "example", title: "My why question", quote: "“What made you choose here?” “A good bakery.”" } },
       // The habit
-      { from: 12, to: 12, ground: "art-coral", visual: { kind: "bubble", text: "why?" } },
+      { from: 13, to: 13, ground: "art-coral", visual: { kind: "bubble", text: "why?" } },
     ],
     close: { heading: "Go one level deeper", items: [{ sign: "?", label: "Ask why" }, { sign: "tick", label: "Ask how it felt" }, { sign: "…", label: "Share a little" }], action: "Swap one fact question for a why" },
   },
