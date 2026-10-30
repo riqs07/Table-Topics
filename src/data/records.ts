@@ -60,8 +60,8 @@ export interface TemplateBeatNote {
   quote: string;
 }
 
-// The story templates a story is told with (decision 126): a lesson learned, a client win, a turning point, a funny moment
-export const STORY_TEMPLATE_IDS = ["lesson", "client-win", "turning-point", "funny"] as const;
+// The story templates a story is told with (decision 126): a lesson learned, a client win, a turning point, a funny moment; and the stories you'll need (decision 152): who I am, an interview answer, a toast, a choice I made
+export const STORY_TEMPLATE_IDS = ["lesson", "client-win", "turning-point", "funny", "who-i-am", "interview", "toast", "choice"] as const;
 
 // One story template
 export type StoryTemplate = (typeof STORY_TEMPLATE_IDS)[number];

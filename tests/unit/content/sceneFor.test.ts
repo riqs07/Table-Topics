@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load what is being checked
-import { FOCUS_SCENES, stepScene } from "@/components/scenes/sceneFor";
+import { FOCUS_SCENES, stepScene, storyScene } from "@/components/scenes/sceneFor";
 // Load the focus areas
 import { FOCUS_AREAS } from "@/core/practiceFocus";
 // Load the step type
@@ -42,5 +42,14 @@ describe("sceneFor", () => {
   it("gives none to lessons, drills and the check-in", () => {
     // Confirm each
     expect([stepScene(step("session", "lesson")), stepScene(step("session", "pause")), stepScene(step("session", "voice")), stepScene(step("checkin", null)), stepScene(step("session", null))]).toEqual([null, null, null, null, null]);
+  });
+});
+
+// Group the checks about a story's setup screen scene (decisions 152 and 153)
+describe("storyScene", () => {
+  // A story you'll need or a "Make it a…" its kind's scene, Story dice for "Connect these", the signpost for other guided stories, the campfire otherwise
+  it("picks the scene by the story's kind", () => {
+    // Each case
+    expect([storyScene({ neededTemplate: "toast", guidedLevel: null }), storyScene({ neededTemplate: "interview", guidedLevel: "make-it" }), storyScene({ neededTemplate: null, guidedLevel: "connect" }), storyScene({ neededTemplate: null, guidedLevel: "shuffled" }), storyScene({ neededTemplate: null, guidedLevel: null }), storyScene({ neededTemplate: "lesson", guidedLevel: null })]).toEqual(["toast", "interview", "story-dice", "guided-stories", "story", "story"]);
   });
 });

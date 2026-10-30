@@ -95,6 +95,10 @@ export const ROUTES: ReadonlyArray<string> = [
   "/conversations",
   "/conversations/talk?id=maya",
   "/conversations/talk?id=missing",
+  // A story you'll need, Story dice and a "Make it a…" guided story (decisions 152 and 153)
+  "/stories/tell?prompt=sp53",
+  "/stories/tell?prompt=gs31",
+  "/stories/tell?prompt=gs43",
   // Scenes and Active listening: the lists, one of each, and one that does not exist (decisions 149 and 150)
   "/scenes",
   "/scenes/play?id=sn-lisbon",

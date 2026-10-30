@@ -115,6 +115,8 @@ import { usePageTitle } from "@/components/screens/usePageTitle";
 import { noteFor } from "@/core/analysis/deep";
 // Load the story beats, the retelling comparison and the templates (decisions 92 and 126)
 import { beatsCompareRow, storyHeadline, templateBeatsOf } from "@/core/storyBeats";
+// Load the checks for the stories you'll need (decision 152)
+import { typeChecks } from "@/core/storyTypes";
 import { retellHeadline, storyCompareRows } from "@/core/storyLibrary";
 import { findStoryTemplate, momentIdOf } from "@/content/stories";
 // Load the guided stories and the comparison with their facts (decision 93)
@@ -624,6 +626,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           </div>
           {/* A story's beats, as the coach heard them (decision 126) */}
           {story && <YourBeats session={session} />}
+          {/* A story you'll need: what that kind needs, as the phone heard it (decision 152) */}
+          {story && <TypeNeeds session={session} />}
           {/* A retold story: this telling beside the one before (decision 92) */}
           {story && original && <StoryBeforeAfter original={original} retold={session} pauseWords={view.pauseWords} />}
           {/* The same words told again: the last telling's pitch under this one's (decision 111) */}
@@ -954,6 +958,36 @@ function YourBeats({ session }: { session: FullSession }) {
       </ol>
       {/* The key */}
       <p aria-hidden="true" className="mt-3 flex gap-3 text-footnote text-ink-muted"><span>✓ strong</span><span>! weak</span><span>– missing</span></p>
+    </section>
+  );
+}
+
+// What a story you'll need needs, as the phone heard it (decision 152): two or three checks, each with the words that showed it or how to get it next time; nothing for the everyday templates
+function TypeNeeds({ session }: { session: FullSession }) {
+  // The template
+  const template = findStoryTemplate(session.story?.template);
+  // Its checks
+  const checks = typeChecks(session.story?.template, session.transcript);
+  // Nothing to show
+  if (checks.length === 0) return null;
+  // The card
+  return (
+    <section aria-labelledby="type-needs" data-type-needs={template.id} className={`mt-5 p-5 ${CARD}`}>
+      {/* Heading */}
+      <h2 id="type-needs" className="font-semibold">What a {template.name.toLowerCase()} needs</h2>
+      {/* The checks */}
+      <ul className="mt-3 flex flex-col gap-2">
+        {/* Each check */}
+        {checks.map((check) => (
+          // One check: its mark, what it looks for, and the words or the note
+          <li key={check.id} data-type-check={check.id} data-passed={check.passed} className="flex items-start gap-3">
+            {/* Its mark */}
+            <span aria-hidden="true" className={`flex size-6 flex-none items-center justify-center rounded-full text-footnote font-semibold ${check.passed ? "bg-fill text-fill-ink" : "bg-paper text-ink-muted"}`}>{check.passed ? "✓" : "–"}</span>
+            {/* What it looks for, then the words or the note */}
+            <span className="text-lede">{check.label}<span className="sr-only">{check.passed ? ": yes" : ": not yet"}</span>{check.evidence && <span className="block text-footnote text-ink-muted">{check.evidence}</span>}</span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

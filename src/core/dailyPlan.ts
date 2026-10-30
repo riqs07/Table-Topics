@@ -10,7 +10,7 @@ import { findSpeechSummary, partId, readingTitle } from "@/content/readingIndex"
 // Load the calendar-day helpers
 import { dayKey, daysBetween, startOfDay } from "@/core/dates";
 // Load today's story prompt (decision 92)
-import { storyPromptForDay } from "@/content/stories";
+import { nextNeeded, storyPromptForDay } from "@/content/stories";
 // Load today's guided story (decision 93)
 import { guidedStoryForDay } from "@/content/guidedStories";
 // Load the small-talk questions and lessons
@@ -150,8 +150,8 @@ function skill(focusId: string, day: Date): PlanStep {
 
 // The bank in three groups, each with its lane: speaking on the spot, delivery skills, and conversation
 const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> = [
-  // On the spot: Rapid Fire, an open story, Rapid Fire again (in the place the retired opening or closing drill had; decision 106), a guided story, a prepared speech; a story is two turns in five, so about twice a week, never twice in a row, open and guided in turn (decisions 92 and 93)
-  { lane: "spot", kinds: ["talk", "story", "talk", "guided", "response"] },
+  // On the spot: Rapid Fire, an open story, a story you'll need (in the place a second Rapid Fire had since decision 106; decision 154), a guided story from any level of the dial, a prepared speech; stories are three turns in five, never the same kind twice in a row (decisions 92, 93 and 154)
+  { lane: "spot", kinds: ["talk", "story", "needed", "guided", "response"] },
   // Delivery: the week's focus drill, a voice drill (the voice modes in turn; decision 80), a pause drill
   { lane: "delivery", kinds: ["skill", "voice", "pause"] },
   // Conversation: the next Connect lesson or drill, a scene, an everyday question, an Active listening story (decision 151; the round of quick scenarios was here, decision 72)
@@ -164,6 +164,9 @@ const GROUP_PAIRS: ReadonlyArray<readonly [number, number]> = [[0, 2], [1, 0], [
 // Kinds kept out of the first days (a prepared speech is long, the focus's own too)
 const NOT_FIRST_DAYS: ReadonlyArray<PickKind> = ["response", "focus-speech"];
 
+// In the first days, a story you'll need (an interview answer is a lot for day one) gives its slot back to Rapid Fire, which held it before, so a new user's first week is unchanged (decision 154)
+const FIRST_DAYS_SWAP: Partial<Record<PickKind, PickKind>> = { needed: "talk" };
+
 // The lane each kind belongs to: its bank group's, and on the spot for a focus's own lessons and speeches (they work on structure and speaking up)
 function laneOf(kind: PickKind): PlanLane {
   // The bank group holding it, or on the spot
@@ -172,8 +175,8 @@ function laneOf(kind: PickKind): PlanLane {
 
 // The kind a group offers on a day: the group's kinds taken in turn by how often the group has come up, so it never repeats on consecutive appearances (plus an offset for "keep going" suggestions)
 function kindFor(group: number, day: Date, firstDays: boolean, offset = 0): PickKind {
-  // The group's kinds (a gentler list in the first days)
-  const kinds = GROUPS[group]!.kinds.filter((kind) => !firstDays || !NOT_FIRST_DAYS.includes(kind));
+  // The group's kinds (a gentler list in the first days, with a story you'll need back to Rapid Fire)
+  const kinds = GROUPS[group]!.kinds.map((kind) => (firstDays ? (FIRST_DAYS_SWAP[kind] ?? kind) : kind)).filter((kind) => !firstDays || !NOT_FIRST_DAYS.includes(kind));
   // The day's number
   const number = dayNumber(day);
   // Which three-day cycle, and where in it
@@ -231,6 +234,13 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
     const prompt = storyPromptForDay(input.day);
     // The step: a minute to plan and about a minute to tell
     return { lane, kind: "session", label: "Story", title: prompt.text, mode: "story", promptId: prompt.id, minutes: 2, href: `/stories/tell?prompt=${prompt.id}` };
+  }
+  // A story you'll need: the four kinds in turn, each with its prompt for the day, told with its own template (decision 154)
+  if (kind === "needed") {
+    // The next kind and prompt, by how many stories you'll need were told before today (the slot comes up only on some days, so taking them by date could keep landing on the same kinds)
+    const needed = nextNeeded(before.filter((session) => session.mode === "story").map((session) => session.promptId));
+    // The step: a minute to plan and about a minute to tell
+    return { lane, kind: "session", label: needed.type.name, title: needed.prompt.text, mode: "story", promptId: needed.prompt.id, minutes: 2, href: `/stories/tell?prompt=${needed.prompt.id}` };
   }
   // A guided story: today's facts to make a story of, set up on its own page with its own focus (decision 93)
   if (kind === "guided") {

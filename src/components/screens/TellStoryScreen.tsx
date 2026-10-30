@@ -23,7 +23,9 @@ import { STORY_LENGTHS, STORY_TEMPLATES, findStoryPrompt, findStoryTemplate, mom
 // Load the record types
 import type { StoryFocus, StoryLength, StoryTake, StoryTemplate } from "@/data/records";
 // Load the guided stories and their card (decision 93)
-import { findGuidedStory } from "@/content/guidedStories";
+import { findGuidedStory, guidedLevel } from "@/content/guidedStories";
+// Load the setup screen's scene for a story's kind (decisions 152 and 153)
+import { storyScene } from "@/components/scenes/sceneFor";
 import { GuidedStoryCard } from "@/components/script/GuidedStoryCard";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
@@ -71,6 +73,10 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
   const [length, setLength] = useState<StoryLength>(planStep || initialFocus === "minute" ? "short" : "full");
   // The chosen template's details
   const chosen = findStoryTemplate(template);
+  // Whether every template shows, or only the chosen one's family (everyday, or the stories you'll need; decision 152)
+  const [showAll, setShowAll] = useState(false);
+  // The templates shown
+  const shown = showAll ? STORY_TEMPLATES : STORY_TEMPLATES.filter((item) => item.family === chosen.family);
   // The set-up as it will be told
   const take: StoryTake = { template, focus, length };
   // Name the tab
@@ -113,8 +119,8 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
           <p role="alert" className="mt-6 max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
         ) : (
           <>
-            {/* The scene, carried over from the Practice card: the signpost for a guided story, the campfire otherwise (decision 141) */}
-            <ScenePanel scene={guided ? "guided-stories" : "story"} name={guided ? "Guided story" : "Tell a story"} line="Plan it in a minute, then tell it." className="mt-6" />
+            {/* The scene, carried over from the Practice card (decision 141): a story you'll need's own, Story dice, the signpost for another guided story, the campfire otherwise (decisions 152 and 153) */}
+            <ScenePanel scene={storyScene({ neededTemplate: findStoryTemplate(suggested).family === "needed" ? suggested : null, guidedLevel: guided ? guidedLevel(guided) : null })} name={guided ? (guided.level === "connect" ? "Story dice" : "Guided story") : findStoryTemplate(suggested).family === "needed" ? findStoryTemplate(suggested).name : "Tell a story"} line="Plan it in a minute, then tell it." className="mt-6" />
             {/* Where it came from */}
             {(momentId || guided) && <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Guided story"}</p>}
             {/* The prompt, a guided story's title, or the moment in the user's words */}
@@ -128,7 +134,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
               <p id="template-label" className="font-semibold">Template</p>
               {/* The templates, only the chosen one showing what it is for and its beats */}
               <div className="mt-2 grid max-w-xl gap-2">
-                {STORY_TEMPLATES.map((item) => (
+                {shown.map((item) => (
                   // One template, filled when chosen
                   <button key={item.id} type="button" aria-pressed={template === item.id} onClick={() => setTemplate(item.id)} className={choice(template === item.id)}>
                     {/* Its name (the suggested one is chosen at the start, so it needs no label) */}
@@ -138,17 +144,13 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                   </button>
                 ))}
               </div>
+              {/* The other family's templates, a tap away */}
+              {!showAll && <button type="button" onClick={() => setShowAll(true)} className={`${TEXT_LINK} text-footnote`}>Show all templates</button>}
+              {/* What a story you'll need needs, in a line (decision 152) */}
+              {chosen.needs && <p data-template-needs className="mt-2 max-w-xl border-l-2 border-accent pl-3 text-footnote">{chosen.needs}</p>}
             </div>
 
-            {/* A short worked example of the chosen template, each beat named */}
-            <section aria-label={`Example: ${chosen.name}`} data-template-example className={`mt-4 max-w-xl p-4 ${CARD}`}>
-              {/* Heading */}
-              <p className="text-footnote font-semibold">Example · {chosen.name}</p>
-              {/* The example, beat by beat */}
-              <p className="mt-1 text-footnote">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-accent">({chosen.beats[index]!.name.toLowerCase()})</b> </span>)}</p>
-            </section>
-
-            {/* The length */}
+            {/* The length, before the example so the Start band never covers it on a phone */}
             <div role="group" aria-labelledby="length-label" className="mt-6">
               {/* Label */}
               <p id="length-label" className="font-semibold">How long?</p>
@@ -165,6 +167,14 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                 ))}
               </div>
             </div>
+
+            {/* A short worked example of the chosen template, each beat named */}
+            <section aria-label={`Example: ${chosen.name}`} data-template-example className={`mt-4 max-w-xl p-4 ${CARD}`}>
+              {/* Heading */}
+              <p className="text-footnote font-semibold">Example · {chosen.name}</p>
+              {/* The example, beat by beat */}
+              <p className="mt-1 text-footnote">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-accent">({chosen.beats[index]!.name.toLowerCase()})</b> </span>)}</p>
+            </section>
 
             {/* Push the band down */}
             <div className="flex-1" />

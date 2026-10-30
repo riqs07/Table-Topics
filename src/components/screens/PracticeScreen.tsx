@@ -10,7 +10,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, EarIcon, ChatsCircleIcon, SunHorizonIcon, TextAaIcon, TimerIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, DiceFiveIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, EarIcon, ChatsCircleIcon, SunHorizonIcon, TextAaIcon, TimerIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the Connect units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the next Connect unit (decision 95)
@@ -34,13 +34,15 @@ import { useEffect, useState } from "react";
 // Load the moment note's prompt
 import { MOMENT_PROMPT } from "@/content/smallTalk";
 // Load today's story prompt (decision 92)
-import { storyPromptForDay } from "@/content/stories";
+import { NEEDED_TYPES, neededPromptForDay, storyPromptForDay } from "@/content/stories";
+// Load today's Story dice (decision 153)
+import { connectStoryForDay } from "@/content/guidedStories";
 // Load the shared heading and card looks
 import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared link look and press effect
 import { TEXT_LINK } from "@/components/script/Buttons";
 // Load the blob scenes (decision 136)
-import { Scene } from "@/components/scenes/Scene";
+import { Scene, type SceneName } from "@/components/scenes/Scene";
 // Load the scene card and the shape of one kind of practice (shared with Today)
 import { WayCard, type Way } from "@/components/script/WayCard";
 // Load the shared page shell
@@ -116,6 +118,9 @@ function Group({ id, title, ways, more, focus = false }: { id: string; title: st
   );
 }
 
+// The scene for each of the stories you'll need (decision 152)
+const NEEDED_SCENES: Readonly<Record<string, SceneName>> = { "who-i-am": "who-i-am", interview: "interview", toast: "toast", choice: "choice" };
+
 // The page
 export function PracticeScreen(props: ScreenProps) {
   // The repository and today (null until in the browser)
@@ -189,6 +194,8 @@ export function PracticeScreen(props: ScreenProps) {
   const prompt = today ? promptForDay(today, 1) : null;
   // Today's story prompt (decision 92)
   const story = today ? storyPromptForDay(today) : null;
+  // Today's Story dice: a "Connect these" guided story, one along each day (decision 153)
+  const dice = today ? connectStoryForDay(today) : null;
 
   // Each voice mode's row, straight into its next drill (decision 80; clear sounds holds the tricky-word lists too, decision 108)
   const voiceWays: Record<VoiceRowId, Way> = {
@@ -258,12 +265,11 @@ export function PracticeScreen(props: ScreenProps) {
     // The "stories" group
     "stories": (
       <>
-          {/* Telling stories, and telling them again (decision 92) */}
+          {/* Telling stories, and telling them again (decision 92); "See all" opens the rest in place: the stories you'll need and Story dice (decisions 152 to 154), and every story a row further */}
           <Group
             focus={focusGroups.includes("stories")}
             id="stories"
             title="Tell stories"
-            more={{ href: "/stories", label: "See all" }}
             ways={[
               // Today's story prompt
               { name: "Today’s story", detail: story ? story.title : "A true story, 1 to 3 min", href: story ? `/stories/tell?prompt=${story.id}` : "/stories", icon: ScrollIcon, scene: "story" },
@@ -273,6 +279,12 @@ export function PracticeScreen(props: ScreenProps) {
               { name: "Guided stories", detail: "You get the facts, you make it a story", href: "/stories#guided-stories", icon: SignpostIcon, scene: "guided-stories" },
               // A moment note, told properly
               { name: "From your moments", detail: "A one-moment note, told properly", href: "/stories#from-moments", icon: SunHorizonIcon, scene: "moment" },
+              // The stories you'll need (decision 152), each straight into today's prompt of its kind
+              ...NEEDED_TYPES.map((type) => ({ name: type.name, detail: type.detail, href: today ? `/stories/tell?prompt=${neededPromptForDay(type.group, today).id}` : "/stories#stories-youll-need", icon: ScrollIcon, scene: NEEDED_SCENES[type.template] } satisfies Way)),
+              // Story dice: four things to connect into one story, today's (decision 153)
+              { name: "Story dice", detail: "Four things that don't belong together. Make one story", href: dice ? `/stories/tell?prompt=${dice.id}` : "/stories#guided-stories", icon: DiceFiveIcon, scene: "story-dice" },
+              // Every story, on its own page (it was this group's "See all" link before decision 154)
+              { name: "All stories", detail: "Your stories, templates, guided stories and prompts", href: "/stories", icon: ListNumbersIcon },
             ]}
           />
       </>

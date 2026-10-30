@@ -8,7 +8,10 @@ import { findGuidedStory } from "@/content/guidedStories";
 import { findCheckInStory } from "@/content/checkIn";
 
 // A group of prompts in the bank
-export type StoryGroupId = "wrong" | "win" | "first" | "person" | "place" | "surprise" | "lesson" | "funny";
+export type StoryGroupId = "wrong" | "win" | "first" | "person" | "place" | "surprise" | "lesson" | "funny" | NeededGroupId;
+
+// The groups of the stories you'll need (decision 152), one per type
+export type NeededGroupId = "who" | "interview" | "toast" | "values";
 
 // One group, with its plain name
 export interface StoryGroup {
@@ -36,6 +39,14 @@ export const STORY_GROUPS: ReadonlyArray<StoryGroup> = [
   { id: "lesson", name: "Something you learned" },
   // Funny ones
   { id: "funny", name: "Something funny" },
+  // The stories you'll need (decision 152): who you are
+  { id: "who", name: "Who you are" },
+  // Interview questions
+  { id: "interview", name: "Interview questions" },
+  // Toasts and thank-yous
+  { id: "toast", name: "Toasts and thank-yous" },
+  // A choice you made
+  { id: "values", name: "A choice you made" },
 ];
 
 // One story prompt
@@ -100,7 +111,41 @@ export const STORY_PROMPTS: ReadonlyArray<StoryPrompt> = [
   { id: "sp38", group: "funny", text: "Tell me about a time an animal stole the show.", title: "The animal that stole the show" },
   { id: "sp39", group: "funny", text: "Tell me about a gift that did not go as planned.", title: "The gift" },
   { id: "sp40", group: "funny", text: "Tell me about a time you said the wrong thing at the right moment.", title: "The wrong thing to say" },
+  // The stories you'll need (decision 152): who you are
+  { id: "sp41", group: "who", text: "Tell me about yourself, starting with a moment that explains what you do now.", title: "Who I am" },
+  { id: "sp42", group: "who", text: "Tell me how you got into the work or study you do.", title: "How I got here" },
+  { id: "sp43", group: "who", text: "Tell me about something you care about, and the moment it started.", title: "Where it started" },
+  { id: "sp44", group: "who", text: "Tell me about a moment that shows the kind of person you are.", title: "The kind of person I am" },
+  { id: "sp45", group: "who", text: "Tell me about a hobby or interest, and how it found you.", title: "How it found me" },
+  { id: "sp46", group: "who", text: "Tell me about a place you come from, and what it gave you.", title: "Where I come from" },
+  // Interview questions
+  { id: "sp47", group: "interview", text: "Tell me about a time you solved a difficult problem.", title: "The difficult problem" },
+  { id: "sp48", group: "interview", text: "Tell me about a time you worked with someone you disagreed with.", title: "The disagreement" },
+  { id: "sp49", group: "interview", text: "Tell me about a time you had to learn something quickly.", title: "Learning it fast" },
+  { id: "sp50", group: "interview", text: "Tell me about a time you made a mistake at work and fixed it.", title: "The mistake I fixed" },
+  { id: "sp51", group: "interview", text: "Tell me about a time you led something without being in charge.", title: "Leading without the title" },
+  { id: "sp52", group: "interview", text: "Tell me about a time you had too much to do and had to choose.", title: "Too much to do" },
+  // Toasts and thank-yous
+  { id: "sp53", group: "toast", text: "Give a toast to a friend on their birthday.", title: "A birthday toast" },
+  { id: "sp54", group: "toast", text: "Say a few words for a colleague who is leaving.", title: "The leaving speech" },
+  { id: "sp55", group: "toast", text: "Give a toast at a friend's wedding.", title: "The wedding toast" },
+  { id: "sp56", group: "toast", text: "Thank someone who helped you more than they know.", title: "A thank-you" },
+  { id: "sp57", group: "toast", text: "Give a toast to your team after something you finished together.", title: "To the team" },
+  { id: "sp58", group: "toast", text: "Say a few words about a family member at a celebration.", title: "For the family" },
+  // A choice you made
+  { id: "sp59", group: "values", text: "Tell me about a time you said no to something that would have been easier.", title: "The easier yes" },
+  { id: "sp60", group: "values", text: "Tell me about a time you stood up for someone.", title: "Standing up for someone" },
+  { id: "sp61", group: "values", text: "Tell me about a time you owned up to something.", title: "Owning up" },
+  { id: "sp62", group: "values", text: "Tell me about a time you chose the harder path, and why.", title: "The harder path" },
+  { id: "sp63", group: "values", text: "Tell me about a time you kept a promise when it cost you.", title: "The promise I kept" },
+  { id: "sp64", group: "values", text: "Tell me about a time you changed your mind and said so.", title: "Saying I was wrong" },
 ];
+
+// The groups of the stories you'll need (decision 152); Today's story draws only from the other, everyday groups
+const NEEDED_GROUPS: ReadonlyArray<StoryGroupId> = ["who", "interview", "toast", "values"];
+
+// The everyday prompts, without the stories you'll need
+export const EVERYDAY_PROMPTS: ReadonlyArray<StoryPrompt> = STORY_PROMPTS.filter((prompt) => !NEEDED_GROUPS.includes(prompt.group));
 
 // The prompt id of a story seeded by one of the user's moment notes: "moment-" and the note's session id
 export const MOMENT_SEED_PREFIX = "moment-";
@@ -150,9 +195,55 @@ function dayNumber(day: Date): number {
 // Today's story prompt: one a day, stepping through the groups so neighbouring days differ (an offset gives the next one along)
 export function storyPromptForDay(day: Date, offset = 0): StoryPrompt {
   // Position in the bank, kept positive; a stride of 7 is coprime with 40, so every prompt comes up before any repeats
-  const index = ((((dayNumber(day) + offset) * 7) % STORY_PROMPTS.length) + STORY_PROMPTS.length) % STORY_PROMPTS.length;
+  const index = ((((dayNumber(day) + offset) * 7) % EVERYDAY_PROMPTS.length) + EVERYDAY_PROMPTS.length) % EVERYDAY_PROMPTS.length;
   // The prompt
-  return STORY_PROMPTS[index]!;
+  return EVERYDAY_PROMPTS[index]!;
+}
+
+// One of the stories you'll need (decision 152): its template, its prompt group and its name on Practice and Today
+export interface NeededType {
+  // The template it is told with
+  template: StoryTemplate;
+  // The prompt group it draws from
+  group: NeededGroupId;
+  // Its name, as a Practice row and a Today step
+  name: string;
+  // What it is for, in a few words
+  detail: string;
+}
+
+// The four, in the order Practice and Today take them
+export const NEEDED_TYPES: ReadonlyArray<NeededType> = [
+  // Who I am
+  { template: "who-i-am", group: "who", name: "Who I am", detail: "“Tell me about yourself”, from one moment" },
+  // An interview answer
+  { template: "interview", group: "interview", name: "Interview answer", detail: "“Tell me about a time when…”" },
+  // A toast
+  { template: "toast", group: "toast", name: "Toast", detail: "One story about them, then raise a glass" },
+  // A choice I made
+  { template: "choice", group: "values", name: "A choice I made", detail: "What you chose, and what it cost" },
+];
+
+// A type's prompt for a day, taken in turn (six a type, so each comes up every six days it is asked for)
+export function neededPromptForDay(group: NeededGroupId, day: Date, offset = 0): StoryPrompt {
+  // The type's prompts
+  const prompts = STORY_PROMPTS.filter((prompt) => prompt.group === group);
+  // Position in them, kept positive
+  const index = (((dayNumber(day) + offset) % prompts.length) + prompts.length) % prompts.length;
+  // The prompt
+  return prompts[index]!;
+}
+
+// The next story you'll need to offer, from the stories told so far (their prompt ids): the four kinds in turn by how many were told, each kind's prompts in turn by how many of that kind were told (decision 154)
+export function nextNeeded(toldPromptIds: ReadonlyArray<string>): { type: NeededType; prompt: StoryPrompt } {
+  // The groups of the stories you'll need told so far, in order
+  const told = toldPromptIds.map((id) => STORY_PROMPTS.find((prompt) => prompt.id === id)?.group).filter((group): group is NeededGroupId => NEEDED_TYPES.some((type) => type.group === group));
+  // The next kind
+  const type = NEEDED_TYPES[told.length % NEEDED_TYPES.length]!;
+  // That kind's prompts
+  const prompts = STORY_PROMPTS.filter((prompt) => prompt.group === type.group);
+  // The next of them, by how many of that kind were told
+  return { type, prompt: prompts[told.filter((group) => group === type.group).length % prompts.length]! };
 }
 
 // One beat of a template
@@ -175,22 +266,36 @@ export interface StoryTemplateInfo {
   beats: ReadonlyArray<TemplateBeat>;
   // A short example, one piece per beat, in order
   example: ReadonlyArray<string>;
+  // Which family it belongs to: an everyday story, or one of the stories you'll need (decision 152)
+  family: "everyday" | "needed";
+  // For a story you'll need: what this kind of story needs, in a line, for the coach and the setup screen
+  needs?: string;
+  // For a story you'll need: how a guided story asks for it ("Make it a toast"; decision 153)
+  makeIt?: string;
 }
 
 // The templates, in the order the pages show them
 export const STORY_TEMPLATES: ReadonlyArray<StoryTemplateInfo> = [
   // A lesson learned
-  { id: "lesson", name: "Lesson learned", forWhat: "For interviews and talks", beats: [{ id: "situation", name: "The situation" }, { id: "wrong", name: "What went wrong" }, { id: "did", name: "What I did" }, { id: "learned", name: "What I learned" }], example: ["The night before our launch, the demo server died.", "Nobody had a backup.", "I rebuilt it on my laptop at 2am.", "Now every demo has a plan B."] },
+  { id: "lesson", name: "Lesson learned", forWhat: "For interviews and talks", beats: [{ id: "situation", name: "The situation" }, { id: "wrong", name: "What went wrong" }, { id: "did", name: "What I did" }, { id: "learned", name: "What I learned" }], example: ["The night before our launch, the demo server died.", "Nobody had a backup.", "I rebuilt it on my laptop at 2am.", "Now every demo has a plan B."], family: "everyday" },
   // A client win, for case studies
-  { id: "client-win", name: "Client win", forWhat: "For pitches and case studies", beats: [{ id: "problem", name: "The problem" }, { id: "tried", name: "What we tried" }, { id: "result", name: "The result, with a number" }, { id: "matters", name: "Why it matters" }], example: ["A café owner was spending ten hours a week on the rota.", "We set up a simple assistant that drafts it from staff availability.", "Now it takes forty minutes.", "That’s a day a week back for the part of the job she loves."] },
+  { id: "client-win", name: "Client win", forWhat: "For pitches and case studies", beats: [{ id: "problem", name: "The problem" }, { id: "tried", name: "What we tried" }, { id: "result", name: "The result, with a number" }, { id: "matters", name: "Why it matters" }], example: ["A café owner was spending ten hours a week on the rota.", "We set up a simple assistant that drafts it from staff availability.", "Now it takes forty minutes.", "That’s a day a week back for the part of the job she loves."], family: "everyday" },
   // A turning point
-  { id: "turning-point", name: "Turning point", forWhat: "For openings and about-me", beats: [{ id: "before", name: "How it was" }, { id: "moment", name: "The moment it changed" }, { id: "now", name: "How it is now" }], example: ["I used to dread speaking up in meetings.", "Then my manager asked me, in front of everyone, what I thought, and waited.", "Now I make sure I say one thing in every meeting."] },
+  { id: "turning-point", name: "Turning point", forWhat: "For openings and about-me", beats: [{ id: "before", name: "How it was" }, { id: "moment", name: "The moment it changed" }, { id: "now", name: "How it is now" }], example: ["I used to dread speaking up in meetings.", "Then my manager asked me, in front of everyone, what I thought, and waited.", "Now I make sure I say one thing in every meeting."], family: "everyday" },
   // A funny moment
-  { id: "funny", name: "Funny moment", forWhat: "For toasts and small talk", beats: [{ id: "setup", name: "The set-up" }, { id: "twist", name: "The twist" }, { id: "line", name: "The line that lands" }], example: ["At my sister’s wedding, I was in charge of the rings.", "At the altar, I handed over two hard sweets from my pocket.", "She still calls me the ring bearer, with air quotes."] },
+  { id: "funny", name: "Funny moment", forWhat: "For toasts and small talk", beats: [{ id: "setup", name: "The set-up" }, { id: "twist", name: "The twist" }, { id: "line", name: "The line that lands" }], example: ["At my sister’s wedding, I was in charge of the rings.", "At the altar, I handed over two hard sweets from my pocket.", "She still calls me the ring bearer, with air quotes."], family: "everyday" },
+  // The stories you'll need (decision 152): who I am, for "tell me about yourself"
+  { id: "who-i-am", name: "Who I am", forWhat: "For “tell me about yourself” and meeting people", family: "needed", makeIt: "Make it a “who I am” story", needs: "Start from one moment, not a list of jobs, and link it to who you are now.", beats: [{ id: "moment", name: "A moment from before" }, { id: "showed", name: "What it showed me" }, { id: "now", name: "How it led to now" }], example: ["When I was twelve, I took our broken toaster apart on the kitchen floor.", "I realised I liked finding out why things stop working.", "That’s what I do now: I find out why software breaks, before customers do."] },
+  // An interview answer, told as situation, task, action, result
+  { id: "interview", name: "Interview answer", forWhat: "For “tell me about a time when…”", family: "needed", makeIt: "Make it an interview answer", needs: "Spend most of it on what you did and the result. Say “I”, not only “we”, and give a number if you can.", beats: [{ id: "situation", name: "The situation" }, { id: "task", name: "My task" }, { id: "action", name: "What I did" }, { id: "result", name: "The result" }, { id: "keep", name: "What I’d keep" }], example: ["Our support queue had grown to 400 open tickets.", "I was asked to bring it down before the holidays.", "I sorted them by cause, and I wrote fixes for the three most common.", "In two weeks we were under 50.", "Now I always look for the pattern before the pile."] },
+  // A toast or tribute
+  { id: "toast", name: "Toast", forWhat: "For weddings, birthdays and leaving drinks", family: "needed", makeIt: "Make it a toast", needs: "One story that shows one thing about them, then raise a glass. Keep it about them, not you.", beats: [{ id: "know", name: "How I know them" }, { id: "story", name: "A story that shows them" }, { id: "quality", name: "What it says about them" }, { id: "raise", name: "Raise a glass" }], example: ["I’ve sat next to Sam for six years.", "On my first day, my laptop died, and Sam lent me theirs for the whole week.", "That’s Sam: the first to help, and the last to mention it.", "So please raise your glasses: to Sam!"] },
+  // A choice I made, for values questions
+  { id: "choice", name: "A choice I made", forWhat: "For values questions and “a time you stood up for…”", family: "needed", makeIt: "Make it a story about a choice you made", needs: "Name the choice, say what it cost you, and say why it mattered.", beats: [{ id: "pressure", name: "The pressure" }, { id: "choice", name: "The choice I made" }, { id: "cost", name: "What it cost" }, { id: "why", name: "Why it mattered" }], example: ["A client wanted us to sign off a report we knew was wrong.", "I said we couldn’t, and showed them why.", "We lost that month’s bonus, and it was an awkward call.", "But they came back a year later because they trusted us."] },
 ];
 
 // The template each group of prompts suits best, suggested first (decision 126)
-const SUGGESTED_TEMPLATE: Readonly<Record<StoryGroupId, StoryTemplate>> = { wrong: "lesson", win: "client-win", first: "turning-point", person: "turning-point", place: "turning-point", surprise: "funny", lesson: "lesson", funny: "funny" };
+const SUGGESTED_TEMPLATE: Readonly<Record<StoryGroupId, StoryTemplate>> = { wrong: "lesson", win: "client-win", first: "turning-point", person: "turning-point", place: "turning-point", surprise: "funny", lesson: "lesson", funny: "funny", who: "who-i-am", interview: "interview", toast: "toast", values: "choice" };
 
 // Look up a template, falling back to Lesson learned
 export function findStoryTemplate(id: string | null | undefined): StoryTemplateInfo {
@@ -208,8 +313,10 @@ export function isStoryTemplate(value: unknown): value is StoryTemplate {
 export function suggestedTemplate(storyId: string): StoryTemplate {
   // The prompt, when it came from the bank
   const prompt = findStoryPrompt(storyId);
-  // Its group's template, or the first
-  return prompt ? SUGGESTED_TEMPLATE[prompt.group] : "lesson";
+  // A guided story that asks for a kind of story sets it (decision 153)
+  const guided = findGuidedStory(storyId);
+  // The prompt's group's template, the guided story's, or Lesson learned
+  return prompt ? SUGGESTED_TEMPLATE[prompt.group] : (guided?.template ?? "lesson");
 }
 
 // The three things every good story does, shown while planning (decision 126)

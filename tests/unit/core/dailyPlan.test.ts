@@ -2,11 +2,15 @@
 import { describe, expect, it } from "vitest";
 // Load the scenes and the Active listening stories (decisions 149 and 150)
 import { SCENES } from "@/content/scenes";
+// Load the stories you'll need (decision 152)
+import { NEEDED_TYPES } from "@/content/stories";
 import { findListenStory } from "@/content/listening";
 // Load the plan rules being checked
 import { dailyPlan, focusSuggestion, moreToDo, nextStepIndex, planHref, planMinutes, planProgress, planSkipped, stepKey, todaysFocusSuggestion } from "@/core/dailyPlan";
 // Load the step type
 import type { PlanStep } from "@/core/planSteps";
+// Load the session type
+import type { SessionRecord } from "@/data/records";
 // Load the focus areas (decision 97)
 import { FOCUS_AREAS, type FocusAreaId } from "@/core/practiceFocus";
 // Load the course lookups, to finish a whole course in a check
@@ -64,7 +68,7 @@ describe("dailyPlan", () => {
   });
 
   // A story comes up about twice a week, in the on-the-spot pick, open and guided in turn, set up on its own page and done by a telling of its prompt today (decisions 92 and 93)
-  it("offers a story about twice a week, open and guided in turn, done by telling it", () => {
+  it("offers a story three turns in five of the on-the-spot lane, never the same kind twice running, done by telling it", () => {
     // The picks over three weeks
     const days = Array.from({ length: 21 }, (_, offset) => regularPlan(dayAfter(offset)).slice(2));
     // The story steps
@@ -75,11 +79,33 @@ describe("dailyPlan", () => {
     const day = dayAfter(days.findIndex((picks) => picks.includes(first)));
     // A telling of its prompt that day
     const told = makeSession({ id: "told", mode: "story", promptId: first.promptId, createdAt: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12).toISOString() });
-    // Confirm how often, where, how long and where it starts, and that the telling marks it done
-    // The labels in order, alternating open and guided
+    // The labels in order: open, a story you'll need and guided, in turn (decision 154)
     const labels = stories.map((step) => step.label);
     // Confirm how often, where, how long, the alternation, where it starts, and that the telling marks it done
-    expect([stories.length >= 5 && stories.length <= 7, stories.every((step) => step.lane === "spot" && ["Story", "Guided story"].includes(step.label) && step.minutes === 2), labels.every((label, index) => index === 0 || label !== labels[index - 1]), stories.filter((step) => step.label === "Guided story").every((step) => step.promptId.startsWith("gs") && step.href === `/stories/tell?prompt=${step.promptId}`), first.href, planProgress([first], [told], day)[0]]).toEqual([true, true, true, true, `/stories/tell?prompt=${first.promptId}`, true]);
+    expect([stories.length >= 7 && stories.length <= 11, stories.every((step) => step.lane === "spot" && ["Story", "Guided story", ...NEEDED_TYPES.map((type) => type.name)].includes(step.label) && step.minutes === 2), labels.every((label, index) => index === 0 || label !== labels[index - 1]), stories.filter((step) => step.label === "Guided story").every((step) => step.promptId.startsWith("gs") && step.href === `/stories/tell?prompt=${step.promptId}`), first.href, planProgress([first], [told], day)[0]]).toEqual([true, true, true, true, `/stories/tell?prompt=${first.promptId}`, true]);
+  });
+
+  // The first days give a story you'll need's slot back to Rapid Fire; once past them, all four kinds come up (decision 154)
+  it("keeps the stories you'll need out of the first days, and offers all four later", () => {
+    // A new user's picks over three weeks (every day is a first day with no sessions)
+    const fresh = Array.from({ length: 21 }, (_, offset) => dailyPlan({ day: dayAfter(offset), sessions: [], focusId: "pausing", nextTalk: null })).flat();
+    // A regular user's picks over five weeks, telling each story you'll need on the day it comes up (the kinds go in turn by how many were told)
+    const told: SessionRecord[] = [];
+    // (the picks)
+    const regularPicks = Array.from({ length: 35 }, (_, offset) => {
+      // The day's plan, with the stories told so far
+      const plan = regularPlan(dayAfter(offset), { sessions: [...regular, ...told] });
+      // Tell today's story you'll need, if there is one
+      for (const step of plan.filter((item) => NEEDED_TYPES.some((type) => type.name === item.label))) told.push(makeSession({ id: `n${offset}`, mode: "story", promptId: step.promptId, createdAt: new Date(dayAfter(offset).getFullYear(), dayAfter(offset).getMonth(), dayAfter(offset).getDate(), 12).toISOString() }));
+      // The plan
+      return plan;
+    });
+    // (flat)
+    const regular2 = regularPicks.flat();
+    // The names of the four kinds
+    const names = NEEDED_TYPES.map((type) => type.name);
+    // Confirm none for the new user, every kind for the regular one, each told with its own prompt and address
+    expect([fresh.some((step) => names.includes(step.label)), names.every((name) => regular2.some((step) => step.label === name)), regular2.filter((step) => names.includes(step.label)).every((step) => step.mode === "story" && step.href === `/stories/tell?prompt=${step.promptId}`)]).toEqual([false, true, true]);
   });
 
   // The first days keep the long prepared speech out
@@ -327,7 +353,7 @@ describe("the plan with a focus", () => {
   // The plan for a regular user with a focus
   const focused = (day: Date, practiceFocus: FocusAreaId[], extra: Partial<Parameters<typeof dailyPlan>[0]> = {}) => regularPlan(day, { practiceFocus, ...extra }).filter((step) => step.kind !== "course");
   // The kinds of practice a step is, by its label
-  const storyStep = (label: string | undefined) => label === "Story" || label === "Guided story";
+  const storyStep = (label: string | undefined) => ["Story", "Guided story", ...NEEDED_TYPES.map((type) => type.name)].includes(label ?? "");
 
   // No focus, or an empty one, is exactly the plan as it was, every day
   it("keeps the usual plan without a focus", () => {
@@ -350,7 +376,7 @@ describe("the plan with a focus", () => {
       days.every((plan) => storyStep(plan[2]?.label)),
       days.every((plan) => plan[2]?.lane !== plan[3]?.lane),
       new Set(days.map((plan) => plan[3]?.lane)).size > 1,
-      days.filter((plan) => storyStep(plan[2]?.label) && plan[2]?.label === "Story").length > 0 && days.some((plan) => plan[2]?.label === "Guided story"),
+      days.filter((plan) => storyStep(plan[2]?.label) && plan[2]?.label === "Story").length > 0 && days.some((plan) => plan[2]?.label === "Guided story") && days.some((plan) => NEEDED_TYPES.some((type) => type.name === plan[2]?.label)),
     ]).toEqual([true, true, true, true, true, true]);
   });
 

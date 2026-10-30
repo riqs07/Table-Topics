@@ -86,6 +86,10 @@ The 6 course shorts (decision 145) and 37 lesson clips (decisions 146 and 147) a
 
 The first two of a round making the practice modes more robust. **Scenes:** choose two replies in a short conversation with one of the four people, each answered in their voice, then say the last one out loud. **Active listening:** hear a story once, answer out loud, see which details you caught and whether you heard what mattered. Both feed Today's conversation lane. The plan, and what was left for later (course parts on them, a harder "say yours first", more content), is in [plan-scenes-and-listening.md](plan-scenes-and-listening.md).
 
+## Done: stories you'll need and the guided-story dial (built 2026-10-30, decisions 152 to 154)
+
+From [research/storytelling-2026-10.md](research/storytelling-2026-10.md): four new kinds of story (who I am, interview answer, toast, a choice I made) with their own prompts and checks, and guided stories as a five-step dial ending in "Make it a…". On Practice under Tell stories and in Today's on-the-spot lane. The plan, and what is next (signature stories, a per-story page, "Make it true"), is in [plan-story-types.md](plan-story-types.md).
+
 ## To revisit after the MVP (agreed 2026-10-14)
 
 Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:

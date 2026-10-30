@@ -61,6 +61,9 @@ export const MODE_CATALOGUE: ReadonlyArray<CatalogueGroup> = [
       { name: "Guided stories", what: "You get the facts, you make it a story", href: "/stories#guided-stories", main: false },
       { name: "Tell one again", what: "Your own stories, a little better each time", href: "/stories#your-stories", main: false },
       { name: "From your moments", what: "A one-moment note, told properly", href: "/stories#from-moments", main: false },
+      // The stories you'll need and Story dice (decisions 152 and 153)
+      { name: "Stories you'll need", what: "Who I am, an interview answer, a toast, a choice I made", href: "/stories#stories-youll-need", main: false },
+      { name: "Story dice", what: "Four things that don't belong together, made into one story", href: "/stories#guided-stories", main: false },
     ],
   },
   // Conversation

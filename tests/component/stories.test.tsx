@@ -16,7 +16,7 @@ import type { LiveText, RecordingServices } from "@/audio/services";
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository, type Repository } from "@/data/repository";
 // Load the story prompts
-import { STORY_GROUPS, findStoryTemplate, storyPromptForDay, suggestedTemplate } from "@/content/stories";
+import { NEEDED_TYPES, STORY_GROUPS, findStoryTemplate, neededPromptForDay, storyPromptForDay, suggestedTemplate } from "@/content/stories";
 // Load a sample session builder
 import { makeSession } from "../support/fixtures";
 
@@ -88,6 +88,16 @@ describe("StoriesScreen", () => {
     const templates = within(screen.getByRole("list", { name: "Templates" })).getAllByRole("link").map((link) => link.getAttribute("href"));
     // Confirm the suggestion, Tell it, and the four templates' addresses
     expect([within(today).getByText(/^Suggested template: /).textContent, within(today).getByRole("link", { name: "Tell it" }).getAttribute("href"), templates]).toEqual([`Suggested template: ${findStoryTemplate(suggestedTemplate(storyPromptForDay(NOW).id)).name}`, `/stories/tell?prompt=${storyPromptForDay(NOW).id}`, ["lesson", "client-win", "turning-point", "funny"].map((id) => `/stories/tell?prompt=${storyPromptForDay(NOW).id}&template=${id}`)]);
+  });
+
+  // The stories you'll need: each kind opens today's prompt of that kind, with its beats (decision 152)
+  it("offers the stories you'll need, each opening today's prompt of its kind", async () => {
+    // Draw it
+    render(<StoriesScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The rows
+    const rows = within(await screen.findByRole("list", { name: "Stories you’ll need" })).getAllByRole("link");
+    // Confirm each kind's name and address, and the interview answer's beats
+    expect([rows.map((row) => [row.querySelector(".font-semibold")?.textContent, row.getAttribute("href")]), rows[1]!.textContent?.includes("The situation → My task → What I did → The result → What I’d keep")]).toEqual([NEEDED_TYPES.map((type) => [type.name, `/stories/tell?prompt=${neededPromptForDay(type.group, NOW).id}`]), true]);
   });
 
   // The library lists each story by title, how often, the takeaway and "Tell it again" from its latest telling; moment notes offer "Tell it properly"
@@ -169,6 +179,28 @@ describe("TellStoryScreen", () => {
     render(<TellStoryScreen storyId="sp04" initialTemplate="turning-point" initialFocus="minute" repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the chosen template and the address that starts the telling
     expect([screen.getByRole("button", { name: /Turning point/ }).getAttribute("aria-pressed"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual(["true", "/session?mode=story&prompt=sp04&template=turning-point&focus=minute&length=short"]);
+  });
+
+  // A story you'll need starts on its own template, shows its family and what it needs, and the everyday ones are a tap away (decision 152)
+  it("starts a story you'll need on its template, with the other family a tap away", async () => {
+    // Draw it for an interview question
+    render(<TellStoryScreen storyId="sp47" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The templates shown at first
+    const before = within(screen.getByRole("group", { name: "Template" })).getAllByRole("button").filter((button) => button.hasAttribute("aria-pressed")).map((button) => button.querySelector(".font-semibold")?.textContent);
+    // Show the rest
+    fireEvent.click(screen.getByRole("button", { name: "Show all templates" }));
+    // Confirm the needed family first, the need line, then all eight, and the address
+    expect([before, screen.getByText(/Spend most of it on what you did/).hasAttribute("data-template-needs"), within(screen.getByRole("group", { name: "Template" })).getAllByRole("button").length, screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([["Who I am", "Interview answer", "Toast", "A choice I made"], true, 8, "/session?mode=story&prompt=sp47&template=interview&length=full"]);
+  });
+
+  // A "Make it a…" guided story asks for its kind and starts on that template; its details are loose, not numbered (decision 153)
+  it("asks a Make it a… guided story for its kind, with loose details", async () => {
+    // Draw it for the toast to Alex
+    render(<TellStoryScreen storyId="gs41" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The card
+    const card = screen.getByRole("region", { name: "Your facts" });
+    // Confirm the ask, the heading, the loose list and the address
+    expect([within(card).getByText("Make it a toast").hasAttribute("data-make-it"), !!within(card).getByText("Use all four"), card.querySelector("ol")?.getAttribute("data-ordered"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([true, true, "false", "/session?mode=story&prompt=gs41&template=toast&focus=point&length=full"]);
   });
 
   // Inside today's practice: short by default, with the step carried on
@@ -299,6 +331,26 @@ describe("SessionScreen, stories", () => {
     const beats = await screen.findByRole("region", { name: /Your beats/ });
     // Confirm the headline, what worked at the top (and not again at the bottom), the line and its gap, and each beat's status and quote
     expect([screen.getByRole("heading", { level: 1 }).textContent, document.querySelector("[data-story-worked]")?.textContent, screen.queryByText("What to keep."), !!screen.getByText("“she goes don't worry”"), screen.getByText("[how you felt]").tagName, [...beats.querySelectorAll("[data-beat]")].map((item) => `${item.getAttribute("data-beat")} ${item.getAttribute("data-status")}`), !!within(beats).getByText("“the train stopped dead”"), within(beats).getByRole("heading").textContent]).toEqual(["2 of 4 beats came through clearly.", "What workedYou opened in the action.", null, true, "EM", ["problem strong", "tried weak", "result missing", "matters strong"], true, "Your beats · Client win"]);
+  });
+
+  // A story you'll need shows what its kind needs, as the phone heard it; an everyday story shows no such card (decision 152)
+  it("shows what a toast needs, and nothing like it for an everyday story", async () => {
+    // A toast that never raises a glass, and an everyday story
+    const repository = await repositoryWith(makeSession({ id: "t", mode: "story", promptId: "sp53", transcript: "I remember the day Sam carried my sofa up four floors. Sam is the kindest person I know. Anyway that's it.", story: { template: "toast", length: "short" }, feedbackStatus: "failed" }), makeSession({ id: "e", mode: "story", promptId: "sp04", transcript: FLAT, story: TAKE, feedbackStatus: "failed" }));
+    // Draw the toast
+    render(<SessionScreen sessionId="t" repository={repository} now={NOW} />);
+    // The card
+    const card = await screen.findByRole("region", { name: "What a toast needs" });
+    // Its checks
+    const checks = [...card.querySelectorAll("[data-type-check]")].map((item) => [item.getAttribute("data-type-check"), item.getAttribute("data-passed")]);
+    // The note on the missed one
+    const note = within(card).getByText(/please raise your glasses/).textContent;
+    // Draw the everyday story
+    cleanup();
+    // (drawn)
+    render(<SessionScreen sessionId="e" repository={repository} now={NOW} />);
+    // Confirm the checks and the note, then no card for the everyday story
+    expect([checks, note, await screen.findByRole("heading", { level: 1 }).then(() => document.querySelector("[data-type-needs]"))]).toEqual([[["moment", "true"], ["quality", "true"], ["raise", "false"]], "Finish with “please raise your glasses: to…”", null]);
   });
 
   // A retelling: how it compared, what it worked on, and the beats that came through last time and this time

@@ -11,7 +11,9 @@ import { createRepository } from "@/data/repository";
 // Load the day's pickers
 import { promptForDay, tableTopicForDay } from "@/content/prompts";
 // Load today's story prompt (decision 92)
-import { storyPromptForDay } from "@/content/stories";
+import { NEEDED_TYPES, neededPromptForDay, storyPromptForDay } from "@/content/stories";
+// Load today's Story dice (decision 153)
+import { connectStoryForDay } from "@/content/guidedStories";
 // Load the small-talk lessons (decision 95)
 import { SMALL_TALK_LESSONS } from "@/content/smallTalk";
 // Load a sample session builder
@@ -58,13 +60,29 @@ describe("PracticeScreen", () => {
     // A group's rows as [name, address] ("See all" first, where it is a link)
     const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
     // Confirm the stories group, second of the groups (the courses' heading sits above them, decision 131), with today's story, telling one again and guided stories, the moments under "See all" (decision 92)
-    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses").indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"]], 1]);
+    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses").indexOf("Tell stories")]).toEqual([[["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"]], 1]);
     // Confirm the other groups: everyday conversation's three (Scenes and Active listening after Talk with someone, decisions 149 and 150; the next unit and the moment under "See all"), the voice group's warm-up and the first two modes (clear sounds with the word lists as one row), and speaking on the spot's three
     expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Speak on the spot")]).toEqual([
       [["Talk with someone", "/conversations"], ["Scenes", "/scenes"], ["Active listening", "/listening"]],
       [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Volume", "/voice/drill?id=v01"]],
       [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Read aloud", "/skills"]],
     ]);
+  });
+
+  // Tell stories' "See all" opens the rest in place: the moments, the four stories you'll need (each today's prompt of its kind), Story dice and every story (decisions 152 to 154)
+  it("opens the rest of Tell stories in place, with the stories you'll need and Story dice", async () => {
+    // Draw the page
+    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Open the rest, where the groups are
+    await openMore();
+    // The group
+    const group = within((await screen.findByRole("heading", { name: "Tell stories" })).closest("section") as HTMLElement);
+    // Open its "See all"
+    fireEvent.click(group.getByRole("button", { name: "See all" }));
+    // Every row as [name, address, scene]
+    const rows = group.getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href"), link.querySelector("[data-scene]")?.getAttribute("data-scene") ?? null]);
+    // Confirm the rows after the first three
+    expect(rows.slice(3)).toEqual([["From your moments", "/stories#from-moments", "moment"], ...NEEDED_TYPES.map((type) => [type.name, `/stories/tell?prompt=${neededPromptForDay(type.group, NOW).id}`, type.template]), ["Story dice", `/stories/tell?prompt=${connectStoryForDay(NOW).id}`, "story-dice"], ["All stories", "/stories", null]]);
   });
 
   // Speaking on the spot has no page of its own, so its "See all" opens the rest in place: free talk and the short speech, two taps from Practice (decision 108)

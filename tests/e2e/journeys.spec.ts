@@ -954,7 +954,9 @@ test("Stories: pick a prompt, choose a template, tell it, then tell it again and
   // The rest of the ways to practise, opened (decision 125)
   await page.getByRole("button", { name: "More ways to practise" }).click();
   // Into Stories
-  await page.getByRole("region", { name: "Tell stories" }).getByRole("link", { name: "See all" }).click();
+  await page.getByRole("region", { name: "Tell stories" }).getByRole("button", { name: "See all" }).click();
+  // (its "All stories" row, since "See all" opens in place; decision 154)
+  await page.getByRole("link", { name: /^All stories/ }).click();
   // Open a group of prompts
   await page.getByText("A time something went wrong", { exact: true }).click();
   // Pick a prompt
@@ -1000,6 +1002,37 @@ test("Stories: pick a prompt, choose a template, tell it, then tell it again and
 });
 
 // A saved moment note, told properly as a story, lands in Your stories (decision 92)
+test("Stories you'll need: from Practice, tell a toast and see what a toast needs", async ({ page }) => {
+  // The stand-in speech gives a toast: one moment, a quality, a raised glass
+  await useStandIns(page, "I remember the day Sam lent me a laptop for a whole week Sam is the kindest person I know so please raise your glasses to Sam");
+  // Past the welcome
+  await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
+  // From Practice
+  await page.goto("/practice");
+  // The rest of the ways to practise, opened (decision 125)
+  await page.getByRole("button", { name: "More ways to practise" }).click();
+  // Tell stories' "See all", opened in place (decision 154)
+  await page.getByRole("region", { name: "Tell stories" }).getByRole("button", { name: "See all" }).click();
+  // The Toast row
+  await page.getByRole("link", { name: /^Toast/ }).click();
+  // The set-up page, on the Toast template, with what a toast needs
+  await expect(page.getByRole("button", { name: /^Toast/ })).toHaveAttribute("aria-pressed", "true");
+  // (the need line)
+  await expect(page.locator("[data-template-needs]")).toContainText("raise a glass");
+  // Short, then start
+  await page.getByRole("button", { name: /^Short/ }).click();
+  // Start
+  await page.getByRole("link", { name: /^Start/ }).click();
+  // The telling page, told with the toast template
+  await expect(page).toHaveURL(/mode=story&prompt=sp5\d&template=toast&length=short/);
+  // Plan and tell
+  await tellStory(page);
+  // The result: what a toast needs, all three heard
+  await expect(page.getByRole("region", { name: "What a toast needs" })).toBeVisible({ timeout: 15_000 });
+  // (all passed)
+  await expect(page.locator("[data-type-check][data-passed=false]")).toHaveCount(0);
+});
+
 test("Stories: tell a saved moment properly, and find it in Your stories", async ({ page }) => {
   // The stand-in speech
   await useStandIns(page, STORY_SPOKEN);

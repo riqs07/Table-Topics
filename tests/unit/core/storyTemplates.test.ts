@@ -17,17 +17,17 @@ function told(statuses: ReadonlyArray<TemplateBeatNote["status"]>): { feedback: 
 
 describe("the templates", () => {
   // Four, each with an example piece per beat
-  it("has four templates, each example one piece per beat, and finds them by id", () => {
-    // The ids and the example lengths
-    expect([STORY_TEMPLATES.map((template) => template.id), STORY_TEMPLATES.every((template) => template.example.length === template.beats.length)]).toEqual([["lesson", "client-win", "turning-point", "funny"], true]);
+  it("has eight templates in two families, each example one piece per beat, and finds them by id", () => {
+    // The ids, their families and the example lengths (the four stories you'll need added by decision 152)
+    expect([STORY_TEMPLATES.map((template) => `${template.id}:${template.family}`), STORY_TEMPLATES.every((template) => template.example.length === template.beats.length)]).toEqual([["lesson:everyday", "client-win:everyday", "turning-point:everyday", "funny:everyday", "who-i-am:needed", "interview:needed", "toast:needed", "choice:needed"], true]);
     // A lookup, the fallback and the check
     expect([findStoryTemplate("funny").name, findStoryTemplate("nope").id, isStoryTemplate("client-win"), isStoryTemplate("classic")]).toEqual(["Funny moment", "lesson", true, false]);
   });
 
   // The suggestion follows the prompt's group
   it("suggests a template by the prompt's group, Lesson learned otherwise", () => {
-    // Something went wrong, a small win, something funny, a moment note and a guided story
-    expect(["sp01", "sp06", "sp36", "moment-abc", "gs13"].map(suggestedTemplate)).toEqual(["lesson", "client-win", "funny", "lesson", "lesson"]);
+    // Something went wrong, a small win, something funny, a moment note, a guided story, then one prompt of each kind you'll need and a guided story that asks for a toast (decisions 152 and 153)
+    expect(["sp01", "sp06", "sp36", "moment-abc", "gs13", "sp41", "sp47", "sp53", "sp59", "gs41"].map(suggestedTemplate)).toEqual(["lesson", "client-win", "funny", "lesson", "lesson", "who-i-am", "interview", "toast", "choice", "toast"]);
   });
 });
 

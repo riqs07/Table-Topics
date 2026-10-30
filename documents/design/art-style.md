@@ -20,6 +20,8 @@ The blob is VoiceLab's one recurring character. Everything else is a prop around
 
 **Two people talking** (decisions 149 and 150): `SceneCast` (`src/components/scenes/SceneCast.tsx`) draws you as the warm blob and the person you are talking to as the accent blob, facing each other on a ground line, with a speech bubble while they speak. Their face shows how the conversation is going: `happy` when pleased, `side-left` at ease, `flat` (open eyes, a straight mouth; added for this) when deflated, never cross. It is the one looping drawing on a scene or story screen. Practice's rows for the two modes use the scenes `scenes` (the blob wondering beside three reply cards, the chosen one swinging out) and `listening` (the other person talking, sound arcs travelling to the blob, who leans in).
 
+**Story scenes** (decisions 152 and 153): `who-i-am` (the blob beside a framed picture of its smaller self, the frame swaying on its nail), `interview` (its bubble showing a result climbing), `toast` (one arm raised behind the body holding a glass, a sparkle rising), `choice` (two paths, the chosen one's sign lit) and `story-dice` (two dice hopping). The setup screen shows the same scene as the Practice row or Today step it came from, so the drawing glides in.
+
 ## 2. Two families: scenes and course tiles
 
 | | **Scenes** (decision 136) | **Course tiles** (decision 142) |

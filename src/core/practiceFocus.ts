@@ -10,7 +10,7 @@ export type FocusAreaId = "stories" | "conversation" | "spot" | "voice" | "work"
 export type PracticeGroupId = "on-the-spot" | "stories" | "conversation" | "voice";
 
 // One kind of practice the daily plan can pick (the bank's kinds, plus a lesson or a prepared speech from an area's own list)
-export type PickKind = "talk" | "response" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios" | "scene" | "listening" | "focus-lesson" | "focus-speech";
+export type PickKind = "talk" | "response" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios" | "scene" | "listening" | "needed" | "focus-lesson" | "focus-speech";
 
 // One area: what it is called, what it steers, and the one next thing to suggest
 export interface FocusArea {
@@ -40,7 +40,7 @@ export const MAX_FOCUS = 2;
 // Every area, in the order the question lists them
 export const FOCUS_AREAS: ReadonlyArray<FocusArea> = [
   // Telling stories: open and guided stories (decisions 92 and 93)
-  { id: "stories", name: "Telling stories", detail: "Your own stories and guided ones", phrase: "telling stories", learnSets: ["stories"], practiceGroup: "stories", picks: ["story", "guided"], lessons: [], speeches: [] },
+  { id: "stories", name: "Telling stories", detail: "Your own stories and guided ones", phrase: "telling stories", learnSets: ["stories"], practiceGroup: "stories", picks: ["story", "guided", "needed"], lessons: [], speeches: [] },
   // Small talk and conversations: the units, scenes, everyday questions and Active listening (decision 151; the paid conversation partner stays a suggestion, not a plan step)
   { id: "conversation", name: "Small talk and conversations", detail: "Everyday chats, and talking with someone", phrase: "small talk and conversations", learnSets: ["conversation", "warmth"], practiceGroup: "conversation", picks: ["connect", "scene", "smalltalk", "listening"], lessons: [], speeches: [] },
   // Thinking on my feet: Rapid Fire and prepared speeches (Q&A was removed in decision 61)

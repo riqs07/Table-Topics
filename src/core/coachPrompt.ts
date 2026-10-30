@@ -693,6 +693,8 @@ export function buildStoryMessage(input: CoachInput): string {
     // The template they told it with, and its beats by id (decision 126; an older story's shape, when there is no template)
     ...(story?.shape && !story.template ? [`Shape shown while planning (optional for them): ${STORY_SHAPE_WORDS[story.shape]}`] : []),
     `Template: ${templateFor(story).name}. Its beats, in order, by id: ${templateFor(story).beats.map((beat) => `${beat.id} (${beat.name})`).join(", ")}`,
+    // For a story you'll need, what that kind of story needs (decision 152)
+    ...(templateFor(story).needs ? [`What this kind of story needs: ${templateFor(story).needs}`] : []),
     // The focus, if any
     `Their focus this telling: ${story?.focus ? STORY_FOCUS_WORDS[story.focus] : "none"}`,
     // For a speaker who stammers, no comments on fluency

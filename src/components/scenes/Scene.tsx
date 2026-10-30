@@ -4,7 +4,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 // The scenes there are, one per kind of practice that has one
-export type SceneName = "rapid-fire" | "prepared-speech" | "read-aloud" | "four-three-two" | "free-talk" | "short-speech" | "your-talk" | "story" | "tell-again" | "guided-stories" | "moment" | "conversation" | "warm-up" | "learn" | "scenes" | "listening";
+export type SceneName = "rapid-fire" | "prepared-speech" | "read-aloud" | "four-three-two" | "free-talk" | "short-speech" | "your-talk" | "story" | "tell-again" | "guided-stories" | "moment" | "conversation" | "warm-up" | "learn" | "scenes" | "listening" | "who-i-am" | "interview" | "toast" | "choice" | "story-dice";
 
 // How much a scene moves: all the time, a few rounds then rest, or only blinking
 export type SceneMotion = "loop" | "few" | "still";
@@ -462,6 +462,102 @@ const SCENES: Record<SceneName, () => ReactNode> = {
       {["M54 70q6 10 0 20", "M62 64q9 16 0 32", "M70 58q12 22 0 44"].map((d, index) => <path key={d} className="s-move s-gust stroke-accent" strokeWidth={3} style={{ animationDelay: `${index * 0.4}s` }} d={d} />)}
       {/* You, leaning in to listen */}
       <Move loop="s-look"><Blob x={88} y={78} r={24} face="side-left" /></Move>
+    </>
+  ),
+  // Who I am (decision 152): the blob beside a framed picture of its smaller self, the frame swaying on its nail
+  "who-i-am": () => (
+    <>
+      {/* The frame, hanging from its nail and swaying */}
+      <Move loop="s-swing" origin="82px 14px">
+        {/* The string */}
+        <path className={LINE} d="M70 34l12-20 12 20" />
+        {/* The frame */}
+        <rect className={`${LINE} fill-card`} x="62" y="32" width="40" height="36" rx="4" />
+        {/* The younger self, small, inside it */}
+        <Blob x={82} y={54} r={10} face="happy" />
+      </Move>
+      {/* The shadow */}
+      <Shadow x={42} y={106} width={22} />
+      {/* The blob, bobbing, looking at the picture */}
+      <Move loop="s-bob"><Blob x={42} y={82} r={23} face="side" /></Move>
+    </>
+  ),
+  // An interview answer: the blob telling it, its bubble showing a result climbing
+  "interview": () => (
+    <>
+      {/* The shadow */}
+      <Shadow x={36} y={106} width={22} />
+      {/* The blob, bobbing, sure of itself */}
+      <Move loop="s-bob"><Blob x={36} y={82} r={23} face="ready" /></Move>
+      {/* The bubble, popping in and out */}
+      <Move loop="s-talk" origin="64px 62px">
+        {/* The bubble */}
+        <path className={`${LINE} fill-card`} d="M64 16h42a6 6 0 0 1 6 6v30a6 6 0 0 1-6 6H76l-10 9v-9h-2a6 6 0 0 1-6-6V22a6 6 0 0 1 6-6z" />
+        {/* The bars, climbing */}
+        <path className="stroke-accent" strokeWidth={5} d="M72 48v-6M83 48v-13M94 48v-20" />
+        {/* The baseline */}
+        <path className={LINE} d="M67 50h34" />
+      </Move>
+    </>
+  ),
+  // A toast: the blob raising a glass, a sparkle rising from it
+  "toast": () => (
+    <>
+      {/* The shadow */}
+      <Shadow x={44} y={106} width={22} />
+      {/* The raised arm and glass, swaying from the shoulder */}
+      <Move loop="s-sway" origin="64px 76px">
+        {/* The arm, reaching up from the shoulder, tucked behind the body's edge */}
+        <ellipse className="fill-warm" cx="70" cy="64" rx="5.5" ry="11" transform="rotate(28 70 64)" />
+        {/* The glass's bowl, held at the arm's end */}
+        <path className={`${LINE} fill-warm-tint`} d="M72 28h18l-2 14a7 7 0 0 1-14 0z" />
+        {/* Its stem and foot, resting on the hand */}
+        <path className={LINE} d="M81 49v6M76 55h10" />
+      </Move>
+      {/* The blob, bobbing, delighted, in front of its arm */}
+      <Move loop="s-bob"><Blob x={44} y={82} r={23} face="happy" /></Move>
+      {/* The sparkle, rising */}
+      <path className="s-move s-spark fill-warm" d="M95 24l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" />
+    </>
+  ),
+  // A choice I made: two paths from where the blob stands, the chosen one lit
+  "choice": () => (
+    <>
+      {/* The two paths */}
+      <path className={LINE} d="M50 104c14-12 26-20 52-24M50 104c18-26 30-44 54-56" />
+      {/* The path not taken, its sign plain */}
+      <path className={`${LINE} fill-card`} d="M88 70h18l5 6-5 6H88z" />
+      {/* The chosen path's sign, lit and glowing */}
+      <Move loop="s-glow" origin="98px 42px"><circle className="fill-warm opacity-30" cx="98" cy="42" r="14" /></Move>
+      {/* (the sign) */}
+      <path className={`${LINE} fill-accent`} d="M86 36h18l5 6-5 6H86z" />
+      {/* The shadow */}
+      <Shadow x={34} y={106} width={20} />
+      {/* The blob, bobbing, deciding */}
+      <Move loop="s-bob"><Blob x={34} y={82} r={22} face="wonder" /></Move>
+    </>
+  ),
+  // Story dice: two dice tumbling beside the blob
+  "story-dice": () => (
+    <>
+      {/* The shadow */}
+      <Shadow x={38} y={106} width={22} />
+      {/* The blob, bobbing, amazed at the roll */}
+      <Move loop="s-bob"><Blob x={38} y={82} r={23} face="wow" /></Move>
+      {/* The first die, hopping */}
+      <Move loop="s-hop">
+        {/* The die */}
+        <rect className={`${LINE} fill-card`} x="70" y="72" width="26" height="26" rx="6" transform="rotate(-12 83 85)" />
+        {/* Its pips */}
+        <path className="stroke-ink" strokeWidth={4.5} d="M77 79h0M83 85h0M89 91h0" />
+      </Move>
+      {/* The second die, hopping out of step */}
+      <Move loop="s-hop" delay={0.6}>
+        {/* The die */}
+        <rect className={`${LINE} fill-accent`} x="86" y="38" width="22" height="22" rx="5" transform="rotate(14 97 49)" />
+        {/* Its pips */}
+        <path className="stroke-accent-ink" strokeWidth={4} d="M92 44h0M102 54h0" />
+      </Move>
     </>
   ),
   // The warm-up: cheeks puffing, gusts of air blowing out

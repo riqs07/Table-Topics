@@ -1,5 +1,5 @@
 "use client";
-// Stories (decisions 92 and 126): today's story with its suggested template, the user's own stories to tell again, the four templates (each starts today's story with it), then guided stories with the facts given (decision 93), moment notes to tell properly, and the bank of story prompts
+// Stories (decisions 92, 126 and 152): today's story with its suggested template, the user's own stories to tell again, the stories you'll need (each opening today's prompt of its kind), the four everyday templates (each starts today's story with it), then guided stories with the facts given (decision 93), moment notes to tell properly, and the bank of story prompts
 
 // Load React's state and effect tools
 import { useCallback, useEffect, useState } from "react";
@@ -15,7 +15,7 @@ import { FoldCard } from "@/components/script/FoldCard";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the story prompts and groups
-import { STORY_GROUPS, STORY_PROMPTS, STORY_TEMPLATES, findStoryTemplate, momentTitle, storyPromptForDay, suggestedTemplate } from "@/content/stories";
+import { NEEDED_TYPES, STORY_GROUPS, STORY_PROMPTS, STORY_TEMPLATES, findStoryTemplate, neededPromptForDay, momentTitle, storyPromptForDay, suggestedTemplate } from "@/content/stories";
 // Load the guided stories (decision 93)
 import { GUIDED_LEVELS, GUIDED_STORIES, guidedLevel } from "@/content/guidedStories";
 // Load the moment note's prompt
@@ -199,7 +199,31 @@ export function StoriesScreen(props: ScreenProps) {
         )}
       </section>
 
-      {/* The templates: each starts today's story told with it (decision 126) */}
+      {/* The stories you'll need (decision 152): each opens today's prompt of its kind, told with its template */}
+      <section aria-labelledby="needed" id="stories-youll-need" className="mt-10 scroll-mt-6">
+        {/* Heading */}
+        <h2 id="needed" className={SECTION_HEADING}>Stories you’ll need</h2>
+        {/* What they are */}
+        <p className="mt-1 max-w-[48ch] text-ink-muted">The few stories people tell again and again, and dread. Get them ready.</p>
+        {/* Each kind */}
+        <ul aria-label="Stories you’ll need" className={`mt-2 ${CARD_LIST}`}>
+          {NEEDED_TYPES.map((type) => (
+            // One kind, opening today's prompt of it
+            <li key={type.template}>
+              <RowLink href={today ? tellHref(neededPromptForDay(type.group, today).id) : "/stories"} label={`${type.name}: ${type.detail}`}>
+                {/* Its name */}
+                <span className="block font-semibold">{type.name}</span>
+                {/* What it is for */}
+                <span className="block text-footnote text-ink-muted">{type.detail}</span>
+                {/* Its beats */}
+                <span className="block text-footnote text-accent">{findStoryTemplate(type.template).beats.map((beat) => beat.name).join(" → ")}</span>
+              </RowLink>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* The templates: each starts today's story told with it (decision 126); the everyday ones only, since the stories you'll need come with their own prompts */}
       <section aria-labelledby="templates" className="mt-10">
         {/* Heading */}
         <h2 id="templates" className={SECTION_HEADING}>Templates</h2>
@@ -207,7 +231,7 @@ export function StoriesScreen(props: ScreenProps) {
         <p className="mt-1 max-w-[48ch] text-ink-muted">A few beats to tell a story in. Pick one for today’s story.</p>
         {/* Each template */}
         <ul aria-label="Templates" className={`mt-2 ${CARD_LIST}`}>
-          {STORY_TEMPLATES.map((template) => (
+          {STORY_TEMPLATES.filter((template) => template.family === "everyday").map((template) => (
             // One template, starting today's story with it
             <li key={template.id}>
               <RowLink href={todays ? tellHref(todays.id, template.id) : "/stories"} label={`${template.name}: ${template.forWhat}`}>
