@@ -68,6 +68,20 @@ Courses for each focus, made of lessons in short parts that use the modes the ap
 
 The voice shape has a face in six moods, Open Peeps people greet new users and celebrate a finished course, and Practice's main ways are blob scene cards that move. Still to draw: scenes for the voice drills and the conversation units.
 
+## To do: scrutinise and polish the videos (added 2026-10-30)
+
+The 6 course shorts (decision 145) and 37 lesson clips (decisions 146 and 147) are fine for now (the user: "this is okay"), but they were made quickly, mostly by agents, and checked only from still frames. Treat them as a pilot: review them properly, then clean them up.
+
+1. **Watch every one with sound,** start to end, on a phone. Note anything that sounds off, reads badly or drags. So far only stills have been checked; nobody has listened to all of them.
+2. **Check the scripts as a set:** the wording against each lesson's Learn cards, the app's voice, repeated phrases or examples across clips, and lengths (30 to 43 s now; aim for about 35 s).
+3. **Known issues to fix:**
+   - In Stop freezing lesson 6, the caption "So: tea." comes about 0.6 s late. Feeding the aligner word times from a transcript (ElevenLabs Scribe) would fix this and any similar slips.
+   - Many example beats sit on the same pink ground; vary the colours across a course.
+   - In Ready by the day lesson 5, the blob calls itself "Blob" ("Blob, you know this."). Decide whether the character has a name.
+   - In the Beyond "good, you?" short, the "(sigh)" caption: keep it or re-voice without it.
+4. **Pilot with a few learners:** show a handful of clips in the lessons and see whether they press play, watch to the end, and whether the closing card's action sticks. Change the format (length, pace, the example beat) from what they do.
+5. **Then clean up:** re-voice and re-render what changes (`pnpm render-lessons <id>`), and move the 45 MB of video out of the repository to a file store before launch; think about playing them offline.
+
 ## To revisit after the MVP (agreed 2026-10-14)
 
 Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:
