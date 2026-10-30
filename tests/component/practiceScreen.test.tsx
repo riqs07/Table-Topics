@@ -61,7 +61,7 @@ describe("PracticeScreen", () => {
     expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses").indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"]], 1]);
     // Confirm the other groups: everyday conversation's three (Scenes and Active listening after Talk with someone, decisions 149 and 150; the next unit and the moment under "See all"), the voice group's warm-up and the first two modes (clear sounds with the word lists as one row), and speaking on the spot's three
     expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Speak on the spot")]).toEqual([
-      [[undefined, "/small-talk"], ["Talk with someone", "/conversations"], ["Scenes", "/scenes"], ["Active listening", "/listening"]],
+      [["Talk with someone", "/conversations"], ["Scenes", "/scenes"], ["Active listening", "/listening"]],
       [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Volume", "/voice/drill?id=v01"]],
       [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Read aloud", "/skills"]],
     ]);

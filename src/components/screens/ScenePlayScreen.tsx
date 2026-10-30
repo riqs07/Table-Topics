@@ -9,8 +9,9 @@ import Link from "next/link";
 import { ActionBand } from "@/components/script/ActionBand";
 import { Masthead } from "@/components/script/Masthead";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-// Load the two people
+// Load the two people, and the panel a step's scene glides into from Today
 import { SceneCast } from "@/components/scenes/SceneCast";
+import { ScenePanel } from "@/components/scenes/ScenePanel";
 // Load the shared button looks
 import { PRESS, PRIMARY, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the card look and the small label look
@@ -245,8 +246,8 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
     <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 pb-28 md:px-14 md:pt-10">
       {/* Title, with the way out */}
       <Masthead title={scene.title} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/scenes", label: "Close, back to Scenes" }}>{plan ? `Step ${plan.step} of ${plan.total}` : `With ${name}`}</Masthead>
-      {/* The two people */}
-      <div className="mt-4 flex justify-center"><SceneCast mood={mood} speaking={speaking} name={name} /></div>
+      {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise the two people */}
+      {planStep && phase === "intro" ? <ScenePanel scene="scenes" line="Choose your replies, then say the last one." className="mt-4" /> : (<div className="mt-4 flex justify-center"><SceneCast mood={mood} speaking={speaking} name={name} /></div>)}
       {/* Before starting: where you are */}
       {phase === "intro" && (
         <section aria-label="The scene" className="mt-4">

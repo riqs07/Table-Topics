@@ -280,12 +280,11 @@ export function PracticeScreen(props: ScreenProps) {
     // The "conversation" group
     "conversation": (
       <>
-          {/* Everyday conversation: a whole conversation, the next of the seven units (the rest under "See all"), and the moment note (decision 95) */}
+          {/* Everyday conversation: a whole conversation, Scenes and Active listening first (decisions 149 and 150); "See all" opens the rest in place, so the next unit and the moment note stay two taps away (decision 108), with every unit a row further */}
           <Group
             focus={focusGroups.includes("conversation")}
             id="conversation"
             title="Everyday conversation"
-            more={{ href: "/small-talk", label: "See all" }}
             ways={[
               // A whole conversation with one of four people (decision 83)
               { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon, scene: "conversation" },
@@ -297,6 +296,8 @@ export function PracticeScreen(props: ScreenProps) {
               { name: unit.unit.name, detail: unit.nextLesson ? `Next: lesson ${unit.nextLesson.number}, ${unit.nextLesson.title}` : unit.unit.youDo, href: `/small-talk/unit?id=${unit.unit.id}`, icon: UNIT_ICONS[unit.unit.id] },
               // One moment a day
               { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon, scene: "moment" },
+              // Every small-talk unit, on its own page (it was this group's "See all" link before decision 149)
+              { name: "Small talk", detail: "All seven units, each with lessons and drills", href: "/small-talk", icon: ListNumbersIcon },
             ]}
           />
       </>

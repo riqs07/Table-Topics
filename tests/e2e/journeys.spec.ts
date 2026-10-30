@@ -438,8 +438,10 @@ test("Small talk: listen to a story and see it afterwards", async ({ page }) => 
   await page.goto("/practice");
   // The rest of the ways to practise, opened (decision 125)
   await page.getByRole("button", { name: "More ways to practise" }).click();
-  // Every unit is under "See all" (decision 95)
-  await page.getByRole("region", { name: "Everyday conversation" }).getByRole("link", { name: "See all" }).click();
+  // Every unit is on the Small talk page, a row under "See all", opened in place (decisions 95 and 149)
+  await page.getByRole("region", { name: "Everyday conversation" }).getByRole("button", { name: "See all" }).click();
+  // (the row)
+  await page.getByRole("link", { name: /^Small talk/ }).click();
   // Open the Listening unit
   await page.getByRole("list", { name: "Units" }).getByRole("link", { name: /^Listening/ }).click();
   // Its practice box
@@ -472,8 +474,10 @@ test("Reading the room: read a moment, say what you'd say, see the beats", async
   await page.goto("/practice");
   // The rest of the ways to practise, opened (decision 125)
   await page.getByRole("button", { name: "More ways to practise" }).click();
-  // Every unit
-  await page.getByRole("region", { name: "Everyday conversation" }).getByRole("link", { name: "See all" }).click();
+  // Every unit is on the Small talk page, a row under "See all", opened in place (decisions 95 and 149)
+  await page.getByRole("region", { name: "Everyday conversation" }).getByRole("button", { name: "See all" }).click();
+  // (the row)
+  await page.getByRole("link", { name: /^Small talk/ }).click();
   // Open Reading the room
   await page.getByRole("list", { name: "Units" }).getByRole("link", { name: /^Reading the room/ }).click();
   // Its practice box
@@ -560,6 +564,8 @@ test("One moment a day: record a note and see it on the Small talk page", async 
   await page.goto("/practice");
   // The rest of the ways to practise, opened (decision 125)
   await page.getByRole("button", { name: "More ways to practise" }).click();
+  // Everyday conversation's "See all", opened in place, where the moment's row went when Scenes and Active listening took the first rows (decision 149)
+  await page.getByRole("region", { name: "Everyday conversation" }).getByRole("button", { name: "See all" }).click();
   // Record today's moment from its row
   await page.getByRole("link", { name: /^One moment a day/ }).click();
   // Start speaking
