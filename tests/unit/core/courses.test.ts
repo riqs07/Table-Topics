@@ -1,5 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
+// Load the file check, for the lesson clips
+import { existsSync } from "node:fs";
 // Load what is being checked
 import { afterTakeHref, compareLine, courseCount, courseTakeFromQuery, courseToOffer, coursePlaces, findCourse, findPart, isPartDone, lessonCount, measureText, nextPart, partHref, partMinutes, partSteps, practicePromptText, revisitsDue, takeHref } from "@/core/courses";
 // Load the courses and their types
@@ -59,6 +61,14 @@ describe("course content", () => {
   it("points only to real Learn cards and in-app pages", () => {
     // Confirm every card is found and every link is an address inside the app
     expect([parts.filter((part) => part.learn.card && !findCard(part.learn.card)).map((part) => part.id), parts.filter((part) => part.learn.link && !part.learn.link.href.startsWith("/")).map((part) => part.id)]).toEqual([[], []]);
+  });
+
+  // Every lesson clip and its still are in the app's public files (decision 146)
+  it("has every lesson clip's video and still in public", () => {
+    // Each clip's two files
+    const files = parts.flatMap((part) => (part.see?.clip ? [part.see.clip.src, part.see.clip.poster] : []));
+    // Confirm at least one, and none missing
+    expect([files.length > 0, files.filter((file) => !existsSync(`public${file}`))]).toEqual([true, []]);
   });
 
   // No course is a draft any more, and every lesson in a course has its own id

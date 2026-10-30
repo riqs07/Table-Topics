@@ -33,6 +33,18 @@ pnpm render-shorts
 
 The videos are written to `out/shorts/<course id>.mp4`. One on its own: `npx remotion render src/index.ts short-stop-freezing out/stop-freezing.mp4`.
 
+## Lesson clips (decision 146)
+
+A lesson clip is a 30 to 45 second, 4:5 explainer for a course part's "See it" step. The first, "Small moments count", is `src/lessons/SmallMoments.tsx`, its voiceover `public/lessons/small-moments.mp3`. Render it, then copy it and a still into the app:
+
+```bash
+npx remotion render src/index.ts lesson-small-moments out/lessons/small-moments.mp4 --crf=26
+```
+
+```bash
+cp out/lessons/small-moments.mp4 ../public/lessons/ && ffmpeg -y -ss 34.6 -i out/lessons/small-moments.mp4 -frames:v 1 -q:v 4 ../public/lessons/small-moments-poster.jpg
+```
+
 ## A new video
 
 Copy `src/BuyABeat.tsx`, write the phrases, record the voice with a short pause between phrases, save it in `public/`, point `scripts/prepare.mjs` at it, and add a `Composition` in `src/Root.tsx`. Check the frames (one from each phrase, and eight in a row mid-sentence for the mouth) before sharing.

@@ -178,6 +178,7 @@ export const ROUTES: ReadonlyArray<string> = [
   "/courses/course?id=beyond-good-you",
   "/courses/course?id=voice-lean-in",
   "/courses/part?id=rd-msg-1",
+  "/courses/part?id=sl-find-1&step=see",
   "/session?mode=story&prompt=sp03&shape=but-therefore&length=full&course=sl-but-1&try=1",
   "/courses/part?id=sf-point-1",
   "/courses/part?id=sf-point-1&step=see",

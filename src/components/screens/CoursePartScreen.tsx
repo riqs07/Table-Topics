@@ -233,7 +233,21 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
       {step === "see" && part.see && (
         <div className="mt-6 flex flex-1 flex-col">
           {/* Heading */}
-          <h1 className="font-display text-statement tracking-tight">See it done</h1>
+          <h1 className="font-display text-statement tracking-tight">{part.see.clip ? "Watch it" : "See it done"}</h1>
+          {/* Our own lesson clip (decision 146): 4:5, tap to play, its words burned in and readable below instead */}
+          {part.see.clip && (
+            <figure data-lesson-clip className="mt-5 w-full max-w-sm">
+              {/* The clip: nothing loads until it is played */}
+              <video src={part.see.clip.src} poster={part.see.clip.poster} controls playsInline preload="none" aria-label={part.see.clip.title} className="aspect-[4/5] w-full rounded-2xl border border-rule bg-ink object-cover" />
+              {/* Its words, for anyone who would rather read */}
+              <details className="mt-3 text-footnote">
+                {/* The toggle */}
+                <summary className="cursor-pointer font-semibold">Read it instead</summary>
+                {/* The words */}
+                <p className="mt-2 max-w-[52ch] text-lede">{part.see.clip.transcript}</p>
+              </details>
+            </figure>
+          )}
           {/* The video, in YouTube's privacy-enhanced player */}
           {part.see.video && (
             <div className="mt-5 aspect-video w-full max-w-2xl overflow-hidden rounded-2xl bg-ink">

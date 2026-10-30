@@ -7,12 +7,14 @@ import path from "node:path";
 
 // Frames a second, matching the composition
 const FPS = 30;
-// The first video's voiceover, and the folder of the course shorts' voiceovers (decision 145)
-const [VOICE, COURSES] = [path.resolve("public/take-a.mp3"), path.resolve("public/courses")];
+// The first video's voiceover, and the folders of the course shorts' and the lesson clips' voiceovers (decisions 145 and 146)
+const [VOICE, COURSES, LESSONS] = [path.resolve("public/take-a.mp3"), path.resolve("public/courses"), path.resolve("public/lessons")];
 // Where the prepared files go
 const OUT = path.resolve("src/generated");
 // Make the folders
 mkdirSync(path.join(OUT, "courses"), { recursive: true });
+// (the lessons')
+mkdirSync(path.join(OUT, "lessons"), { recursive: true });
 
 // The app's stylesheet
 const css = readFileSync(path.resolve("../src/app/globals.css"), "utf8");
@@ -71,6 +73,15 @@ for (const file of readdirSync(COURSES).filter((name) => name.endsWith(".mp3")).
   writeFileSync(path.join(OUT, "courses", file.replace(/\.mp3$/, ".json")), JSON.stringify(short));
   // Said
   console.log(`${file}: ${short.phrases.length} phrases over ${short.duration.toFixed(2)} s.`);
+}
+// Each lesson clip's voiceover (public/lessons/<clip id>.mp3), split the same way
+for (const file of readdirSync(LESSONS).filter((name) => name.endsWith(".mp3")).sort()) {
+  // Its timings and loudness
+  const clip = measure(path.join(LESSONS, file), { noise: -38, gap: 0.2 });
+  // Saved by clip id
+  writeFileSync(path.join(OUT, "lessons", file.replace(/\.mp3$/, ".json")), JSON.stringify(clip));
+  // Said
+  console.log(`lesson ${file}: ${clip.phrases.length} phrases over ${clip.duration.toFixed(2)} s.`);
 }
 // And the scene CSS
 console.log("Prepared the scene CSS.");

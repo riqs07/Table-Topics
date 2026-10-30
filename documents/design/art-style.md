@@ -104,3 +104,13 @@ Every course has a 15-second short (`video/src/CourseShort.tsx`, one component; 
 - **Voice:** "Mira – Bright & Friendly Narrator" (ElevenLabs, `eleven_v4`), each phrase on its own line with a direction tag where it helps (`[curious]`, `[worried]`, `[warm]`, `[confident]`, `[cheerful]`). When the voice pauses inside a line, or adds a sound of its own (a sigh), set the line's `span` or give the sound its own caption, so the phrases still line up.
 - **End card:** the course tile, "VoiceLab", the course's name and one line on it ("6 short lessons · practise out loud").
 
+### Lesson clips (decision 146)
+
+A lesson clip teaches one idea inside a course part's "See it" step. It is not an advert, so it differs from the shorts:
+
+- **4:5 (1080 by 1350), 30 to 45 seconds:** about 30 seconds of voice and a 4-second closing card.
+- **Calm:** one background per beat (not per phrase), a few beats only, slower moves. A label for the course and lesson at the top left; no app name.
+- **Captions:** one short phrase at a time, in a cream box near the bottom. The voice pauses often in a calm read, so each pause is its own caption.
+- **Teach from the Learn cards,** and end on something to do: a closing card such as "Today, notice … Tonight: write one line".
+- **Reuse the drawings:** the lesson's own tile appears once; simple props (cards that turn over, a notebook line writing itself) do the explaining.
+

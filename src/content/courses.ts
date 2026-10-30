@@ -24,8 +24,10 @@ export interface PartLearn {
   link?: { href: string; label: string };
 }
 
-// Something to see before trying: a short video, a model answer, or both (optional on a part)
+// Something to see before trying: one of our own lesson clips, a YouTube video, a model answer, or a mix (optional on a part)
 export interface PartSee {
+  // A lesson clip made for the part (decision 146): the video in public/lessons, a still to show before it plays, and its words, readable instead of watching
+  clip?: { src: string; poster: string; title: string; transcript: string };
   // A YouTube video, shown through YouTube's privacy-enhanced player, with the stretch to watch in seconds (optional)
   video?: { youtubeId: string; title: string; start?: number; end?: number };
   // A model answer: the question, the answer, and the words in it to highlight (optional)
@@ -374,7 +376,7 @@ export const COURSES: ReadonlyArray<Course> = [
         blurb: "Small moments count.",
         parts: [
           // Small moments
-          { id: "sl-find-1", title: "Small moments count", learn: { headline: "Good stories come from small moments.", body: "You don’t need a shipwreck. A story is a moment when something changed, however small: the stranger who helped with the car, the recipe that failed, the call you kept putting off. Look for the moment, not the drama.", card: "story-small-moments" }, practice: { mode: "story", promptId: "sp06", story: { length: "full" }, goal: "Tell one small moment, and say what changed.", tries: 1, measure: "length" } },
+          { id: "sl-find-1", title: "Small moments count", see: { clip: { src: "/lessons/small-moments.mp4", poster: "/lessons/small-moments-poster.jpg", title: "Small moments count", transcript: "Think nothing interesting ever happens to you? Most people do. But good stories aren’t big events. They’re small moments, when something changed. So today, notice three kinds. A surprise: something you didn’t expect. A small win: something that went right. And a line someone said, in their own words. Tonight, write one of them down. Just one line. Don’t polish it. Just the moment. Do that for a week, and you’ll have more stories than you can tell." } }, learn: { headline: "Good stories come from small moments.", body: "You don’t need a shipwreck. A story is a moment when something changed, however small: the stranger who helped with the car, the recipe that failed, the call you kept putting off. Look for the moment, not the drama.", card: "story-small-moments" }, practice: { mode: "story", promptId: "sp06", story: { length: "full" }, goal: "Tell one small moment, and say what changed.", tries: 1, measure: "length" } },
           // One thing, not a list
           { id: "sl-find-2", title: "One thing, told well", learn: { headline: "Pick one thing and tell it well.", body: "Asked about your weekend, the list (“Saw friends, did some chores, watched a film”) closes the topic. One moment, told well, opens it.", instead: "“Oh, you know, saw some friends, did some chores.”", tryThis: "“I finally fixed the bike. It took three videos and one very patient neighbour.”", card: "story-one-thing" }, practice: { mode: "smalltalk", promptId: "st02", goal: "Pick one thing from your weekend and tell it as a moment.", tries: 2, measure: "length" } },
         ],
