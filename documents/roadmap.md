@@ -82,6 +82,10 @@ The 6 course shorts (decision 145) and 37 lesson clips (decisions 146 and 147) a
 4. **Pilot with a few learners:** show a handful of clips in the lessons and see whether they press play, watch to the end, and whether the closing card's action sticks. Change the format (length, pace, the example beat) from what they do.
 5. **Then clean up:** re-voice and re-render what changes (`pnpm render-lessons <id>`), and move the 45 MB of video out of the repository to a file store before launch; think about playing them offline.
 
+## Done: Scenes and Active listening (built 2026-10-30, decisions 149 to 151)
+
+The first two of a round making the practice modes more robust. **Scenes:** choose two replies in a short conversation with one of the four people, each answered in their voice, then say the last one out loud. **Active listening:** hear a story once, answer out loud, see which details you caught and whether you heard what mattered. Both feed Today's conversation lane. The plan, and what was left for later (course parts on them, a harder "say yours first", more content), is in [plan-scenes-and-listening.md](plan-scenes-and-listening.md).
+
 ## To revisit after the MVP (agreed 2026-10-14)
 
 Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:

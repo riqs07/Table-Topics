@@ -10,7 +10,7 @@ export type FocusAreaId = "stories" | "conversation" | "spot" | "voice" | "work"
 export type PracticeGroupId = "on-the-spot" | "stories" | "conversation" | "voice";
 
 // One kind of practice the daily plan can pick (the bank's kinds, plus a lesson or a prepared speech from an area's own list)
-export type PickKind = "talk" | "response" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios" | "focus-lesson" | "focus-speech";
+export type PickKind = "talk" | "response" | "story" | "guided" | "skill" | "voice" | "pause" | "connect" | "smalltalk" | "scenarios" | "scene" | "listening" | "focus-lesson" | "focus-speech";
 
 // One area: what it is called, what it steers, and the one next thing to suggest
 export interface FocusArea {
@@ -41,8 +41,8 @@ export const MAX_FOCUS = 2;
 export const FOCUS_AREAS: ReadonlyArray<FocusArea> = [
   // Telling stories: open and guided stories (decisions 92 and 93)
   { id: "stories", name: "Telling stories", detail: "Your own stories and guided ones", phrase: "telling stories", learnSets: ["stories"], practiceGroup: "stories", picks: ["story", "guided"], lessons: [], speeches: [] },
-  // Small talk and conversations: the units, quick scenarios and everyday questions (the paid conversation partner stays a suggestion, not a plan step)
-  { id: "conversation", name: "Small talk and conversations", detail: "Everyday chats, and talking with someone", phrase: "small talk and conversations", learnSets: ["conversation", "warmth"], practiceGroup: "conversation", picks: ["connect", "smalltalk", "scenarios"], lessons: [], speeches: [] },
+  // Small talk and conversations: the units, scenes, everyday questions and Active listening (decision 151; the paid conversation partner stays a suggestion, not a plan step)
+  { id: "conversation", name: "Small talk and conversations", detail: "Everyday chats, and talking with someone", phrase: "small talk and conversations", learnSets: ["conversation", "warmth"], practiceGroup: "conversation", picks: ["connect", "scene", "smalltalk", "listening"], lessons: [], speeches: [] },
   // Thinking on my feet: Rapid Fire and prepared speeches (Q&A was removed in decision 61)
   { id: "spot", name: "Thinking on my feet", detail: "Rapid Fire and prepared speeches", phrase: "thinking on my feet", learnSets: ["point", "nerves"], practiceGroup: "on-the-spot", picks: ["talk", "response", "focus-lesson"], lessons: ["l014", "l015"], speeches: [] },
   // How I sound: voice drills, pausing and reading aloud

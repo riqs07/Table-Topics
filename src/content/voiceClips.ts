@@ -489,6 +489,237 @@ export const VOICE_CLIPS: Readonly<Record<string, VoiceClip>> = {
   "priya-27": { file: "priya-27", seconds: 4.2, text: "Oh, that's my train! Let's celebrate properly soon, okay?" },
   // Stacey, read as: I have to run, but thank you. Seriously. [warmly] That made my day.
   "priya-28": { file: "priya-28", seconds: 5.1, text: "I have to run, but thank you. Seriously. That made my day." },
+  // Scenes and Active listening (decisions 149 and 150): each line in its person's voice, one take each, the tag kept beside the words in scenes.ts and listening.ts
+  // Stacey, [excited]
+  "sn-lisbon-open": { file: "sn-lisbon-open", seconds: 5.5, text: "Okay, I have to tell someone. I got the offer. The Lisbon job! I start in March!" },
+  // Stacey, [delighted, talking fast]
+  "sn-lisbon-1a": { file: "sn-lisbon-1a", seconds: 7.0, text: "Like ten minutes ago! I was in the lift and I actually squeaked. A man in a suit looked at me like I was a kettle." },
+  // Stacey, [deflating a little]
+  "sn-lisbon-1b": { file: "sn-lisbon-1b", seconds: 5.5, text: "Oh. Right. Yeah, I guess it'll be hard at first." },
+  // Stacey, [a bit flat]
+  "sn-lisbon-1c": { file: "sn-lisbon-1c", seconds: 3.3, text: "Thanks. Yeah. It's a big deal for me." },
+  // Stacey, [thoughtful, then excited]
+  "sn-lisbon-bridge": { file: "sn-lisbon-bridge", seconds: 7.9, text: "The thing is, my mum doesn't know yet. I'm calling her tonight. She's going to cry. Good crying, I think. Mostly." },
+  // Stacey, [smiling]
+  "sn-lisbon-2a": { file: "sn-lisbon-2a", seconds: 3.2, text: "Yeah, she will. I hope so, anyway." },
+  // Stacey, [softer, honest]
+  "sn-lisbon-2b": { file: "sn-lisbon-2b", seconds: 8.1, text: "Honestly? She'll be proud, and then sad I'm going. We're really close. I think that's why I've been putting the call off." },
+  // Stacey, [deflated]
+  "sn-lisbon-2c": { file: "sn-lisbon-2c", seconds: 3.5, text: "Mm. Yeah. That's what everyone says." },
+  // Stacey, [nervous laugh]
+  "sn-lisbon-prompt": { file: "sn-lisbon-prompt", seconds: 7.3, text: "Sorry, I'm talking so much. It's just a lot. Big, scary, amazing a lot." },
+  // Stacey, [warm, grateful]
+  "sn-lisbon-warm": { file: "sn-lisbon-warm", seconds: 6.3, text: "Thank you. Honestly, saying it out loud to someone helped. I think I'm ready to call her." },
+  // Stacey, [polite]
+  "sn-lisbon-flat": { file: "sn-lisbon-flat", seconds: 4.1, text: "Anyway. Thanks. I should probably get back to my desk." },
+  // Stacey, [excited]
+  "sn-board-open": { file: "sn-board-open", seconds: 6.0, text: "Guess who's presenting the library project to the board next week? Me! They asked for me by name!" },
+  // Stacey, [happy]
+  "sn-board-1a": { file: "sn-board-1a", seconds: 2.9, text: "Thank you! I really didn't expect it." },
+  // Stacey, [deflating]
+  "sn-board-1b": { file: "sn-board-1b", seconds: 3.9, text: "Oh. Yeah. I hadn't really thought about that." },
+  // Stacey, [beaming]
+  "sn-board-1c": { file: "sn-board-1c", seconds: 7.1, text: "That the library was the best thing the studio's done this year. I had to go and stand in the stairwell for a minute." },
+  // Stacey, [nervous laugh]
+  "sn-board-bridge": { file: "sn-board-bridge", seconds: 8.1, text: "I've never presented to anyone more senior than my manager. I keep imagining my slides just not loading." },
+  // Stacey, [honest]
+  "sn-board-2a": { file: "sn-board-2a", seconds: 5.5, text: "The questions, I think. The slides I can practise. The questions could be anything." },
+  // Stacey, [polite laugh]
+  "sn-board-2b": { file: "sn-board-2b", seconds: 3.8, text: "Ha. Yeah. People keep telling me that." },
+  // Stacey, [smiles]
+  "sn-board-2c": { file: "sn-board-2c", seconds: 3.6, text: "That's true. I did draw every bookshelf." },
+  // Stacey, [hopeful]
+  "sn-board-prompt": { file: "sn-board-prompt", seconds: 5.6, text: "Okay. Big breath. I think I'm more excited than scared. Mostly." },
+  // Stacey, [delighted]
+  "sn-board-warm": { file: "sn-board-warm", seconds: 6.5, text: "Thank you. Seriously, I feel so much better. Merci, gracias, thank you!" },
+  // Stacey, [polite]
+  "sn-board-flat": { file: "sn-board-flat", seconds: 3.6, text: "Okay. Thanks. I'd better go and practise." },
+  // Chris, [tired, dry]
+  "sn-long-week-open": { file: "sn-long-week-open", seconds: 7.5, text: "Don't ask about my week. Actually, do. The deadline moved up again, and I'm the only one left on the project." },
+  // Chris, [flat, shutting down]
+  "sn-long-week-1a": { file: "sn-long-week-1a", seconds: 3.6, text: "Yeah. Maybe. I've tried that." },
+  // Chris, [opening up]
+  "sn-long-week-1b": { file: "sn-long-week-1b", seconds: 9.0, text: "Two people left in a month and nobody replaced them. I've been doing three jobs. I even missed football tonight. First time in two years." },
+  // Chris, [shrugs]
+  "sn-long-week-1c": { file: "sn-long-week-1c", seconds: 2.3, text: "Yeah. It is what it is." },
+  // Chris, [quieter, wry]
+  "sn-long-week-bridge": { file: "sn-long-week-bridge", seconds: 7.6, text: "And my mum keeps ringing to ask if I'm eating properly. Which, to be fair, I'm not. It's been cereal for dinner since Monday." },
+  // Chris, [polite]
+  "sn-long-week-2a": { file: "sn-long-week-2a", seconds: 2.5, text: "Ha. Yeah. Toast's good." },
+  // Chris, [mild]
+  "sn-long-week-2b": { file: "sn-long-week-2b", seconds: 2.9, text: "She is. She worries, that's all." },
+  // Chris, [small laugh]
+  "sn-long-week-2c": { file: "sn-long-week-2c", seconds: 6.1, text: "Ha. Honestly? I can't remember. The plants are the only ones getting looked after in my flat." },
+  // Chris, [tired, honest]
+  "sn-long-week-prompt": { file: "sn-long-week-prompt", seconds: 3.9, text: "I keep thinking it'll calm down next week. It never does." },
+  // Chris, [grateful, lighter]
+  "sn-long-week-warm": { file: "sn-long-week-warm", seconds: 4.3, text: "Thanks for listening. Really. I feel a bit less like I'm going mad." },
+  // Chris, [tired]
+  "sn-long-week-flat": { file: "sn-long-week-flat", seconds: 3.9, text: "Anyway. Enough about me. I'll survive." },
+  // Chris, [quiet]
+  "sn-the-flat-open": { file: "sn-the-flat-open", seconds: 6.0, text: "My landlord's selling the flat. I've got two months to find somewhere. Six years I've been there." },
+  // Chris, [sighs]
+  "sn-the-flat-1a": { file: "sn-the-flat-1a", seconds: 3.6, text: "Yeah. With work as well. Perfect." },
+  // Chris, [opening up]
+  "sn-the-flat-1b": { file: "sn-the-flat-1b", seconds: 8.3, text: "Gutted, honestly. It's not just a flat. Every windowsill's got my plants on it. I know the man at the corner shop by name." },
+  // Chris, [short]
+  "sn-the-flat-1c": { file: "sn-the-flat-1c", seconds: 2.6, text: "Yeah. I know. Everyone keeps saying." },
+  // Chris, [wry]
+  "sn-the-flat-bridge": { file: "sn-the-flat-bridge", seconds: 7.0, text: "The plants are the real problem. Do you know how hard it is to move forty plants? I'll need a van just for them." },
+  // Chris, [flat]
+  "sn-the-flat-2a": { file: "sn-the-flat-2a", seconds: 2.4, text: "Ha. No. Not happening." },
+  // Chris, [laughs, warmer]
+  "sn-the-flat-2b": { file: "sn-the-flat-2b", seconds: 6.8, text: "The fern. Definitely the fern. My mum gave it to me the day I moved in. It's huge now." },
+  // Chris, [small smile]
+  "sn-the-flat-2c": { file: "sn-the-flat-2c", seconds: 4.4, text: "Hopefully. Big windows. That's my one rule." },
+  // Chris, [softer]
+  "sn-the-flat-prompt": { file: "sn-the-flat-prompt", seconds: 4.1, text: "It's daft. It's only a flat. But it's been home." },
+  // Chris, [touched]
+  "sn-the-flat-warm": { file: "sn-the-flat-warm", seconds: 3.8, text: "Yeah. Thanks. It helps that someone gets it." },
+  // Chris, [quiet]
+  "sn-the-flat-flat": { file: "sn-the-flat-flat", seconds: 2.1, text: "Anyway. I'll figure it out." },
+  // Brittney, [bright]
+  "sn-first-question-open": { file: "sn-first-question-open", seconds: 4.6, text: "Hey! You're the one who knows everyone here. So what have you been up to lately?" },
+  // Brittney, [trying]
+  "sn-first-question-1a": { file: "sn-first-question-1a", seconds: 3.9, text: "Ha, fair. Work, work, work. Cool." },
+  // Brittney, [curious]
+  "sn-first-question-1b": { file: "sn-first-question-1b", seconds: 2.7, text: "Oh nice, the coast! Which bit?" },
+  // Brittney, [laughs, excited]
+  "sn-first-question-1c": { file: "sn-first-question-1c", seconds: 7.3, text: "No way, I walk past it every day! I keep saying I'll go. Were your arms dead the next day?" },
+  // Brittney, [lively, self-mocking]
+  "sn-first-question-bridge": { file: "sn-first-question-bridge", seconds: 7.6, text: "I just moved here from Denver, so I'm collecting things to do. Long story, but I joined a running club, and I don't run." },
+  // Brittney, [cheerful]
+  "sn-first-question-2a": { file: "sn-first-question-2a", seconds: 5.1, text: "Work! I'm in marketing now. Big move, but I'm loving it so far." },
+  // Brittney, [laughing]
+  "sn-first-question-2b": { file: "sn-first-question-2b", seconds: 8.9, text: "I chat at the back! It's a social club now, as far as I'm concerned. There's a pastry stop at the end. That's my real motivation." },
+  // Brittney, [polite]
+  "sn-first-question-2c": { file: "sn-first-question-2c", seconds: 3.1, text: "Ha. Yeah. It's not for everyone." },
+  // Brittney, [curious]
+  "sn-first-question-prompt": { file: "sn-first-question-prompt", seconds: 4.7, text: "Okay, your turn. What's something you're actually looking forward to this month?" },
+  // Brittney, [delighted]
+  "sn-first-question-warm": { file: "sn-first-question-warm", seconds: 4.4, text: "Oh, I love that. Okay, we're friends now. That's decided." },
+  // Brittney, [polite]
+  "sn-first-question-flat": { file: "sn-first-question-flat", seconds: 4.0, text: "Nice. Cool. Oh, I think my friend's waving at me." },
+  // Brittney, [bright]
+  "sn-what-do-you-do-open": { file: "sn-what-do-you-do-open", seconds: 7.0, text: "Hi! I'm Maya, I just started in marketing. I feel like I should know what everyone does by now. What do you do?" },
+  // Brittney, [laughs]
+  "sn-what-do-you-do-1a": { file: "sn-what-do-you-do-1a", seconds: 3.6, text: "Better than it sounds? Now I'm curious." },
+  // Brittney, [delighted]
+  "sn-what-do-you-do-1b": { file: "sn-what-do-you-do-1b", seconds: 11.2, text: "Okay, I need to hear the best complaint. But marketing! I used to be at a tiny startup where I did everything. Now I do one thing, which is weird." },
+  // Brittney, [trying]
+  "sn-what-do-you-do-1c": { file: "sn-what-do-you-do-1c", seconds: 4.6, text: "Oh, cool. Operations. So what does that involve?" },
+  // Brittney, [wry]
+  "sn-what-do-you-do-bridge": { file: "sn-what-do-you-do-bridge", seconds: 8.9, text: "Honestly, everyone here's so nice. The only one who's been rude to me since I moved is my cat. He yells at me at five every morning." },
+  // Brittney, [cheerful]
+  "sn-what-do-you-do-2a": { file: "sn-what-do-you-do-2a", seconds: 5.5, text: "I love it! Tacos everywhere. I'm trying every place I can walk to." },
+  // Brittney, [polite laugh]
+  "sn-what-do-you-do-2b": { file: "sn-what-do-you-do-2b", seconds: 3.6, text: "Ha. Fair enough. Dog people." },
+  // Brittney, [laughing]
+  "sn-what-do-you-do-2c": { file: "sn-what-do-you-do-2c", seconds: 7.8, text: "Breakfast! Always breakfast. His name's Biscuit, which is ironic, because he's a monster." },
+  // Brittney, [curious]
+  "sn-what-do-you-do-prompt": { file: "sn-what-do-you-do-prompt", seconds: 4.6, text: "Okay, quick. If I only have one free Saturday this month, where should I go?" },
+  // Brittney, [delighted]
+  "sn-what-do-you-do-warm": { file: "sn-what-do-you-do-warm", seconds: 4.2, text: "Oh, sold. I'm going. You're officially my tour guide." },
+  // Brittney, [polite]
+  "sn-what-do-you-do-flat": { file: "sn-what-do-you-do-flat", seconds: 2.5, text: "Cool, thanks. I'll look it up." },
+  // Eddy, [quiet, polite]
+  "sn-early-open": { file: "sn-early-open", seconds: 2.2, text: "Hi. Early too, then." },
+  // Eddy, [brief]
+  "sn-early-1a": { file: "sn-early-1a", seconds: 2.2, text: "Fine. Busy. Month end." },
+  // Eddy, [quiet]
+  "sn-early-1b": { file: "sn-early-1b", seconds: 0.8, text: "Mm." },
+  // Eddy, [surprised, warming]
+  "sn-early-1c": { file: "sn-early-1c", seconds: 7.7, text: "Oh. Yeah, it is. Old ones, from the fifties. I've got eleven now. My flatmate says that's ten too many." },
+  // Eddy, [a little shy]
+  "sn-early-bridge": { file: "sn-early-bridge", seconds: 7.1, text: "Sorry, I'm not great at chat. Mostly I just go home and fix radios. That's my exciting life." },
+  // Eddy, [small smile]
+  "sn-early-2a": { file: "sn-early-2a", seconds: 3.5, text: "Thanks. It's quite niche." },
+  // Eddy, [warming up]
+  "sn-early-2b": { file: "sn-early-2b", seconds: 8.3, text: "My grandad's kitchen radio. It broke when I was fourteen, and I took it apart to fix it. Took me a whole summer. It still works." },
+  // Eddy, [brief]
+  "sn-early-2c": { file: "sn-early-2c", seconds: 2.2, text: "No. I just keep them." },
+  // Eddy, [quietly enthusiastic]
+  "sn-early-prompt": { file: "sn-early-prompt", seconds: 7.0, text: "The best ones still have their original valves. When you switch them on, they glow orange for a minute before any sound comes out." },
+  // Eddy, [warm, animated]
+  "sn-early-warm": { file: "sn-early-warm", seconds: 5.9, text: "Honestly? Best feeling in the world. I'll bring a picture in. Thanks for asking. Really." },
+  // Eddy, [polite]
+  "sn-early-flat": { file: "sn-early-flat", seconds: 3.2, text: "Yeah. Anyway. Looks like the others are coming." },
+  // Eddy, [nervous]
+  "sn-before-two-open": { file: "sn-before-two-open", seconds: 4.7, text: "I'm presenting the budget at two. I'm fine. I'm mostly fine." },
+  // Eddy, [quiet]
+  "sn-before-two-1a": { file: "sn-before-two-1a", seconds: 2.7, text: "Thanks. Yeah. Confident." },
+  // Eddy, [hesitant]
+  "sn-before-two-1b": { file: "sn-before-two-1b", seconds: 4.2, text: "Maybe. I don't know. I've read it so many times." },
+  // Eddy, [honest]
+  "sn-before-two-1c": { file: "sn-before-two-1c", seconds: 6.7, text: "The questions. I know the numbers. But when someone asks me something on the spot, my mind goes white." },
+  // Eddy, [dry]
+  "sn-before-two-bridge": { file: "sn-before-two-bridge", seconds: 7.6, text: "Last time someone asked about travel costs, and I said “I'll get back to you” four times. Four. I counted." },
+  // Eddy, [small laugh, thinking]
+  "sn-before-two-2a": { file: "sn-before-two-2a", seconds: 7.8, text: "Something like, good question, here's what I know, and I'll check the rest. Which is fine, actually. That's allowed." },
+  // Eddy, [polite]
+  "sn-before-two-2b": { file: "sn-before-two-2b", seconds: 3.0, text: "Oh. Right. That sounds tough." },
+  // Eddy, [mild]
+  "sn-before-two-2c": { file: "sn-before-two-2c", seconds: 1.4, text: "Yeah. They are." },
+  // Eddy, [steadier]
+  "sn-before-two-prompt": { file: "sn-before-two-prompt", seconds: 4.7, text: "Actually, I think I've just answered my own question. Talking it through helps." },
+  // Eddy, [warmer, steady]
+  "sn-before-two-warm": { file: "sn-before-two-warm", seconds: 6.1, text: "Good question. That the budget's tight, but fair. Okay. I think I'm ready. Thanks." },
+  // Eddy, [polite]
+  "sn-before-two-flat": { file: "sn-before-two-flat", seconds: 2.9, text: "Okay. Thanks. I should go and set up." },
+  // Brittney, [excited, proud]
+  "ls-five-k": { file: "ls-five-k", seconds: 14.8, text: "So on Saturday the running club did a five K, and I actually ran the whole thing. All of it! I came last, by about ten minutes, but the whole group waited for me at the finish and clapped. I nearly cried. Then we had pastries." },
+  // Brittney, [delighted]
+  "ls-five-k-warm": { file: "ls-five-k-warm", seconds: 4.7, text: "It felt amazing. I've signed up for the next one. Don't tell anyone." },
+  // Brittney, [cheerful]
+  "ls-five-k-flat": { file: "ls-five-k-flat", seconds: 2.3, text: "Yeah, it was fun. Anyway!" },
+  // Stacey, [excited, talking fast]
+  "ls-first-sale": { file: "ls-first-sale", seconds: 14.2, text: "I was sketching in my café this morning, the one with the green door, and an old man asked if he could see. He said he used to be an architect, fifty years ago. Then he bought my drawing for five pounds. My first ever sale! I'm framing the five pound note." },
+  // Stacey, [beaming]
+  "ls-first-sale-warm": { file: "ls-first-sale-warm", seconds: 5.5, text: "He said I had a good eye for light. I'm going to be insufferable about it all week." },
+  // Stacey, [happy]
+  "ls-first-sale-flat": { file: "ls-first-sale-flat", seconds: 2.6, text: "Yeah! Fun, right? Anyway." },
+  // Chris, [dry, deadpan]
+  "ls-nine-one": { file: "ls-nine-one", seconds: 12.2, text: "Football last night was a disaster. We lost nine one. Nine one! And I scored the one goal, but it was in our own net. The team have given me a new nickname. I'm not telling you what it is." },
+  // Chris, [sighs, amused]
+  "ls-nine-one-warm": { file: "ls-nine-one-warm", seconds: 6.0, text: "Fine. It's “Backwards Chris”. On the team chat. Forever." },
+  // Chris, [dry]
+  "ls-nine-one-flat": { file: "ls-nine-one-flat", seconds: 2.4, text: "Yeah. Not my finest hour." },
+  // Eddy, [quiet, building enthusiasm]
+  "ls-radio": { file: "ls-radio", seconds: 28.1, text: "Last Sunday I went to the flea market by the canal, early, about seven. A man was selling a box of junk, and right at the bottom was a radio from 1956. The exact model my grandad had in his kitchen. It was cracked down one side, and the dial was missing. He wanted twenty pounds. I paid it without even haggling, which I never do. I've worked on it every evening since. Last night, for the first time, it hissed. Just a hiss. But that means it's alive." },
+  // Eddy, [softly, warm]
+  "ls-radio-warm": { file: "ls-radio-warm", seconds: 5.3, text: "Honestly, I just sat there grinning at a hiss. Grandad would've laughed at me." },
+  // Eddy, [brief]
+  "ls-radio-flat": { file: "ls-radio-flat", seconds: 1.5, text: "Yeah. It's a good one." },
+  // Stacey, [warm, delighted]
+  "ls-whale": { file: "ls-whale", seconds: 23.6, text: "The children's library opened on Saturday, the one I designed. There's a reading nook shaped like a whale, and I was so worried the kids would think it was silly. Within ten minutes there were six kids inside the whale, and one little girl refused to come out, even for cake. Her dad had to read her three books in there. Then the head librarian hugged me. I've been smiling for two days." },
+  // Stacey, [delighted]
+  "ls-whale-warm": { file: "ls-whale-warm", seconds: 6.3, text: "Mine! I drew it on a napkin. I nearly didn't show anyone. Thank you for asking." },
+  // Stacey, [cheerful]
+  "ls-whale-flat": { file: "ls-whale-flat", seconds: 2.3, text: "Yeah, it was a good day!" },
+  // Chris, [warm, amused]
+  "ls-seventy": { file: "ls-seventy", seconds: 25.2, text: "It was my mum's seventieth on Sunday. My brother organised a surprise party at her favourite Italian place, and my job was getting her there without her guessing. I told her we were going to look at a new flat for me. She was so excited about the flat she was almost disappointed when everyone jumped out. Almost. Then she saw her sister had flown in from Dublin, and she just stood there holding the menu, crying. I've never seen her lost for words." },
+  // Chris, [softer]
+  "ls-seventy-warm": { file: "ls-seventy-warm", seconds: 5.5, text: "Three years. They didn't let go of each other all night. Best birthday she's had." },
+  // Chris, [easy]
+  "ls-seventy-flat": { file: "ls-seventy-flat", seconds: 1.5, text: "Yeah. Good night, that." },
+  // Brittney, [bright, then a little unsure]
+  "ls-sister": { file: "ls-sister", seconds: 26.5, text: "My little sister's coming to visit next weekend, her first time seeing my new place. I've planned everything. Friday night, tacos at the place with the neon cactus. Saturday morning, the running club, which she'll mock me for. Saturday night, a comedy show. The thing is, we haven't spent a whole weekend together since I moved, and the last time we really talked, we kind of argued about me leaving Denver. So, you know. I've planned a lot." },
+  // Brittney, [quieter, honest]
+  "ls-sister-warm": { file: "ls-sister-warm", seconds: 7.0, text: "Nervous, honestly. I want her to see I'm happy here. Maybe I'll leave Sunday free. Just to talk." },
+  // Brittney, [bright, brushing it off]
+  "ls-sister-flat": { file: "ls-sister-flat", seconds: 3.1, text: "Yeah! It'll be fun. Busy, but fun." },
+  // Stacey, [light, but a little flat]
+  "ls-last-day": { file: "ls-last-day", seconds: 22.3, text: "So Friday was my last day at the old job. They did drinks, which was lovely, and my manager made a speech, and everyone signed a card with a little drawing of me. Very flattering. Huge hair. And then I went home and sat on the floor of my new flat with the card for, I don't know, an hour? It's fine. The new job's on Monday. It's all very exciting." },
+  // Stacey, [relieved, honest]
+  "ls-last-day-warm": { file: "ls-last-day-warm", seconds: 4.8, text: "So much. I think I needed someone to say that. Thank you." },
+  // Stacey, [bright, a bit forced]
+  "ls-last-day-flat": { file: "ls-last-day-flat", seconds: 3.1, text: "Yeah. Anyway, new chapter!" },
+  // Eddy, [quiet, even, careful]
+  "ls-new-team": { file: "ls-new-team", seconds: 18.5, text: "My manager asked if I'd like to lead the new forecasting team. It's more money, which is good, and the team's good. I'd be presenting to the directors every month. Every month. I said I'd think about it. My flatmate says it's obvious and I should say yes. He's probably right. He usually is." },
+  // Eddy, [a small, surprised laugh]
+  "ls-new-team-warm": { file: "ls-new-team-warm", seconds: 6.4, text: "Yeah. It is. Nobody else noticed that. Maybe I'll ask if I can build up to it." },
+  // Eddy, [quiet]
+  "ls-new-team-flat": { file: "ls-new-team-flat", seconds: 2.5, text: "Yeah. I'll probably say yes." },
 };
 
 // A line's saved recording: its address and length, or null when it has none

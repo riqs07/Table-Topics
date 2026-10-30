@@ -10,7 +10,7 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load an icon for each kind of practice
-import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TimerIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCounterClockwiseIcon, ScrollIcon, BookOpenTextIcon, ListNumbersIcon, MaskHappyIcon, PresentationIcon, MicrophoneStageIcon, CaretRightIcon, LightningIcon, NotePencilIcon, PauseIcon, RepeatIcon, SignpostIcon, SpeakerHighIcon, EarIcon, ChatsCircleIcon, SunHorizonIcon, TextAaIcon, TimerIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the Connect units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
 // Load the next Connect unit (decision 95)
@@ -289,6 +289,10 @@ export function PracticeScreen(props: ScreenProps) {
             ways={[
               // A whole conversation with one of four people (decision 83)
               { name: "Talk with someone", detail: "Four people, 3 minutes, out loud", href: "/conversations", icon: UsersThreeIcon, scene: "conversation" },
+              // A scene: choose replies, then say the last one (decision 149)
+              { name: "Scenes", detail: "Choose your replies, then say the last one", href: "/scenes", icon: ChatsCircleIcon, scene: "scenes" },
+              // Active listening: hear a story, answer to what mattered (decision 150)
+              { name: "Active listening", detail: "Hear a story once, answer to what mattered", href: "/listening", icon: EarIcon, scene: "listening" },
               // The next unit, straight to its page, with its next lesson or what you do in it
               { name: unit.unit.name, detail: unit.nextLesson ? `Next: lesson ${unit.nextLesson.number}, ${unit.nextLesson.title}` : unit.unit.youDo, href: `/small-talk/unit?id=${unit.unit.id}`, icon: UNIT_ICONS[unit.unit.id] },
               // One moment a day

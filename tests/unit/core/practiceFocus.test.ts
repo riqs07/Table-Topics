@@ -24,7 +24,7 @@ describe("practice focus", () => {
     expect([mapping, unknown, FOCUS_AREAS.map((area) => area.name)]).toEqual([
       {
         stories: ["stories", ["stories"], ["story", "guided"]],
-        conversation: ["conversation", ["conversation", "warmth"], ["connect", "smalltalk", "scenarios"]],
+        conversation: ["conversation", ["conversation", "warmth"], ["connect", "scene", "smalltalk", "listening"]],
         spot: ["on-the-spot", ["point", "nerves"], ["talk", "response", "focus-lesson"]],
         voice: ["voice", ["voice"], ["voice", "pause", "skill"]],
         work: ["on-the-spot", ["work", "point"], ["focus-lesson", "focus-speech", "talk"]],

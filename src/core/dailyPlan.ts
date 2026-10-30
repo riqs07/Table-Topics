@@ -18,9 +18,12 @@ import { SMALL_TALK_LESSONS, UNITS, drillForDay, findUnit, smallTalkForDay, unit
 // Load the next Learn card
 import { nextCard, type LearnProgress } from "@/core/learn";
 // Load the record types
-import type { ScenarioProgress, SessionMode, SessionRecord } from "@/data/records";
+import type { ListenProgress, ScenarioProgress, SceneProgress, SessionMode, SessionRecord } from "@/data/records";
 // Load how many scenarios a quick round holds
 import { QUICK_COUNT } from "@/core/scenarios";
+// Load the next scene and the next story (decisions 149 and 150)
+import { nextScene, sceneHref } from "@/core/scenes";
+import { listenHref, nextStory } from "@/core/listening";
 // Load the step type and the rules about steps, which pages use without the plan (decision 88)
 import { stepKey, type PlanLane, type PlanStep } from "@/core/planSteps";
 // The step type and rules, for code that already loads the plan
@@ -53,6 +56,10 @@ export interface PlanInput {
   checkIn?: { id: string; week: number; baseline: boolean } | null;
   // Progress through guided courses (decision 131; only parts finished before today are used, so the plan stays the same all day)
   courses?: CourseProgress;
+  // How each scene and story has gone (decisions 149 and 150; read as it stood before today, so the plan stays the same all day)
+  scenes?: Readonly<Record<string, SceneProgress>>;
+  // (stories)
+  listening?: Readonly<Record<string, ListenProgress>>;
 }
 
 // The order speeches are offered in when none is under way: short and familiar first
@@ -147,8 +154,8 @@ const GROUPS: ReadonlyArray<{ lane: PlanLane; kinds: ReadonlyArray<PickKind> }> 
   { lane: "spot", kinds: ["talk", "story", "talk", "guided", "response"] },
   // Delivery: the week's focus drill, a voice drill (the voice modes in turn; decision 80), a pause drill
   { lane: "delivery", kinds: ["skill", "voice", "pause"] },
-  // Conversation: the next Connect lesson or drill, a round of quick scenarios, an everyday question (decision 72)
-  { lane: "connection", kinds: ["connect", "scenarios", "smalltalk"] },
+  // Conversation: the next Connect lesson or drill, a scene, an everyday question, an Active listening story (decision 151; the round of quick scenarios was here, decision 72)
+  { lane: "connection", kinds: ["connect", "scene", "smalltalk", "listening"] },
 ];
 
 // The two groups the day picks from, taken in turn by day, so each group comes up two days in three
@@ -179,6 +186,20 @@ function kindFor(group: number, day: Date, firstDays: boolean, offset = 0): Pick
   const appearance = cycle * 2 + earlier + offset;
   // The kind, wrapping round
   return kinds[((appearance % kinds.length) + kinds.length) % kinds.length]!;
+}
+
+// Progress as it stood before today, so the plan stays the same all day: entries first played today are left out, and one played again today keeps its first time in place of today's
+function progressBeforeToday<T extends { firstAt: string; lastAt: string }>(progress: Readonly<Record<string, T>>, day: Date): Record<string, T> {
+  // Today's key
+  const today = dayKey(day);
+  // Each entry, as it stood
+  return Object.fromEntries(
+    Object.entries(progress)
+      // Played before today (a damaged entry without a time is left out)
+      .filter(([, entry]) => typeof entry?.firstAt === "string" && dayKey(new Date(entry.firstAt)) < today)
+      // Today's play put back to the first time
+      .map(([id, entry]) => [id, typeof entry.lastAt === "string" && dayKey(new Date(entry.lastAt)) < today ? entry : { ...entry, lastAt: entry.firstAt }]),
+  );
 }
 
 // The step for a kind of practice on a day (a focus's own lesson or speech is taken from its lists, in turn)
@@ -238,6 +259,20 @@ function pickStep(kind: PickKind, lane: PlanLane, input: PlanInput, before: Read
   }
   // The next Connect lesson or drill
   if (kind === "connect") return { ...connection(input, before), lane };
+  // A scene: the next one, by its progress as it stood before today (decision 149)
+  if (kind === "scene") {
+    // The scene
+    const scene = nextScene(progressBeforeToday(input.scenes ?? {}, input.day));
+    // The step
+    return { lane, kind: "scene", label: "Scene", title: scene.title, mode: null, promptId: scene.id, minutes: 2, href: sceneHref(scene.id) };
+  }
+  // An Active listening story: the next one, by its progress as it stood before today (decision 150)
+  if (kind === "listening") {
+    // The story
+    const story = nextStory(progressBeforeToday(input.listening ?? {}, input.day));
+    // The step (its name stays hidden until afterwards)
+    return { lane, kind: "listening", label: "Active listening", title: "Hear a story, answer to what mattered", mode: null, promptId: story.id, minutes: 2, href: listenHref(story.id) };
+  }
   // A round of quick scenarios: choose the best reply, then say it (decision 72)
   if (kind === "scenarios") return { lane, kind: "scenarios", label: "Quick scenarios", title: "Choose the best reply, then say it", mode: null, promptId: "scenarios", minutes: 2, href: "/learn/scenarios" };
   // An everyday small-talk question
@@ -438,8 +473,8 @@ export function moreToDo(input: PlanInput, plan: ReadonlyArray<PlanStep>): PlanS
   return [...practice, ...learn].slice(0, 4);
 }
 
-// Which steps were done today: a session today of the same kind and prompt, a card read today (or, on older progress, its recall answered today), a round of scenarios answered today, a warm-up finished today, today's check-in with every part done or skipped, or a course part finished today
-export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}, scenarios: Readonly<Record<string, ScenarioProgress>> = {}, warmupDays: ReadonlyArray<string> = [], checkInFinished = false, courses: CourseProgress = {}): boolean[] {
+// Which steps were done today: a session today of the same kind and prompt, a card read today (or, on older progress, its recall answered today), a round of scenarios answered today, a scene or story finished today, a warm-up finished today, today's check-in with every part done or skipped, or a course part finished today
+export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyArray<SessionRecord>, day: Date, learn: LearnProgress = {}, scenarios: Readonly<Record<string, ScenarioProgress>> = {}, warmupDays: ReadonlyArray<string> = [], checkInFinished = false, courses: CourseProgress = {}, played: { scenes?: Readonly<Record<string, SceneProgress>>; listening?: Readonly<Record<string, ListenProgress>> } = {}): boolean[] {
   // Today's sessions
   const today = sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(day));
   // Each step
@@ -450,6 +485,13 @@ export function planProgress(plan: ReadonlyArray<PlanStep>, sessions: ReadonlyAr
     if (step.kind === "checkin") return checkInFinished;
     // A course part: finished today (decision 131)
     if (step.kind === "course") return !!courses[step.promptId] && dayKey(new Date(courses[step.promptId]!.doneAt)) === dayKey(day);
+    // A scene or a story: that one finished today (decisions 149 and 150)
+    if (step.kind === "scene" || step.kind === "listening") {
+      // Its progress
+      const entry = (step.kind === "scene" ? played.scenes : played.listening)?.[step.promptId];
+      // Finished today
+      return typeof entry?.lastAt === "string" && dayKey(new Date(entry.lastAt)) === dayKey(day);
+    }
     // Scenarios: a round's worth answered today
     if (step.kind === "scenarios") return Object.values(scenarios).filter((item) => dayKey(new Date(item.lastAt)) === dayKey(day)).length >= QUICK_COUNT;
     // A card's progress

@@ -10,8 +10,8 @@ export type PlanLane = "learn" | "warmup" | "spot" | "delivery" | "connection" |
 export interface PlanStep {
   // Its lane
   lane: PlanLane;
-  // A recorded session, a Learn card, a round of quick scenarios (decision 72), a warm-up routine, which records nothing (decision 80), the weekly check-in, four recordings in a row (decision 100), or the next part of a guided course (decision 131)
-  kind: "session" | "card" | "scenarios" | "warmup" | "checkin" | "course";
+  // A recorded session, a Learn card, a round of quick scenarios (decision 72), a warm-up routine, which records nothing (decision 80), the weekly check-in, four recordings in a row (decision 100), the next part of a guided course (decision 131), a scene (decision 149) or an Active listening story (decision 150), which save no session
+  kind: "session" | "card" | "scenarios" | "warmup" | "checkin" | "course" | "scene" | "listening";
   // The step's short name, such as "Warm up"
   label: string;
   // What it is, such as "Inaugural Address, part 3 of 12"

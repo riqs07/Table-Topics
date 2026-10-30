@@ -4,7 +4,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 // The scenes there are, one per kind of practice that has one
-export type SceneName = "rapid-fire" | "prepared-speech" | "read-aloud" | "four-three-two" | "free-talk" | "short-speech" | "your-talk" | "story" | "tell-again" | "guided-stories" | "moment" | "conversation" | "warm-up" | "learn";
+export type SceneName = "rapid-fire" | "prepared-speech" | "read-aloud" | "four-three-two" | "free-talk" | "short-speech" | "your-talk" | "story" | "tell-again" | "guided-stories" | "moment" | "conversation" | "warm-up" | "learn" | "scenes" | "listening";
 
 // How much a scene moves: all the time, a few rounds then rest, or only blinking
 export type SceneMotion = "loop" | "few" | "still";
@@ -13,7 +13,7 @@ export type SceneMotion = "loop" | "few" | "still";
 export const BLOB = "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z";
 
 // The blob's faces, each drawn 48 by 34 and placed on the outline
-export type FaceName = "ready" | "wow" | "sing" | "happy" | "down" | "up" | "wonder" | "puff" | "side" | "side-left";
+export type FaceName = "ready" | "wow" | "sing" | "happy" | "down" | "up" | "wonder" | "puff" | "side" | "side-left" | "flat";
 
 // One face's features, in the current colour
 export function Face({ face }: { face: FaceName }) {
@@ -54,6 +54,17 @@ export function Face({ face }: { face: FaceName }) {
         </>
       )}
       {/* Looking down, reading */}
+      {/* Flat (decision 149): open eyes that blink and a straight mouth, for someone a reply left a little deflated, never cross */}
+      {face === "flat" && (
+        <>
+          {/* The left eye */}
+          <ellipse className="s-blink fill-current" cx="12" cy="11" rx="5" ry="6.5" />
+          {/* The right eye */}
+          <ellipse className="s-blink fill-current" cx="36" cy="11" rx="5" ry="6.5" />
+          {/* The mouth, straight */}
+          <path className="stroke-current" d="M18 28h12" />
+        </>
+      )}
       {face === "down" && (
         <>
           {/* The eyes */}
@@ -103,8 +114,8 @@ export function Face({ face }: { face: FaceName }) {
   );
 }
 
-// The blob at a place and size, warm or (for a second blob) in the accent
-function Blob({ x, y, r, face, accent = false }: { x: number; y: number; r: number; face: FaceName; accent?: boolean }) {
+// The blob at a place and size, warm or (for a second blob) in the accent (also used by the people in a scene, decision 149)
+export function Blob({ x, y, r, face, accent = false }: { x: number; y: number; r: number; face: FaceName; accent?: boolean }) {
   // The outline, then the face in the colour that sits on it
   return (
     <g transform={`translate(${x} ${y}) scale(${r / 100})`}>
@@ -416,6 +427,41 @@ const SCENES: Record<SceneName, () => ReactNode> = {
       <path className={LINE} d="M84 34l4 5 4-5" />
       {/* Its base */}
       <rect className={`${LINE} fill-accent`} x="82" y="48" width="12" height="9" rx="2" />
+    </>
+  ),
+  // Scenes (decision 149): the blob thinking, three replies to choose from, the chosen one swinging out
+  "scenes": () => (
+    <>
+      {/* The shadow */}
+      <Shadow x={36} y={106} width={22} />
+      {/* The blob, bobbing, wondering which to say */}
+      <Move loop="s-bob"><Blob x={36} y={80} r={24} face="wonder" /></Move>
+      {/* The two replies not chosen */}
+      <path className={`${LINE} fill-card`} d="M70 20h36a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H70a5 5 0 0 1-5-5v-8a5 5 0 0 1 5-5z" />
+      {/* (the lower one) */}
+      <path className={`${LINE} fill-card`} d="M70 76h36a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H70a5 5 0 0 1-5-5v-8a5 5 0 0 1 5-5z" />
+      {/* The chosen reply, swinging out from its left edge */}
+      <Move loop="s-swing" origin="62px 57px">
+        {/* The card */}
+        <path className={`${LINE} fill-accent`} d="M66 48h40a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H66a5 5 0 0 1-5-5v-8a5 5 0 0 1 5-5z" />
+        {/* Its line of words */}
+        <path className="stroke-accent-ink" strokeWidth={3} d="M70 57h28" />
+      </Move>
+    </>
+  ),
+  // Active listening (decision 150): the other person telling a story, sound arcs reaching the blob, who leans in
+  "listening": () => (
+    <>
+      {/* The shadows */}
+      <Shadow x={30} y={106} width={20} />
+      {/* (yours) */}
+      <Shadow x={88} y={106} width={22} />
+      {/* Them, bobbing as they talk */}
+      <Move loop="s-bob"><Blob x={30} y={82} r={20} face="sing" accent /></Move>
+      {/* The sound, travelling across, one arc after another */}
+      {["M54 70q6 10 0 20", "M62 64q9 16 0 32", "M70 58q12 22 0 44"].map((d, index) => <path key={d} className="s-move s-gust stroke-accent" strokeWidth={3} style={{ animationDelay: `${index * 0.4}s` }} d={d} />)}
+      {/* You, leaning in to listen */}
+      <Move loop="s-look"><Blob x={88} y={78} r={24} face="side-left" /></Move>
     </>
   ),
   // The warm-up: cheeks puffing, gusts of air blowing out

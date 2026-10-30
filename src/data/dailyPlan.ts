@@ -80,11 +80,11 @@ export async function loadDailyPlan(repository: Repository, now: Date): Promise<
   // Today's check-in, on a check-in day
   const checkIn = schedule.due ? { id, week: weekFor(checkIns, id), baseline: schedule.baseline, late: schedule.late, parts: partStatuses(started) } : null;
   // The steps
-  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [], practiceFocus: readPracticeFocus(settings.practiceFocus) ?? [], checkIn, courses: readCourseProgress(settings.courses) };
+  const input = { day: now, sessions, focusId: focus.id, nextTalk: talk ? { id: talk.talk.id, title: talk.talk.title, headline: talk.headline } : null, learn: settings.learn ?? {}, warmupDays: settings.warmupDays ?? [], practiceFocus: readPracticeFocus(settings.practiceFocus) ?? [], checkIn, courses: readCourseProgress(settings.courses), scenes: settings.scenes ?? {}, listening: settings.listening ?? {} };
   // The steps
   const steps = dailyPlan(input);
   // Hand back the steps, what is done, today's sessions, more to do afterwards, and the check-in (only when it is in the steps: never on day one)
-  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? [], isFinished(started), input.courses), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps), suggestion: todaysFocusSuggestion(input), checkIn: steps.some((step) => step.kind === "checkin") ? checkIn : null, revisit: revisitFor(input.courses, now) };
+  return { steps, done: planProgress(steps, sessions, now, settings.learn ?? {}, settings.scenarios ?? {}, settings.warmupDays ?? [], isFinished(started), input.courses, { scenes: input.scenes, listening: input.listening }), skipped: planSkipped(steps, settings.skipped, now), today: sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(now)), more: moreToDo(input, steps), suggestion: todaysFocusSuggestion(input), checkIn: steps.some((step) => step.kind === "checkin") ? checkIn : null, revisit: revisitFor(input.courses, now) };
 }
 
 // The course prompt due to come back today, the oldest first, with its question and where to answer it (decision 131)

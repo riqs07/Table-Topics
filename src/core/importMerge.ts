@@ -1,7 +1,7 @@
 // How an imported backup joins what is already on this device (decision 86): nothing on the device is lost or unlinked. A record already here is kept and only gains what it lacks from the file; settings take the file's choices but keep any the file does not have; progress lists are joined, keeping the further-on entry for each item
 
 // Load the record types
-import type { ChallengeRecord, LearnCardProgress, MissionRecord, ScenarioProgress, SessionRecord, SettingsRecord, TalkRecord } from "@/data/records";
+import type { ChallengeRecord, LearnCardProgress, ListenProgress, MissionRecord, ScenarioProgress, SceneProgress, SessionRecord, SettingsRecord, TalkRecord } from "@/data/records";
 // Load the reader that makes a saved focus safe (decision 97)
 import { readPracticeFocus } from "@/core/practiceFocus";
 // Load the check-in settings' reader and join (decision 100)
@@ -95,6 +95,10 @@ export function mergeSettings(existing: SettingsRecord, incoming: SettingsRecord
   const learn = joinMaps(existing.learn, incoming.learn, (a, b) => (learnedAt(b) > learnedAt(a) ? b : a));
   // Scenario questions: both, the more recently answered where both have one
   const scenarios = joinMaps<ScenarioProgress>(existing.scenarios, incoming.scenarios, (a, b) => (b.lastAt > a.lastAt ? b : a));
+  // Scenes and Active listening stories: both, the more recently played where both have one (decisions 149 and 150)
+  const scenes = joinMaps<SceneProgress>(existing.scenes, incoming.scenes, (a, b) => (b.lastAt > a.lastAt ? b : a));
+  // (stories)
+  const listening = joinMaps<ListenProgress>(existing.listening, incoming.listening, (a, b) => (b.lastAt > a.lastAt ? b : a));
   // Words to watch: both, the higher count where both have one
   const wordsToWatch = joinMaps(existing.wordsToWatch, incoming.wordsToWatch, (a, b) => Math.max(a, b));
   // Mission tries: both, the further-on where both have one
@@ -112,5 +116,5 @@ export function mergeSettings(existing: SettingsRecord, incoming: SettingsRecord
   // (without the file's unchecked copy)
   delete merged.checkIn;
   // Each joined part, only where there is one
-  return { ...merged, ...(checkIn ? { checkIn } : {}), ...(practiceFocus ? { practiceFocus } : {}), ...(learn ? { learn } : {}), ...(scenarios ? { scenarios } : {}), ...(wordsToWatch ? { wordsToWatch } : {}), ...(missions ? { missions } : {}), ...(courses && Object.keys(courses).length > 0 ? { courses } : {}), ...(warmupDays ? { warmupDays } : {}), ...(skipped ? { skipped } : {}) };
+  return { ...merged, ...(checkIn ? { checkIn } : {}), ...(practiceFocus ? { practiceFocus } : {}), ...(learn ? { learn } : {}), ...(scenarios ? { scenarios } : {}), ...(scenes ? { scenes } : {}), ...(listening ? { listening } : {}), ...(wordsToWatch ? { wordsToWatch } : {}), ...(missions ? { missions } : {}), ...(courses && Object.keys(courses).length > 0 ? { courses } : {}), ...(warmupDays ? { warmupDays } : {}), ...(skipped ? { skipped } : {}) };
 }

@@ -95,6 +95,13 @@ export const ROUTES: ReadonlyArray<string> = [
   "/conversations",
   "/conversations/talk?id=maya",
   "/conversations/talk?id=missing",
+  // Scenes and Active listening: the lists, one of each, and one that does not exist (decisions 149 and 150)
+  "/scenes",
+  "/scenes/play?id=sn-lisbon",
+  "/scenes/play?id=missing",
+  "/listening",
+  "/listening/play?id=ls-five-k",
+  "/listening/play?id=missing",
   // Learn, a card, and the review
   "/learn",
   "/learn/card?id=body-93",
@@ -210,6 +217,9 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/small-talk", current: "Practice" },
   // Talk with someone belongs to Practice (decision 83)
   { path: "/conversations", current: "Practice" },
+  // Scenes and Active listening belong to Practice (decisions 149 and 150)
+  { path: "/scenes", current: "Practice" },
+  { path: "/listening", current: "Practice" },
   // Learn marks Learn
   { path: "/learn", current: "Learn" },
   // History lives in Settings, so no tab is marked

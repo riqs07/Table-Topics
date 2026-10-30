@@ -10,6 +10,9 @@ import { ASKING_DRILLS, LISTENING_STORIES, NEWS_DRILLS, SMALL_TALK_LESSONS, SMAL
 import { SHADOW_PASSAGES, shadowSteps } from "@/content/voice";
 // Load the conversation characters (decision 83)
 import { PERSONAS } from "@/content/conversations";
+// Load the scenes and the Active listening stories (decisions 149 and 150)
+import { SCENES, sceneLines } from "@/content/scenes";
+import { LISTEN_STORIES, listenLines } from "@/content/listening";
 
 // Where the recordings are kept
 const FOLDER = "public/clips";
@@ -24,6 +27,10 @@ const LINES: ReadonlyArray<{ id: string; text: string }> = [
   ...SHADOW_PASSAGES.flatMap((passage) => shadowSteps(passage).map((step) => ({ id: step.voiceId, text: step.text }))),
   // Conversations: every line each character can say
   ...PERSONAS.flatMap((character) => character.lines.map((line) => ({ id: line.id, text: line.text }))),
+  // Scenes: every line of every scene (decision 149)
+  ...SCENES.flatMap(sceneLines).map((line) => ({ id: line.id, text: line.text })),
+  // Active listening: each story and its two closings (decision 150)
+  ...LISTEN_STORIES.flatMap(listenLines).map((line) => ({ id: line.id, text: line.text })),
 ];
 
 // Group the checks about the saved recordings (decision 82)
@@ -35,7 +42,7 @@ describe("VOICE_CLIPS", () => {
     // Recordings with no line
     const extra = Object.keys(VOICE_CLIPS).filter((id) => !LINES.some((line) => line.id === id));
     // None of either
-    expect([wrong, extra, LINES.length]).toEqual([[], [], 232]);
+    expect([wrong, extra, LINES.length]).toEqual([[], [], 347]);
   });
 
   // Every file named is there, each file is used, and each length matches its file

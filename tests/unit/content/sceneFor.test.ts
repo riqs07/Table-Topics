@@ -33,7 +33,9 @@ describe("sceneFor", () => {
       stepScene(step("scenarios", null)),
       stepScene(step("course", "talk")),
       stepScene(step("card", null, "Learn")),
-    ]).toEqual(["rapid-fire", "prepared-speech", "read-aloud", "story", "guided-stories", "free-talk", "conversation", "warm-up", "conversation", "rapid-fire", "learn"]);
+      stepScene(step("scene", null, "Scene")),
+      stepScene(step("listening", null, "Active listening")),
+    ]).toEqual(["rapid-fire", "prepared-speech", "read-aloud", "story", "guided-stories", "free-talk", "conversation", "warm-up", "conversation", "rapid-fire", "learn", "scenes", "listening"]);
   });
 
   // Kinds with no scene yet keep their number

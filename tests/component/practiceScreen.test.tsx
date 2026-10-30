@@ -59,9 +59,9 @@ describe("PracticeScreen", () => {
     const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
     // Confirm the stories group, second of the groups (the courses' heading sits above them, decision 131), with today's story, telling one again and guided stories, the moments under "See all" (decision 92)
     expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses").indexOf("Tell stories")]).toEqual([[[undefined, "/stories"], ["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"]], 1]);
-    // Confirm the other groups: the voice group's warm-up and the first two modes (clear sounds with the word lists as one row), and speaking on the spot's three
+    // Confirm the other groups: everyday conversation's three (Scenes and Active listening after Talk with someone, decisions 149 and 150; the next unit and the moment under "See all"), the voice group's warm-up and the first two modes (clear sounds with the word lists as one row), and speaking on the spot's three
     expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Speak on the spot")]).toEqual([
-      [[undefined, "/small-talk"], ["Talk with someone", "/conversations"], ["Answering", "/small-talk/unit?id=answering"], ["One moment a day", "/session?mode=moment&prompt=moment"]],
+      [[undefined, "/small-talk"], ["Talk with someone", "/conversations"], ["Scenes", "/scenes"], ["Active listening", "/listening"]],
       [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Volume", "/voice/drill?id=v01"]],
       [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Read aloud", "/skills"]],
     ]);
@@ -116,9 +116,11 @@ describe("PracticeScreen", () => {
   });
 
   // The conversation group shows the next unit only, with "See all" for the seven (decision 95): once the first four units' lessons are done, Reading the room and its first lesson
-  it("shows the next conversation unit, with its next lesson", async () => {
-    // A repository with every lesson of the first four units answered
+  it("shows the next conversation unit, with its next lesson, when conversation is the focus", async () => {
+    // A repository with every lesson of the first four units answered, and conversation as the focus (which shows a fourth row, where the unit sits since decision 149)
     const repository = createRepository(new MemoryStore());
+    // The focus
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["conversation"] });
     // Save one answer per lesson
     for (const lesson of SMALL_TALK_LESSONS.filter((item) => ["answering", "asking", "listening", "news"].includes(item.unit))) await repository.saveSession(makeSession({ id: lesson.id, mode: "smalltalk", promptId: lesson.id }));
     // Draw the page

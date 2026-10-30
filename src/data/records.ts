@@ -466,6 +466,42 @@ export interface ScenarioProgress {
   lastAt: string;
 }
 
+// How a scene has gone (decision 149), kept with the settings
+export interface SceneProgress {
+  // How many times it was played to the end
+  plays: number;
+  // When it was first finished (ISO text)
+  firstAt: string;
+  // When it was last finished (ISO text)
+  lastAt: string;
+  // The warmth the last play's choices left
+  lastWarmth: number;
+  // The best warmth so far
+  bestWarmth: number;
+  // How many spoken checks passed last time
+  lastPassed: number;
+  // How many spoken checks there were
+  checkCount: number;
+}
+
+// How an Active listening story has gone (decision 150), kept with the settings
+export interface ListenProgress {
+  // How many times it was answered
+  plays: number;
+  // When it was first answered (ISO text)
+  firstAt: string;
+  // When it was last answered (ISO text)
+  lastAt: string;
+  // How many details the last reply picked up
+  lastCaught: number;
+  // The most details picked up so far
+  bestCaught: number;
+  // How many details the story has
+  detailCount: number;
+  // Whether the last reply went to what mattered
+  lastCore: boolean;
+}
+
 // A conversation's timing measures (decision 120), worked out from its turns' times: null where the turns were not timed
 export interface ConversationTimingRaw {
   // Median gap from the end of their line to the start of your reply, in seconds, or null
@@ -498,6 +534,10 @@ export interface SettingsRecord {
   missions?: MissionRecord[];
   // Scenario questions: how each went, by scenario id (missing until the first is answered)
   scenarios?: Record<string, ScenarioProgress>;
+  // Scenes: how each went, by scene id (decision 149; missing until the first is finished)
+  scenes?: Record<string, SceneProgress>;
+  // Active listening: how each story went, by story id (decision 150; missing until the first is answered)
+  listening?: Record<string, ListenProgress>;
   // Steps of today's practice put off with "Can't speak now?": the day (YYYY-MM-DD) and each step's key; another day's list means nothing (decision 77; missing until the first skip)
   skipped?: { day: string; steps: string[] };
   // Hide the run and the week's squares on Today (decision 78; missing means shown)

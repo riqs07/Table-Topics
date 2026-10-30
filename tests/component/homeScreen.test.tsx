@@ -16,6 +16,8 @@ import { firstRead } from "@/core/learn";
 // Load the scenarios and the way answers are saved
 import { SCENARIOS } from "@/content/scenarios";
 import { saveScenarioAnswer } from "@/data/scenarioProgress";
+// Load the Scenes and Active listening savers
+import { saveListenResult, saveSceneResult } from "@/data/practiceProgress";
 // Load the plan loader, to know today's picks
 import { loadDailyPlan } from "@/data/dailyPlan";
 // Load course progress saving, to finish a course part in a check
@@ -205,6 +207,10 @@ describe("HomeScreen", () => {
     for (const step of plan.steps.slice(1)) {
       // Quick scenarios: three answered today
       if (step.kind === "scenarios") for (const scenario of SCENARIOS.slice(0, 3)) await saveScenarioAnswer(repository, scenario.id, "best", NOW);
+      // A scene or an Active listening story: finished today, which saves progress, not a recording (decisions 149 and 150)
+      else if (step.kind === "scene") await saveSceneResult(repository, step.promptId, { warmth: 4, passed: 3, checkCount: 4 }, NOW);
+      // (a story)
+      else if (step.kind === "listening") await saveListenResult(repository, step.promptId, { caught: 3, detailCount: 5, core: true }, NOW);
       // A warm-up routine, finished today
       else if (step.kind === "warmup") await repository.saveSettings({ ...(await repository.getSettings(NOW)), warmupDays: ["2026-10-13"] });
       // The stories course's part (decision 144), finished today
@@ -290,10 +296,14 @@ describe("HomeScreen", () => {
     await repository.saveSettings({ ...(await repository.getSettings(NOW)), learn: { [LEARN_CARDS[0]!.id]: firstRead(NOW) } });
     // The warm-up, with a note
     await repository.saveSession(makeSession({ id: "w", mode: "read", promptId: "lincoln-second-inaugural-1", durationSec: 70, fillersPerMinute: 5, createdAt: new Date(2026, 9, 13, 8).toISOString(), selfReview: { worked: "", change: "Look up more", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
-    // The two picks, without notes (a round of quick scenarios is three answers, not a recording; decision 72)
+    // The two picks, without notes (a round of quick scenarios is three answers, and a scene or story a saved play, not a recording; decisions 72, 149 and 150)
     for (const [index, step] of plan.steps.slice(2).entries()) {
       // Quick scenarios: three answered today
       if (step.kind === "scenarios") for (const scenario of SCENARIOS.slice(0, 3)) await saveScenarioAnswer(repository, scenario.id, "best", NOW);
+      // A scene or an Active listening story: finished today, which saves progress, not a recording (decisions 149 and 150)
+      else if (step.kind === "scene") await saveSceneResult(repository, step.promptId, { warmth: 4, passed: 3, checkCount: 4 }, NOW);
+      // (a story)
+      else if (step.kind === "listening") await saveListenResult(repository, step.promptId, { caught: 3, detailCount: 5, core: true }, NOW);
       // A session
       else await repository.saveSession(makeSession({ id: `p${index}`, mode: step.mode!, promptId: step.promptId, durationSec: index === 0 ? 90 : 30, fillersPerMinute: 6, createdAt: new Date(2026, 9, 13, 9, index).toISOString(), selfReview: null }));
     }
@@ -302,7 +312,7 @@ describe("HomeScreen", () => {
     // The steps
     const steps = await screen.findByRole("list", { name: "Steps" });
     // Confirm the headline, the summary, each step's line, no filler counts, the moment playing, and the blob celebrating in it (decision 134)
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 2 minutes 40 today. Second day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/pause words a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length, document.querySelector("[data-done-face] [data-blob-mood]")?.getAttribute("data-blob-mood")]).toEqual(["Done for today.", true, true, true, null, 4, "celebrating"]);
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 3 minutes 10 today. Second day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/pause words a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length, document.querySelector("[data-done-face] [data-blob-mood]")?.getAttribute("data-blob-mood")]).toEqual(["Done for today.", true, true, true, null, 4, "celebrating"]);
     // The suggestions to keep going
     const more = within(screen.getByRole("region", { name: "Keep going" })).getAllByRole("link");
     // Confirm three or four, none of them today's steps, the last another card

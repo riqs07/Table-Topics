@@ -43,12 +43,16 @@ const MODE_SCENES: Partial<Record<SessionMode, SceneName>> = {
   moment: "moment",
 };
 
-// A step's scene, or none: the voice warm-up and quick scenarios by their kind, a guided story by its label, otherwise by the kind of session it records
+// A step's scene, or none: the voice warm-up, quick scenarios, scenes and stories by their kind, a guided story by its label, otherwise by the kind of session it records
 export function stepScene(step: Pick<PlanStep, "kind" | "label" | "mode">): SceneName | null {
   // The warm-up routine, which records nothing
   if (step.kind === "warmup") return "warm-up";
   // A round of quick scenarios: a conversation
   if (step.kind === "scenarios") return "conversation";
+  // A scene and an Active listening story: their own drawings (decisions 149 and 150)
+  if (step.kind === "scene") return "scenes";
+  // (the story)
+  if (step.kind === "listening") return "listening";
   // A Learn card: the light bulb (decision 139)
   if (step.kind === "card") return "learn";
   // The check-in has none yet

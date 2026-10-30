@@ -69,6 +69,9 @@ export const MODE_CATALOGUE: ReadonlyArray<CatalogueGroup> = [
     entries: [
       // The main one
       { name: "Talk with someone", what: "A few exchanges in a chosen situation, out loud", href: "/conversations", main: true },
+      // Scenes and Active listening (decisions 149 and 150)
+      { name: "Scenes", what: "Choose your replies, they answer to what you chose", href: "/scenes", main: false },
+      { name: "Active listening", what: "Hear a story once, answer to what mattered", href: "/listening", main: false },
       // The units, each its own entry
       ...UNITS.map((unit) => ({ name: `Small talk: ${unit.name}`, what: unit.when, href: `/small-talk/unit?id=${unit.id}`, main: false })),
       // The rest

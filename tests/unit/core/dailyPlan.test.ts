@@ -1,7 +1,12 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
+// Load the scenes and the Active listening stories (decisions 149 and 150)
+import { SCENES } from "@/content/scenes";
+import { findListenStory } from "@/content/listening";
 // Load the plan rules being checked
 import { dailyPlan, focusSuggestion, moreToDo, nextStepIndex, planHref, planMinutes, planProgress, planSkipped, stepKey, todaysFocusSuggestion } from "@/core/dailyPlan";
+// Load the step type
+import type { PlanStep } from "@/core/planSteps";
 // Load the focus areas (decision 97)
 import { FOCUS_AREAS, type FocusAreaId } from "@/core/practiceFocus";
 // Load the course lookups, to finish a whole course in a check
@@ -214,19 +219,53 @@ describe("planProgress", () => {
   });
 
   // Quick scenarios are in the conversation group's turn (decision 72): no recording, counted once, done after a round's worth of answers today
-  it("offers a round of quick scenarios, done after three answers today", () => {
-    // A new user's plan on a day the conversation pick is scenarios
+  it("still marks a round of quick scenarios done after three answers today", () => {
+    // A quick scenarios step (no longer offered by the plan since decision 151, but its rule stays for a plan already showing)
+    const step = { lane: "connection", kind: "scenarios", label: "Quick scenarios", title: "Choose the best reply, then say it", mode: null, promptId: "scenarios", minutes: 2, href: "/learn/scenarios" } as const;
+    // Today
     const day = new Date(2026, 9, 13, 10);
-    // The plan
-    const plan = dailyPlan({ day, sessions: [], focusId: "pausing", nextTalk: null });
-    // The scenarios step
-    const step = plan.find((item) => item.kind === "scenarios")!;
     // An answer on a day
     const answer = (at: Date) => ({ firstTier: "best", lastTier: "best", firstAt: at.toISOString(), lastAt: at.toISOString() });
     // Two answered today, then three, then three yesterday
     const done = (count: number, at: Date) => planProgress([step], [], day, {}, Object.fromEntries(Array.from({ length: count }, (_, index) => [`sc-${index}`, answer(at)])))[0];
-    // Confirm its look, its address in the plan, its time, and when it is done
-    expect([step.label, step.lane, step.mode, planHref(step, 4), planMinutes([step]), done(2, day), done(3, day), done(3, new Date(2026, 9, 12, 10))]).toEqual(["Quick scenarios", "connection", null, "/learn/scenarios?plan=4", 2, false, true, false]);
+    // Confirm when it is done
+    expect([done(2, day), done(3, day), done(3, new Date(2026, 9, 12, 10))]).toEqual([false, true, false]);
+  });
+
+  // The conversation lane takes the next Connect step, a scene, an everyday question and an Active listening story in turn (decision 151); quick scenarios no longer
+  it("offers scenes and Active listening stories in the conversation lane, not quick scenarios", () => {
+    // Every kind the plan offers over three weeks
+    const kinds = new Set(Array.from({ length: 21 }, (_, index) => dailyPlan({ day: new Date(2026, 9, 13 + index, 10), sessions: [], focusId: "pausing", nextTalk: null })).flat().map((step) => step.kind));
+    // Confirm both new kinds come up and the old round does not
+    expect([kinds.has("scene"), kinds.has("listening"), kinds.has("scenarios")]).toEqual([true, true, false]);
+  });
+
+  // A scene step: the next scene by progress before today, its address and time, done when that scene is finished today
+  it("offers the next scene, done when it is finished today", () => {
+    // A day whose plan has a scene
+    const day = Array.from({ length: 21 }, (_, index) => new Date(2026, 9, 13 + index, 10)).find((candidate) => dailyPlan({ day: candidate, sessions: [], focusId: "pausing", nextTalk: null }).some((step) => step.kind === "scene"))!;
+    // A play of a scene at a time
+    const play = (firstAt: Date, lastAt: Date) => ({ plays: 1, firstAt: firstAt.toISOString(), lastAt: lastAt.toISOString(), lastWarmth: 2, bestWarmth: 2, lastPassed: 3, checkCount: 4 });
+    // Yesterday
+    const yesterday = new Date(day.getTime() - 86_400_000);
+    // The step with nothing played, with the first scene played yesterday, and with it first played today
+    const [fresh, afterOne, playedToday] = [{}, { [SCENES[0]!.id]: play(yesterday, yesterday) }, { [SCENES[0]!.id]: play(day, day) }].map((scenes) => dailyPlan({ day, sessions: [], focusId: "pausing", nextTalk: null, scenes }).find((step) => step.kind === "scene")!) as [PlanStep, PlanStep, PlanStep];
+    // Confirm the picks (one played today does not move the plan), the step's look, and when it is done
+    expect([fresh.promptId, afterOne.promptId, playedToday.promptId, fresh.label, fresh.lane, fresh.mode, planHref(fresh, 3), fresh.minutes]).toEqual([SCENES[0]!.id, SCENES[1]!.id, SCENES[0]!.id, "Scene", "connection", null, `/scenes/play?id=${SCENES[0]!.id}&plan=3`, 2]);
+    // Done only when that scene was finished today
+    expect([planProgress([fresh], [], day)[0], planProgress([fresh], [], day, {}, {}, [], false, {}, { scenes: { [SCENES[0]!.id]: play(yesterday, day) } })[0], planProgress([fresh], [], day, {}, {}, [], false, {}, { scenes: { [SCENES[0]!.id]: play(yesterday, yesterday) } })[0], planProgress([fresh], [], day, {}, {}, [], false, {}, { scenes: { [SCENES[0]!.id]: {} as never } })[0]]).toEqual([false, true, false, false]);
+  });
+
+  // An Active listening step: the next story, its name kept hidden, done when it is answered today
+  it("offers the next Active listening story, done when it is answered today", () => {
+    // A day whose plan has a story
+    const day = Array.from({ length: 21 }, (_, index) => new Date(2026, 9, 13 + index, 10)).find((candidate) => dailyPlan({ day: candidate, sessions: [], focusId: "pausing", nextTalk: null }).some((step) => step.kind === "listening"))!;
+    // The step
+    const step = dailyPlan({ day, sessions: [], focusId: "pausing", nextTalk: null }).find((item) => item.kind === "listening")!;
+    // An answer to that story today
+    const answered = { [step.promptId]: { plays: 1, firstAt: day.toISOString(), lastAt: day.toISOString(), lastCaught: 2, bestCaught: 2, detailCount: 5, lastCore: true } };
+    // Confirm it starts at the first level-1 story, hides the story's name, and is done once answered
+    expect([findListenStory(step.promptId)?.level, step.title.includes(findListenStory(step.promptId)!.title), step.href, planProgress([step], [], day)[0], planProgress([step], [], day, {}, {}, [], false, {}, { listening: answered })[0]]).toEqual([1, false, `/listening/play?id=${step.promptId}`, false, true]);
   });
 
   // A step's address carries its number in the plan, cards included
