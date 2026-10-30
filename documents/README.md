@@ -47,6 +47,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 31 | [course-outlines.md](course-outlines.md) | What are the six courses (one per focus area), their lessons and parts, and why each is shaped that way? (Built, decision 144) | 8 min |
 | 32 | [plan-launch-and-scale.md](plan-launch-and-scale.md) | What has to change for 1,000 users and the App Store: accounts, the database and cloud storage, security, privacy and retention, licences, cost? (Draft for later) | 10 min |
 | 33 | [plan-scenes-and-listening.md](plan-scenes-and-listening.md) | How do Scenes (choose your replies, then say the last one) and Active listening (hear a story once, answer to what mattered) work, and how do they feed Today? (Built, decisions 149 to 151) | 4 min |
+| 34 | [research/storytelling-2026-10.md](research/storytelling-2026-10.md) | What makes a good spoken story, how stories improve over tellings, which story types the app lacks (who I am, interview answer, toast, values), and how a given-details mode should work? | 15 min |
 
 ## Inspector checklist
 
