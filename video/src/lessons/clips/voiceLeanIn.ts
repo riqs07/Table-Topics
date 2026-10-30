@@ -179,9 +179,9 @@ export const VOICE_LEAN_IN_CLIPS: ReadonlyArray<LessonClipDef> = [
       // Relaxed, not forced
       { from: 9, to: 10, ground: "art-sun", visual: { kind: "steps", items: [{ label: "Breathe out", at: 10 }, { label: "Relax", at: 10 }, { label: "Let it fall", at: 10 }] } },
       // Fall and rise
-      { from: 11, to: 11, ground: "art-sky", visual: { kind: "cards", items: [{ sign: ".", label: "Fall to state", at: 11 }, { sign: "?", label: "Rise to invite", at: 11 }] } },
+      { from: 11, to: 11, ground: "art-sky", visual: { kind: "cards", items: [{ sign: "tick", label: "Fall to state", at: 11 }, { sign: "?", label: "Rise to invite", at: 11 }] } },
     ],
-    close: { heading: "Land it low", items: [{ sign: ".", label: "Fall to state" }, { sign: "?", label: "Rise to invite" }], action: "End your point low" },
+    close: { heading: "Land it low", items: [{ sign: "tick", label: "Fall to state" }, { sign: "?", label: "Rise to invite" }], action: "End your point low" },
   },
   // Lesson 6, Fill the room: more breath, not more throat, with the blob's welcome
   {
