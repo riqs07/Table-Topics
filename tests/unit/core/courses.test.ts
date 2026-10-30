@@ -63,6 +63,14 @@ describe("course content", () => {
     expect([parts.filter((part) => part.learn.card && !findCard(part.learn.card)).map((part) => part.id), parts.filter((part) => part.learn.link && !part.learn.link.href.startsWith("/")).map((part) => part.id)]).toEqual([[], []]);
   });
 
+  // Every lesson's first part plays its lesson clip, and no other part does (decision 147)
+  it("gives every lesson's first part its clip", () => {
+    // The first parts without a clip, and any other part with one
+    const firsts = COURSES.flatMap((course) => course.lessons.map((lesson) => lesson.parts[0]!));
+    // Confirm none missing and none elsewhere
+    expect([firsts.filter((part) => !part.see?.clip).map((part) => part.id), parts.filter((part) => part.see?.clip && !firsts.includes(part)).map((part) => part.id)]).toEqual([[], []]);
+  });
+
   // Every lesson clip and its still are in the app's public files (decision 146)
   it("has every lesson clip's video and still in public", () => {
     // Each clip's two files

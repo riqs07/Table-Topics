@@ -168,9 +168,9 @@ describe("CoursePartScreen", () => {
   // A part with no "see" skips it; an unknown step shows the first
   it("leaves out steps a part does not have", () => {
     // A part without something to see, asked for its see step
-    render(<CoursePartScreen partId={BEAT1} step="see" repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the learn step and three steps in the bar
-    expect([screen.getByRole("list", { name: /Step 1 of 3: Learn/ }) !== null, screen.getByRole("link", { name: /Next/ }).getAttribute("href")]).toEqual([true, `/courses/part?id=${BEAT1}&step=try`]);
+    render(<CoursePartScreen partId={BEAT2} step="see" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the learn step and three steps in the bar (a lesson's later parts have no clip, decision 147)
+    expect([screen.getByRole("list", { name: /Step 1 of 3: Learn/ }) !== null, screen.getByRole("link", { name: /Next/ }).getAttribute("href")]).toEqual([true, `/courses/part?id=${BEAT2}&step=try`]);
   });
 
   // The second try says how the first went, and can be skipped
