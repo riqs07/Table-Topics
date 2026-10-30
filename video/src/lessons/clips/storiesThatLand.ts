@@ -56,7 +56,8 @@ export const STORIES_THAT_LAND_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "The alarm. The commute. The weather.", mood: "worried" },
       { text: "By the time it gets good, they’ve drifted off.", mood: "worried" },
       { text: "So start in the middle, where things were happening.", mood: "ready", tag: "[warm]" },
-      { text: "Not, “So I’d been meaning to go camping for ages…”", mood: "ready" },
+      { text: "Not,", mood: "ready" },
+      { text: "“So I’d been meaning to go camping for ages…”", mood: "ready" },
       { text: "But, “The tent was already floating when I woke up.”", mood: "wow", tag: "[playful]" },
       { text: "Here’s one of mine.", mood: "happy", tag: "[cheerful]" },
       { text: "“The fire alarm went off, and I was still in the shower.”", mood: "wow" },
@@ -71,13 +72,13 @@ export const STORIES_THAT_LAND_CLIPS: ReadonlyArray<LessonClipDef> = [
       // Start in the middle
       { from: 3, to: 3, ground: "art-plum", visual: { kind: "tile" } },
       // The run-up, then the action
-      { from: 4, to: 5, ground: "art-leaf", visual: { kind: "contrast", instead: "“So I’d been meaning to go camping for ages…”", tryThis: "“The tent was already floating when I woke up.”", tryAt: 5 } },
+      { from: 4, to: 6, ground: "art-leaf", visual: { kind: "contrast", instead: "“So I’d been meaning to go camping for ages…”", tryThis: "“The tent was already floating when I woke up.”", tryAt: 6 } },
       // The blob's own opening
-      { from: 6, to: 8, ground: "art-bloom", visual: { kind: "example", title: "My opening", quote: "“The fire alarm went off. I was in the shower.”" } },
+      { from: 7, to: 9, ground: "art-bloom", visual: { kind: "example", title: "My opening", quote: "“The fire alarm went off. I was in the shower.”" } },
       // Something at stake
-      { from: 9, to: 10, ground: "art-plum", visual: { kind: "struck", text: "NO PROBLEM" } },
+      { from: 10, to: 11, ground: "art-plum", visual: { kind: "struck", text: "NO PROBLEM" } },
       // What to do
-      { from: 11, to: 11, ground: "art-sun", visual: { kind: "steps", items: [{ label: "Find the moment", at: 11 }, { label: "Open with it", at: 11 }] } },
+      { from: 12, to: 12, ground: "art-sun", visual: { kind: "steps", items: [{ label: "Find the moment", at: 12 }, { label: "Open with it", at: 12 }] } },
     ],
     close: { heading: "Next time you tell one", items: [{ sign: "1", label: "Open in the action" }, { sign: "!", label: "Name the stakes" }], action: "Open with the moment" },
   },
@@ -163,7 +164,8 @@ export const STORIES_THAT_LAND_CLIPS: ReadonlyArray<LessonClipDef> = [
       { text: "“So yeah… that was that.”", mood: "worried", tag: "[playful]" },
       { text: "A story that trails off undoes its own ending.", mood: "ready", tag: "[warm]" },
       { text: "So know your last line before you start.", mood: "ready" },
-      { text: "It’s the change, the lesson, or the laugh. Pick one.", mood: "ready" },
+      { text: "It’s the change, the lesson, or the laugh.", mood: "ready" },
+      { text: "Pick one.", mood: "ready" },
       { text: "Here’s mine.", mood: "happy", tag: "[cheerful]" },
       { text: "I told the bread story at work last week.", mood: "happy" },
       { text: "My last line was, “Now I label the sugar.”", mood: "happy" },
@@ -179,11 +181,11 @@ export const STORIES_THAT_LAND_CLIPS: ReadonlyArray<LessonClipDef> = [
       // End on the point
       { from: 3, to: 3, ground: "art-leaf", visual: { kind: "tile" } },
       // The three kinds of last line
-      { from: 4, to: 4, ground: "art-sun", visual: { kind: "cards", items: [{ sign: "!", label: "The change", at: 4 }, { sign: "tick", label: "The lesson", at: 4 }, { sign: "ha", label: "The laugh", at: 4 }] } },
+      { from: 4, to: 5, ground: "art-sun", visual: { kind: "cards", items: [{ sign: "!", label: "The change", at: 4 }, { sign: "tick", label: "The lesson", at: 4 }, { sign: "ha", label: "The laugh", at: 4 }] } },
       // The blob's own ending
-      { from: 5, to: 9, ground: "art-bloom", visual: { kind: "example", title: "My last line", quote: "“Now I label the sugar.”" } },
+      { from: 6, to: 10, ground: "art-bloom", visual: { kind: "example", title: "My last line", quote: "“Now I label the sugar.”" } },
       // What to do
-      { from: 10, to: 10, ground: "art-sky", visual: { kind: "steps", items: [{ label: "Last line", at: 10 }, { label: "Pause", at: 10 }, { label: "Stop", at: 10 }] } },
+      { from: 11, to: 11, ground: "art-sky", visual: { kind: "steps", items: [{ label: "Last line", at: 11 }, { label: "Pause", at: 11 }, { label: "Stop", at: 11 }] } },
     ],
     close: { heading: "End on the point", items: [{ sign: "1", label: "Last line" }, { sign: "2", label: "Pause" }, { sign: "3", label: "Stop" }], action: "Know your last line first" },
   },
