@@ -90,6 +90,10 @@ The first two of a round making the practice modes more robust. **Scenes:** choo
 
 From [research/storytelling-2026-10.md](research/storytelling-2026-10.md): four new kinds of story (who I am, interview answer, toast, a choice I made) with their own prompts and checks, and guided stories as a five-step dial ending in "Make it a…". On Practice under Tell stories and in Today's on-the-spot lane. The plan, and what is next (signature stories, a per-story page, "Make it true"), is in [plan-story-types.md](plan-story-types.md).
 
+## Done: a second course for each focus area (built 2026-10-30, decision 155)
+
+Six more courses from the research: Interview ready, Toasts and tributes, Listen like you mean it, Tell it again (better), Know your voice and The tough question, each with five lessons, tiles, lesson clips and a short. Outlines in [course-outlines.md](course-outlines.md).
+
 ## To revisit after the MVP (agreed 2026-10-14)
 
 Accepted for launch, but expected to change so the app does not become a copy of Toastmasters:

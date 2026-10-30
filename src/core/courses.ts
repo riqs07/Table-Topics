@@ -8,6 +8,8 @@ import type { CoursePartProgress, CourseTake, SessionRecord } from "@/data/recor
 import type { FocusAreaId } from "@/core/practiceFocus";
 // Load the prompt finders, for a part's question
 import { findPrompt } from "@/content/prompts";
+// Load the guided stories, which a story part can practise on (decision 155)
+import { findGuidedStory } from "@/content/guidedStories";
 import { findStoryPrompt, storyTakeQuery } from "@/content/stories";
 // Load the practice type
 import type { PartPractice } from "@/content/courses";
@@ -147,8 +149,8 @@ export function takeHref(part: CoursePart, attempt: number, revisit = false): st
 
 // The words of a part's prompt (a question, a story prompt, a passage's or lesson's title), or undefined when its id is unknown
 export function practicePromptText(practice: PartPractice): string | undefined {
-  // A story prompt from the story bank, anything else from the prompt lists
-  return practice.mode === "story" ? findStoryPrompt(practice.promptId)?.text : findPrompt(practice.promptId)?.text;
+  // A story prompt from the story bank, or a guided story by its title (decision 155), anything else from the prompt lists
+  return practice.mode === "story" ? (findStoryPrompt(practice.promptId)?.text ?? findGuidedStory(practice.promptId)?.title) : findPrompt(practice.promptId)?.text;
 }
 
 // Where a take inside a course goes once saved: the comparison for a comeback, the next try, or the wrap-up

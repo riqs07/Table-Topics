@@ -277,8 +277,8 @@ describe("CoursesScreen", () => {
     render(<CoursesScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Every course under one heading
     const all = await waitFor(() => hrefs("All courses"));
-    // Confirm the rest left out the focus's course, and all six with no "Your course"
-    expect([rest.length, rest.includes("/courses/course?id=stories-that-land"), all.length, screen.queryByRole("region", { name: "Your course" })]).toEqual([5, false, 6, null]);
+    // Confirm the rest left out the focus's course, and all twelve with no "Your course" (two for each focus area since decision 155)
+    expect([rest.length, rest.includes("/courses/course?id=stories-that-land"), all.length, screen.queryByRole("region", { name: "Your course" })]).toEqual([11, false, 12, null]);
   });
 
   // Each course with how far through

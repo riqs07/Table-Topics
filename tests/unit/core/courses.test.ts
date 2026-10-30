@@ -43,10 +43,10 @@ describe("course content", () => {
     expect([new Set(parts.map((part) => part.id)).size === parts.length, parts.filter((part) => part.practice && !practicePromptText(part.practice)).map((part) => part.id), COURSES[0]?.focus]).toEqual([true, [], "spot"]);
   });
 
-  // One course for each focus area, so every answer to the welcome question leads to one
-  it("has one course for each focus area", () => {
-    // Confirm each focus has exactly one
-    expect(FOCUS_AREAS.map((area) => [area.id, COURSES.filter((course) => course.focus === area.id).length])).toEqual(FOCUS_AREAS.map((area) => [area.id, 1]));
+  // Two courses for each focus area, so every answer to the welcome question leads to one, then a next one (decision 155)
+  it("has two courses for each focus area", () => {
+    // Confirm each focus has exactly two
+    expect(FOCUS_AREAS.map((area) => [area.id, COURSES.filter((course) => course.focus === area.id).length])).toEqual(FOCUS_AREAS.map((area) => [area.id, 2]));
   });
 
   // Each part's prompt is its own, so a prompt coming back days later belongs to one part only
@@ -169,6 +169,12 @@ describe("part steps and addresses", () => {
     const texts = [practicePromptText({ mode: "story", promptId: "sp03", goal: "g", tries: 1, measure: "length" }), practicePromptText({ mode: "smalltalk", promptId: "st01", goal: "g", tries: 1, measure: "length" }), practicePromptText({ mode: "read", promptId: "r004", goal: "g", tries: 1, measure: "pace" }), practicePromptText({ mode: "story", promptId: "t001", goal: "g", tries: 1, measure: "length" })];
     // Confirm each
     expect(texts).toEqual(["Tell me about a time a recipe or a repair did not go to plan.", "How was your weekend?", "Ask not", undefined]);
+  });
+
+  // A story part can practise on a guided story, found by its title (decision 155); a guided id is never a question in another mode
+  it("finds a guided story for a story part", () => {
+    // A Story dice guided story as a story part, and the same id as a Rapid Fire part
+    expect([practicePromptText({ mode: "story", promptId: "gs31", goal: "g", tries: 1, measure: "length" }), practicePromptText({ mode: "talk", promptId: "gs31", goal: "g", tries: 1, measure: "length" })]).toEqual(["The bus stop", undefined]);
   });
 
   // Where a saved course take goes: the next try, the wrap-up, or the comparison

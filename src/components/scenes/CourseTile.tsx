@@ -11,12 +11,20 @@ import { READY_BY_THE_DAY_TILES } from "@/components/scenes/tiles/readyByTheDay"
 import { STORIES_THAT_LAND_TILES } from "@/components/scenes/tiles/storiesThatLand";
 import { BEYOND_GOOD_YOU_TILES } from "@/components/scenes/tiles/beyondGoodYou";
 import { VOICE_LEAN_IN_TILES } from "@/components/scenes/tiles/voiceLeanIn";
+// (the second course for each focus area, decision 155)
+import { INTERVIEW_READY_TILES } from "@/components/scenes/tiles/interviewReady";
+import { TOASTS_AND_TRIBUTES_TILES } from "@/components/scenes/tiles/toastsAndTributes";
+import { LISTEN_LIKE_YOU_MEAN_IT_TILES } from "@/components/scenes/tiles/listenLikeYouMeanIt";
+import { TELL_IT_AGAIN_TILES } from "@/components/scenes/tiles/tellItAgain";
+import { KNOW_YOUR_VOICE_TILES } from "@/components/scenes/tiles/knowYourVoice";
+import { THE_TOUGH_QUESTION_TILES } from "@/components/scenes/tiles/theToughQuestion";
+
 
 // The shaded blob, shared with the videos
 export { Body } from "@/components/scenes/tiles/parts";
 
 // Every tile, by name
-const TILES = { ...STOP_FREEZING_TILES, ...EXPLAIN_IT_SIMPLY_TILES, ...READY_BY_THE_DAY_TILES, ...STORIES_THAT_LAND_TILES, ...BEYOND_GOOD_YOU_TILES, ...VOICE_LEAN_IN_TILES };
+const TILES = { ...STOP_FREEZING_TILES, ...EXPLAIN_IT_SIMPLY_TILES, ...READY_BY_THE_DAY_TILES, ...STORIES_THAT_LAND_TILES, ...BEYOND_GOOD_YOU_TILES, ...VOICE_LEAN_IN_TILES, ...INTERVIEW_READY_TILES, ...TOASTS_AND_TRIBUTES_TILES, ...LISTEN_LIKE_YOU_MEAN_IT_TILES, ...TELL_IT_AGAIN_TILES, ...KNOW_YOUR_VOICE_TILES, ...THE_TOUGH_QUESTION_TILES };
 
 // The tiles there are
 export type CourseTileName = keyof typeof TILES;

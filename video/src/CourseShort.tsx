@@ -23,15 +23,33 @@ import readyByTheDay from "./generated/courses/ready-by-the-day.json";
 import storiesThatLand from "./generated/courses/stories-that-land.json";
 import beyondGoodYou from "./generated/courses/beyond-good-you.json";
 import voiceLeanIn from "./generated/courses/voice-lean-in.json";
+// The second course for each focus area's voiceovers (decision 155)
+import interviewReady from "./generated/courses/interview-ready.json";
+import toastsAndTributes from "./generated/courses/toasts-and-tributes.json";
+import listenLikeYouMeanIt from "./generated/courses/listen-like-you-mean-it.json";
+import tellItAgain from "./generated/courses/tell-it-again.json";
+import knowYourVoice from "./generated/courses/know-your-voice.json";
+import theToughQuestion from "./generated/courses/the-tough-question.json";
 
 // A voiceover's timings: frames a second, its length, its phrases and the loudness of every frame
 type Voice = { fps: number; duration: number; phrases: ReadonlyArray<{ start: number; end: number }>; loudness: ReadonlyArray<number> };
 
 // Each course's voiceover, by course id
-const VOICES: Readonly<Record<string, Voice>> = { "stop-freezing": stopFreezing, "explain-it-simply": explainItSimply, "ready-by-the-day": readyByTheDay, "stories-that-land": storiesThatLand, "beyond-good-you": beyondGoodYou, "voice-lean-in": voiceLeanIn };
+const VOICES: Readonly<Record<string, Voice>> = { "stop-freezing": stopFreezing, "explain-it-simply": explainItSimply, "ready-by-the-day": readyByTheDay, "stories-that-land": storiesThatLand, "beyond-good-you": beyondGoodYou, "voice-lean-in": voiceLeanIn, "interview-ready": interviewReady, "toasts-and-tributes": toastsAndTributes, "listen-like-you-mean-it": listenLikeYouMeanIt, "tell-it-again": tellItAgain, "know-your-voice": knowYourVoice, "the-tough-question": theToughQuestion };
 
 // Every short is 15 seconds, at 30 frames a second
 export const SHORT_FRAMES = 15 * 30;
+
+// How long the end card needs after the voice, in seconds
+const END_CARD_SECONDS = 2.5;
+
+// A short's length in frames: 15 seconds, or longer when its voice needs it, so the end card always gets its time (decision 155: four of the second courses' voiceovers run 14 to 15 seconds)
+export function shortFrames(id: string): number {
+  // Its voiceover, if there is one
+  const voice = VOICES[id];
+  // 15 seconds, or the voice and the end card, whichever is longer
+  return Math.max(SHORT_FRAMES, voice ? Math.ceil((voice.duration + END_CARD_SECONDS) * 30) : SHORT_FRAMES);
+}
 
 // The backgrounds to pick from when a phrase's own matches the tile shown on it
 const GROUNDS: ReadonlyArray<Ground> = ["art-sky", "art-plum", "art-sun", "art-leaf", "art-bloom", "art-coral"];
@@ -48,8 +66,8 @@ function setUp(id: string): { short: Short; voice: Voice; grounds: Ground[] } {
   const covered = short.lines.reduce((sum, line) => sum + (line.span ?? 1), 0);
   // Stop when the voiceover's phrases no longer match the script
   if (voice.phrases.length !== covered) throw new Error(`${id}: the voiceover has ${voice.phrases.length} phrases but the script's lines cover ${covered}: re-run scripts/prepare.mjs or adjust the script`);
-  // Stop when the voice leaves under two seconds for the end card
-  if (voice.duration > 13) throw new Error(`${id}: the voiceover is ${voice.duration.toFixed(1)} s, leaving too little of the 15 s for the end card`);
+  // Stop when the voice would run past 20 seconds (a short is for a quick look; the length now stretches to fit the end card, decision 155)
+  if (voice.duration > 20 - END_CARD_SECONDS) throw new Error(`${id}: the voiceover is ${voice.duration.toFixed(1)} s, too long for a short`);
   // Each phrase's background, moved off the shown tile's own colour
   const grounds = short.lines.map((line) => (line.tile && courseTileGround(line.tile.name) === line.ground ? GROUNDS.find((ground) => ground !== line.ground && ground !== courseTileGround(line.tile!.name))! : line.ground));
   // The voice's phrases joined into one per line: from the first phrase a line covers to the end of its last

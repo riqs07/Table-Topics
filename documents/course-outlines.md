@@ -155,6 +155,89 @@ The same rules apply to every course:
 
 ---
 
+## The second course for each focus (decision 155, built 2026-10-30)
+
+At the user's request ("create some more courses… base the courses off of [the research]"), each focus area has a second course, offered once its first is finished (the engine already did this; Today then adds the second course's next part). Each has five lessons of two or three parts, a tile for the course and each lesson, a lesson clip in each lesson's first part with the blob's own example, and a 15-second short. They were written from the research in `documents/research/`: the storytelling report (Interview ready, Toasts and tributes, Tell it again), the charisma and connection reports (Listen like you mean it, The tough question) and the speech-analysis report (Know your voice). The content lives in `src/content/courseBank/`, one file per course.
+
+### Interview ready (speaking at work)
+
+**Promise:** “Have your answer ready for “tell me about yourself” and “tell me about a time when…”.”
+**By the end you can:** Answer “tell me about yourself” with one moment, linked to now; Tell a “tell me about a time…” story as situation, task, action, result; Say what you did, with “I” and a number; Answer the mistake or weakness question honestly, as something you learned; Say why you want the role, and ask a real question back.
+
+| Lesson | Parts | Try it | Tile |
+|---|---|---|---|
+| **1. Tell me about yourself** | One moment, not your CV · Link it to now · Two minutes, then stop | story | `tell-me-about-yourself` |
+| **2. The STAR answer** | Situation, task, action, result · Short set-up, long action · Keep a few stories ready | story | `star-answer` |
+| **3. Own it** | Say “I” · Give it a number | story, prepared speech | `own-it` |
+| **4. The hard one** | A real one · End on what you’d keep | story, prepared speech | `the-hard-one` |
+| **5. Your close** | Why this role · A question back · The run | story | `your-close` |
+
+### Toasts and tributes (a talk coming up)
+
+**Promise:** “A toast, a leaving speech or a thank-you: short, warm and about them.”
+**By the end you can:** Pick one story that shows one thing about them; Open on them, not on your nerves; Keep it to a few warm minutes; End by raising a glass, or on the thanks; Stand up on the day with three words in your head.
+
+| Lesson | Parts | Try it | Tile |
+|---|---|---|---|
+| **1. One story, one quality** | One story, not a list · Say what it shows | story | `one-story-one-quality` |
+| **2. Open on them** | Not “I’m not good at this” · How you know them, in one line | story, prepared speech | `open-on-them` |
+| **3. Short and sweet** | Two or three minutes · Keep it about them | story | `short-and-sweet` |
+| **4. Raise the glass** | End with the glass · A thank-you ends on the thanks | story | `raise-the-glass` |
+| **5. On the day** | Call it excitement · Three words, out loud | prepared speech | `toast-on-the-day` |
+
+### Listen like you mean it (small talk and conversations)
+
+**Promise:** “Stop waiting for your turn. Hear them, and let them know it.”
+**By the end you can:** React to the moment in their story, not with “mm-hmm”; Say back how it felt for them, not just what happened; Stay on their story instead of jumping to yours; Hold the advice until it’s asked for; Ask about the part that mattered to them.
+
+| Lesson | Parts | Try it | Tile |
+|---|---|---|---|
+| **1. React to the moment** | Specific beats “mm-hmm” · Stop planning your line | small talk | `react-to-the-moment` |
+| **2. Their words, their feeling** | The feeling, not the facts · Check, don’t tell | small talk | `their-feeling` |
+| **3. Stay on their story** | Support, don’t shift · Their news, not yours · Your story can wait | small talk | `stay-on-their-story` |
+| **4. Hold the advice** | Hold the fix · No “at least” · Ask before you advise | small talk | `hold-the-advice` |
+| **5. Ask about what mattered** | Find the heart of it · What they didn’t say · All together | small talk | `ask-what-mattered` |
+
+### Tell it again, better (telling stories)
+
+**Promise:** “Pick a few good stories and polish them, one telling at a time.”
+**By the end you can:** Catch a story a day in one line, and pick your five; Start each story close to the moment it changed; Slow down the few seconds that matter; Give someone one line, in words that sound like them; End on what it meant, and tell it tighter each time.
+
+| Lesson | Parts | Try it | Tile |
+|---|---|---|---|
+| **1. Find your five** | One line a day · Pick your five | story | `five-stories` |
+| **2. Start close to the change** | Find the change first · Start on the opposite · The stakes, not the ending | story | `close-to-the-change` |
+| **3. Slow down the moment** | The five seconds · Slip into now | story | `slow-the-moment` |
+| **4. Let them speak** | Your version of their words · Put the line at the turn | story | `in-their-words` |
+| **5. End on what it meant** | Say why it mattered · One thing per telling · Tighter, not faster | story | `what-it-meant` |
+
+### Know your voice (how I sound)
+
+**Promise:** “Read what your recordings say, then change one thing at a time.”
+**By the end you can:** Find where your pauses fall, and move them between ideas; Read your two pace numbers, and slow down for the line that matters; Read your pitch range and how your statements ended; Use volume with variety, and keep it to the last line; Change one thing at a time, and tell a real change from noise.
+
+| Lesson | Parts | Try it | Tile |
+|---|---|---|---|
+| **1. Where your pauses fall** | Pauses mid-sentence · “Um” is a signal · Words per run | read aloud, pause drill | `pause-map` |
+| **2. Your pace** | Two paces · Slow the key line | read aloud | `pace-dial` |
+| **3. Your pitch range** | Your range in steps · Where your peaks land · Count your endings | read aloud, lesson | `pitch-span` |
+| **4. Your energy** | Volume with variety · Keep it to the end | read aloud, pause drill | `volume-meter` |
+| **5. Then and now** | One thing at a time · Small changes are noise · Same words, weeks apart | read aloud, pause drill | `takes-side-by-side` |
+
+### The tough question (thinking on my feet)
+
+**Promise:** “Stay calm and answer well when the question has an edge.”
+**By the end you can:** Say a sharp question back in calm words, then answer it; Hear the worry behind a question, and answer that; Agree with what’s fair, then disagree calmly; Say “I don’t know” without bluffing, and own a slip; Answer briefly, then stop, without a long defence.
+
+| Lesson | Parts | Try it | Tile |
+|---|---|---|---|
+| **1. Say it back** | Take the edge off · Answer the one they asked · Look away to think | Rapid Fire | `say-it-back` |
+| **2. Find the doubt** | Hear the worry · Never leave it hanging | prepared speech | `find-the-doubt` |
+| **3. Agree with what’s true** | Give them the fair part · Drop the hedges · Their side, then yours | Rapid Fire, prepared speech | `agree-then-differ` |
+| **4. Say “I don’t know” well** | Don’t bluff · Caught out? Own it | prepared speech | `admit-it-well` |
+| **5. Short, then stop** | Answer, then stop · Hand it back · The run | Rapid Fire, prepared speech | `short-then-stop` |
+
+
 ## What the engine needs
 
 **Done (decision 144):** parts can now record stories (with their set-up), readings, pause drills, small-talk questions and lessons, as well as Rapid Fire, prepared speech and free talk; practices with their own screens are links under the idea. **Still open:** the user's own talk inside a part, and the new measures. The table as planned:

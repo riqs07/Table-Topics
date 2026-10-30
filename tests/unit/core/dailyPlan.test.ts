@@ -457,13 +457,17 @@ describe("a course in the plan", () => {
   const [day, morning] = [dayAfter(0), new Date(2026, 9, 16, 7)];
 
   // With a matching focus, the course's next part is added after the picks; without a focus, nothing is added
-  it("adds the next part of the course for the focus", () => {
+  it("adds the next part of the course for the focus, then the focus's next course once it is done", () => {
     // Thinking on your feet, and no focus
     const [withFocus, without] = [regularPlan(day, { practiceFocus: ["spot"] }), regularPlan(day)];
     // The last step
     const last = withFocus.at(-1)!;
-    // Confirm one more step, the course's first part, its address, and none without a focus
-    expect([withFocus.length - regularPlan(day, { practiceFocus: ["spot"], courses: Object.fromEntries(coursePlaces(findCourse("stop-freezing")!).map((place) => [place.part.id, { doneAt: "2026-09-01T10:00:00Z", takeId: null }])) }).length, last.kind, last.lane, last.promptId, last.href, without.some((step) => step.kind === "course")]).toEqual([1, "course", "course", "sf-beat-1", "/courses/part?id=sf-beat-1", false]);
+    // With Stop freezing finished, the focus's second course takes its place (decision 155)
+    const afterFirst = regularPlan(day, { practiceFocus: ["spot"], courses: Object.fromEntries(coursePlaces(findCourse("stop-freezing")!).map((place) => [place.part.id, { doneAt: "2026-09-01T10:00:00Z", takeId: null }])) });
+    // Confirm the second course's first part then
+    expect([afterFirst.length, afterFirst.at(-1)?.promptId]).toEqual([withFocus.length, coursePlaces(findCourse("the-tough-question")!)[0]!.part.id]);
+    // Confirm the course step, the course's first part, its address, and none without a focus
+    expect([1, last.kind, last.lane, last.promptId, last.href, without.some((step) => step.kind === "course")]).toEqual([1, "course", "course", "sf-beat-1", "/courses/part?id=sf-beat-1", false]);
   });
 
   // Every focus area now has a course, so each one's first part is offered (decision 144)

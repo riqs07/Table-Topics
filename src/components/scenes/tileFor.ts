@@ -2,6 +2,14 @@
 
 // Load the tile names
 import type { CourseTileName } from "@/components/scenes/CourseTile";
+// Load the second course for each focus area's lesson tiles (decision 155)
+import { INTERVIEW_READY_LESSON_TILES } from "@/components/scenes/tiles/interviewReady";
+import { TOASTS_AND_TRIBUTES_LESSON_TILES } from "@/components/scenes/tiles/toastsAndTributes";
+import { LISTEN_LIKE_YOU_MEAN_IT_LESSON_TILES } from "@/components/scenes/tiles/listenLikeYouMeanIt";
+import { TELL_IT_AGAIN_LESSON_TILES } from "@/components/scenes/tiles/tellItAgain";
+import { KNOW_YOUR_VOICE_LESSON_TILES } from "@/components/scenes/tiles/knowYourVoice";
+import { THE_TOUGH_QUESTION_LESSON_TILES } from "@/components/scenes/tiles/theToughQuestion";
+
 
 // Each course's tile, by course id
 const COURSE_TILES: Readonly<Record<string, CourseTileName>> = {
@@ -17,6 +25,13 @@ const COURSE_TILES: Readonly<Record<string, CourseTileName>> = {
   "beyond-good-you": "beyond-good-you",
   // (how I sound)
   "voice-lean-in": "voice-lean-in",
+  // The second course for each focus area (decision 155): each course's tile has its id
+  "interview-ready": "interview-ready" as CourseTileName,
+  "toasts-and-tributes": "toasts-and-tributes" as CourseTileName,
+  "listen-like-you-mean-it": "listen-like-you-mean-it" as CourseTileName,
+  "tell-it-again": "tell-it-again" as CourseTileName,
+  "know-your-voice": "know-your-voice" as CourseTileName,
+  "the-tough-question": "the-tough-question" as CourseTileName,
 };
 
 // Each lesson's tile, by course id and lesson id
@@ -69,6 +84,13 @@ const LESSON_TILES: Readonly<Record<string, CourseTileName>> = {
   "voice-lean-in/low": "land-it-low",
   "voice-lean-in/room": "fill-the-room",
   "voice-lean-in/run": "speech-run",
+  // The second course for each focus area's lessons (decision 155), from their tile files
+  ...(INTERVIEW_READY_LESSON_TILES as Readonly<Record<string, CourseTileName>>),
+  ...(TOASTS_AND_TRIBUTES_LESSON_TILES as Readonly<Record<string, CourseTileName>>),
+  ...(LISTEN_LIKE_YOU_MEAN_IT_LESSON_TILES as Readonly<Record<string, CourseTileName>>),
+  ...(TELL_IT_AGAIN_LESSON_TILES as Readonly<Record<string, CourseTileName>>),
+  ...(KNOW_YOUR_VOICE_LESSON_TILES as Readonly<Record<string, CourseTileName>>),
+  ...(THE_TOUGH_QUESTION_LESSON_TILES as Readonly<Record<string, CourseTileName>>),
 };
 
 // A course's tile, or none

@@ -4,6 +4,14 @@
 import type { CourseTileName } from "@/components/scenes/CourseTile";
 // Load the talking blob's moods
 import type { Mood } from "./TalkingBlob";
+// Load the second course for each focus area's shorts (decision 155)
+import { INTERVIEW_READY_SHORT } from "./shortsBank/interviewReady";
+import { TOASTS_AND_TRIBUTES_SHORT } from "./shortsBank/toastsAndTributes";
+import { LISTEN_LIKE_YOU_MEAN_IT_SHORT } from "./shortsBank/listenLikeYouMeanIt";
+import { TELL_IT_AGAIN_SHORT } from "./shortsBank/tellItAgain";
+import { KNOW_YOUR_VOICE_SHORT } from "./shortsBank/knowYourVoice";
+import { THE_TOUGH_QUESTION_SHORT } from "./shortsBank/theToughQuestion";
+
 
 // The colour roles a background can be
 export type Ground = "art-sky" | "art-plum" | "art-sun" | "art-leaf" | "art-bloom" | "art-coral";
@@ -39,7 +47,7 @@ export interface Short {
 }
 
 // The shorts, in the courses' order
-export const SHORTS: ReadonlyArray<Short> = [
+const FIRST_SHORTS: ReadonlyArray<Short> = [
   // Stop freezing (7 phrases)
   {
     id: "stop-freezing",
@@ -175,3 +183,6 @@ export const SHORTS: ReadonlyArray<Short> = [
     ],
   },
 ];
+
+// The shorts, in the courses' order: the first six, then the second course for each focus area (decision 155), each in its own file
+export const SHORTS: ReadonlyArray<Short> = [...FIRST_SHORTS, ...[INTERVIEW_READY_SHORT, TOASTS_AND_TRIBUTES_SHORT, LISTEN_LIKE_YOU_MEAN_IT_SHORT, TELL_IT_AGAIN_SHORT, KNOW_YOUR_VOICE_SHORT, THE_TOUGH_QUESTION_SHORT].filter((short): short is Short => short !== null)];

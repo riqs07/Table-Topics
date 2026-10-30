@@ -1,6 +1,6 @@
 # Plan: guided courses
 
-**Status:** Built, with six courses, one for each focus area, and their final words (decisions 131 and 144, 2026-10-29). Every course and lesson has its tile, and every course a 15-second short (decision 145). Mockups: the "Guided courses: Thinking on my feet" canvas (approved in conversation on 2026-10-28, with the changes below).
+**Status:** Built, with six courses, one for each focus area, and their final words (decisions 131 and 144, 2026-10-29). **2026-10-30 (decision 155):** six more, a second for each focus area (Interview ready, Toasts and tributes, Listen like you mean it, Tell it again, better, Know your voice, The tough question), each in its own file in `src/content/courseBank/` with its tiles, clips and short in their own files too; outlines in [course-outlines.md](course-outlines.md#the-second-course-for-each-focus-decision-155-built-2026-10-30). Every course and lesson has its tile, and every course a 15-second short (decision 145). Mockups: the "Guided courses: Thinking on my feet" canvas (approved in conversation on 2026-10-28, with the changes below).
 
 ## The idea
 

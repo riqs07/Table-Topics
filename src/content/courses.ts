@@ -6,6 +6,14 @@ import type { FocusAreaId } from "@/core/practiceFocus";
 import type { SessionMode, StoryTake } from "@/data/records";
 // Load the lesson clips made so far, by course part (decision 147)
 import { LESSON_CLIP_FILES } from "@/content/lessonClips";
+// Load the second course for each focus area (decision 155)
+import { INTERVIEW_READY } from "@/content/courseBank/interviewReady";
+import { TOASTS_AND_TRIBUTES } from "@/content/courseBank/toastsAndTributes";
+import { LISTEN_LIKE_YOU_MEAN_IT } from "@/content/courseBank/listenLikeYouMeanIt";
+import { TELL_IT_AGAIN } from "@/content/courseBank/tellItAgain";
+import { KNOW_YOUR_VOICE } from "@/content/courseBank/knowYourVoice";
+import { THE_TOUGH_QUESTION } from "@/content/courseBank/theToughQuestion";
+
 
 // What a part's practice is compared on between tries, and when its prompt comes back: pause words, pace or length (more measures, such as time to the point, come with the real content)
 export type CourseMeasure = "fillers" | "pace" | "length";
@@ -619,6 +627,13 @@ const WRITTEN: ReadonlyArray<Course> = [
       },
     ],
   },
+  // The second course for each focus area (decision 155), in their own files
+  INTERVIEW_READY,
+  TOASTS_AND_TRIBUTES,
+  LISTEN_LIKE_YOU_MEAN_IT,
+  TELL_IT_AGAIN,
+  KNOW_YOUR_VOICE,
+  THE_TOUGH_QUESTION,
 ];
 
 // A part with its lesson clip added to "See it", when one has been made for it (decision 147)
