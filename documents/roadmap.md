@@ -115,6 +115,15 @@ Ideas agreed for later, in order. Each sends audio or text to ElevenLabs, so eac
 
 Not chosen for now: ElevenLabs Scribe as the transcriber (would keep filler words and time every word, but sends audio to ElevenLabs). Revisit if browser transcription drops too many fillers (risk R1).
 
+## Later: smarter use of AI, feedback and access per mode (added 2026-10-31)
+
+To workshop with the user. One idea with three parts: each mode declares what it is for, and the app decides from that (1) when to use AI, (2) which feedback and charts to show afterwards, and (3) whether it is open any time or unlocked and limited. Mostly to keep AI costs down without users missing anything that matters.
+
+- **When to use AI, by need (1 to 5):** 5, essential, AI every time on the best model (boss levels, Rapid Fire, prepared speech, stories you'll need such as STAR answers, tell a story, talk with someone); 4, high, AI every time on a cheaper model (guided stories, story dice, tell one again, small talk, active listening, short speech, the weekly check-in's spoken parts); 3, useful, AI on request with a "Get coach feedback" button (your talk, free talk, 4/3/2); 2, light, and 1, none: phone measures and ready-written tips only (skill lessons, quick scenarios, scenes, one moment a day; read aloud, whole speeches, pause drills, voice drills, shadowing, warm-up). Courses inherit the level of each part's mode. Live voice (boss calls, spoken conversation lines) is costed and limited separately from text analysis.
+- **Which feedback and charts to show:** each mode shows the few results that match its purpose (a reading: pace, pauses and stress against the text; Rapid Fire: the point and its structure, the start, pause words; a story: its beats), with the rest one tap away, instead of every measure after every take.
+- **Open any time or limited:** a core set always open (to decide: reading and voice drills, which cost nothing, and a daily allowance of the AI-heavy modes), others unlocked through courses or limited a day, as boss levels are.
+- **Questions:** which modes are always open; how big the daily allowance is, and whether a paid plan lifts it; which charts belong to each mode; whether "on request" feedback feels like a loss to users.
+
 ## Later: a UX redesign (added 2026-10-31)
 
 Once the app is in a workable, finished state, redesign the user experience and the look as one coherent system, keeping the content, the code underneath and the app's spirit. Not started; the user will say when.
