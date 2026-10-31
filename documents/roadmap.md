@@ -1,7 +1,7 @@
 # Roadmap
 
 **Purpose:** The order VoiceLab is built in. Every milestone starts with tests, and every milestone lists where you step in.
-**Last updated:** 2026-10-29
+**Last updated:** 2026-10-31
 
 Checkpoint IDs (C#) are defined in [checkpoints.md](checkpoints.md). The riskiest assumptions are tested first (milestone 1), because their answers can reshape later milestones, especially 5 and 10.
 
@@ -114,6 +114,17 @@ Ideas agreed for later, in order. Each sends audio or text to ElevenLabs, so eac
 | V2 | **Live conversation practice** | A new mode: a real-time voice partner for small talk, interviews, or ordering coffee, with Claude as its brain and feedback afterwards | ElevenLabs Agents: plans from about $99 a month plus about $0.08 a minute plus AI usage (third-party figures, to be confirmed). Audio leaves the device during the call. **A cheaper version is built instead (decisions 83 and 84):** four personas in eight situations; Claude Haiku writes each line and ElevenLabs speaks it, about 10 to 15¢ a conversation (recorded lines, at no cost, without the coach), with no audio of the user leaving the device |
 
 Not chosen for now: ElevenLabs Scribe as the transcriber (would keep filler words and time every word, but sends audio to ElevenLabs). Revisit if browser transcription drops too many fillers (risk R1).
+
+## Later: a UX redesign (added 2026-10-31)
+
+Once the app is in a workable, finished state, redesign the user experience and the look as one coherent system, keeping the content, the code underneath and the app's spirit. Not started; the user will say when.
+
+- **Why:** the app grew one idea at a time and now has many good parts without one plan tying them together.
+- **How:** build a new interface alongside the current one, screen by screen behind a switch, on the same logic, storage and content (about 60% of the code and 179 of the 225 test files carry over; the screens and their tests are rebuilt). Users' saved practice keeps working throughout.
+- **Order:** (1) audit: map every screen, journey and choice; (2) the core loop and structure (the first five minutes, week and month; which modes lead; how Today, Practice, Learn and Courses relate); (3) one design language (the two-layer colour idea from the palette comparison, type scale, spacing, components, motion and illustration per `design/art-style.md`); (4) mockups tested on a phone; (5) build.
+- **First, cheaply:** move the logic still inside screens (such as Today's data loading) into `core` and hooks, so the redesign is mostly visual.
+- **Inputs:** UX pattern libraries and Figma through MCPs, and real usage data once there are users.
+- **Keep:** one change per take, honest privacy, never making the user feel judged, progress you can hear.
 
 ## After launch
 
