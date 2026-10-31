@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="600" height="600">
+<!-- Boss concept: Jules, the quiet one at the party (concept art, not in the app; drawn in the course-tile style, decision 142) -->
+<defs><clipPath id="c"><rect x="14" y="14" width="172" height="172" rx="34"/></clipPath></defs>
+<g transform="rotate(4 100 100)">
+<rect x="14" y="14" width="172" height="172" rx="34" fill="#e86aae"/>
+<g clip-path="url(#c)"><path d="M14 36 Q100 62 186 36" stroke="#fff6e6" stroke-width="2.5" fill="none"/><path d="M20 40 l14 2 -8 16z" fill="#f4b73b"/><path d="M48 46 l14 2 -8 16z" fill="#4a68e0"/><path d="M76 40 l14 2 -8 16z" fill="#fff6e6"/><path d="M104 46 l14 2 -8 16z" fill="#f4b73b"/><path d="M132 40 l14 2 -8 16z" fill="#4a68e0"/><path d="M160 46 l14 2 -8 16z" fill="#fff6e6"/>
+<circle cx="30" cy="190" r="56" fill="#1e2320" opacity="0.08"/></g>
+<path d="M150 182 L168 60" stroke="#f4b73b" stroke-width="6" stroke-linecap="round"/><ellipse cx="148" cy="164" rx="9" ry="28" fill="#f4b73b" transform="rotate(8 148 164)"/>
+<path d="M166 70 L172 50" stroke="#d99a1e" stroke-width="10" stroke-linecap="round"/>
+<g transform="translate(92 124) scale(0.44)">
+  <path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#7cc46a"/><path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#1e2320" opacity="0.18"/>
+  <path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#7cc46a" transform="translate(-9 -8) scale(0.93)"/>
+  <ellipse cx="-50" cy="-54" rx="20" ry="12" fill="#fff6e6" opacity="0.45" transform="rotate(-35 -50 -54)"/>
+  <ellipse cx="-12" cy="-22" rx="9" ry="13" fill="#1e2320"/><ellipse cx="44" cy="-22" rx="9" ry="13" fill="#1e2320"/>
+<path d="M6 20q14 10 28 0" stroke="#1e2320" stroke-width="6" stroke-linecap="round" fill="none"/>
+<ellipse cx="-32" cy="8" rx="13" ry="8" fill="#ec6a55" opacity="0.35"/><ellipse cx="62" cy="8" rx="11" ry="7" fill="#ec6a55" opacity="0.35"/>
+</g>
+<path d="M54 92 Q92 52 130 92 Z" fill="#ec6a55"/><path d="M52 92 Q92 82 132 92 L130 100 Q92 90 54 100 Z" fill="#c95c47"/><circle cx="92" cy="72" r="9" fill="#fff6e6"/>
+<rect x="34" y="138" width="20" height="26" rx="5" fill="#fff6e6"/><path d="M54 144q8 0 8 8t-8 8" stroke="#fff6e6" stroke-width="4" fill="none"/>
+<path d="M170 39.99l0.0024 0.0076 0.0076 0.0024-0.0076 0.0024-0.0024 0.0076-0.0024-0.0076-0.0076-0.0024 0.0076-0.0024z" fill="#fff6e6"/><path d="M44 105l1.68 5.32 5.32 1.68-5.32 1.68-1.68 5.32-1.68-5.32-5.32-1.68 5.32-1.68z" fill="#fff6e6"/>
+</g></svg>

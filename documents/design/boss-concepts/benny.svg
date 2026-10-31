@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="600" height="600">
+<!-- Boss concept: Benny Adeyemi, the quickfire host (concept art, not in the app; drawn in the course-tile style, decision 142) -->
+<defs><clipPath id="c"><rect x="14" y="14" width="172" height="172" rx="34"/></clipPath></defs>
+<g transform="rotate(-4 100 100)">
+<rect x="14" y="14" width="172" height="172" rx="34" fill="#f4b73b"/>
+<g clip-path="url(#c)"><circle cx="40" cy="40" r="60" fill="#fff6e6" opacity="0.18"/><circle cx="190" cy="190" r="50" fill="#ec6a55" opacity="0.9"/></g>
+<rect x="28" y="30" width="62" height="24" rx="8" fill="#ec6a55"/><circle cx="37" cy="42" r="3.5" fill="#fff6e6"/>
+<text x="66" y="47" font-family="system-ui,sans-serif" font-weight="800" font-size="13" fill="#fff6e6" text-anchor="middle">ON AIR</text>
+<path d="M150 46q8 8 0 18M158 40q14 14 0 30" stroke="#fff6e6" stroke-width="4" stroke-linecap="round" fill="none"/>
+<g transform="translate(118 116) scale(0.46)">
+  <path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#8a63e0"/><path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#1e2320" opacity="0.18"/>
+  <path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#8a63e0" transform="translate(-9 -8) scale(0.93)"/>
+  <ellipse cx="-50" cy="-54" rx="20" ry="12" fill="#fff6e6" opacity="0.45" transform="rotate(-35 -50 -54)"/>
+  <ellipse cx="-30" cy="-26" rx="10" ry="14" fill="#1e2320"/><ellipse cx="34" cy="-26" rx="10" ry="14" fill="#1e2320"/>
+<path d="M-28 6h56q0 34-28 34t-28-34z" fill="#1e2320"/><path d="M-14 26q14-10 28 0q-4 12-14 12t-14-12z" fill="#ec6a55"/>
+<path d="M-48 -52 q10 -8 22 -4 M26 -56 q12 -4 22 4" stroke="#1e2320" stroke-width="7" stroke-linecap="round" fill="none"/>
+</g>
+<path d="M80 102 q38 -54 76 0" stroke="#1e2320" stroke-width="8" stroke-linecap="round" fill="none"/>
+<rect x="70" y="96" width="16" height="28" rx="8" fill="#1e2320"/><rect x="150" y="96" width="16" height="28" rx="8" fill="#1e2320"/>
+<rect x="73" y="102" width="5" height="16" rx="2.5" fill="#ec6a55"/><rect x="158" y="102" width="5" height="16" rx="2.5" fill="#ec6a55"/>
+<path d="M60 182 V150 L84 132" stroke="#1e2320" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M44 182h32" stroke="#1e2320" stroke-width="5" stroke-linecap="round"/>
+<circle cx="88" cy="128" r="11" fill="#3a3f48"/><path d="M80 124l14-4M80 130l16-4" stroke="#8b929c" stroke-width="2" stroke-linecap="round"/>
+<path d="M168 131l2.16 6.84 6.84 2.16-6.84 2.16-2.16 6.84-2.16-6.84-6.84-2.16 6.84-2.16z" fill="#fff6e6"/><path d="M36 94l1.44 4.5600000000000005 4.5600000000000005 1.44-4.5600000000000005 1.44-1.44 4.5600000000000005-1.44-4.5600000000000005-4.5600000000000005-1.44 4.5600000000000005-1.44z" fill="#ec6a55"/>
+</g></svg>
