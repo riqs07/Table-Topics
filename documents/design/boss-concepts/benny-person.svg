@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="600" height="600">
+<!-- Boss concept: Benny Adeyemi, as a person in a Duolingo-like shape language (concept art, not in the app) -->
+<defs><clipPath id="t"><rect x="14" y="14" width="172" height="172" rx="34"/></clipPath></defs>
+<g transform="rotate(-4 100 100)">
+<rect x="14" y="14" width="172" height="172" rx="34" fill="#f4b73b"/>
+<g clip-path="url(#t)"><circle cx="40" cy="44" r="56" fill="#fff6e6" opacity="0.2"/><circle cx="186" cy="186" r="48" fill="#ec6a55"/>
+<rect x="126" y="22" width="54" height="20" rx="7" fill="#ec6a55"/><circle cx="135" cy="32" r="3.2" fill="#fff6e6"/>
+<text x="157" y="36.5" font-family="system-ui,sans-serif" font-weight="800" font-size="11" fill="#fff6e6" text-anchor="middle">ON AIR</text>
+<path d="M44 44q-8 8 0 18M36 38q-14 14 0 30" stroke="#fff6e6" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M44 200 V150 Q44 122 74 120 H126 Q156 122 156 150 V200 Z" fill="#8a63e0"/>
+<path d="M126 120 Q156 122 156 150 V200 H138 V152 Q138 132 120 124 Z" fill="#7552c8"/>
+<rect x="91.0" y="102" width="18" height="24" rx="6" fill="#71402a"/>
+<circle cx="66" cy="82" r="8" fill="#8a5233"/><circle cx="134" cy="82" r="8" fill="#71402a"/>
+<rect x="67" y="44" width="66" height="70" rx="30" fill="#8a5233"/>
+<path d="M118 47 Q133 56 133 80 Q133 104 112 113 Q124 98 124 80 Q124 60 118 47 Z" fill="#71402a"/>
+<path d="M84 120 L100 136 L116 120 Z" fill="#fff6e6"/>
+<path d="M67 70 Q66 40 100 40 Q134 40 133 70 Q126 54 100 54 Q76 54 67 70 Z" fill="#241510"/>
+<path d="M78 106 Q100 122 122 106 Q122 114 100 118 Q78 114 78 106 Z" fill="#241510"/>
+<ellipse cx="88" cy="78" rx="6.2" ry="7.6" fill="#ffffff"/><circle cx="89" cy="78.6" r="3.9" fill="#1e2320"/><circle cx="90.3" cy="77" r="1.2" fill="#ffffff"/><ellipse cx="112" cy="78" rx="6.2" ry="7.6" fill="#ffffff"/><circle cx="113" cy="78.6" r="3.9" fill="#1e2320"/><circle cx="114.3" cy="77" r="1.2" fill="#ffffff"/>
+<rect x="79" y="62" width="17" height="6" rx="3" fill="#241510" transform="rotate(-10 87 65)"/><rect x="104" y="62" width="17" height="6" rx="3" fill="#241510" transform="rotate(10 112 65)"/>
+<path d="M97 86 q3 6 8 4" stroke="#71402a" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M86 94 H114 Q114 110 100 110 Q86 110 86 94 Z" fill="#3a1a12"/><path d="M88 94 H112 V98 H88 Z" fill="#ffffff"/><path d="M92 106 Q100 100 108 106 Q104 110 100 110 Q96 110 92 106 Z" fill="#ec6a55"/>
+<path d="M70 74 Q70 34 100 34 Q130 34 130 74" stroke="#1e2320" stroke-width="7" stroke-linecap="round" fill="none"/>
+<rect x="58" y="68" width="16" height="26" rx="7" fill="#1e2320"/><rect x="126" y="68" width="16" height="26" rx="7" fill="#1e2320"/>
+<rect x="61" y="73" width="5" height="16" rx="2.5" fill="#ec6a55"/><rect x="134" y="73" width="5" height="16" rx="2.5" fill="#ec6a55"/>
+<path d="M150 136 L166 100" stroke="#8a63e0" stroke-width="20" stroke-linecap="round"/>
+<rect x="157" y="76" width="22" height="26" rx="10" fill="#8a5233" transform="rotate(20 168 89)"/><rect x="152" y="86" width="9" height="14" rx="4.5" fill="#71402a" transform="rotate(-30 156 93)"/>
+<path d="M30 200 V160 L58 140" stroke="#1e2320" stroke-width="5" stroke-linecap="round" fill="none"/>
+<rect x="52" y="122" width="22" height="26" rx="11" fill="#3a3f48" transform="rotate(-35 63 135)"/><path d="M56 128l12-6M58 134l12-6" stroke="#8b929c" stroke-width="2" stroke-linecap="round"/></g>
+</g></svg>

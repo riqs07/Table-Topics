@@ -224,6 +224,8 @@ Today a call keeps only words and times. To judge how the person sounded with th
 
 Concepts (not in the app): `design/boss-concepts/benny.svg`, `jules.svg`, `helen.svg`, and `bosses.png` side by side.
 
+**Alternative, as people (2026-10-31, at the user's request, after Duolingo's shape language):** `benny-person.svg`, `jules-person.svg`, `helen-person.svg`, and `people.png`. Built from big rounded shapes: a large rounded-rectangle head, a chunky torso with rounded shoulders, white eyes with dark pupils, bold brows, mitten hands, one flat shadow shape per form, no outlines; framed from the waist up so legs are never drawn. Benny cheers with headphones and a microphone; Jules looks away shyly over a mug, the paddle beside them; Helen in glasses and a blazer with a lanyard, coffee in hand, in the lift. They read as people with real character, at the cost of more detail to keep consistent and harder animation than a blob (a talking mouth and a blink are easy; arm and body movement is not). Which way to go is still open.
+
 **The mission brief** (before the call): the boss's tile large and moving gently, their name and one line ("Benny Adeyemi, host of *Three quick ones*. He moves fast."), the situation in two sentences, the three goals in plain words, the length, and "One try a day. Beat Benny to earn the badge." Then "Start the call".
 
 **An intro video, optional:** a 10 to 15 second clip of the boss talking, made with the video pipeline (decision 143) in the boss's own ElevenLabs voice ("Welcome to Three quick ones! I'll ask, you answer, no warning. Ready?"). It plays on the brief, and doubles as a short for social media. The same character in the brief, the call's voice and the badge makes each boss feel like someone.

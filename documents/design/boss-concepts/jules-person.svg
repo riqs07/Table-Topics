@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="600" height="600">
+<!-- Boss concept: Jules, as a person in a Duolingo-like shape language (concept art, not in the app) -->
+<defs><clipPath id="t"><rect x="14" y="14" width="172" height="172" rx="34"/></clipPath></defs>
+<g transform="rotate(4 100 100)">
+<rect x="14" y="14" width="172" height="172" rx="34" fill="#e86aae"/>
+<g clip-path="url(#t)"><path d="M14 30 Q100 56 186 30" stroke="#fff6e6" stroke-width="2.5" fill="none"/><path d="M18 34 l14 2 -8 15z" fill="#f4b73b"/><path d="M46 39 l14 2 -8 15z" fill="#4a68e0"/><path d="M74 34 l14 2 -8 15z" fill="#fff6e6"/><path d="M102 39 l14 2 -8 15z" fill="#f4b73b"/><path d="M130 34 l14 2 -8 15z" fill="#4a68e0"/><path d="M158 39 l14 2 -8 15z" fill="#fff6e6"/><path d="M186 34 l14 2 -8 15z" fill="#f4b73b"/>
+<circle cx="24" cy="190" r="54" fill="#1e2320" opacity="0.08"/>
+<path d="M166 200 L176 70" stroke="#f4b73b" stroke-width="6" stroke-linecap="round"/><path d="M172 64 l8 -14" stroke="#d99a1e" stroke-width="10" stroke-linecap="round"/><path d="M44 200 V150 Q44 122 74 120 H126 Q156 122 156 150 V200 Z" fill="#4a68e0"/>
+<path d="M126 120 Q156 122 156 150 V200 H138 V152 Q138 132 120 124 Z" fill="#3b55c0"/>
+<rect x="91.0" y="102" width="18" height="24" rx="6" fill="#dba987"/>
+<circle cx="66" cy="82" r="8" fill="#f1c7a5"/><circle cx="134" cy="82" r="8" fill="#dba987"/>
+<rect x="67" y="44" width="66" height="70" rx="30" fill="#f1c7a5"/>
+<path d="M118 47 Q133 56 133 80 Q133 104 112 113 Q124 98 124 80 Q124 60 118 47 Z" fill="#dba987"/>
+<path d="M86 120 Q100 130 114 120" stroke="#3b55c0" stroke-width="6" fill="none"/>
+<path d="M68 80 Q64 96 72 104 L78 84 Z" fill="#9a5b34"/><path d="M132 80 Q136 96 128 104 L122 84 Z" fill="#9a5b34"/>
+<path d="M64 74 Q64 36 100 36 Q136 36 136 74 Z" fill="#ec6a55"/><rect x="62" y="64" width="76" height="14" rx="7" fill="#c95c47"/><circle cx="100" cy="34" r="9" fill="#fff6e6"/>
+<ellipse cx="90" cy="88" rx="5.89" ry="7.22" fill="#ffffff"/><circle cx="92.6" cy="89.19999999999999" r="3.7049999999999996" fill="#1e2320"/><circle cx="93.89999999999999" cy="87.6" r="1.14" fill="#ffffff"/><ellipse cx="113" cy="88" rx="5.89" ry="7.22" fill="#ffffff"/><circle cx="115.6" cy="89.19999999999999" r="3.7049999999999996" fill="#1e2320"/><circle cx="116.89999999999999" cy="87.6" r="1.14" fill="#ffffff"/>
+<rect x="82" y="76" width="15" height="4.5" rx="2.25" fill="#9a5b34"/><rect x="105" y="76" width="15" height="4.5" rx="2.25" fill="#9a5b34"/>
+<g fill="#c98f6a"><circle cx="80" cy="98" r="1.4"/><circle cx="84" cy="101" r="1.4"/><circle cx="78" cy="102" r="1.2"/><circle cx="120" cy="98" r="1.4"/><circle cx="124" cy="101" r="1.2"/></g>
+<ellipse cx="80" cy="99" rx="7" ry="4" fill="#ec6a55" opacity="0.3"/><ellipse cx="122" cy="99" rx="6" ry="4" fill="#ec6a55" opacity="0.3"/>
+<path d="M94 104 Q102 109 110 103" stroke="#7a3f2a" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+<rect x="84" y="140" width="32" height="38" rx="8" fill="#fff6e6"/><path d="M116 148 q12 0 12 10 t-12 10" stroke="#fff6e6" stroke-width="5" fill="none"/>
+<path d="M90 140 q4 -8 0 -14 M102 138 q4 -8 0 -14" stroke="#fff6e6" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+<rect x="72" y="148" width="20" height="22" rx="10" fill="#f1c7a5"/><rect x="108" y="150" width="18" height="20" rx="9" fill="#dba987"/></g>
+</g></svg>
