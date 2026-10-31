@@ -44,7 +44,7 @@ test("4/3/2: tell today's story three times, shorter each time, then compare the
   // The drill's page
   await page.getByRole("link", { name: /^4\/3\/2/ }).click();
   // Today's story, with a full story's times shown
-  const row = page.getByRole("list", { name: "Today's 4/3/2" }).getByRole("link", { name: /^Story:/ });
+  const row = page.getByRole("list", { name: "Today's 4/3/2" }).getByRole("link", { name: /^A story/ });
   // (the times)
   await expect(row).toContainText("3:00, then 2:15, then 1:30");
   // Start
