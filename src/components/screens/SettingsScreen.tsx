@@ -21,6 +21,8 @@ import type { SettingsRecord } from "@/data/records";
 import { sampleSessions } from "@/data/sampleData";
 // Load the passphrase storage
 import { readPassphrase, savePassphrase } from "@/data/passphrase";
+// Load the clearer of the app's browser-storage notes and its question cache, for "Delete all my data"
+import { clearBrowserData } from "@/data/clearBrowserData";
 // Load the shortest passphrase allowed
 import { MIN_PASSPHRASE_LENGTH } from "@/config/headers";
 // Load the passphrase fingerprint
@@ -573,6 +575,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
     try {
       // Remove every record and recording
       await repo.deleteAllData();
+      // Remove the app's browser-storage notes and its cache of spoken questions too (the passphrase and the colour choice stay)
+      await clearBrowserData();
       // Show fresh settings, so a later change here never writes the deleted ones back (decision 86)
       setSettings(await repo.getSettings(today ?? new Date()));
       // Nothing waits for the coach now
@@ -760,7 +764,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {confirmingDelete && (
           <div>
             {/* What will happen */}
-            <p>This removes every recording, transcript, and setting on this device. It cannot be undone.</p>
+            <p>This removes every recording, transcript, setting and progress note on this device. Your coach passphrase and light or dark choice stay. It cannot be undone.</p>
             {/* Confirm */}
             <button type="button" onClick={deleteEverything} className={`mt-3 min-h-11 rounded-2xl bg-ink px-4 font-semibold text-paper-raised ${PRESS}`}>Yes, delete everything</button>
             {/* Back out */}

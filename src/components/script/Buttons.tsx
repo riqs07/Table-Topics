@@ -24,7 +24,7 @@ interface ButtonLinkProps {
   href: string;
   // Its words
   children: ReactNode;
-  // A fuller name for screen readers, when the words alone are not enough
+  // More for screen readers when the words alone are not enough: read after the words on a button ("Rehearse" + "section 2"), before them on a row ("Tell it properly:" + the moment). Never replaces the words, so the name a screen reader hears always holds what is seen (WCAG 2.5.3)
   label?: string;
 }
 
@@ -32,8 +32,10 @@ interface ButtonLinkProps {
 export function PrimaryLink({ href, children, label }: ButtonLinkProps) {
   // A filled, rounded button
   return (
-    <Link href={href} aria-label={label} className={PRIMARY}>
+    <Link href={href} className={PRIMARY}>
       {children}
+      {/* The extra, read after the words */}
+      {label && <span className="sr-only"> {label}</span>}
     </Link>
   );
 }
@@ -42,8 +44,10 @@ export function PrimaryLink({ href, children, label }: ButtonLinkProps) {
 export function SecondaryLink({ href, children, label }: ButtonLinkProps) {
   // An outlined, rounded button
   return (
-    <Link href={href} aria-label={label} className={SECONDARY}>
+    <Link href={href} className={SECONDARY}>
       {children}
+      {/* The extra, read after the words */}
+      {label && <span className="sr-only"> {label}</span>}
     </Link>
   );
 }
@@ -52,7 +56,9 @@ export function SecondaryLink({ href, children, label }: ButtonLinkProps) {
 export function RowLink({ href, children, label, meta }: ButtonLinkProps & { meta?: ReactNode }) {
   // The full row is the tap target
   return (
-    <Link href={href} aria-label={label} className={`flex min-h-14 items-center gap-3 py-2 hover:text-accent ${PRESS}`}>
+    <Link href={href} className={`flex min-h-14 items-center gap-3 py-2 hover:text-accent ${PRESS}`}>
+      {/* The lead-in, read before the words */}
+      {label && <span className="sr-only">{label} </span>}
       {/* The main words */}
       <span className="min-w-0 flex-1">{children}</span>
       {/* Anything quieter on the right */}

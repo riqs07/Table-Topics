@@ -116,7 +116,12 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
         <Masthead title="Tell a story" nav={false} close={close} />
         {/* A story that cannot be found */}
         {unknown ? (
-          <p role="alert" className="mt-6 max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
+          <>
+            {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+            <h1 className="sr-only">Tell a story</h1>
+            {/* Where it went */}
+            <p role="alert" className="mt-6 max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
+          </>
         ) : (
           <>
             {/* The scene, carried over from the Practice card (decision 141): a story you'll need's own, Story dice, the signpost for another guided story, the campfire otherwise (decisions 152 and 153) */}

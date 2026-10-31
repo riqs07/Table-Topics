@@ -98,6 +98,8 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
       <main id="main" className={PAGE}>
         {/* Title and close */}
         <Masthead title="Course" nav={false} close={{ href: "/courses", label: "Close, back to Courses" }} />
+        {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+        <h1 className="sr-only">Course</h1>
         {/* The message */}
         <p className="mt-8 text-lede">This course could not be found. <Link href="/courses" className="underline underline-offset-4">Back to Courses</Link></p>
       </main>

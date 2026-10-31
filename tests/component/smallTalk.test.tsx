@@ -129,7 +129,7 @@ describe("small talk", () => {
     // Draw Asking
     render(<SmallTalkScreen unitId="asking" repository={createRepository(new MemoryStore())} now={NOW} />);
     // The asking recipe, its lessons, and the main action leading to its first lesson
-    const asking = [!!(await screen.findByRole("region", { name: "A good follow-up, in four beats" })), screen.getByRole("link", { name: "Asking lesson 1: Ask about what they said" }).getAttribute("href"), screen.getByRole("link", { name: /^Lesson 1Ask about/ }).getAttribute("href"), !!screen.getByRole("region", { name: "Ask a follow-up" })];
+    const asking = [!!(await screen.findByRole("region", { name: "A good follow-up, in four beats" })), screen.getByRole("link", { name: /Asking lesson 1:\s*Ask about what they said/ }).getAttribute("href"), screen.getByRole("link", { name: /^Lesson 1Ask about/ }).getAttribute("href"), !!screen.getByRole("region", { name: "Ask a follow-up" })];
     // Draw Listening
     cleanup();
     // The page
@@ -165,7 +165,7 @@ describe("small talk", () => {
     // Draw the News page
     render(<SmallTalkScreen unitId="news" repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the recipe, the first lesson and the practice box
-    expect([!!(await screen.findByRole("region", { name: "A good response to news, in four beats" })), screen.getByRole("link", { name: "News lesson 1: Good news needs a real reaction" }).getAttribute("href"), !!within(screen.getByRole("region", { name: "Respond to news" })).getByRole("link", { name: "Respond to it" })]).toEqual([true, "/session?mode=smalltalk&prompt=snl1", true]);
+    expect([!!(await screen.findByRole("region", { name: "A good response to news, in four beats" })), screen.getByRole("link", { name: /News lesson 1:\s*Good news needs a real reaction/ }).getAttribute("href"), !!within(screen.getByRole("region", { name: "Respond to news" })).getByRole("link", { name: "Respond to it" })]).toEqual([true, "/session?mode=smalltalk&prompt=snl1", true]);
     // A response to "I got the job!"
     const repository = await repositoryWith(answer({ promptId: "sn01", durationSec: 6, transcript: "no way you got it how did it feel when they called", selfReview: { worked: "", change: "", tags: [], skipped: false, savedAt: NOW.toISOString() } }));
     // Its page

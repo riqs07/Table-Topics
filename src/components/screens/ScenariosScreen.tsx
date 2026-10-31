@@ -106,8 +106,8 @@ export function ScenariosScreen({ services = browserRecordingServices, planStep 
       {/* One scenario */}
       {scenario && !finished && (
         <section key={scenario.id} aria-label={scenario.title} className="mt-6">
-          {/* Its name */}
-          <p className="text-footnote text-ink-muted">{scenario.title}</p>
+          {/* Its name, the page's heading (the round's result has its own once finished) */}
+          <h1 className="text-footnote font-normal text-ink-muted">{scenario.title}</h1>
           {/* The item */}
           <div className="mt-2"><ScenarioItem scenario={scenario} services={services} onAnswer={answer} /></div>
           {/* On to the next, once answered */}

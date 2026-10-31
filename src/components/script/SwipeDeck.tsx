@@ -97,7 +97,7 @@ export function SwipeDeck({ screens, index, onIndex, label, finish = null }: Swi
         {screens.map((_, position) => <span key={position} className={`h-1.5 flex-1 rounded-full transition-[background-color,transform] duration-300 ${position <= index ? "bg-accent" : "bg-rule"} ${position === index ? "scale-y-150" : ""}`} />)}
       </span>
       {/* The screens, side by side, one in view at a time */}
-      <div ref={row} onScroll={onScroll} className="-mx-6 flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:mx-0">
+      <div ref={row} onScroll={onScroll} role="region" aria-label="Screens" tabIndex={0} className="-mx-6 flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:mx-0">
         {/* Each screen */}
         {screens.map((screen, position) => (
           // One screen, the full width of the row

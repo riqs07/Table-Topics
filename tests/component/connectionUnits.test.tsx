@@ -87,7 +87,7 @@ describe("the new Connect units on screen", () => {
       within(practice).getByRole("heading", { level: 1 }).textContent,
       within(practice).getByRole("link", { name: "Say what you'd say" }).getAttribute("href"),
       !!screen.getByRole("region", { name: "Reading the room, in four beats" }),
-      screen.getByRole("link", { name: "Reading the room lesson 1: Notice changes, not signals" }).getAttribute("href"),
+      screen.getByRole("link", { name: /Reading the room lesson 1:\s*Notice changes, not signals/ }).getAttribute("href"),
       within(screen.getByRole("region", { name: "Moments to read" })).getAllByRole("link").length,
       within(missions).getAllByRole("listitem").map((item) => item.getAttribute("data-tried")),
       within(missions).getAllByRole("listitem")[1]?.textContent?.includes("A stretch"),

@@ -40,7 +40,7 @@ describe("RehearseScreen", () => {
     // Confirm the rehearse link points at it
     const [talk] = await repository.listTalks();
     // Check the link
-    expect(screen.getByRole("link", { name: /Rehearse “Wedding toast”/ }).getAttribute("href")).toBe(`/session?mode=rehearse&prompt=${talk!.id}`);
+    expect(screen.getByRole("link", { name: /Rehearse\s*“Wedding toast”/ }).getAttribute("href")).toBe(`/session?mode=rehearse&prompt=${talk!.id}`);
   });
 
   // A talk can be saved with the date it will be given, and each talk links to its own page with the days left
@@ -69,8 +69,8 @@ describe("RehearseScreen", () => {
   it("is called Your talks", async () => {
     // Draw the screen
     render(<RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the title
-    expect(await screen.findByText("Your talks")).toBeTruthy();
+    // Confirm the title is the page's heading (and the masthead shows it too)
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, screen.getAllByText("Your talks").length]).toEqual(["Your talks", 2]);
   });
 
   // A talk needs a title and some words

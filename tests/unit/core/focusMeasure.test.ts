@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the focus measure being checked
-import { headlineFor, headlineKind, measureFor, retryHeadline } from "@/core/focusMeasure";
+import { headlineFor, headlineKind, measureFor, retryHeadline, retryNote } from "@/core/focusMeasure";
 // Load a sample session builder
 import { makeSession } from "../../support/fixtures";
 
@@ -85,6 +85,21 @@ describe("headlineFor", () => {
 });
 
 // Group the checks about the retry headline
+// Group the checks about the kinder note on a second try that went the other way
+describe("retryNote", () => {
+  // More pause words on the second try gets a task-focused word; fewer, the same, or no measure gets nothing
+  it("speaks only when the second try went the other way", () => {
+    // Confirm each case
+    expect([
+      retryNote(makeSession({ focus: "cut-fillers", fillersPerMinute: 6.5 }), makeSession({ focus: "cut-fillers", fillersPerMinute: 4 }))?.startsWith("Second tries often"),
+      retryNote(makeSession({ focus: "cut-fillers", fillersPerMinute: 1.8 }), makeSession({ focus: "cut-fillers", fillersPerMinute: 4.2 })),
+      retryNote(makeSession({ focus: "cut-fillers", fillersPerMinute: 4.1 }), makeSession({ focus: "cut-fillers", fillersPerMinute: 4 })),
+      retryNote(makeSession({ focus: "pace", wordsPerMinute: 150 }), makeSession({ focus: "pace", wordsPerMinute: 148 })),
+      retryNote(makeSession({ focus: "pace", wordsPerMinute: 190 }), makeSession({ focus: "pace", wordsPerMinute: 150 }))?.startsWith("A big change in pace"),
+    ]).toEqual([true, null, null, null, true]);
+  });
+});
+
 describe("retryHeadline", () => {
   // Filler week compares filler rates
   it("compares filler rates in filler week", () => {

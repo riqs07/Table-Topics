@@ -147,6 +147,8 @@ export async function importExport(repo: Repository, file: ExportFile, now: Date
   let added = 0;
   // The file's readings by session id (a version 1 file has none here: its sessions carry them)
   const fileSignals = new Map(file.signals.map((record) => [record.sessionId, record]));
+  // The settings joined with the file's, worked out before anything is written, so a join that fails leaves nothing half-imported
+  const settings = mergeSettings(await repo.getSettings(now), file.settings);
   // Sessions, a chunk at a time
   await inChunks(file.sessions, async (chunk) => {
     // The copies already here
@@ -188,7 +190,7 @@ export async function importExport(repo: Repository, file: ExportFile, now: Date
   // Challenges, talks, summaries and stories joined with the copies here (each list is small), saved together: a challenge or talk gains what it lacks, a summary is added when new, and the later story title wins (decision 92)
   await repo.saveBatch({ challenges: file.challenges.map((challenge) => mergeRecord(challenges.get(challenge.id), challenge)), talks: file.talks.map((talk) => mergeRecord(talks.get(talk.id), talk)), summaries: file.summaries.filter((summary) => !summaries.has(summary.id)), stories: file.stories.map((story) => mergeStory(stories.get(story.id), story)) });
   // The settings, joined with those here
-  await repo.saveSettings(mergeSettings(await repo.getSettings(now), file.settings));
+  await repo.saveSettings(settings);
   // Each take's measures, a chunk at a time: one already here is kept, gaining only a rubric or a deeper analysis it lacks (decisions 90 and 91)
   await inChunks(file.analyses, async (chunk) => {
     // The copies here
@@ -356,10 +358,57 @@ function isStory(value: unknown): value is StoryRecord {
   return isObject(value) && isText(value.id) && isText(value.title) && isText(value.createdAt) && isText(value.updatedAt);
 }
 
-// Check that a value has the shape of the settings record
+// Check that a value is a yes/no flag, or missing
+const isFlagOrMissing = (value: unknown) => value === undefined || typeof value === "boolean";
+// Check that a value is text, or missing
+const isTextOrMissing = (value: unknown) => value === undefined || isText(value);
+// Check that a value is a map by id whose every entry passes a check, or missing
+const isMapOrMissing = (value: unknown, check: (entry: unknown) => boolean) => value === undefined || (isObject(value) && Object.values(value).every(check));
+// Check that a value is a list whose every item passes a check, or missing
+const isListOrMissing = (value: unknown, check: (item: unknown) => boolean) => value === undefined || (Array.isArray(value) && value.every(check));
+
+// Check that a value has the shape of one Learn card's progress (the merge reads its times, so they must be text)
+function isLearnProgress(value: unknown): boolean {
+  // Read time, box, due time, last result and an optional recall time
+  return isObject(value) && isText(value.readAt) && isNumber(value.box) && isText(value.dueAt) && (value.lastResult === null || value.lastResult === "right" || value.lastResult === "wrong") && isTextOrMissing(value.recalledAt);
+}
+
+// Check that a value has the shape of one mission try (the merge sorts by day and ranks by status)
+function isMission(value: unknown): boolean {
+  // Ids, day, status, the two ratings, whether tried, the note, and the debrief
+  return isObject(value) && isText(value.id) && isText(value.missionId) && isText(value.day) && ["accepted", "skipped", "done"].includes(value.status as string) && (value.predicted === null || isNumber(value.predicted)) && (value.tried === null || typeof value.tried === "boolean") && (value.outcome === null || isNumber(value.outcome)) && isText(value.note) && typeof value.tooMuch === "boolean" && isTextOrNull(value.debriefedAt);
+}
+
+// Check that a value has the shape of a scenario question's progress (the merge compares lastAt)
+function isScenarioProgress(value: unknown): boolean {
+  // The first and last tiers and times
+  return isObject(value) && isText(value.firstTier) && isText(value.lastTier) && isText(value.firstAt) && isText(value.lastAt);
+}
+
+// Check that a value has the shape of a scene's progress (decision 149; the merge compares lastAt)
+function isSceneProgress(value: unknown): boolean {
+  // Plays, times, warmth, passes and checks
+  return isObject(value) && isNumber(value.plays) && isText(value.firstAt) && isText(value.lastAt) && isNumber(value.lastWarmth) && isNumber(value.bestWarmth) && isNumber(value.lastPassed) && isNumber(value.checkCount);
+}
+
+// Check that a value has the shape of a listening story's progress (decision 150; the merge compares lastAt)
+function isListenProgress(value: unknown): boolean {
+  // Plays, times, what was caught, details and the core
+  return isObject(value) && isNumber(value.plays) && isText(value.firstAt) && isText(value.lastAt) && isNumber(value.lastCaught) && isNumber(value.bestCaught) && isNumber(value.detailCount) && typeof value.lastCore === "boolean";
+}
+
+// Check that a value has the shape of the settings record, every part of it: a crafted or damaged file must be refused before anything is written, never crash the merge halfway through or leave broken progress behind (the focus, check-in and course parts are read safely by the merge itself)
 function isSettings(value: unknown): value is SettingsRecord {
   // Must be an object with a focus position, start date and audio limit
-  return isObject(value) && isNumber(value.focusIndex) && isText(value.focusStartedOn) && isNumber(value.audioRetention);
+  if (!isObject(value) || !isNumber(value.focusIndex) || !isText(value.focusStartedOn) || !isNumber(value.audioRetention)) return false;
+  // The plain choices: numbers, flags and short texts
+  const choicesOk = (value.recordingDays === undefined || isNumber(value.recordingDays)) && isFlagOrMissing(value.shareNotes) && isFlagOrMissing(value.hideStreak) && isFlagOrMissing(value.showPauseWords) && isFlagOrMissing(value.stammer) && isFlagOrMissing(value.deepAnalysis) && isFlagOrMissing(value.headphones) && isTextOrMissing(value.anchor) && isTextOrMissing(value.reminderTime) && (value.turnEnding === undefined || ["tap", "auto", "live", "call"].includes(value.turnEnding as string)) && (value.conversationDifficulty === undefined || ["easy", "normal", "hard"].includes(value.conversationDifficulty as string));
+  // The progress maps and lists, each entry checked
+  const progressOk = isMapOrMissing(value.learn, isLearnProgress) && isListOrMissing(value.missions, isMission) && isMapOrMissing(value.scenarios, isScenarioProgress) && isMapOrMissing(value.scenes, isSceneProgress) && isMapOrMissing(value.listening, isListenProgress) && isMapOrMissing(value.wordsToWatch, isNumber) && isListOrMissing(value.warmupDays, isText) && isListOrMissing(value.practiceFocus, isText) && (value.courses === undefined || isObject(value.courses)) && (value.checkIn === undefined || isObject(value.checkIn));
+  // Steps put off: a day and a list of step keys
+  const skippedOk = value.skipped === undefined || (isObject(value.skipped) && isText(value.skipped.day) && Array.isArray(value.skipped.steps) && value.skipped.steps.every(isText));
+  // All of it
+  return choicesOk && progressOk && skippedOk;
 }
 
 // Read an export file's text, checking it fully before anything is saved

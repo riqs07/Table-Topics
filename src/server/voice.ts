@@ -14,6 +14,9 @@ export interface Voice {
   speak(text: string): Promise<ArrayBuffer>;
 }
 
+// How long one text-to-speech call may take before it is given up (a question is a sentence or two)
+export const SPEECH_TIMEOUT_MS = 20_000;
+
 // The ElevenLabs voice
 export function createElevenLabsVoice(settings: VoiceSettings, fetchFn: typeof fetch = fetch): Voice {
   // Hand back the voice
@@ -28,6 +31,8 @@ export function createElevenLabsVoice(settings: VoiceSettings, fetchFn: typeof f
         headers: { "xi-api-key": settings.apiKey, "content-type": "application/json", accept: "audio/mpeg" },
         // The words and the model
         body: JSON.stringify({ text, model_id: VOICE_MODEL }),
+        // Given up after the time limit
+        signal: AbortSignal.timeout(SPEECH_TIMEOUT_MS),
       });
       // A refusal or failure is an error, with the status for the log
       if (!response.ok) throw new Error(`ElevenLabs answered ${response.status}.`);
@@ -63,8 +68,8 @@ export function createPersonaVoice(apiKey: string, fetchFn: typeof fetch = fetch
         headers: { "xi-api-key": apiKey, "content-type": "application/json", accept: "audio/mpeg" },
         // The words and the model
         body: JSON.stringify({ text, model_id: model }),
-        // Stopped when the phone stops listening
-        signal: options?.signal,
+        // Stopped when the phone stops listening, or after the time limit, whichever comes first
+        signal: options?.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(SPEECH_TIMEOUT_MS)]) : AbortSignal.timeout(SPEECH_TIMEOUT_MS),
       });
       // A refusal or failure is an error, with the status for the log
       if (!response.ok) throw new Error(`ElevenLabs answered ${response.status}.`);

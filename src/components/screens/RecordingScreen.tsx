@@ -1588,6 +1588,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 <p className="mt-4 max-w-[48ch] text-lede">You get {think} seconds to think, then recording starts by itself. Aim for 1 to 2 minutes: the light turns green at 1:00, yellow at 1:30 and red at 2:00.</p>
               </>
             )}
+            {/* A reading, lesson or rehearsal whose text is not here (still loading, or a talk no longer on this device): the page's heading for screen readers and the keyboard, since nothing else draws one */}
+            {(mode === "read" || mode === "pause" || mode === "lesson" || mode === "rehearse") && !script && !recording && <h1 className="sr-only">{title}</h1>}
             {/* Reading aloud, a lesson, or a rehearsal: the title (and source or tip) before starting, and the text throughout */}
             {script && (
               <>

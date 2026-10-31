@@ -12,11 +12,11 @@ describe("sendResultMessage", () => {
     // Nothing waiting
     [0, null, "Nothing was waiting."],
     // Missing passphrase
-    [0, "needs-passphrase", "Add the right passphrase to get feedback."],
+    [0, "needs-passphrase", "Feedback needs the coach passphrase (Settings, then Coach)."],
     // Partly sent, then offline
     [1, "retry-later", "Feedback arrived for 1 session. The coach could not be reached; it will try again later."],
     // Server not set up
-    [0, "not-set-up", "The server is missing a setting (see documents/setup-requirements.md)."],
+    [0, "not-set-up", "The coach is not set up on the server yet. Settings, then Coach, says what is missing."],
   ] as const)("describes %i sent, stopped by %s", (sent, stoppedBy, expected) => {
     // Confirm the sentence
     expect(sendResultMessage(sent, stoppedBy)).toBe(expected);

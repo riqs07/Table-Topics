@@ -190,7 +190,7 @@ describe("CoursePartScreen", () => {
     // The wrap-up
     render(<CoursePartScreen partId={BEAT1} step="wrap" repository={repository} now={NOW} />);
     // The line
-    const line = (await screen.findByRole("heading", { level: 1 })).textContent;
+    const line = (await screen.findByRole("heading", { level: 1, name: /pause words/ })).textContent;
     // Saved
     await waitFor(async () => expect((await loadCourseProgress(repository, NOW))[BEAT1]?.takeId).toBe("b"));
     // Confirm the line, the comeback note, the results link and the next part
@@ -286,7 +286,7 @@ describe("CoursesScreen", () => {
     // One part done
     render(<CoursesScreen repository={await seeded([[BEAT1, "a", "2026-10-27T10:00:00Z"]])} now={NOW} />);
     // Confirm the card and its count
-    const card = await screen.findByRole("link", { name: "Stop freezing, 1 of 16" });
+    const card = await screen.findByRole("link", { name: /Stop freezing, 1 of 16/ });
     // Confirm where it leads, and its tile in place of the icon (decision 142)
     expect([card.getAttribute("href"), card.querySelector("[data-course-tile]")?.getAttribute("data-course-tile")]).toEqual(["/courses/course?id=stop-freezing", "stop-freezing"]);
   });

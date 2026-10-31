@@ -68,9 +68,9 @@ export function FourThreeTwoScreen(props: ScreenProps) {
         {/* The rows */}
         <ul aria-label="Today's 4/3/2" className={`mt-2 ${CARD_LIST}`}>
           {/* Today's prepared speech */}
-          {topic && <li><RowLink href={loopHref({ mode: "response", promptId: topic.id }, "new", 1)} label={`Prepared speech: ${topic.text}`}><span className="block font-semibold">Prepared speech</span><span className="block text-footnote text-ink-muted">{topic.text}</span><span className="block text-footnote text-accent">{targetWords("response")}</span></RowLink></li>}
+          {topic && <li><RowLink href={loopHref({ mode: "response", promptId: topic.id }, "new", 1)}><span className="block font-semibold">Prepared speech</span><span className="block text-footnote text-ink-muted">{topic.text}</span><span className="block text-footnote text-accent">{targetWords("response")}</span></RowLink></li>}
           {/* Today's story, with its suggested template */}
-          {story && <li><RowLink href={loopHref({ mode: "story", promptId: story.id, story: { template: suggestedTemplate(story.id), focus: null, length: "full" } }, "new", 1)} label={`Story: ${story.text}`}><span className="block font-semibold">A story</span><span className="block text-footnote text-ink-muted">{story.text}</span><span className="block text-footnote text-accent">{findStoryTemplate(suggestedTemplate(story.id)).name} · {targetWords("story", "full")}</span></RowLink></li>}
+          {story && <li><RowLink href={loopHref({ mode: "story", promptId: story.id, story: { template: suggestedTemplate(story.id), focus: null, length: "full" } }, "new", 1)}><span className="block font-semibold">A story</span><span className="block text-footnote text-ink-muted">{story.text}</span><span className="block text-footnote text-accent">{findStoryTemplate(suggestedTemplate(story.id)).name} · {targetWords("story", "full")}</span></RowLink></li>}
         </ul>
       </section>
 
@@ -86,7 +86,7 @@ export function FourThreeTwoScreen(props: ScreenProps) {
               // The set-up it was last told with (a story from before set-ups were saved gets its suggested template)
               const take = item.latest.story ?? { template: suggestedTemplate(item.id), focus: null, length: "full" as const };
               // One row
-              return <li key={item.id}><RowLink href={loopHref({ mode: "story", promptId: item.id, story: take, retryOf: item.latest.id }, "new", 1)} label={`Your story: ${item.title}`}><span className="block font-semibold">{item.title}</span><span className="block text-footnote text-accent">{targetWords("story", take.length)}</span></RowLink></li>;
+              return <li key={item.id}><RowLink href={loopHref({ mode: "story", promptId: item.id, story: take, retryOf: item.latest.id }, "new", 1)}><span className="block font-semibold">{item.title}</span><span className="block text-footnote text-accent">{targetWords("story", take.length)}</span></RowLink></li>;
             })}
           </ul>
         </section>

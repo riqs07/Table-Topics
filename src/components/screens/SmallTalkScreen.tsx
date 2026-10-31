@@ -234,15 +234,15 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
             // One lesson
             <li key={lesson.id}>
               {/* The whole row starts the lesson */}
-              <Link href={answerHref(lesson.id)} aria-label={`${unit.name} lesson ${lesson.number}: ${lesson.title}`} className={`flex min-h-14 items-center gap-x-3 py-2.5 hover:text-accent ${PRESS}`}>
+              <Link href={answerHref(lesson.id)} className={`flex min-h-14 items-center gap-x-3 py-2.5 hover:text-accent ${PRESS}`}>
                 {/* Its mark on the path */}
                 <PathMark mark={marks[index] ?? "open"} number={lesson.number} />
                 {/* Title (the idea is in the lesson itself, decision 63) */}
                 <span className="min-w-0 flex-1">
                   {/* "Next" above the lesson to do next */}
                   {marks[index] === "next" && <span className="block text-footnote font-semibold text-accent">Next</span>}
-                  {/* Title */}
-                  <span className="block font-semibold leading-snug">{lesson.title}</span>
+                  {/* Title, with the unit and number read before it (the visible words stay in the name; WCAG 2.5.3) */}
+                  <span className="block font-semibold leading-snug"><span className="sr-only">{unit.name} lesson {lesson.number}: </span>{lesson.title}</span>
                 </span>
                 {/* The chevron */}
                 <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />

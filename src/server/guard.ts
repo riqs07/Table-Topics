@@ -33,6 +33,8 @@ export interface GuardDeps {
 
 // Seconds in an hour, the window for counting wrong passphrases
 const HOUR = 3_600;
+// The most bytes a JSON body may declare: the largest valid request is a few tens of thousands of characters of text (REQUEST_TEXT_MAX_CHARS), so anything far over that is refused before it is parsed
+export const BODY_MAX_BYTES = 512_000;
 
 // Build a JSON reply with a status code and optional headers
 export function reply(status: number, body: unknown, headers: Record<string, string> = {}): Response {
@@ -174,6 +176,10 @@ export async function admit<Schema extends z.ZodType>(request: Request, deps: Gu
   // The checked settings
   const { env } = access;
 
+  // A body declared far larger than any valid request is refused before it is read
+  const declared = Number(request.headers.get("content-length") ?? 0);
+  // Refuse it
+  if (Number.isFinite(declared) && declared > BODY_MAX_BYTES) return { refusal: reply(413, { error: "The request was too large." }) };
   // Read the body as JSON
   let body: unknown;
   // Try to parse it

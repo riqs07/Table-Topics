@@ -126,6 +126,7 @@ Concrete steps that follow from the rules above, not yet done:
 2. **Turn on typed linting with `no-floating-promises`** (S3).
 3. **Do a real-voice test on desktop and a phone test** (checkpoints C3 and C5). Nothing so far has used a real microphone.
 4. **Bring the coding standards in line with section 8**: test-first only for bug fixes, fewer and broader screen tests, and comments that explain why. Waiting on the user's go-ahead, since the standards are theirs.
+5. **Keep the accessibility scan green** (added 2026-10-31): `tests/e2e/accessibility.spec.ts` runs axe over every route in `ROUTES`. A new page joins `ROUTES` and so is scanned; a new state of a page (a not-found or loading state) needs its own level-one heading, visible or `sr-only`, since `RouteFocus` and the skip link land on it.
 
 ## 8. Are AI-written tests worth it? (measured on VoiceLab, 2026-10-15)
 

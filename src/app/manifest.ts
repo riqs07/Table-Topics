@@ -28,6 +28,13 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: palette["paper-raised"],
     // Status bar color: the accent
     theme_color: palette.accent,
+    // Long-press shortcuts on the installed icon (Android and desktop): straight into today's practice, or a Rapid Fire
+    shortcuts: [
+      // Today's practice
+      { name: "Today’s practice", short_name: "Today", url: "/", icons: [{ src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }] },
+      // A surprise question (Practice picks the day's topic)
+      { name: "Rapid Fire question", short_name: "Rapid Fire", url: "/practice", icons: [{ src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }] },
+    ],
     // Home-screen icons
     icons: [
       // Standard small icon

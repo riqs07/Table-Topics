@@ -24,6 +24,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 8 | [checkpoints.md](checkpoints.md) | Exactly what do I need from you, and when? | 3 min |
 | 9 | [setup-requirements.md](setup-requirements.md) | Which accounts and keys must you set up? | 2 min |
 | 10 | [risks.md](risks.md) | What do we expect to go wrong, and what is the plan? | 3 min |
+| 10a | [audit-2026-10-31.md](audit-2026-10-31.md) | What did the overnight audit of security, accessibility, performance and stickiness find, fix and leave for you? | 6 min |
 | 11 | [ai-development-playbook.md](ai-development-playbook.md) | What have we learned about building with an AI agent, and which rules carry over to the next project? | 5 min |
 | 12 | [plan-public-speaking.md](plan-public-speaking.md) | What is being built next to make VoiceLab a public-speaking app, and in what order? | 6 min |
 | 13 | [plan-daily-practice.md](plan-daily-practice.md) | How does today's practice work, and what did the user decide? | 2 min |

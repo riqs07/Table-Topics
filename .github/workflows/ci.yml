@@ -27,6 +27,8 @@ jobs:
           cache: pnpm
       # Install exactly the versions recorded in the lockfile
       - run: pnpm install --frozen-lockfile
+      # Refuse known high or critical flaws in the packages the released app ships (decision 123 asks for this check before each release)
+      - run: pnpm audit --prod --audit-level=high
       # Check code style and common mistakes, failing on any warning
       - run: pnpm lint
       # Check that all types are correct

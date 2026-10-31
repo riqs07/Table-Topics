@@ -61,7 +61,7 @@ describe("Learn", () => {
     // The set marked "Next up"
     const nextUp = sets.find((link) => link.textContent?.includes("Next up"));
     // Confirm Stories leads the group (decision 94), the set holding the first card is marked next, and the main action
-    expect([sets[0]?.getAttribute("aria-label"), nextUp?.getAttribute("aria-label"), nextUp?.getAttribute("href"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([`Stories you can tell, 0 of ${LEARN_CARDS.filter((card) => card.set === "stories").length}`, `Nerves and presence, 0 of ${LEARN_CARDS.filter((card) => card.set === "nerves").length}`, "/learn/set?id=nerves", `/learn/card?id=${LEARN_CARDS[0]?.id}`]);
+    expect([sets[0]?.textContent?.startsWith(`Stories you can tell, 0 of ${LEARN_CARDS.filter((card) => card.set === "stories").length}`), nextUp?.textContent?.includes(`Nerves and presence, 0 of ${LEARN_CARDS.filter((card) => card.set === "nerves").length}`), nextUp?.getAttribute("href"), screen.getByRole("link", { name: /^Next card/ }).getAttribute("href")]).toEqual([true, true, "/learn/set?id=nerves", `/learn/card?id=${LEARN_CARDS[0]?.id}`]);
   });
 
   // With a focus, its sets come first as their own group, and the next card is from them (decision 97)

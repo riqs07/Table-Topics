@@ -68,6 +68,8 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
       <main id="main" className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Speech" section="skills" />
+        {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+        <h1 className="sr-only">Speech</h1>
         {/* The explanation */}
         <p data-inline className="mt-6 text-lede text-ink-muted">This speech is not in the library. <Link href="/skills#readings" className="underline underline-offset-4">Back to the readings</Link></p>
       </main>
@@ -92,6 +94,8 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
     <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 md:[&>:not(header,nav,[data-action-band])]:max-w-3xl">
       {/* Heading and navigation */}
       <Masthead title={speech.title} section="skills" />
+      {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+      <h1 className="sr-only">{speech.title}</h1>
       {/* Who, where and when */}
       <p className="mt-6 text-lede">{speech.speaker}. {speech.occasion}.</p>
       {/* How long, in how many parts, and how far along */}
@@ -105,15 +109,15 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
             {/* The line to the next part (not after the last) */}
             {index < speech.parts.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
             {/* The whole row starts the reading */}
-            <Link href={`/session?mode=read&prompt=${ids[index]}`} aria-label={`Read part ${index + 1}`} className="relative flex items-start gap-x-4 py-4 hover:text-accent">
+            <Link href={`/session?mode=read&prompt=${ids[index]}`} className="relative flex items-start gap-x-4 py-4 hover:text-accent">
               {/* Its mark on the path */}
               <PathMark mark={marks[index] ?? "open"} number={index + 1} />
               {/* Its opening words and length */}
               <span className="min-w-0 flex-1">
                 {/* "Next" above the part to read next */}
                 {marks[index] === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
-                {/* The opening words */}
-                <span className="block text-lede">{opening(part)}</span>
+                {/* The opening words, with what the row does read before them (the visible words stay in the name; WCAG 2.5.3) */}
+                <span className="block text-lede"><span className="sr-only">Read part {index + 1}: </span>{opening(part)}</span>
                 {/* How long */}
                 <span className="block text-footnote text-ink-muted">{lengthLabel(readingTime(part))}</span>
               </span>

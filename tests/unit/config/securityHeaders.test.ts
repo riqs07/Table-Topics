@@ -33,6 +33,10 @@ describe("security headers", () => {
     const worker = rules.find((rule) => rule.source === "/sw.js");
     // Confirm both headers on pages, and the worker's cache rule
     expect([page["Content-Security-Policy"], page["Strict-Transport-Security"], worker?.headers.some((header) => header.key === "Cache-Control")]).toEqual([contentSecurityPolicy(false), STRICT_TRANSPORT_SECURITY, true]);
+    // Confirm the window and file isolation headers, and that the microphone is the only device the page may ask for
+    expect([page["Cross-Origin-Opener-Policy"], page["Cross-Origin-Resource-Policy"], page["Permissions-Policy"]?.startsWith("microphone=(self), camera=()")]).toEqual(["same-origin", "same-origin", true]);
+    // Confirm the image resizing route is off (the only images are SVG files it would never resize)
+    expect(nextConfig.images?.unoptimized).toBe(true);
   });
 
   // The development server accepts no tunnel unless one is named (it used to accept any Cloudflare tunnel)

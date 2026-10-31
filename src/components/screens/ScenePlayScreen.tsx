@@ -246,6 +246,8 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
     <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 pb-28 md:px-14 md:pt-10">
       {/* Title, with the way out */}
       <Masthead title={scene.title} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/scenes", label: "Close, back to Scenes" }}>{plan ? `Step ${plan.step} of ${plan.total}` : `With ${name}`}</Masthead>
+      {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+      {!result && <h1 className="sr-only">{scene.title}</h1>}
       {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise the two people */}
       {planStep && phase === "intro" ? <ScenePanel scene="scenes" line="Choose your replies, then say the last one." className="mt-4" /> : (<div className="mt-4 flex justify-center"><SceneCast mood={mood} speaking={speaking} name={name} /></div>)}
       {/* Before starting: where you are */}

@@ -9,7 +9,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { PRESS, RowButton, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, RowButton, RowLink, SECONDARY, SecondaryLink, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 import { Player } from "@/components/script/Player";
 // Load the shared screen starting points
@@ -82,7 +82,7 @@ import { talkSections } from "@/core/eventPrep";
 // Load the Table Topics timing sentence
 import { LOUDNESS_TICK_MS, formatClock, takeWindow, timingSentence } from "@/core/recordingRules";
 // Load the focus-based headlines and numbers
-import { headlineFor, headlineKind, measureFor, retryHeadline } from "@/core/focusMeasure";
+import { headlineFor, headlineKind, measureFor, retryHeadline, retryNote } from "@/core/focusMeasure";
 // Load the pause-word and fluency settings rules
 import { fluencyJudged, pauseWordsShown } from "@/core/pauseWords";
 // Load the daily prompt picker, for the step after a warm-up
@@ -596,6 +596,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             <p className="mt-4 text-footnote text-ink-muted">{warmup ? "Before your response" : story ? "Before you tell it again" : "Before you try again"}</p>
             {/* The cue */}
             <p className="mt-1 font-display text-cue font-semibold tracking-tight">{(session.feedback ?? ownChange).retryCue}</p>
+            {/* Inside today's practice the band moves on, so the second try is offered here, right under the cue, one tap away (the loop is speak, one change, try again; offered, never forced) */}
+            {plan && <p className="mt-4"><SecondaryLink href={retryHref}>{story ? "Tell it again" : "Try it again"}</SecondaryLink></p>}
             {/* For a follow-up question or a reply to a story, a better one */}
             {session.feedback?.connection && (
               <>
@@ -700,8 +702,6 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {speechPart && <li>{speechPart.part < speechPart.speech.partCount ? <RowLink href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`}>Read part {speechPart.part + 1}</RowLink> : <RowLink href={`/speech?id=${speechPart.speech.id}`}>That was the last part</RowLink>}</li>}
             {/* After a rehearsal, back to the talk and its plan */}
             {rehearsed && <li><RowLink href={`/talk?id=${rehearsed.id}`}>Back to your talk</RowLink></li>}
-            {/* Inside today's practice, trying again is offered here (the main action moves on) */}
-            {plan && <li><RowLink href={retryHref}>{story ? "Tell it again" : "Try it again"}</RowLink></li>}
             {/* After small talk, another question, back on its own page */}
             {/* A follow-up or a reply: trying the same one again is a row, since the main action moves on */}
             {quick && !plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
@@ -1133,6 +1133,8 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
         <div className="flex flex-1 flex-col">
           {/* The change as one sentence */}
           <h1 className="mt-6 font-display text-statement font-semibold tracking-tight motion-safe:animate-rise md:mt-0 md:max-w-[18ch] md:text-statement-xl">{view.pauseWords || measureFor(original.focus)?.kind !== "fillers" ? retryHeadline(retry, original) : "Your second try is in."}</h1>
+          {/* When the number went the other way: a task-focused word, so the second try never reads as failure (person-focused feedback lowers persistence; playbook 6a) */}
+          {retryNote(retry, original) && <p className="mt-3 max-w-[48ch] text-lede">{retryNote(retry, original)}</p>}
           {/* What the first try said to work on */}
           {cue && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">You were working on: {cue}</p>}
           {/* The speaker's own call against the measure (decision 116) */}
@@ -1302,6 +1304,8 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
         <>
           {/* Title */}
           <Masthead title="Session" />
+          {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+          <h1 className="sr-only">Session</h1>
           {/* Explanation and a way back */}
           <p data-inline className="mt-6 text-lede text-ink-muted">This session is not on this device. <Link href="/history" className={TEXT_LINK}>Back to history</Link></p>
         </>
@@ -1311,6 +1315,8 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
         <>
           {/* Title */}
           <Masthead title="Session" />
+          {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+          <h1 className="sr-only">Session</h1>
           {/* What happened */}
           <p role="alert" data-inline className="mt-6 max-w-[48ch] text-lede">This session could not be loaded. The browser said: “{loadError}” Reload the page to try again. <Link href="/history" className={TEXT_LINK}>Back to history</Link></p>
         </>

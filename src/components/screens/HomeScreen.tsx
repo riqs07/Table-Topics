@@ -64,7 +64,7 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 import { missionDays } from "@/core/missions";
 // Load the scene tile and the icons for Today's two tiles (decision 138)
 import { WayCard } from "@/components/script/WayCard";
-import { ShuffleIcon, UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
+import { ChartLineUpIcon, ShuffleIcon, UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared heading and card looks
 import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the end-of-day moment
@@ -398,6 +398,8 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
           {margin && <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
             {/* Where practice stands: days in the last seven, and the run from a week of practice; never a broken run (decision 78) */}
             {runLines.map((line) => <p key={line}>{line}</p>)}
+            {/* Where the run leads: progress against your own past self, one tap away instead of behind the gear (the PRD's motivation lever) */}
+            {runLines.length > 0 && <p className="mt-1"><Link href="/profile" className={TEXT_LINK}>See your progress</Link></p>}
             {/* The last seven days as squares, filled where there was practice */}
             {data && !data.showWelcome && !data.hideStreak && data.run.any && (
               <ul aria-label="The last seven days" className="mt-3 mb-4 flex gap-1.5">
@@ -537,6 +539,8 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                   {lesson && <li><WayCard way={{ name: lesson.title, detail: `Your lesson · ${lesson.unit} ${lesson.number}/${lesson.total}`, href: `/session?mode=smalltalk&prompt=${lesson.promptId}`, icon: UsersThreeIcon, scene: "conversation" }} /></li>}
                   {/* Quick play: what it is, not what it picked, so the pick stays a surprise */}
                   <li><WayCard way={{ name: "Quick play", detail: "A random kind of practice", href: data.quick.href, icon: ShuffleIcon }} delay={70} /></li>
+                  {/* Your progress: then and now, every measure, and history (one tap from Today, not two behind the gear) */}
+                  <li><WayCard way={{ name: "Your progress", detail: "Then and now, every take", href: "/profile", icon: ChartLineUpIcon }} delay={140} /></li>
                 </ul>
               </section>
             )}

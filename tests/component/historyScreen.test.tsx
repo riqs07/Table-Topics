@@ -46,7 +46,7 @@ describe("HistoryScreen", () => {
     // Draw the screen with no data
     render(<HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the one action leads to Today
-    expect((await screen.findByRole("link", { name: "Record your first session" })).getAttribute("href")).toBe("/");
+    expect((await screen.findByRole("link", { name: "Record your first session" })).getAttribute("href")).toBe("/session?mode=free&prompt=free");
   });
 
   // The trend is labelled, so it reads without guessing

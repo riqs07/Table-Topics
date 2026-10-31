@@ -196,6 +196,8 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
     <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 pb-28 md:px-14 md:pt-10">
       {/* Title, with the way out (the story's name stays hidden until afterwards) */}
       <Masthead title={result ? story.title : "Active listening"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/listening", label: "Close, back to Active listening" }}>{plan ? `Step ${plan.step} of ${plan.total}` : LEVELS[story.level].name}</Masthead>
+      {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+      {!result && <h1 className="sr-only">Active listening</h1>}
       {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise the two people */}
       {planStep && phase === "intro" ? <ScenePanel scene="listening" line="Listen once, then answer to what mattered." className="mt-4" /> : (<div className="mt-4 flex justify-center"><SceneCast mood={result ? (result.warm ? "pleased" : "easy") : "easy"} speaking={speaking} name={name} /></div>)}
       {/* Before hearing it */}

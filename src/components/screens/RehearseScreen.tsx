@@ -115,6 +115,8 @@ export function RehearseScreen(props: ScreenProps) {
     <main id="main" className={PAGE}>
       {/* Title and a way back */}
       <Masthead title="Your talks" section="practice" />
+      {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+      <h1 className="sr-only">Your talks</h1>
 
       {/* What this is for */}
       <p className="mt-6 max-w-[52ch] text-lede">Paste a talk you are preparing, or your notes for it. Rehearse it with the timer, then compare runs from different days. Your talks stay on this device.</p>
@@ -139,7 +141,7 @@ export function RehearseScreen(props: ScreenProps) {
                 <span className="ml-2 text-footnote text-ink-muted">about {Math.round(readingSeconds(talk.body) / 60)} min{talk.goalMinutes ? ` · goal ${talk.goalMinutes} min` : ""}{today && talk.eventDate ? ` · ${daysAway(daysUntil(talk.eventDate, today))}` : ""}</span>
               </span>
               {/* Rehearse it */}
-              <SecondaryLink href={`/session?mode=rehearse&prompt=${talk.id}`} label={`Rehearse “${talk.title}”`}>Rehearse</SecondaryLink>
+              <SecondaryLink href={`/session?mode=rehearse&prompt=${talk.id}`} label={`“${talk.title}”`}>Rehearse</SecondaryLink>
               {/* Delete, with a confirmation step */}
               {confirming === talk.id ? (
                 <span className="flex gap-3">

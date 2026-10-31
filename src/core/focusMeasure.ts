@@ -105,6 +105,24 @@ export function headlineKind(session: FullSession): ResultKind | null {
   return headlineFor(session) ? (measureFor(session.focus)?.kind ?? null) : null;
 }
 
+// A task-focused line for a second try whose number went the other way (more pause words, or a pace further from the usual zone), so the screen never reads as failure: the numbers stay honest, and the cue stands (playbook 6a; feedback aimed at the task, not the person, keeps people trying). Null when the second try held or improved, or when there is nothing to compare
+export function retryNote(retry: FullSession, original: FullSession): string | null {
+  // Measure by the focus the first try was made under
+  const measure = measureFor(original.focus);
+  // Both numbers
+  const before = measure?.read(original) ?? null;
+  // The retry's
+  const after = measure?.read(retry) ?? null;
+  // Nothing to compare, or too close to call
+  if (!measure || before === null || after === null || Math.abs(after - before) < measure.noticeable) return null;
+  // Pause words: more of them is the other way
+  if (measure.kind === "fillers" && after > before) return "Second tries often pick up a few more pause words while the change is still in mind. The cue stands; the third one is usually the one that lands.";
+  // Pace is a target zone, not a direction: a word only when it moved away from the first try by a lot, since nearer or further is for the zone to say
+  if (measure.kind === "speed" && Math.abs(after - before) >= measure.noticeable * 10) return "A big change in pace is normal while you hold a new habit in mind. Keep the cue; the next one settles.";
+  // Held or improved
+  return null;
+}
+
 // The headline sentence on the Retry result screen
 export function retryHeadline(retry: FullSession, original: FullSession): string {
   // Measure by the focus the first try was made under

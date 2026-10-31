@@ -427,7 +427,7 @@ describe("HomeScreen", () => {
     // The section beside the steps
     const also = await screen.findByRole("region", { name: "Also today" });
     // Confirm the lesson is a step, and the section holds only Quick play
-    expect([!!within(screen.getByRole("list", { name: "Steps" })).getByRole("link", { name: /Small-talk lesson 1/ }), within(also).getAllByRole("link").map((link) => link.textContent)]).toEqual([true, ["Quick playA random kind of practice"]]);
+    expect([!!within(screen.getByRole("list", { name: "Steps" })).getByRole("link", { name: /Small-talk lesson 1/ }), within(also).getAllByRole("link").map((link) => link.textContent)]).toEqual([true, ["Quick playA random kind of practice", "Your progressThen and now, every take"]]);
   });
 
   // A returning user sees days in the last week, and the run only from a week of practice (decision 78)

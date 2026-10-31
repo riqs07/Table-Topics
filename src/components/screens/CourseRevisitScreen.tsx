@@ -89,6 +89,8 @@ export function CourseRevisitScreen({ partId, takeId, ...props }: ScreenProps & 
     <main id="main" className={`${PAGE} flex flex-col`}>
       {/* Title and a way back to Today */}
       <Masthead title="Back again" nav={false} close={{ href: "/", label: "Close, back to Today" }} />
+      {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+      {!(data.status === "ready" && place?.part.practice && now && before) && <h1 className="sr-only">Back again</h1>}
       {/* Loading, failed, missing, or the comparison */}
       {data.status === "loading" && <Skeleton blocks={["h-24", "h-56"]} />}
       {data.status === "failed" && <CourseLoadFailed retry={data.retry} />}

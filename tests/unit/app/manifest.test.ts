@@ -28,6 +28,14 @@ describe("web app manifest", () => {
     expect(result.theme_color).toBe(THEMES[DEFAULT_THEME].colors.light.accent);
   });
 
+  // Long-press shortcuts lead to pages the app has
+  it("offers shortcuts to pages that exist", () => {
+    // The shortcut addresses
+    const urls = (manifest().shortcuts ?? []).map((shortcut) => shortcut.url);
+    // Confirm two, each a real page
+    expect(urls).toEqual(["/", "/practice"]);
+  });
+
   // Phones need 192 and 512 pixel icons, plus a maskable one for Android shapes
   it("lists 192 and 512 pixel icons, including a maskable one", () => {
     // Collect the sizes

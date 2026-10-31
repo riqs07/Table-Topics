@@ -30,6 +30,8 @@ export function DevTilesScreen() {
     <main id="main" className={PAGE}>
       {/* Heading */}
       <Masthead title="All tiles" nav={false} close={{ href: "/settings", label: "Close, back to Settings" }} />
+      {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+      <h1 className="sr-only">All tiles</h1>
       {/* Each course */}
       {COURSES.filter((course) => !only || course.id === only).map((course) => {
         // The course's tile, then each lesson's, with what it stands for

@@ -72,7 +72,7 @@ describe("TalkScreen", () => {
     // Draw the page
     render(<TalkScreen talkId="talk-1" repository={repository} now={NOW} />);
     // Confirm the note and the open practice links
-    expect([!!(await screen.findByText(/The date has passed/)), !!screen.getByRole("link", { name: "Rehearse section 2" })]).toEqual([true, true]);
+    expect([!!(await screen.findByText(/The date has passed/)), !!screen.getByRole("link", { name: /Rehearse\s*section 2/ })]).toEqual([true, true]);
   });
 
   // Whole run-throughs are listed with their length against the goal

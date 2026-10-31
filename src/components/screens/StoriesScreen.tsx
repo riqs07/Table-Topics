@@ -15,7 +15,7 @@ import { FoldCard } from "@/components/script/FoldCard";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the story prompts and groups
-import { NEEDED_TYPES, STORY_GROUPS, STORY_PROMPTS, STORY_TEMPLATES, findStoryTemplate, neededPromptForDay, momentTitle, storyPromptForDay, suggestedTemplate } from "@/content/stories";
+import { NEEDED_TYPES, STORY_GROUPS, STORY_PROMPTS, STORY_TEMPLATES, findStoryTemplate, neededPromptForDay, storyPromptForDay, suggestedTemplate } from "@/content/stories";
 // Load the guided stories (decision 93)
 import { GUIDED_LEVELS, GUIDED_STORIES, guidedLevel } from "@/content/guidedStories";
 // Load the moment note's prompt
@@ -210,7 +210,7 @@ export function StoriesScreen(props: ScreenProps) {
           {NEEDED_TYPES.map((type) => (
             // One kind, opening today's prompt of it
             <li key={type.template}>
-              <RowLink href={today ? tellHref(neededPromptForDay(type.group, today).id) : "/stories"} label={`${type.name}: ${type.detail}`}>
+              <RowLink href={today ? tellHref(neededPromptForDay(type.group, today).id) : "/stories"}>
                 {/* Its name */}
                 <span className="block font-semibold">{type.name}</span>
                 {/* What it is for */}
@@ -234,7 +234,7 @@ export function StoriesScreen(props: ScreenProps) {
           {STORY_TEMPLATES.filter((template) => template.family === "everyday").map((template) => (
             // One template, starting today's story with it
             <li key={template.id}>
-              <RowLink href={todays ? tellHref(todays.id, template.id) : "/stories"} label={`${template.name}: ${template.forWhat}`}>
+              <RowLink href={todays ? tellHref(todays.id, template.id) : "/stories"}>
                 {/* Its name */}
                 <span className="block font-semibold">{template.name}</span>
                 {/* What it is for */}
@@ -264,7 +264,7 @@ export function StoriesScreen(props: ScreenProps) {
                 {/* The stories */}
                 <ul aria-label={level.name} className="divide-y divide-rule">
                   {/* Each story: its title, with its first fact under it */}
-                  {stories.map((story) => <li key={story.id}><RowLink href={tellHref(story.id)} label={story.title}><span className="block font-semibold">{story.title}</span><span className="block text-footnote text-ink-muted">{story.facts[0]}</span></RowLink></li>)}
+                  {stories.map((story) => <li key={story.id}><RowLink href={tellHref(story.id)}><span className="block font-semibold">{story.title}</span><span className="block text-footnote text-ink-muted">{story.facts[0]}</span></RowLink></li>)}
                 </ul>
               </FoldCard>
             );
@@ -284,7 +284,7 @@ export function StoriesScreen(props: ScreenProps) {
               // One note
               <li key={moment.id}>
                 {/* The whole row starts telling it */}
-                <RowLink href={tellMomentHref(moment.id)} label={`Tell it properly: ${momentTitle(moment.transcript)}`}>
+                <RowLink href={tellMomentHref(moment.id)} label="Tell it properly:">
                   {/* When */}
                   <span className="block text-footnote text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
                   {/* What was said, two lines at most */}

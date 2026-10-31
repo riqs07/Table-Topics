@@ -139,6 +139,8 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       <main id="main" data-area="learn" className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
         {/* Heading */}
         <Masthead title="Learn" section="learn" />
+        {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+        <h1 className="sr-only">Learn</h1>
         {/* Explanation */}
         <p data-inline className="mt-6 text-lede">There is no such card. <Link href="/learn" className="underline underline-offset-4">Back to Learn</Link></p>
       </main>

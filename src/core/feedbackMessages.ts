@@ -16,9 +16,9 @@ export function sendResultMessage(sent: number, stoppedBy: FeedbackOutcome | nul
   // Why sending stopped, if it did
   const reason =
     // No passphrase, or a wrong one
-    stoppedBy === "needs-passphrase" ? "Add the right passphrase to get feedback."
+    stoppedBy === "needs-passphrase" ? "Feedback needs the coach passphrase (Settings, then Coach)."
     // The server is missing a setting
-    : stoppedBy === "not-set-up" ? "The server is missing a setting (see documents/setup-requirements.md)."
+    : stoppedBy === "not-set-up" ? "The coach is not set up on the server yet. Settings, then Coach, says what is missing."
     // Offline or busy
     : stoppedBy === "retry-later" ? "The coach could not be reached; it will try again later."
     // Nothing stopped it

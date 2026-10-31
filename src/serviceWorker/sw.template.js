@@ -91,10 +91,10 @@ self.voicelabStrategyFor = strategyFor;
 self.voicelabPageKey = pageKey;
 self.voicelabRscKey = rscKey;
 
-// A plain page shown when this page is not saved on the device and there is no connection
+// A plain page shown when this page is not saved on the device and there is no connection: the browser's own light or dark colours (the theme lives in the app's stylesheet, which is not to hand here, and no raw colour may be written; design-system.md), a heading, and a way home
 function offlinePage() {
   // Minimal page with a way home
-  const html = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline · VoiceLab</title><body style="max-width:32rem;margin:3rem auto;padding:0 1.5rem;line-height:1.5"><p>You\'re offline and this page isn\'t saved on this device yet. Pages you\'ve opened while online work offline.</p><p><a href="/">Back to today</a></p></body>';
+  const html = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Offline · VoiceLab</title><body style="margin:0;min-height:100dvh;line-height:1.5"><main style="max-width:32rem;margin:0 auto;padding:3rem 1.5rem"><p style="font-weight:600;font-size:1.25rem;margin:0 0 .75rem">VoiceLab</p><h1 style="font-size:1.75rem;line-height:1.15;margin:0 0 1rem">You\'re offline.</h1><p style="margin:0 0 1.5rem;opacity:.75">This page isn\'t saved on this device yet. Pages you\'ve opened while online work offline.</p><p><a href="/" style="display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1.25rem;border-radius:1rem;border:2px solid currentColor;font-weight:600;text-decoration:none;color:inherit">Back to today</a></p></main></body>';
   // Wrap it as a response
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
 }

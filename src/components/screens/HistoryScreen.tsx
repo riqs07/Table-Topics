@@ -261,7 +261,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
           {/* What will appear */}
           <p className="text-lede text-ink-muted">Nothing here yet. Your first recording will start the page.</p>
           {/* The one thing to do */}
-          <p className="mt-5"><PrimaryLink href="/">Record your first session</PrimaryLink></p>
+          <p className="mt-5"><PrimaryLink href="/session?mode=free&prompt=free">Record your first session</PrimaryLink></p>
         </div>
       )}
 

@@ -433,7 +433,7 @@ describe("service worker fetch", () => {
     worker.handlers.fetch!(page.event);
     worker.handlers.fetch!(move.event);
     // Confirm the page load got the offline page and the move a failed fetch (so the app loads the page instead)
-    expect([await (await page.reply()!).text(), (await move.reply()!).type]).toEqual([expect.stringContaining("this page isn't saved on this device yet"), "error"]);
+    expect([await (await page.reply()!).text(), (await move.reply()!).type]).toEqual([expect.stringContaining("page isn't saved on this device yet"), "error"]);
   });
 
   // The offline page no longer claims the page was never opened (it may have been opened before this build)

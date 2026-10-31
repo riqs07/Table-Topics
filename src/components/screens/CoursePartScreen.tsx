@@ -111,6 +111,8 @@ function WrapUp({ place, takes, onDone }: { place: PartPlace; takes: ReadonlyArr
     // The message and the way to try
     return (
       <div className="mt-8">
+        {/* The page's heading for screen readers and the keyboard (the masthead and the step bar carry it visibly) */}
+        <h1 className="sr-only">Wrap-up</h1>
         {/* What is missing */}
         <p className="text-lede">No take for this part yet.</p>
         {/* The way to try */}
@@ -166,6 +168,8 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
       <main id="main" className={PAGE}>
         {/* Title and close */}
         <Masthead title="Lesson" nav={false} close={{ href: "/courses", label: "Close, back to Courses" }} />
+        {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+        <h1 className="sr-only">Lesson</h1>
         {/* The message */}
         <p className="mt-8 text-lede">This lesson could not be found. <Link href="/courses" className="underline underline-offset-4">Back to Courses</Link></p>
       </main>
@@ -267,6 +271,8 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
       {/* Try it: the goal, then the recording page */}
       {step === "try" && part.practice && (
         <div className="mt-6 flex flex-1 flex-col">
+          {/* The page's heading for screen readers and the keyboard (the masthead and the step bar carry it visibly) */}
+          <h1 className="sr-only">Lesson {lessonNumber}: try it</h1>
           {/* Which try */}
           <p className="text-footnote font-semibold text-accent">{part.practice.tries > 1 ? `Try ${Math.min(attempt, part.practice.tries)} of ${part.practice.tries}` : "Your try"}</p>
           {/* The goal */}
@@ -295,6 +301,8 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
       )}
 
       {/* Wrap up: once the takes are read */}
+      {step === "wrap" && data.status !== "ready" && <h1 className="sr-only">Lesson {lessonNumber}: wrap-up</h1>}
+      {/* Loading the takes */}
       {step === "wrap" && data.status === "loading" && <Skeleton blocks={["h-24", "h-40"]} />}
       {step === "wrap" && data.status === "failed" && <CourseLoadFailed retry={data.retry} />}
       {step === "wrap" && data.status === "ready" && today && <WrapUp place={place} takes={data.takes} onDone={async (takeId) => void (await markPartDone(repo, part.id, takeId, new Date()))} />}

@@ -68,6 +68,10 @@ Courses for each focus, made of lessons in short parts that use the modes the ap
 
 The voice shape has a face in six moods, Open Peeps people greet new users and celebrate a finished course, and Practice's main ways are blob scene cards that move. Still to draw: scenes for the voice drills and the conversation units.
 
+## Done: overnight audit and fixes (2026-10-31, decision 156)
+
+Security, accessibility, performance and stickiness were audited in one autonomous pass and the safe fixes made; the report is [audit-2026-10-31.md](audit-2026-10-31.md). Still to do from it, each needing a product call: a cross-platform install nudge after the first finished day; real reminders for the installed app (web push, decision 2's known risk); a "short day" and a lighter first day back; recording without live words when the speech service is offline; a lighter day one (the course step makes it five steps); keeping the passphrase out of script reach (an HttpOnly cookie); server-side start times for live minutes so a dishonest client cannot refund them; atomic counter expiry in the rate-limit store.
+
 ## To do: scrutinise and polish the videos (added 2026-10-30)
 
 The 6 course shorts (decision 145) and 37 lesson clips (decisions 146 and 147) are fine for now (the user: "this is okay"), but they were made quickly, mostly by agents, and checked only from still frames. Treat them as a pilot: review them properly, then clean them up.

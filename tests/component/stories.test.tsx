@@ -109,7 +109,7 @@ describe("StoriesScreen", () => {
     // The story's row
     const row = within(await screen.findByRole("list", { name: "Your stories" })).getByRole("listitem");
     // Confirm the title, count, takeaway, the retelling's address and the moment's
-    expect([within(row).getByText("Running late"), within(row).getByText(/Client win · Told twice/), within(row).getByText("Say her words exactly."), within(row).getByRole("link", { name: "Tell “Running late” again" }).getAttribute("href"), screen.getByRole("link", { name: /Tell it properly: the kettle sang at dawn/ }).getAttribute("href")]).toEqual([expect.anything(), expect.anything(), expect.anything(), "/session?mode=story&prompt=sp04&retryOf=b", "/stories/tell?moment=m1"]);
+    expect([within(row).getByText("Running late"), within(row).getByText(/Client win · Told twice/), within(row).getByText("Say her words exactly."), within(row).getByRole("link", { name: "Tell “Running late” again" }).getAttribute("href"), screen.getByRole("link", { name: /Tell it properly:.*the kettle sang at dawn/ }).getAttribute("href")]).toEqual([expect.anything(), expect.anything(), expect.anything(), "/session?mode=story&prompt=sp04&retryOf=b", "/stories/tell?moment=m1"]);
   });
 
   // A story's title can be changed
@@ -405,7 +405,7 @@ describe("guided stories", () => {
     // The section
     const section = (await screen.findByRole("heading", { name: "Guided stories" })).closest("section") as HTMLElement;
     // Confirm the line, the two folds, and the zoo's address
-    expect([!!within(section).getByText("You get the facts. You make it a story."), !!within(section).getByText("Just the facts"), !!within(section).getByText("With a twist"), within(section).getByRole("link", { name: "A day at the zoo" }).getAttribute("href")]).toEqual([true, true, true, "/stories/tell?prompt=gs13"]);
+    expect([!!within(section).getByText("You get the facts. You make it a story."), !!within(section).getByText("Just the facts"), !!within(section).getByText("With a twist"), within(section).getByRole("link", { name: /^A day at the zoo/ }).getAttribute("href")]).toEqual([true, true, true, "/stories/tell?prompt=gs13"]);
   });
 
   // The set-up shows the facts, the twist and the nudges, carries the story's own focus, and lets the user pick a template (decision 126)

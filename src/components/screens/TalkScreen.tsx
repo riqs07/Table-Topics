@@ -101,6 +101,8 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
       <main id="main" className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Your talk" section="practice" />
+        {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+        <h1 className="sr-only">Your talk</h1>
         {/* What happened */}
         <p role="alert" className="mt-6 max-w-[48ch] text-lede">This talk could not be loaded. The browser said: “{loadError}” Reload the page to try again.</p>
         {/* The way back */}
@@ -119,6 +121,8 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
       <main id="main" className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Your talk" section="practice" />
+        {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+        <h1 className="sr-only">Your talk</h1>
         {/* The note */}
         <p className="mt-6 text-lede">This talk is not on this device. It may have been deleted, or saved in another browser.</p>
         {/* The way back */}
@@ -235,7 +239,7 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
                 {section.split("\n")[0]}
               </span>
               {/* Rehearse it */}
-              <SecondaryLink href={rehearseHref(talk.id, index, "full")} label={`Rehearse section ${index + 1}`}>Rehearse</SecondaryLink>
+              <SecondaryLink href={rehearseHref(talk.id, index, "full")} label={`section ${index + 1}`}>Rehearse</SecondaryLink>
             </li>
           ))}
           {/* The whole talk, at each rung */}

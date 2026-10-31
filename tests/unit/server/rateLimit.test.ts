@@ -85,7 +85,7 @@ describe("UpstashCounterStore", () => {
     // Confirm the count came back
     expect(count).toBe(1);
     // Confirm the increment command was sent with the token
-    expect(fetchFake.mock.calls[0]).toEqual(["https://kv.example/incr/k", { method: "POST", headers: { Authorization: "Bearer t" } }]);
+    expect(fetchFake.mock.calls[0]).toEqual(["https://kv.example/incr/k", { method: "POST", headers: { Authorization: "Bearer t" }, signal: expect.any(AbortSignal) }]);
     // Confirm the expiry was set on first use
     expect(fetchFake.mock.calls[1]?.[0]).toBe("https://kv.example/expire/k/60");
   });

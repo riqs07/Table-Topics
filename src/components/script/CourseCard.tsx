@@ -40,7 +40,7 @@ export function CourseCard({ href, name, blurb, icon: IconShape, art, done, tota
   const started = done > 0 && total > 1;
   // The whole card is the link
   return (
-    <Link href={href} aria-label={`${name}, ${done} of ${total}`} className={`flex h-full min-h-20 items-center gap-4 p-4 ${CARD} ${PRESS}`}>
+    <Link href={href} className={`flex h-full min-h-20 items-center gap-4 p-4 ${CARD} ${PRESS}`}>
       {/* The picture when there is one, otherwise the icon on a rounded warm tile */}
       {art ? <span aria-hidden="true" className="flex flex-none">{art}</span> : (
         <span aria-hidden="true" className="flex size-12 flex-none items-center justify-center rounded-[14px] bg-warm-tint text-warm-ink">
@@ -52,8 +52,8 @@ export function CourseCard({ href, name, blurb, icon: IconShape, art, done, tota
       <span className="min-w-0 flex-1">
         {/* A note, such as "Next up" */}
         {note && <span className="block text-footnote font-semibold text-warm-ink">{note}</span>}
-        {/* The name */}
-        <span className="block font-display text-xl font-semibold leading-tight tracking-tight">{name}</span>
+        {/* The name, with the progress read out after it (the visible count and bar below are decorative), so the link's name is its visible text (WCAG 2.5.3) */}
+        <span className="block font-display text-xl font-semibold leading-tight tracking-tight">{name}<span className="sr-only">, {done} of {total}</span></span>
         {/* What it is */}
         <span className="block text-footnote text-ink-muted">{blurb}</span>
         {/* Before starting: how many there are */}

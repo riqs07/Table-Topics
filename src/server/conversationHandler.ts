@@ -359,6 +359,6 @@ export function createConversationMinutesHandler(deps: ConversationDeps) {
       return reply(503, { error: PAUSED });
     }
     // Used, allowed and left
-    return reply(200, { minutesUsed: used, minutesPerMonth: settings.minutesPerMonth, minutesLeft: Math.max(0, settings.minutesPerMonth - used) });
+    return reply(200, { minutesUsed: used, minutesPerMonth: settings.minutesPerMonth, minutesLeft: Math.max(0, settings.minutesPerMonth - used) }, { "cache-control": "no-store" });
   };
 }

@@ -97,6 +97,9 @@ export class MemoryCounterStore implements CounterStore {
   }
 }
 
+// How long one store command may take: the store is reached before any paid work, so a hung connection must not pin a request until the platform's own limit
+export const STORE_TIMEOUT_MS = 5_000;
+
 // Shape of a reply from the Upstash REST API
 interface UpstashReply {
   // The command's result, when it worked (a number from a count, text or nothing from a read)
@@ -118,7 +121,7 @@ export class UpstashCounterStore implements CounterStore {
   // Send one command to the store and return its result as it came
   private async send(path: string): Promise<UpstashReply["result"]> {
     // Call the store's REST API
-    const response = await this.fetchFn(`${this.settings.url}/${path}`, { method: "POST", headers: { Authorization: `Bearer ${this.settings.token}` } });
+    const response = await this.fetchFn(`${this.settings.url}/${path}`, { method: "POST", headers: { Authorization: `Bearer ${this.settings.token}` }, signal: AbortSignal.timeout(STORE_TIMEOUT_MS) });
     // Read the reply
     const reply = (await response.json()) as UpstashReply;
     // Treat any failure as an error, so an outage cannot quietly lift the limits

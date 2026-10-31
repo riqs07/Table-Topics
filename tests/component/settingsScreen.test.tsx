@@ -241,6 +241,10 @@ describe("SettingsScreen", () => {
   it("deletes all data only after confirming", async () => {
     // Make a repository with data
     const repository = await repositoryWithOneSession();
+    // Notes this browser keeps outside the database: a progress note that must go, and the passphrase that stays
+    localStorage.setItem("voicelab-steps-ticked", "2026-10-13:1");
+    // (the passphrase)
+    localStorage.setItem("voicelab-passphrase", "a-long-enough-passphrase");
     // Draw the screen
     render(<SettingsScreen repository={repository} now={NOW} />);
     // First tap
@@ -253,6 +257,10 @@ describe("SettingsScreen", () => {
     await waitFor(async () => expect(await repository.listSessions()).toHaveLength(0));
     // Confirm the user is told
     expect(screen.getByText(/Everything is deleted/)).toBeTruthy();
+    // Confirm the progress note went with it and the passphrase stayed
+    expect([localStorage.getItem("voicelab-steps-ticked"), localStorage.getItem("voicelab-passphrase")]).toEqual([null, "a-long-enough-passphrase"]);
+    // Leave no passphrase for the next check
+    localStorage.removeItem("voicelab-passphrase");
   });
 
   // Importing an export file adds its sessions

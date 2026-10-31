@@ -717,7 +717,7 @@ test("Learn: read a card one screen at a time", async ({ page }) => {
   // Start at Learn
   await page.goto("/learn");
   // Open the body-language set
-  await page.getByRole("link", { name: /^Body language: myth or fact, / }).click();
+  await page.getByRole("link", { name: /Body language: myth or fact\s*,/ }).click();
   // Open the "93%" card
   await page.getByRole("link", { name: /93% of communication/ }).click();
   // Guess

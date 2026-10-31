@@ -83,6 +83,8 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
 export function createAssemblyAiTranscriber(apiKey: string, options: AssemblyAiOptions = {}): Transcriber {
   // The network, the address, the pause between checks and the wait
   const { fetchFn = fetch, baseUrl = "https://api.assemblyai.com", pollMs = TRANSCRIPT_POLL_MS, sleep = wait } = options;
+  // How long the clean-up delete may take (it runs after the caller's own time limit may have passed, so it needs its own)
+  const DELETE_TIMEOUT_MS = 5_000;
   // Send one request and read its JSON reply, failing with the status (never the key)
   async function call(path: string, init: RequestInit, signal: AbortSignal): Promise<unknown> {
     // Ask, with the key
@@ -117,7 +119,7 @@ export function createAssemblyAiTranscriber(apiKey: string, options: AssemblyAiO
         }
       } finally {
         // Delete the transcript (and with it the text) at AssemblyAI; a failure here is not fatal, and the account's own data-retention setting is the backstop (setup-requirements.md)
-        await fetchFn(`${baseUrl}${path}`, { method: "DELETE", headers: { authorization: apiKey } }).catch(() => undefined);
+        await fetchFn(`${baseUrl}${path}`, { method: "DELETE", headers: { authorization: apiKey }, signal: AbortSignal.timeout(DELETE_TIMEOUT_MS) }).catch(() => undefined);
       }
     },
   };

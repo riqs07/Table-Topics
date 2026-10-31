@@ -84,6 +84,8 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
       {/* Title and a way back to Today */}
       <Masthead title="Mission" nav={false} close={{ href: origin.href, label: `Close, back to ${origin.name}` }}>{mission?.move ?? ""}</Masthead>
       {/* Missing */}
+      {record === null && <h1 className="sr-only">Mission</h1>}
+      {/* Missing */}
       {record === null && <p className="mt-8 text-lede">This mission could not be found. <Link href={origin.href} className="underline underline-offset-4">Back to {origin.name}</Link></p>}
       {/* The debrief */}
       {record && mission && (

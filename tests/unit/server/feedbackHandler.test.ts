@@ -67,6 +67,16 @@ describe("feedback handler", () => {
     expect(await response.json()).toEqual({ feedback: FEEDBACK });
   });
 
+  // A body declared far larger than any valid request is refused before it is parsed, so a passphrase holder cannot make the server chew megabytes of JSON
+  it("refuses a body declared too large before reading it", async () => {
+    // A request whose header claims a megabyte
+    const big = new Request("http://localhost/api/feedback", { method: "POST", headers: { "content-type": "application/json", "x-voicelab-passphrase": SECRET, "content-length": "1000000" }, body: JSON.stringify(BODY) });
+    // Call the handler
+    const response = await createFeedbackHandler(deps())(big);
+    // Confirm the refusal and its reason
+    expect([response.status, (await response.json()).error]).toEqual([413, "The request was too large."]);
+  });
+
   // The coach's internal rubric is passed on beside the feedback (decision 90)
   it("passes the internal rubric on with the feedback", async () => {
     // A rubric from the coach

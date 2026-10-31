@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Let the development server be opened through your own tunnel (DEV_TUNNEL_HOST, for trying the app on a phone over HTTPS); none unless set
   allowedDevOrigins: devTunnelHosts(process.env),
+  // The only images drawn with next/image are SVG files, which it never resizes, so its resizing route is switched off (one less reachable endpoint; decision 123 patched a flaw in exactly that route)
+  images: { unoptimized: true },
   // Security headers (from the Next.js PWA and Content Security Policy guides)
   async headers() {
     // One rule for every page, one for the service worker
@@ -23,8 +25,12 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           // Send only the site name when following links out
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          // Allow the microphone for this site only; block camera and location
-          { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=()" },
+          // Allow the microphone for this site only; block camera, location, payment, USB and screen capture
+          { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=(), payment=(), usb=(), display-capture=()" },
+          // Keep the app's window apart from any page that opens it, so another site cannot reach it through a window reference
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          // Only this site may embed the app's own files (the YouTube frame is the other way round and unaffected)
+          { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
           // Limit what pages may load and where they may send data
           { key: "Content-Security-Policy", value: contentSecurityPolicy(process.env.NODE_ENV === "development") },
           // Always use HTTPS once the site has been visited over it

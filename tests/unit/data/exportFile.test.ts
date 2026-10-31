@@ -299,6 +299,41 @@ describe("parseExport", () => {
     expect(() => parseExport(JSON.stringify({ format: "voicelab-export", version: 99 }))).toThrow("This file comes from a newer version of VoiceLab.");
   });
 
+  // A crafted or damaged file whose settings carry progress of the wrong shape is refused whole, before anything is written (the merge would otherwise crash halfway or keep broken progress for good)
+  it.each([
+    ["missions that are not a list", { missions: {} }],
+    ["a mission without a day", { missions: [{ id: "m1", missionId: "ask", status: "done", predicted: 3, tried: true, outcome: 4, note: "", tooMuch: false, debriefedAt: null }] }],
+    ["a scenario entry that is null", { scenarios: { s1: null } }],
+    ["Learn progress that is text", { learn: "abc" }],
+    ["a scene without a last time", { scenes: { sc1: { plays: 1, firstAt: "2026-10-01" } } }],
+    ["words to watch with a text count", { wordsToWatch: { um: "many" } }],
+    ["skipped steps without a day", { skipped: { steps: ["s1"] } }],
+    ["a flag that is text", { stammer: "yes" }],
+  ])("refuses settings with %s, writing nothing", async (_name, broken) => {
+    // A file whose settings carry the broken part
+    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [makeSession({ id: "s-broken" })], challenges: [], settings: { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30, ...broken } });
+    // An empty repository
+    const repository = createRepository(new MemoryStore());
+    // Confirm the file is refused as damaged
+    expect(() => parseExport(text)).toThrow("This file is damaged and cannot be imported.");
+    // Confirm nothing was written
+    expect(await repository.getSession("s-broken")).toBeUndefined();
+  });
+
+  // Settings with every kind of progress in the right shape still import
+  it("accepts settings with progress of every kind", async () => {
+    // Progress of every kind, each in its shape
+    const settings = { focusIndex: 0, focusStartedOn: NOW.toISOString(), audioRetention: 30, stammer: true, anchor: "after coffee", learn: { c1: { readAt: "2026-10-01", box: 1, dueAt: "2026-10-03", lastResult: null } }, missions: [{ id: "m1", missionId: "ask", day: "2026-10-02", status: "done", predicted: 3, tried: true, outcome: 4, note: "fine", tooMuch: false, debriefedAt: "2026-10-02T10:00:00Z" }], scenarios: { s1: { firstTier: "ok", lastTier: "best", firstAt: "2026-10-01", lastAt: "2026-10-02" } }, scenes: { sc1: { plays: 1, firstAt: "2026-10-01", lastAt: "2026-10-01", lastWarmth: 2, bestWarmth: 2, lastPassed: 1, checkCount: 2 } }, listening: { l1: { plays: 1, firstAt: "2026-10-01", lastAt: "2026-10-01", lastCaught: 2, bestCaught: 2, detailCount: 3, lastCore: true } }, wordsToWatch: { um: 2 }, warmupDays: ["2026-10-01"], skipped: { day: "2026-10-02", steps: ["s1"] } };
+    // A file carrying them
+    const text = JSON.stringify({ format: "voicelab-export", version: 1, exportedAt: NOW.toISOString(), sessions: [], challenges: [], settings });
+    // An empty repository
+    const repository = createRepository(new MemoryStore());
+    // Imported
+    await importExport(repository, parseExport(text), NOW);
+    // Confirm the progress arrived
+    expect((await repository.getSettings(NOW)).missions?.[0]?.status).toBe("done");
+  });
+
   // Files exported before warm-ups existed have no mode; their sessions are full sessions
   it("treats sessions without a mode as full sessions", () => {
     // A valid file whose session has no mode field
