@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="600" height="600">
+<!-- Boss concept: The user's blob, a blob with its own shape, eyes, accessory and colour (concept art, not in the app) -->
+<defs><clipPath id="t"><rect x="14" y="14" width="172" height="172" rx="34"/></clipPath></defs>
+<g transform="rotate(0 100 100)">
+<g class="bg"><rect x="14" y="14" width="172" height="172" rx="34" fill="#fce7d6"/><g clip-path="url(#t)"></g></g>
+<g class="char" transform="translate(100 104) scale(0.62)"><g><path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#f4a46c"/><path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#1e2320" opacity="0.18"/><path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#f4a46c" transform="translate(-9 -8) scale(0.93)"/><ellipse cx="-46" cy="-56" rx="20" ry="12" fill="#fff6e6" opacity="0.45" transform="rotate(-35 -46 -56)"/><ellipse cx="-34" cy="-22" rx="10" ry="15" fill="#1e2320"/><ellipse cx="34" cy="-22" rx="10" ry="15" fill="#1e2320"/><path d="M-16 18q16 14 32 0" stroke="#1e2320" stroke-width="6" stroke-linecap="round" fill="none"/></g></g>
+<g class="bg"></g>
+</g></svg>

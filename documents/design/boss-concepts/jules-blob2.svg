@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="600" height="600">
+<!-- Boss concept: Jules, a blob with its own shape, eyes, accessory and colour (concept art, not in the app) -->
+<defs><clipPath id="t"><rect x="14" y="14" width="172" height="172" rx="34"/></clipPath></defs>
+<g transform="rotate(4 100 100)">
+<g class="bg"><rect x="14" y="14" width="172" height="172" rx="34" fill="#e86aae"/><g clip-path="url(#t)"><path d="M14 26 Q100 52 186 26" stroke="#fff6e6" stroke-width="2.5" fill="none"/><path d="M18 30 l14 2 -8 15z" fill="#f4b73b"/><path d="M46 35 l14 2 -8 15z" fill="#4a68e0"/><path d="M74 30 l14 2 -8 15z" fill="#fff6e6"/><path d="M102 35 l14 2 -8 15z" fill="#f4b73b"/><path d="M130 30 l14 2 -8 15z" fill="#4a68e0"/><path d="M158 35 l14 2 -8 15z" fill="#fff6e6"/><path d="M186 30 l14 2 -8 15z" fill="#f4b73b"/><circle cx="24" cy="190" r="54" fill="#1e2320" opacity="0.08"/><path d="M158 186 L172 70" stroke="#f4b73b" stroke-width="6" stroke-linecap="round"/><ellipse cx="157" cy="172" rx="9" ry="22" fill="#f4b73b" transform="rotate(7 157 172)"/><path d="M36 105l1.68 5.32 5.32 1.68-5.32 1.68-1.68 5.32-1.68-5.32-5.32-1.68 5.32-1.68z" fill="#fff6e6"/></g></g>
+<g class="char" transform="translate(90 128) scale(0.5)"><g transform="rotate(-9)">
+<path d="M2 -116C42 -116 66 -82 66 -34C66 14 76 56 54 84C34 106 -36 106 -56 84C-76 60 -64 16 -64 -34C-64 -84 -38 -116 2 -116Z" fill="#7cc46a"/><path d="M2 -116C42 -116 66 -82 66 -34C66 14 76 56 54 84C34 106 -36 106 -56 84C-76 60 -64 16 -64 -34C-64 -84 -38 -116 2 -116Z" fill="#1e2320" opacity="0.18"/><path d="M2 -116C42 -116 66 -82 66 -34C66 14 76 56 54 84C34 106 -36 106 -56 84C-76 60 -64 16 -64 -34C-64 -84 -38 -116 2 -116Z" fill="#7cc46a" transform="translate(-9 -8) scale(0.93)"/><ellipse cx="-46" cy="-56" rx="20" ry="12" fill="#fff6e6" opacity="0.45" transform="rotate(-35 -46 -56)"/>
+<path d="M-62 -60 Q-60 -132 4 -132 Q66 -132 66 -60 Z" fill="#ec6a55" transform="rotate(-8 0 -90)"/>
+<rect x="-70" y="-74" width="140" height="22" rx="11" fill="#c95c47" transform="rotate(-8 0 -64)"/>
+<circle cx="-6" cy="-138" r="15" fill="#fff6e6"/>
+<circle cx="14" cy="-20" r="7" fill="#1e2320"/><circle cx="46" cy="-22" r="7" fill="#1e2320"/>
+<path d="M2 -40 l20 2 M36 -42 l20 0" stroke="#4f8a43" stroke-width="5" stroke-linecap="round"/>
+<ellipse cx="-4" cy="2" rx="14" ry="8" fill="#ec6a55" opacity="0.4"/><ellipse cx="60" cy="0" rx="10" ry="7" fill="#ec6a55" opacity="0.4"/>
+<path d="M22 12 q10 7 20 0" stroke="#1e2320" stroke-width="6" stroke-linecap="round" fill="none"/>
+</g></g>
+<g class="bg"><rect x="36" y="150" width="22" height="26" rx="5" fill="#fff6e6"/><path d="M58 156q9 0 9 8t-9 8" stroke="#fff6e6" stroke-width="4" fill="none"/></g>
+</g></svg>

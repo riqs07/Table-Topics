@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="600" height="600">
+<!-- Boss concept: Helen, a blob with its own shape, eyes, accessory and colour (concept art, not in the app) -->
+<defs><clipPath id="t"><rect x="14" y="14" width="172" height="172" rx="34"/></clipPath></defs>
+<g transform="rotate(-3 100 100)">
+<g class="bg"><rect x="14" y="14" width="172" height="172" rx="34" fill="#8a63e0"/><g clip-path="url(#t)"><rect x="40" y="36" width="58" height="160" fill="#fff6e6" opacity="0.92"/><rect x="102" y="36" width="58" height="160" fill="#fff6e6" opacity="0.92"/><path d="M100 36v160" stroke="#8a63e0" stroke-width="4"/><rect x="40" y="36" width="120" height="160" fill="none" stroke="#c9c2e8" stroke-width="3"/><rect x="128" y="16" width="44" height="16" rx="5" fill="#1e2320"/><text x="150" y="28" font-family="system-ui,sans-serif" font-weight="800" font-size="11" fill="#f4b73b" text-anchor="middle">▲ 12</text><path d="M28 143l1.68 5.32 5.32 1.68-5.32 1.68-1.68 5.32-1.68-5.32-5.32-1.68 5.32-1.68z" fill="#fff6e6"/></g></g>
+<g class="char" transform="translate(100 124) scale(0.5)"><g>
+<circle cx="0" cy="-126" r="34" fill="#24140e"/><rect x="-26" y="-108" width="52" height="16" rx="8" fill="#24140e"/>
+<path d="M-66 -100H66Q98 -100 98 -68V64Q98 94 66 94H-66Q-98 94 -98 64V-68Q-98 -100 -66 -100Z" fill="#ec6a55"/><path d="M-66 -100H66Q98 -100 98 -68V64Q98 94 66 94H-66Q-98 94 -98 64V-68Q-98 -100 -66 -100Z" fill="#1e2320" opacity="0.18"/><path d="M-66 -100H66Q98 -100 98 -68V64Q98 94 66 94H-66Q-98 94 -98 64V-68Q-98 -100 -66 -100Z" fill="#ec6a55" transform="translate(-9 -8) scale(0.93)"/><ellipse cx="-46" cy="-56" rx="20" ry="12" fill="#fff6e6" opacity="0.45" transform="rotate(-35 -46 -56)"/>
+<path d="M-98 -54 Q-96 -98 -60 -100 H60 Q96 -98 98 -54 Q70 -82 0 -82 Q-70 -82 -98 -54 Z" fill="#24140e"/>
+<ellipse cx="-36" cy="-22" rx="16" ry="14" fill="#fff"/><ellipse cx="36" cy="-22" rx="16" ry="14" fill="#fff"/>
+<circle cx="-34" cy="-18" r="8" fill="#1e2320"/><circle cx="38" cy="-18" r="8" fill="#1e2320"/>
+<path d="M-54 -26 Q-36 -40 -18 -26 V-38 H-54 Z" fill="#ec6a55"/><path d="M18 -26 Q36 -40 54 -26 V-38 H18 Z" fill="#ec6a55"/>
+<rect x="-60" y="-42" width="48" height="40" rx="14" fill="none" stroke="#1e2320" stroke-width="7"/><rect x="12" y="-42" width="48" height="40" rx="14" fill="none" stroke="#1e2320" stroke-width="7"/><path d="M-12 -24h24" stroke="#1e2320" stroke-width="7"/>
+<path d="M-56 -58 h36" stroke="#24140e" stroke-width="8" stroke-linecap="round"/><path d="M18 -62 l38 -10" stroke="#24140e" stroke-width="8" stroke-linecap="round"/>
+<path d="M-14 26 Q8 38 30 22" stroke="#1e2320" stroke-width="7" stroke-linecap="round" fill="none"/>
+<path d="M-34 62 L0 84 L34 62" stroke="#4a68e0" stroke-width="8" fill="none" stroke-linejoin="round"/><rect x="-14" y="80" width="28" height="22" rx="5" fill="#fff6e6"/>
+</g></g>
+<g class="bg"><rect x="140" y="148" width="30" height="24" rx="5" fill="#1e2320"/><path d="M149 148v-6h12v6" stroke="#1e2320" stroke-width="4" fill="none"/></g>
+</g></svg>
