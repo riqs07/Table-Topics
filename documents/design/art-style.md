@@ -101,7 +101,7 @@ Videos are made in `video/` with Remotion, which renders React to MP4. They use 
 
 ### Course shorts (decision 145)
 
-Every course has a 15-second short (`video/src/CourseShort.tsx`, one component; the words are in `video/src/shorts.ts`). The shape, for any new course:
+Every course has a 15-second short (`video/src/social/CourseShort.tsx`, one component; the words are in `video/src/social/shorts.ts`). The shape, for any new course:
 
 - **About 12 seconds of voice, then a 2.5 to 3 second end card.** A hook (the problem, with a bubble prop), the course's name with its tile, three lessons named with their tiles popping in, and a short close. Each phrase is one idea.
 - **Tiles take the stage:** while a tile is shown (with a label such as "Lesson 2 · Point first"), the blob steps down and shrinks underneath and keeps talking. The background never matches the tile's ground; the video picks another colour if a phrase's does.

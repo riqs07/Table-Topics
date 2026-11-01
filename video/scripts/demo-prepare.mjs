@@ -43,7 +43,7 @@ for (let i = 0; i < LEAD * RATE; i++) track.push(0);
 // Each line in turn
 LINES.forEach(([speaker, text], index) => {
   // Its tightened recording
-  const samples = samplesOf(`public/demo/tight/line${index + 1}.wav`);
+  const samples = samplesOf(`public/social/demo/tight/line${index + 1}.wav`);
   // Where it starts, in seconds
   const start = track.length / RATE;
   // Add it
@@ -86,8 +86,8 @@ const pcm = Buffer.alloc(track.length * 2);
 // Each sample
 track.forEach((value, i) => pcm.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(value * 32767))), i * 2));
 // Wrap and save
-execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "s16le", "-ar", String(RATE), "-ac", "1", "-i", "-", "public/demo/conversation.wav"], { input: pcm });
+execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "s16le", "-ar", String(RATE), "-ac", "1", "-i", "-", "public/social/demo/conversation.wav"], { input: pcm });
 // Save the timings and loudness for the composition
-writeFileSync("src/demo/conversation.json", JSON.stringify({ fps: FPS, frames, lines: timings, loud: bySpeaker }));
+writeFileSync("src/social/demo/conversation.json", JSON.stringify({ fps: FPS, frames, lines: timings, loud: bySpeaker }));
 // Report
 console.log(`${frames} frames (${(frames / FPS).toFixed(1)} s)`, timings.map((t) => `${t.speaker} ${t.start}-${t.end}`).join(", "));

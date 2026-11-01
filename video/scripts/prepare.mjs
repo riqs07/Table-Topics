@@ -8,7 +8,7 @@ import path from "node:path";
 // Frames a second, matching the composition
 const FPS = 30;
 // The first video's voiceover, and the folders of the course shorts' and the lesson clips' voiceovers (decisions 145 and 146)
-const [VOICE, COURSES, LESSONS] = [path.resolve("public/take-a.mp3"), path.resolve("public/courses"), path.resolve("public/lessons")];
+const [VOICE, COURSES, LESSONS] = [path.resolve("public/social/take-a.mp3"), path.resolve("public/social/courses"), path.resolve("public/lessons")];
 // Where the prepared files go
 const OUT = path.resolve("src/generated");
 // Make the folders
@@ -65,7 +65,7 @@ writeFileSync(path.join(OUT, "voice.json"), JSON.stringify(first));
 // Said
 console.log(`Buy a beat: ${first.phrases.length} phrases over ${first.duration.toFixed(2)} s.`);
 
-// Each course short's voiceover (public/courses/<course id>.mp3): finer pauses, since the shorts' phrases are short
+// Each course short's voiceover (public/social/courses/<course id>.mp3): finer pauses, since the shorts' phrases are short
 for (const file of readdirSync(COURSES).filter((name) => name.endsWith(".mp3")).sort()) {
   // Its timings and loudness
   const short = measure(path.join(COURSES, file), { noise: -38, gap: 0.2 });

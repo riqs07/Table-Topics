@@ -3,7 +3,7 @@
 // Load the tile names
 import type { CourseTileName } from "@/components/scenes/CourseTile";
 // Load the talking blob's moods
-import type { Mood } from "./TalkingBlob";
+import type { Mood } from "../TalkingBlob";
 // Load the second course for each focus area's shorts (decision 155)
 import { INTERVIEW_READY_SHORT } from "./shortsBank/interviewReady";
 import { TOASTS_AND_TRIBUTES_SHORT } from "./shortsBank/toastsAndTributes";

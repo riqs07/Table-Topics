@@ -7,17 +7,17 @@ import "@fontsource-variable/fraunces";
 // Load the app's own body face file
 import atkinson from "@/theme/fonts/AtkinsonHyperlegibleNext-OpenZero.woff2";
 // Load the first video and its length
-import { BuyABeat, DURATION_FRAMES } from "./BuyABeat";
+import { BuyABeat, DURATION_FRAMES } from "./social/BuyABeat";
 // Load the course shorts, their length and their list (decision 145)
-import { CourseShort, shortFrames } from "./CourseShort";
-import { SHORTS } from "./shorts";
+import { CourseShort, shortFrames } from "./social/CourseShort";
+import { SHORTS } from "./social/shorts";
 // Load the lesson clips, their frame and their lengths (decisions 146 and 147)
 import { LESSON_HEIGHT, LESSON_WIDTH, LessonClip, clipFrames } from "./lessons/LessonClip";
 import { LESSON_CLIPS } from "./lessons/clips";
 // Load the lesson voiceovers made so far, so a clip without one is left out
 import voices from "./generated/lessons/index.json";
 // Load the two-person demo and its length (a one-off test)
-import { TWO_PEOPLE_FRAMES, TwoPeople } from "./demo/TwoPeople";
+import { TWO_PEOPLE_FRAMES, TwoPeople } from "./social/demo/TwoPeople";
 // Load the panels of Sage's character sheet (stills)
 import { SHEET_PANELS } from "./characters/SageSheet";
 

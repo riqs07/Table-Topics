@@ -7,15 +7,15 @@ import { AbsoluteFill, Audio, interpolate, spring, staticFile, useCurrentFrame, 
 // Load the app's course tiles
 import { CourseTile } from "@/components/scenes/CourseTile";
 // Load the talking blob
-import { TalkingBlob, type Mood } from "./TalkingBlob";
+import { TalkingBlob, type Mood } from "../TalkingBlob";
 // Load the theme as CSS, and the helper for inline colours
-import { THEME_CSS, role, tint } from "./theme";
+import { THEME_CSS, role, tint } from "../theme";
 // Load the shared video pieces
-import { BODY, Bubble, Chip, DISPLAY, Place, Synced } from "./kit";
+import { BODY, Bubble, Chip, DISPLAY, Place, Synced } from "../kit";
 // Load the app's scene animations as plain CSS
-import "./generated/scene.css";
+import "../generated/scene.css";
 // Load the voiceover's phrases and loudness
-import voice from "./generated/voice.json";
+import voice from "../generated/voice.json";
 
 // The colour roles the backgrounds use (never the same as a tile shown on them: the lesson tile is leaf green)
 type Ground = "art-sky" | "art-plum" | "art-sun" | "art-leaf" | "art-bloom";
@@ -300,7 +300,7 @@ export function BuyABeat() {
       {/* The theme's colours and classes */}
       <style>{THEME_CSS}</style>
       {/* The voice */}
-      <Audio src={staticFile("take-a.mp3")} />
+      <Audio src={staticFile("social/take-a.mp3")} />
       {/* The background */}
       <Background seconds={seconds} />
       {/* The app's name and course */}

@@ -299,7 +299,7 @@ export function TwoPeople() {
   return (
     <AbsoluteFill style={{ background: "#f3e3cf", opacity: fade }}>
       {/* The voices */}
-      <Audio src={staticFile("demo/conversation.wav")} />
+      <Audio src={staticFile("social/demo/conversation.wav")} />
       {/* The café */}
       <Cafe frame={frame} />
       {/* The two people, sitting across the table, a little nearer each other's side */}

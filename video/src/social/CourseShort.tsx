@@ -7,29 +7,29 @@ import { AbsoluteFill, Audio, interpolate, spring, staticFile, useCurrentFrame, 
 // Load the app's course tiles and each tile's ground colour
 import { CourseTile, courseTileGround, type CourseTileName } from "@/components/scenes/CourseTile";
 // Load the talking blob
-import { TalkingBlob } from "./TalkingBlob";
+import { TalkingBlob } from "../TalkingBlob";
 // Load the theme as CSS, and the helpers for inline colours
-import { THEME_CSS, role, tint } from "./theme";
+import { THEME_CSS, role, tint } from "../theme";
 // Load the shared video pieces
-import { BODY, Bubble, Chip, DISPLAY, Place, Synced } from "./kit";
+import { BODY, Bubble, Chip, DISPLAY, Place, Synced } from "../kit";
 // Load the shorts' words, and their types
 import { SHORTS, type Ground, type Short } from "./shorts";
 // Load the app's scene animations as plain CSS
-import "./generated/scene.css";
+import "../generated/scene.css";
 // Load each voiceover's phrases and loudness
-import stopFreezing from "./generated/courses/stop-freezing.json";
-import explainItSimply from "./generated/courses/explain-it-simply.json";
-import readyByTheDay from "./generated/courses/ready-by-the-day.json";
-import storiesThatLand from "./generated/courses/stories-that-land.json";
-import beyondGoodYou from "./generated/courses/beyond-good-you.json";
-import voiceLeanIn from "./generated/courses/voice-lean-in.json";
+import stopFreezing from "../generated/courses/stop-freezing.json";
+import explainItSimply from "../generated/courses/explain-it-simply.json";
+import readyByTheDay from "../generated/courses/ready-by-the-day.json";
+import storiesThatLand from "../generated/courses/stories-that-land.json";
+import beyondGoodYou from "../generated/courses/beyond-good-you.json";
+import voiceLeanIn from "../generated/courses/voice-lean-in.json";
 // The second course for each focus area's voiceovers (decision 155)
-import interviewReady from "./generated/courses/interview-ready.json";
-import toastsAndTributes from "./generated/courses/toasts-and-tributes.json";
-import listenLikeYouMeanIt from "./generated/courses/listen-like-you-mean-it.json";
-import tellItAgain from "./generated/courses/tell-it-again.json";
-import knowYourVoice from "./generated/courses/know-your-voice.json";
-import theToughQuestion from "./generated/courses/the-tough-question.json";
+import interviewReady from "../generated/courses/interview-ready.json";
+import toastsAndTributes from "../generated/courses/toasts-and-tributes.json";
+import listenLikeYouMeanIt from "../generated/courses/listen-like-you-mean-it.json";
+import tellItAgain from "../generated/courses/tell-it-again.json";
+import knowYourVoice from "../generated/courses/know-your-voice.json";
+import theToughQuestion from "../generated/courses/the-tough-question.json";
 
 // A voiceover's timings: frames a second, its length, its phrases and the loudness of every frame
 type Voice = { fps: number; duration: number; phrases: ReadonlyArray<{ start: number; end: number }>; loudness: ReadonlyArray<number> };
@@ -310,7 +310,7 @@ export function CourseShort({ id }: { id: string }): ReactNode {
       {/* The theme's colours and classes, and tiles filling their boxes */}
       <style>{`${THEME_CSS}\n.tile-box svg { width: 100%; height: 100%; }`}</style>
       {/* The voice */}
-      <Audio src={staticFile(`courses/${id}.mp3`)} />
+      <Audio src={staticFile(`social/courses/${id}.mp3`)} />
       {/* The background */}
       <Background voice={voice} grounds={grounds} seconds={seconds} />
       {/* The app's name and course */}
