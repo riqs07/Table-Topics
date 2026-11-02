@@ -98,7 +98,17 @@ export function adFrames(): number {
 }
 
 // What a line's scene needs: how far through its line we are (0 to 1), a spring that starts at a point in the line, and the blob's breathing, blinking and talking
-type Moment = { through: number; pop: (at: number) => number; breath: number; blink: boolean; talk: number };
+type Moment = { through: number; pop: (at: number) => number; breath: number; blink: boolean; talk: number; t: number };
+
+// A prop popping in at a point in its line around its middle (cx, cy): growing with a little overshoot, tipping upright as it lands, then floating gently
+function grow(m: Moment, at: number, cx: number, cy: number): string {
+  // How far it has popped in
+  const p = m.pop(at);
+  // Its gentle float, out of step with other props by where it is
+  const float = Math.sin(m.t * 2.2 + cx * 0.02) * 6;
+  // Placed, tipped, grown
+  return `translate(${cx} ${cy + float}) rotate(${(1 - Math.min(1, p)) * -16}) scale(${p}) translate(${-cx} ${-cy})`;
+}
 
 // The hook's first beat: the idea lights up over you
 function SceneIdea({ m }: { m: Moment }) {
@@ -106,11 +116,11 @@ function SceneIdea({ m }: { m: Moment }) {
   return (
     <>
       {/* Your idea */}
-      <Bulb x={360} y={560} s={1.3 * m.pop(0.2)} lit />
+      <Bulb t={m.t} x={360} y={560} s={1.3 * m.pop(0.2)} lit />
       {/* You, looking up */}
-      <You x={360} y={990} r={150} mood="up" breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={360} y={990} r={150} mood="up" breath={m.breath} blink={m.blink} />
       {/* The other person, listening */}
-      <Other x={780} y={1030} r={115} mood="ready" />
+      <Other t={m.t} x={780} y={1030} r={115} mood="ready" />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -125,15 +135,15 @@ function SceneTaken({ m }: { m: Moment }) {
   return (
     <>
       {/* Their bubble with your idea in it, until the credit lands */}
-      {!out && <g transform={`translate(765 800) scale(${m.pop(0)}) translate(-765 -800)`}><Talk x={600} y={560} w={330} h={240} tailX={760}><Bulb x={765} y={670} s={0.7} lit /></Talk></g>}
+      {!out && <g transform={`${grow(m, 0, 765, 800)}`}><Talk x={600} y={560} w={330} h={240} tailX={760}><Bulb t={m.t} x={765} y={670} s={0.7} lit /></Talk></g>}
       {/* The praise they get */}
-      {out && <g transform={`translate(780 700) scale(${m.pop(0.5)}) translate(-780 -700)`}><Tag x={780} y={700} text="Great idea!" size={50} /></g>}
-      {/* Your bulb: lit, then out */}
-      <Bulb x={330} y={620} s={0.9} lit={!out} />
+      {out && <g transform={`${grow(m, 0.5, 780, 700)}`}><Tag x={780} y={700} text="Great idea!" size={50} /></g>}
+      {/* Your bulb: lit, flickering as the credit lands, then out */}
+      <Bulb t={m.t} x={330} y={620} s={0.9} lit={m.through < 0.5 || (m.through < 0.62 && Math.floor(m.t * 18) % 2 === 0)} />
       {/* You: surprised, then deflated */}
-      <You x={330} y={out ? 1010 : 990} r={out ? 140 : 150} mood={out ? "worried" : "wow"} open={out ? 0 : 0.35} breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={330} y={out ? 1010 : 990} r={out ? 140 : 150} mood={out ? "worried" : "wow"} open={out ? 0 : 0.35} breath={m.breath} blink={m.blink} />
       {/* Them: talking, then pleased */}
-      <Other x={780} y={out ? 1000 : 1010} r={out ? 135 : 125} mood={out ? "happy" : "talk"} />
+      <Other t={m.t} x={780} y={out ? 1000 : 1010} r={out ? 135 : 125} mood={out ? "happy" : "talk"} />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -148,11 +158,11 @@ function SceneGroup({ m }: { m: Moment }) {
   return (
     <>
       {/* Bubbles over the other three, one after another */}
-      {seats.slice(1).map((x, index) => <g key={x} transform={`translate(${x} 840) scale(${m.pop(0.1 + index * 0.18)}) translate(${-x} -840)`}><Talk x={x - 95} y={index === 1 ? 600 : 680} w={190} h={120} tailX={x}><Dots x={x} y={index === 1 ? 660 : 740} /></Talk></g>)}
+      {seats.slice(1).map((x, index) => <g key={x} transform={grow(m, 0.1 + index * 0.18, x, 840)}><Talk x={x - 95} y={index === 1 ? 600 : 680} w={190} h={120} tailX={x}><Dots x={x} y={index === 1 ? 660 : 740} /></Talk></g>)}
       {/* You, quiet */}
-      <You x={seats[0]!} y={1020} r={100} mood="ready" breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={seats[0]!} y={1020} r={100} mood="ready" breath={m.breath} blink={m.blink} />
       {/* The others, talking or listening */}
-      {seats.slice(1).map((x, index) => <Other key={x} x={x} y={1025} r={95} mood={index === 1 ? "ready" : "talk"} />)}
+      {seats.slice(1).map((x, index) => <Other t={m.t} key={x} x={x} y={1025} r={95} mood={index === 1 ? "ready" : "talk"} />)}
       {/* The table */}
       <Table y={1110} />
     </>
@@ -167,13 +177,13 @@ function SceneBadge({ m }: { m: Moment }) {
   return (
     <>
       {/* Three bubbles stacking, until the badge lands */}
-      {!landed && [[620, 400, 760, 740, 470], [700, 550, 800, 820, 620], [600, 700, 760, 720, 770]].map(([x, y, tail, dx, dy], index) => <g key={index} transform={`translate(${tail} ${y! + 140}) scale(${m.pop(0.05 + index * 0.16)}) translate(${-tail!} ${-(y! + 140)})`}><Talk x={x!} y={y!} w={240} h={140} tailX={tail!}><Dots x={dx!} y={dy!} /></Talk></g>)}
+      {!landed && [[620, 400, 760, 740, 470], [700, 550, 800, 820, 620], [600, 700, 760, 720, 770]].map(([x, y, tail, dx, dy], index) => <g key={index} transform={grow(m, 0.05 + index * 0.16, tail!, y! + 140)}><Talk x={x!} y={y!} w={240} h={140} tailX={tail!}><Dots x={dx!} y={dy!} /></Talk></g>)}
       {/* The badge */}
-      {landed && <g transform={`translate(770 720) scale(${m.pop(0.72)}) translate(-770 -720)`}><Tag x={770} y={720} text="Most competent ✓" size={48} /></g>}
+      {landed && <g transform={`${grow(m, 0.72, 770, 720)}`}><Tag x={770} y={720} text="Most competent ✓" size={48} /></g>}
       {/* The talker: talking, then pleased */}
-      <Other x={770} y={1010} r={135} mood={landed ? "happy" : "talk"} />
+      <Other t={m.t} x={770} y={1010} r={135} mood={landed ? "happy" : "talk"} />
       {/* You: quiet, then surprised */}
-      <You x={300} y={1010} r={135} mood={landed ? "wow" : "ready"} open={landed ? 0.35 : 0} breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={300} y={1010} r={135} mood={landed ? "wow" : "ready"} open={landed ? 0.35 : 0} breath={m.breath} blink={m.blink} />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -186,15 +196,15 @@ function SceneEqual({ m }: { m: Moment }) {
   return (
     <>
       {/* Your idea */}
-      <Bulb x={320} y={620} s={1.1 * m.pop(0.05)} lit />
+      <Bulb t={m.t} x={320} y={620} s={1.1 * m.pop(0.05)} lit />
       {/* The equals sign */}
-      <g className="fill-art-cream" transform={`translate(540 620) scale(${m.pop(0.45)}) translate(-540 -620)`}><rect x="500" y="590" width="80" height="18" rx="9" /><rect x="500" y="630" width="80" height="18" rx="9" /></g>
+      <g className="fill-art-cream" transform={`${grow(m, 0.45, 540, 620)}`}><rect x="500" y="590" width="80" height="18" rx="9" /><rect x="500" y="630" width="80" height="18" rx="9" /></g>
       {/* Their idea */}
-      <Bulb x={760} y={620} s={1.1 * m.pop(0.25)} lit />
+      <Bulb t={m.t} x={760} y={620} s={1.1 * m.pop(0.25)} lit />
       {/* You, puzzled */}
-      <You x={320} y={1010} r={135} mood="worried" breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={320} y={1010} r={135} mood="worried" breath={m.breath} blink={m.blink} />
       {/* Them */}
-      <Other x={760} y={1010} r={135} mood="ready" />
+      <Other t={m.t} x={760} y={1010} r={135} mood="ready" />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -207,13 +217,13 @@ function SceneBoth({ m }: { m: Moment }) {
   return (
     <>
       {/* Your idea */}
-      <Bulb x={320} y={600} s={1.2 * m.pop(0)} lit />
+      <Bulb t={m.t} x={320} y={600} s={1.2 * m.pop(0)} lit />
       {/* Their idea */}
-      <Bulb x={760} y={600} s={1.2 * m.pop(0.15)} lit />
+      <Bulb t={m.t} x={760} y={600} s={1.2 * m.pop(0.15)} lit />
       {/* You */}
-      <You x={320} y={1010} r={140} mood="ready" breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={320} y={1010} r={140} mood="ready" breath={m.breath} blink={m.blink} />
       {/* Them */}
-      <Other x={760} y={1010} r={135} mood="ready" />
+      <Other t={m.t} x={760} y={1010} r={135} mood="ready" />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -226,15 +236,15 @@ function SceneTiming({ m }: { m: Moment }) {
   return (
     <>
       {/* The clock */}
-      <g transform={`translate(540 470) scale(${m.pop(0)}) translate(-540 -470)`}><Clock x={540} y={470} r={150} minute={8 + m.through * 22} /></g>
+      <g transform={`${grow(m, 0, 540, 470)}`}><Clock x={540} y={470} r={150} minute={8 + m.through * 22} /></g>
       {/* "1st" over them */}
-      <g transform={`translate(790 720) scale(${m.pop(0.35)}) translate(-790 -720)`}><Tag x={790} y={720} text="1st" size={56} /></g>
+      <g transform={`${grow(m, 0.35, 790, 720)}`}><Tag x={790} y={720} text="1st" size={56} /></g>
       {/* Your bulb, waiting */}
-      <Bulb x={300} y={720} s={0.8} lit={false} />
+      <Bulb t={m.t} x={300} y={720} s={0.8} lit={false} />
       {/* You, worried */}
-      <You x={300} y={1010} r={135} mood="worried" breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={300} y={1010} r={135} mood="worried" breath={m.breath} blink={m.blink} />
       {/* Them, talking */}
-      <Other x={790} y={1010} r={135} mood="talk" />
+      <Other t={m.t} x={790} y={1010} r={135} mood="talk" />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -247,13 +257,13 @@ function SceneEarly({ m }: { m: Moment }) {
   return (
     <>
       {/* The clock, early in the meeting */}
-      <g transform={`translate(820 470) scale(${m.pop(0.3)}) translate(-820 -470)`}><Clock x={820} y={470} r={120} minute={3} /></g>
+      <g transform={`${grow(m, 0.3, 820, 470)}`}><Clock x={820} y={470} r={120} minute={3} /></g>
       {/* Your bubble with a question mark */}
-      <g transform={`translate(330 800) scale(${m.pop(0.05)}) translate(-330 -800)`}><Talk x={190} y={540} w={280} h={240} tailX={330}><text className="fill-accent" x="330" y="710" fontFamily={DISPLAY} fontWeight="700" fontSize="180" textAnchor="middle">?</text></Talk></g>
+      <g transform={`${grow(m, 0.05, 330, 800)}`}><Talk x={190} y={540} w={280} h={240} tailX={330}><text className="fill-accent" x="330" y="710" fontFamily={DISPLAY} fontWeight="700" fontSize="180" textAnchor="middle">?</text></Talk></g>
       {/* You, speaking */}
-      <You x={340} y={1000} r={150} mood="ready" open={m.talk} breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={340} y={1000} r={150} mood="ready" open={m.talk} breath={m.breath} blink={m.blink} />
       {/* Them, listening */}
-      <Other x={790} y={1020} r={120} mood="ready" />
+      <Other t={m.t} x={790} y={1020} r={120} mood="ready" />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -266,13 +276,13 @@ function SceneLeader({ m }: { m: Moment }) {
   return (
     <>
       {/* Your bubble */}
-      <g transform={`translate(330 800) scale(${m.pop(0.05)}) translate(-330 -800)`}><Talk x={110} y={600} w={470} h={170} tailX={330}><text className="fill-on-warm" x="345" y="705" fontFamily={DISPLAY} fontWeight="700" fontSize="64" textAnchor="middle">What if we…?</text></Talk></g>
+      <g transform={`${grow(m, 0.05, 330, 800)}`}><Talk x={110} y={600} w={470} h={170} tailX={330}><text className="fill-on-warm" x="345" y="705" fontFamily={DISPLAY} fontWeight="700" fontSize="64" textAnchor="middle">What if we…?</text></Talk></g>
       {/* The praise, now yours */}
-      <g transform={`translate(345 470) scale(${m.pop(0.6)}) translate(-345 -470)`}><Tag x={345} y={470} text="Great idea!" size={50} /></g>
+      <g transform={`${grow(m, 0.6, 345, 470)}`}><Tag x={345} y={470} text="Great idea!" size={50} /></g>
       {/* You, pleased and talking */}
-      <You x={340} y={1000} r={150} mood="happy" open={m.talk} breath={m.breath} blink={m.blink} />
+      <You t={m.t} x={340} y={1000} r={150} mood="happy" open={m.talk} breath={m.breath} blink={m.blink} />
       {/* Them, pleased */}
-      <Other x={790} y={1010} r={125} mood="happy" />
+      <Other t={m.t} x={790} y={1010} r={125} mood="happy" />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -285,9 +295,9 @@ function SceneWave({ m, seconds }: { m: Moment; seconds: number }) {
   return (
     <>
       {/* Your idea, big */}
-      <Bulb x={540} y={560} s={1.5 * m.pop(0)} lit />
+      <Bulb t={m.t} x={540} y={560} s={1.5 * m.pop(0)} lit />
       {/* You, waving and talking */}
-      <You x={540} y={1000} r={160} mood="happy" open={m.talk} breath={m.breath} blink={m.blink} wave={0.5 + 0.5 * Math.sin(seconds * 9)} />
+      <You t={m.t} x={540} y={1000} r={160} mood="happy" open={m.talk} breath={m.breath} blink={m.blink} wave={0.5 + 0.5 * Math.sin(seconds * 9)} />
       {/* The table */}
       <Table y={1110} />
     </>
@@ -325,8 +335,8 @@ function Caption({ text, said, pop }: { text: string; said: number; pop: number 
     <div style={{ position: "absolute", left: 80, right: 150, bottom: 370, display: "flex", justifyContent: "center", transform: `scale(${0.92 + pop * 0.08})`, opacity: pop }}>
       {/* The cream box */}
       <div style={{ padding: "24px 42px", borderRadius: 44, background: role("art-cream"), color: role("on-warm"), fontFamily: DISPLAY, fontWeight: 650, fontSize: size, lineHeight: 1.14, textAlign: "center", letterSpacing: -1 }}>
-        {/* Each word, the one being said in the accent */}
-        {words.map((word, position) => <span key={position} style={{ color: position === said ? role("accent") : undefined }}>{word}{position < words.length - 1 ? " " : ""}</span>)}
+        {/* Each word, the one being said in the accent and a little bigger */}
+        {words.map((word, position) => <span key={position}><span style={{ display: "inline-block", color: position === said ? role("accent") : undefined, transform: position === said ? "scale(1.06)" : undefined, margin: position === said ? "0 0.1em" : undefined }}>{word}</span>{position < words.length - 1 ? " " : ""}</span>)}
       </div>
     </div>
   );
@@ -372,9 +382,17 @@ export function QuietInMeetings(): ReactNode {
   // The line's scene and the moment it is drawn at
   const [line, Scene] = [LINES[index]!, SCENES[index]!];
   // (the moment)
-  const moment: Moment = { through: Math.min(1, Math.max(0, (seconds - start) / (end - start))), pop: (at) => springFrom(start + at * (end - start)), breath: 1 + Math.sin(seconds * 2.4) * 0.012, blink: frame % 137 < 4, talk: line.speaking ? loud : 0 };
-  // The ground now: the line's, or its later one past halfway
-  const ground = line.later && moment.through > 0.5 ? line.later : line.ground;
+  const moment: Moment = { through: Math.min(1, Math.max(0, (seconds - start) / (end - start))), pop: (at) => springFrom(start + at * (end - start)), breath: 1 + Math.sin(seconds * 2.4) * 0.012, blink: frame % 137 < 4, talk: line.speaking ? loud : 0, t: seconds };
+  // Every change of ground: each line's start, and a line's later ground halfway through it
+  const changes = LINES.flatMap((each, at) => [{ from: lineStarts[at]!, ground: each.ground }, ...(each.later ? [{ from: (lineStarts[at]! + (lineStarts[at + 1] ?? timing.duration)) / 2, ground: each.later }] : [])]);
+  // The latest change so far, and the one before it
+  const latest = Math.max(0, changes.filter((change) => seconds >= change.from).length - 1);
+  // (the grounds, and how far the new one has faded in, over a quarter of a second)
+  const [ground, previous, fade] = [changes[latest]!.ground, changes[Math.max(0, latest - 1)]!.ground, Math.min(1, Math.max(0, (seconds - changes[latest]!.from) / 0.25))];
+  // The camera: each line arrives with a quick push in from the right, then drifts slowly closer
+  const arrive = springFrom(start, 15);
+  // (its scale and slide)
+  const [zoom, slide] = [(0.92 + 0.08 * Math.min(1, arrive)) * (1 + 0.04 * moment.through), (1 - arrive) * 90];
   // The word being said: the last in this line that has started
   const said = Math.max(0, words.filter((word) => word.line === index && word.start <= seconds).length - 1);
   // How far the end card has come in
@@ -386,10 +404,12 @@ export function QuietInMeetings(): ReactNode {
       <style>{`${THEME_CSS}\n.tile-box svg { width: 100%; height: 100%; }`}</style>
       {/* The voice, once it is made */}
       {adReady && <Audio src={staticFile(`ads/${AD_ID}.mp3`)} />}
-      {/* The ground */}
-      <Backdrop ground={ground} />
-      {/* The line's scene */}
-      <svg viewBox="0 0 1080 1920" width={1080} height={1920} style={{ position: "absolute", inset: 0, overflow: "visible" }}><Scene m={moment} seconds={seconds} /></svg>
+      {/* The ground before, under the new one fading in */}
+      <Backdrop ground={previous} t={seconds} />
+      {/* (the new one) */}
+      <Backdrop ground={ground} t={seconds} opacity={fade} />
+      {/* The line's scene, through the camera */}
+      <svg viewBox="0 0 1080 1920" width={1080} height={1920} style={{ position: "absolute", inset: 0, overflow: "visible" }}><g transform={`translate(${540 + slide} 900) scale(${zoom}) translate(-540 -900)`}><Scene m={moment} seconds={seconds} /></g></svg>
       {/* The headline, in from the first frame */}
       <Headline shown={springFrom(0, 16)} />
       {/* The study's source, when the line cites one */}

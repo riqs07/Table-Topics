@@ -16,43 +16,55 @@ import { THEME_CSS, role, tint } from "../theme";
 // The art grounds a still can sit on
 export type Ground = "art-sky" | "art-sun" | "art-bloom" | "art-leaf" | "art-plum" | "art-coral";
 
-// The background: one art colour with two soft circles, as in every video
-export function Backdrop({ ground }: { ground: Ground }) {
+// The background: one art colour with two soft circles, as in every video; given the time in seconds, the circles drift
+export function Backdrop({ ground, t = 0, opacity = 1 }: { ground: Ground; t?: number; opacity?: number }) {
+  // The circles' slow drift
+  const drift = Math.sin(t * 0.6) * 40;
   // The colour and the circles
   return (
-    <AbsoluteFill style={{ background: role(ground), overflow: "hidden" }}>
+    <AbsoluteFill style={{ background: role(ground), overflow: "hidden", opacity }}>
       {/* A lighter circle, upper right */}
-      <div style={{ position: "absolute", width: 900, height: 900, borderRadius: "50%", right: -380, top: -260, background: role("art-cream"), opacity: 0.12 }} />
+      <div style={{ position: "absolute", width: 900, height: 900, borderRadius: "50%", right: -380 + drift, top: -260 + drift * 0.5, background: role("art-cream"), opacity: 0.12 }} />
       {/* A darker circle, lower left */}
-      <div style={{ position: "absolute", width: 760, height: 760, borderRadius: "50%", left: -340, bottom: -200, background: role("on-warm"), opacity: 0.07 }} />
+      <div style={{ position: "absolute", width: 760, height: 760, borderRadius: "50%", left: -340 - drift, bottom: -200 - drift * 0.6, background: role("on-warm"), opacity: 0.07 }} />
     </AbsoluteFill>
   );
 }
 
-// The warm blob (you), centred at x, y with a radius in pixels, in a mood, its mouth open or shut, blinking, breathing and waving when asked
-export function You({ x, y, r, mood, open = 0, blink = false, breath = 1, wave = 0 }: { x: number; y: number; r: number; mood: Mood; open?: number; blink?: boolean; breath?: number; wave?: number }) {
+// How far a character bobs at a time (seconds), out of step with others by where it stands; still when no time is given
+function bob(t: number | undefined, x: number): number {
+  // A gentle rise and fall
+  return t === undefined ? 0 : Math.sin(t * 2.6 + x * 0.013) * 7;
+}
+
+// The warm blob (you), centred at x, y with a radius in pixels, in a mood, its mouth open or shut, blinking, breathing and waving when asked; given the time, it bobs
+export function You({ x, y, r, mood, open = 0, blink = false, breath = 1, wave = 0, t }: { x: number; y: number; r: number; mood: Mood; open?: number; blink?: boolean; breath?: number; wave?: number; t?: number }) {
   // The talking blob's square is three radii across
   const size = r * 3;
-  // Placed by its middle
-  return <g transform={`translate(${x - size / 2} ${y - size / 2})`}><TalkingBlob size={size} open={open} mood={mood} blink={blink} breath={breath} wave={wave} /></g>;
+  // Placed by its middle, bobbing
+  return <g transform={`translate(${x - size / 2} ${y - size / 2 + bob(t, x)})`}><TalkingBlob size={size} open={open} mood={mood} blink={blink} breath={breath} wave={wave} /></g>;
 }
 
 // The other person's faces: talking, pleased or listening
 export type OtherMood = "talk" | "happy" | "ready";
 
-// The other person (the accent blob), centred at x, y with a radius in pixels
-export function Other({ x, y, r, mood }: { x: number; y: number; r: number; mood: OtherMood }) {
-  // Drawn in the blob's own units around its middle
+// The other person (the accent blob), centred at x, y with a radius in pixels; given the time, it bobs, blinks and its mouth moves while it talks
+export function Other({ x, y, r, mood, t }: { x: number; y: number; r: number; mood: OtherMood; t?: number }) {
+  // How open the talking mouth is: chattering when there is a time, half open when still
+  const open = t === undefined ? 0.6 : 0.25 + 0.75 * Math.abs(Math.sin(t * 11 + x));
+  // Blinking now and then, at its own time
+  const blink = t !== undefined && (t * 30 + x) % 151 < 4;
+  // Drawn in the blob's own units around its middle, bobbing
   return (
-    <g transform={`translate(${x} ${y}) scale(${r / 100})`}>
+    <g transform={`translate(${x} ${y + bob(t, x)}) scale(${r / 100})`}>
       {/* The shaded accent body with its face */}
       <Body x={0} y={0} r={100} accent>
         {/* Pleased: happy arches and a wide smile */}
         {mood === "happy" && <><path className="stroke-current" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" d="M-46 -16l12-13 12 13M22 -16l12-13 12 13" /><path className="fill-current" d="M-22 14h44q0 22-22 22t-22-22z" /></>}
-        {/* Talking or listening: open eyes */}
-        {mood !== "happy" && <><ellipse className="fill-current" cx="-34" cy="-22" rx="10" ry="15" /><ellipse className="fill-current" cx="34" cy="-22" rx="10" ry="15" /></>}
-        {/* Talking: an open mouth */}
-        {mood === "talk" && <ellipse className="fill-current" cx="0" cy="26" rx="14" ry="16" />}
+        {/* Talking or listening: open eyes, shut for a moment when blinking */}
+        {mood !== "happy" && <g transform={blink ? "translate(0 -22) scale(1 0.12) translate(0 22)" : undefined}><ellipse className="fill-current" cx="-34" cy="-22" rx="10" ry="15" /><ellipse className="fill-current" cx="34" cy="-22" rx="10" ry="15" /></g>}
+        {/* Talking: a mouth opening and closing */}
+        {mood === "talk" && <ellipse className="fill-current" cx="0" cy="24" rx={15 - open * 3} ry={4 + open * 18} />}
         {/* Listening: a small smile */}
         {mood === "ready" && <path className="stroke-current" strokeWidth="6" strokeLinecap="round" fill="none" d="M-16 18q16 14 32 0" />}
       </Body>
@@ -60,13 +72,25 @@ export function Other({ x, y, r, mood }: { x: number; y: number; r: number; mood
   );
 }
 
-// A lightbulb (the idea) at x, y, lit or gone out, at a size (1 is 60 pixels across the glass)
-export function Bulb({ x, y, s = 1, lit }: { x: number; y: number; s?: number; lit: boolean }) {
+// A four-pointed sparkle around its middle
+function Sparkle({ x, y, size }: { x: number; y: number; size: number }) {
+  // The star
+  return <path className="fill-art-cream" d={`M${x} ${y - size}l${size * 0.24} ${size * 0.76} ${size * 0.76} ${size * 0.24}-${size * 0.76} ${size * 0.24}-${size * 0.24} ${size * 0.76}-${size * 0.24}-${size * 0.76}-${size * 0.76}-${size * 0.24} ${size * 0.76}-${size * 0.24}z`} />;
+}
+
+// A lightbulb (the idea) at x, y, lit or gone out, at a size (1 is 60 pixels across the glass); given the time, a lit bulb's rays turn and pulse with sparkles twinkling, and a dead one's smoke rises
+export function Bulb({ x, y, s = 1, lit, t }: { x: number; y: number; s?: number; lit: boolean; t?: number }) {
+  // The rays' turn and pulse, and the smoke's rise (all still without a time)
+  const [turn, pulse, rise] = t === undefined ? [0, 1, 0] : [t * 14, 1 + Math.sin(t * 5) * 0.08, (t * 40) % 40];
   // Drawn around the glass's middle
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      {/* Rays around it, when lit */}
-      {lit && [0, 45, 90, 135, 180, 225, 270, 315].map((angle) => <line key={angle} className="stroke-art-cream" strokeWidth="10" strokeLinecap="round" x1="0" y1="-92" x2="0" y2="-118" transform={`rotate(${angle})`} />)}
+      {/* A soft glow behind it, when lit and moving */}
+      {lit && t !== undefined && <circle className="fill-art-cream" r={112 * pulse} opacity={0.14} />}
+      {/* Rays around it, when lit, turning and pulsing */}
+      {lit && <g transform={`rotate(${turn}) scale(${pulse})`}>{[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => <line key={angle} className="stroke-art-cream" strokeWidth="10" strokeLinecap="round" x1="0" y1="-92" x2="0" y2="-118" transform={`rotate(${angle})`} />)}</g>}
+      {/* Two sparkles twinkling beside it, when lit and moving */}
+      {lit && t !== undefined && <><Sparkle x={118} y={-96} size={18 * Math.abs(Math.sin(t * 3))} /><Sparkle x={-122} y={40} size={14 * Math.abs(Math.sin(t * 3 + 1.4))} /></>}
       {/* The glass: sunny when lit, a dull grey when out */}
       <path className={lit ? "fill-art-sun" : "fill-on-warm opacity-30"} d="M0 -64a64 64 0 0 1 38 116v18h-76v-18a64 64 0 0 1 38-116z" />
       {/* A highlight on the glass, when lit */}
@@ -75,8 +99,8 @@ export function Bulb({ x, y, s = 1, lit }: { x: number; y: number; s?: number; l
       <rect className="fill-on-warm opacity-60" x="-34" y="72" width="68" height="16" rx="8" />
       {/* (its second ring) */}
       <rect className="fill-on-warm opacity-60" x="-28" y="92" width="56" height="16" rx="8" />
-      {/* A wisp of smoke, when it has gone out */}
-      {!lit && <path className="stroke-art-cream opacity-60" strokeWidth="9" strokeLinecap="round" fill="none" d="M10 -84q-22 -20 0 -40t0 -40" />}
+      {/* A wisp of smoke, when it has gone out, rising and fading */}
+      {!lit && <path className="stroke-art-cream" opacity={0.6 * (1 - rise / 40)} strokeWidth="9" strokeLinecap="round" fill="none" d="M10 -84q-22 -20 0 -40t0 -40" transform={`translate(0 ${-rise})`} />}
     </g>
   );
 }
