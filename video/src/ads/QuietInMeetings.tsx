@@ -13,7 +13,7 @@ import { BODY, DISPLAY, Synced } from "../kit";
 // Load the theme as CSS, and the helpers for inline colours
 import { THEME_CSS, role } from "../theme";
 // Load the word timing
-import { alignLines } from "../lessons/align";
+import { alignLines, syllables } from "../lessons/align";
 // Load the app's scene animations as plain CSS (the tile's loops)
 import "../generated/scene.css";
 // Load every ad voiceover's timings, by ad id
@@ -55,15 +55,38 @@ type Voice = { fps: number; duration: number; phrases: ReadonlyArray<{ start: nu
 
 // Whether the ad's voiceover has been made and prepared
 export const adReady = AD_ID in voices;
+// The length the silent preview stands in for, in seconds (the two takes ran 25.4 and 25.6)
+const PREVIEW_SECONDS = 25.4;
+// The pause between lines in the silent preview, in seconds
+const PREVIEW_PAUSE = 0.45;
 
-// The ad's voiceover, or a clear stop when it has not been made yet
+// Stand-in timings for a silent preview before the voiceover is in: each line as long as its syllables at the voice's pace, a pause after each, and a mouth that opens and closes while a line is said
+function previewVoice(): Voice {
+  // Each line's syllables
+  const counts = LINES.map((line) => line.text.split(" ").reduce((sum, word) => sum + syllables(word), 0));
+  // Seconds a syllable, leaving room for the pauses
+  const pace = (PREVIEW_SECONDS - PREVIEW_PAUSE * (LINES.length - 1)) / counts.reduce((sum, count) => sum + count, 0);
+  // Each line's stretch, one after another
+  let at = 0;
+  // (worked out in order)
+  const phrases = counts.map((count) => {
+    // This line's stretch
+    const phrase = { start: at, end: at + count * pace };
+    // On past it and its pause
+    at = phrase.end + PREVIEW_PAUSE;
+    // Kept
+    return phrase;
+  });
+  // A loudness for every frame: a soft wobble while a line is said, silence between
+  const loudness = Array.from({ length: Math.ceil(PREVIEW_SECONDS * 30) }, (_, frame) => (phrases.some((phrase) => frame / 30 >= phrase.start && frame / 30 < phrase.end) ? 0.06 + 0.05 * Math.abs(Math.sin(frame * 0.9)) : 0));
+  // The stand-in timings
+  return { fps: 30, duration: PREVIEW_SECONDS, phrases, loudness };
+}
+
+// The ad's voiceover, or stand-in timings for a silent preview when it has not been made yet
 function voice(): Voice {
-  // The timings, by id
-  const found = (voices as Record<string, Voice>)[AD_ID];
-  // Stop with a message when missing
-  if (!found) throw new Error(`No voiceover timings for the ad "${AD_ID}": save public/ads/${AD_ID}.mp3 and run scripts/prepare.mjs`);
-  // Found
-  return found;
+  // The real timings, when there are some, otherwise the stand-in
+  return (voices as Record<string, Voice>)[AD_ID] ?? previewVoice();
 }
 
 // The ad's length in frames: its voice and the end card
@@ -144,7 +167,7 @@ function SceneBadge({ m }: { m: Moment }) {
   return (
     <>
       {/* Three bubbles stacking, until the badge lands */}
-      {!landed && [[620, 330, 760, 740, 400], [700, 500, 800, 820, 570], [600, 670, 760, 720, 740]].map(([x, y, tail, dx, dy], index) => <g key={index} transform={`translate(${tail} ${y! + 140}) scale(${m.pop(0.05 + index * 0.16)}) translate(${-tail!} ${-(y! + 140)})`}><Talk x={x!} y={y!} w={240} h={140} tailX={tail!}><Dots x={dx!} y={dy!} /></Talk></g>)}
+      {!landed && [[620, 400, 760, 740, 470], [700, 550, 800, 820, 620], [600, 700, 760, 720, 770]].map(([x, y, tail, dx, dy], index) => <g key={index} transform={`translate(${tail} ${y! + 140}) scale(${m.pop(0.05 + index * 0.16)}) translate(${-tail!} ${-(y! + 140)})`}><Talk x={x!} y={y!} w={240} h={140} tailX={tail!}><Dots x={dx!} y={dy!} /></Talk></g>)}
       {/* The badge */}
       {landed && <g transform={`translate(770 720) scale(${m.pop(0.72)}) translate(-770 -720)`}><Tag x={770} y={720} text="Most competent ✓" size={48} /></g>}
       {/* The talker: talking, then pleased */}
@@ -318,8 +341,10 @@ function EndCard({ shown, strap }: { shown: number; strap: number }) {
       <div className="tile-box" style={{ width: 520, height: 520, transform: `scale(${shown}) rotate(${(1 - shown) * 10}deg)` }}><Synced><CourseTile name="speak-up" /></Synced></div>
       {/* The app's name */}
       <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 120, color: role("ink"), letterSpacing: -2 }}>VoiceLab</div>
-      {/* The course and lesson */}
-      <div style={{ fontFamily: DISPLAY, fontWeight: 650, fontSize: 56, color: role("ink"), textAlign: "center", padding: "0 80px" }}>Explain it simply · Speak up in meetings</div>
+      {/* The lesson */}
+      <div style={{ fontFamily: DISPLAY, fontWeight: 650, fontSize: 64, color: role("ink"), textAlign: "center" }}>Speak up in meetings</div>
+      {/* Its course */}
+      <div style={{ marginTop: -18, fontFamily: BODY, fontWeight: 700, fontSize: 40, color: role("ink-muted") }}>Explain it simply · Lesson 4</div>
       {/* The two things to do */}
       <div style={{ marginTop: 10, padding: "20px 44px", borderRadius: 999, background: role("fill"), color: role("fill-ink"), fontFamily: BODY, fontWeight: 700, fontSize: 40, opacity: strap }}>Speak early. Bring a way forward.</div>
     </AbsoluteFill>
@@ -359,8 +384,8 @@ export function QuietInMeetings(): ReactNode {
     <AbsoluteFill style={{ fontFamily: BODY }}>
       {/* The theme's colours and classes, and the tile filling its box */}
       <style>{`${THEME_CSS}\n.tile-box svg { width: 100%; height: 100%; }`}</style>
-      {/* The voice */}
-      <Audio src={staticFile(`ads/${AD_ID}.mp3`)} />
+      {/* The voice, once it is made */}
+      {adReady && <Audio src={staticFile(`ads/${AD_ID}.mp3`)} />}
       {/* The ground */}
       <Backdrop ground={ground} />
       {/* The line's scene */}

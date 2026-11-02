@@ -22,8 +22,8 @@ import { TWO_PEOPLE_FRAMES, TwoPeople } from "./demo/TwoPeople";
 import { SHEET_PANELS } from "./characters/SageSheet";
 // Load the storyboard of hooks for the "quiet in meetings" ad
 import { HOOKS, HookSheet, SHEET_HEIGHT, SHEET_WIDTH } from "./hooks/HookStoryboard";
-// Load the "quiet in meetings" ad, its length and whether its voiceover is made
-import { QuietInMeetings, adFrames, adReady } from "./ads/QuietInMeetings";
+// Load the "quiet in meetings" ad and its length
+import { QuietInMeetings, adFrames } from "./ads/QuietInMeetings";
 
 // Hold the render until both faces are ready, so no frame is drawn in a fallback font
 const waiting = delayRender("Loading fonts");
@@ -49,8 +49,8 @@ export function Root() {
       {SHEET_PANELS.map((panel) => <Composition key={panel.id} id={panel.id} component={panel.component} durationInFrames={1} fps={30} width={panel.width} height={panel.height} />)}
       {/* The "quiet in meetings" ad's hook storyboard: each hook's three stills, full size */}
       {HOOKS.flatMap((hook) => hook.stills.map((still, index) => <Composition key={`${hook.id}${index}`} id={`hook-${hook.id}${index + 1}`} component={still} durationInFrames={1} fps={30} width={1080} height={1920} />))}
-      {/* The "quiet in meetings" social ad, once its voiceover is made */}
-      {adReady && <Composition id="ad-quiet-in-meetings" component={QuietInMeetings} durationInFrames={adFrames()} fps={30} width={1080} height={1920} />}
+      {/* The "quiet in meetings" social ad (a silent preview until its voiceover is made) */}
+      <Composition id="ad-quiet-in-meetings" component={QuietInMeetings} durationInFrames={adFrames()} fps={30} width={1080} height={1920} />
       {/* (and all of them on one sheet) */}
       <Composition id="hook-sheet" component={HookSheet} durationInFrames={1} fps={30} width={SHEET_WIDTH} height={SHEET_HEIGHT} />
     </>
