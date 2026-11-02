@@ -14,10 +14,10 @@ import { BODY, DISPLAY } from "../kit";
 import { THEME_CSS, role, tint } from "../theme";
 
 // The art grounds a still can sit on
-type Ground = "art-sky" | "art-sun" | "art-bloom" | "art-leaf" | "art-plum" | "art-coral";
+export type Ground = "art-sky" | "art-sun" | "art-bloom" | "art-leaf" | "art-plum" | "art-coral";
 
 // The background: one art colour with two soft circles, as in every video
-function Backdrop({ ground }: { ground: Ground }) {
+export function Backdrop({ ground }: { ground: Ground }) {
   // The colour and the circles
   return (
     <AbsoluteFill style={{ background: role(ground), overflow: "hidden" }}>
@@ -29,19 +29,19 @@ function Backdrop({ ground }: { ground: Ground }) {
   );
 }
 
-// The warm blob (you), centred at x, y with a radius in pixels, in a mood, its mouth open or shut
-function You({ x, y, r, mood, open = 0 }: { x: number; y: number; r: number; mood: Mood; open?: number }) {
+// The warm blob (you), centred at x, y with a radius in pixels, in a mood, its mouth open or shut, blinking, breathing and waving when asked
+export function You({ x, y, r, mood, open = 0, blink = false, breath = 1, wave = 0 }: { x: number; y: number; r: number; mood: Mood; open?: number; blink?: boolean; breath?: number; wave?: number }) {
   // The talking blob's square is three radii across
   const size = r * 3;
   // Placed by its middle
-  return <g transform={`translate(${x - size / 2} ${y - size / 2})`}><TalkingBlob size={size} open={open} mood={mood} blink={false} /></g>;
+  return <g transform={`translate(${x - size / 2} ${y - size / 2})`}><TalkingBlob size={size} open={open} mood={mood} blink={blink} breath={breath} wave={wave} /></g>;
 }
 
 // The other person's faces: talking, pleased or listening
-type OtherMood = "talk" | "happy" | "ready";
+export type OtherMood = "talk" | "happy" | "ready";
 
 // The other person (the accent blob), centred at x, y with a radius in pixels
-function Other({ x, y, r, mood }: { x: number; y: number; r: number; mood: OtherMood }) {
+export function Other({ x, y, r, mood }: { x: number; y: number; r: number; mood: OtherMood }) {
   // Drawn in the blob's own units around its middle
   return (
     <g transform={`translate(${x} ${y}) scale(${r / 100})`}>
@@ -61,7 +61,7 @@ function Other({ x, y, r, mood }: { x: number; y: number; r: number; mood: Other
 }
 
 // A lightbulb (the idea) at x, y, lit or gone out, at a size (1 is 60 pixels across the glass)
-function Bulb({ x, y, s = 1, lit }: { x: number; y: number; s?: number; lit: boolean }) {
+export function Bulb({ x, y, s = 1, lit }: { x: number; y: number; s?: number; lit: boolean }) {
   // Drawn around the glass's middle
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
@@ -82,7 +82,7 @@ function Bulb({ x, y, s = 1, lit }: { x: number; y: number; s?: number; lit: boo
 }
 
 // A cream speech bubble in the drawing, its tail pointing down at tailX, holding whatever is given
-function Talk({ x, y, w, h, tailX, children }: { x: number; y: number; w: number; h: number; tailX: number; children?: ReactNode }) {
+export function Talk({ x, y, w, h, tailX, children }: { x: number; y: number; w: number; h: number; tailX: number; children?: ReactNode }) {
   // The box, the tail and the content
   return (
     <g>
@@ -99,13 +99,13 @@ function Talk({ x, y, w, h, tailX, children }: { x: number; y: number; w: number
 }
 
 // Three dots of speech, centred at x, y
-function Dots({ x, y }: { x: number; y: number }) {
+export function Dots({ x, y }: { x: number; y: number }) {
   // Three round dots
   return <g className="fill-warm-shade">{[-44, 0, 44].map((dx) => <circle key={dx} cx={x + dx} cy={y} r="15" />)}</g>;
 }
 
 // The meeting table: a cream top with a darker front edge, across the frame at y
-function Table({ y }: { y: number }) {
+export function Table({ y }: { y: number }) {
   // The top and its edge
   return (
     <g>
@@ -118,7 +118,7 @@ function Table({ y }: { y: number }) {
 }
 
 // A clock face at x, y with a radius, its minute hand at a minute
-function Clock({ x, y, r, minute }: { x: number; y: number; r: number; minute: number }) {
+export function Clock({ x, y, r, minute }: { x: number; y: number; r: number; minute: number }) {
   // The hands' angles: the minute hand round the hour, the hour hand just past ten
   const [minuteAngle, hourAngle] = [minute * 6, 300 + minute * 0.5];
   // The face, ticks and hands
@@ -141,7 +141,7 @@ function Clock({ x, y, r, minute }: { x: number; y: number; r: number; minute: n
 }
 
 // A cream label in the drawing, centred at x, y, in the body face
-function Tag({ x, y, text, size = 46 }: { x: number; y: number; text: string; size?: number }) {
+export function Tag({ x, y, text, size = 46 }: { x: number; y: number; text: string; size?: number }) {
   // Wide enough for its letters
   const w = text.length * size * 0.56 + size * 1.4;
   // The pill and its words

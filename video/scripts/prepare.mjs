@@ -1,7 +1,7 @@
 // Prepares what a render needs (run before every render): the app's scene animations as plain CSS, and the voiceover's phrases and loudness, frame by frame
 
 // Load Node's file, path and process tools
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync, spawnSync } from "node:child_process";
 import path from "node:path";
 
@@ -85,5 +85,20 @@ for (const file of readdirSync(LESSONS).filter((name) => name.endsWith(".mp3")).
 writeFileSync(path.join(OUT, "lessons", "index.json"), JSON.stringify(lessons));
 // Said
 console.log(`Lesson clips: ${Object.keys(lessons).length} voiceovers.`);
+// Each social ad's voiceover (public/ads/<ad id>.mp3), split the same way as the lessons', all saved in one file by ad id
+const ads = {};
+// The ads' folder, when there is one
+const ADS = path.resolve("public/ads");
+// (each voiceover in it)
+for (const file of existsSync(ADS) ? readdirSync(ADS).filter((name) => name.endsWith(".mp3")).sort() : []) {
+  // Its timings and loudness, by id
+  ads[file.replace(/\.mp3$/, "")] = measure(path.join(ADS, file), { noise: -38, gap: 0.2 });
+}
+// Make the folder
+mkdirSync(path.join(OUT, "ads"), { recursive: true });
+// Saved
+writeFileSync(path.join(OUT, "ads", "index.json"), JSON.stringify(ads));
+// Said
+console.log(`Ads: ${Object.keys(ads).length} voiceovers.`);
 // And the scene CSS
 console.log("Prepared the scene CSS.");
