@@ -24,6 +24,8 @@ import { SHEET_PANELS } from "./characters/SageSheet";
 import { HOOKS, HookSheet, SHEET_HEIGHT, SHEET_WIDTH } from "./hooks/HookStoryboard";
 // Load the "quiet in meetings" ad and its length
 import { QuietInMeetings, adFrames } from "./ads/QuietInMeetings";
+// Load the spotlight trial of the ad's hook and its length
+import { SPOTLIGHT_HOOK_FRAMES, SpotlightHook } from "./ads/SpotlightHook";
 
 // Hold the render until both faces are ready, so no frame is drawn in a fallback font
 const waiting = delayRender("Loading fonts");
@@ -51,6 +53,8 @@ export function Root() {
       {HOOKS.flatMap((hook) => hook.stills.map((still, index) => <Composition key={`${hook.id}${index}`} id={`hook-${hook.id}${index + 1}`} component={still} durationInFrames={1} fps={30} width={1080} height={1920} />))}
       {/* The "quiet in meetings" social ad (a silent preview until its voiceover is made) */}
       <Composition id="ad-quiet-in-meetings" component={QuietInMeetings} durationInFrames={adFrames()} fps={30} width={1080} height={1920} />
+      {/* The spotlight trial of the ad's hook */}
+      <Composition id="ad-spotlight-hook" component={SpotlightHook} durationInFrames={SPOTLIGHT_HOOK_FRAMES} fps={30} width={1080} height={1920} />
       {/* (and all of them on one sheet) */}
       <Composition id="hook-sheet" component={HookSheet} durationInFrames={1} fps={30} width={SHEET_WIDTH} height={SHEET_HEIGHT} />
     </>

@@ -308,7 +308,7 @@ function SceneWave({ m, seconds }: { m: Moment; seconds: number }) {
 const SCENES: ReadonlyArray<(props: { m: Moment; seconds: number }) => ReactNode> = [SceneIdea, SceneTaken, SceneGroup, SceneBadge, SceneEqual, SceneBoth, SceneTiming, SceneEarly, SceneLeader, SceneWave];
 
 // The headline at the top: a cream pill, clear of the apps' buttons
-function Headline({ shown }: { shown: number }) {
+export function Headline({ shown }: { shown: number }) {
   // Centred near the top
   return (
     <div style={{ position: "absolute", left: 60, right: 150, top: 170, display: "flex", justifyContent: "center", opacity: shown, transform: `translateY(${(1 - shown) * -30}px)` }}>
@@ -325,7 +325,7 @@ function Source({ text }: { text: string }) {
 }
 
 // The caption: the line being said, its current word in the accent, in a cream box whose bottom sits clear of the apps' buttons
-function Caption({ text, said, pop }: { text: string; said: number; pop: number }) {
+export function Caption({ text, said, pop }: { text: string; said: number; pop: number }) {
   // The line's words
   const words = text.split(" ");
   // Long lines in a smaller size, so the box stays clear of the drawing
