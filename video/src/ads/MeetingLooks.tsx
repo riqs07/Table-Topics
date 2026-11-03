@@ -3,9 +3,11 @@
 // Load React's node type
 import type { ReactNode } from "react";
 // Load Remotion's frame and spring
-import { AbsoluteFill, spring } from "remotion";
+import { AbsoluteFill, spring, useCurrentFrame, useVideoConfig } from "remotion";
 // Load the characters and props shared with the storyboard
 import { Bulb, Other, Tag, Talk, You } from "../hooks/HookStoryboard";
+// Load the colleagues on the call
+import { Person } from "./Cast";
 // Load the headline and caption from the ad
 import { Caption, Headline } from "./QuietInMeetings";
 // Load the spotlight's lamp, cone, hop and the hook's timings
@@ -192,6 +194,31 @@ const CALL = [
   // Alex, bottom right
   { name: "Alex", ground: "art-bloom", x: 555, y: 855 },
 ] as const;
+// Where each colleague looks: at you while the idea is yours, then at Sam once he has the floor (Sam looks at you, then out at everyone)
+function gaze(index: number, samTalking: boolean): { look: number; lookUp: number } {
+  // Sam, top right: toward you on his left, then straight out
+  if (index === 1) return samTalking ? { look: 0, lookUp: 0 } : { look: -1, lookUp: 0 };
+  // Priya, bottom left: up at you, then up and right at Sam
+  if (index === 2) return samTalking ? { look: 1, lookUp: 1 } : { look: 0, lookUp: 1 };
+  // Alex, bottom right: up and left at you, then up at Sam
+  return samTalking ? { look: 0, lookUp: 1 } : { look: -1, lookUp: 1 };
+}
+
+// A small muted microphone at x, y (its middle): the mic with a line through it
+function MutedMic({ x, y }: { x: number; y: number }) {
+  // The mic, its stand, and the slash
+  return (
+    <g className="stroke-art-cream" strokeWidth="4.5" strokeLinecap="round" fill="none">
+      {/* The mic's head */}
+      <rect x={x - 7} y={y - 15} width="14" height="20" rx="7" />
+      {/* Its cradle and stand */}
+      <path d={`M${x - 12} ${y}q0 12 12 12t12 -12M${x} ${y + 12}v6`} />
+      {/* The slash */}
+      <path className="stroke-art-coral" d={`M${x - 14} ${y - 16}l28 32`} />
+    </g>
+  );
+}
+
 // A tile's size
 const [TILE_W, TILE_H] = [465, 395];
 
@@ -236,15 +263,17 @@ export function VideoCall({ t }: { t: number }): ReactNode {
               <circle className="fill-art-cream opacity-15" cx={person.x + TILE_W - 70} cy={person.y + 60} r="150" />
               {/* You, with your idea */}
               {index === 0 && <><Bulb x={person.x + TILE_W / 2} y={person.y + 105} s={0.72 * springAt(t, BULB_ON)} lit={bulbLit(t)} t={t} /><You x={person.x + TILE_W / 2} y={person.y + 300 + hop(t, BULB_ON, 20)} r={120} mood={left ? "worried" : t > THEY_TALK ? "wow" : "up"} open={!left && t > THEY_TALK ? 0.3 : 0} t={t} /></>}
-              {/* The others */}
-              {index > 0 && <Other x={person.x + TILE_W / 2} y={person.y + 290 + (index === 1 ? hop(t, SWING + 0.2, 20) : 0)} r={115} mood={index === 1 ? (t > PRAISE ? "happy" : t > THEY_TALK ? "talk" : "ready") : t > PRAISE ? "happy" : "ready"} t={t} />}
+              {/* The others, each their own character, their eyes on whoever is speaking */}
+              {index > 0 && <Person who={(["sam", "priya", "alex"] as const)[index - 1]!} x={person.x + TILE_W / 2} y={person.y + 290 + (index === 1 ? hop(t, SWING + 0.2, 20) : 0)} r={112} mood={index === 1 ? (t > PRAISE ? "happy" : t > THEY_TALK ? "talk" : "ready") : t > PRAISE ? "happy" : "ready"} t={t} {...gaze(index, t > THEY_TALK)} />}
               {/* Your tile dims once the highlight leaves you */}
               {index === 0 && left && <rect className="fill-on-warm" opacity="0.4" x={person.x} y={person.y} width={TILE_W} height={TILE_H} />}
             </g>
             {/* Their name, bottom left */}
-            <rect className="fill-on-warm opacity-60" x={person.x + 20} y={person.y + TILE_H - 66} width={person.name.length * 22 + 44} height="48" rx="14" />
+            <rect className="fill-on-warm opacity-60" x={person.x + 20} y={person.y + TILE_H - 66} width={person.name.length * 22 + (index === 0 ? 92 : 44)} height="48" rx="14" />
             {/* (the name itself) */}
             <text className="fill-art-cream" x={person.x + 42} y={person.y + TILE_H - 31} fontFamily={BODY} fontWeight="700" fontSize="32">{person.name}</text>
+            {/* Your mic, muted: the quiet one on the call */}
+            {index === 0 && <MutedMic x={person.x + 132} y={person.y + TILE_H - 42} />}
           </g>
         ))}
         {/* The active-speaker highlight */}
@@ -262,4 +291,12 @@ export function VideoCall({ t }: { t: number }): ReactNode {
       <Caption text={caption.text} said={caption.said} pop={1} />
     </AbsoluteFill>
   );
+}
+
+// The video-call hook as a clip (hook B): the call drawn at each frame's time
+export function CallHook(): ReactNode {
+  // This frame and the rate
+  const [frame, { fps }] = [useCurrentFrame(), useVideoConfig()];
+  // The call at this moment
+  return <VideoCall t={frame / fps} />;
 }
