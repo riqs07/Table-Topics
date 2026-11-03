@@ -21,7 +21,7 @@ import { THEME_CSS, role, tint } from "../theme";
 const HEADLINE = "Why your ideas don't get heard in meetings";
 
 // A spring from a moment, at time t (a pure function, so a still can be drawn at any time)
-function springAt(t: number, at: number, damping = 12): number {
+export function springAt(t: number, at: number, damping = 12): number {
   // Remotion's spring at that frame
   return spring({ frame: Math.round((t - at) * 30), fps: 30, config: { damping } });
 }
@@ -184,7 +184,7 @@ export function MeetingRoom({ t }: { t: number }): ReactNode {
 }
 
 // The people on the call: their name, the tile's colour, and where the tile sits
-const CALL = [
+export const CALL = [
   // You, top left
   { name: "You", ground: "art-sky", x: 60, y: 430 },
   // Sam, who says your idea, top right
@@ -205,7 +205,7 @@ function gaze(index: number, samTalking: boolean): { look: number; lookUp: numbe
 }
 
 // A small muted microphone at x, y (its middle): the mic with a line through it
-function MutedMic({ x, y }: { x: number; y: number }) {
+export function MutedMic({ x, y }: { x: number; y: number }) {
   // The mic, its stand, and the slash
   return (
     <g className="stroke-art-cream" strokeWidth="4.5" strokeLinecap="round" fill="none">
@@ -220,7 +220,7 @@ function MutedMic({ x, y }: { x: number; y: number }) {
 }
 
 // A tile's size
-const [TILE_W, TILE_H] = [465, 395];
+export const [TILE_W, TILE_H] = [465, 395];
 
 // The moments the call turns on, in seconds: your bulb lights, Sam starts talking, the highlight jumps to him, your bulb dies, the praise lands
 export type CallBeats = { bulbOn: number; talk: number; swing: number; out: number; praise: number };

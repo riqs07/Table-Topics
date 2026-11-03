@@ -101,10 +101,10 @@ export function adFrames(): number {
 }
 
 // What a line's scene needs: how far through its line we are (0 to 1), a spring that starts at a point in the line, the blob's breathing, blinking and talking, and the time
-type Moment = { through: number; pop: (at: number) => number; breath: number; blink: boolean; talk: number; t: number };
+export type Moment = { through: number; pop: (at: number) => number; breath: number; blink: boolean; talk: number; t: number };
 
 // A prop popping in at a point in its line around its middle (cx, cy): growing with a little overshoot, tipping upright as it lands, then floating gently
-function grow(m: Moment, at: number, cx: number, cy: number): string {
+export function grow(m: Moment, at: number, cx: number, cy: number): string {
   // How far it has popped in
   const p = m.pop(at);
   // Its gentle float, out of step with other props by where it is
@@ -114,7 +114,7 @@ function grow(m: Moment, at: number, cx: number, cy: number): string {
 }
 
 // The blob explaining, big and centred low, talking with the voice
-function Narrator({ m, mood = "ready", x = 540, y = 1010, r = 170, wave = 0 }: { m: Moment; mood?: "ready" | "happy" | "up" | "wow"; x?: number; y?: number; r?: number; wave?: number }) {
+export function Narrator({ m, mood = "ready", x = 540, y = 1010, r = 170, wave = 0 }: { m: Moment; mood?: "ready" | "happy" | "up" | "wow"; x?: number; y?: number; r?: number; wave?: number }) {
   // The blob, with a soft shadow under it
   return (
     <>
@@ -291,7 +291,7 @@ export function Headline({ shown, text = HEADLINE, big = false }: { shown: numbe
 }
 
 // The source of a study, small, under the headline
-function Source({ text }: { text: string }) {
+export function Source({ text }: { text: string }) {
   // Small cream words
   return <div style={{ position: "absolute", left: 60, right: 150, top: 340, textAlign: "center", fontFamily: BODY, fontWeight: 700, fontSize: 36, color: role("art-cream") }}>{text}</div>;
 }
@@ -314,8 +314,8 @@ export function Caption({ text, said, pop }: { text: string; said: number; pop: 
   );
 }
 
-// The end card: the lesson's tile, the app's name, the course and lesson, and the two things to do
-function EndCard({ shown, strap }: { shown: number; strap: number }) {
+// The end card: the lesson's tile, the app's name, the course and lesson, and the ad's one line of what to do
+export function EndCard({ shown, strap, line = "Speak early. Bring a way forward." }: { shown: number; strap: number; line?: string }) {
   // Over everything
   return (
     <AbsoluteFill style={{ background: role("paper"), opacity: Math.min(1, shown * 1.5), alignItems: "center", justifyContent: "center", gap: 34 }}>
@@ -328,7 +328,7 @@ function EndCard({ shown, strap }: { shown: number; strap: number }) {
       {/* Its course */}
       <div style={{ marginTop: -18, fontFamily: BODY, fontWeight: 700, fontSize: 40, color: role("ink-muted") }}>Explain it simply · Lesson 4</div>
       {/* The two things to do */}
-      <div style={{ marginTop: 10, padding: "20px 44px", borderRadius: 999, background: role("fill"), color: role("fill-ink"), fontFamily: BODY, fontWeight: 700, fontSize: 40, opacity: strap }}>Speak early. Bring a way forward.</div>
+      <div style={{ marginTop: 10, padding: "20px 44px", borderRadius: 999, background: role("fill"), color: role("fill-ink"), fontFamily: BODY, fontWeight: 700, fontSize: 40, opacity: strap }}>{line}</div>
     </AbsoluteFill>
   );
 }
