@@ -3,7 +3,7 @@
 // Load React's node type
 import type { ReactNode } from "react";
 // Load Remotion's building blocks
-import { AbsoluteFill, Audio, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Audio, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 // Load the app's course tiles
 import { CourseTile } from "@/components/scenes/CourseTile";
 // Load the drawing pieces shared with the hook storyboard
@@ -333,6 +333,42 @@ function EndCard({ shown, strap }: { shown: number; strap: number }) {
   );
 }
 
+// The sound effects (public/ads/sfx/, made with ElevenLabs' sound effects): each a file and how loud it plays under the voice
+const SFX = { pop: 0.35, whoosh: 0.3, fizzle: 0.4, ding: 0.35, tick: 0.6 } as const;
+
+// When each effect plays, in seconds, from when each line starts and ends: a moment in a line is its start plus a share of its length, as the props that pop in on it
+function soundCues(lineStarts: ReadonlyArray<number>, duration: number, swing: number): Array<{ sound: keyof typeof SFX; at: number }> {
+  // A moment a share of the way through a line
+  const into = (line: number, share: number) => lineStarts[line]! + share * ((lineStarts[line + 1] ?? duration) - lineStarts[line]!);
+  // The cues, in order
+  return [
+    // Sam's bubble with your idea in it
+    { sound: "pop", at: 0.3 },
+    // The highlight jumping to Sam
+    { sound: "whoosh", at: swing - 0.05 },
+    // Your bulb going out
+    { sound: "fizzle", at: swing + 0.25 },
+    // "Great idea, Sam!"
+    { sound: "ding", at: swing + 0.45 },
+    // Into the explanation: the "Why?" bubble
+    { sound: "pop", at: into(2, 0.05) },
+    // The chart's card
+    { sound: "pop", at: into(3, 0) },
+    // Your bulb lighting again
+    { sound: "pop", at: into(6, 0.05) },
+    // The clock
+    { sound: "tick", at: into(7, 0) },
+    // The question
+    { sound: "pop", at: into(8, 0.05) },
+    // "What if we…?"
+    { sound: "pop", at: into(9, 0.05) },
+    // "Great idea!", yours this time
+    { sound: "ding", at: into(9, 0.55) },
+    // The last bulb
+    { sound: "pop", at: into(10, 0) },
+  ];
+}
+
 // The ad
 export function QuietInMeetings(): ReactNode {
   // This frame and the rate
@@ -376,6 +412,8 @@ export function QuietInMeetings(): ReactNode {
       <style>{`${THEME_CSS}\n.tile-box svg { width: 100%; height: 100%; }`}</style>
       {/* The voice, once it is made */}
       {adReady && <Audio src={staticFile(`ads/${AD_ID}.mp3`)} />}
+      {/* The sound effects, each at its moment */}
+      {soundCues(lineStarts, timing.duration, swing).map((cue, at) => <Sequence key={at} from={Math.max(0, Math.round(cue.at * fps))} layout="none"><Audio src={staticFile(`ads/sfx/${cue.sound}.mp3`)} volume={SFX[cue.sound]} /></Sequence>)}
       {/* The hook: the video call */}
       {hook && <VideoCall t={seconds} beats={beats} chrome={false} />}
       {/* After it: the ground before, under the new one fading in */}

@@ -1,7 +1,7 @@
 # Art Style: the Blob, Scenes, Course Tiles and Videos
 
 **Purpose:** The rules that keep VoiceLab's drawings looking like one family, and the recipe for adding more. Read this before drawing a new scene, tile or video.
-**Last updated:** 2026-10-29 (decisions 134, 136, 142, 143 and 145)
+**Last updated:** 2026-11-03 (decisions 134, 136, 142, 143, 145 and 157)
 **Code:** `src/components/scenes/Scene.tsx` (the blob, its faces, the scenes), `src/components/scenes/CourseTile.tsx` (course tiles: the registry), `src/components/scenes/tiles/` (the shaded `Body`, `Twinkle` and each course's drawings, one file per course; decision 145), `src/components/script/BlobFace.tsx` (the voice shape's face), `video/` (short videos). The motion lives in `src/app/globals.css` under "The blob scenes (decision 136)".
 
 ## 1. The character: the blob
@@ -119,4 +119,26 @@ A lesson clip teaches one idea inside a course part's "See it" step. It is not a
 - **Reuse the drawings:** the lesson's own tile appears once; simple props (cards that turn over, a notebook line writing itself) do the explaining.
 - **The blob gives its own example (decision 147):** one beat where it tells, in the first person, an ordinary moment that shows the lesson's idea ("Here’s mine…"), on a cream story card titled "My moment", "My update" or similar, its key words writing themselves in. No real people, brands, places or news.
 - **Made from data:** a clip is its lines, beats and closing card in `video/src/lessons/clips/`; the pictures are a bubble, the tile, a burst struck through, "instead of" then "try", cards turning over, numbered steps, a page of lines, and the example card. Text that fits: card labels up to 18 characters, step labels 16, list lines 40, contrast lines 70, example quotes 60.
+
+### Social ads (decision 157)
+
+An ad sells to someone scrolling a feed, often with the sound off, so it differs from both the shorts and the lesson clips. The first is "Why your ideas don't get heard in meetings" (`video/src/ads/QuietInMeetings.tsx`). The formula:
+
+1. **Pick one niche and one moment they have lived** ("you go quiet in meetings"), not the whole app. Name the place: the headline and the first scene say "meeting".
+2. **The first frame is already moving and already readable.** No fade in, no logo. The scene starts in the middle: the idea is already lit and the other person is already talking.
+3. **The hook is a sting in about 6 words, on screen and spoken**, in under 2 seconds ("Your idea. / Sam gets the credit."), set big at the top. The setting has to be instantly familiar (a video call grid, where the active-speaker highlight is the spotlight).
+4. **Then open a question** the ad promises to answer ("There's a reason this keeps happening."), and only then change the headline to the question itself.
+5. **One cited fact, shown as a picture**, ideally a chart that builds on the words, with the source on screen. A chart without the study's numbers shows its shape only and says so ("Illustration of the finding"); never invent figures.
+6. **One reframe** a viewer can repeat ("It's not your idea that's losing. It's your timing.") and **one fix** they can try today.
+7. **Close the loop:** the hook's moment comes back reversed (the "Great idea!" that went to Sam lands on you).
+8. **Call to action over the last scene**, then an end card of 2 seconds at most.
+
+How it looks and moves:
+
+- **Something changes every 1 to 2 seconds**, inside the scene (a prop popping in, a bar growing, a light swinging), not through the transition. Between lines: a cut with a fifth of a second's colour fade. No slides or zooms between scenes; one quick zoom inside a scene is enough to land the hook's turn.
+- **Fewer, bigger things**, as on the tiles: one main character, one prop, one idea at a time; the tiles are the style to follow, not a set of pieces to paste in.
+- **Other people are told apart by body shape, colour and eyes**, not hair or accessories (`video/src/ads/Cast.tsx`): Sam wide and purple, Priya a coral rounded square, Alex the app's green blob. Apricot stays the user's.
+- **Captions** of one line at a time, the spoken word picked out; long lines in a smaller size. Pauses between lines in the voice are short (a social read, not a lesson's).
+- **Sound:** the voice, plus a small effect on each key moment (a pop as a prop lands, a whoosh as the highlight moves, a fizzle as the idea goes out, a ding as the praise lands, ticks under the clock), kept well under the voice. A music bed is wanted but needs a music source; the ElevenLabs connector here makes speech and sound effects, not music.
+- **Under 30 seconds.** The voice decides the length; the ad times itself from its pauses, and renders silently with estimated timing until the voice is in.
 
