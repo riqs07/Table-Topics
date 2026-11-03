@@ -1,4 +1,4 @@
-// The "quiet in meetings" social ad: a 1080 by 1920, roughly 28-second short for people who go quiet in meetings. The hook acts out an idea taken by someone else; two studies explain why (Anderson & Kilduff, 2009; McClean et al., 2018) and what to do instead. Its lines are timed from the voice's own pauses, as the lesson clips are
+// The "quiet in meetings" social ad: a 1080 by 1920, roughly 30-second short for people who go quiet in meetings. The hook happens on a video call (your idea, Sam gets the credit); then the blob explains why with a chart of one study (Anderson & Kilduff, 2009) and what to do instead (McClean et al., 2018). Its lines are timed from the voice's own pauses, as the lesson clips are
 
 // Load React's node type
 import type { ReactNode } from "react";
@@ -7,11 +7,14 @@ import { AbsoluteFill, Audio, interpolate, spring, staticFile, useCurrentFrame, 
 // Load the app's course tiles
 import { CourseTile } from "@/components/scenes/CourseTile";
 // Load the drawing pieces shared with the hook storyboard
-import { Backdrop, Bulb, Clock, Dots, Other, Table, Tag, Talk, You, type Ground } from "../hooks/HookStoryboard";
+import { Backdrop, Bulb, Clock, Tag, Talk, You, type Ground } from "../hooks/HookStoryboard";
+// Load the video call (the hook) and the colleagues on it
+import { VideoCall } from "./MeetingLooks";
+import { Person } from "./Cast";
 // Load the shared video pieces
 import { BODY, DISPLAY, Synced } from "../kit";
 // Load the theme as CSS, and the helpers for inline colours
-import { THEME_CSS, role } from "../theme";
+import { THEME_CSS, role, tint } from "../theme";
 // Load the word timing
 import { alignLines, syllables } from "../lessons/align";
 // Load the app's scene animations as plain CSS (the tile's loops)
@@ -22,32 +25,36 @@ import voices from "../generated/ads/index.json";
 // The ad's id, which names its voiceover (public/ads/quiet-in-meetings.mp3)
 export const AD_ID = "quiet-in-meetings";
 // The end card's length in seconds, after the voice
-const END_SECONDS = 3;
-// The headline kept at the top, for viewers with the sound off
-const HEADLINE = "Why your ideas don't get heard";
+const END_SECONDS = 2;
+// The words at the top during the hook (the sting, readable in a glance), and after it
+const [HOOK_TEXT, HEADLINE] = ["Your idea.\nSam gets the credit.", "Why your ideas don't get heard in meetings"];
+// How many lines the hook (the video call) takes
+const HOOK_LINES = 2;
 
-// The voiceover's lines in order, each with its ground (the second line changes ground halfway, when the bulb goes out), the source shown with it and whether you are the one speaking
-const LINES: ReadonlyArray<{ text: string; ground: Ground; later?: Ground; source?: string; speaking?: boolean }> = [
+// The voiceover's lines in order, each with its ground (after the hook) and the source shown with it
+const LINES: ReadonlyArray<{ text: string; ground: Ground; source?: string }> = [
   // The hook: your idea
-  { text: "You had the idea.", ground: "art-sky" },
-  // The hook: taken
-  { text: "Then someone else said it.", ground: "art-bloom", later: "art-plum" },
-  // The study
-  { text: "Researchers watched groups solve problems.", ground: "art-sun", source: "Anderson & Kilduff, 2009" },
+  { text: "Your idea.", ground: "art-sky" },
+  // The hook: Sam's credit
+  { text: "Sam gets the credit.", ground: "art-sky" },
+  // The open question
+  { text: "There's a reason this keeps happening.", ground: "art-sky" },
+  // The study (on the chart)
+  { text: "Researchers watched groups solve problems.", ground: "art-sun" },
   // Its finding
-  { text: "Whoever spoke first and most was rated the most competent.", ground: "art-bloom", source: "Anderson & Kilduff, 2009" },
+  { text: "Whoever spoke first and most was rated the most competent.", ground: "art-sun" },
   // Its twist
-  { text: "Even when their answers were no better.", ground: "art-sky", source: "Anderson & Kilduff, 2009" },
+  { text: "Even when their answers were no better.", ground: "art-sun" },
   // The turn
   { text: "So it's not your idea that's losing.", ground: "art-plum" },
   // (its second half)
   { text: "It's your timing.", ground: "art-coral" },
   // The fix
-  { text: "Say one thing early, even a question.", ground: "art-leaf", speaking: true },
+  { text: "Say one thing early, even a question.", ground: "art-leaf" },
   // The second study
-  { text: "People who bring a way forward, not just problems, are more often seen as leaders.", ground: "art-bloom", source: "McClean et al., 2018", speaking: true },
+  { text: "People who bring a way forward, not just problems, are more often seen as leaders.", ground: "art-bloom", source: "McClean et al., 2018" },
   // The call to action
-  { text: "Practise it in VoiceLab.", ground: "art-sky", speaking: true },
+  { text: "Practise it in VoiceLab.", ground: "art-sky" },
 ];
 
 // A voiceover's timings
@@ -55,32 +62,28 @@ type Voice = { fps: number; duration: number; phrases: ReadonlyArray<{ start: nu
 
 // Whether the ad's voiceover has been made and prepared
 export const adReady = AD_ID in voices;
-// The length the silent preview stands in for, in seconds (the two takes ran 25.4 and 25.6)
-const PREVIEW_SECONDS = 25.4;
-// The pause between lines in the silent preview, in seconds
-const PREVIEW_PAUSE = 0.45;
+// The silent preview's pace: seconds a syllable (the voice's own, from its first takes) and the short pause between lines a social cut leaves
+const [PREVIEW_PACE, PREVIEW_PAUSE] = [0.2, 0.3];
 
-// Stand-in timings for a silent preview before the voiceover is in: each line as long as its syllables at the voice's pace, a pause after each, and a mouth that opens and closes while a line is said
+// Stand-in timings for a silent preview before the voiceover is in: each line as long as its syllables at the voice's pace, a short pause after each, and a mouth that opens and closes while a line is said
 function previewVoice(): Voice {
-  // Each line's syllables
-  const counts = LINES.map((line) => line.text.split(" ").reduce((sum, word) => sum + syllables(word), 0));
-  // Seconds a syllable, leaving room for the pauses
-  const pace = (PREVIEW_SECONDS - PREVIEW_PAUSE * (LINES.length - 1)) / counts.reduce((sum, count) => sum + count, 0);
   // Each line's stretch, one after another
   let at = 0;
   // (worked out in order)
-  const phrases = counts.map((count) => {
+  const phrases = LINES.map((line) => {
     // This line's stretch
-    const phrase = { start: at, end: at + count * pace };
+    const phrase = { start: at, end: at + line.text.split(" ").reduce((sum, word) => sum + syllables(word), 0) * PREVIEW_PACE };
     // On past it and its pause
     at = phrase.end + PREVIEW_PAUSE;
     // Kept
     return phrase;
   });
+  // The voice's length: the last line's end
+  const duration = phrases.at(-1)!.end;
   // A loudness for every frame: a soft wobble while a line is said, silence between
-  const loudness = Array.from({ length: Math.ceil(PREVIEW_SECONDS * 30) }, (_, frame) => (phrases.some((phrase) => frame / 30 >= phrase.start && frame / 30 < phrase.end) ? 0.06 + 0.05 * Math.abs(Math.sin(frame * 0.9)) : 0));
+  const loudness = Array.from({ length: Math.ceil(duration * 30) }, (_, frame) => (phrases.some((phrase) => frame / 30 >= phrase.start && frame / 30 < phrase.end) ? 0.06 + 0.05 * Math.abs(Math.sin(frame * 0.9)) : 0));
   // The stand-in timings
-  return { fps: 30, duration: PREVIEW_SECONDS, phrases, loudness };
+  return { fps: 30, duration, phrases, loudness };
 }
 
 // The ad's voiceover, or stand-in timings for a silent preview when it has not been made yet
@@ -97,7 +100,7 @@ export function adFrames(): number {
   return Math.ceil((timing.duration + END_SECONDS) * timing.fps);
 }
 
-// What a line's scene needs: how far through its line we are (0 to 1), a spring that starts at a point in the line, and the blob's breathing, blinking and talking
+// What a line's scene needs: how far through its line we are (0 to 1), a spring that starts at a point in the line, the blob's breathing, blinking and talking, and the time
 type Moment = { through: number; pop: (at: number) => number; breath: number; blink: boolean; talk: number; t: number };
 
 // A prop popping in at a point in its line around its middle (cx, cy): growing with a little overshoot, tipping upright as it lands, then floating gently
@@ -110,212 +113,179 @@ function grow(m: Moment, at: number, cx: number, cy: number): string {
   return `translate(${cx} ${cy + float}) rotate(${(1 - Math.min(1, p)) * -16}) scale(${p}) translate(${-cx} ${-cy})`;
 }
 
-// The hook's first beat: the idea lights up over you
-function SceneIdea({ m }: { m: Moment }) {
-  // Sky: your bulb pops in, you look up at it
+// The blob explaining, big and centred low, talking with the voice
+function Narrator({ m, mood = "ready", x = 540, y = 1010, r = 170, wave = 0 }: { m: Moment; mood?: "ready" | "happy" | "up" | "wow"; x?: number; y?: number; r?: number; wave?: number }) {
+  // The blob, with a soft shadow under it
+  return (
+    <>
+      {/* Its shadow */}
+      <ellipse className="fill-on-warm opacity-15" cx={x} cy={y + r * 0.95} rx={r * 0.85} ry={r * 0.15} />
+      {/* The blob */}
+      <You t={m.t} x={x} y={y} r={r} mood={mood} open={m.talk} breath={m.breath} blink={m.blink} wave={wave} />
+    </>
+  );
+}
+
+// The open question: "Why?" in a bubble over the blob
+function SceneWhy({ m }: { m: Moment }) {
+  // Sky: the bubble pops in, the blob explains
+  return (
+    <>
+      {/* The bubble */}
+      <g transform={grow(m, 0.05, 540, 760)}><Talk x={360} y={500} w={360} h={230} tailX={540}><text className="fill-accent" x="540" y="655" fontFamily={DISPLAY} fontWeight="700" fontSize="120" textAnchor="middle">Why?</text></Talk></g>
+      {/* The blob */}
+      <Narrator m={m} mood="up" />
+    </>
+  );
+}
+
+// The people on the chart, top to bottom, with how much each talked, how competent each was rated, and how good each answer was (an illustration of the finding's shape, not the study's numbers)
+const CHART_ROWS = [
+  // Sam talked most and was rated highest
+  { who: "sam", talk: 0.95, rated: 0.9 },
+  // Priya
+  { who: "priya", talk: 0.55, rated: 0.58 },
+  // Alex
+  { who: "alex", talk: 0.38, rated: 0.42 },
+  // You talked least
+  { who: "you", talk: 0.14, rated: 0.18 },
+] as const;
+// Every answer was about as good
+const QUALITY = 0.62;
+// The chart's three measures: their colour and name
+const MEASURES = [["art-sky", "Talk time"], ["art-coral", "Rated competent"], ["art-leaf", "Quality of answers"]] as const;
+
+// The study as a chart that builds over three lines: the people (stage 0), how much each talked and how competent each was rated (stage 1), and how good each answer was (stage 2); the blob beside it, explaining
+function SceneChart({ m, stage }: { m: Moment; stage: 0 | 1 | 2 }) {
+  // The card's place
+  const [left, top, width, height] = [70, 370, 860, 760];
+  // Where the bars start and how long a full one is
+  const [barX, full] = [left + 170, 600];
+  // How far a set of bars has grown: earlier stages already full, this stage's growing in turn down the rows
+  const grown = (set: 0 | 1 | 2, row: number, at: number) => (stage > set ? 1 : stage === set ? Math.min(1, m.pop(at + row * 0.06)) : 0);
+  // When each set starts within its line: talk time at once; on the finding's line, "rated competent" once "competent" is near
+  const startOf = [0.05, 0.62, 0.1];
+  // The card and its contents
+  return (
+    <>
+      {/* The card, popping in on the first line only */}
+      <g transform={stage === 0 ? grow(m, 0, left + width / 2, top + height / 2) : undefined}>
+        {/* Its shadow */}
+        <rect x={left} y={top + 14} width={width} height={height} rx="44" fill={tint("on-warm", 10)} />
+        {/* The card */}
+        <rect className="fill-art-cream" x={left} y={top} width={width} height={height} rx="44" />
+        {/* Its title */}
+        <text className="fill-on-warm" x={left + 50} y={top + 82} fontFamily={DISPLAY} fontWeight="700" fontSize="50">Groups solving a problem</text>
+        {/* The key: each measure once its bars are showing */}
+        {MEASURES.map(([fill, name], index) => (index === 0 || stage >= index) && <g key={name} opacity={index === 0 || stage > index ? 1 : Math.min(1, m.pop(startOf[index]!))}><rect className={`fill-${fill}`} x={left + 50 + index * 262} y={top + 118} width="26" height="26" rx="7" /><text className="fill-on-warm" x={left + 86 + index * 262} y={top + 140} fontFamily={BODY} fontWeight="700" fontSize="27" opacity="0.8">{name}</text></g>)}
+        {/* Each person's row */}
+        {CHART_ROWS.map((row, index) => {
+          // The row's middle
+          const y = top + 250 + index * 128;
+          // The row: who, then three bars
+          return (
+            <g key={row.who}>
+              {/* Who: you as the warm blob, the others as themselves */}
+              {row.who === "you" ? <You t={m.t} x={left + 90} y={y} r={40} mood="ready" /> : <Person who={row.who} x={left + 90} y={y} r={40} mood={row.who === "sam" && stage >= 1 ? "happy" : "ready"} t={m.t} />}
+              {/* Talk time */}
+              <rect className="fill-art-sky" x={barX} y={y - 46} width={Math.max(0, full * row.talk * grown(0, index, startOf[0]!))} height="28" rx="14" />
+              {/* Rated competent */}
+              <rect className="fill-art-coral" x={barX} y={y - 14} width={Math.max(0, full * row.rated * grown(1, index, startOf[1]!))} height="28" rx="14" />
+              {/* Quality of answers: the same for everyone */}
+              <rect className="fill-art-leaf" x={barX} y={y + 18} width={Math.max(0, full * QUALITY * grown(2, index, startOf[2]!))} height="28" rx="14" />
+            </g>
+          );
+        })}
+        {/* The study, and that this is its shape rather than its numbers */}
+        <text className="fill-on-warm" x={left + width / 2} y={top + height - 34} fontFamily={BODY} fontWeight="600" fontSize="26" textAnchor="middle" opacity="0.6">Illustration of the finding · Anderson &amp; Kilduff, 2009</text>
+      </g>
+      {/* The blob, small beside the card, explaining */}
+      <Narrator m={m} mood={stage === 2 ? "wow" : "ready"} x={880} y={1180} r={88} />
+    </>
+  );
+}
+
+// The turn: your bulb lights again over you, it was a good idea all along
+function SceneYourIdea({ m }: { m: Moment }) {
+  // Plum: the bulb pops back on
   return (
     <>
       {/* Your idea */}
-      <Bulb t={m.t} x={360} y={560} s={1.3 * m.pop(0.2)} lit />
-      {/* You, looking up */}
-      <You t={m.t} x={360} y={990} r={150} mood="up" breath={m.breath} blink={m.blink} />
-      {/* The other person, listening */}
-      <Other t={m.t} x={780} y={1030} r={115} mood="ready" />
-      {/* The table */}
-      <Table y={1110} />
+      <g transform={grow(m, 0.05, 540, 560)}><Bulb t={m.t} x={540} y={560} s={1.6} lit /></g>
+      {/* The blob, pleased */}
+      <Narrator m={m} mood="happy" />
     </>
   );
 }
 
-// The hook's second beat: they say it, then get the credit while your bulb goes out
-function SceneTaken({ m }: { m: Moment }) {
-  // Whether the bulb has gone out yet
-  const out = m.through > 0.5;
-  // Bloom then plum
-  return (
-    <>
-      {/* Their bubble with your idea in it, until the credit lands */}
-      {!out && <g transform={`${grow(m, 0, 765, 800)}`}><Talk x={600} y={560} w={330} h={240} tailX={760}><Bulb t={m.t} x={765} y={670} s={0.7} lit /></Talk></g>}
-      {/* The praise they get */}
-      {out && <g transform={`${grow(m, 0.5, 780, 700)}`}><Tag x={780} y={700} text="Great idea!" size={50} /></g>}
-      {/* Your bulb: lit, flickering as the credit lands, then out */}
-      <Bulb t={m.t} x={330} y={620} s={0.9} lit={m.through < 0.5 || (m.through < 0.62 && Math.floor(m.t * 18) % 2 === 0)} />
-      {/* You: surprised, then deflated */}
-      <You t={m.t} x={330} y={out ? 1010 : 990} r={out ? 140 : 150} mood={out ? "worried" : "wow"} open={out ? 0 : 0.35} breath={m.breath} blink={m.blink} />
-      {/* Them: talking, then pleased */}
-      <Other t={m.t} x={780} y={out ? 1000 : 1010} r={out ? 135 : 125} mood={out ? "happy" : "talk"} />
-      {/* The table */}
-      <Table y={1110} />
-    </>
-  );
-}
-
-// The study: a group at a table, talk popping up
-function SceneGroup({ m }: { m: Moment }) {
-  // Where each person sits: you first, at the left
-  const seats = [170, 400, 650, 900];
-  // Sun: four at the table, bubbles popping over the others in turn
-  return (
-    <>
-      {/* Bubbles over the other three, one after another */}
-      {seats.slice(1).map((x, index) => <g key={x} transform={grow(m, 0.1 + index * 0.18, x, 840)}><Talk x={x - 95} y={index === 1 ? 600 : 680} w={190} h={120} tailX={x}><Dots x={x} y={index === 1 ? 660 : 740} /></Talk></g>)}
-      {/* You, quiet */}
-      <You t={m.t} x={seats[0]!} y={1020} r={100} mood="ready" breath={m.breath} blink={m.blink} />
-      {/* The others, talking or listening */}
-      {seats.slice(1).map((x, index) => <Other t={m.t} key={x} x={x} y={1025} r={95} mood={index === 1 ? "ready" : "talk"} />)}
-      {/* The table */}
-      <Table y={1110} />
-    </>
-  );
-}
-
-// The finding: the one who talks most gets the badge
-function SceneBadge({ m }: { m: Moment }) {
-  // Whether the badge has landed
-  const landed = m.through > 0.72;
-  // Bloom: bubbles stack over the talker, then the badge replaces them
-  return (
-    <>
-      {/* Three bubbles stacking, until the badge lands */}
-      {!landed && [[620, 400, 760, 740, 470], [700, 550, 800, 820, 620], [600, 700, 760, 720, 770]].map(([x, y, tail, dx, dy], index) => <g key={index} transform={grow(m, 0.05 + index * 0.16, tail!, y! + 140)}><Talk x={x!} y={y!} w={240} h={140} tailX={tail!}><Dots x={dx!} y={dy!} /></Talk></g>)}
-      {/* The badge */}
-      {landed && <g transform={`${grow(m, 0.72, 770, 720)}`}><Tag x={770} y={720} text="Most competent ✓" size={48} /></g>}
-      {/* The talker: talking, then pleased */}
-      <Other t={m.t} x={770} y={1010} r={135} mood={landed ? "happy" : "talk"} />
-      {/* You: quiet, then surprised */}
-      <You t={m.t} x={300} y={1010} r={135} mood={landed ? "wow" : "ready"} open={landed ? 0.35 : 0} breath={m.breath} blink={m.blink} />
-      {/* The table */}
-      <Table y={1110} />
-    </>
-  );
-}
-
-// The twist: their idea was no better than yours
-function SceneEqual({ m }: { m: Moment }) {
-  // Sky: two bulbs the same size, then the equals sign
-  return (
-    <>
-      {/* Your idea */}
-      <Bulb t={m.t} x={320} y={620} s={1.1 * m.pop(0.05)} lit />
-      {/* The equals sign */}
-      <g className="fill-art-cream" transform={`${grow(m, 0.45, 540, 620)}`}><rect x="500" y="590" width="80" height="18" rx="9" /><rect x="500" y="630" width="80" height="18" rx="9" /></g>
-      {/* Their idea */}
-      <Bulb t={m.t} x={760} y={620} s={1.1 * m.pop(0.25)} lit />
-      {/* You, puzzled */}
-      <You t={m.t} x={320} y={1010} r={135} mood="worried" breath={m.breath} blink={m.blink} />
-      {/* Them */}
-      <Other t={m.t} x={760} y={1010} r={135} mood="ready" />
-      {/* The table */}
-      <Table y={1110} />
-    </>
-  );
-}
-
-// The turn: both ideas just as bright
-function SceneBoth({ m }: { m: Moment }) {
-  // Plum: both bulbs lit, side by side
-  return (
-    <>
-      {/* Your idea */}
-      <Bulb t={m.t} x={320} y={600} s={1.2 * m.pop(0)} lit />
-      {/* Their idea */}
-      <Bulb t={m.t} x={760} y={600} s={1.2 * m.pop(0.15)} lit />
-      {/* You */}
-      <You t={m.t} x={320} y={1010} r={140} mood="ready" breath={m.breath} blink={m.blink} />
-      {/* Them */}
-      <Other t={m.t} x={760} y={1010} r={135} mood="ready" />
-      {/* The table */}
-      <Table y={1110} />
-    </>
-  );
-}
-
-// The turn's second half: the clock, and they went first
+// The turn's second half: the clock
 function SceneTiming({ m }: { m: Moment }) {
-  // Coral: the clock's hand sweeping on, "1st" over them, your bulb gone dim
+  // Coral: the clock pops in, its hand sweeping on
   return (
     <>
       {/* The clock */}
-      <g transform={`${grow(m, 0, 540, 470)}`}><Clock x={540} y={470} r={150} minute={8 + m.through * 22} /></g>
-      {/* "1st" over them */}
-      <g transform={`${grow(m, 0.35, 790, 720)}`}><Tag x={790} y={720} text="1st" size={56} /></g>
-      {/* Your bulb, waiting */}
-      <Bulb t={m.t} x={300} y={720} s={0.8} lit={false} />
-      {/* You, worried */}
-      <You t={m.t} x={300} y={1010} r={135} mood="worried" breath={m.breath} blink={m.blink} />
-      {/* Them, talking */}
-      <Other t={m.t} x={790} y={1010} r={135} mood="talk" />
-      {/* The table */}
-      <Table y={1110} />
+      <g transform={grow(m, 0, 540, 560)}><Clock x={540} y={560} r={200} minute={8 + m.through * 30} /></g>
+      {/* The blob */}
+      <Narrator m={m} mood="up" />
     </>
   );
 }
 
-// The fix: you say something early, a question
+// The fix: say one thing early, even a question
 function SceneEarly({ m }: { m: Moment }) {
-  // Leaf: your "?" bubble, the clock early, you talking
+  // Leaf: a "?" bubble and a clock still early
   return (
     <>
+      {/* The question */}
+      <g transform={grow(m, 0.05, 330, 760)}><Talk x={190} y={500} w={280} h={240} tailX={330}><text className="fill-accent" x="330" y="672" fontFamily={DISPLAY} fontWeight="700" fontSize="180" textAnchor="middle">?</text></Talk></g>
       {/* The clock, early in the meeting */}
-      <g transform={`${grow(m, 0.3, 820, 470)}`}><Clock x={820} y={470} r={120} minute={3} /></g>
-      {/* Your bubble with a question mark */}
-      <g transform={`${grow(m, 0.05, 330, 800)}`}><Talk x={190} y={540} w={280} h={240} tailX={330}><text className="fill-accent" x="330" y="710" fontFamily={DISPLAY} fontWeight="700" fontSize="180" textAnchor="middle">?</text></Talk></g>
-      {/* You, speaking */}
-      <You t={m.t} x={340} y={1000} r={150} mood="ready" open={m.talk} breath={m.breath} blink={m.blink} />
-      {/* Them, listening */}
-      <Other t={m.t} x={790} y={1020} r={120} mood="ready" />
-      {/* The table */}
-      <Table y={1110} />
+      <g transform={grow(m, 0.3, 780, 600)}><Clock x={780} y={600} r={130} minute={2} /></g>
+      {/* The blob */}
+      <Narrator m={m} mood="happy" />
     </>
   );
 }
 
-// The second study: you bring a way forward, and the credit lands on you this time
+// The second study: a way forward, and this time the credit lands on you
 function SceneLeader({ m }: { m: Moment }) {
-  // Bloom: your "What if we…?" bubble, then "Great idea!" over you
+  // Bloom: "What if we…?" then "Great idea!" over you
   return (
     <>
-      {/* Your bubble */}
-      <g transform={`${grow(m, 0.05, 330, 800)}`}><Talk x={110} y={600} w={470} h={170} tailX={330}><text className="fill-on-warm" x="345" y="705" fontFamily={DISPLAY} fontWeight="700" fontSize="64" textAnchor="middle">What if we…?</text></Talk></g>
-      {/* The praise, now yours */}
-      <g transform={`${grow(m, 0.6, 345, 470)}`}><Tag x={345} y={470} text="Great idea!" size={50} /></g>
-      {/* You, pleased and talking */}
-      <You t={m.t} x={340} y={1000} r={150} mood="happy" open={m.talk} breath={m.breath} blink={m.blink} />
-      {/* Them, pleased */}
-      <Other t={m.t} x={790} y={1010} r={125} mood="happy" />
-      {/* The table */}
-      <Table y={1110} />
+      {/* The way forward */}
+      <g transform={grow(m, 0.05, 540, 760)}><Talk x={300} y={590} w={480} h={170} tailX={540}><text className="fill-on-warm" x="540" y="697" fontFamily={DISPLAY} fontWeight="700" fontSize="66" textAnchor="middle">What if we…?</text></Talk></g>
+      {/* The praise, yours this time */}
+      <g transform={grow(m, 0.55, 540, 480)}><Tag x={540} y={480} text="Great idea!" size={56} /></g>
+      {/* The blob */}
+      <Narrator m={m} mood="happy" />
     </>
   );
 }
 
 // The call to action: your bulb glowing, you waving
-function SceneWave({ m, seconds }: { m: Moment; seconds: number }) {
-  // Sky: a big lit bulb over you, waving
+function SceneWave({ m }: { m: Moment }) {
+  // Sky: a big lit bulb and a wave
   return (
     <>
       {/* Your idea, big */}
-      <Bulb t={m.t} x={540} y={560} s={1.5 * m.pop(0)} lit />
-      {/* You, waving and talking */}
-      <You t={m.t} x={540} y={1000} r={160} mood="happy" open={m.talk} breath={m.breath} blink={m.blink} wave={0.5 + 0.5 * Math.sin(seconds * 9)} />
-      {/* The table */}
-      <Table y={1110} />
+      <g transform={grow(m, 0, 540, 560)}><Bulb t={m.t} x={540} y={560} s={1.5} lit /></g>
+      {/* The blob, waving */}
+      <Narrator m={m} mood="happy" wave={0.5 + 0.5 * Math.sin(m.t * 9)} />
     </>
   );
 }
 
-// Each line's scene, in the lines' order
-const SCENES: ReadonlyArray<(props: { m: Moment; seconds: number }) => ReactNode> = [SceneIdea, SceneTaken, SceneGroup, SceneBadge, SceneEqual, SceneBoth, SceneTiming, SceneEarly, SceneLeader, SceneWave];
+// Each line's scene after the hook, in the lines' order (the hook's two lines are the video call)
+const SCENES: ReadonlyArray<(props: { m: Moment }) => ReactNode> = [SceneWhy, (props) => <SceneChart {...props} stage={0} />, (props) => <SceneChart {...props} stage={1} />, (props) => <SceneChart {...props} stage={2} />, SceneYourIdea, SceneTiming, SceneEarly, SceneLeader, SceneWave];
 
-// The headline at the top: a cream pill (a rounded box when it wraps onto two lines), clear of the apps' buttons
-export function Headline({ shown, text = HEADLINE }: { shown: number; text?: string }) {
-  // Two lines when the words are long
-  const wraps = text.length > 32;
+// The headline at the top: a cream pill (a rounded box when it wraps onto two lines, bigger for the hook's sting), clear of the apps' buttons
+export function Headline({ shown, text = HEADLINE, big = false }: { shown: number; text?: string; big?: boolean }) {
+  // Two lines when the words are long, or when it is the hook's big sting
+  const wraps = big || text.length > 32;
   // Centred near the top
   return (
-    <div style={{ position: "absolute", left: 60, right: 150, top: 170, display: "flex", justifyContent: "center", opacity: shown, transform: `translateY(${(1 - shown) * -30}px)` }}>
+    <div style={{ position: "absolute", left: 60, right: 150, top: big ? 150 : 170, display: "flex", justifyContent: "center", opacity: shown, transform: `translateY(${(1 - shown) * -30}px)` }}>
       {/* The pill */}
-      <div style={{ padding: wraps ? "18px 40px" : "22px 40px", borderRadius: wraps ? 40 : 999, background: role("art-cream"), color: role("on-warm"), fontFamily: DISPLAY, fontWeight: 700, fontSize: wraps ? 52 : 54, lineHeight: 1.12, letterSpacing: -0.5, textAlign: "center", whiteSpace: wraps ? "normal" : "nowrap" }}>{text}</div>
+      <div style={{ padding: wraps ? "18px 40px" : "22px 40px", borderRadius: wraps ? 40 : 999, background: role("art-cream"), color: role("on-warm"), fontFamily: DISPLAY, fontWeight: 700, fontSize: big ? 62 : wraps ? 52 : 54, lineHeight: 1.1, letterSpacing: -0.5, textAlign: "center", whiteSpace: big ? "pre-line" : wraps ? "normal" : "nowrap" }}>{text}</div>
     </div>
   );
 }
@@ -323,7 +293,7 @@ export function Headline({ shown, text = HEADLINE }: { shown: number; text?: str
 // The source of a study, small, under the headline
 function Source({ text }: { text: string }) {
   // Small cream words
-  return <div style={{ position: "absolute", left: 60, right: 150, top: 290, textAlign: "center", fontFamily: BODY, fontWeight: 700, fontSize: 36, color: role("art-cream") }}>{text}</div>;
+  return <div style={{ position: "absolute", left: 60, right: 150, top: 340, textAlign: "center", fontFamily: BODY, fontWeight: 700, fontSize: 36, color: role("art-cream") }}>{text}</div>;
 }
 
 // The caption: the line being said, its current word in the accent, in a cream box whose bottom sits clear of the apps' buttons
@@ -381,24 +351,24 @@ export function QuietInMeetings(): ReactNode {
   const springFrom = (at: number, damping = 13) => spring({ frame: frame - Math.round(at * fps), fps, config: { damping } });
   // How loud the voice is now, smoothed over two frames, for a talking mouth
   const loud = Math.min(1, (((timing.loudness[frame] ?? 0) + (timing.loudness[Math.max(0, frame - 1)] ?? 0)) / 2) * 6);
-  // The line's scene and the moment it is drawn at
-  const [line, Scene] = [LINES[index]!, SCENES[index]!];
-  // (the moment)
-  const moment: Moment = { through: Math.min(1, Math.max(0, (seconds - start) / (end - start))), pop: (at) => springFrom(start + at * (end - start)), breath: 1 + Math.sin(seconds * 2.4) * 0.012, blink: frame % 137 < 4, talk: line.speaking ? loud : 0, t: seconds };
-  // Every change of ground: each line's start, and a line's later ground halfway through it
-  const changes = LINES.flatMap((each, at) => [{ from: lineStarts[at]!, ground: each.ground }, ...(each.later ? [{ from: (lineStarts[at]! + (lineStarts[at + 1] ?? timing.duration)) / 2, ground: each.later }] : [])]);
-  // The latest change so far, and the one before it
-  const latest = Math.max(0, changes.filter((change) => seconds >= change.from).length - 1);
-  // (the grounds, and how far the new one has faded in, over a quarter of a second)
-  const [ground, previous, fade] = [changes[latest]!.ground, changes[Math.max(0, latest - 1)]!.ground, Math.min(1, Math.max(0, (seconds - changes[latest]!.from) / 0.25))];
-  // The camera: each line arrives with a quick push in from the right, then drifts slowly closer
-  const arrive = springFrom(start, 15);
-  // (its scale and slide)
-  const [zoom, slide] = [(0.92 + 0.08 * Math.min(1, arrive)) * (1 + 0.04 * moment.through), (1 - arrive) * 90];
+  // The line now
+  const line = LINES[index]!;
+  // Whether the hook (the video call) is on
+  const hook = index < HOOK_LINES;
+  // The moment a scene is drawn at
+  const moment: Moment = { through: Math.min(1, Math.max(0, (seconds - start) / (end - start))), pop: (at) => springFrom(start + at * (end - start)), breath: 1 + Math.sin(seconds * 2.4) * 0.012, blink: (frame + 40) % 137 < 4, talk: loud, t: seconds };
+  // The scene after the hook
+  const Scene = SCENES[index - HOOK_LINES];
+  // The call's moments: your idea already lit and Sam already talking (it starts in the middle), the highlight jumping to him as his name is said
+  const swing = (lineStarts[1] ?? 1) + 0.1;
+  // (all of them)
+  const beats = { bulbOn: -1, talk: 0.3, swing, out: swing + 0.25, praise: swing + 0.45 };
+  // The ground now and the one before it, fading in over a fifth of a second at each line's start
+  const [ground, previous, fade] = [line.ground, LINES[Math.max(0, index - 1)]!.ground, Math.min(1, Math.max(0, (seconds - start) / 0.2))];
   // The word being said: the last in this line that has started
   const said = Math.max(0, words.filter((word) => word.line === index && word.start <= seconds).length - 1);
   // How far the end card has come in
-  const closing = seconds > timing.duration ? springFrom(timing.duration + 0.1, 14) : 0;
+  const closing = seconds > timing.duration ? springFrom(timing.duration + 0.05, 14) : 0;
   // The layers, back to front
   return (
     <AbsoluteFill style={{ fontFamily: BODY }}>
@@ -406,20 +376,22 @@ export function QuietInMeetings(): ReactNode {
       <style>{`${THEME_CSS}\n.tile-box svg { width: 100%; height: 100%; }`}</style>
       {/* The voice, once it is made */}
       {adReady && <Audio src={staticFile(`ads/${AD_ID}.mp3`)} />}
-      {/* The ground before, under the new one fading in */}
-      <Backdrop ground={previous} t={seconds} />
+      {/* The hook: the video call */}
+      {hook && <VideoCall t={seconds} beats={beats} chrome={false} />}
+      {/* After it: the ground before, under the new one fading in */}
+      {!hook && <Backdrop ground={index === HOOK_LINES ? ground : previous} t={seconds} />}
       {/* (the new one) */}
-      <Backdrop ground={ground} t={seconds} opacity={fade} />
-      {/* The line's scene, through the camera */}
-      <svg viewBox="0 0 1080 1920" width={1080} height={1920} style={{ position: "absolute", inset: 0, overflow: "visible" }}><g transform={`translate(${540 + slide} 900) scale(${zoom}) translate(-540 -900)`}><Scene m={moment} seconds={seconds} /></g></svg>
-      {/* The headline, in from the first frame */}
-      <Headline shown={springFrom(0, 16)} />
+      {!hook && <Backdrop ground={ground} t={seconds} opacity={fade} />}
+      {/* The line's scene */}
+      {Scene && <svg viewBox="0 0 1080 1920" width={1080} height={1920} style={{ position: "absolute", inset: 0, overflow: "visible" }}><Scene m={moment} /></svg>}
+      {/* The words at the top: the sting during the hook, then the question it raises */}
+      <Headline shown={1} text={hook ? HOOK_TEXT : HEADLINE} big={hook} />
       {/* The study's source, when the line cites one */}
       {line.source && <Source text={line.source} />}
       {/* The caption */}
-      {seconds <= timing.duration && <Caption text={line.text} said={said} pop={springFrom(start, 15)} />}
+      {seconds <= timing.duration && <Caption text={line.text} said={said} pop={index === 0 ? 1 : springFrom(start, 15)} />}
       {/* The end card, once the voice is done */}
-      {closing > 0 && <EndCard shown={closing} strap={interpolate(seconds, [timing.duration + 0.6, timing.duration + 1], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })} />}
+      {closing > 0 && <EndCard shown={closing} strap={interpolate(seconds, [timing.duration + 0.4, timing.duration + 0.8], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })} />}
     </AbsoluteFill>
   );
 }

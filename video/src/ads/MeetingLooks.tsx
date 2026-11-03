@@ -33,9 +33,9 @@ function captionAt(t: number): { text: string; said: number } {
 }
 
 // Whether your bulb is lit at time t: on, flickering as the credit goes, then out
-function bulbLit(t: number): boolean {
+function bulbLit(t: number, out = BULB_OUT): boolean {
   // Lit before it goes out, flickering for a moment after
-  return t < BULB_OUT || (t < BULB_OUT + 0.3 && Math.floor(t * 18) % 2 === 0);
+  return t < out || (t < out + 0.3 && Math.floor(t * 18) % 2 === 0);
 }
 
 // The calendar invite that opens the hook: a cream card with a date icon, sliding up and away once the idea lights
@@ -222,8 +222,17 @@ function MutedMic({ x, y }: { x: number; y: number }) {
 // A tile's size
 const [TILE_W, TILE_H] = [465, 395];
 
-// The video call at time t: four tiles, the active-speaker highlight on you, then jumping to Sam as he says your idea
-export function VideoCall({ t }: { t: number }): ReactNode {
+// The moments the call turns on, in seconds: your bulb lights, Sam starts talking, the highlight jumps to him, your bulb dies, the praise lands
+export type CallBeats = { bulbOn: number; talk: number; swing: number; out: number; praise: number };
+// The hook's own timings, for the stand-alone stills and clip
+const HOOK_BEATS: CallBeats = { bulbOn: BULB_ON, talk: THEY_TALK, swing: SWING, out: BULB_OUT, praise: PRAISE };
+
+// The video call at time t: four tiles, the active-speaker highlight on you, then jumping to Sam as he says your idea, with a quick zoom onto his tile; with its own headline and caption unless the ad draws them
+export function VideoCall({ t, beats = HOOK_BEATS, chrome = true }: { t: number; beats?: CallBeats; chrome?: boolean }): ReactNode {
+  // The moments, by name
+  const { bulbOn: BULB_ON, talk: THEY_TALK, swing: SWING, out: BULB_OUT, praise: PRAISE } = beats;
+  // The zoom onto Sam's tile as the highlight jumps: in quickly, held
+  const zoom = 1 + 0.07 * Math.min(1, springAt(t, SWING, 14));
   // Who is lit as the speaker: you, then Sam once he takes your idea
   const speaker = t > SWING ? 1 : 0;
   // How far the highlight has popped onto its tile
@@ -246,8 +255,8 @@ export function VideoCall({ t }: { t: number }): ReactNode {
         {/* The meeting */}
         Weekly team sync · 10:02
       </div>
-      {/* The tiles */}
-      <svg viewBox="0 0 1080 1920" width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
+      {/* The tiles, zooming toward Sam's as he takes the floor */}
+      <svg viewBox="0 0 1080 1920" width={1080} height={1920} style={{ position: "absolute", inset: 0, transform: `scale(${zoom})`, transformOrigin: "787px 627px" }}>
         <defs>
           {/* Each tile's shape, so the people are cut off at its edges */}
           {CALL.map((person) => <clipPath key={person.name} id={`tile-${person.name}`}><rect x={person.x} y={person.y} width={TILE_W} height={TILE_H} rx="30" /></clipPath>)}
@@ -262,7 +271,7 @@ export function VideoCall({ t }: { t: number }): ReactNode {
               {/* A soft circle behind them, as on the tiles */}
               <circle className="fill-art-cream opacity-15" cx={person.x + TILE_W - 70} cy={person.y + 60} r="150" />
               {/* You, with your idea */}
-              {index === 0 && <><Bulb x={person.x + TILE_W / 2} y={person.y + 105} s={0.72 * springAt(t, BULB_ON)} lit={bulbLit(t)} t={t} /><You x={person.x + TILE_W / 2} y={person.y + 300 + hop(t, BULB_ON, 20)} r={120} mood={left ? "worried" : t > THEY_TALK ? "wow" : "up"} open={!left && t > THEY_TALK ? 0.3 : 0} t={t} /></>}
+              {index === 0 && <><Bulb x={person.x + TILE_W / 2} y={person.y + 105} s={0.72 * springAt(t, BULB_ON)} lit={bulbLit(t, BULB_OUT)} t={t} /><You x={person.x + TILE_W / 2} y={person.y + 300 + hop(t, BULB_ON, 20)} r={120} mood={left ? "worried" : t > THEY_TALK ? "wow" : "up"} open={!left && t > THEY_TALK ? 0.3 : 0} t={t} /></>}
               {/* The others, each their own character, their eyes on whoever is speaking */}
               {index > 0 && <Person who={(["sam", "priya", "alex"] as const)[index - 1]!} x={person.x + TILE_W / 2} y={person.y + 290 + (index === 1 ? hop(t, SWING + 0.2, 20) : 0)} r={112} mood={index === 1 ? (t > PRAISE ? "happy" : t > THEY_TALK ? "talk" : "ready") : t > PRAISE ? "happy" : "ready"} t={t} {...gaze(index, t > THEY_TALK)} />}
               {/* Your tile dims once the highlight leaves you */}
@@ -282,13 +291,9 @@ export function VideoCall({ t }: { t: number }): ReactNode {
         {t > THEY_TALK && t < PRAISE && <g transform={`translate(1000 500) scale(${springAt(t, THEY_TALK)}) translate(-1000 -500)`}><Talk x={810} y={455} w={190} h={140} tailX={900}><Bulb x={905} y={516} s={0.4} lit /></Talk></g>}
         {/* The praise in the chat, over Priya and Alex */}
         {t > PRAISE && <g transform={`translate(790 905) rotate(${(1 - Math.min(1, springAt(t, PRAISE))) * -10}) scale(${springAt(t, PRAISE)}) translate(-790 -905)`}><Tag x={790} y={905} text="Great idea, Sam!" size={44} /></g>}
-        {/* The call's buttons: mute, camera, leave */}
-        {[["art-cream", 420], ["art-cream", 540], ["art-coral", 660]].map(([fill, x]) => <circle key={x} className={`fill-${fill}`} opacity={fill === "art-cream" ? 0.25 : 1} cx={x} cy="1300" r="34" />)}
       </svg>
-      {/* The headline */}
-      <Headline shown={1} text={HEADLINE} />
-      {/* The caption */}
-      <Caption text={caption.text} said={caption.said} pop={1} />
+      {/* The headline and caption, unless the ad draws its own */}
+      {chrome && <><Headline shown={1} text={HEADLINE} /><Caption text={caption.text} said={caption.said} pop={1} /></>}
     </AbsoluteFill>
   );
 }
