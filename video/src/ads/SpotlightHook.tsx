@@ -22,13 +22,13 @@ const LINES = [
   { text: "Then someone else said it.", start: 1.9, words: [1.9, 2.15, 2.5, 2.8, 3.0] },
 ];
 // The moments the story turns on, in seconds: your bulb lights, they start talking, the light swings, your bulb dies, the praise lands
-const [BULB_ON, THEY_TALK, SWING, BULB_OUT, PRAISE] = [0.25, 2.0, 2.45, 2.7, 3.15];
+export const [BULB_ON, THEY_TALK, SWING, BULB_OUT, PRAISE] = [0.25, 2.0, 2.45, 2.7, 3.15];
 
 // Where things stand: you, them, the floor and the lamp
-const [YOU_X, THEM_X, FLOOR_Y, LAMP] = [320, 770, 1150, { x: 540, y: 360 }];
+export const [YOU_X, THEM_X, FLOOR_Y, LAMP] = [320, 770, 1150, { x: 540, y: 360 }];
 
 // The lamp hanging from the top, turned to aim at a point on the floor
-function Lamp({ aim }: { aim: number }) {
+export function Lamp({ aim }: { aim: number }) {
   // The angle from straight down to the point it aims at
   const angle = (Math.atan2(aim - LAMP.x, FLOOR_Y - LAMP.y) * -180) / Math.PI;
   // The rod and the turning lamp
@@ -50,7 +50,7 @@ function Lamp({ aim }: { aim: number }) {
 }
 
 // The cone of light from the lamp to a pool on the floor around a point, as a shape (used both to light the stage and to cut the darkness)
-function Cone({ aim, className, opacity }: { aim: number; className?: string; opacity?: number }) {
+export function Cone({ aim, className, opacity }: { aim: number; className?: string; opacity?: number }) {
   // The beam and the pool where it lands
   return (
     <g className={className} opacity={opacity}>
@@ -63,7 +63,7 @@ function Cone({ aim, className, opacity }: { aim: number; className?: string; op
 }
 
 // A small hop: how high, in pixels, a blob is a moment after it starts to hop (0 before and after)
-function hop(seconds: number, from: number, height = 34): number {
+export function hop(seconds: number, from: number, height = 34): number {
   // How far through a third of a second
   const through = (seconds - from) / 0.34;
   // Up and down once

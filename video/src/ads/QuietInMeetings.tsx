@@ -307,13 +307,15 @@ function SceneWave({ m, seconds }: { m: Moment; seconds: number }) {
 // Each line's scene, in the lines' order
 const SCENES: ReadonlyArray<(props: { m: Moment; seconds: number }) => ReactNode> = [SceneIdea, SceneTaken, SceneGroup, SceneBadge, SceneEqual, SceneBoth, SceneTiming, SceneEarly, SceneLeader, SceneWave];
 
-// The headline at the top: a cream pill, clear of the apps' buttons
-export function Headline({ shown }: { shown: number }) {
+// The headline at the top: a cream pill (a rounded box when it wraps onto two lines), clear of the apps' buttons
+export function Headline({ shown, text = HEADLINE }: { shown: number; text?: string }) {
+  // Two lines when the words are long
+  const wraps = text.length > 32;
   // Centred near the top
   return (
     <div style={{ position: "absolute", left: 60, right: 150, top: 170, display: "flex", justifyContent: "center", opacity: shown, transform: `translateY(${(1 - shown) * -30}px)` }}>
       {/* The pill */}
-      <div style={{ padding: "22px 40px", borderRadius: 999, background: role("art-cream"), color: role("on-warm"), fontFamily: DISPLAY, fontWeight: 700, fontSize: 54, letterSpacing: -0.5, whiteSpace: "nowrap" }}>{HEADLINE}</div>
+      <div style={{ padding: wraps ? "18px 40px" : "22px 40px", borderRadius: wraps ? 40 : 999, background: role("art-cream"), color: role("on-warm"), fontFamily: DISPLAY, fontWeight: 700, fontSize: wraps ? 52 : 54, lineHeight: 1.12, letterSpacing: -0.5, textAlign: "center", whiteSpace: wraps ? "normal" : "nowrap" }}>{text}</div>
     </div>
   );
 }

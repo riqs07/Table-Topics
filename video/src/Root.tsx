@@ -26,6 +26,8 @@ import { HOOKS, HookSheet, SHEET_HEIGHT, SHEET_WIDTH } from "./hooks/HookStorybo
 import { QuietInMeetings, adFrames } from "./ads/QuietInMeetings";
 // Load the spotlight trial of the ad's hook and its length
 import { SPOTLIGHT_HOOK_FRAMES, SpotlightHook } from "./ads/SpotlightHook";
+// Load the two meeting looks for the hook (stills for choosing)
+import { MeetingRoom, VideoCall } from "./ads/MeetingLooks";
 
 // Hold the render until both faces are ready, so no frame is drawn in a fallback font
 const waiting = delayRender("Loading fonts");
@@ -55,6 +57,10 @@ export function Root() {
       <Composition id="ad-quiet-in-meetings" component={QuietInMeetings} durationInFrames={adFrames()} fps={30} width={1080} height={1920} />
       {/* The spotlight trial of the ad's hook */}
       <Composition id="ad-spotlight-hook" component={SpotlightHook} durationInFrames={SPOTLIGHT_HOOK_FRAMES} fps={30} width={1080} height={1920} />
+      {/* The meeting-room look, at the start of the hook and at its turn */}
+      {[0.9, 3.6].map((t, index) => <Composition key={`room${index}`} id={`look-room-${index + 1}`} component={MeetingRoom} defaultProps={{ t }} durationInFrames={1} fps={30} width={1080} height={1920} />)}
+      {/* The video-call look, at the same two moments */}
+      {[0.9, 3.6].map((t, index) => <Composition key={`call${index}`} id={`look-call-${index + 1}`} component={VideoCall} defaultProps={{ t }} durationInFrames={1} fps={30} width={1080} height={1920} />)}
       {/* (and all of them on one sheet) */}
       <Composition id="hook-sheet" component={HookSheet} durationInFrames={1} fps={30} width={SHEET_WIDTH} height={SHEET_HEIGHT} />
     </>
