@@ -333,18 +333,13 @@ function EndCard({ shown, strap }: { shown: number; strap: number }) {
   );
 }
 
-// The sound effects (public/ads/sfx/, made with ElevenLabs' sound effects), kept to two so they mark the turns rather than decorate: each a file and how loud it plays under the voice
-const SFX = { whoosh: 0.3, tick: 0.35 } as const;
+// The one sound effect (public/ads/sfx/, made with ElevenLabs' sound effects): the clock's ticks, and how loud they play under the voice
+const SFX = { tick: 0.35 } as const;
 
-// When each effect plays, in seconds: the whoosh as the highlight jumps to Sam, the ticks as the clock comes in
-function soundCues(lineStarts: ReadonlyArray<number>, swing: number): Array<{ sound: keyof typeof SFX; at: number }> {
-  // The two cues
-  return [
-    // The highlight jumping to Sam
-    { sound: "whoosh", at: swing - 0.05 },
-    // The clock, as "It's your timing." starts
-    { sound: "tick", at: lineStarts[7]! },
-  ];
+// When each effect plays, in seconds: the ticks as the clock comes in on "It's your timing."
+function soundCues(lineStarts: ReadonlyArray<number>): Array<{ sound: keyof typeof SFX; at: number }> {
+  // The one cue
+  return [{ sound: "tick", at: lineStarts[7]! }];
 }
 
 // The ad
@@ -391,7 +386,7 @@ export function QuietInMeetings(): ReactNode {
       {/* The voice, once it is made */}
       {adReady && <Audio src={staticFile(`ads/${AD_ID}.mp3`)} />}
       {/* The sound effects, each at its moment */}
-      {soundCues(lineStarts, swing).map((cue, at) => <Sequence key={at} from={Math.max(0, Math.round(cue.at * fps))} layout="none"><Audio src={staticFile(`ads/sfx/${cue.sound}.mp3`)} volume={SFX[cue.sound]} /></Sequence>)}
+      {soundCues(lineStarts).map((cue, at) => <Sequence key={at} from={Math.max(0, Math.round(cue.at * fps))} layout="none"><Audio src={staticFile(`ads/sfx/${cue.sound}.mp3`)} volume={SFX[cue.sound]} /></Sequence>)}
       {/* The hook: the video call */}
       {hook && <VideoCall t={seconds} beats={beats} chrome={false} />}
       {/* After it: the ground before, under the new one fading in */}

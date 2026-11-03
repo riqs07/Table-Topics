@@ -139,6 +139,6 @@ How it looks and moves:
 - **Fewer, bigger things**, as on the tiles: one main character, one prop, one idea at a time; the tiles are the style to follow, not a set of pieces to paste in.
 - **Other people are told apart by body shape, colour and eyes**, not hair or accessories (`video/src/ads/Cast.tsx`): Sam wide and purple, Priya a coral rounded square, Alex the app's green blob. Apricot stays the user's.
 - **Captions** of one line at a time, the spoken word picked out; long lines in a smaller size. Pauses between lines in the voice are short (a social read, not a lesson's).
-- **Sound:** the voice, plus very few effects, only on the turns, kept well under the voice: a whoosh as the highlight jumps to the person taking the credit, and ticks under the clock. An effect on every pop was too much (the user cut them). A music bed is wanted but needs a music source; the ElevenLabs connector here makes speech and sound effects, not music.
+- **Sound:** the voice, plus at most one or two effects where the picture is a sound (ticks under the clock), kept under the voice. An effect on every pop was too much, and so was a whoosh on the highlight (the user cut them). A music bed is wanted but needs a music source; the ElevenLabs connector here makes speech and sound effects, not music.
 - **Under 30 seconds.** The voice decides the length; the ad times itself from its pauses, and renders silently with estimated timing until the voice is in.
 
