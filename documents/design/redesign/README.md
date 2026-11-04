@@ -48,6 +48,6 @@
 
 ## Next steps
 
-1. Prototype the rest of B on the same page: Practice, a course, Me, and the recording screen.
+1. ~~Prototype the rest of B: Practice, a course, Me, and the recording screen.~~ Done 2026-11-04: [screens-b.html](screens-b.html) has Practice (a quick start and four illustrated jobs, role-play packs), Courses (courses and Learn's card sets in one tab), a course's path (every lesson open, no locks), recording (focus mode, the blob singing along, the cue in view) and Me (then and now you can hear, run, stats, takes, settings).
 2. Turn B into a design system (tokens for both themes, type scale, card, button, sheet, tab bar) before any app code changes.
 3. Then the roadmap's order: move logic still inside screens into `core` and hooks, and build the new screens one at a time behind a switch.
