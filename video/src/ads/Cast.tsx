@@ -5,8 +5,8 @@ import { BLOB } from "@/components/scenes/Scene";
 
 // Who they are
 export type Colleague = "sam" | "priya" | "alex";
-// How they look right now: talking, pleased or listening
-export type ColleagueMood = "talk" | "happy" | "ready";
+// How they look right now: talking, pleased, listening, or bored (half-shut eyes, a flat mouth)
+export type ColleagueMood = "talk" | "happy" | "ready" | "bored";
 
 // Each colleague's body: its colour and its shape (the blob's outline stretched, or a rounded square)
 const BODIES: Record<Colleague, { fill: string; shape: string }> = {
@@ -57,17 +57,21 @@ export function Person({ who, x, y, r, mood, t, look = 0, lookUp = 0 }: { who: C
         {who === "priya" && mood !== "happy" && <>{[-34, 34].map((ex) => <circle key={ex} className="fill-current" cx={ex + px} cy={-16 + py} r="11" />)}</>}
         {/* Alex: the blob's own tall oval eyes */}
         {who === "alex" && mood !== "happy" && <>{[-34, 34].map((ex) => <ellipse key={ex} className="fill-current" cx={ex + px} cy={-22 + py} rx="10" ry="15" />)}</>}
+        {/* Bored: heavy lids over the top half of each eye, in the body's colour */}
+        {mood === "bored" && <>{[-1, 1].map((side) => <rect key={side} className={`fill-${body.fill}`} x={side * 35 - 26} y={who === "alex" ? -50 : -46} width="52" height={who === "alex" ? 26 : 28} />)}</>}
         {/* Pleased: happy arches, closer together for Alex */}
         {mood === "happy" && <path className="stroke-current" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" d="M-48 -14l12-13 12 13M24 -14l12-13 12 13" />}
       </g>
-      {/* Sam's brows, raised and sure */}
-      {who === "sam" && <path className="stroke-on-warm" strokeWidth="8" strokeLinecap="round" fill="none" d="M-56 -52q18 -12 36 -4M20 -56q18 -8 36 4" />}
+      {/* Sam's brows, raised and sure (flat when bored) */}
+      {who === "sam" && <path className="stroke-on-warm" strokeWidth="8" strokeLinecap="round" fill="none" d={mood === "bored" ? "M-56 -46h36M20 -46h36" : "M-56 -52q18 -12 36 -4M20 -56q18 -8 36 4"} />}
       {/* The mouth, in the face colour (light on Alex's green): talking, a wide grin, or a small smile */}
       <g className={who === "alex" ? "text-accent-ink" : "text-on-warm"}>
       {mood === "talk" && <ellipse className="fill-current" cx="0" cy="30" rx={16 - open * 3} ry={4 + open * 18} />}
       {/* (pleased) */}
       {mood === "happy" && <path className="fill-current" d="M-24 18h48q0 24-24 24t-24-24z" />}
-      {/* (listening: Alex's is smaller) */}
+      {/* (bored: a flat line) */}
+      {mood === "bored" && <path className="stroke-current" strokeWidth="6" strokeLinecap="round" fill="none" d="M-14 26h28" />}
+      {/* (listening) */}
       {mood === "ready" && <path className="stroke-current" strokeWidth="6" strokeLinecap="round" fill="none" d="M-16 22q16 14 32 0" />}
       </g>
     </g>

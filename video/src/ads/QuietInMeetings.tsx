@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 // Load Remotion's building blocks
 import { AbsoluteFill, Audio, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 // Load the app's course tiles
-import { CourseTile } from "@/components/scenes/CourseTile";
+import { CourseTile, type CourseTileName } from "@/components/scenes/CourseTile";
 // Load the drawing pieces shared with the hook storyboard
 import { Backdrop, Bulb, Clock, Tag, Talk, You, type Ground } from "../hooks/HookStoryboard";
 // Load the video call (the hook) and the colleagues on it
@@ -278,14 +278,14 @@ function SceneWave({ m }: { m: Moment }) {
 const SCENES: ReadonlyArray<(props: { m: Moment }) => ReactNode> = [SceneWhy, (props) => <SceneChart {...props} stage={0} />, (props) => <SceneChart {...props} stage={1} />, (props) => <SceneChart {...props} stage={2} />, SceneYourIdea, SceneTiming, SceneEarly, SceneLeader, SceneWave];
 
 // The headline at the top: a cream pill (a rounded box when it wraps onto two lines, bigger for the hook's sting), clear of the apps' buttons
-export function Headline({ shown, text = HEADLINE, big = false }: { shown: number; text?: string; big?: boolean }) {
+export function Headline({ shown, text = HEADLINE, big = false, size }: { shown: number; text?: string; big?: boolean; size?: number }) {
   // Two lines when the words are long, or when it is the hook's big sting
   const wraps = big || text.length > 32;
   // Centred near the top
   return (
     <div style={{ position: "absolute", left: 60, right: 150, top: big ? 150 : 170, display: "flex", justifyContent: "center", opacity: shown, transform: `translateY(${(1 - shown) * -30}px)` }}>
       {/* The pill */}
-      <div style={{ padding: wraps ? "18px 40px" : "22px 40px", borderRadius: wraps ? 40 : 999, background: role("art-cream"), color: role("on-warm"), fontFamily: DISPLAY, fontWeight: 700, fontSize: big ? 62 : wraps ? 52 : 54, lineHeight: 1.1, letterSpacing: -0.5, textAlign: "center", whiteSpace: big ? "pre-line" : wraps ? "normal" : "nowrap" }}>{text}</div>
+      <div style={{ padding: wraps ? "18px 40px" : "22px 40px", borderRadius: wraps ? 40 : 999, background: role("art-cream"), color: role("on-warm"), fontFamily: DISPLAY, fontWeight: 700, fontSize: size ?? (big ? 62 : wraps ? 52 : 54), lineHeight: 1.1, letterSpacing: -0.5, textAlign: "center", whiteSpace: big ? "pre-line" : wraps ? "normal" : "nowrap" }}>{text}</div>
     </div>
   );
 }
@@ -301,7 +301,7 @@ export function Caption({ text, said, pop }: { text: string; said: number; pop: 
   // The line's words
   const words = text.split(" ");
   // Long lines in a smaller size, so the box stays clear of the drawing
-  const size = words.length > 9 ? 62 : 74;
+  const size = words.length > 7 ? 62 : 74;
   // The box
   return (
     <div style={{ position: "absolute", left: 80, right: 150, bottom: 370, display: "flex", justifyContent: "center", transform: `scale(${0.92 + pop * 0.08})`, opacity: pop }}>
@@ -315,18 +315,18 @@ export function Caption({ text, said, pop }: { text: string; said: number; pop: 
 }
 
 // The end card: the lesson's tile, the app's name, the course and lesson, and the ad's one line of what to do
-export function EndCard({ shown, strap, line = "Speak early. Bring a way forward." }: { shown: number; strap: number; line?: string }) {
+export function EndCard({ shown, strap, line = "Speak early. Bring a way forward.", tile = "speak-up", lesson = "Speak up in meetings", course = "Explain it simply · Lesson 4" }: { shown: number; strap: number; line?: string; tile?: CourseTileName; lesson?: string; course?: string }) {
   // Over everything
   return (
     <AbsoluteFill style={{ background: role("paper"), opacity: Math.min(1, shown * 1.5), alignItems: "center", justifyContent: "center", gap: 34 }}>
       {/* The "Speak up in meetings" tile */}
-      <div className="tile-box" style={{ width: 520, height: 520, transform: `scale(${shown}) rotate(${(1 - shown) * 10}deg)` }}><Synced><CourseTile name="speak-up" /></Synced></div>
+      <div className="tile-box" style={{ width: 520, height: 520, transform: `scale(${shown}) rotate(${(1 - shown) * 10}deg)` }}><Synced><CourseTile name={tile} /></Synced></div>
       {/* The app's name */}
       <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 120, color: role("ink"), letterSpacing: -2 }}>VoiceLab</div>
       {/* The lesson */}
-      <div style={{ fontFamily: DISPLAY, fontWeight: 650, fontSize: 64, color: role("ink"), textAlign: "center" }}>Speak up in meetings</div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 650, fontSize: 64, color: role("ink"), textAlign: "center" }}>{lesson}</div>
       {/* Its course */}
-      <div style={{ marginTop: -18, fontFamily: BODY, fontWeight: 700, fontSize: 40, color: role("ink-muted") }}>Explain it simply · Lesson 4</div>
+      <div style={{ marginTop: -18, fontFamily: BODY, fontWeight: 700, fontSize: 40, color: role("ink-muted") }}>{course}</div>
       {/* The two things to do */}
       <div style={{ marginTop: 10, padding: "20px 44px", borderRadius: 999, background: role("fill"), color: role("fill-ink"), fontFamily: BODY, fontWeight: 700, fontSize: 40, opacity: strap }}>{line}</div>
     </AbsoluteFill>
