@@ -222,7 +222,7 @@ section.part{display:flex;flex-direction:column;gap:16px}
   }
   function sage(expr = "calm", arms = [6, 6], tilt = 0, breath = 1) {
     const e = SX[expr];
-    const arm = (side, lift, far) => `<g transform="rotate(${-side * lift} ${side*82} -6)"><ellipse fill="${far ? "var(--sage-shade)" : "var(--sage)"}" cx="${side*104}" cy="26" rx="17" ry="28"/></g>`;
+    const arm = (side, lift, far) => lift < 20 ? "" : `<g transform="rotate(${-side * lift} ${side*82} -6)"><ellipse fill="${far ? "var(--sage-shade)" : "var(--sage)"}" cx="${side*104}" cy="26" rx="17" ry="28"/></g>`;
     const brow = (side, [lift, inner]) => { const cx = side * 24; return `<path fill="none" stroke="${INK}" stroke-width="5.5" stroke-linecap="round" d="M${cx - side*12} ${-52-lift-inner}Q${cx} ${-57-lift} ${cx + side*12} ${-52-lift+inner*.3}"/>`; };
     return `<g transform="rotate(${tilt} 0 94)"><g transform="translate(0 94) scale(${breath*1.02} ${breath*.95}) translate(0 -94)">
       ${arm(-1, arms[0], true)}${arm(1, arms[1], false)}
@@ -233,7 +233,7 @@ section.part{display:flex;flex-direction:column;gap:16px}
         ${brow(-1, e.brows[0])}${brow(1, e.brows[1])}${sEye(-24, e.eyes)}${sEye(24, e.eyes)}${sMouth(e.mouth)}</g>
     </g></g>`;
   }
-  const sageSvg = (size, expr, arms, tilt, breath) => `<svg width="${size}" height="${size}" viewBox="-150 -165 300 290" aria-hidden="true">${sage(expr, arms, tilt, breath)}</svg>`;
+  const sageSvg = (size, expr, arms = [0, 0], tilt, breath) => `<svg width="${size}" height="${size}" viewBox="-150 -165 300 290" aria-hidden="true">${sage(expr, arms, tilt, breath)}</svg>`;
 
   const status = `<div class="status"><span>9:41</span><span>●●● ▮</span></div>`;
   const I = {
@@ -372,6 +372,9 @@ section.part{display:flex;flex-direction:column;gap:16px}
     return function draw(s, breath = 0, blink = 0) {
       const sx = s.sx * (1 + breath * .012), sy = s.sy * (1 - breath * .012);
       el.body.setAttribute("transform", `translate(0 ${s.dy}) translate(0 94) rotate(${s.lean}) scale(${sx} ${sy}) translate(0 -94)`);
+      // arms only while they show something: hidden at rest, they appear as they lift
+      el.armL.setAttribute("opacity", Math.min(1, Math.max(0, (s.armL - 20) / 25)).toFixed(2));
+      el.armR.setAttribute("opacity", Math.min(1, Math.max(0, (s.armR - 20) / 25)).toFixed(2));
       el.armL.setAttribute("transform", `rotate(${s.armL} -90 -4)`);
       el.armR.setAttribute("transform", `rotate(${-s.armR} 90 -4)`);
       el.face.setAttribute("transform", `translate(${s.lookX} ${s.lookY})`);

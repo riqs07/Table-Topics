@@ -46,6 +46,11 @@
 - **The venue path** replaces the Duolingo-style course path the user found unoriginal: each lesson is a bigger room, the audience grows, and the course's boss waits in the last one (Stop freezing: mirror, sofa, café, meeting room, open mic, hall, then live on air with Benny). Every lesson stays open. Each course would get its own rooms.
 - **Sage speaks for the app; the orange blob is you.** Sage greets you on Today, breathes with you before a timed take, teaches a lesson's idea while your blob gives its example, and gives the one note after a take. Drawn from `video/src/characters/Sage.tsx` and [../characters/sage.md](../characters/sage.md).
 - **The orange blob's moments:** idle is a breath and a blink only (no constant bobbing, which the user felt could look cheap); a reaction plays once, with a wind-up, an overshoot and a settle: a nod for a held pause, leaning in when an ending trails off, a proud puff for a personal best, sheepish then "hmm" after a rough take, looking at the button for your turn, and moving with your voice while you speak. Eight still poses (ready, listening, thinking, proud, sheepish, cheering, waiting, focused) carry most of the expression.
+- **The user's response (2026-11-04):** likes the direction overall.
+  - **Course path:** keep the idea of a course as separate tiles that get harder, leading to the boss. Venues are a working version, not locked in.
+  - **Sage and a cast:** Sage at those four moments is right, but **design the characters first**, before placing any of them on screens.
+  - **Arms:** only when they show something (a gesture, a cheer), never at rest. This is already the rule in `art-style.md` ("Limbs: only when they show something"); the first mockup broke it and was fixed the same day.
+  - **Later:** somewhere in the app, tell the story that the characters began as the microphone (record) button.
 - **Open:** the user's blob colour (not attached to apricot); a new colour for "the other person" so Sage only ever means Sage (sage.md, question 3); whether polished rigs move to Rive later.
 
 ## Open questions
@@ -57,6 +62,7 @@
 
 ## Next steps
 
+0. **Characters first (the user, 2026-11-04):** settle the cast (you, Sage, the other person, the bosses) as character sheets with shapes, colours, faces and poses at rest without arms, before more screens use them.
 1. ~~Prototype the rest of B: Practice, a course, Me, and the recording screen.~~ Done 2026-11-04: [screens-b.html](screens-b.html) has Practice (a quick start and four illustrated jobs, role-play packs), Courses (courses and Learn's card sets in one tab), a course's path (every lesson open, no locks), recording (focus mode, the blob singing along, the cue in view) and Me (then and now you can hear, run, stats, takes, settings).
 2. Turn B into a design system (tokens for both themes, type scale, card, button, sheet, tab bar) before any app code changes.
 3. Then the roadmap's order: move logic still inside screens into `core` and hooks, and build the new screens one at a time behind a switch.
