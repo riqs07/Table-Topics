@@ -65,6 +65,12 @@ node scripts/commercial-audio.mjs
 npx remotion render src/index.ts Commercial out/commercial.mp4
 ```
 
+Then bring it to the web's usual loudness (about -16 LUFS; the render alone comes out near -25), copying the picture as it is:
+
+```bash
+ffmpeg -i out/commercial.mp4 -c:v copy -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 48000 -c:a aac -b:a 192k out/commercial-web.mp4
+```
+
 ## A new video
 
 Copy `src/BuyABeat.tsx`, write the phrases, record the voice with a short pause between phrases, save it in `public/`, point `scripts/prepare.mjs` at it, and add a `Composition` in `src/Root.tsx`. Check the frames (one from each phrase, and eight in a row mid-sentence for the mouth) before sharing.
