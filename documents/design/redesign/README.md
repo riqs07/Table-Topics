@@ -75,7 +75,7 @@ The user: the orange blob stays **you** (every tile is about you), and the cast 
 
 Open: the friend's name and colour; whether Helen's coral sits too close to your apricot.
 
-**The user's verdict (2026-11-04):** the friend is kept; **Benny, Jules and Helen's drawings are rejected** (they were placeholders and look tacky). **No accessories on any character** (no headphones, hats, glasses or buns). Rounder bodies are fine. Next: [character-workshop.html](character-workshop.html), twelve accessory-free rounded candidates told apart by proportion, face and colour only, with Like / Maybe / No saved on the page. Open: whether Sage's sprout counts as an accessory, and whether the friend keeps its curl.
+**The user's verdict (2026-11-04):** the friend is kept; **Benny, Jules and Helen's drawings are rejected** (they were placeholders and look tacky). **No accessories on any character** (no headphones, hats, glasses or buns). Rounder bodies are fine. Next: [character-workshop.html](character-workshop.html), twelve accessory-free rounded candidates told apart by proportion, face and colour only, with Like / Maybe / No saved on the page. **Workshop result (2026-11-04):** Like: Bun (D), Pear (F), Squircle (H), Wobbly (J). Maybe: Top-heavy (G), Low face (K). No: Tall oval, Wide pebble, Soft drop, Big eyes, Leaning, Dot eyes. Overall: "notably different". The likes are the silhouettes furthest from you and the friend; the noes are near-ovals. **Rules from it:** every character's silhouette must differ clearly from the round (you) and the egg (the friend); small non-human details are fine (Sage's sprout, the friend's curl), but nothing that reads as a human detail (glasses, hats, hair, clothes).
 
 ## Next steps
 
