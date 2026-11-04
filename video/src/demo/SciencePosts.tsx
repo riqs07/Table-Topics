@@ -1,7 +1,7 @@
 // Two silent social reels in the glowing "science of speaking" style (2026-11-04): "They see far less than you feel" and "Brains in sync", each under 20 seconds, 9:16, with a hook in the first 3 seconds and the study on screen
 
 // Load Remotion's frame clock, easing, springs and layout
-import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Audio, Easing, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 // Load the reels' rounded display face
 import "@fontsource/fredoka/600.css";
 // (and its bold)
@@ -203,6 +203,10 @@ export function ScienceTransparency() {
   // The reel
   return (
     <AbsoluteFill style={{ opacity: edges(frame) }}>
+      {/* Sound: rain under the storm (ElevenLabs sound effects, 2026-11-04), fading as the storm shrinks into the porthole */}
+      <Sequence from={90} durationInFrames={130}><Audio src={staticFile("reels/rain-b.mp3")} loop volume={(f) => interpolate(f, [0, 6, 70, 92, 124, 130], [0, 0.6, 0.6, 0.14, 0.05, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })} /></Sequence>
+      {/* Sound: one thunderclap on the first lightning flash */}
+      <Sequence from={96} durationInFrames={120}><Audio src={staticFile("reels/thunder-a.mp3")} volume={0.9} /></Sequence>
       {/* The night sky */}
       <Sky frame={frame} top="#24205a" bottom="#08061e" />
       {/* 0–7 s: you, nervous, then calm outside with a storm inside */}
