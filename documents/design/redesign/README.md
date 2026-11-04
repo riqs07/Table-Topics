@@ -53,6 +53,30 @@
   - **Later:** somewhere in the app, tell the story that the characters began as the microphone (record) button.
 - **Open:** the user's blob colour (not attached to apricot); a new colour for "the other person" so Sage only ever means Sage (sage.md, question 3); whether polished rigs move to Rive later.
 
+## Art direction studies (2026-11-04)
+
+Saved in [art-studies/](art-studies/), each an HTML page to open in a browser:
+
+| File | What it explored |
+|---|---|
+| `art.html` | Soft-glow lesson tiles and two course headers (Stop freezing, Stories that land) |
+| `styles.html` | One set of tiles in five styles (soft glow, paper cut, bold sticker, calm minimal, risograph); the user wanted more creative subjects instead |
+| `people.html` | Fifteen tiles with humanoid characters from a character kit |
+| `epic.html` | Eight bigger scenes with the blob cast |
+| `power.html`, `final.html` | Six animated showpieces; four (the shadow, echo canyon, story town, train of thought) finished as a benchmark |
+| `more8.html` | Eight lesson scenes (pause bridge, headline, the landing, the maze, a jar of moments, pop-up book, balloon, word playground) |
+| `wild.html` | Eight unconstrained ideas (inside your head, silence is golden, conversation tennis, butterflies in formation, voice river, memory palace, story blueprint, travel poster) |
+
+**The user's picks:** favourites are **Silence is golden** (the museum of the pause) and **Blueprint of a story**; they also like the visuals of **Inside your head** (the cutaway) and **The landing** (the paper plane on the runway). Earlier picks: the shadow, echo canyon, story town, train of thought. The user: the limiting factor is creativity, not drawing; keep exploring ambitiously, then make it coherent with the app's style later.
+
+**What the favourites share (to become the style guide's rules):**
+1. **One idea you can guess without the caption:** an abstract tip turned into a concrete place or object (a pause in a museum case, a story as an engineering drawing, a talk ending on a runway's stop line).
+2. **Places over props:** the scene does the teaching; characters are small actors or absent.
+3. **Wit:** clever and warm, never childish.
+4. **Words inside the picture:** short labels that belong to the scene (the museum plaque, STOP on the runway, blueprint callouts, a title block "checked by: Sage").
+5. **One lit focal point, with depth:** a spotlight, a sunset, perspective or a cutaway.
+6. **Special formats are allowed** where they fit the content (for example a blueprint for lessons about structure).
+
 ## Open questions
 
 1. How playful can the wording get before it reads as childish? Test with real screens.

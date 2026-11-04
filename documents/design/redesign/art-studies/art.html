@@ -1,0 +1,313 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>VoiceLab Illustration Study</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: a full-width course header illustration, then three lesson tiles each shown beside today's flat version, then notes on the techniques and the ways to get there. */
+:root{--bg:#f3efe8;--surface:#fffdf9;--fg:#231f1c;--muted:#6b635c;--line:#e3dbd0;--chip:#ece5da;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--round:"Fredoka",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--chip:#2b2723;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--chip:#2b2723;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:flex;flex-direction:column;gap:26px}
+h1{font-family:var(--round);font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0}
+h2{font-family:var(--round);font-weight:600;font-size:22px;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:74ch}
+.hero{border-radius:28px;overflow:hidden;position:relative;box-shadow:0 18px 40px rgba(0,0,0,.14)}
+.hero svg{display:block;width:100%;height:auto}
+.hero .cap{position:absolute;left:28px;bottom:24px;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.25)}
+.hero .cap small{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px;opacity:.9}
+.hero .cap b{display:block;font-family:var(--round);font-weight:700;font-size:clamp(28px,5vw,48px);line-height:1}
+.pairs{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.pair{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.pair .two{display:grid;grid-template-columns:1fr 1.6fr;gap:12px;align-items:end}
+.pair .two div{display:flex;flex-direction:column;gap:6px;align-items:center;font-size:12px;color:var(--muted);font-weight:700}
+.pair svg{width:100%;height:auto;display:block;border-radius:22px}
+.pair .old svg{max-width:120px}
+.pair p{margin:0;font-size:14px;color:var(--muted)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}.gallery svg{width:100%;height:auto;display:block;border-radius:22px}
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.notes>div{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px}
+.notes h3{margin:0 0 8px;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.notes ul,.notes ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+@media (max-width:760px){.notes{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>How rich can the art get?</h1>
+    <p class="lede">A study, all drawn in code as vectors: two course headers and seven lesson tiles at the level of Wellspoken’s illustrations, each next to today’s flat tile. Same blob, same colours; what changes is layering, light, texture and a scene instead of an icon.</p>
+  </header>
+  <div class="hero" id="hero"></div>
+  <h2>Lesson tiles: today vs. a full illustration</h2>
+  <div class="pairs" id="pairs"></div>
+  <h2>Five more: a header and four tiles</h2>
+  <div class="hero" id="hero2"></div>
+  <div class="gallery" id="more"></div>
+  <div class="notes">
+    <div><h3>What makes them richer</h3><ul>
+      <li><strong>A scene, not an icon:</strong> a place, a moment, something happening (ice melting, a dart landing).</li>
+      <li><strong>Depth:</strong> three layers (far shapes, middle, the character up front) with lighter colours further back.</li>
+      <li><strong>Light:</strong> soft gradients, a light source, glows and long shadows.</li>
+      <li><strong>Texture:</strong> a fine grain over everything, so it reads as illustration, not clip art.</li>
+      <li><strong>A story in one glance:</strong> the lesson’s idea acted out, not a symbol next to the blob.</li>
+    </ul></div>
+    <div><h3>Ways to get there</h3><ol>
+      <li><strong>Me, in code (what you see here).</strong> Consistent with the cast, themeable, animatable, tiny files. Slower per piece, and painterly detail is out of reach.</li>
+      <li><strong>An illustrator for a style guide plus key art.</strong> The best quality. They draw the cast and 5–10 hero pieces; I build the rest to match.</li>
+      <li><strong>AI image tools outside this session</strong> (with a strict style prompt and the cast as reference), cleaned up and vectorised. Fast and cheap, but hard to keep consistent across 70+ tiles.</li>
+    </ol><p style="margin:10px 0 0;color:var(--muted);font-size:14px">My suggestion: decide the style with a few pieces like these, then choose. If you like this level, I can do it; if you want more painterly than this, bring in an illustrator for the style guide.</p></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const BLOB = "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z";
+  const INK = "#2a2420";
+  const L = (c, w = 7) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+  const FACES = {
+    ready: `<ellipse fill="${INK}" cx="-24" cy="-34" rx="10" ry="14.5"/><ellipse fill="${INK}" cx="24" cy="-34" rx="10" ry="14.5"/><circle fill="#fff" cx="-20" cy="-40" r="3.6"/><circle fill="#fff" cx="28" cy="-40" r="3.6"/><path ${L(INK, 7.5)} d="M-15 -4q15 13 30 0"/>`,
+    calm: `<path ${L(INK, 7)} d="M-35 -32q11 8 22 0M13 -32q11 8 22 0"/><path ${L(INK, 7)} d="M-12 -2q12 9 24 0"/>`,
+    wow: `<circle fill="${INK}" cx="-24" cy="-36" r="12"/><circle fill="${INK}" cx="24" cy="-36" r="12"/><circle fill="#fff" cx="-20" cy="-41" r="3.6"/><circle fill="#fff" cx="28" cy="-41" r="3.6"/><ellipse fill="${INK}" cx="0" cy="2" rx="9" ry="11"/>`,
+    happy: `<path ${L(INK, 7.5)} d="M-38 -28L-24 -42-10 -28M10 -28L24 -42 38 -28"/><path fill="${INK}" d="M-23 -12h46q0 23-23 23t-23-23z"/><path fill="#ec6a55" d="M-12 4q12-8 24 0q-5 7-12 7t-12-7z"/>`,
+    look: `<ellipse fill="${INK}" cx="-14" cy="-38" rx="10" ry="14"/><ellipse fill="${INK}" cx="32" cy="-38" rx="10" ry="14"/><circle fill="#fff" cx="-10" cy="-44" r="3.6"/><circle fill="#fff" cx="36" cy="-44" r="3.6"/><path ${L(INK, 7)} d="M-4 -6q12 9 24 0"/>`
+  };
+  // a richer blob: gradient body, rim light, contact shadow, cheeks
+  let gid = 0;
+  function blob(x, y, r, face = "ready", opts = {}) {
+    const id = "b" + (gid++);
+    const {rot = 0, sx = 1, sy = 1, shadow = true} = opts;
+    return `<defs><radialGradient id="${id}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f7b07c"/><stop offset=".55" stop-color="#e8935c"/><stop offset="1" stop-color="#c96a35"/></radialGradient></defs>
+      ${shadow ? `<ellipse cx="${x}" cy="${y + r * .96}" rx="${r * .95}" ry="${r * .16}" fill="#000" opacity=".18"/>` : ""}
+      <g transform="translate(${x} ${y}) rotate(${rot}) scale(${r / 100 * sx} ${r / 100 * sy})">
+        <path fill="url(#${id})" d="${BLOB}"/>
+        <ellipse fill="#fff6e6" opacity=".55" cx="-48" cy="-56" rx="20" ry="11" transform="rotate(-35 -48 -56)"/>
+        <ellipse fill="#ec6a55" opacity=".35" cx="-44" cy="-10" rx="13" ry="8"/><ellipse fill="#ec6a55" opacity=".35" cx="44" cy="-10" rx="13" ry="8"/>
+        ${FACES[face]}
+      </g>`;
+  }
+  const grain = id => `<filter id="${id}" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>`;
+  const spark = (x, y, s, c = "#fff6e6", o = 1) => `<path opacity="${o}" fill="${c}" d="M${x} ${y - s}C${x + s * .12} ${y - s * .12} ${x + s * .12} ${y - s * .12} ${x + s} ${y}C${x + s * .12} ${y + s * .12} ${x + s * .12} ${y + s * .12} ${x} ${y + s}C${x - s * .12} ${y + s * .12} ${x - s * .12} ${y + s * .12} ${x - s} ${y}C${x - s * .12} ${y - s * .12} ${x - s * .12} ${y - s * .12} ${x} ${y - s}Z"/>`;
+
+  // ---------- the course header: Stop freezing ----------
+  const hero = `<svg viewBox="0 0 1200 520" role="img" aria-label="Your blob stepping out of a melting block of ice in warm sunlight">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a52d6"/><stop offset=".6" stop-color="#6f8ff0"/><stop offset="1" stop-color="#ffd38a"/></linearGradient>
+      <radialGradient id="sun" cx="78%" cy="22%" r="45%"><stop offset="0" stop-color="#fff2c4" stop-opacity=".95"/><stop offset=".35" stop-color="#ffd27a" stop-opacity=".55"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+      <linearGradient id="ice" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9f8ff"/><stop offset=".5" stop-color="#b9e4fb"/><stop offset="1" stop-color="#7cc0ea"/></linearGradient>
+      <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc46a"/><stop offset="1" stop-color="#4f9a45"/></linearGradient>
+      ${grain("g1")}
+    </defs>
+    <rect width="1200" height="520" fill="url(#sky)"/>
+    <rect width="1200" height="520" fill="url(#sun)"/>
+    <g opacity=".22" fill="#fff6e6">${[0,1,2,3,4,5,6].map(i => `<path d="M936 114 L${600 + i * 90} 520 L${640 + i * 90} 520Z"/>`).join("")}</g>
+    <circle cx="936" cy="114" r="58" fill="#fff4cf"/><circle cx="936" cy="114" r="80" fill="#fff4cf" opacity=".25"/>
+    <path d="M0 330 C140 270 260 300 380 280 C520 256 600 300 760 292 C900 284 1040 250 1200 270 V520 H0Z" fill="#9db6f5" opacity=".7"/>
+    <path d="M0 380 C160 340 300 370 460 350 C640 328 780 372 940 360 C1060 352 1140 330 1200 336 V520 H0Z" fill="#8fd19e"/>
+    <path d="M0 430 C200 398 420 420 620 410 C820 400 1000 428 1200 416 V520 H0Z" fill="url(#ground)"/>
+    <g fill="#5ea34e">${[90, 210, 1040, 1130].map((x, i) => `<path d="M${x} 430 q-6 -40 4 -70 q10 30 4 70z" opacity=".9"/><path d="M${x + 12} 432 q4 -30 22 -48 q-6 30 -16 50z"/>`).join("")}</g>
+    <!-- the melting ice block -->
+    <ellipse cx="500" cy="452" rx="190" ry="22" fill="#000" opacity=".16"/>
+    <path d="M330 290 Q330 262 358 262 H640 Q668 262 668 290 V420 Q668 446 640 446 H360 Q330 446 330 420Z" fill="url(#ice)" opacity=".92"/>
+    <path d="M330 300 Q420 330 500 300 T668 304 V292 Q668 262 640 262 H358 Q330 262 330 292Z" fill="#ffffff" opacity=".55"/>
+    <path d="M352 286 L392 278 M610 300 L646 292 M360 410 L392 400" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+    <g fill="#9fd6f6">${[[380, 446, 12], [452, 446, 18], [560, 446, 14], [622, 446, 10]].map(([x, y, h]) => `<path d="M${x - 8} ${y} q8 ${h} 16 0z"/><circle cx="${x}" cy="${y + h + 12}" r="6" opacity=".8"/>`).join("")}</g>
+    <path d="M300 468 q100 -16 200 -6 t220 -2" stroke="#bfe6fb" stroke-width="10" fill="none" stroke-linecap="round" opacity=".8"/>
+    <!-- you, stepping out, half still in the ice -->
+    ${blob(590, 318, 100, "wow", {rot: 8, shadow: false})}
+    <path d="M470 352 Q520 336 560 352 Q610 370 668 350 V420 Q668 446 640 446 H470Z" fill="url(#ice)" opacity=".88"/>
+    <path d="M500 380 l24 14 -10 20 M620 372 l-14 22 18 16" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".9"/>
+    <g fill="#e9f8ff">${[[700, 240, 14, 20], [730, 300, 10, -30], [452, 250, 12, 40]].map(([x, y, r, a]) => `<rect x="${x}" y="${y}" width="${r}" height="${r}" rx="3" transform="rotate(${a} ${x} ${y})"/>`).join("")}</g>
+    <g opacity=".9">${spark(820, 210, 18)}${spark(610, 200, 12)}${spark(1060, 300, 14)}${spark(260, 180, 10)}</g>
+    <g fill="#fff6e6" opacity=".9"><path d="M790 250 q30 -26 62 -10" ${L("#fff6e6", 7)}/><path d="M800 280 q36 -20 70 0" ${L("#fff6e6", 7)}/></g>
+    <rect width="1200" height="520" filter="url(#g1)" opacity=".16"/>
+    <rect width="1200" height="520" fill="url(#vig)" opacity="0"/>
+  </svg>`;
+  document.getElementById("hero").innerHTML = hero + `<div class="cap"><small>Course · 6 lessons and a boss</small><b>Stop freezing</b></div>`;
+
+  // ---------- three lesson tiles ----------
+  const flat = (ground, prop, face) => `<svg viewBox="0 0 200 200" aria-hidden="true"><g transform="rotate(-4 100 100)"><rect x="14" y="14" width="172" height="172" rx="34" fill="${ground}"/></g>${prop}<g transform="translate(88 130) scale(.4)"><path fill="#cf7440" d="${BLOB}"/><path fill="#e8935c" transform="translate(-9 -8) scale(0.93)" d="${BLOB}"/>${FACES[face]}</g></svg>`;
+
+  const tiles = [
+    {name: "Pause, don’t fill", say: "Night‑time calm: you breathe while crossed‑out “ums” drift off and pop, and a big pause mark stands like a doorway.",
+     old: flat("#7cc46a", `<rect x="130" y="54" width="15" height="50" rx="6" fill="#fff6e6"/><rect x="153" y="54" width="15" height="50" rx="6" fill="#fff6e6"/>`, "ready"),
+     art: () => `<svg viewBox="0 0 400 400" role="img" aria-label="Your blob breathing calmly at night while um bubbles float away">
+      <defs><linearGradient id="n1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2f7a"/><stop offset="1" stop-color="#5a4fc4"/></linearGradient>${grain("g2")}
+        <radialGradient id="moon" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff6d6"/><stop offset=".6" stop-color="#ffe7a3"/><stop offset="1" stop-color="#ffe7a3" stop-opacity="0"/></radialGradient></defs>
+      <rect width="400" height="400" fill="url(#n1)"/>
+      <circle cx="300" cy="96" r="70" fill="url(#moon)" opacity=".5"/><circle cx="300" cy="96" r="34" fill="#fff3c6"/>
+      ${[[40, 60], [90, 120], [160, 40], [230, 150], [360, 200], [60, 210], [380, 40]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.2" fill="#fff6e6" opacity=".8"/>`).join("")}
+      <path d="M0 300 C80 270 160 290 230 280 C300 270 350 286 400 280 V400 H0Z" fill="#3d3a9a"/>
+      <path d="M0 330 C100 312 200 330 300 320 C350 315 380 318 400 316 V400 H0Z" fill="#4a46b4"/>
+      <g transform="translate(250 196)"><rect x="0" y="0" width="34" height="132" rx="14" fill="#7cc46a"/><rect x="50" y="0" width="34" height="132" rx="14" fill="#7cc46a"/><rect x="0" y="0" width="34" height="132" rx="14" fill="#000" opacity=".12" transform="translate(6 6)"/></g>
+      ${[[96, 128, 34, 1], [176, 76, 28, .85], [60, 56, 22, .6]].map(([x, y, r, o]) => `<g opacity="${o}"><circle cx="${x}" cy="${y}" r="${r + 12}" fill="#fff6e6" opacity=".9"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="${r * .95}" fill="#5a4fc4">um</text><path d="M${x - r} ${y + r * .2} L${x + r} ${y - r * .2}" stroke="#ec6a55" stroke-width="5" stroke-linecap="round"/></g>`).join("")}
+      ${spark(40, 150, 6, "#fff6e6", .7)}${spark(200, 100, 8, "#fff6e6", .9)}
+      ${blob(150, 270, 74, "calm")}
+      <path d="M118 200 q32 -20 64 0" ${L("#fff6e6", 5)} opacity=".7"/>
+      <rect width="400" height="400" filter="url(#g2)" opacity=".18"/></svg>`},
+    {name: "Answer first", say: "A sunny fairground stall: your answer flies straight to the bullseye, motion lines behind it, the crowd of targets missed on purpose.",
+     old: flat("#4a68e0", `<circle cx="150" cy="70" r="30" fill="#fff6e6"/><circle cx="150" cy="70" r="19" fill="#ec6a55"/><circle cx="150" cy="70" r="8" fill="#fff6e6"/>`, "ready"),
+     art: () => `<svg viewBox="0 0 400 400" role="img" aria-label="Your blob throwing a dart that hits the bullseye">
+      <defs><linearGradient id="d1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffcf5a"/><stop offset="1" stop-color="#f39a3b"/></linearGradient>${grain("g3")}</defs>
+      <rect width="400" height="400" fill="url(#d1)"/>
+      ${[0,1,2,3,4,5,6,7].map(i => `<rect x="${i * 50}" y="0" width="25" height="70" fill="#ec6a55" opacity=".9"/>`).join("")}
+      <path d="M0 70 q25 18 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0" fill="#ec6a55"/>
+      <circle cx="80" cy="150" r="80" fill="#fff6e6" opacity=".18"/>
+      <g transform="translate(286 176)"><circle r="78" fill="#fff6e6"/><circle r="60" fill="#4a68e0"/><circle r="42" fill="#fff6e6"/><circle r="24" fill="#ec6a55"/><circle r="9" fill="#fff6e6"/><circle r="78" fill="none" stroke="#000" stroke-opacity=".12" stroke-width="8" transform="translate(4 6)"/></g>
+      <path d="M150 236 L276 180" stroke="#2a2420" stroke-width="6" stroke-linecap="round"/><path d="M276 180 l-16 -2 6 10z" fill="#2a2420"/><path d="M150 236 l-14 -10 4 14 -12 6z" fill="#4a68e0"/>
+      <g ${L("#fff6e6", 6)} opacity=".85"><path d="M110 230 h-40"/><path d="M118 250 h-56"/><path d="M110 270 h-30"/></g>
+      ${spark(286, 96, 12)}${spark(360, 250, 9)}${spark(230, 120, 7)}
+      <path d="M0 330 C120 310 260 330 400 318 V400 H0Z" fill="#e0812c"/>
+      ${blob(120, 290, 76, "happy", {rot: -6})}
+      <rect width="400" height="400" filter="url(#g3)" opacity=".16"/></svg>`},
+    {name: "Two in a row", say: "A running track at golden hour: two of you mid‑stride, the second one ahead, finish ribbon in view.",
+     old: flat("#e86aae", `<path d="M150 46 L122 100 h22 l-10 46 34 -60 h-22 z" fill="#f4b73b" stroke="#fff6e6" stroke-width="5" stroke-linejoin="round"/>`, "ready"),
+     art: () => `<svg viewBox="0 0 400 400" role="img" aria-label="Two of your blob running on a track toward a finish ribbon">
+      <defs><linearGradient id="t1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f06aa8"/><stop offset=".6" stop-color="#ff9a7a"/><stop offset="1" stop-color="#ffd08a"/></linearGradient>
+        <linearGradient id="t2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9543f"/><stop offset="1" stop-color="#b8432f"/></linearGradient>${grain("g4")}</defs>
+      <rect width="400" height="400" fill="url(#t1)"/>
+      <circle cx="320" cy="150" r="56" fill="#fff0c4" opacity=".9"/>
+      <path d="M0 220 C80 196 160 214 240 204 C320 194 360 206 400 200 V400 H0Z" fill="#c95390" opacity=".55"/>
+      <path d="M-40 400 L170 236 H240 L440 400Z" fill="url(#t2)"/>
+      <g stroke="#fff6e6" stroke-width="5" opacity=".85"><path d="M60 400 L190 236"/><path d="M200 400 L205 236"/><path d="M340 400 L222 236"/></g>
+      <g><path d="M176 238 H232" stroke="#fff6e6" stroke-width="7" stroke-dasharray="8 6"/><rect x="170" y="200" width="6" height="40" fill="#fff6e6"/><rect x="230" y="200" width="6" height="40" fill="#fff6e6"/></g>
+      ${blob(120, 300, 54, "ready", {rot: -10, sx: 1.05, sy: .96})}
+      ${blob(260, 330, 64, "happy", {rot: -12, sx: 1.06, sy: .95})}
+      <g ${L("#fff6e6", 6)} opacity=".8"><path d="M60 290 h-30"/><path d="M66 312 h-44"/><path d="M190 326 h-36"/><path d="M196 350 h-50"/></g>
+      ${spark(60, 110, 10)}${spark(150, 160, 7)}${spark(370, 80, 9)}
+      <rect width="400" height="400" filter="url(#g4)" opacity=".16"/></svg>`}
+  ];
+  document.getElementById("pairs").innerHTML = tiles.map(t => `<article class="pair"><h2>${t.name}</h2><div class="two"><div class="old">${t.old}Today</div><div>${t.art()}Full illustration</div></div><p>${t.say}</p></article>`).join("");
+
+  // ================= five more =================
+  // the friend, shaded the same way: a teal egg with a curl
+  const EGG = "M0 -114C52 -114 92 -42 92 10C92 62 52 94 0 94C-52 94 -92 62 -92 10C-92 -42 -52 -114 0 -114Z";
+  function friend(x, y, r, face = "ready", opts = {}) {
+    const id = "f" + (gid++); const {rot = 0, shadow = true} = opts;
+    return `<defs><radialGradient id="${id}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#5fd6c8"/><stop offset=".55" stop-color="#2fb3a4"/><stop offset="1" stop-color="#1d8476"/></radialGradient></defs>
+      ${shadow ? `<ellipse cx="${x}" cy="${y + r * .96}" rx="${r * .85}" ry="${r * .15}" fill="#000" opacity=".18"/>` : ""}
+      <g transform="translate(${x} ${y}) rotate(${rot}) scale(${r / 100})">
+        <path ${L("#1d8476", 10)} d="M2 -112q-4 -22 14 -26q14 -2 10 12"/>
+        <path fill="url(#${id})" d="${EGG}"/>
+        <ellipse fill="#fff6e6" opacity=".5" cx="-42" cy="-60" rx="16" ry="10" transform="rotate(-35 -42 -60)"/>
+        <g transform="translate(0 6)">${FACES[face]}</g>
+      </g>`;
+  }
+  // Sage, shaded, for a cameo
+  function sageR(x, y, r, closed = true) {
+    const id = "s" + (gid++);
+    return `<defs><radialGradient id="${id}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#4f8a5f"/><stop offset=".6" stop-color="#2d5a3d"/><stop offset="1" stop-color="#1b3a26"/></radialGradient></defs>
+      <ellipse cx="${x}" cy="${y + r * .94}" rx="${r}" ry="${r * .15}" fill="#000" opacity=".2"/>
+      <g transform="translate(${x} ${y}) scale(${r / 100 * 1.04} ${r / 100 * .96})">
+        <g transform="translate(0 -96)"><path ${L("#4f8a43", 6)} d="M0 0Q-3 -16 3 -30"/><ellipse fill="#5ea34e" cx="16" cy="-38" rx="16" ry="8" transform="rotate(-30 16 -38)"/><ellipse fill="#7cc46a" cx="-10" cy="-36" rx="15" ry="8" transform="rotate(28 -10 -36)"/></g>
+        <path fill="url(#${id})" d="${BLOB}"/>
+        <path ${L("#fcfcfb", 5.5)} d="M-36 -46Q-24 -51 -12 -46M12 -46Q24 -51 36 -46"/>
+        ${closed ? `<path ${L("#fcfcfb", 6)} d="M-35 -22Q-24 -13 -13 -22M13 -22Q24 -13 35 -22"/>` : `<ellipse fill="#fcfcfb" cx="-24" cy="-22" rx="9" ry="12"/><ellipse fill="#fcfcfb" cx="24" cy="-22" rx="9" ry="12"/>`}
+        <path ${L("#fcfcfb", 6.5)} d="M-15 6Q0 17 15 6"/>
+      </g>`;
+  }
+  const FACES2 = {
+    tell: `<path ${L(INK, 7.5)} d="M-38 -28L-24 -42-10 -28M10 -28L24 -42 38 -28"/><ellipse fill="${INK}" cx="0" cy="2" rx="13" ry="14"/><ellipse fill="#ec6a55" cx="0" cy="9" rx="7" ry="4"/>`
+  };
+  Object.assign(FACES, FACES2);
+
+  // --- header: Stories that land ---
+  const hero2 = `<svg viewBox="0 0 1200 520" role="img" aria-label="You telling a story around a campfire at night while the friend and Sage listen">
+    <defs>
+      <linearGradient id="ns" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f1747"/><stop offset=".7" stop-color="#4a2f7a"/><stop offset="1" stop-color="#7a3f6e"/></linearGradient>
+      <radialGradient id="glow" cx="50%" cy="78%" r="42%"><stop offset="0" stop-color="#ffb35c" stop-opacity=".75"/><stop offset=".5" stop-color="#ff7a4a" stop-opacity=".25"/><stop offset="1" stop-color="#ff7a4a" stop-opacity="0"/></radialGradient>
+      <linearGradient id="fl" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ec6a55"/><stop offset=".6" stop-color="#f4b73b"/><stop offset="1" stop-color="#ffe7a3"/></linearGradient>
+      ${grain("g5")}
+    </defs>
+    <rect width="1200" height="520" fill="url(#ns)"/>
+    ${Array.from({length: 46}, (_, i) => `<circle cx="${(i * 263) % 1200}" cy="${(i * 97) % 260}" r="${i % 5 ? 1.6 : 2.6}" fill="#fff6e6" opacity="${.4 + (i % 4) * .15}"/>`).join("")}
+    <circle cx="180" cy="90" r="40" fill="#fff3c6" opacity=".95"/><circle cx="196" cy="80" r="40" fill="#2a1d55"/>
+    <path d="M0 340 C120 300 220 320 320 300 C420 280 520 310 640 298 C780 284 900 300 1020 280 C1100 268 1160 280 1200 276 V520 H0Z" fill="#2c1f52"/>
+    <g fill="#24184a">${[[80, 330, 46], [150, 318, 60], [1030, 300, 58], [1110, 312, 44], [960, 318, 40]].map(([x, y, r]) => `<circle cx="${x}" cy="${y - r}" r="${r}"/><rect x="${x - 5}" y="${y - 10}" width="10" height="30"/>`).join("")}</g>
+    <path d="M0 410 C200 390 400 400 600 396 C800 392 1000 404 1200 398 V520 H0Z" fill="#3a2550"/>
+    <rect width="1200" height="520" fill="url(#glow)"/>
+    <!-- the fire -->
+    <g transform="translate(600 420)">
+      <path d="M-70 12 L60 -14 M-60 -12 L70 14" stroke="#7b4a2c" stroke-width="18" stroke-linecap="round"/>
+      <path d="M0 -150 C30 -110 64 -76 54 -34 C46 0 20 8 0 8 C-24 8 -50 -2 -56 -32 C-62 -66 -30 -90 -20 -120 C-12 -98 -4 -92 0 -150Z" fill="url(#fl)"/>
+      <path d="M2 -96 C20 -70 34 -50 26 -26 C20 -8 8 -4 0 -4 C-14 -4 -26 -12 -26 -30 C-26 -50 -8 -62 2 -96Z" fill="#ffe7a3"/>
+    </g>
+    <!-- story embers: little shapes rising -->
+    <g fill="#ffd27a" opacity=".9">
+      ${spark(600, 200, 10, "#ffd27a")}${spark(640, 150, 7, "#ffd27a")}
+      <path d="M560 170 h16 v-12 l8 -8 8 8 v12 h16" stroke="#ffd27a" stroke-width="4" fill="none" stroke-linejoin="round" opacity=".8"/>
+      <path d="M672 112 c6 -10 18 -6 16 4 c-2 8 -16 16 -16 16 s-14 -8 -16 -16 c-2 -10 10 -14 16 -4z" opacity=".8"/>
+      <circle cx="590" cy="110" r="4"/><circle cx="620" cy="84" r="3"/>
+    </g>
+    ${blob(400, 362, 92, "tell", {rot: 6})}
+    ${friend(820, 360, 88, "wow", {rot: -6})}
+    ${sageR(980, 390, 62)}
+    <rect width="1200" height="520" filter="url(#g5)" opacity=".18"/>
+  </svg>`;
+
+  // --- four tiles ---
+  const more = [
+    {course: "Explain it simply", name: "Plain words", say: "A knot of tangled string, and you pulling it into one clean line.",
+     art: () => `<svg viewBox="0 0 400 400" role="img" aria-label="Your blob pulling a tangled string into a straight line">
+      <defs><linearGradient id="m1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fe0cf"/><stop offset="1" stop-color="#3fb6a8"/></linearGradient>${grain("g6")}</defs>
+      <rect width="400" height="400" fill="url(#m1)"/>
+      <circle cx="320" cy="80" r="110" fill="#fff6e6" opacity=".18"/><circle cx="60" cy="340" r="90" fill="#1d8476" opacity=".2"/>
+      <path d="M40 150 c40 -60 90 10 50 40 c-40 30 -70 -40 -10 -60 c60 -20 90 50 30 70 c-50 16 -60 -50 0 -50 c40 0 60 30 40 60 c-16 24 -50 10 -40 -14 c10 -22 50 -26 80 6" ${L("#f4b73b", 9)}/>
+      <path d="M150 186 C190 214 220 240 380 240" ${L("#f4b73b", 9)}/>
+      <path d="M368 228 l14 12 -14 12" ${L("#ec6a55", 7)}/>
+      ${spark(340, 200, 10)}${spark(300, 300, 7)}
+      <path d="M0 330 C120 316 260 330 400 322 V400 H0Z" fill="#2a9f92"/>
+      ${blob(250, 296, 70, "happy", {rot: -8})}
+      <rect width="400" height="400" filter="url(#g6)" opacity=".16"/></svg>`},
+    {course: "Beyond “good, you?”", name: "Follow their detail", say: "A café table: the friend mentions a bike ride, and a dotted line runs from your eyes to that one detail.",
+     art: () => `<svg viewBox="0 0 400 400" role="img" aria-label="You and the friend at a café table, your attention following a detail in their speech bubble">
+      <defs><linearGradient id="c1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd8a8"/><stop offset="1" stop-color="#f6a97a"/></linearGradient>${grain("g7")}</defs>
+      <rect width="400" height="400" fill="url(#c1)"/>
+      <rect x="30" y="30" width="150" height="120" rx="14" fill="#cfe8fb"/><path d="M105 30v120M30 90h150" stroke="#fff6e6" stroke-width="8"/>
+      <rect x="30" y="30" width="150" height="120" rx="14" fill="none" stroke="#c98b5a" stroke-width="8"/>
+      <g transform="translate(206 44)"><rect width="170" height="104" rx="26" fill="#fff6e6"/><path d="M36 102 l-6 24 26 -22z" fill="#fff6e6"/>
+        <g transform="translate(46 30)"><circle cx="14" cy="34" r="16" ${L("#4a68e0", 6)}/><circle cx="74" cy="34" r="16" ${L("#4a68e0", 6)}/><path d="M14 34 L34 6 H58 L74 34 M34 6 L46 34 H14 M30 0 h12" ${L("#4a68e0", 6)}/></g>
+        <circle cx="122" cy="52" r="40" fill="none" stroke="#ec6a55" stroke-width="4" stroke-dasharray="6 7" opacity="0"/></g>
+      <path d="M156 236 C190 200 230 170 262 136" stroke="#ec6a55" stroke-width="5" stroke-dasharray="2 12" stroke-linecap="round" fill="none"/>
+      ${spark(270, 128, 10, "#ec6a55")}
+      <path d="M0 300 H400 V400 H0Z" fill="#c98b5a"/><rect x="40" y="292" width="320" height="18" rx="9" fill="#a46b3f"/>
+      <g><rect x="170" y="268" width="26" height="24" rx="5" fill="#fff6e6"/><path d="M196 274 q10 0 10 8 t-10 8" ${L("#fff6e6", 4)}/><path d="M176 260 q4 -8 0 -16 M188 260 q4 -8 0 -16" ${L("#fff6e6", 3)} opacity=".8"/></g>
+      ${blob(110, 252, 62, "look", {rot: 8, shadow: false})}
+      ${friend(300, 244, 60, "happy", {shadow: false})}
+      <rect width="400" height="400" filter="url(#g7)" opacity=".16"/></svg>`},
+    {course: "A voice they lean in for", name: "Lean on one word", say: "Your words as blocks on a stage; one of them gets the spotlight and grows.",
+     art: () => `<svg viewBox="0 0 400 400" role="img" aria-label="Word blocks on a stage, the word late lit and larger than the rest">
+      <defs><linearGradient id="v1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b3aa8"/><stop offset="1" stop-color="#8a63e0"/></linearGradient>
+        <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c6" stop-opacity=".7"/><stop offset="1" stop-color="#fff3c6" stop-opacity="0"/></linearGradient>${grain("g8")}</defs>
+      <rect width="400" height="400" fill="url(#v1)"/>
+      <path d="M286 0 L250 0 L210 250 L380 250Z" fill="url(#beam)"/>
+      <path d="M0 250 H400 V400 H0Z" fill="#3d2580"/><path d="M0 250 H400 V262 H0Z" fill="#6b4ac4"/>
+      ${[["Thanks", 26, 206, 70, 32], ["for", 102, 210, 40, 28], ["staying", 148, 206, 74, 32]].map(([w, x, y, wd, h]) => `<g><rect x="${x}" y="${y}" width="${wd}" height="${h}" rx="9" fill="#fff6e6" opacity=".8"/><text x="${x + wd / 2}" y="${y + h * .68}" text-anchor="middle" font-family="Fredoka" font-weight="600" font-size="15" fill="#5b3aa8">${w}</text></g>`).join("")}
+      <g><rect x="232" y="164" width="120" height="78" rx="16" fill="#f4b73b"/><rect x="232" y="164" width="120" height="78" rx="16" fill="none" stroke="#fff3c6" stroke-width="5"/><text x="292" y="218" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="40" fill="#5b2d0c">late</text></g>
+      ${spark(368, 150, 12)}${spark(228, 150, 8)}
+      <g ${L("#fff6e6", 6)} opacity=".8"><path d="M186 300 q14 14 0 28"/><path d="M204 290 q24 24 0 48"/></g>
+      ${blob(120, 320, 62, "tell", {rot: -4})}
+      <rect width="400" height="400" filter="url(#g8)" opacity=".16"/></svg>`},
+    {course: "Ready by the day", name: "The memory ladder", say: "A ladder with three rungs: the full page, a few keywords, then nothing. You’re on the ground, ready, in the spotlight.",
+     art: () => `<svg viewBox="0 0 400 400" role="img" aria-label="A ladder whose rungs hold a full page, a few keywords and an empty card, with your blob at the bottom in a spotlight">
+      <defs><linearGradient id="r1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f8ff0"/><stop offset="1" stop-color="#b9c8ff"/></linearGradient>${grain("g9")}</defs>
+      <rect width="400" height="400" fill="url(#r1)"/>
+      <circle cx="80" cy="70" r="90" fill="#fff6e6" opacity=".2"/>
+      <path d="M232 380 L300 20 M300 380 L368 20" stroke="#c98b5a" stroke-width="12" stroke-linecap="round"/>
+      ${[[350, 112], [326, 196], [304, 280]].map(([x, y], i) => `<path d="M${x - 66} ${y} H${x + 6}" stroke="#a46b3f" stroke-width="10" stroke-linecap="round"/>
+        <g transform="translate(${x - 70} ${y - 58}) rotate(${-6 + i * 4})"><rect width="92" height="60" rx="10" fill="#fff6e6"/><rect width="92" height="60" rx="10" fill="#000" opacity=".08" transform="translate(4 5)"/>
+        ${i === 0 ? [12, 22, 32, 42].map(yy => `<path d="M12 ${yy} H${80 - (yy % 20)}" stroke="#4a68e0" stroke-width="4" stroke-linecap="round"/>`).join("") : i === 1 ? `<path d="M14 20 H40 M50 30 H76 M20 42 H48" stroke="#ec6a55" stroke-width="6" stroke-linecap="round"/>` : `${spark(46, 30, 10, "#f4b73b")}`}</g>`).join("")}
+      <ellipse cx="130" cy="352" rx="96" ry="24" fill="#fff3c6" opacity=".7"/>
+      <path d="M0 360 C120 350 260 360 400 354 V400 H0Z" fill="#4a68e0" opacity=".5"/>
+      ${blob(130, 290, 64, "happy", {shadow: false})}
+      <rect width="400" height="400" filter="url(#g9)" opacity=".16"/></svg>`}
+  ];
+  document.getElementById("hero2").innerHTML = hero2 + `<div class="cap"><small>Course · 6 lessons and a boss</small><b>Stories that land</b></div>`;
+  document.getElementById("more").innerHTML = more.map(t => `<article class="pair"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">${t.course}</span><h2>${t.name}</h2>${t.art()}<p>${t.say}</p></article>`).join("");
+})();
+</script>
+
+</body></html>

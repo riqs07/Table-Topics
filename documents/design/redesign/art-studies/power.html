@@ -1,0 +1,221 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>VoiceLab Showpieces</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: a header with a motion switch, then six large showpieces in a two-column grid; each caption names the idea and the technique it shows off. */
+:root{--bg:#f3efe8;--surface:#fffdf9;--fg:#231f1c;--muted:#6b635c;--line:#e3dbd0;--chip:#ece5da;--focus:#2c8050;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--round:"Fredoka",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--chip:#2b2723;--focus:#6fd39a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--chip:#2b2723;--focus:#6fd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:flex;flex-direction:column;gap:22px}
+.head{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between}
+h1{font-family:var(--round);font-weight:600;font-size:clamp(28px,4vw,42px);line-height:1.05;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:76ch}
+.btn{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:9px 14px;cursor:pointer}
+.btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:20px}
+@media (max-width:540px){.grid{grid-template-columns:1fr}}
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:10px 10px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+figure svg{width:100%;height:auto;display:block;border-radius:20px}
+figcaption{padding:0 8px;display:flex;flex-direction:column;gap:4px}
+figcaption b{font-family:var(--round);font-weight:600;font-size:20px}
+figcaption span{font-size:14px;color:var(--muted)}
+figcaption em{font-style:normal;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+/* motion: one or two slow movements per piece */
+.mv .wave1{animation:wave 9s linear infinite}.mv .wave2{animation:wave 6s linear infinite}.mv .wave3{animation:wave 4s linear infinite}
+@keyframes wave{to{transform:translateX(-200px)}}
+.mv .bob{animation:bob 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-3deg)}}
+.mv .beam{animation:beam 7s ease-in-out infinite alternate;transform-box:view-box;transform-origin:318px 118px}
+@keyframes beam{from{transform:rotate(-14deg)}to{transform:rotate(16deg)}}
+.mv .shadowbreathe{animation:sb 2.6s ease-in-out infinite;transform-box:view-box;transform-origin:250px 300px}
+@keyframes sb{50%{transform:scale(1.04,1.07) skewX(-2deg)}}
+.mv .shiver{animation:shiver .5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes shiver{25%{transform:translateX(-1.5px)}75%{transform:translateX(1.5px)}}
+.mv .echo{animation:echo 4.5s ease-in-out infinite}
+@keyframes echo{0%,10%{opacity:0}25%,70%{opacity:1}100%{opacity:0}}
+.mv .far{animation:par 30s linear infinite}.mv .near{animation:par 12s linear infinite}.mv .track{animation:par 4s linear infinite}
+@keyframes par{to{transform:translateX(-400px)}}
+.mv .wheel{animation:spin 1s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mv .puff{animation:puff 3s ease-out infinite}
+@keyframes puff{0%{transform:translate(0,0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translate(-60px,-90px) scale(1.2);opacity:0}}
+.mv .dust{animation:dust 8s ease-in-out infinite alternate}
+@keyframes dust{to{transform:translate(18px,-22px)}}
+.mv .drip{animation:drip 1.4s linear infinite}
+@keyframes drip{from{transform:translateY(0);opacity:1}to{transform:translateY(46px);opacity:0}}
+.mv .walk{animation:walk 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes walk{50%{transform:translateY(-4px)}}
+.mv .twinkle{animation:tw 2.4s ease-in-out infinite alternate}
+@keyframes tw{to{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.mv *{animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Six showpieces</h1>
+      <p class="lede">Each piece pairs a bigger idea about speaking with a different technique: animated light, a cast shadow, atmospheric depth, isometric 3D, parallax motion and light rays. Same cast, same soft‑glow style, all drawn in code. They move gently; switch motion off to see the still frames.</p>
+    </div>
+    <button class="btn" id="motion" type="button" aria-pressed="true">Motion: on</button>
+  </div>
+  <div class="grid mv" id="grid"></div>
+</div>
+
+<script>
+(() => {
+  let uid = 0;
+  const SH = {
+    round: "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z",
+    egg: "M0 -114C52 -114 92 -42 92 10C92 62 52 94 0 94C-52 94 -92 62 -92 10C-92 -42 -52 -114 0 -114Z",
+    wobbly: "M4 -104C50 -110 74 -76 98 -50C124 -22 118 30 96 58C72 90 30 96 -6 94C-52 92 -96 74 -108 34C-120 -8 -100 -44 -72 -72C-50 -94 -26 -102 4 -104Z",
+    bun: "M0 -60C76 -60 132 -30 132 22C132 66 82 94 0 94C-82 94 -132 66 -132 22C-132 -30 -76 -60 0 -60Z",
+    squircle: "M0 -100C80 -100 100 -80 100 -2C100 76 80 94 0 94C-80 94 -100 76 -100 -2C-100 -80 -80 -100 0 -100Z"
+  };
+  const PAL = {you: ["#f7b07c", "#e8935c", "#c96a35"], friend: ["#5fd6c8", "#2fb3a4", "#1d8476"], sage: ["#5f9a6f", "#2d5a3d", "#1b3a26"], wobbly: ["#f8b0d6", "#f08cc0", "#c9619a"],
+    bun: ["#ffd77a", "#f4b73b", "#cf8f1c"], squircle: ["#8a9cf2", "#5b6ee1", "#3e4fbf"], lilac: ["#c4b4f2", "#9b82e6", "#7a60c6"], mint: ["#b4ecc4", "#7fd39a", "#4fa86c"], sky: ["#9fc4ff", "#6f8ff0", "#4a68d0"], rose: ["#ffc2b4", "#f49a86", "#d0735f"]};
+  const SHAPE_OF = {you: "round", friend: "egg", sage: "round", wobbly: "wobbly", bun: "bun", squircle: "squircle", lilac: "round", mint: "egg", sky: "round", rose: "round"};
+  const INK = "#2a2420", W = "#fcfcfb";
+  const L = (c, w = 7) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+  const face = (f, c, lx = 0, ly = 0) => {
+    const e = x => x + lx, y = v => v + ly;
+    return ({
+      ready: `<ellipse fill="${c}" cx="${e(-24)}" cy="${y(-34)}" rx="10" ry="14.5"/><ellipse fill="${c}" cx="${e(24)}" cy="${y(-34)}" rx="10" ry="14.5"/><circle fill="#fff" cx="${e(-20)}" cy="${y(-40)}" r="3.6"/><circle fill="#fff" cx="${e(28)}" cy="${y(-40)}" r="3.6"/><path ${L(c, 7.5)} d="M${e(-15)} ${y(-4)}q15 13 30 0"/>`,
+      happy: `<path ${L(c, 7.5)} d="M${e(-38)} ${y(-28)}L${e(-24)} ${y(-42)} ${e(-10)} ${y(-28)}M${e(10)} ${y(-28)}L${e(24)} ${y(-42)} ${e(38)} ${y(-28)}"/><path fill="${c}" d="M${e(-23)} ${y(-12)}h46q0 23-23 23t-23-23z"/><path fill="#ec6a55" d="M${e(-12)} ${y(4)}q12-8 24 0q-5 7-12 7t-12-7z"/>`,
+      shout: `<path ${L(c, 7)} d="M${e(-36)} ${y(-48)}L${e(-14)} ${y(-38)}M${e(14)} ${y(-38)}L${e(36)} ${y(-48)}"/><circle fill="${c}" cx="${e(-24)}" cy="${y(-28)}" r="9"/><circle fill="${c}" cx="${e(24)}" cy="${y(-28)}" r="9"/><ellipse fill="${c}" cx="${e(0)}" cy="${y(8)}" rx="17" ry="20"/><ellipse fill="#ec6a55" cx="${e(0)}" cy="${y(18)}" rx="9" ry="6"/>`,
+      calm: `<path ${L(c, 7)} d="M${e(-35)} ${y(-32)}q11 8 22 0M${e(13)} ${y(-32)}q11 8 22 0"/><path ${L(c, 7)} d="M${e(-12)} ${y(-2)}q12 9 24 0"/>`,
+      nervous: `<circle fill="${c}" cx="${e(-22)}" cy="${y(-34)}" r="9"/><circle fill="#fff" cx="${e(-19)}" cy="${y(-37)}" r="3"/><circle fill="${c}" cx="${e(22)}" cy="${y(-34)}" r="9"/><circle fill="#fff" cx="${e(25)}" cy="${y(-37)}" r="3"/><path ${L(c, 6)} d="M${e(-36)} ${y(-58)}L${e(-14)} ${y(-64)}M${e(14)} ${y(-64)}L${e(36)} ${y(-58)}"/><path ${L(c, 6)} d="M${e(-14)} ${y(0)}q4 -5 9 0t9 0t9 0"/>`,
+      small: `<circle fill="${c}" cx="${e(-20)}" cy="${y(-30)}" r="9"/><circle fill="${c}" cx="${e(20)}" cy="${y(-30)}" r="9"/><path ${L(c, 6)} d="M${e(-9)} ${y(-4)}q9 6 18 0"/>`,
+      bored: `<path ${L(c, 6)} d="M${e(-30)} ${y(-30)}h16M${e(14)} ${y(-30)}h16"/><path fill="${c}" d="M${e(-30)} ${y(-30)}a8 6 0 0 0 16 0zM${e(14)} ${y(-30)}a8 6 0 0 0 16 0z"/><path ${L(c, 6)} d="M${e(-8)} ${y(-2)}h16"/>`,
+      sageglow: `<path ${L(W, 5.5)} d="M-36 -56Q-24 -61 -12 -56M12 -56Q24 -61 36 -56"/><path ${L(W, 6)} d="M-35 -30Q-24 -40 -13 -30M13 -30Q24 -40 35 -30"/><path ${L(W, 6.5)} d="M-15 -2Q0 9 15 -2"/>`,
+      sagecalm: `<path ${L(W, 5.5)} d="M-36 -56Q-24 -61 -12 -56M12 -56Q24 -61 36 -56"/><ellipse fill="${W}" cx="-24" cy="-30" rx="9" ry="12"/><ellipse fill="${W}" cx="24" cy="-30" rx="9" ry="12"/><path ${L(W, 6.5)} d="M-15 -2Q0 9 15 -2"/>`
+    })[f];
+  };
+  function cast(who, x, y, r, f = "ready", o = {}) {
+    const {rot = 0, sx = 1, sy = 1, shadow = true, look = [0, 0], cls = "", arm = null, rim = null} = o;
+    const [lt, md, dk] = PAL[who], id = "g" + (uid++), sh = SH[SHAPE_OF[who]];
+    const fc = who === "sage" ? W : INK;
+    const extra = who === "friend" || who === "mint" ? `<path ${L(dk, 10)} d="M2 -112q-4 -22 14 -26q14 -2 10 12"/>` : who === "sage" ? `<g transform="translate(0 -96)"><path ${L("#4f8a43", 6)} d="M0 0Q-3 -16 3 -30"/><ellipse fill="#5ea34e" cx="16" cy="-38" rx="16" ry="8" transform="rotate(-30 16 -38)"/><ellipse fill="#7cc46a" cx="-10" cy="-36" rx="15" ry="8" transform="rotate(28 -10 -36)"/></g>` : "";
+    const armSvg = arm ? `<g transform="rotate(${-arm[0] * arm[1]} ${arm[0] * 90} -4)"><ellipse fill="${arm[0] > 0 ? md : dk}" cx="${arm[0] * 90}" cy="32" rx="15" ry="26"/></g>` : "";
+    const fy = who === "bun" ? 28 : who === "friend" || who === "mint" ? 6 : 0;
+    const rimSvg = rim ? `<path d="${sh}" fill="none" stroke="${rim}" stroke-width="7" opacity=".7" stroke-dasharray="160 900" stroke-dashoffset="${rim === "#fff3c6" ? -20 : -360}"/>` : "";
+    return `${shadow ? `<ellipse cx="${x}" cy="${y + r * .95}" rx="${r * (who === "bun" ? 1.2 : .9)}" ry="${r * .15}" fill="#000" opacity=".2"/>` : ""}
+      <g class="${cls}"><g transform="translate(${x} ${y}) rotate(${rot}) scale(${r / 100 * sx} ${r / 100 * sy})"><defs><radialGradient id="${id}" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${md}"/><stop offset="1" stop-color="${dk}"/></radialGradient></defs>
+      ${extra}${armSvg}<path fill="url(#${id})" d="${sh}"/>${rimSvg}
+      <ellipse fill="#fff6e6" opacity="${who === "sage" ? .25 : .5}" cx="-46" cy="-58" rx="18" ry="11" transform="rotate(-35 -46 -58)"/>
+      ${who !== "sage" ? `<ellipse fill="#ec6a55" opacity=".3" cx="-44" cy="${-8 + fy}" rx="13" ry="8"/><ellipse fill="#ec6a55" opacity=".3" cx="44" cy="${-8 + fy}" rx="13" ry="8"/>` : ""}
+      <g transform="translate(0 ${fy})">${face(f, fc, look[0], look[1])}</g></g></g>`;
+  }
+  const spark = (x, y, s, c = "#fff6e6", cls = "") => `<path class="${cls}" fill="${c}" d="M${x} ${y - s}C${x + s * .12} ${y - s * .12} ${x + s * .12} ${y - s * .12} ${x + s} ${y}C${x + s * .12} ${y + s * .12} ${x + s * .12} ${y + s * .12} ${x} ${y + s}C${x - s * .12} ${y + s * .12} ${x - s * .12} ${y + s * .12} ${x - s} ${y}C${x - s * .12} ${y - s * .12} ${x - s * .12} ${y - s * .12} ${x} ${y - s}Z"/>`;
+  const grainF = id => `<filter id="${id}"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>`;
+  const frame = (label, inner) => { const id = "f" + (uid++); return `<svg viewBox="0 0 400 400" role="img" aria-label="${label}"><defs>${grainF(id + "n")}<clipPath id="${id}c"><rect width="400" height="400"/></clipPath></defs><g clip-path="url(#${id}c)">${inner(id)}<rect width="400" height="400" filter="url(#${id}n)" opacity=".15"/></g></svg>`; };
+  const lg = (id, stops, x2 = 0, y2 = 1) => `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}">${stops.map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join("")}</linearGradient>`;
+  const rg = (id, stops, cx = .5, cy = .5, r = .5) => `<radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}">${stops.map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join("")}</radialGradient>`;
+  // a repeating wave band 1200 wide (period 200), so it can slide 200 px and loop seamlessly
+  const waveBand = (y, amp, fill, cls, jag = 0) => { let d = `M-400 ${y}`; for (let x = -400; x <= 800; x += 25) { const k = (x + 400) % 200; const a = jag ? amp * (.4 + .6 * Math.abs(Math.sin(k * 1.7))) : amp; d += ` L${x} ${(y + Math.sin(k / 200 * Math.PI * 2) * a).toFixed(1)}`; } d += ` L800 400 L-400 400Z`; return `<path class="${cls}" d="${d}" fill="${fill}"/>`; };
+
+  // isometric helpers: (x, y) on the ground grid, z up
+  const ISO = (x, y, z = 0) => [200 + (x - y) * .866, 150 + (x + y) * .5 - z];
+  const P = pts => pts.map(p => ISO(...p).map(n => n.toFixed(1)).join(" ")).join(" L");
+  const box = (x, y, w, d, h, top, left, right, extra = "") => `<path d="M${P([[x, y, h], [x + w, y, h], [x + w, y + d, h], [x, y + d, h]])}Z" fill="${top}"/><path d="M${P([[x, y + d, h], [x + w, y + d, h], [x + w, y + d, 0], [x, y + d, 0]])}Z" fill="${left}"/><path d="M${P([[x + w, y, h], [x + w, y + d, h], [x + w, y + d, 0], [x + w, y, 0]])}Z" fill="${right}"/>${extra}`;
+
+  const PIECES = [
+    {t: "The voice sea", idea: "Your voice is the sea you learn to sail; Sage is the lighthouse.", tech: "Animated light and looping waves drawn as a sound wave", where: "App welcome; the Practice header", draw: frame("You sailing a paper boat on a sea of sound waves at night, Sage glowing as a lighthouse", id => `
+      <defs>${lg(id + "s", [[0, "#0d0b2e"], [.65, "#2c2470"], [1, "#5a3a8a"]])}${lg(id + "b", [[0, "#fff3c6", .6], [1, "#fff3c6", 0]], 1, 0)}${rg(id + "m", [[0, "#fff6d6", .7], [1, "#fff6d6", 0]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/>
+      ${Array.from({length: 50}, (_, i) => `<circle class="${i % 5 ? "" : "twinkle"}" cx="${(i * 89) % 400}" cy="${(i * 47) % 220}" r="${i % 7 ? 1.3 : 2.4}" fill="#fff" opacity="${.35 + (i % 4) * .15}"/>`).join("")}
+      <circle cx="90" cy="80" r="70" fill="url(#${id}m)"/><circle cx="90" cy="80" r="26" fill="#fff6d6"/>
+      <g class="beam"><path d="M318 118 L420 70 L420 170Z" fill="url(#${id}b)"/><path d="M318 118 L-40 40 L-40 150Z" fill="url(#${id}b)" opacity=".0"/></g>
+      
+      <path d="M290 330 L300 160 H336 L346 330Z" fill="#fff6e6"/>${[0, 1, 2].map(i => `<path d="M${296 - i * 2} ${200 + i * 44} H${340 + i * 2} L${341 + i * 2} ${220 + i * 44} H${295 - i * 2}Z" fill="#ec6a55"/>`).join("")}
+      <rect x="292" y="150" width="52" height="12" rx="4" fill="#3a2a55"/>
+      ${cast("sage", 318, 128, 20, "sageglow", {shadow: false})}<circle cx="318" cy="122" r="34" fill="#fff3c6" opacity=".18"/>
+      <path d="M262 330 Q318 300 380 330 V400 H262Z" fill="#2a1f45"/>
+      <g opacity=".5">${[0, 1, 2, 3, 4].map(i => `<rect x="${80 + (i % 2) * 8}" y="${244 + i * 14}" width="${26 - i * 3}" height="4" rx="2" fill="#fff6d6"/>`).join("")}</g>
+      ${waveBand(260, 8, "#3b2f8a", "wave1", 1)}${waveBand(292, 10, "#4a3aa8", "wave2", 1)}
+      <g class="bob"><path d="M128 312 L232 312 L214 336 H146Z" fill="#fff6e6"/><path d="M180 312 V250 L216 300Z" fill="#fff6e6" opacity=".9"/><path d="M128 312 L232 312" stroke="#d9cfbf" stroke-width="3"/>
+      ${cast("you", 162, 290, 22, "happy", {shadow: false, look: [6, -2]})}</g>
+      ${waveBand(330, 12, "#5b4ac4", "wave3", 1)}
+      ${spark(210, 60, 8, "#fff6d6", "twinkle")}`)},
+    {t: "The shadow", idea: "You feel huge and shaky; the audience sees someone small and fine. (They see far less than you feel.)", tech: "A single light source and a cast shadow that breathes", where: "Learn card “Everyone can see how nervous I am”; the Nerves course header", draw: frame("You small and shaky in a spotlight casting a giant spiky shadow on the curtain, while the audience calmly eats popcorn", id => `
+      <defs>${lg(id + "s", [[0, "#3a2050"], [1, "#1c0f2a"]])}${rg(id + "l", [[0, "#fff3c6", .55], [1, "#fff3c6", 0]], .3, .9, .7)}${lg(id + "c", [[0, "#f6e3c4"], [1, "#e8c99a"]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/>
+      <path d="M30 20 H370 V290 H30Z" fill="url(#${id}c)"/>${[60, 110, 160, 210, 260, 310, 350].map(x => `<path d="M${x} 20 Q${x + 10} 150 ${x} 290" stroke="#d9b480" stroke-width="5" fill="none" opacity=".6"/>`).join("")}
+      <path d="M30 20 H370 V290 H30Z" fill="url(#${id}l)"/>
+      <g class="shadowbreathe" opacity=".85"><path d="M250 290 C170 290 140 230 150 180 L130 150 L170 156 L160 110 L196 132 L206 84 L232 124 L262 82 L278 128 L316 104 L306 150 L346 150 L320 186 C330 240 320 290 250 290Z" fill="#2a1840"/>
+        <circle cx="222" cy="168" r="12" fill="#f6e3c4" opacity=".55"/><circle cx="282" cy="168" r="12" fill="#f6e3c4" opacity=".55"/></g>
+      <path d="M0 290 H400 V320 H0Z" fill="#6b3a2c"/><path d="M0 320 H400 V400 H0Z" fill="#2a1630"/>
+      <path d="M40 400 L84 290 L120 290 L150 400Z" fill="#fff3c6" opacity=".18"/>
+      ${cast("you", 120, 266, 22, "nervous", {shadow: false, cls: "shiver"})}
+      <g transform="translate(70 400)"><rect x="-10" y="-60" width="28" height="64" rx="4" fill="#3a2a55"/></g>
+      ${[[60, 368, "lilac", "small"], [150, 374, "sky", "bored"], [240, 366, "mint", "small"], [330, 372, "rose", "small"]].map(([x, y, w, f]) => cast(w, x, y, 26, f, {shadow: false, look: [-6, -4]})).join("")}
+      <g transform="translate(176 356)"><path d="M-12 0 h24 l-4 22 h-16z" fill="#ec6a55"/><path d="M-12 0 h24 l-4 22 h-16z" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="4 4" opacity=".6"/>${[[-6, -4], [2, -6], [8, -2], [-2, -10]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#fff6e6"/>`).join("")}</g>`)},
+    {t: "Echo canyon", idea: "Say it once, clearly, and let it carry. Each echo fades into the distance.", tech: "Atmospheric depth: six layers fading into haze, words travelling through them", where: "Course header: A voice they lean in for", draw: frame("You calling out from a canyon edge at sunset, the word hello echoing smaller across distant ridges", id => `
+      <defs>${lg(id + "s", [[0, "#ff9a6a"], [.55, "#ffc58a"], [1, "#ffe3b0"]])}${rg(id + "u", [[0, "#fff6d6"], [.5, "#ffe0a0", .6], [1, "#ffe0a0", 0]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/>
+      <circle cx="280" cy="170" r="110" fill="url(#${id}u)"/><circle cx="280" cy="170" r="34" fill="#fff6d6"/>
+      ${[["#f5b88e", 186, 20], ["#e8a07a", 206, 26], ["#d98766", 228, 32], ["#c46e52", 252, 40], ["#a8543e", 280, 46]].map(([c, y, a], i) => `<path d="M0 ${y} ${Array.from({length: 9}, (_, k) => `L${k * 50} ${y - ((k * (i + 3)) % 5) * a / 5 - (k % 2) * a / 2}`).join(" ")} L400 ${y} V400 H0Z" fill="${c}"/>`).join("")}
+      <g fill="none" stroke="#7a3a2a" stroke-width="2.4" stroke-linecap="round" opacity=".7"><path d="M60 110 q6 -6 12 0 q6 -6 12 0"/><path d="M96 92 q4 -4 8 0 q4 -4 8 0"/><path d="M140 120 q5 -5 10 0 q5 -5 10 0"/></g>
+      ${[["HELLO", 140, 250, 30, .95, 0], ["hello", 208, 222, 22, .7, .9], ["hello", 262, 200, 16, .5, 1.8], ["hello", 304, 186, 11, .35, 2.7]].map(([w, x, y, s, o, d]) => `<text class="echo" style="animation-delay:${d}s" x="${x}" y="${y}" font-family="Fredoka" font-weight="700" font-size="${s}" fill="#fff6e6" opacity="${o}" transform="rotate(-8 ${x} ${y})">${w}</text>`).join("")}
+      <path d="M0 300 L150 280 Q170 282 176 300 L170 400 H0Z" fill="#7a3a2a"/><path d="M0 300 L150 280 Q170 282 176 300" stroke="#a8543e" stroke-width="6" fill="none"/>
+      <path d="M176 300 L200 400" stroke="#5a2a1e" stroke-width="2" opacity=".5"/>
+      ${cast("you", 110, 254, 30, "shout", {shadow: false, rot: 8})}
+      <g ${L("#fff6e6", 4)} opacity=".8"><path d="M150 236 q10 10 0 20"/><path d="M162 228 q16 18 0 36"/></g>`)},
+    {t: "Story town", idea: "Every story you tell builds your town: books for buildings, a bubble fountain, the friend walking over to listen.", tech: "Isometric 3D: everything drawn on a true isometric grid", where: "Stories hub header; Me tab: ‘your stories so far’", draw: frame("An isometric town where the buildings are books, a speech-bubble fountain in the square, you and the friend walking", id => `
+      <defs>${lg(id + "s", [[0, "#bfe3ff"], [1, "#f2f8ff"]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/>
+      ${[[30, 70, 60], [320, 50, 50], [250, 100, 40]].map(([x, y, w]) => `<g fill="#fff" opacity=".9"><ellipse cx="${x}" cy="${y}" rx="${w * .6}" ry="${w * .2}"/><circle cx="${x - w * .15}" cy="${y - w * .14}" r="${w * .2}"/><circle cx="${x + w * .15}" cy="${y - w * .18}" r="${w * .24}"/></g>`).join("")}
+      <path d="M${P([[-80, -80], [220, -80], [220, 220], [-80, 220]])}Z" fill="#9fd67f"/>
+      <path d="M${P([[-80, 220], [220, 220], [220, 220, -14], [-80, 220, -14]])}Z" fill="#6fae58"/><path d="M${P([[220, -80], [220, 220], [220, 220, -14], [220, -80, -14]])}Z" fill="#5f9a4a"/>
+      <path d="M${P([[40, -80], [80, -80], [80, 220], [40, 220]])}Z" fill="#f2d9a6"/><path d="M${P([[-80, 80], [220, 80], [220, 120], [-80, 120]])}Z" fill="#f2d9a6"/>
+      ${[[-60, 30, 120, "#ec6a55", "#c4523f", "#a8442f"], [-24, 22, 96, "#4a68e0", "#3a55c4", "#2f46a8"], [4, 28, 140, "#f4b73b", "#d39722", "#b98318"]].map(([x, w, h, t, l, r]) => box(x, -60, w, 70, h, t, l, r) + `<path d="M${P([[x, 10, h * .62], [x + w, 10, h * .62], [x + w, 10, h * .72], [x, 10, h * .72]])}Z" fill="#fff6e6" opacity=".85"/><path d="M${P([[x, 10, h * .2], [x + w, 10, h * .2], [x + w, 10, h * .24], [x, 10, h * .24]])}Z" fill="#fff6e6" opacity=".5"/><path d="M${P([[x + w, -60, h * .62], [x + w, 10, h * .62], [x + w, 10, h * .64], [x + w, -60, h * .64]])}Z" fill="#fff6e6" opacity=".4"/>`).join("")}
+      ${box(110, -60, 90, 26, 70, "#9b82e6", "#7a60c6", "#6a50b0")}
+      ${box(110, -26, 90, 22, 54, "#f08cc0", "#c9619a", "#b25088")}
+      ${box(-60, 140, 70, 60, 50, "#fff6e6", "#e8dcc6", "#d9cbb0")}<path d="M${P([[-60, 140, 50], [10, 140, 50], [-25, 170, 96]])}Z" fill="#ec6a55"/><path d="M${P([[10, 140, 50], [10, 200, 50], [-25, 170, 96]])}Z" fill="#c4523f"/>
+      ${box(130, 140, 70, 60, 36, "#7fd39a", "#4fa86c", "#3f8f5a")}
+      <g>${(() => { const [cx, cy] = ISO(60, 100, 0); return `<ellipse cx="${cx}" cy="${cy}" rx="34" ry="17" fill="#6f8ff0"/><ellipse cx="${cx}" cy="${cy - 4}" rx="28" ry="13" fill="#9fc4ff"/><rect x="${cx - 20}" y="${cy - 66}" width="40" height="28" rx="14" fill="#fff6e6"/><path d="M${cx - 6} ${cy - 40} l-4 10 12 -8z" fill="#fff6e6"/><circle cx="${cx - 9}" cy="${cy - 52}" r="3" fill="#6f8ff0"/><circle cx="${cx}" cy="${cy - 52}" r="3" fill="#6f8ff0"/><circle cx="${cx + 9}" cy="${cy - 52}" r="3" fill="#6f8ff0"/><path d="M${cx} ${cy - 10} V${cy - 36}" stroke="#9fc4ff" stroke-width="4"/>`; })()}</g>
+      ${[[-70, 100], [190, 40], [200, 210]].map(([x, y]) => { const [cx, cy] = ISO(x, y, 0); return `<rect x="${cx - 3}" y="${cy - 20}" width="6" height="20" fill="#7b4a2c"/><circle cx="${cx}" cy="${cy - 28}" r="14" fill="#5ea34e"/><circle cx="${cx - 5}" cy="${cy - 32}" r="6" fill="#7fd39a"/>`; }).join("")}
+      ${(() => { const [ax, ay] = ISO(60, 170, 0), [bx, by] = ISO(150, 100, 0); return cast("friend", bx, by - 16, 15, "happy", {cls: "walk", look: [-6, 0]}) + cast("you", ax, ay - 16, 16, "happy", {cls: "walk", look: [6, -2]}); })()}
+      ${spark(70, 150, 7, "#f4b73b")}${spark(300, 160, 6, "#f4b73b")}`)},
+    {t: "Train of thought", idea: "Point, reason, example: three cars, one engine, always on track.", tech: "Parallax motion: three layers scrolling at different speeds, turning wheels, puffs of speech", where: "Lesson: Three beats; course header: Stop freezing", draw: frame("You driving a little train with three cars labelled point, reason and example through rolling hills, smoke puffs shaped like speech bubbles", id => `
+      <defs>${lg(id + "s", [[0, "#8fd0ff"], [1, "#e6f6ff"]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/>
+      <circle cx="330" cy="70" r="30" fill="#fff6d6"/>
+      <g class="far">${[0, 400, 800].map(o => `<path d="M${o - 400} 240 Q${o - 300} 170 ${o - 200} 230 T${o} 240 V400 H${o - 400}Z" fill="#a8d9b0"/>`).join("")}</g>
+      <g class="near">${[0, 400, 800].map(o => `<path d="M${o - 400} 280 Q${o - 330} 230 ${o - 250} 270 T${o - 100} 262 T${o} 280 V400 H${o - 400}Z" fill="#7cc46a"/><g transform="translate(${o - 330} 240)"><rect x="-3" y="0" width="6" height="22" fill="#7b4a2c"/><circle cy="-6" r="16" fill="#5ea34e"/></g><g transform="translate(${o - 150} 250)"><rect x="-3" y="0" width="6" height="18" fill="#7b4a2c"/><circle cy="-6" r="13" fill="#4f9a45"/></g>`).join("")}</g>
+      <path d="M0 330 H400 V400 H0Z" fill="#5f9a4a"/>
+      <g class="track">${Array.from({length: 22}, (_, i) => `<rect x="${i * 40 - 400}" y="330" width="12" height="10" rx="2" fill="#7b4a2c"/>`).join("")}</g><path d="M0 330 H400" stroke="#8a8a96" stroke-width="5"/>
+      ${[["POINT", 32, "#ec6a55"], ["REASON", 120, "#4a68e0"], ["EXAMPLE", 208, "#9b82e6"]].map(([w, x, c]) => `<rect x="${x}" y="268" width="80" height="50" rx="10" fill="${c}"/><rect x="${x}" y="268" width="80" height="12" rx="6" fill="#fff" opacity=".2"/><text x="${x + 40}" y="300" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="${w.length > 5 ? 13 : 15}" fill="#fff6e6">${w}</text><path d="M${x + 80} 300 h8" stroke="#2a2420" stroke-width="5"/>`).join("")}
+      <path d="M296 250 H352 Q378 250 378 276 V318 H296Z" fill="#f4b73b"/><rect x="304" y="226" width="40" height="40" rx="8" fill="#cf8f1c"/><rect x="310" y="232" width="28" height="22" rx="6" fill="#bfe6ff"/>
+      ${cast("you", 324, 248, 12, "happy", {shadow: false, look: [6, 0]})}
+      <rect x="356" y="222" width="14" height="30" rx="4" fill="#2a2420"/>
+      ${[52, 92, 140, 180, 228, 268, 318, 356].map(x => `<g class="wheel"><circle cx="${x}" cy="322" r="11" fill="#2a2420"/><circle cx="${x}" cy="322" r="4" fill="#c9c3bb"/><path d="M${x - 9} 322 h18" stroke="#c9c3bb" stroke-width="2"/></g>`).join("")}
+      ${[0, 1, 2].map(i => `<g class="puff" style="animation-delay:${i}s;transform-origin:363px 222px"><g transform="translate(363 214)"><rect x="-16" y="-12" width="32" height="22" rx="11" fill="#fff"/><path d="M-6 8 l-4 8 10 -6z" fill="#fff"/></g></g>`).join("")}`)},
+    {t: "The pause garden", idea: "Pauses grow if you tend them; the ums are weeds you pull.", tech: "Light rays through glass, drifting dust, falling water", where: "Course header: pausing lessons; the voice warm-up", draw: frame("You watering pause-shaped flowers in a sunlit greenhouse while um weeds wilt in a bucket", id => `
+      <defs>${lg(id + "s", [[0, "#e6fff2"], [1, "#c8f0dc"]])}${lg(id + "r", [[0, "#fff6d6", .7], [1, "#fff6d6", 0]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/>
+      <path d="M20 400 V140 Q200 -20 380 140 V400" fill="#dff7ee" stroke="#5f9a8a" stroke-width="8"/>
+      <g stroke="#5f9a8a" stroke-width="4" fill="none" opacity=".8"><path d="M200 50 V400"/><path d="M110 82 V400"/><path d="M290 82 V400"/><path d="M20 230 H380"/><path d="M40 140 Q200 30 360 140"/></g>
+      ${[[60, 0], [150, 0], [240, 0]].map(([x]) => `<path d="M${x} 40 L${x + 60} 40 L${x + 160} 400 L${x + 60} 400Z" fill="url(#${id}r)" opacity=".5"/>`).join("")}
+      <g class="dust">${Array.from({length: 18}, (_, i) => `<circle cx="${(i * 67) % 360 + 20}" cy="${(i * 113) % 280 + 60}" r="${i % 3 ? 1.6 : 2.6}" fill="#fff6d6" opacity=".9"/>`).join("")}</g>
+      <path d="M0 330 H400 V400 H0Z" fill="#a46b3f"/><rect x="0" y="322" width="400" height="12" fill="#c98b5a"/>
+      ${[[230, 1.2], [300, 1], [364, .8]].map(([x, s]) => `<g transform="translate(${x} 322) scale(${s})"><path d="M-22 0 h44 l-6 30 h-32z" fill="#ec6a55"/><path d="M0 0 V-70" stroke="#4f9a45" stroke-width="5"/><path d="M0 -30 q-22 -6 -26 -24 q22 2 26 24z" fill="#5ea34e"/><path d="M0 -44 q22 -6 26 -24 q-22 2 -26 24z" fill="#7fd39a"/><g transform="translate(0 -84)"><circle r="22" fill="#fff6e6"/><rect x="-11" y="-12" width="8" height="24" rx="4" fill="#9b82e6"/><rect x="3" y="-12" width="8" height="24" rx="4" fill="#9b82e6"/></g></g>`).join("")}
+      <g transform="translate(96 322)"><path d="M-26 0 h52 l-6 -40 h-40z" fill="#8a8a96"/><path d="M-26 -40 h52" stroke="#6a6a76" stroke-width="5"/>${[[-12, -40, -20], [4, -40, 14], [14, -40, -6]].map(([x, y, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M0 0 V-28" stroke="#9a9a5a" stroke-width="4"/><text x="0" y="-30" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="11" fill="#7a7a40">um</text></g>`).join("")}</g>
+      ${cast("you", 160, 286, 34, "calm", {shadow: true, arm: [1, 110]})}
+      <g transform="translate(204 222) rotate(24)"><path d="M0 0 h34 v26 h-34z" fill="#4a68e0"/><path d="M34 6 l26 -10 v6 l-24 12z" fill="#4a68e0"/><path d="M8 0 q10 -16 20 0" stroke="#3a55c4" stroke-width="4" fill="none"/></g>
+      ${[0, .45, .9].map(d => `<g class="drip" style="animation-delay:${d}s"><path d="M262 214 q3 8 0 11 q-3 -3 0 -11z" fill="#6f8ff0"/></g>`).join("")}
+      ${spark(330, 140, 9, "#fff6d6")}`)}
+  ];
+
+  document.getElementById("grid").innerHTML = PIECES.map((p, i) => `<figure>${p.draw}<figcaption><em>${p.tech}</em><b>${i + 1}. ${p.t}</b><span>${p.idea}</span><span>Could live: ${p.where}</span></figcaption></figure>`).join("");
+  const btn = document.getElementById("motion"), grid = document.getElementById("grid");
+  btn.addEventListener("click", () => { const on = grid.classList.toggle("mv"); btn.setAttribute("aria-pressed", String(on)); btn.textContent = "Motion: " + (on ? "on" : "off"); });
+})();
+</script>
+
+</body></html>
