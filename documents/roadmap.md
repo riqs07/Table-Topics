@@ -132,6 +132,8 @@ To workshop with the user. One idea with three parts: each mode declares what it
 
 Once the app is in a workable, finished state, redesign the user experience and the look as one coherent system, keeping the content, the code underneath and the app's spirit. Not started; the user will say when.
 
+**Direction chosen (2026-11-04, decision 157):** B, Playful. The user's ranking of reference screens, the three prototypes and what B means are in [design/redesign/README.md](design/redesign/README.md).
+
 - **Why:** the app grew one idea at a time and now has many good parts without one plan tying them together.
 - **How:** build a new interface alongside the current one, screen by screen behind a switch, on the same logic, storage and content (about 60% of the code and 179 of the 225 test files carry over; the screens and their tests are rebuilt). Users' saved practice keeps working throughout.
 - **Order:** (1) audit: map every screen, journey and choice; (2) the core loop and structure (the first five minutes, week and month; which modes lead; how Today, Practice, Learn and Courses relate); (3) one design language (the two-layer colour idea from the palette comparison, type scale, spacing, components, motion and illustration per `design/art-style.md`); (4) mockups tested on a phone; (5) build.
