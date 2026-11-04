@@ -1,0 +1,217 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>VoiceLab Science Posts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: a header with a motion switch, then six large showpieces in a two-column grid; each caption names the idea and the technique it shows off. */
+:root{--bg:#f3efe8;--surface:#fffdf9;--fg:#231f1c;--muted:#6b635c;--line:#e3dbd0;--chip:#ece5da;--focus:#2c8050;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--round:"Fredoka",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--chip:#2b2723;--focus:#6fd39a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--chip:#2b2723;--focus:#6fd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:flex;flex-direction:column;gap:22px}
+.head{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between}
+h1{font-family:var(--round);font-weight:600;font-size:clamp(28px,4vw,42px);line-height:1.05;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:76ch}
+.btn{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:9px 14px;cursor:pointer}
+.btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:20px}
+@media (max-width:540px){.grid{grid-template-columns:1fr}}
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:10px 10px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+figure svg{width:100%;height:auto;display:block;border-radius:20px}
+figcaption{padding:0 8px;display:flex;flex-direction:column;gap:4px}
+figcaption b{font-family:var(--round);font-weight:600;font-size:20px}
+figcaption span{font-size:14px;color:var(--muted)}
+figcaption em{font-style:normal;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+/* motion: one or two slow movements per piece */
+.mv .wave1{animation:wave 9s linear infinite}.mv .wave2{animation:wave 6s linear infinite}.mv .wave3{animation:wave 4s linear infinite}
+@keyframes wave{to{transform:translateX(-200px)}}
+.mv .bob{animation:bob 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-3deg)}}
+.mv .beam{animation:beam 7s ease-in-out infinite alternate;transform-box:view-box;transform-origin:318px 118px}
+@keyframes beam{from{transform:rotate(-14deg)}to{transform:rotate(16deg)}}
+.mv .shadowbreathe{animation:sb 2.6s ease-in-out infinite;transform-box:view-box;transform-origin:250px 300px}
+@keyframes sb{50%{transform:scale(1.04,1.07) skewX(-2deg)}}
+.mv .shiver{animation:shiver .5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes shiver{25%{transform:translateX(-1.5px)}75%{transform:translateX(1.5px)}}
+.mv .echo{animation:echo 4.5s ease-in-out infinite}
+@keyframes echo{0%,10%{opacity:0}25%,70%{opacity:1}100%{opacity:0}}
+.mv .far{animation:par 30s linear infinite}.mv .near{animation:par 12s linear infinite}.mv .track{animation:par 4s linear infinite}
+@keyframes par{to{transform:translateX(-400px)}}
+.mv .wheel{animation:spin 1s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mv .puff{animation:puff 3s ease-out infinite}
+@keyframes puff{0%{transform:translate(0,0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translate(-60px,-90px) scale(1.2);opacity:0}}
+.mv .dust{animation:dust 8s ease-in-out infinite alternate}
+@keyframes dust{to{transform:translate(18px,-22px)}}
+.mv .drip{animation:drip 1.4s linear infinite}
+@keyframes drip{from{transform:translateY(0);opacity:1}to{transform:translateY(46px);opacity:0}}
+.mv .walk{animation:walk 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes walk{50%{transform:translateY(-4px)}}
+.mv .twinkle{animation:tw 2.4s ease-in-out infinite alternate}
+@keyframes tw{to{opacity:.25}}
+@keyframes needle{from{transform:rotate(-8deg)}to{transform:rotate(6deg)}}
+@keyframes rise{from{transform:translateY(0);opacity:1}to{transform:translateY(-110px);opacity:0}}
+.mv .drip[style*="rise"]{animation-name:rise}
+.mv .radar{animation:spin 4s linear infinite;transform-box:view-box;transform-origin:200px 300px}
+.mv .thread{animation:thread 3s linear infinite}
+@keyframes thread{to{stroke-dashoffset:-48}}
+@media (prefers-reduced-motion:reduce){.mv *{animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Six more: the science of speaking</h1>
+      <p class="lede">Six more in the glowing explainer style, each built on a real finding and designed to stand on its own as a post. Pick one and I’ll refine it into a finished social image. They move gently; switch motion off for still frames.</p>
+    </div>
+    <button class="btn" id="motion" type="button" aria-pressed="true">Motion: on</button>
+  </div>
+  <div class="grid mv" id="grid"></div>
+  <div class="strip" id="strip" style="background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>
+</div>
+
+<script>
+(() => {
+  let uid = 0;
+  const SH = {
+    round: "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z",
+    egg: "M0 -114C52 -114 92 -42 92 10C92 62 52 94 0 94C-52 94 -92 62 -92 10C-92 -42 -52 -114 0 -114Z",
+    wobbly: "M4 -104C50 -110 74 -76 98 -50C124 -22 118 30 96 58C72 90 30 96 -6 94C-52 92 -96 74 -108 34C-120 -8 -100 -44 -72 -72C-50 -94 -26 -102 4 -104Z",
+    bun: "M0 -60C76 -60 132 -30 132 22C132 66 82 94 0 94C-82 94 -132 66 -132 22C-132 -30 -76 -60 0 -60Z",
+    squircle: "M0 -100C80 -100 100 -80 100 -2C100 76 80 94 0 94C-80 94 -100 76 -100 -2C-100 -80 -80 -100 0 -100Z"
+  };
+  const PAL = {you: ["#f7b07c", "#e8935c", "#c96a35"], friend: ["#5fd6c8", "#2fb3a4", "#1d8476"], sage: ["#5f9a6f", "#2d5a3d", "#1b3a26"], wobbly: ["#f8b0d6", "#f08cc0", "#c9619a"],
+    bun: ["#ffd77a", "#f4b73b", "#cf8f1c"], squircle: ["#8a9cf2", "#5b6ee1", "#3e4fbf"], lilac: ["#c4b4f2", "#9b82e6", "#7a60c6"], mint: ["#b4ecc4", "#7fd39a", "#4fa86c"], sky: ["#9fc4ff", "#6f8ff0", "#4a68d0"], rose: ["#ffc2b4", "#f49a86", "#d0735f"]};
+  const SHAPE_OF = {you: "round", friend: "egg", sage: "round", wobbly: "wobbly", bun: "bun", squircle: "squircle", lilac: "round", mint: "egg", sky: "round", rose: "round"};
+  const INK = "#2a2420", W = "#fcfcfb";
+  const L = (c, w = 7) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+  const face = (f, c, lx = 0, ly = 0) => {
+    const e = x => x + lx, y = v => v + ly;
+    return ({
+      ready: `<ellipse fill="${c}" cx="${e(-24)}" cy="${y(-34)}" rx="10" ry="14.5"/><ellipse fill="${c}" cx="${e(24)}" cy="${y(-34)}" rx="10" ry="14.5"/><circle fill="#fff" cx="${e(-20)}" cy="${y(-40)}" r="3.6"/><circle fill="#fff" cx="${e(28)}" cy="${y(-40)}" r="3.6"/><path ${L(c, 7.5)} d="M${e(-15)} ${y(-4)}q15 13 30 0"/>`,
+      happy: `<path ${L(c, 7.5)} d="M${e(-38)} ${y(-28)}L${e(-24)} ${y(-42)} ${e(-10)} ${y(-28)}M${e(10)} ${y(-28)}L${e(24)} ${y(-42)} ${e(38)} ${y(-28)}"/><path fill="${c}" d="M${e(-23)} ${y(-12)}h46q0 23-23 23t-23-23z"/><path fill="#ec6a55" d="M${e(-12)} ${y(4)}q12-8 24 0q-5 7-12 7t-12-7z"/>`,
+      shout: `<path ${L(c, 7)} d="M${e(-36)} ${y(-48)}L${e(-14)} ${y(-38)}M${e(14)} ${y(-38)}L${e(36)} ${y(-48)}"/><circle fill="${c}" cx="${e(-24)}" cy="${y(-28)}" r="9"/><circle fill="${c}" cx="${e(24)}" cy="${y(-28)}" r="9"/><ellipse fill="${c}" cx="${e(0)}" cy="${y(8)}" rx="17" ry="20"/><ellipse fill="#ec6a55" cx="${e(0)}" cy="${y(18)}" rx="9" ry="6"/>`,
+      calm: `<path ${L(c, 7)} d="M${e(-35)} ${y(-32)}q11 8 22 0M${e(13)} ${y(-32)}q11 8 22 0"/><path ${L(c, 7)} d="M${e(-12)} ${y(-2)}q12 9 24 0"/>`,
+      nervous: `<circle fill="${c}" cx="${e(-22)}" cy="${y(-34)}" r="9"/><circle fill="#fff" cx="${e(-19)}" cy="${y(-37)}" r="3"/><circle fill="${c}" cx="${e(22)}" cy="${y(-34)}" r="9"/><circle fill="#fff" cx="${e(25)}" cy="${y(-37)}" r="3"/><path ${L(c, 6)} d="M${e(-36)} ${y(-58)}L${e(-14)} ${y(-64)}M${e(14)} ${y(-64)}L${e(36)} ${y(-58)}"/><path ${L(c, 6)} d="M${e(-14)} ${y(0)}q4 -5 9 0t9 0t9 0"/>`,
+      small: `<circle fill="${c}" cx="${e(-20)}" cy="${y(-30)}" r="9"/><circle fill="${c}" cx="${e(20)}" cy="${y(-30)}" r="9"/><path ${L(c, 6)} d="M${e(-9)} ${y(-4)}q9 6 18 0"/>`,
+      bored: `<path ${L(c, 6)} d="M${e(-30)} ${y(-30)}h16M${e(14)} ${y(-30)}h16"/><path fill="${c}" d="M${e(-30)} ${y(-30)}a8 6 0 0 0 16 0zM${e(14)} ${y(-30)}a8 6 0 0 0 16 0z"/><path ${L(c, 6)} d="M${e(-8)} ${y(-2)}h16"/>`,
+      sageglow: `<path ${L(W, 5.5)} d="M-36 -56Q-24 -61 -12 -56M12 -56Q24 -61 36 -56"/><path ${L(W, 6)} d="M-35 -30Q-24 -40 -13 -30M13 -30Q24 -40 35 -30"/><path ${L(W, 6.5)} d="M-15 -2Q0 9 15 -2"/>`,
+      sagecalm: `<path ${L(W, 5.5)} d="M-36 -56Q-24 -61 -12 -56M12 -56Q24 -61 36 -56"/><ellipse fill="${W}" cx="-24" cy="-30" rx="9" ry="12"/><ellipse fill="${W}" cx="24" cy="-30" rx="9" ry="12"/><path ${L(W, 6.5)} d="M-15 -2Q0 9 15 -2"/>`
+    })[f];
+  };
+  function cast(who, x, y, r, f = "ready", o = {}) {
+    const {rot = 0, sx = 1, sy = 1, shadow = true, look = [0, 0], cls = "", arm = null, rim = null} = o;
+    const [lt, md, dk] = PAL[who], id = "g" + (uid++), sh = SH[SHAPE_OF[who]];
+    const fc = who === "sage" ? W : INK;
+    const extra = who === "friend" || who === "mint" ? `<path ${L(dk, 10)} d="M2 -112q-4 -22 14 -26q14 -2 10 12"/>` : who === "sage" ? `<g transform="translate(0 -96)"><path ${L("#4f8a43", 6)} d="M0 0Q-3 -16 3 -30"/><ellipse fill="#5ea34e" cx="16" cy="-38" rx="16" ry="8" transform="rotate(-30 16 -38)"/><ellipse fill="#7cc46a" cx="-10" cy="-36" rx="15" ry="8" transform="rotate(28 -10 -36)"/></g>` : "";
+    const armSvg = arm ? `<g transform="rotate(${-arm[0] * arm[1]} ${arm[0] * 90} -4)"><ellipse fill="${arm[0] > 0 ? md : dk}" cx="${arm[0] * 90}" cy="32" rx="15" ry="26"/></g>` : "";
+    const fy = who === "bun" ? 28 : who === "friend" || who === "mint" ? 6 : 0;
+    const rimSvg = rim ? `<path d="${sh}" fill="none" stroke="${rim}" stroke-width="7" opacity=".7" stroke-dasharray="160 900" stroke-dashoffset="${rim === "#fff3c6" ? -20 : -360}"/>` : "";
+    return `${shadow ? `<ellipse cx="${x}" cy="${y + r * .95}" rx="${r * (who === "bun" ? 1.2 : .9)}" ry="${r * .15}" fill="#000" opacity=".2"/>` : ""}
+      <g class="${cls}"><g transform="translate(${x} ${y}) rotate(${rot}) scale(${r / 100 * sx} ${r / 100 * sy})"><defs><radialGradient id="${id}" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${md}"/><stop offset="1" stop-color="${dk}"/></radialGradient></defs>
+      ${extra}${armSvg}<path fill="url(#${id})" d="${sh}"/>${rimSvg}
+      <ellipse fill="#fff6e6" opacity="${who === "sage" ? .25 : .5}" cx="-46" cy="-58" rx="18" ry="11" transform="rotate(-35 -46 -58)"/>
+      ${who !== "sage" ? `<ellipse fill="#ec6a55" opacity=".3" cx="-44" cy="${-8 + fy}" rx="13" ry="8"/><ellipse fill="#ec6a55" opacity=".3" cx="44" cy="${-8 + fy}" rx="13" ry="8"/>` : ""}
+      <g transform="translate(0 ${fy})">${face(f, fc, look[0], look[1])}</g></g></g>`;
+  }
+  const spark = (x, y, s, c = "#fff6e6", cls = "") => `<path class="${cls}" fill="${c}" d="M${x} ${y - s}C${x + s * .12} ${y - s * .12} ${x + s * .12} ${y - s * .12} ${x + s} ${y}C${x + s * .12} ${y + s * .12} ${x + s * .12} ${y + s * .12} ${x} ${y + s}C${x - s * .12} ${y + s * .12} ${x - s * .12} ${y + s * .12} ${x - s} ${y}C${x - s * .12} ${y - s * .12} ${x - s * .12} ${y - s * .12} ${x} ${y - s}Z"/>`;
+  const grainF = id => `<filter id="${id}"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>`;
+  const frame = (label, inner) => { const id = "f" + (uid++); return `<svg viewBox="0 0 400 400" role="img" aria-label="${label}"><defs>${grainF(id + "n")}<clipPath id="${id}c"><rect width="400" height="400"/></clipPath></defs><g clip-path="url(#${id}c)">${inner(id)}<rect width="400" height="400" filter="url(#${id}n)" opacity=".15"/></g></svg>`; };
+  const lg = (id, stops, x2 = 0, y2 = 1) => `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}">${stops.map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join("")}</linearGradient>`;
+  const rg = (id, stops, cx = .5, cy = .5, r = .5) => `<radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}">${stops.map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join("")}</radialGradient>`;
+  // a repeating wave band 1200 wide (period 200), so it can slide 200 px and loop seamlessly
+  const waveBand = (y, amp, fill, cls, jag = 0) => { let d = `M-400 ${y}`; for (let x = -400; x <= 800; x += 25) { const k = (x + 400) % 200; const a = jag ? amp * (.4 + .6 * Math.abs(Math.sin(k * 1.7))) : amp; d += ` L${x} ${(y + Math.sin(k / 200 * Math.PI * 2) * a).toFixed(1)}`; } d += ` L800 400 L-400 400Z`; return `<path class="${cls}" d="${d}" fill="${fill}"/>`; };
+
+  // isometric helpers: (x, y) on the ground grid, z up
+  const ISO = (x, y, z = 0) => [200 + (x - y) * .866, 150 + (x + y) * .5 - z];
+  const P = pts => pts.map(p => ISO(...p).map(n => n.toFixed(1)).join(" ")).join(" L");
+  const box = (x, y, w, d, h, top, left, right, extra = "") => `<path d="M${P([[x, y, h], [x + w, y, h], [x + w, y + d, h], [x, y + d, h]])}Z" fill="${top}"/><path d="M${P([[x, y + d, h], [x + w, y + d, h], [x + w, y + d, 0], [x, y + d, 0]])}Z" fill="${left}"/><path d="M${P([[x + w, y, h], [x + w, y + d, h], [x + w, y + d, 0], [x + w, y, 0]])}Z" fill="${right}"/>${extra}`;
+
+  const cloud = (x, y, w, o = .95, c = "#fff") => `<g fill="${c}" opacity="${o}"><ellipse cx="${x}" cy="${y}" rx="${w * .6}" ry="${w * .2}"/><circle cx="${x - w * .15}" cy="${y - w * .14}" r="${w * .2}"/><circle cx="${x + w * .15}" cy="${y - w * .18}" r="${w * .24}"/></g>`;
+  const fly = (x, y, s, r, c1 = "#f08cc0", c2 = "#f4b73b", cls = "") => `<g class="${cls}"><g transform="translate(${x} ${y}) rotate(${r}) scale(${s})"><path d="M0 0 q-16 -20 -22 -4 q2 12 22 4z" fill="${c1}"/><path d="M0 0 q16 -20 22 -4 q-2 12 -22 4z" fill="${c2}"/><path d="M0 0 q-10 10 -12 16 q8 -2 12 -16z M0 0 q10 10 12 16 q-8 -2 -12 -16z" fill="${c1}" opacity=".8"/><path d="M0 -6 v12" stroke="#2a2420" stroke-width="2.4" stroke-linecap="round"/></g></g>`;
+  const glowF = (id, s = 6) => `<filter id="${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${s}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  const stars = (n, seed = 7, h = 400, o = .8) => Array.from({length: n}, (_, i) => { const x = (i * 97 + seed * 13) % 400, y = (i * 61 + seed * 7) % h, r = i % 9 ? 1 : 2; return `<circle class="${i % 7 ? "" : "twinkle"}" style="animation-delay:${(i % 5) * .4}s" cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${o * (.4 + (i % 4) * .15)}"/>`; }).join("");
+  const title = (t, sub, y = 40) => `<text x="200" y="${y}" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="18" fill="#fff" opacity=".95">${t}</text>${sub ? `<text x="200" y="${y + 18}" text-anchor="middle" font-family="Fredoka" font-weight="600" font-size="11" fill="#d0c4ff">${sub}</text>` : ""}`;
+  const PIECES = [
+    {t: "Storm inside, calm outside", idea: "You feel a storm; they see a calm face. Speakers rate their own nerves far higher than audiences do (Savitsky & Gilovich, 2003).", tech: "An x-ray window into a character: weather inside, a still night outside", where: "Learn card: “Everyone can see how nervous I am”; a social post", draw: frame("You standing calmly under the stars, with a window in your body showing a lightning storm raging inside", id => `
+      <defs>${glowF(id + "g", 6)}${rg(id + "bg", [[0, "#24205a"], [1, "#08061e"]], .5, .45, .8)}${rg(id + "in", [[0, "#3a3f7a"], [1, "#141838"]])}<clipPath id="${id}win"><circle cx="200" cy="268" r="40"/></clipPath></defs>
+      <rect width="400" height="400" fill="url(#${id}bg)"/>${stars(60, 4)}
+      <path d="M0 330 C100 316 300 324 400 316 V400 H0Z" fill="#1a1540"/>
+      ${cast("you", 200, 206, 100, "calm", {shadow: false})}
+      <circle cx="200" cy="268" r="44" fill="#1a1a3a"/>
+      <g clip-path="url(#${id}win)"><g transform="translate(0 36) scale(1)"><rect x="140" y="170" width="120" height="130" fill="url(#${id}in)"/>
+        ${cloud(186, 206, 70, 1, "#6a6ea8")}${cloud(226, 218, 60, 1, "#5a5e98")}
+        <path d="M206 220 l-14 28 h12 l-10 26 26 -36 h-12 l10 -18z" fill="#ffe08a" filter="url(#${id}g)" class="twinkle" style="animation-duration:.7s"/>
+        ${Array.from({length: 10}, (_, i) => `<path d="M${152 + i * 10} ${236 + (i % 3) * 12} l-6 14" stroke="#9fc4ff" stroke-width="2.5" stroke-linecap="round" class="drip" style="animation-duration:.9s;animation-delay:${i * .09}s"/>`).join("")}</g></g>
+      <circle cx="200" cy="268" r="42" fill="none" stroke="#c96a35" stroke-width="6"/><circle cx="200" cy="268" r="42" fill="none" stroke="#fff" stroke-width="2" opacity=".3"/>
+      <g font-family="Fredoka" font-weight="700" font-size="11"><text x="296" y="272" fill="#ffd27a">HOW IT FEELS</text><path d="M292 268 H246" stroke="#ffd27a" stroke-width="1.5"/>
+      <text x="30" y="150" fill="#9fece0">HOW IT LOOKS</text><path d="M110 154 L156 166" stroke="#9fece0" stroke-width="1.5"/></g>
+      ${title("THEY SEE FAR LESS THAN YOU FEEL", "")}`)},
+    {t: "One second, two clocks", idea: "A pause that feels endless to you sounds natural, even confident, to them.", tech: "Two glowing hourglasses in space: the same second, stretched and normal", where: "Learn card: “A pause feels much longer to you”; pausing lessons", draw: frame("Two glowing hourglasses side by side: yours stretched impossibly tall, theirs a normal one second", id => `
+      <defs>${glowF(id + "g", 6)}${rg(id + "bg", [[0, "#2a1a4a"], [1, "#0a0618"]], .5, .5, .8)}${lg(id + "sand", [[0, "#ffd27a"], [1, "#f08a4a"]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}bg)"/>${stars(50, 6)}
+      ${[[130, 70, 300, "HOW IT FEELS TO YOU", "#ff8ac4"], [280, 210, 160, "HOW IT SOUNDS TO THEM", "#7fd3e0"]].map(([x, top, h, l, c], i) => `<g filter="url(#${id}g)"><path d="M${x - 40} ${top} H${x + 40} M${x - 40} ${top + h} H${x + 40}" stroke="${c}" stroke-width="7" stroke-linecap="round"/>
+        <path d="M${x - 32} ${top + 6} C${x - 32} ${top + h * .4} ${x - 4} ${top + h * .46} ${x - 4} ${top + h / 2} C${x - 4} ${top + h * .54} ${x - 32} ${top + h * .6} ${x - 32} ${top + h - 6} H${x + 32} C${x + 32} ${top + h * .6} ${x + 4} ${top + h * .54} ${x + 4} ${top + h / 2} C${x + 4} ${top + h * .46} ${x + 32} ${top + h * .4} ${x + 32} ${top + 6}Z" fill="${c}" fill-opacity=".1" stroke="${c}" stroke-width="3"/></g>
+        <path d="M${x - 20} ${top + h * .3} Q${x} ${top + h * .36} ${x + 20} ${top + h * .3} L${x + 4} ${top + h / 2 - 4} H${x - 4}Z" fill="url(#${id}sand)"/>
+        <path d="M${x} ${top + h / 2} V${top + h - 30}" stroke="#ffd27a" stroke-width="2" stroke-dasharray="3 5" class="thread"/>
+        <path d="M${x - 26} ${top + h - 6} Q${x} ${top + h - 30} ${x + 26} ${top + h - 6}Z" fill="url(#${id}sand)"/>
+        <text x="${x}" y="${top + h + 24}" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="10" fill="${c}">${l}</text>`).join("")}
+      ${cast("you", 60, 352, 18, "nervous", {shadow: false, look: [6, -6]})}${cast("lilac", 350, 360, 16, "small", {shadow: false, look: [-6, -6]})}
+      ${title("ONE SECOND", "")}`)},
+    {t: "Feelings are contagious", idea: "A real smile spreads: people tend to catch the emotions they see and hear (emotional contagion).", tech: "A chain reaction of light across a crowd", where: "Learn set: Warmth and connection; a social post", draw: frame("You smiling at the front of a dark crowd, a wave of warm light spreading from face to face so they smile too", id => `
+      <defs>${glowF(id + "g", 7)}${lg(id + "bg", [[0, "#140c30"], [1, "#2a1450"]])}${rg(id + "w", [[0, "#ffd27a", .6], [1, "#ffd27a", 0]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}bg)"/>${stars(40, 8, 160)}
+      ${[0, 1, 2].map(i => `<circle cx="200" cy="300" r="${80 + i * 70}" fill="none" stroke="#ffd27a" stroke-width="${3 - i}" opacity="${.5 - i * .14}" filter="url(#${id}g)" class="twinkle" style="animation-delay:${i * .4}s;animation-duration:2.4s"/>`).join("")}
+      <circle cx="200" cy="300" r="110" fill="url(#${id}w)"/>
+      ${[[60, 200, 16, "lilac", 3], [120, 186, 16, "sky", 2], [280, 186, 16, "rose", 2], [340, 200, 16, "mint", 3], [40, 270, 20, "sky", 2], [110, 252, 20, "mint", 1], [290, 252, 20, "lilac", 1], [360, 270, 20, "rose", 2], [170, 196, 14, "rose", 2], [230, 196, 14, "lilac", 2]].map(([x, y, r, w, ring]) => `${ring < 3 ? `<circle cx="${x}" cy="${y}" r="${r * 1.7}" fill="#ffd27a" opacity="${.3 - ring * .08}"/>` : ""}${cast(w, x, y, r, ring < 3 ? "happy" : "small", {shadow: false, look: [(200 - x) / 30, 4]})}`).join("")}
+      ${cast("you", 200, 300, 38, "happy", {shadow: false})}
+      ${title("SMILES SPREAD", "people catch the feelings they see")}`)},
+    {t: "Brains in sync", idea: "When you tell a story, the listener’s brain activity starts to echo yours (Stephens, Silbert & Hasson, 2010).", tech: "Two glowing brain-planets linked by threads of light, the same pattern lighting in both", where: "Course header: Stories that land; a social post", draw: frame("Two glowing brains like planets, linked by threads of light, with the same pattern of lights shining in both as you tell the friend a story", id => `
+      <defs>${glowF(id + "g", 6)}${rg(id + "bg", [[0, "#1a2050"], [1, "#05061a"]], .5, .5, .8)}${rg(id + "b1", [[0, "#ff9ac0"], [1, "#9a3a7a"]], .35, .3, .8)}${rg(id + "b2", [[0, "#8ae0ff"], [1, "#2a6a9a"]], .35, .3, .8)}</defs>
+      <rect width="400" height="400" fill="url(#${id}bg)"/>${stars(60, 12)}
+      ${[[110, "url(#" + id + "b1)"], [290, "url(#" + id + "b2)"]].map(([x, f]) => `<g filter="url(#${id}g)"><path d="M${x - 60} 170 C${x - 70} 120 ${x - 30} 90 ${x} 92 C${x + 40} 88 ${x + 70} 120 ${x + 62} 168 C${x + 56} 210 ${x + 20} 222 ${x} 214 C${x - 30} 222 ${x - 56} 210 ${x - 60} 170Z" fill="${f}"/></g><path d="M${x} 96 V210 M${x - 40} 130 q20 10 30 -6 M${x + 10} 150 q20 16 36 -4 M${x - 46} 180 q20 -10 34 8" stroke="#fff" stroke-width="2.4" fill="none" opacity=".35"/>`).join("")}
+      ${[[-30, 120], [10, 160], [36, 128], [-18, 190]].map(([dx, y], i) => `<circle cx="${110 + dx}" cy="${y}" r="6" fill="#fff6d6" filter="url(#${id}g)" class="twinkle" style="animation-delay:${i * .5}s"/><circle cx="${290 + dx}" cy="${y}" r="6" fill="#fff6d6" filter="url(#${id}g)" class="twinkle" style="animation-delay:${i * .5 + .25}s"/><path d="M${116 + dx} ${y} Q200 ${y - 40 + i * 20} ${284 + dx} ${y}" stroke="#ffd27a" stroke-width="2" fill="none" stroke-dasharray="3 8" class="thread" opacity=".8"/>`).join("")}
+      ${cast("you", 110, 310, 34, "happy", {shadow: false, look: [8, -4]})}${cast("friend", 290, 306, 32, "wow", {shadow: false, look: [-8, -6]})}
+      <g transform="translate(160 300)"><rect x="-26" y="-14" width="52" height="26" rx="13" fill="#fff"/><path d="M-14 10 l-8 10 12 -8z" fill="#fff"/>${[-10, 0, 10].map(dx => `<circle cx="${dx}" cy="-1" r="3" fill="#ff8ac4"/>`).join("")}</g>
+      ${title("BRAINS IN SYNC", "a good story makes the listener’s brain echo yours")}`)},
+    {t: "The long breath out", idea: "Breathing out slower than you breathe in gently slows your heart: a calm you can use backstage.", tech: "A glowing heart-rate line easing under a long exhale", where: "Lesson: Low breath; ‘Take a breath’ before a take", draw: frame("You breathing out a long glowing ribbon of air while a heart-rate line beside you slows from fast peaks to gentle waves", id => `
+      <defs>${glowF(id + "g", 5)}${lg(id + "bg", [[0, "#0c2a3a"], [1, "#061620"]])}${lg(id + "air", [[0, "#9fece0", .9], [1, "#9fece0", 0]], 1, 0)}</defs>
+      <rect width="400" height="400" fill="url(#${id}bg)"/>${stars(30, 14, 400, .5)}
+      <g filter="url(#${id}g)"><path d="M20 160 H70 l8 -40 10 80 10 -60 8 20 H140 l8 -34 10 66 10 -48 8 16 H220 l10 -22 12 40 12 -26 H290 q10 -10 20 0 t20 0 t20 0 t20 0" stroke="#ff7a86" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+      <text x="40" y="104" font-family="Fredoka" font-weight="700" font-size="10" fill="#ff9aa6">BEFORE</text><text x="320" y="132" font-family="Fredoka" font-weight="700" font-size="10" fill="#9fece0">AFTER</text>
+      <g transform="translate(130 300)"><text x="-60" y="-80" font-family="Fredoka" font-weight="700" font-size="12" fill="#9fece0">IN · 4</text><text x="96" y="-80" font-family="Fredoka" font-weight="700" font-size="12" fill="#9fece0">OUT · 6</text></g>
+      <path d="M140 298 C200 270 260 320 330 280 C360 262 380 270 400 260" stroke="url(#${id}air)" stroke-width="16" fill="none" stroke-linecap="round" filter="url(#${id}g)"/>
+      <path d="M140 298 C200 270 260 320 330 280" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="2 12" class="thread" opacity=".7"/>
+      ${cast("you", 100, 300, 44, "calm", {shadow: false})}
+      ${title("BREATHE OUT LONGER", "a slow exhale gently slows your heart")}`)},
+    {t: "How fast you talk", idea: "Most people speak somewhere around 120 to 160 words a minute. Nerves push you faster than you think.", tech: "A glowing speedometer and comet trails of words", where: "Course: A voice they lean in for; lesson: Brisk, then slow", draw: frame("A glowing speedometer with a needle pushed into the red by nerves, words streaking past like comets", id => `
+      <defs>${glowF(id + "g", 6)}${rg(id + "bg", [[0, "#2a1440"], [1, "#0a0614"]], .5, .6, .8)}</defs>
+      <rect width="400" height="400" fill="url(#${id}bg)"/>${stars(50, 15)}
+      ${[["so", 40, 100], ["and", 300, 70], ["um", 70, 150], ["like", 330, 140]].map(([w, x, y], i) => `<g class="far" style="animation-duration:${3 + i}s"><g transform="translate(${x + 400} ${y})"><path d="M0 0 H-60" stroke="#ff8ac4" stroke-width="3" opacity=".5" stroke-linecap="round"/><text x="4" y="5" font-family="Fredoka" font-weight="700" font-size="14" fill="#ffb0d8">${w}</text></g></g>`).join("")}
+      <g transform="translate(200 270)">
+        <path d="M-130 0 A130 130 0 0 1 130 0" stroke="#2a2050" stroke-width="22" fill="none"/>
+        <path d="M-130 0 A130 130 0 0 1 -40 -124" stroke="#4a68e0" stroke-width="22" fill="none" filter="url(#${id}g)"/>
+        <path d="M-40 -124 A130 130 0 0 1 60 -115" stroke="#7fd39a" stroke-width="22" fill="none" filter="url(#${id}g)"/>
+        <path d="M60 -115 A130 130 0 0 1 130 0" stroke="#ff5a6a" stroke-width="22" fill="none" filter="url(#${id}g)"/>
+        ${[0, 1, 2, 3, 4, 5, 6].map(i => { const a = Math.PI + i * Math.PI / 6; return `<path d="M${Math.cos(a) * 104} ${Math.sin(a) * 104} L${Math.cos(a) * 114} ${Math.sin(a) * 114}" stroke="#fff" stroke-width="2" opacity=".6"/><text x="${Math.cos(a) * 90}" y="${Math.sin(a) * 90 + 4}" text-anchor="middle" font-family="Fredoka" font-weight="600" font-size="9" fill="#fff" opacity=".7">${60 + i * 40}</text>`; }).join("")}
+        <g class="beam" style="transform-box:view-box;transform-origin:200px 270px;animation:needle 1.6s ease-in-out infinite alternate"><path d="M0 0 L88 -58" stroke="#fff6d6" stroke-width="5" stroke-linecap="round" filter="url(#${id}g)"/></g>
+        <circle r="12" fill="#fff6d6"/>
+        <text x="0" y="-40" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="11" fill="#7fd39a">SWEET SPOT</text>
+        <text x="0" y="40" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="12" fill="#fff" opacity=".8">WORDS A MINUTE</text>
+      </g>
+      ${cast("you", 330, 352, 22, "nervous", {shadow: false, look: [-6, -6]})}
+      ${title("HOW FAST DO YOU TALK?", "most people: about 120–160 words a minute")}`)}
+  ];
+
+  document.getElementById("grid").innerHTML = PIECES.map((p, i) => `<figure>${p.draw}<figcaption><em>${p.tech}</em><b>${i + 1}. ${p.t}</b><span>${p.idea}</span><span>Could live: ${p.where}</span></figcaption></figure>`).join("");
+  document.getElementById("strip").innerHTML = PIECES.map(p => p.draw.replace("<svg ", '<svg width="80" height="80" style="border-radius:16px" ')).join("") + '<span style="font-size:13px;color:var(--muted)">At 80 px, about tile size on a phone.</span>';
+  const btn = document.getElementById("motion"), grid = document.getElementById("grid");
+  btn.addEventListener("click", () => { const on = grid.classList.toggle("mv"); btn.setAttribute("aria-pressed", String(on)); btn.textContent = "Motion: " + (on ? "on" : "off"); });
+})();
+</script>
+
+</body></html>
