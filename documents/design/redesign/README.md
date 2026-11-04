@@ -66,6 +66,8 @@ Saved in [art-studies/](art-studies/), each an HTML page to open in a browser:
 | `power.html`, `final.html` | Six animated showpieces; four (the shadow, echo canyon, story town, train of thought) finished as a benchmark |
 | `more8.html` | Eight lesson scenes (pause bridge, headline, the landing, the maze, a jar of moments, pop-up book, balloon, word playground) |
 | `wild.html` | Eight unconstrained ideas (inside your head, silence is golden, conversation tennis, butterflies in formation, voice river, memory palace, story blueprint, travel poster) |
+| `five.html` | Five less busy ideas: a transit map of a talk, a recipe for a toast, air traffic control, the cutting room, a conversation forecast |
+| `story-blueprint.mp4` | A silent 17-second, 4:5 animation of the story blueprint (Remotion composition `StoryBlueprint`, `video/src/demo/StoryBlueprint.tsx`). The user thinks the busier scenes may suit video lessons better than tiles |
 
 **The user's picks:** favourites are **Silence is golden** (the museum of the pause) and **Blueprint of a story**; they also like the visuals of **Inside your head** (the cutaway) and **The landing** (the paper plane on the runway). Earlier picks: the shadow, echo canyon, story town, train of thought. The user: the limiting factor is creativity, not drawing; keep exploring ambitiously, then make it coherent with the app's style later.
 

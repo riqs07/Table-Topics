@@ -1,0 +1,226 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>VoiceLab Format Ideas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: a header with a motion switch, then six large showpieces in a two-column grid; each caption names the idea and the technique it shows off. */
+:root{--bg:#f3efe8;--surface:#fffdf9;--fg:#231f1c;--muted:#6b635c;--line:#e3dbd0;--chip:#ece5da;--focus:#2c8050;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--round:"Fredoka",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--chip:#2b2723;--focus:#6fd39a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--chip:#2b2723;--focus:#6fd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:flex;flex-direction:column;gap:22px}
+.head{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between}
+h1{font-family:var(--round);font-weight:600;font-size:clamp(28px,4vw,42px);line-height:1.05;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:76ch}
+.btn{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:9px 14px;cursor:pointer}
+.btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:20px}
+@media (max-width:540px){.grid{grid-template-columns:1fr}}
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:10px 10px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+figure svg{width:100%;height:auto;display:block;border-radius:20px}
+figcaption{padding:0 8px;display:flex;flex-direction:column;gap:4px}
+figcaption b{font-family:var(--round);font-weight:600;font-size:20px}
+figcaption span{font-size:14px;color:var(--muted)}
+figcaption em{font-style:normal;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+/* motion: one or two slow movements per piece */
+.mv .wave1{animation:wave 9s linear infinite}.mv .wave2{animation:wave 6s linear infinite}.mv .wave3{animation:wave 4s linear infinite}
+@keyframes wave{to{transform:translateX(-200px)}}
+.mv .bob{animation:bob 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-3deg)}}
+.mv .beam{animation:beam 7s ease-in-out infinite alternate;transform-box:view-box;transform-origin:318px 118px}
+@keyframes beam{from{transform:rotate(-14deg)}to{transform:rotate(16deg)}}
+.mv .shadowbreathe{animation:sb 2.6s ease-in-out infinite;transform-box:view-box;transform-origin:250px 300px}
+@keyframes sb{50%{transform:scale(1.04,1.07) skewX(-2deg)}}
+.mv .shiver{animation:shiver .5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes shiver{25%{transform:translateX(-1.5px)}75%{transform:translateX(1.5px)}}
+.mv .echo{animation:echo 4.5s ease-in-out infinite}
+@keyframes echo{0%,10%{opacity:0}25%,70%{opacity:1}100%{opacity:0}}
+.mv .far{animation:par 30s linear infinite}.mv .near{animation:par 12s linear infinite}.mv .track{animation:par 4s linear infinite}
+@keyframes par{to{transform:translateX(-400px)}}
+.mv .wheel{animation:spin 1s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mv .puff{animation:puff 3s ease-out infinite}
+@keyframes puff{0%{transform:translate(0,0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translate(-60px,-90px) scale(1.2);opacity:0}}
+.mv .dust{animation:dust 8s ease-in-out infinite alternate}
+@keyframes dust{to{transform:translate(18px,-22px)}}
+.mv .drip{animation:drip 1.4s linear infinite}
+@keyframes drip{from{transform:translateY(0);opacity:1}to{transform:translateY(46px);opacity:0}}
+.mv .walk{animation:walk 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes walk{50%{transform:translateY(-4px)}}
+.mv .twinkle{animation:tw 2.4s ease-in-out infinite alternate}
+@keyframes tw{to{opacity:.25}}
+.mv .radar{animation:spin 4s linear infinite;transform-box:view-box;transform-origin:200px 300px}
+.mv .thread{animation:thread 3s linear infinite}
+@keyframes thread{to{stroke-dashoffset:-48}}
+@media (prefers-reduced-motion:reduce){.mv *{animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Five more: formats and single ideas</h1>
+      <p class="lede">Building on the museum and the blueprint: one clear idea each, a few labels inside the picture, and less clutter. Three are special formats (a transit map, a recipe card, a weather map), two are scenes with one focal point. They move gently; switch motion off for still frames.</p>
+    </div>
+    <button class="btn" id="motion" type="button" aria-pressed="true">Motion: on</button>
+  </div>
+  <div class="grid mv" id="grid"></div>
+  <div class="strip" id="strip" style="background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>
+</div>
+
+<script>
+(() => {
+  let uid = 0;
+  const SH = {
+    round: "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z",
+    egg: "M0 -114C52 -114 92 -42 92 10C92 62 52 94 0 94C-52 94 -92 62 -92 10C-92 -42 -52 -114 0 -114Z",
+    wobbly: "M4 -104C50 -110 74 -76 98 -50C124 -22 118 30 96 58C72 90 30 96 -6 94C-52 92 -96 74 -108 34C-120 -8 -100 -44 -72 -72C-50 -94 -26 -102 4 -104Z",
+    bun: "M0 -60C76 -60 132 -30 132 22C132 66 82 94 0 94C-82 94 -132 66 -132 22C-132 -30 -76 -60 0 -60Z",
+    squircle: "M0 -100C80 -100 100 -80 100 -2C100 76 80 94 0 94C-80 94 -100 76 -100 -2C-100 -80 -80 -100 0 -100Z"
+  };
+  const PAL = {you: ["#f7b07c", "#e8935c", "#c96a35"], friend: ["#5fd6c8", "#2fb3a4", "#1d8476"], sage: ["#5f9a6f", "#2d5a3d", "#1b3a26"], wobbly: ["#f8b0d6", "#f08cc0", "#c9619a"],
+    bun: ["#ffd77a", "#f4b73b", "#cf8f1c"], squircle: ["#8a9cf2", "#5b6ee1", "#3e4fbf"], lilac: ["#c4b4f2", "#9b82e6", "#7a60c6"], mint: ["#b4ecc4", "#7fd39a", "#4fa86c"], sky: ["#9fc4ff", "#6f8ff0", "#4a68d0"], rose: ["#ffc2b4", "#f49a86", "#d0735f"]};
+  const SHAPE_OF = {you: "round", friend: "egg", sage: "round", wobbly: "wobbly", bun: "bun", squircle: "squircle", lilac: "round", mint: "egg", sky: "round", rose: "round"};
+  const INK = "#2a2420", W = "#fcfcfb";
+  const L = (c, w = 7) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+  const face = (f, c, lx = 0, ly = 0) => {
+    const e = x => x + lx, y = v => v + ly;
+    return ({
+      ready: `<ellipse fill="${c}" cx="${e(-24)}" cy="${y(-34)}" rx="10" ry="14.5"/><ellipse fill="${c}" cx="${e(24)}" cy="${y(-34)}" rx="10" ry="14.5"/><circle fill="#fff" cx="${e(-20)}" cy="${y(-40)}" r="3.6"/><circle fill="#fff" cx="${e(28)}" cy="${y(-40)}" r="3.6"/><path ${L(c, 7.5)} d="M${e(-15)} ${y(-4)}q15 13 30 0"/>`,
+      happy: `<path ${L(c, 7.5)} d="M${e(-38)} ${y(-28)}L${e(-24)} ${y(-42)} ${e(-10)} ${y(-28)}M${e(10)} ${y(-28)}L${e(24)} ${y(-42)} ${e(38)} ${y(-28)}"/><path fill="${c}" d="M${e(-23)} ${y(-12)}h46q0 23-23 23t-23-23z"/><path fill="#ec6a55" d="M${e(-12)} ${y(4)}q12-8 24 0q-5 7-12 7t-12-7z"/>`,
+      shout: `<path ${L(c, 7)} d="M${e(-36)} ${y(-48)}L${e(-14)} ${y(-38)}M${e(14)} ${y(-38)}L${e(36)} ${y(-48)}"/><circle fill="${c}" cx="${e(-24)}" cy="${y(-28)}" r="9"/><circle fill="${c}" cx="${e(24)}" cy="${y(-28)}" r="9"/><ellipse fill="${c}" cx="${e(0)}" cy="${y(8)}" rx="17" ry="20"/><ellipse fill="#ec6a55" cx="${e(0)}" cy="${y(18)}" rx="9" ry="6"/>`,
+      calm: `<path ${L(c, 7)} d="M${e(-35)} ${y(-32)}q11 8 22 0M${e(13)} ${y(-32)}q11 8 22 0"/><path ${L(c, 7)} d="M${e(-12)} ${y(-2)}q12 9 24 0"/>`,
+      nervous: `<circle fill="${c}" cx="${e(-22)}" cy="${y(-34)}" r="9"/><circle fill="#fff" cx="${e(-19)}" cy="${y(-37)}" r="3"/><circle fill="${c}" cx="${e(22)}" cy="${y(-34)}" r="9"/><circle fill="#fff" cx="${e(25)}" cy="${y(-37)}" r="3"/><path ${L(c, 6)} d="M${e(-36)} ${y(-58)}L${e(-14)} ${y(-64)}M${e(14)} ${y(-64)}L${e(36)} ${y(-58)}"/><path ${L(c, 6)} d="M${e(-14)} ${y(0)}q4 -5 9 0t9 0t9 0"/>`,
+      small: `<circle fill="${c}" cx="${e(-20)}" cy="${y(-30)}" r="9"/><circle fill="${c}" cx="${e(20)}" cy="${y(-30)}" r="9"/><path ${L(c, 6)} d="M${e(-9)} ${y(-4)}q9 6 18 0"/>`,
+      bored: `<path ${L(c, 6)} d="M${e(-30)} ${y(-30)}h16M${e(14)} ${y(-30)}h16"/><path fill="${c}" d="M${e(-30)} ${y(-30)}a8 6 0 0 0 16 0zM${e(14)} ${y(-30)}a8 6 0 0 0 16 0z"/><path ${L(c, 6)} d="M${e(-8)} ${y(-2)}h16"/>`,
+      sageglow: `<path ${L(W, 5.5)} d="M-36 -56Q-24 -61 -12 -56M12 -56Q24 -61 36 -56"/><path ${L(W, 6)} d="M-35 -30Q-24 -40 -13 -30M13 -30Q24 -40 35 -30"/><path ${L(W, 6.5)} d="M-15 -2Q0 9 15 -2"/>`,
+      sagecalm: `<path ${L(W, 5.5)} d="M-36 -56Q-24 -61 -12 -56M12 -56Q24 -61 36 -56"/><ellipse fill="${W}" cx="-24" cy="-30" rx="9" ry="12"/><ellipse fill="${W}" cx="24" cy="-30" rx="9" ry="12"/><path ${L(W, 6.5)} d="M-15 -2Q0 9 15 -2"/>`
+    })[f];
+  };
+  function cast(who, x, y, r, f = "ready", o = {}) {
+    const {rot = 0, sx = 1, sy = 1, shadow = true, look = [0, 0], cls = "", arm = null, rim = null} = o;
+    const [lt, md, dk] = PAL[who], id = "g" + (uid++), sh = SH[SHAPE_OF[who]];
+    const fc = who === "sage" ? W : INK;
+    const extra = who === "friend" || who === "mint" ? `<path ${L(dk, 10)} d="M2 -112q-4 -22 14 -26q14 -2 10 12"/>` : who === "sage" ? `<g transform="translate(0 -96)"><path ${L("#4f8a43", 6)} d="M0 0Q-3 -16 3 -30"/><ellipse fill="#5ea34e" cx="16" cy="-38" rx="16" ry="8" transform="rotate(-30 16 -38)"/><ellipse fill="#7cc46a" cx="-10" cy="-36" rx="15" ry="8" transform="rotate(28 -10 -36)"/></g>` : "";
+    const armSvg = arm ? `<g transform="rotate(${-arm[0] * arm[1]} ${arm[0] * 90} -4)"><ellipse fill="${arm[0] > 0 ? md : dk}" cx="${arm[0] * 90}" cy="32" rx="15" ry="26"/></g>` : "";
+    const fy = who === "bun" ? 28 : who === "friend" || who === "mint" ? 6 : 0;
+    const rimSvg = rim ? `<path d="${sh}" fill="none" stroke="${rim}" stroke-width="7" opacity=".7" stroke-dasharray="160 900" stroke-dashoffset="${rim === "#fff3c6" ? -20 : -360}"/>` : "";
+    return `${shadow ? `<ellipse cx="${x}" cy="${y + r * .95}" rx="${r * (who === "bun" ? 1.2 : .9)}" ry="${r * .15}" fill="#000" opacity=".2"/>` : ""}
+      <g class="${cls}"><g transform="translate(${x} ${y}) rotate(${rot}) scale(${r / 100 * sx} ${r / 100 * sy})"><defs><radialGradient id="${id}" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${md}"/><stop offset="1" stop-color="${dk}"/></radialGradient></defs>
+      ${extra}${armSvg}<path fill="url(#${id})" d="${sh}"/>${rimSvg}
+      <ellipse fill="#fff6e6" opacity="${who === "sage" ? .25 : .5}" cx="-46" cy="-58" rx="18" ry="11" transform="rotate(-35 -46 -58)"/>
+      ${who !== "sage" ? `<ellipse fill="#ec6a55" opacity=".3" cx="-44" cy="${-8 + fy}" rx="13" ry="8"/><ellipse fill="#ec6a55" opacity=".3" cx="44" cy="${-8 + fy}" rx="13" ry="8"/>` : ""}
+      <g transform="translate(0 ${fy})">${face(f, fc, look[0], look[1])}</g></g></g>`;
+  }
+  const spark = (x, y, s, c = "#fff6e6", cls = "") => `<path class="${cls}" fill="${c}" d="M${x} ${y - s}C${x + s * .12} ${y - s * .12} ${x + s * .12} ${y - s * .12} ${x + s} ${y}C${x + s * .12} ${y + s * .12} ${x + s * .12} ${y + s * .12} ${x} ${y + s}C${x - s * .12} ${y + s * .12} ${x - s * .12} ${y + s * .12} ${x - s} ${y}C${x - s * .12} ${y - s * .12} ${x - s * .12} ${y - s * .12} ${x} ${y - s}Z"/>`;
+  const grainF = id => `<filter id="${id}"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>`;
+  const frame = (label, inner) => { const id = "f" + (uid++); return `<svg viewBox="0 0 400 400" role="img" aria-label="${label}"><defs>${grainF(id + "n")}<clipPath id="${id}c"><rect width="400" height="400"/></clipPath></defs><g clip-path="url(#${id}c)">${inner(id)}<rect width="400" height="400" filter="url(#${id}n)" opacity=".15"/></g></svg>`; };
+  const lg = (id, stops, x2 = 0, y2 = 1) => `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}">${stops.map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join("")}</linearGradient>`;
+  const rg = (id, stops, cx = .5, cy = .5, r = .5) => `<radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}">${stops.map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join("")}</radialGradient>`;
+  // a repeating wave band 1200 wide (period 200), so it can slide 200 px and loop seamlessly
+  const waveBand = (y, amp, fill, cls, jag = 0) => { let d = `M-400 ${y}`; for (let x = -400; x <= 800; x += 25) { const k = (x + 400) % 200; const a = jag ? amp * (.4 + .6 * Math.abs(Math.sin(k * 1.7))) : amp; d += ` L${x} ${(y + Math.sin(k / 200 * Math.PI * 2) * a).toFixed(1)}`; } d += ` L800 400 L-400 400Z`; return `<path class="${cls}" d="${d}" fill="${fill}"/>`; };
+
+  // isometric helpers: (x, y) on the ground grid, z up
+  const ISO = (x, y, z = 0) => [200 + (x - y) * .866, 150 + (x + y) * .5 - z];
+  const P = pts => pts.map(p => ISO(...p).map(n => n.toFixed(1)).join(" ")).join(" L");
+  const box = (x, y, w, d, h, top, left, right, extra = "") => `<path d="M${P([[x, y, h], [x + w, y, h], [x + w, y + d, h], [x, y + d, h]])}Z" fill="${top}"/><path d="M${P([[x, y + d, h], [x + w, y + d, h], [x + w, y + d, 0], [x, y + d, 0]])}Z" fill="${left}"/><path d="M${P([[x + w, y, h], [x + w, y + d, h], [x + w, y + d, 0], [x + w, y, 0]])}Z" fill="${right}"/>${extra}`;
+
+  const cloud = (x, y, w, o = .95, c = "#fff") => `<g fill="${c}" opacity="${o}"><ellipse cx="${x}" cy="${y}" rx="${w * .6}" ry="${w * .2}"/><circle cx="${x - w * .15}" cy="${y - w * .14}" r="${w * .2}"/><circle cx="${x + w * .15}" cy="${y - w * .18}" r="${w * .24}"/></g>`;
+  const fly = (x, y, s, r, c1 = "#f08cc0", c2 = "#f4b73b", cls = "") => `<g class="${cls}"><g transform="translate(${x} ${y}) rotate(${r}) scale(${s})"><path d="M0 0 q-16 -20 -22 -4 q2 12 22 4z" fill="${c1}"/><path d="M0 0 q16 -20 22 -4 q-2 12 -22 4z" fill="${c2}"/><path d="M0 0 q-10 10 -12 16 q8 -2 12 -16z M0 0 q10 10 12 16 q-8 -2 -12 -16z" fill="${c1}" opacity=".8"/><path d="M0 -6 v12" stroke="#2a2420" stroke-width="2.4" stroke-linecap="round"/></g></g>`;
+  const PIECES = [
+    {t: "The talk line", idea: "Your talk as a transit map: board at the Opening, change at the Story, get off at the Close. You are here.", tech: "A special format: a transit map, clean lines and stations", where: "A course path; Rehearse my talk; Ready by the day", draw: frame("A transit map of a talk with a red opening line, a blue story line and a green close line meeting at interchange stations, with a you-are-here marker", id => `
+      <rect width="400" height="400" fill="#f6f1e6"/>
+      <rect x="18" y="18" width="364" height="364" rx="14" fill="none" stroke="#2a2420" stroke-width="3"/>
+      <text x="36" y="56" font-family="Fredoka" font-weight="700" font-size="20" fill="#2a2420">THE TALK LINE</text><text x="36" y="74" font-family="Fredoka" font-weight="600" font-size="11" fill="#8a8070">Toast for Sam · Saturday</text>
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="12">
+        <path d="M54 300 H130 L170 260 V180" stroke="#ec6a55"/>
+        <path d="M170 180 H250 L290 140 V110" stroke="#4a68e0"/>
+        <path d="M170 180 V140 L210 100 H250" stroke="#4a68e0" opacity=".0"/>
+        <path d="M290 110 V200 L330 240 V320" stroke="#4cbf7c"/>
+      </g>
+      ${[[54, 300, "#ec6a55", "Hello", "end"], [130, 300, "#ec6a55", "The hook", ""], [170, 220, "#ec6a55", "", ""], [210, 180, "#4a68e0", "Flat", ""], [250, 180, "#4a68e0", "Fire", ""], [290, 200, "#4cbf7c", "", ""], [330, 280, "#4cbf7c", "Raise a glass", ""], [330, 320, "#4cbf7c", "Thank you", "end"]].map(([x, y, c, n, k]) => `<circle cx="${x}" cy="${y}" r="${k ? 10 : 7}" fill="#fff" stroke="${c}" stroke-width="5"/>${n ? `<text x="${x + (x > 300 ? -14 : 0)}" y="${y + (y === 180 ? 28 : 26)}" text-anchor="${x > 300 ? "end" : "middle"}" font-family="Fredoka" font-weight="600" font-size="11" fill="#2a2420">${n}</text>` : ""}`).join("")}
+      ${[[170, 180], [290, 110]].map(([x, y]) => `<rect x="${x - 15}" y="${y - 11}" width="30" height="22" rx="11" fill="#fff" stroke="#2a2420" stroke-width="4"/>`).join("")}
+      <text x="170" y="164" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="11" fill="#2a2420">STORY</text><text x="300" y="98" font-family="Fredoka" font-weight="700" font-size="11" fill="#2a2420">THE POINT</text>
+      <g transform="translate(250 180)"><circle r="20" fill="#f4b73b" opacity=".35" class="twinkle"/></g>
+      ${cast("you", 250, 156, 13, "happy", {shadow: false})}<path d="M250 170 v-2" stroke="#2a2420"/>
+      <rect x="196" y="122" width="74" height="18" rx="9" fill="#2a2420"/><text x="233" y="135" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="9" fill="#fff">YOU ARE HERE</text>
+      <g transform="translate(220 64)" font-family="Fredoka" font-weight="600" font-size="10" fill="#2a2420">${[["#ec6a55", "Opening"], ["#4a68e0", "Story"], ["#4cbf7c", "Close"]].map(([c, n], i) => `<rect x="${(i % 2) * 74}" y="${Math.floor(i / 2) * 16 - 8}" width="20" height="8" rx="4" fill="${c}"/><text x="${(i % 2) * 74 + 26}" y="${Math.floor(i / 2) * 16}">${n}</text>`).join("")}</g>`)},
+    {t: "A recipe for a toast", idea: "A good toast is a recipe: one true moment, one quality, a pinch of humour, raise the glass.", tech: "A special format: a kitchen recipe card", where: "Course: Toasts and tributes", draw: frame("A handwritten recipe card for a toast listing one moment, one quality, a pinch of humour and a raised glass, beside a glass and a sprig of herbs", id => `
+      <defs>${lg(id + "s", [[0, "#e9dcc6"], [1, "#d8c4a4"]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/>
+      ${Array.from({length: 8}, (_, i) => `<path d="M0 ${i * 50 + 20} H400" stroke="#c9b28c" stroke-width="2" opacity=".5"/>`).join("")}
+      <g transform="translate(196 196) rotate(-4)">
+        <rect x="-160" y="-140" width="300" height="270" rx="6" fill="#000" opacity=".12" transform="translate(6 8)"/>
+        <rect x="-160" y="-140" width="300" height="270" rx="6" fill="#fffaf0"/>
+        <rect x="-160" y="-140" width="300" height="40" rx="6" fill="#ec6a55"/><rect x="-160" y="-108" width="300" height="8" fill="#ec6a55"/>
+        <text x="-144" y="-112" font-family="Fredoka" font-weight="700" font-size="20" fill="#fffaf0">A Toast</text><text x="124" y="-112" text-anchor="end" font-family="Fredoka" font-weight="600" font-size="11" fill="#fffaf0">serves: everyone · 2 min</text>
+        ${[-72, -46, -20, 6, 32, 58, 84, 110].map(y => `<path d="M-148 ${y + 4} H128" stroke="#bfd6e8" stroke-width="1.5"/>`).join("")}
+        <path d="M-128 -100 V126" stroke="#f2a0a0" stroke-width="1.5"/>
+        <g font-family="Fredoka" font-weight="500" font-size="15" fill="#3a3f7a">
+          <text x="-120" y="-74">1  true moment (small, specific)</text>
+          <text x="-120" y="-48">1  quality, named out loud</text>
+          <text x="-120" y="-22">a pinch of humour, kind</text>
+          <text x="-120" y="4">no inside jokes</text>
+          <text x="-120" y="44" font-weight="700">Method:</text>
+          <text x="-120" y="70">tell it, name it, raise it.</text>
+          <text x="-120" y="96">Serve warm. Stop on time.</text>
+        </g>
+        <path d="M-138 -2 l14 0" stroke="#3a3f7a" stroke-width="2"/>
+        <circle cx="96" cy="64" r="28" fill="none" stroke="#ec6a55" stroke-width="3" opacity=".7" transform="rotate(-12 96 64)"/><text x="96" y="62" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="9" fill="#ec6a55" transform="rotate(-12 96 64)">SAGE’S</text><text x="96" y="74" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="9" fill="#ec6a55" transform="rotate(-12 96 64)">FAVOURITE</text>
+      </g>
+      <g transform="translate(340 300)"><ellipse cx="0" cy="70" rx="28" ry="7" fill="#000" opacity=".15"/><path d="M-20 -50 h40 l-6 46 a14 10 0 0 1 -28 0z" fill="#fff" opacity=".85"/><path d="M-16 -40 h32 l-4 34 a12 8 0 0 1 -24 0z" fill="#f4b73b"/><path d="M0 0 V62 M-16 66 h32" stroke="#fff" stroke-width="5" stroke-linecap="round"/>${[[-6, -30], [6, -22], [-2, -14]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.4" fill="#fff6d6" class="twinkle"/>`).join("")}</g>
+      <g transform="translate(46 330) rotate(-30)"><path d="M0 0 V-60" stroke="#4f8a43" stroke-width="3"/>${[-12, -26, -40, -54].map((y, i) => `<ellipse cx="${i % 2 ? 8 : -8}" cy="${y}" rx="9" ry="4" fill="#5ea34e" transform="rotate(${i % 2 ? -30 : 30} ${i % 2 ? 8 : -8} ${y})"/>`).join("")}</g>`)},
+    {t: "Cleared to speak", idea: "In meetings, find your gap and take off early: the longer you circle, the harder landing gets.", tech: "Night light from screens; one focal point, the radar", where: "Lesson: Say something early (Explain it simply)", draw: frame("You in an air traffic control tower at night watching a radar screen of conversation turns, a green message reading cleared to speak", id => `
+      <defs>${lg(id + "s", [[0, "#0f1838"], [1, "#24305e"]])}${rg(id + "r", [[0, "#1f6a4a"], [1, "#0c2a1e"]])}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/>
+      ${Array.from({length: 26}, (_, i) => `<circle cx="${(i * 83) % 400}" cy="${(i * 29) % 150}" r="1.3" fill="#fff" opacity=".6"/>`).join("")}
+      <path d="M0 180 ${Array.from({length: 21}, (_, i) => `L${i * 20} ${170 - (i % 4) * 6}`).join(" ")} L400 180Z" fill="#1a1f40"/>${Array.from({length: 18}, (_, i) => `<rect x="${8 + i * 22}" y="${162 - (i % 4) * 6}" width="3" height="3" fill="#ffd27a"/>`).join("")}
+      <path d="M40 160 L360 160" stroke="#3a4a7a" stroke-width="2"/>
+      <path d="M0 210 H400 V400 H0Z" fill="#2a2f4a"/><path d="M0 210 H400" stroke="#4a5480" stroke-width="6"/>
+      <g transform="translate(200 300)"><circle r="92" fill="url(#${id}r)"/><circle r="92" fill="none" stroke="#7fd39a" stroke-width="3"/>${[30, 60].map(r => `<circle r="${r}" fill="none" stroke="#7fd39a" stroke-width="1.5" opacity=".5"/>`).join("")}<path d="M-92 0 H92 M0 -92 V92" stroke="#7fd39a" stroke-width="1" opacity=".4"/>
+        <g class="radar"><path d="M0 0 L0 -92 A92 92 0 0 1 60 -70Z" fill="#7fd39a" opacity=".25"/></g>
+        ${[[-40, -40, "#f08cc0", "Priya"], [44, -26, "#6f8ff0", "Theo"], [20, 46, "#f4b73b", "Chris"]].map(([x, y, c, n]) => `<circle cx="${x}" cy="${y}" r="7" fill="${c}"/><text x="${x + 10}" y="${y + 4}" font-family="Fredoka" font-weight="600" font-size="9" fill="#bff0cf">${n}</text>`).join("")}
+        <circle cx="-30" cy="30" r="8" fill="#e8935c"/><circle cx="-30" cy="30" r="16" fill="none" stroke="#e8935c" stroke-width="2" class="twinkle"/><text x="-18" y="34" font-family="Fredoka" font-weight="700" font-size="9" fill="#ffd6b8">YOU</text></g>
+      <rect x="120" y="226" width="160" height="26" rx="6" fill="#0c2a1e" stroke="#7fd39a" stroke-width="2"/><text x="200" y="244" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="12" fill="#7fd39a" class="twinkle" style="animation-duration:1.2s">CLEARED TO SPEAK</text>
+      ${cast("you", 330, 300, 30, "ready", {shadow: false, look: [-8, 2]})}
+      <path d="M300 340 h60 l6 60 h-72z" fill="#3a4470"/>`)},
+    {t: "The cutting room", idea: "Your talk is the film; the ums and the so’s are the frames on the floor.", tech: "Film strip as the subject; offcuts as the punchline", where: "Lesson: Fewer pause words; Know your voice", draw: frame("A film strip of your talk running across a desk, the um, so and like frames cut out and curling into a bin", id => `
+      <defs>${lg(id + "s", [[0, "#3a2a2a"], [1, "#1f1414"]])}${rg(id + "l", [[0, "#ffd9a6", .55], [1, "#ffd9a6", 0]], .5, .3, .7)}</defs>
+      <rect width="400" height="400" fill="url(#${id}s)"/><rect width="400" height="400" fill="url(#${id}l)"/>
+      <path d="M0 260 H400 V400 H0Z" fill="#6b4a36"/><path d="M0 260 H400" stroke="#8a6248" stroke-width="6"/>
+      <g transform="translate(0 150) rotate(-4 200 0)">
+        <rect x="-20" y="-40" width="440" height="80" fill="#1b1414"/>
+        ${Array.from({length: 22}, (_, i) => `<rect x="${-14 + i * 20}" y="-34" width="10" height="7" rx="2" fill="#efe6d6"/><rect x="${-14 + i * 20}" y="27" width="10" height="7" rx="2" fill="#efe6d6"/>`).join("")}
+        ${[[0, "you"], [80, "gap"], [160, "you"], [240, "gap"], [320, "you"]].map(([x, k], i) => k === "gap" ? `<rect x="${x + 4}" y="-22" width="72" height="44" fill="#3a2a2a" stroke="#efe6d6" stroke-dasharray="4 4" stroke-width="1.5"/>` : `<rect x="${x + 4}" y="-22" width="72" height="44" fill="#bfe3ff"/><g transform="translate(${x + 40} 8) scale(.16)"><path d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z" fill="#e8935c"/><ellipse cx="-24" cy="-34" rx="10" ry="14" fill="#2a2420"/><ellipse cx="24" cy="-34" rx="10" ry="14" fill="#2a2420"/><path d="M-15 -4q15 13 30 0" stroke="#2a2420" stroke-width="8" fill="none" stroke-linecap="round"/></g>`).join("")}
+      </g>
+      <g transform="translate(200 150)"><path d="M-30 -60 l60 120 M30 -60 l-60 120" stroke="#c9c3bb" stroke-width="7" stroke-linecap="round" opacity="0"/></g>
+      <g transform="translate(150 70) rotate(30)"><path d="M0 0 L40 -6 M0 0 L40 6" stroke="#c9c3bb" stroke-width="6" stroke-linecap="round"/><circle cx="-8" cy="-8" r="9" fill="none" stroke="#ec6a55" stroke-width="5"/><circle cx="-8" cy="8" r="9" fill="none" stroke="#ec6a55" stroke-width="5"/></g>
+      <path d="M270 400 L290 300 H370 L390 400Z" fill="#4a3a3a"/><path d="M286 300 H374" stroke="#6a5a5a" stroke-width="6"/>
+      ${[["um", 300, 286, -20], ["so", 336, 274, 18], ["like", 360, 292, -8]].map(([w, x, y, r], i) => `<g class="drip" style="animation-delay:${i * .6}s;animation-duration:3s"><g transform="translate(${x} ${y}) rotate(${r})"><rect x="-22" y="-16" width="44" height="32" fill="#1b1414"/><rect x="-16" y="-10" width="32" height="20" fill="#efe6d6"/><text x="0" y="5" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="11" fill="#ec6a55">${w}</text></g></g>`).join("")}
+      <text x="200" y="350" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="16" fill="#f6efe2" opacity=".85">FINAL CUT · 1:24</text>`)},
+    {t: "Today’s conversation forecast", idea: "Read the room like a weather map: a cold front of one-word answers, sunshine wherever you ask a follow-up.", tech: "A TV weather map: symbols, fronts and a presenter", where: "Course: Beyond “good, you?”; Listen like you mean it", draw: frame("A TV weather map of a conversation: a cold front of one-word answers, sunshine over a follow-up question, with you presenting", id => `
+      <rect width="400" height="400" fill="#bfe3ff"/>
+      <rect x="0" y="0" width="400" height="44" fill="#2a2f4a"/><text x="20" y="29" font-family="Fredoka" font-weight="700" font-size="16" fill="#fff">CONVERSATION FORECAST</text><rect x="320" y="12" width="64" height="20" rx="4" fill="#ec6a55"/><text x="352" y="27" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="11" fill="#fff">LIVE</text>
+      <path d="M30 90 C90 70 150 100 210 86 C260 74 320 96 370 84 L380 300 C300 320 200 300 120 318 C80 326 40 312 24 300Z" fill="#9fd67f"/>
+      <path d="M150 100 C170 160 210 220 200 300" stroke="#6f8ff0" stroke-width="5" fill="none"/>${[0, 1, 2, 3, 4].map(i => `<path d="M${156 + i * 10} ${120 + i * 38} l12 6 -10 8z" fill="#6f8ff0"/>`).join("")}
+      <g transform="translate(90 150)"><g fill="#c9c3e8">${[0, 1].map(i => `<ellipse cx="${i * 20}" cy="${i * 4}" rx="22" ry="12"/>`).join("")}<circle cx="6" cy="-6" r="13"/></g>${[-10, 4, 18].map(x => `<path d="M${x} 16 l-4 10" stroke="#6f8ff0" stroke-width="3" stroke-linecap="round"/>`).join("")}</g>
+      <text x="96" y="204" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="10" fill="#2a2f4a">“Fine.” “Good.”</text>
+      <g transform="translate(280 150)"><circle r="22" fill="#f4b73b" class="twinkle" style="animation-duration:3s"/>${Array.from({length: 8}, (_, i) => `<path d="M0 -30 V-38" stroke="#f4b73b" stroke-width="4" stroke-linecap="round" transform="rotate(${i * 45})"/>`).join("")}</g>
+      <text x="280" y="204" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="10" fill="#2a2f4a">“What took you there?”</text>
+      <g transform="translate(290 250)"><rect x="-26" y="-14" width="52" height="28" rx="6" fill="#fff"/><text y="6" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="16" fill="#ec6a55">24°</text></g>
+      <g transform="translate(96 250)"><rect x="-26" y="-14" width="52" height="28" rx="6" fill="#fff"/><text y="6" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="16" fill="#4a68e0">4°</text></g>
+      <path d="M0 330 H400 V400 H0Z" fill="#2a2f4a"/><text x="200" y="372" text-anchor="middle" font-family="Fredoka" font-weight="600" font-size="12" fill="#fff" opacity=".85">Outlook: warming, with a chance of a real conversation</text>
+      ${cast("you", 352, 312, 30, "happy", {shadow: false, look: [-6, -2]})}`)}
+  ];
+
+  document.getElementById("grid").innerHTML = PIECES.map((p, i) => `<figure>${p.draw}<figcaption><em>${p.tech}</em><b>${i + 1}. ${p.t}</b><span>${p.idea}</span><span>Could live: ${p.where}</span></figcaption></figure>`).join("");
+  document.getElementById("strip").innerHTML = PIECES.map(p => p.draw.replace("<svg ", '<svg width="80" height="80" style="border-radius:16px" ')).join("") + '<span style="font-size:13px;color:var(--muted)">At 80 px, about tile size on a phone.</span>';
+  const btn = document.getElementById("motion"), grid = document.getElementById("grid");
+  btn.addEventListener("click", () => { const on = grid.classList.toggle("mv"); btn.setAttribute("aria-pressed", String(on)); btn.textContent = "Motion: " + (on ? "on" : "off"); });
+})();
+</script>
+
+</body></html>
