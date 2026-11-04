@@ -1,4 +1,4 @@
-// The Talk beat (26.4 s, 4.6 s long): a live conversation with Maya at the office party; she asks "Ooh. And how was it?", then it is your turn, your words appear as you say them, she smiles when you ask her back, and the cursor taps Done
+// The Talk beat (26.4 s, 4.6 s long): a live conversation with Maya at the office party; she asks "Ooh. And how was it?", then it is your turn, your words appear as you say them, her face falls a little when the answer stops short (the next beat shows how it could sound), and the cursor taps Done
 
 // Load Remotion's frame
 import { interpolate, useCurrentFrame } from "remotion";
@@ -20,10 +20,10 @@ const T = {
   cursorFrom: s(3.3), cursorTo: s(3.9), tap: s(4.0),
 } as const;
 
-// What you say, word by word
-const WORDS = "It was so fun. My bowl came out totally lopsided, but I’m keeping it. Have you tried it?".split(" ");
-// The word where you ask her back ("Have")
-const ASK = WORDS.indexOf("Have");
+// What you say, word by word: the flat answer the next beat's "One change" improves on ("You said: It was good. Yeah.")
+const WORDS = "It was good. Yeah. Um… it was fine.".split(" ");
+// The word after which the answer has visibly run out ("Yeah.")
+const FLAT = WORDS.indexOf("Yeah.");
 
 // Where the parts sit on the screen
 const LEFT = { x: 48, w: 1000 } as const;
@@ -64,10 +64,10 @@ export function Talk() {
   const youTalk = voice(frame + 7, T.wordsFrom, T.wordsTo + 4);
   // How many words you have said, at an even pace (a fraction for the newest word fading in)
   const said = interpolate(frame, [T.wordsFrom, T.wordsTo], [0, WORDS.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  // Maya's face: speaking, then listening, then pleased when you ask her back
-  const mayaFace = frame < T.mayaEnd ? "ready" : said > ASK + 1.5 ? "happy" : "listen";
+  // Maya's face: speaking, then listening, then a little deflated when the answer stops short (never cross)
+  const mayaFace = frame < T.mayaEnd ? "ready" : said > FLAT + 1.5 ? "flat" : "listen";
   // Your face: listening, singing while you speak, pleased once you finish
-  const youFace = frame < T.turn ? "ready" : frame < T.wordsTo + 6 ? "sing" : "happy";
+  const youFace = frame < T.turn ? "ready" : frame < T.wordsTo + 6 ? "sing" : "ready";
   // A slow bob for both characters
   const bob = Math.sin(frame / 16) * 3;
   // The call's clock: 0:42 and counting
@@ -96,7 +96,7 @@ export function Talk() {
           <div style={{ position: "absolute", left: LEFT.x, top: 104, width: 220, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
             <div style={{ transform: `translateY(${bob}px)` }}><Cast who="friend" face={mayaFace} size={220} talk={mayaTalk} blink={mayaFace !== "listen" && blinking(frame, 1)} /></div>
             <span style={round(26)}>Maya</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: B.muted }}>{frame < T.mayaEnd ? "is talking" : "is listening"}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: B.muted }}>{frame >= T.line && frame < T.mayaEnd ? "is talking" : "is listening"}</span>
           </div>
 
           {/* Maya's line: a big speech bubble popping in from its tail */}
@@ -140,7 +140,7 @@ export function Talk() {
               <div style={{ minHeight: 106, fontFamily: TEXT, fontWeight: 700, fontSize: 26, lineHeight: 1.36 }}>
                 {said < 0.05
                   ? <span style={{ color: mix(B.bg, 72, B.ink) }}>Tap Done when you’ve finished.</span>
-                  : WORDS.map((word, i) => <span key={i} style={{ opacity: Math.min(1, Math.max(0, said - i) * 2.5), color: i >= ASK ? B.sun : B.bg }}>{word} </span>)}
+                  : WORDS.map((word, i) => <span key={i} style={{ opacity: Math.min(1, Math.max(0, said - i) * 2.5), color: B.bg }}>{word} </span>)}
               </div>
               {/* Your level, live */}
               <svg width={94} height={40} viewBox="0 0 94 40" style={{ marginTop: 2 }}>
