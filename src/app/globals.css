@@ -28,6 +28,10 @@
   --color-accent: var(--vl-accent);
   /* Text on the accent */
   --color-accent-ink: var(--vl-accent-ink);
+  /* A soft tint of the accent (UI rewrite) */
+  --color-accent-tint: var(--vl-accent-tint);
+  /* Text on the accent tint */
+  --color-accent-tint-ink: var(--vl-accent-tint-ink);
   /* Action band, main buttons and icon tiles */
   --color-fill: var(--vl-fill);
   /* Text on those filled areas */
@@ -77,7 +81,19 @@
 /* Warm and lively motion (decision 69): every animation is used through motion-safe:, so reduced motion shows the end state at once */
 @theme {
   /* A soft lifted shadow under cards, from the ink colour */
-  --shadow-card: 0 8px 24px -14px color-mix(in srgb, var(--vl-ink) 30%, transparent);
+  --shadow-card: 0 4px 0 var(--vl-rule);
+  /* A smaller solid ledge under bordered buttons and choices (UI rewrite) */
+  --shadow-ledge: 0 3px 0 var(--vl-rule);
+  /* A chunky progress bar's darker lower edge (UI rewrite) */
+  --shadow-bar: inset 0 -3px 0 color-mix(in srgb, black 14%, transparent);
+  /* The next step's sunny ledge on Today (UI rewrite) */
+  --shadow-next: 0 5px 0 var(--vl-art-sun);
+  /* A picked choice's green ledge (UI rewrite) */
+  --shadow-picked: 0 3px 0 var(--vl-accent);
+  /* The chunky main button's darker underside (UI rewrite) */
+  --shadow-chunky: 0 5px 0 color-mix(in srgb, var(--vl-fill) 68%, black);
+  /* The same underside, pressed down */
+  --shadow-chunky-pressed: 0 2px 0 color-mix(in srgb, var(--vl-fill) 68%, black);
   /* Something arriving with a small overshoot (week squares, ticks, the done badge) */
   --animate-pop: vl-pop 550ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
   /* A block sliding up into place */
@@ -326,6 +342,30 @@
   }
 }
 
+/* A speech bubble's tail, pointing left at whoever is speaking (UI rewrite) */
+.vl-bubble::before {
+  /* An empty square */
+  content: "";
+  /* Placed at the bubble's lower left */
+  position: absolute;
+  /* Half out of the bubble */
+  left: -10px;
+  /* Near the bottom, by the speaker's face */
+  bottom: 16px;
+  /* Its size */
+  width: 16px;
+  /* Square */
+  height: 16px;
+  /* The bubble's own colour */
+  background: var(--vl-card);
+  /* Its edge on the two outer sides */
+  border-left: 2px solid var(--vl-rule);
+  /* (the other outer side) */
+  border-bottom: 2px solid var(--vl-rule);
+  /* Turned to make a point */
+  transform: rotate(45deg);
+}
+
 /* The blob scenes (decision 136): parts turn and grow around points given in the drawing's own units */
 .vl-scene * {
   /* Pivot points measured in the drawing's square */
@@ -351,6 +391,8 @@
   .vl-scene .s-blink { animation: vl-s-blink 4.6s infinite; }
   /* A gentle bob */
   .vl-scene .s-bob { animation: vl-s-bob 2.6s ease-in-out infinite; }
+  /* A character on its own breathing up and down (Buddy, UI rewrite) */
+  .vl-scene .b-bob { animation: vl-b-bob 3.4s ease-in-out infinite; }
   /* Rapid Fire: the jump, the bolt and its lines */
   .vl-scene .s-jolt { animation: vl-s-jolt 2.4s ease-out infinite; }
   /* (the bolt) */
@@ -448,6 +490,7 @@
 /* Blink: open, then shut for a moment */
 @keyframes vl-s-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
 /* Bob: up a little and back */
+@keyframes vl-b-bob { 0%, 100% { transform: none; } 50% { transform: translateY(-7px) scale(1.01, 0.99); } }
 @keyframes vl-s-bob { 0%, 100% { transform: none; } 50% { transform: translateY(-3px); } }
 /* Jolt: still, then a quick jump as the bolt strikes */
 @keyframes vl-s-jolt { 0%, 60%, 82%, 100% { transform: none; } 68% { transform: translateY(-7px); } }
@@ -626,18 +669,24 @@
   --text-prompt-xl: 4.5rem;
   /* Large prompt line height */
   --text-prompt-xl--line-height: 1.02;
+  /* The chunky buttons' words (UI rewrite) */
+  --text-button: 1.0625rem;
+  /* A small pill's words (UI rewrite) */
+  --text-chip: 0.8125rem;
 }
 
 /* Page-wide defaults; these read the theme variables directly so nested themed areas get their own values */
 @layer base {
   /* Every themed area starts with the theme's paper, ink, and body font */
   [data-theme] {
-    /* Paper background */
-    background-color: var(--vl-paper);
+    /* The page's cream (paper is the softer inset inside cards since the UI rewrite) */
+    background-color: var(--vl-paper-raised);
     /* Ink text */
     color: var(--vl-ink);
     /* Body font */
     font-family: var(--vl-font-body);
+    /* Nunito reads best a little heavier than regular (UI rewrite) */
+    font-weight: 500;
   }
 
   /* An area with its own surfaces also takes its own ink (decision 69) */
@@ -675,6 +724,15 @@
     --vl-tabbar-h: 0px;
     /* Height of the sticky main action */
     --vl-band-h: 0px;
+  }
+}
+
+/* On a computer, the main navigation is a rail down the left: the page moves over to make room (UI rewrite) */
+@media (min-width: 48rem) {
+  /* A page with the rail */
+  body:has(nav[data-tabbar]) {
+    /* The rail's width */
+    padding-left: 15rem;
   }
 }
 

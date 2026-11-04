@@ -58,7 +58,7 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
         {/* Who, and how long */}
         <p className="text-footnote font-semibold text-accent">With {name}{scenario ? ` · ${scenario.title}` : ""}{session.conversation?.difficulty && session.conversation.difficulty !== "normal" ? ` · ${session.conversation.difficulty === "hard" ? "Hard" : "Easy"}` : ""} · {formatClock(session.durationSec)}</p>
         {/* The goal first, when the situation has one (decision 127); otherwise the share and the questions */}
-        <h1 id="conversation-heading" className="mt-1 font-display text-3xl font-semibold tracking-tight">{goal ? goalHeadline(goal, measures) : conversationHeadline(measures)}</h1>
+        <h1 id="conversation-heading" className="mt-1 font-display text-3xl font-semibold">{goal ? goalHeadline(goal, measures) : conversationHeadline(measures)}</h1>
         {/* The goal's dots, its words, and the share and questions underneath */}
         {goal && progress && (
           <div data-goal-result className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -83,7 +83,7 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
           {/* Small heading for the cue */}
           <p className="mt-4 text-footnote text-ink-muted">Before you talk again</p>
           {/* The cue */}
-          <p className="mt-1 font-display text-cue font-semibold tracking-tight">{shown.retryCue}</p>
+          <p className="mt-1 font-display text-cue font-semibold">{shown.retryCue}</p>
           {/* One of your lines, and how it could sound */}
           {session.feedback?.conversation && (
             <>
@@ -105,7 +105,7 @@ export function ConversationSessionView({ session, now, note, plan }: { session:
         {/* The turns in two lanes, its own view (decision 115), with their times and cut-ins (decision 120; exact when the turns were live) */}
         <ConversationTimeline turns={turns} name={name} live={session.conversation?.turnMode === "live" || session.conversation?.turnMode === "call"} />
         {/* The whole conversation */}
-        <h2 className="mt-8 font-display text-xl font-semibold tracking-tight">The conversation</h2>
+        <h2 className="mt-8 font-display text-xl font-semibold">The conversation</h2>
         {/* Each turn */}
         <ol aria-label="The conversation" className="mt-3 flex flex-col gap-2">
           {turns.map((turn, index) => (

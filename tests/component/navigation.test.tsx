@@ -35,19 +35,17 @@ const NOW = new Date(2026, 9, 15, 10);
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
-// Where the tabs must lead, in order (Settings is the gear in the title row; Courses added, decision 148)
-const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Courses", "/courses"], ["Learn", "/learn"]];
+// Where the tabs must lead, in order (UI rewrite: Today, Practice, Courses and Me; Learn is inside Courses, Settings inside Me)
+const DESTINATIONS = [["Today", "/"], ["Practice", "/practice"], ["Courses", "/courses"], ["Me", "/profile"]];
 
 // Read the main navigation's links as [name, address] pairs, and which one is marked as the current page
 async function readNavigation() {
-  // Find the navigation landmark
+  // The navigation landmark
   const nav = await screen.findByRole("navigation", { name: "Main" });
-  // Its links
-  const links = within(nav).getAllByRole("link");
-  // The settings gear
-  const gear = screen.getByRole("link", { name: "Settings" });
-  // Names and addresses, the marked tab (or the gear, on Settings), and where the gear leads
-  return { links: links.map((link) => [link.textContent, link.getAttribute("href")]), current: links.find((link) => link.getAttribute("aria-current") === "page")?.textContent ?? (gear.getAttribute("aria-current") === "page" ? "Settings" : null), gear: gear.getAttribute("href") };
+  // Its section links (the rail's app name, a link home on a computer, is left out)
+  const links = within(nav).getAllByRole("link").filter((link) => link.textContent !== "VoiceLab");
+  // Each link's name and address, and which one is marked current
+  return { links: links.map((link) => [link.textContent, link.getAttribute("href")]), current: links.find((link) => link.getAttribute("aria-current") === "page")?.textContent ?? null };
 }
 
 // Group the checks about getting around the app
@@ -67,9 +65,9 @@ describe("main navigation", () => {
     ["Skills", "Practice", async () => <SkillsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // History
     // History lives in Settings, so the gear is marked
-    ["History", "Settings", async () => <HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    ["History", "Me", async () => <HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // The speaking profile lives in Settings too (decision 90)
-    ["the speaking profile", "Settings", async () => <ProfileScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    ["the speaking profile", "Me", async () => <ProfileScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Your talks belong to Practice
     ["Talks", "Practice", async () => <RehearseScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // So does a talk's page
@@ -83,7 +81,7 @@ describe("main navigation", () => {
     // (the comparison)
     ["Compare check-ins", "Today", async () => <CheckInCompareScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Settings
-    ["Settings", "Settings", async () => <SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
+    ["Settings", "Me", async () => <SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // A session's results belong to where that kind of session lives (here speaking on the spot)
     ["a session", "Practice", async () => {
       // A repository with one session
@@ -99,6 +97,6 @@ describe("main navigation", () => {
     // Draw the screen
     render(await build());
     // Confirm the links and the marked page
-    expect(await readNavigation()).toEqual({ links: DESTINATIONS, current, gear: "/settings" });
+    expect(await readNavigation()).toEqual({ links: DESTINATIONS, current });
   });
 });

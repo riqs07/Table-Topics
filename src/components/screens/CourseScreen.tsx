@@ -125,7 +125,7 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
           {/* The course */}
           <p className="text-footnote font-semibold text-accent">Course{course.draft ? " · draft lessons" : ""}</p>
           {/* Its name */}
-          <h1 className="mt-1 font-display text-statement tracking-tight">{course.title}</h1>
+          <h1 className="mt-1 font-display text-statement">{course.title}</h1>
         </div>
       </div>
       {/* What it does, and how it is paced */}

@@ -129,7 +129,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
             {/* Where it came from */}
             {(momentId || guided) && <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Guided story"}</p>}
             {/* The prompt, a guided story's title, or the moment in the user's words */}
-            <h1 className={`${momentId || guided ? "mt-1" : "mt-6"} font-display tracking-tight ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
+            <h1 className={`${momentId || guided ? "mt-1" : "mt-6"} font-display ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
             {/* A guided story's facts and nudges, with the template named (decision 93) */}
             {guided && <GuidedStoryCard story={guided} take={take} />}
 

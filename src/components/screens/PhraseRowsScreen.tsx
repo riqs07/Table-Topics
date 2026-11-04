@@ -187,7 +187,7 @@ export function PhraseRowsScreen({ sessionId, ...props }: PhraseRowsProps) {
       {/* Title and the way back */}
       <Masthead title="Your take" nav={false} close={back} />
       {/* The heading and what the page shows */}
-      <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight">Your voice</h1>
+      <h1 className="mt-4 font-display text-3xl font-semibold">Your voice</h1>
       {/* Could not be read */}
       {loadError !== null && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This take could not be loaded. The browser said: “{loadError}” Reload the page to try again.</p>}
       {/* Not on this device */}

@@ -135,7 +135,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         {/* The icon on an accent tile */}
         <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center rounded-[18px] bg-warm-tint text-warm-ink">{(() => { const IconShape = UNIT_ICONS[unit.id]; return <IconShape className="size-9" />; })()}</span>
         {/* Name (when it is for is on its card on Connect, decision 63) */}
-        <p className="min-w-0 flex-1 font-display text-statement tracking-tight">{unit.name}</p>
+        <p className="min-w-0 flex-1 font-display text-statement">{unit.name}</p>
       </div>
 
       {/* Until today's date and the answers are read, a quiet placeholder, so the page appears in one piece (decision 76) */}
@@ -148,7 +148,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           {/* Small heading */}
           <p className="text-footnote text-ink-muted">{unit.words.kicker}</p>
           {/* What is said (a story stays hidden until afterwards; a described moment or situation a size smaller, decision 95) */}
-          <h1 className={`mt-1 font-display tracking-tight ${unit.drill === "situation" ? "text-cue" : "text-statement"}`}>{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
+          <h1 className={`mt-1 font-display ${unit.drill === "situation" ? "text-cue" : "text-statement"}`}>{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
           {/* Reply, or move along */}
           <p className="mt-3 flex flex-wrap gap-3">
             {/* Reply, the main choice */}

@@ -164,7 +164,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {/* What kind of card, when it is not a plain explainer (the set's name is already the page title; decision 79) */}
       {card.kind !== "explainer" && <Kicker>{card.kind === "myth-or-fact" ? "Myth or fact?" : "Try it"}</Kicker>}
       {/* The question, set like a headline */}
-      <h1 className="mt-2 font-display text-prompt font-semibold tracking-tight">{card.title}</h1>
+      <h1 className="mt-2 font-display text-prompt font-semibold">{card.title}</h1>
       {/* A myth-or-fact guess, before the research */}
       {card.verdict && (
         <div className="mt-6">
@@ -202,7 +202,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {/* Heading */}
       <Kicker>What it means</Kicker>
       {/* The meaning, set large */}
-      <p className="mt-2 max-w-[40ch] font-display text-statement font-semibold tracking-tight">{card.meaning}</p>
+      <p className="mt-2 max-w-[40ch] font-display text-statement font-semibold">{card.meaning}</p>
     </div>,
     // 4. What to do
     <div key="do">

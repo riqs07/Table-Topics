@@ -56,7 +56,7 @@ function OutlineForm({ draft }: { draft: Outline | null }) {
       {/* Title, with a way back to Practice */}
       <Masthead title="Short speech" nav={false} close={{ href: "/practice", label: "Close, back to Practice" }} />
       {/* The heading */}
-      <h1 className="mt-6 font-display text-statement font-semibold tracking-tight">Plan a short speech.</h1>
+      <h1 className="mt-6 font-display text-statement font-semibold">Plan a short speech.</h1>
       {/* What it is about */}
       <label className="mt-6 block">
         {/* Label */}

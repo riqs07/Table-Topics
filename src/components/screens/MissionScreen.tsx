@@ -93,7 +93,7 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
           {/* The task */}
           <p className="mt-6 text-footnote text-ink-muted">The mission</p>
           {/* Its words */}
-          <h1 className="mt-1 font-display text-statement tracking-tight">{mission.task}</h1>
+          <h1 className="mt-1 font-display text-statement">{mission.task}</h1>
           {/* Debriefed: the outcome against the prediction, and what they noticed */}
           {record.status === "done" ? (
             <section aria-label="How it went" className="mt-6">

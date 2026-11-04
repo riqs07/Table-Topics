@@ -100,7 +100,7 @@ export function CourseRevisitScreen({ partId, takeId, ...props }: ScreenProps & 
           {/* Where it comes from */}
           <p className="mt-6 text-footnote text-ink-muted">From {place.course.title}, lesson {place.lessonNumber}: {place.lesson.title}</p>
           {/* The question */}
-          <h1 className="mt-1 max-w-[30ch] font-display text-statement tracking-tight">{question ? `“${question}”` : place.part.title}</h1>
+          <h1 className="mt-1 max-w-[30ch] font-display text-statement">{question ? `“${question}”` : place.part.title}</h1>
           {/* What changed */}
           <p data-revisit-line className="mt-3 max-w-[48ch] font-display text-cue text-accent">{compareLine(place.part.practice.measure, before, now) ?? "Hear both answers side by side."}</p>
           {/* Both answers */}

@@ -75,7 +75,7 @@ export function VoiceBlob({ levels, signal, clock, onStop, compact, paused = fal
         {/* The face, listening (asleep while paused), on the large shape only (decision 134) */}
         {!compact && <BlobFace mood={paused ? "sleepy" : "listening"} className="mb-2 w-12" />}
         {/* The clock (the button is named by its action alone) */}
-        <span aria-hidden="true" className={`font-display font-semibold tabular-nums tracking-tight ${compact ? "text-xl" : "text-prompt-xl"}`}>{clock}</span>
+        <span aria-hidden="true" className={`font-display font-semibold tabular-nums ${compact ? "text-xl" : "text-prompt-xl"}`}>{clock}</span>
         {/* The action */}
         <span className="text-footnote font-semibold">{action}</span>
       </span>

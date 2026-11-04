@@ -440,7 +440,7 @@ describe("SettingsScreen", () => {
   it("links to your progress once, and not to History directly", async () => {
     // Draw Settings
     render(<SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the one link, and none to History or the profile besides
-    expect([(await screen.findByRole("link", { name: "Your speaking profile and history" })).getAttribute("href"), screen.getAllByRole("link").filter((link) => ["/history", "/profile"].includes(link.getAttribute("href") ?? "")).length]).toEqual(["/profile", 1]);
+    // Confirm the one link, and none to History or the profile besides (outside the Me tab)
+    expect([(await screen.findByRole("link", { name: "Your speaking profile and history" })).getAttribute("href"), screen.getAllByRole("link").filter((link) => !link.closest("nav")).filter((link) => ["/history", "/profile"].includes(link.getAttribute("href") ?? "")).length]).toEqual(["/profile", 1]);
   });
 });

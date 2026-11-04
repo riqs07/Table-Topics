@@ -309,7 +309,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
         {/* Title and the way out */}
         <Masthead title="Voice drill" nav={false} close={{ href: "/voice", label: "Close, back to Your voice" }} />
         {/* What happened */}
-        <h1 className="mt-8 font-display text-statement font-semibold tracking-tight">That drill could not be found.</h1>
+        <h1 className="mt-8 font-display text-statement font-semibold">That drill could not be found.</h1>
         {/* The way back */}
         <p className="mt-4"><Link href="/voice" className={TEXT_LINK}>See every voice drill</Link></p>
       </main>
@@ -344,7 +344,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
           {/* Another of the drill's sentences, before the first take */}
           {stage === "take" && takes.length === 0 && !recording && !starting && setIndex !== null && setCount > 1 && <p><Link href={`/voice/drill?id=${drill.id}&set=${((setIndex + 1) % setCount) + 1}${planStep ? `&plan=${planStep}` : ""}`} className={`${TEXT_LINK} text-footnote`}>Another sentence</Link></p>}
           {/* What to say */}
-          <h1 id="take-heading" className="mt-3 font-display text-statement font-semibold tracking-tight">{current.text}</h1>
+          <h1 id="take-heading" className="mt-3 font-display text-statement font-semibold">{current.text}</h1>
           {/* How to say it */}
           <p className="mt-3 max-w-[48ch] text-lede">{current.cue}</p>
           {/* A take that could not be used */}
@@ -379,7 +379,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
           {/* Which drill */}
           <p className="text-footnote font-semibold text-accent">{drill.title}</p>
           {/* The headline */}
-          <h1 id="results-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">{findings.headline}</h1>
+          <h1 id="results-heading" className="mt-1 font-display text-statement font-semibold">{findings.headline}</h1>
           {/* How loud each take was, side by side */}
           {LEVEL_MEASURES.has(drill.measure) && <div className="mt-6"><LevelBars takes={drill.takes.map((take, index) => ({ label: take.label, level: findings.measures[index]?.level ?? 0 }))} /></div>}
           {/* Stress and tone: can a listener tell the takes apart? */}

@@ -1391,7 +1391,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         {/* The explanation */}
         <section aria-label="Your microphone" className="flex flex-1 flex-col md:max-w-2xl md:pt-8">
           {/* What it is for */}
-          <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0">VoiceLab listens through your microphone.</h1>
+          <h1 className="mt-8 font-display text-statement md:mt-0">VoiceLab listens through your microphone.</h1>
           {/* Where recordings go, and who turns speech into text (the browser's speech recognition usually sends the audio to Apple or Google; decision 97) */}
           <p className="mt-4 max-w-[48ch] text-lede">VoiceLab keeps your recordings on this device. To show your words, your browser’s speech recognition turns them into text; on most phones and in Chrome, Apple or Google does that on their servers. Choose Allow next.</p>
           {/* Back without asking (just under the words, so the action band never covers it) */}
@@ -1523,7 +1523,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               </div>
             )}
             {/* The question being answered, above the shape */}
-            {recording && prompt && !smallTalk && !script && <p className="mt-3 max-w-[30ch] font-display text-cue font-semibold tracking-tight">{prompt.text}</p>}
+            {recording && prompt && !smallTalk && !script && <p className="mt-3 max-w-[30ch] font-display text-cue font-semibold">{prompt.text}</p>}
             {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
             {recording && mode === "story" && (
               <div data-story-template className="mt-3">
@@ -1583,7 +1583,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             {showBriefing && (
               <>
                 {/* The headline */}
-                <h1 className="mt-8 font-display text-statement tracking-tight md:mt-0 md:max-w-[18ch]">Your topic is hidden until you start.</h1>
+                <h1 className="mt-8 font-display text-statement md:mt-0 md:max-w-[18ch]">Your topic is hidden until you start.</h1>
                 {/* How it works, once */}
                 <p className="mt-4 max-w-[48ch] text-lede">You get {think} seconds to think, then recording starts by itself. Aim for 1 to 2 minutes: the light turns green at 1:00, yellow at 1:30 and red at 2:00.</p>
               </>
@@ -1596,7 +1596,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {/* Reading aloud, before starting: the reading scene, carried over from Today or Practice (decision 141) */}
                 {mode === "read" && stage === "ready" && !busy && <ScenePanel scene="read-aloud" name="Read aloud" line={`Aim for ${lengthText}`} className="mt-8 md:mt-0" />}
                 {/* Title and source, before starting */}
-                {!recording && <h1 className={`${mode === "read" && stage === "ready" && !busy ? "mt-5" : "mt-8 md:mt-0"} font-display text-statement tracking-tight`}>{script.title}</h1>}
+                {!recording && <h1 className={`${mode === "read" && stage === "ready" && !busy ? "mt-5" : "mt-8 md:mt-0"} font-display text-statement`}>{script.title}</h1>}
                 {/* Who said it, or that it is a practice passage */}
                 {!recording && script.source && <p className="mt-1 text-ink-muted">{script.source}</p>}
                 {/* Reading aloud: the metronome, before and while reading (decision 128) */}
@@ -1655,7 +1655,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {smallTalk.lesson && !busy && (
                   <section aria-label="The lesson" className="mt-8 md:mt-0">
                     {/* Its title, as one piece of text so it reads (and is counted) as written */}
-                    <h2 className="font-display text-statement tracking-tight">{`Lesson ${smallTalk.lesson.number}: ${smallTalk.lesson.title}`}</h2>
+                    <h2 className="font-display text-statement">{`Lesson ${smallTalk.lesson.number}: ${smallTalk.lesson.title}`}</h2>
                     {/* The idea */}
                     <p className="mt-3 max-w-[52ch] text-lede">{smallTalk.lesson.idea}</p>
                     {/* Why it works, from the research, folded so the lesson stays short (decision 95) */}
@@ -1676,10 +1676,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {cue && <p className={`text-footnote text-ink-muted ${smallTalk.lesson && !busy ? "mt-1" : "mt-8 md:mt-0"}`}>{cue}</p>}
                 {/* A story to listen to, not shown */}
                 {storyHidden ? (
-                  <h1 className="mt-8 font-display text-prompt tracking-tight md:mt-0 md:max-w-[18ch]">Listen to their story.</h1>
+                  <h1 className="mt-8 font-display text-prompt md:mt-0 md:max-w-[18ch]">Listen to their story.</h1>
                 ) : (
                   // The question, remark or story, set like a headline (a story, moment or situation a size smaller; a described moment without quote marks)
-                  <h1 className={`relative font-display tracking-tight ${described ? "" : "before:absolute before:-left-[0.42em] before:text-accent before:content-['“']"} ${smallTalk.unit === "listening" || described ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"} ${smallTalk.lesson && !busy ? "mt-1" : cue ? "mt-1" : "mt-8 md:mt-0"}`}>
+                  <h1 className={`relative font-display ${described ? "" : "before:absolute before:-left-[0.42em] before:text-accent before:content-['“']"} ${smallTalk.unit === "listening" || described ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"} ${smallTalk.lesson && !busy ? "mt-1" : cue ? "mt-1" : "mt-8 md:mt-0"}`}>
                     {smallTalk.question}
                   </h1>
                 )}
@@ -1711,7 +1711,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {/* A Rapid Fire topic already seen: say it is the same one for the next try */}
                 {topicSeen && <p className="mt-6 text-footnote text-ink-muted">Same topic for your next try</p>}
                 {/* The prompt, set like a headline (focusable from code, so it can be read out the moment a Rapid Fire topic is revealed) */}
-                <h1 ref={promptHeading} tabIndex={-1} className={`relative font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[16ch] md:text-prompt-xl ${topicSeen ? "mt-1" : "mt-8 md:mt-0"}`}>
+                <h1 ref={promptHeading} tabIndex={-1} className={`relative font-display text-prompt before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[16ch] md:text-prompt-xl ${topicSeen ? "mt-1" : "mt-8 md:mt-0"}`}>
                   {prompt.text}
                 </h1>
               </>
@@ -1720,7 +1720,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             {mode === "free" && !recording && (
               <>
                 {/* The invitation */}
-                <h1 className="mt-8 font-display text-prompt font-semibold tracking-tight md:mt-0 md:max-w-[16ch] md:text-prompt-xl">Talk about anything.</h1>
+                <h1 className="mt-8 font-display text-prompt font-semibold md:mt-0 md:max-w-[16ch] md:text-prompt-xl">Talk about anything.</h1>
                 {/* A few ideas, and that there is no clock to beat */}
                 <p className="mt-4 max-w-[48ch] text-lede">Your day, an idea, something you’d explain to a friend. Stop when you’re done.</p>
               </>
@@ -1729,7 +1729,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             {mode === "outline" && outline && (
               <section aria-label="Your plan" className={recording ? "mt-6 md:mt-0" : "mt-8 md:mt-0"}>
                 {/* The topic */}
-                <h1 className={`font-display font-semibold tracking-tight ${recording ? "text-cue" : "text-statement md:max-w-[20ch]"}`}>{outline.topic}</h1>
+                <h1 className={`font-display font-semibold ${recording ? "text-cue" : "text-statement md:max-w-[20ch]"}`}>{outline.topic}</h1>
                 {/* The points, numbered */}
                 <ol aria-label="Your points" className={`mt-3 flex max-w-[52ch] flex-col gap-2 ${recording ? "text-footnote" : "text-lede"}`}>
                   {/* Each point */}
@@ -1753,7 +1753,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {/* Where it came from */}
                 <p className="text-footnote text-ink-muted">{momentIdOf(promptId) ? "From your moment" : thinking ? "Plan it in your head" : guidedStory ? "Guided story" : "Your story"}</p>
                 {/* The prompt, set like a headline, or the moment in the user's words */}
-                <h1 className={`relative mt-1 font-display tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${momentIdOf(promptId) ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"}`}>{prompt?.text ?? "Your moment"}</h1>
+                <h1 className={`relative mt-1 font-display before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] ${momentIdOf(promptId) ? "text-statement md:max-w-[30ch]" : "text-prompt md:max-w-[18ch]"}`}>{prompt?.text ?? "Your moment"}</h1>
                 {/* The template's beats, or a guided story's facts (decisions 93 and 126) */}
                 {guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />}
                 {/* The three things every good story does (decision 126) */}

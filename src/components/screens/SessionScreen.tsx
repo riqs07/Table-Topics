@@ -557,7 +557,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {reading ? (
             <>
               {/* How much of the passage was read */}
-              <h1 data-testid="reading-headline" className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</h1>
+              <h1 data-testid="reading-headline" className="mt-5 font-display text-3xl font-semibold md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</h1>
               {/* The detail */}
               <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}{view.fluency ? `, ${reading.repeated} repeated` : ""}, {reading.extra} extra ({view.pauseWords ? "pause words and added words" : "added words"}).</p>
               {/* A lesson's tip, as a reminder */}
@@ -566,7 +566,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           ) : bookendOutcome ? (
             <>
               {/* The drill's main finding */}
-              <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight md:mt-0">{bookendOutcome.headline}</h1>
+              <h1 className="mt-5 font-display text-3xl font-semibold md:mt-0">{bookendOutcome.headline}</h1>
               {/* Its second finding */}
               <p className="mt-2 text-footnote text-ink-muted">{bookendOutcome.detail}</p>
             </>
@@ -578,7 +578,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             <SmallTalkBeats session={session} ticks={session.selfReview === null ? <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} startOpen /> : null} />
           ) : (
             // The focus number as a sentence, when one measures it (otherwise the one change leads)
-            headline ? <h1 className={`font-display text-3xl font-semibold tracking-tight ${asked ? "mt-4" : "mt-5 md:mt-0"}`}>{headline}</h1> : <h1 className="sr-only">{title}</h1>
+            headline ? <h1 className={`font-display text-3xl font-semibold ${asked ? "mt-4" : "mt-5 md:mt-0"}`}>{headline}</h1> : <h1 className="sr-only">{title}</h1>
           )}
           {/* When the headline is the fillers (so no fillers tile below), the way to see where they were */}
           {headline && shownHeadline === "fillers" && fillerCount(session) > 0 && !reading && <p><button type="button" onClick={showFillers} className={`${TEXT_LINK} text-footnote`}>Show where</button></p>}
@@ -595,7 +595,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {/* Small heading for the cue */}
             <p className="mt-4 text-footnote text-ink-muted">{warmup ? "Before your response" : story ? "Before you tell it again" : "Before you try again"}</p>
             {/* The cue */}
-            <p className="mt-1 font-display text-cue font-semibold tracking-tight">{(session.feedback ?? ownChange).retryCue}</p>
+            <p className="mt-1 font-display text-cue font-semibold">{(session.feedback ?? ownChange).retryCue}</p>
             {/* Inside today's practice the band moves on, so the second try is offered here, right under the cue, one tap away (the loop is speak, one change, try again; offered, never forced) */}
             {plan && <p className="mt-4"><SecondaryLink href={retryHref}>{story ? "Tell it again" : "Try it again"}</SecondaryLink></p>}
             {/* For a follow-up question or a reply to a story, a better one */}
@@ -873,7 +873,7 @@ function SmallTalkBeats({ session, ticks }: { session: FullSession; ticks: React
         </div>
       )}
       {/* How many, as a headline, once reported; until then, the question */}
-      <h1 className={`font-display text-3xl font-semibold tracking-tight ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{!reported ? "Which beats did you hit?" : count === 4 ? "All four beats." : `${count} of 4 beats.`}</h1>
+      <h1 className={`font-display text-3xl font-semibold ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{!reported ? "Which beats did you hit?" : count === 4 ? "All four beats." : `${count} of 4 beats.`}</h1>
       {/* A dead-end opening, said plainly */}
       {unit === "answering" && deadEndOpening(session.transcript) && <p className="mt-2 text-lede">It stopped at the opening. Even a quiet day has one thing worth telling.</p>}
       {/* On a fresh answer: the ticks, right under the question */}
@@ -918,7 +918,7 @@ function StoryHeard({ session, original, moment }: { session: FullSession; origi
       {/* From a moment note: say so (a prompt from the bank is shown above instead) */}
       {moment && <p className="mt-5 text-footnote text-ink-muted md:mt-0">From your moment</p>}
       {/* The headline */}
-      <h1 className={`font-display text-3xl font-semibold tracking-tight ${moment ? "mt-1" : "mt-5 md:mt-0"}`}>{guided ? (original ? retellHeadline(original, session) : "What you added") : storyHeadline(session, original)}</h1>
+      <h1 className={`font-display text-3xl font-semibold ${moment ? "mt-1" : "mt-5 md:mt-0"}`}>{guided ? (original ? retellHeadline(original, session) : "What you added") : storyHeadline(session, original)}</h1>
       {/* What worked, once the coach has answered */}
       {session.feedback && <p data-story-worked className="mt-3 text-lede"><span className="mr-2 inline-flex rounded-full bg-accent/15 px-2.5 py-0.5 align-middle text-footnote font-semibold text-accent">What worked</span>{session.feedback.keep}</p>}
       {/* A guided story: what was added beyond the facts, and the facts kept (decision 93) */}
@@ -1132,7 +1132,7 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
         {/* Main column */}
         <div className="flex flex-1 flex-col">
           {/* The change as one sentence */}
-          <h1 className="mt-6 font-display text-statement font-semibold tracking-tight motion-safe:animate-rise md:mt-0 md:max-w-[18ch] md:text-statement-xl">{view.pauseWords || measureFor(original.focus)?.kind !== "fillers" ? retryHeadline(retry, original) : "Your second try is in."}</h1>
+          <h1 className="mt-6 font-display text-statement font-semibold motion-safe:animate-rise md:mt-0 md:max-w-[18ch] md:text-statement-xl">{view.pauseWords || measureFor(original.focus)?.kind !== "fillers" ? retryHeadline(retry, original) : "Your second try is in."}</h1>
           {/* When the number went the other way: a task-focused word, so the second try never reads as failure (person-focused feedback lowers persistence; playbook 6a) */}
           {retryNote(retry, original) && <p className="mt-3 max-w-[48ch] text-lede">{retryNote(retry, original)}</p>}
           {/* What the first try said to work on */}

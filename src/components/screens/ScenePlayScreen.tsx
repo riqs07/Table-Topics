@@ -75,7 +75,7 @@ export function ScenePlayScreen({ sceneId, ...props }: ScenePlayProps) {
         {/* Title, with the way back */}
         <Masthead title="Scenes" nav={false} close={{ href: "/scenes", label: "Close, back to Scenes" }} />
         {/* The note */}
-        <h1 className="mt-8 font-display text-statement tracking-tight">That scene isn’t here.</h1>
+        <h1 className="mt-8 font-display text-statement">That scene isn’t here.</h1>
         {/* The way back */}
         <p className="mt-4"><Link href="/scenes" className={TEXT_LINK}>Choose another scene</Link></p>
       </main>
@@ -325,16 +325,16 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
       {phase === "done" && result && (
         <section aria-label="How it went" className="mt-8">
           {/* The headline */}
-          <h1 className="font-display text-statement tracking-tight">{result.warm ? `${name} left happy.` : "Close. One more go?"}</h1>
+          <h1 className="font-display text-statement">{result.warm ? `${name} left happy.` : "Close. One more go?"}</h1>
           {/* Your two choices */}
-          <h2 className="mt-6 font-display text-xl font-semibold tracking-tight">Your choices</h2>
+          <h2 className="mt-6 font-display text-xl font-semibold">Your choices</h2>
           {/* Each */}
           <ul className="mt-2 flex flex-col gap-1">
             {/* With its tier */}
             {result.tiers.map((tier, index) => <li key={index} data-choice-tier={tier}>{index === 0 ? "First" : "Second"}: <strong>{TIER_NAMES[tier]}</strong></li>)}
           </ul>
           {/* Your spoken reply */}
-          <h2 className="mt-6 font-display text-xl font-semibold tracking-tight">Your reply</h2>
+          <h2 className="mt-6 font-display text-xl font-semibold">Your reply</h2>
           {/* Nothing caught */}
           {!transcript?.trim() && <p className="mt-2 text-footnote">No words were caught, so nothing could be checked. Try the scene again when you can speak.</p>}
           {/* Each check */}

@@ -94,7 +94,7 @@ export function LearnScreen(props: ScreenProps) {
       {/* Heading and navigation */}
       <Masthead title="VoiceLab" section="learn" />
       {/* The page's name, and what is here */}
-      <PageTitle title="Learn">What the research says, and one move to try for real each day.</PageTitle>
+      <PageTitle title="Quick reads">What the research says, and one move to try for real each day.</PageTitle>
 
       {/* Until everything is read, a quiet placeholder, so nothing jumps (decision 76) */}
       {!(today && progress && scenarios && missions) && <Skeleton blocks={["h-72", "h-24", "h-28", "h-28"]} />}

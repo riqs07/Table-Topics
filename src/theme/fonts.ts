@@ -1,7 +1,7 @@
 // Loads the theme fonts (from Google Fonts at build time, and the body font from this project) and serves them from our own site
 
 // Load the font loaders for the web fonts the themes use
-import { Fraunces, Newsreader, Young_Serif } from "next/font/google";
+import { Fraunces, Fredoka, Newsreader, Nunito, Young_Serif } from "next/font/google";
 // Load the loader for a font file kept in this project
 import localFont from "next/font/local";
 
@@ -15,7 +15,11 @@ const newsreader = Newsreader({ subsets: ["latin"], style: ["normal", "italic"],
 
 // Class names that define every font variable; put on the page root so any theme can use them
 // Fraunces: the display face for headlines and numbers (decision 69)
-const fraunces = Fraunces({ subsets: ["latin"], axes: ["opsz"], display: "swap", variable: "--font-fraunces" });
+const fraunces = Fraunces({ subsets: ["latin"], axes: ["opsz"], display: "swap", variable: "--font-fraunces", preload: false });
+// The playful theme's display face: rounded, for headings, buttons and big numbers (UI rewrite)
+const fredoka = Fredoka({ subsets: ["latin"], weight: ["500", "600", "700"], display: "swap", variable: "--font-fredoka" });
+// The playful theme's text face: round and friendly, readable small (UI rewrite)
+const nunito = Nunito({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap", variable: "--font-nunito" });
 
 // Every font's variable, set on the page root
-export const fontVariables = [atkinson.variable, youngSerif.variable, newsreader.variable, fraunces.variable].join(" ");
+export const fontVariables = [atkinson.variable, youngSerif.variable, newsreader.variable, fraunces.variable, fredoka.variable, nunito.variable].join(" ");

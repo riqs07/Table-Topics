@@ -28,7 +28,6 @@ import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
 // Load the plan's time and addresses
 import { nextStepIndex, planHref, planMinutes } from "@/core/planSteps";
 // Load the done and next marks on a path
-import { PathMark } from "@/components/script/PathMark";
 // Load the day's summary wording
 import { spokenSentence, stepNote, weekSentence } from "@/core/daySummary";
 // Load the calendar-day key
@@ -42,11 +41,14 @@ import { stepKey } from "@/core/planSteps";
 // Load the filter that leaves out private moment notes
 import { practiceSessions } from "@/core/sessionHome";
 // Load the hand-drawn welcome (decision 134)
-import { Drawing } from "@/components/script/Drawing";
 // Load the step's scene as its mark, and which scene each step shows (decision 137)
-import { SceneMark } from "@/components/scenes/SceneMark";
-import { GLIDE, PageFade, onlyOnce } from "@/components/scenes/SharedScene";
+import { PageFade } from "@/components/scenes/SharedScene";
+import { stepTile } from "@/components/scenes/modeTileFor";
 import { stepScene } from "@/components/scenes/sceneFor";
+import { GROUND_TINT, ModeTile } from "@/components/scenes/ModeTile";
+import { Buddy } from "@/components/scenes/Buddy";
+import { TileRow } from "@/components/script/TileRow";
+import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the welcome flag, kept in this browser
 import { markWelcomeSeen, readWelcomeSeen } from "@/data/welcome";
 // Load what the user wants to get better at most: the reader, the words for it, and saving it (decision 97)
@@ -63,10 +65,8 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 // Load the mission days, which count towards the run
 import { missionDays } from "@/core/missions";
 // Load the scene tile and the icons for Today's two tiles (decision 138)
-import { WayCard } from "@/components/script/WayCard";
-import { ChartLineUpIcon, ShuffleIcon, UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared heading and card looks
-import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
+import { BUBBLE, CARD, CARD_LIST, CHIP_GOOD, LAB, PBAR, PBAR_FILL, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the end-of-day moment
 import { DoneBurst } from "@/components/script/DoneBurst";
 // Load the loading placeholder
@@ -213,7 +213,7 @@ function ReminderCard({ days, onSeen }: { days: number; onSeen: () => Promise<vo
   return (
     <section aria-labelledby="look-back" className={`mt-8 p-5 ${CARD}`}>
       {/* The invitation */}
-      <h2 id="look-back" className="font-display text-cue font-semibold tracking-tight">Hear how far you’ve come</h2>
+      <h2 id="look-back" className="font-display text-cue font-semibold">Hear how far you’ve come</h2>
       {/* Why now */}
       <p className="mt-1 text-footnote text-ink-muted">It’s been {sinceWords(days)} since your first check-in. Hear it beside your latest.</p>
       {/* A failure to put it aside */}
@@ -258,7 +258,7 @@ function FocusAsk({ onAnswer }: { onAnswer: (picks: FocusAreaId[]) => Promise<vo
   return (
     <section aria-labelledby="focus-ask" className={`mt-8 p-5 ${CARD}`}>
       {/* The question */}
-      <h2 id="focus-ask" className="font-display text-cue font-semibold tracking-tight">What do you want to get better at most?</h2>
+      <h2 id="focus-ask" className="font-display text-cue font-semibold">What do you want to get better at most?</h2>
       {/* What it does */}
       <p className="mt-1 text-footnote text-ink-muted">Pick one or two.</p>
       {/* The choices, names only */}
@@ -350,7 +350,6 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
   // Whether every step is done (put-off steps are not done; decision 77)
   const allDone = !!plan && plan.done.every(Boolean);
   // The steps' scenes that appear once on Today, which may glide into their screens (a repeated name would cancel the glide; decision 141)
-  const uniqueScenes = onlyOnce(plan ? plan.steps.map(stepScene) : []);
   // Steps done
   const doneCount = plan ? plan.done.filter(Boolean).length : 0;
   // The run's lines, unless hidden
@@ -363,14 +362,17 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
   const showFocus = !!data && !data.showWelcome && data.run.any;
   // The lesson the user is on, unless it is already one of today's open steps (one link to it is enough)
   const lesson = plan && data?.lesson && !plan.steps.some((step, index) => step.promptId === data.lesson?.promptId && !plan.done[index]) ? data.lesson : null;
-  // Whether the margin has anything in it; with nothing, the page is one centred column instead of an empty left column on a computer
-  const margin = !!data && !data.showWelcome && (runLines.length > 0 || (!data.hideStreak && data.run.any) || showFocus || !!data.anchor || !!data.practiceFocus?.length);
+
+  // Sage's line in the bubble: a greeting for the time of day and what is left, or a word once the day is done
+  const greeting = !plan ? "" : allDone ? "That’s today done. Lovely work." : checkInWaiting ? (plan.checkIn?.baseline ? `Today is your first check-in. About ${CHECK_IN_MINUTES} minutes.` : `Check-in day. About ${CHECK_IN_MINUTES} minutes.`) : nextIndex === -1 ? "The rest can wait. Come back if a moment comes up." : `${partOfDay(today)}. ${doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short ones today` : `${plan.steps.length - doneCount} to go`}, about ${planMinutes(plan.steps.filter((_, index) => !plan.done[index]))} minutes.`;
+  // The next step's address, for the Start button
+  const nextHref = plan && nextStep ? planHref(nextStep, nextIndex + 1) : null;
 
   // Draw the page
   return (
-    // Full-height page: one column on a phone, margin plus main column on a computer
+    // Full-height page, wide on a computer
     <PageFade>
-      <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+      <main id="main" className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-5 pt-6 pb-16 md:px-12 md:pt-10">
         {/* Name and links */}
         <Masthead title="VoiceLab" section="today" nav={!data?.showWelcome} />
 
@@ -380,7 +382,7 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
         {!data && loadError !== null && (
           <section role="alert" className="mt-8 max-w-[48ch] text-lede">
             {/* What happened */}
-            <h1 className="font-display text-statement font-semibold tracking-tight">Your practice could not be loaded.</h1>
+            <h1 className="font-display text-statement font-semibold">Your practice could not be loaded.</h1>
             {/* The browser's reason, so the problem can be pinned down */}
             <p className="mt-3">The browser said: “{loadError}” Try again; if it keeps happening, reload the page or check that this site may store data on this device.</p>
             {/* Try again, or practise anyway */}
@@ -392,189 +394,219 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
             </p>
           </section>
         )}
-        {/* Two columns on a computer */}
-        {data && <div className={`flex flex-1 flex-col md:pt-8 ${margin ? "md:grid md:grid-cols-[240px_1fr] md:gap-14" : "md:mx-auto md:w-full md:max-w-2xl"}`}>
-          {/* Context: streak and focus (above the step on a phone, in the margin on a computer; left out when there is nothing to say yet) */}
-          {margin && <aside className="mt-5 text-lede text-ink-muted md:mt-0 md:text-footnote md:leading-relaxed">
-            {/* Where practice stands: days in the last seven, and the run from a week of practice; never a broken run (decision 78) */}
-            {runLines.map((line) => <p key={line}>{line}</p>)}
-            {/* Where the run leads: progress against your own past self, one tap away instead of behind the gear (the PRD's motivation lever) */}
-            {runLines.length > 0 && <p className="mt-1"><Link href="/profile" className={TEXT_LINK}>See your progress</Link></p>}
-            {/* The last seven days as squares, filled where there was practice */}
-            {data && !data.showWelcome && !data.hideStreak && data.run.any && (
-              <ul aria-label="The last seven days" className="mt-3 mb-4 flex gap-1.5">
-                {/* Each day, popping in one after another */}
-                {data.strip.map((day, index) => (
-                  // One rounded square with the day's letter: green where practised, warm for today, ringed in the warm tint
-                  <li key={day.key} aria-label={`${day.name}${day.isToday ? ", today" : ""}: ${day.practised ? "practised" : "not yet"}`} className={`flex size-8 items-center justify-center rounded-[10px] text-tab motion-safe:animate-pop ${day.practised ? "bg-fill text-fill-ink" : day.isToday ? "bg-warm text-on-warm" : "bg-paper text-ink-muted"} ${day.isToday ? "outline-3 outline-warm-tint" : ""}`} style={{ animationDelay: `${100 + index * 60}ms` }}>
-                    {/* The letter, which the label already says */}
-                    <span aria-hidden="true">{day.letter}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {/* This week's focus, in a few words (held back during the welcome, which asks one thing only) */}
-            {showFocus && <p className="md:mt-3">This week: <em className="text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
-            {/* What the user wants to get better at most, once chosen (decision 97) */}
-            {data && !data.showWelcome && !!data.practiceFocus?.length && <p className="mt-1">Getting better at: <em className="text-ink">{focusPhrase(data.practiceFocus)}</em>.</p>}
-            {/* When the user practises, in their words (decision 78) */}
-            {data && !data.showWelcome && data.anchor && <p className="mt-1">Your time: <em className="text-ink">{data.anchor}</em>.</p>}
-          </aside>}
 
-          {/* Main column */}
-          <div className="flex flex-1 flex-col">
-            {/* A first visit: one question, then straight to the right place */}
-            {data?.showWelcome && (
-              <section aria-label="Welcome" className="mt-8 md:mt-0">
-                {/* Someone mid-explanation, to say hello (decision 134) */}
-                <Drawing name="welcome" className="mb-4 block h-40 motion-safe:animate-rise md:h-52" />
-                {/* The greeting */}
-                <h1 className="font-display text-prompt font-semibold tracking-tight motion-safe:animate-rise md:text-prompt-xl">Welcome to VoiceLab</h1>
-                {/* What it is, and what VoiceLab keeps (the speech recognition is explained before the microphone is first used; decision 97) */}
-                <p className="mt-3 max-w-[52ch] text-lede">Practise speaking, privately. VoiceLab keeps your recordings on this device.</p>
-                {/* What a session gives (decision 78) */}
-                <p className="mt-2 max-w-[52ch] text-lede">Every take ends with one change to try.</p>
-                {/* One question: what to get better at most, which steers the day's practice (decision 97) */}
-                <h2 id="focus-question" className="mt-8 font-display text-statement font-semibold tracking-tight">What do you want to get better at most?</h2>
-                {/* How many */}
-                <p className="mt-1 text-ink-muted">Pick one or two. You can change it in Settings.</p>
-                {/* The choices */}
-                <FocusPicker value={welcomePicks} onChange={setWelcomePicks} label="What do you want to get better at most?" />
-                {/* One way in: today's first step, which on day one is speaking (decisions 37 and 78); Start works with nothing picked */}
-                <p className="mt-6"><Link href={firstStep} onClick={finishWelcome} className={PRIMARY}>Start</Link></p>
-              </section>
-            )}
+        {/* A first visit: one question, then straight to the right place */}
+        {data?.showWelcome && (
+          <section aria-label="Welcome" className="mx-auto mt-6 w-full max-w-3xl md:mt-4">
+            {/* Sage says hello */}
+            <div className="flex items-end gap-4 motion-safe:animate-rise">
+              {/* The coach */}
+              <Buddy who="sage" face="happy" className="size-24 md:size-32" />
+              {/* What VoiceLab is, in a bubble */}
+              <p className={`${BUBBLE} mb-4 max-w-[44ch] text-lg`}>Hi, I’m Sage. Practise speaking, privately: VoiceLab keeps your recordings on this device.</p>
+            </div>
+            {/* The greeting */}
+            <h1 className="mt-6 font-display text-prompt font-semibold motion-safe:animate-rise md:text-prompt-xl">Welcome to VoiceLab</h1>
+            {/* What a session gives (decision 78) */}
+            <p className="mt-2 max-w-[52ch] text-lede font-semibold text-ink-muted">Every take ends with one change to try.</p>
+            {/* One question: what to get better at most, which steers the day's practice (decision 97) */}
+            <div className={`mt-8 p-5 md:p-7 ${CARD}`}>
+              {/* The question */}
+              <h2 id="focus-question" className="font-display text-statement font-semibold">What do you want to get better at most?</h2>
+              {/* How many */}
+              <p className="mt-1 font-semibold text-ink-muted">Pick one or two. You can change it in Settings.</p>
+              {/* The choices */}
+              <FocusPicker value={welcomePicks} onChange={setWelcomePicks} label="What do you want to get better at most?" />
+              {/* One way in: today's first step, which on day one is speaking (decisions 37 and 78); Start works with nothing picked */}
+              <p className="mt-6"><Link href={firstStep} onClick={finishWelcome} className={PRIMARY}>Start</Link></p>
+            </div>
+          </section>
+        )}
 
-            {/* Today's practice: the steps, with done and next marks */}
-            {plan && (
-              <section aria-label="Today's practice" className={`-mx-2 mt-6 p-5 motion-safe:animate-rise md:mx-0 md:mt-0 md:p-7 ${CARD}`}>
-                {/* Once done: the full ring, badge and (the first time) sparks */}
-                {allDone && <DoneBurst celebrate={data?.celebrate ?? false} />}
-                {/* What it is and how long, with how far through */}
-                <p className="flex justify-between text-footnote text-ink-muted"><span>Today · about {planMinutes(plan.steps)} min</span>{!allDone && doneCount > 0 && <span className="font-semibold text-warm-ink">{doneCount} of {plan.steps.length}</span>}</p>
-                {/* Where things stand, set like a headline */}
-                <h1 className="mt-2 font-display text-statement font-semibold tracking-tight md:text-statement-xl">{allDone ? "Done for today." : nextIndex === -1 ? "The rest can wait." : checkInWaiting ? (plan.checkIn?.baseline ? "Your first check-in." : "Check-in day.") : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
-                {/* On a check-in day, what it is in a line (decision 100) */}
-                {checkInWaiting && <p className="mt-2 max-w-[48ch] text-lede">{plan.checkIn?.baseline ? `Four short parts, about ${CHECK_IN_MINUTES} minutes. Next week you’ll hear the change.` : `The same four parts as last time, about ${CHECK_IN_MINUTES} minutes.${plan.checkIn?.late ? " Still open today." : ""}`}</p>}
-                {/* Once done: the time spoken today, and which day of the week this is */}
-                {allDone && data && <p className="mt-2 text-lede">{spokenSentence(plan.today)}{data.hideStreak ? "" : ` ${data.weekLine}`}</p>}
-                {/* How far through, as a bar that fills in, once a step is done (an empty bar first thing reads as a zero; decision 78) */}
-                {doneCount > 0 && (
-                  <span aria-hidden="true" className="mt-4 block h-2 overflow-hidden rounded-full bg-paper">
-                    {/* The filled part */}
-                    <span className="block h-full origin-left rounded-full bg-accent motion-safe:animate-fill" style={{ width: `${(doneCount / Math.max(1, plan.steps.length)) * 100}%`, animationDelay: "300ms" }} />
-                  </span>
-                )}
-                {/* The steps */}
-                <ol aria-label="Steps" className="mt-4 flex flex-col gap-2">
-                  {/* Each step */}
-                  {plan.steps.map((step, index) => {
-                    // Done, next, or still to come
-                    const mark = plan.done[index] ? "done" : index === nextIndex ? "next" : "open";
-                    // When done, a line from today's session: the user's note, or how long they spoke (never a filler count)
-                    const session = plan.done[index] ? plan.today.find((item) => item.mode === step.mode && item.promptId === step.promptId) : undefined;
-                    // How far the check-in has got, in parts (decision 100)
-                    const parts = step.kind === "checkin" && plan.checkIn ? plan.checkIn.parts.filter((part) => part.status !== "open").length : 0;
-                    // That line (or, for a step put off today, saying so; for the check-in, its parts)
-                    const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : step.kind === "course" && plan.done[index] ? "Part done" : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
-                    // Its blob scene, if its kind has one (decision 137)
-                    const scene = stepScene(step);
-                    // Whether it was done since Today last showed it, and whether it takes over as the next step after one was (decision 141)
-                    const justDone = !!data?.ticked.includes(stepKey(step));
-                    // (taking over)
-                    const arriving = mark === "next" && !!data?.ticked.length;
-                    // One step
-                    return (
-                      <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
-                        {/* The whole row starts the step: a rounded tile, warm when next (and marked as the current step, since no band names it; decision 138); the page fades into the step's screen, the scene gliding along when it is the only one of its kind (decision 141) */}
-                        <Link href={planHref(step, index + 1)} transitionTypes={GLIDE} aria-label={`Step ${index + 1}: ${step.label}`} aria-current={mark === "next" ? "step" : undefined} className={`flex items-center gap-x-3 rounded-2xl px-3 py-2.5 ${PRESS} ${mark === "next" ? "bg-warm-tint" : "bg-paper-raised hover:bg-paper"}`}>
-                          {/* Its mark: its scene where its kind has one, else its number (decision 137), each in the same width so the words line up; when the day is first done, the marks grow in one by one, unless motion is unwelcome */}
-                          <span className={`flex w-14 flex-none justify-center ${data?.celebrate ? "motion-safe:animate-pop" : ""}`} style={data?.celebrate ? { animationDelay: `${850 + index * 120}ms` } : undefined}>{scene ? <SceneMark scene={scene} mark={mark} faded={!!(plan.done[index] || plan.skipped[index])} justDone={justDone} arriving={arriving} shared={uniqueScenes.has(scene)} /> : <span className={justDone || arriving ? "motion-safe:animate-pop" : undefined} style={justDone || arriving ? { animationDelay: justDone ? "900ms" : "1400ms" } : undefined}><PathMark mark={mark} number={index + 1} /></span>}</span>
-                          {/* What it is */}
-                          <span className="min-w-0 flex-1">
-                            {/* Its name and time */}
-                            <span className={`block text-footnote ${mark === "next" ? "font-semibold text-warm-ink" : "text-ink-muted"}`}>{step.label} · {step.minutes} min</span>
-                            {/* What it uses */}
-                            <span data-step-title className="block leading-snug">{step.title}</span>
-                            {/* How it went, once done */}
-                            {result && <span className="block text-footnote text-ink-muted">{result}</span>}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ol>
-                {/* Once done, a word on what is next */}
-                {nextIndex === -1 && <p className="mt-3 max-w-[52ch] text-ink-muted">{allDone ? "A new practice is ready tomorrow." : "Skipped steps are still here if a moment comes up."}</p>}
-                {/* Once done, and no practice time chosen yet: a way to choose one (decision 78) */}
-                {allDone && data && !data.anchor && <p><Link href="/settings#practice-time" className={TEXT_LINK}>Choose when you’ll practise tomorrow</Link></p>}
-              </section>
-            )}
+        {/* Today */}
+        {plan && data && (
+          <div className="flex flex-1 flex-col gap-8 md:pt-2">
+            {/* Sage's greeting, and where practice stands */}
+            <div className="flex flex-wrap items-end justify-between gap-5">
+              {/* The coach and the bubble */}
+              <div className="flex min-w-0 flex-[1_1_440px] items-end gap-3 md:gap-4">
+                {/* The coach */}
+                <Buddy who="sage" face={allDone ? "happy" : "ready"} className="size-20 md:size-28" />
+                {/* What today holds */}
+                <p data-greeting className={`${BUBBLE} mb-3 max-w-[40ch] md:text-lg`}>{greeting}</p>
+              </div>
+              {/* Where practice stands: days in the last seven, never a broken run (decision 78) */}
+              {(runLines.length > 0 || showFocus || !!data.practiceFocus?.length || !!data.anchor) && (
+                <div className={`flex min-w-0 flex-[0_1_340px] flex-col gap-2 p-4 ${CARD}`}>
+                  {/* The run, in words */}
+                  {runLines.map((line) => <p key={line} className="font-extrabold">{line}</p>)}
+                  {/* The last seven days as squares, filled where there was practice */}
+                  {!data.hideStreak && data.run.any && (
+                    <ul aria-label="The last seven days" className="flex gap-1.5">
+                      {/* Each day, popping in one after another */}
+                      {data.strip.map((day, index) => (
+                        // One rounded square with the day's letter: green where practised, dashed for today
+                        <li key={day.key} aria-label={`${day.name}${day.isToday ? ", today" : ""}: ${day.practised ? "practised" : "not yet"}`} className={`flex size-8 items-center justify-center rounded-[10px] text-tab font-extrabold motion-safe:animate-pop ${day.practised ? "bg-fill text-fill-ink" : day.isToday ? "border-3 border-dashed border-accent text-accent-tint-ink" : "bg-paper text-ink-muted"}`} style={{ animationDelay: `${100 + index * 60}ms` }}>
+                          {/* The letter, which the label already says */}
+                          <span aria-hidden="true">{day.letter}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {/* This week's focus, in a few words */}
+                  {showFocus && <p className="text-footnote font-semibold text-ink-muted">This week: <em className="not-italic text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
+                  {/* What the user wants to get better at most, once chosen (decision 97) */}
+                  {!!data.practiceFocus?.length && <p className="text-footnote font-semibold text-ink-muted">Getting better at: <em className="not-italic text-ink">{focusPhrase(data.practiceFocus)}</em>.</p>}
+                  {/* When the user practises, in their words (decision 78) */}
+                  {data.anchor && <p className="text-footnote font-semibold text-ink-muted">Your time: <em className="not-italic text-ink">{data.anchor}</em>.</p>}
+                  {/* Where the run leads: progress against your own past self */}
+                  {runLines.length > 0 && <Link href="/profile" className={`${TEXT_LINK} min-h-9 self-start`}>See your progress</Link>}
+                </div>
+              )}
+            </div>
+
+            {/* Today's practice: the steps as picture cards, with done and next marks */}
+            <section aria-label="Today's practice" className="relative flex flex-col gap-5 motion-safe:animate-rise">
+              {/* Once done: the full ring, badge and (the first time) sparks */}
+              {allDone && <DoneBurst celebrate={data.celebrate} />}
+              {/* The headline and the one main action */}
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                {/* What it is, where things stand, and how long */}
+                <div className="flex flex-col gap-1">
+                  {/* What it is and how long, with how far through */}
+                  <p className={LAB}>Today · about {planMinutes(plan.steps)} min{!allDone && doneCount > 0 ? ` · ${doneCount} of ${plan.steps.length}` : ""}</p>
+                  {/* Where things stand, set like a headline */}
+                  <h1 className="font-display text-statement font-semibold md:text-statement-xl">{allDone ? "Done for today." : nextIndex === -1 ? "The rest can wait." : checkInWaiting ? (plan.checkIn?.baseline ? "Your first check-in." : "Check-in day.") : doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short steps.` : "Pick up where you left off."}</h1>
+                </div>
+                {/* Start the next step */}
+                {nextHref && nextStep && <Link href={nextHref} aria-label={`Start step ${nextIndex + 1}: ${nextStep.label}`} className={PRIMARY}>{doneCount === 0 ? "Start" : "Continue"}</Link>}
+              </div>
+              {/* On a check-in day, what it is in a line (decision 100) */}
+              {checkInWaiting && <p className="-mt-2 max-w-[56ch] text-lede font-semibold text-ink-muted">{plan.checkIn?.baseline ? `Four short parts, about ${CHECK_IN_MINUTES} minutes. Next week you’ll hear the change.` : `The same four parts as last time, about ${CHECK_IN_MINUTES} minutes.${plan.checkIn?.late ? " Still open today." : ""}`}</p>}
+              {/* Once done: the time spoken today, and which day of the week this is */}
+              {allDone && <p className="-mt-2 text-lede font-semibold">{spokenSentence(plan.today)}{data.hideStreak ? "" : ` ${data.weekLine}`}</p>}
+              {/* How far through, as a chunky bar that fills in, once a step is done (an empty bar first thing reads as a zero; decision 78) */}
+              {doneCount > 0 && (
+                <span aria-hidden="true" className={`${PBAR} max-w-xl`}>
+                  {/* The filled part */}
+                  <span className={`${PBAR_FILL} motion-safe:animate-fill`} style={{ width: `${(doneCount / Math.max(1, plan.steps.length)) * 100}%`, animationDelay: "300ms" }} />
+                </span>
+              )}
+              {/* The steps, as picture cards */}
+              <ol aria-label="Steps" className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
+                {/* Each step */}
+                {plan.steps.map((step, index) => {
+                  // Done, next, or still to come
+                  const mark = plan.done[index] ? "done" : index === nextIndex ? "next" : "open";
+                  // When done, a line from today's session: the user's note, or how long they spoke (never a filler count)
+                  const session = plan.done[index] ? plan.today.find((item) => item.mode === step.mode && item.promptId === step.promptId) : undefined;
+                  // How far the check-in has got, in parts (decision 100)
+                  const parts = step.kind === "checkin" && plan.checkIn ? plan.checkIn.parts.filter((part) => part.status !== "open").length : 0;
+                  // That line (or, for a step put off today, saying so; for the check-in, its parts)
+                  const result = step.kind === "checkin" ? (plan.done[index] ? "Done" : parts > 0 ? `${parts} of ${CHECK_IN_PARTS.length} parts` : plan.skipped[index] ? "Skipped for today" : null) : step.kind === "course" && plan.done[index] ? "Part done" : session ? stepNote(session) : plan.skipped[index] && !plan.done[index] ? "Skipped for today" : null;
+                  // Its picture
+                  const tile = stepTile(step);
+                  // Whether it was done since Today last showed it (decision 141)
+                  const justDone = !!data.ticked.includes(stepKey(step));
+                  // (taking over as the next step after one was)
+                  const arriving = mark === "next" && !!data.ticked.length;
+                  // Done or put off: quieter
+                  const faded = !!(plan.done[index] || plan.skipped[index]);
+                  // Its kind's scene name, kept on the picture so the step's kind can be read (decision 137)
+                  const scene = stepScene(step);
+                  // Whether the picture pops in: a step just ticked off, the step taking over, or every step when the day is first done (decision 141)
+                  const pop = justDone || arriving || data.celebrate;
+                  // One step
+                  return (
+                    <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
+                      {/* The whole card starts the step; the next one is edged in sun and marked as the current step */}
+                      <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} aria-current={mark === "next" ? "step" : undefined} className={`flex h-full flex-row overflow-hidden rounded-[22px] border-2 bg-card sm:flex-col ${PRESS} hover:-translate-y-0.5 ${mark === "next" ? "border-art-sun shadow-next" : "border-rule shadow-card"}`}>
+                        {/* The picture on its ground's tint, with a tick once done */}
+                        <span data-step-scene={scene ?? undefined} data-tick={justDone ? "done" : arriving ? "arriving" : undefined} className={`relative flex w-28 flex-none items-center justify-center sm:h-36 sm:w-auto ${GROUND_TINT[tile.ground]}`}>
+                          {/* The tile */}
+                          <span className={`flex ${faded ? "opacity-55" : ""} ${pop ? "motion-safe:animate-pop" : ""}`} style={pop ? { animationDelay: data.celebrate ? `${850 + index * 120}ms` : justDone ? "900ms" : "1400ms" } : undefined}><ModeTile ground={tile.ground} prop={tile.prop} face={plan.done[index] ? "happy" : tile.face} tilt={index % 2 ? 4 : -4} still={faded || mark !== "next"} className="size-22 sm:size-28" /></span>
+                          {/* The done tick */}
+                          {plan.done[index] && <span className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-fill text-fill-ink shadow-chunky-pressed sm:top-3 sm:right-3 sm:size-9"><CheckIcon aria-hidden="true" weight="bold" className="size-5" /><span className="sr-only">Done</span></span>}
+                        </span>
+                        {/* What it is */}
+                        <span className="flex min-w-0 flex-1 flex-col gap-1 p-3.5 sm:p-4 sm:pt-3.5">
+                          {/* Its number, name and time */}
+                          <span className={LAB}>Step {index + 1} · {step.label} · {step.minutes} min</span>
+                          {/* What it uses */}
+                          <span data-step-title className="font-display text-lg leading-tight font-semibold sm:text-xl">{step.title}</span>
+                          {/* How it went, once done */}
+                          {result && <span className="text-footnote font-bold text-accent-tint-ink">{result}</span>}
+                          {/* The next one says so */}
+                          {mark === "next" && <span className={`${CHIP_GOOD} mt-1 self-start`}>Up next</span>}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+              {/* Once done, a word on what is next */}
+              {nextIndex === -1 && <p className="max-w-[52ch] font-semibold text-ink-muted">{allDone ? "A new practice is ready tomorrow." : "Skipped steps are still here if a moment comes up."}</p>}
+              {/* Once done, and no practice time chosen yet: a way to choose one (decision 78) */}
+              {allDone && !data.anchor && <p><Link href="/settings#practice-time" className={TEXT_LINK}>Choose when you’ll practise tomorrow</Link></p>}
+            </section>
 
             {/* A course prompt coming back: the same question again, then both answers side by side (decision 131) */}
-            {plan?.revisit && (
-              <Link href={plan.revisit.href} data-revisit className={`mt-6 flex items-center gap-3 rounded-2xl border border-rule px-4 py-3 ${PRESS} hover:bg-paper`}>
+            {plan.revisit && (
+              <Link href={plan.revisit.href} data-revisit className={`flex items-center gap-4 p-4 ${CARD} ${PRESS}`}>
                 {/* The mark */}
-                <span aria-hidden="true" className="flex size-9 flex-none items-center justify-center rounded-xl bg-warm-tint text-warm-ink"><ArrowCounterClockwiseIcon className="size-5" /></span>
+                <span aria-hidden="true" className="flex size-12 flex-none items-center justify-center rounded-2xl bg-warm-tint text-warm-ink"><ArrowCounterClockwiseIcon weight="bold" className="size-6" /></span>
                 {/* What it is */}
                 <span className="min-w-0 flex-1">
                   {/* Heading and where it comes from */}
-                  <span className="block text-footnote text-ink-muted">Back again · from {plan.revisit.from}</span>
+                  <span className={`block ${LAB}`}>Back again · from {plan.revisit.from}</span>
                   {/* The question */}
-                  <span className="block leading-snug">{plan.revisit.question}</span>
+                  <span className="block font-display text-lg leading-snug font-semibold">{plan.revisit.question}</span>
                   {/* What happens */}
-                  <span className="block text-footnote text-ink-muted">Answer it again, then hear both side by side.</span>
+                  <span className="block text-footnote font-semibold text-ink-muted">Answer it again, then hear both side by side.</span>
                 </span>
               </Link>
             )}
 
-            {/* Beside today's steps, as two scene tiles: the lesson the user is on, and Quick play, a kind of practice at random (decisions 135 and 138) */}
-            {plan && data && (
-              <section aria-labelledby="also-today" className="mt-8">
-                {/* Run-in heading */}
-                <h2 id="also-today" className={SECTION_HEADING}>Also today</h2>
-                {/* The tiles, two by two */}
-                <ul className="mt-3 grid grid-cols-2 gap-3">
-                  {/* The lesson the user is on, straight into it (its unit and place under its title) */}
-                  {lesson && <li><WayCard way={{ name: lesson.title, detail: `Your lesson · ${lesson.unit} ${lesson.number}/${lesson.total}`, href: `/session?mode=smalltalk&prompt=${lesson.promptId}`, icon: UsersThreeIcon, scene: "conversation" }} /></li>}
-                  {/* Quick play: what it is, not what it picked, so the pick stays a surprise */}
-                  <li><WayCard way={{ name: "Quick play", detail: "A random kind of practice", href: data.quick.href, icon: ShuffleIcon }} delay={70} /></li>
-                  {/* Your progress: then and now, every measure, and history (one tap from Today, not two behind the gear) */}
-                  <li><WayCard way={{ name: "Your progress", detail: "Then and now, every take", href: "/profile", icon: ChartLineUpIcon }} delay={140} /></li>
-                </ul>
-              </section>
-            )}
+            {/* Beside today's steps: the lesson the user is on, Quick play, and progress (decisions 135 and 138) */}
+            <section aria-labelledby="also-today" className="flex flex-col gap-3.5">
+              {/* Heading */}
+              <h2 id="also-today" className={SECTION_HEADING}>Also today</h2>
+              {/* The cards */}
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {/* The lesson the user is on, straight into it (its unit and place under its title) */}
+                {lesson && <li><TileRow href={`/session?mode=smalltalk&prompt=${lesson.promptId}`} label={lesson.title} title={lesson.title} detail={`Your lesson · ${lesson.unit} ${lesson.number}/${lesson.total}`} ground="bloom" prop="chat" face="ready" tilt={-4} /></li>}
+                {/* Quick play: what it is, not what it picked, so the pick stays a surprise */}
+                <li><TileRow href={data.quick.href} label="Quick play" title="Quick play" detail="A random kind of practice" ground="sky" prop="loop" face="wow" tilt={4} /></li>
+                {/* Your progress: then and now, every measure, and history */}
+                <li><TileRow href="/profile" label="Your progress" title="Your progress" detail="Then and now, every take" ground="leaf" prop="star" face="happy" tilt={-4} /></li>
+              </ul>
+            </section>
 
             {/* The reminder to hear the first check-in beside the latest (decision 100) */}
-            {data?.reminder && today && <ReminderCard days={data.reminder.days} onSeen={async () => { await markReminderSeen(repo, data.reminder!.days, today); setData({ ...data, reminder: null }); }} />}
+            {data.reminder && today && <ReminderCard days={data.reminder.days} onSeen={async () => { await markReminderSeen(repo, data.reminder!.days, today); setData({ ...data, reminder: null }); }} />}
 
             {/* Someone who was here before the question: asked once, gently, under the steps (decision 97) */}
-            {plan && data && data.practiceFocus === undefined && <FocusAsk onAnswer={answerFocus} />}
+            {data.practiceFocus === undefined && <FocusAsk onAnswer={answerFocus} />}
 
             {/* A reminder to keep practice safe, when one is due (decision 64) */}
-            {data?.nudge && today && (
-              <div className="mt-8">
-                <SafetyNote nudge={data.nudge} onDismiss={() => { markNudgeDismissed(today); setData({ ...data, nudge: null }); }} />
-              </div>
-            )}
-
+            {data.nudge && today && <SafetyNote nudge={data.nudge} onDismiss={() => { markNudgeDismissed(today); setData({ ...data, nudge: null }); }} />}
 
             {/* Once done: more to do, for anyone who wants to keep going */}
-            {plan && nextIndex === -1 && plan.more.length > 0 && (
-              <section aria-labelledby="keep-going" className="mt-8">
-                {/* Run-in heading */}
+            {nextIndex === -1 && plan.more.length > 0 && (
+              <section aria-labelledby="keep-going" className="flex flex-col gap-3.5">
+                {/* Heading */}
                 <h2 id="keep-going" className={SECTION_HEADING}>Keep going</h2>
                 {/* The suggestions */}
-                <ul className={`mt-3 divide-y divide-rule px-4 ${CARD}`}>
+                <ul className={CARD_LIST}>
                   {/* Each one */}
                   {plan.more.map((step) => (
                     // One suggestion: what kind, then what it uses
                     <li key={`${step.lane}-${step.promptId}`}>
                       <RowLink href={step.href} meta={`${step.minutes} min`}>
                         {/* Its kind */}
-                        <span className="block text-footnote text-ink-muted">{step.label}</span>
+                        <span className={`block ${LAB}`}>{step.label}</span>
                         {/* What it uses */}
-                        <span className="block">{step.title}</span>
+                        <span className="block font-semibold">{step.title}</span>
                       </RowLink>
                     </li>
                   ))}
@@ -584,11 +616,19 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
 
             {/* Push the action down */}
             <div className="flex-1" />
-            {/* Once the day is done, the one main action: with a focus, its next thing; otherwise everything in Practice (decision 97). While steps are left there is no band: the next step is the warm row in the list (decision 138) */}
-            {plan && nextIndex === -1 && (plan.suggestion ? <ActionBand action={plan.suggestion.action} aside={`for ${plan.suggestion.phrase}`} href={plan.suggestion.href} /> : <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />)}
+            {/* Once the day is done, the one main action: with a focus, its next thing; otherwise everything in Practice (decision 97) */}
+            {nextIndex === -1 && (plan.suggestion ? <ActionBand action={plan.suggestion.action} aside={`for ${plan.suggestion.phrase}`} href={plan.suggestion.href} /> : <ActionBand action="Practise more" aside="everything in Practice" href="/practice" />)}
           </div>
-        </div>}
+        )}
       </main>
     </PageFade>
   );
+}
+
+// "Morning", "Afternoon" or "Evening", for Sage's greeting
+function partOfDay(now: Date | null): string {
+  // The hour, or midday before the date is known
+  const hour = now ? now.getHours() : 12;
+  // The part of the day
+  return hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
 }

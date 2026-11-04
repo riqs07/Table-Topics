@@ -48,7 +48,7 @@ export function TopicDraw({ steps, onDone }: TopicDrawProps) {
   // Whether the real topic has landed
   const landed = at === steps.length - 1;
   // The headline's look, shared by the hidden real topic that sets the height and the topic shown over it
-  const headline = "relative font-display text-prompt tracking-tight before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[16ch] md:text-prompt-xl";
+  const headline = "relative font-display text-prompt before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[16ch] md:text-prompt-xl";
   // The headline's place: as tall as the real topic all along, so nothing below it moves, with longer topics clipped top and bottom (never at the sides, where the quote mark and the landing pop reach)
   return (
     <div data-topic-draw={landed ? "landed" : "spinning"} className="relative mt-8 grid overflow-y-clip md:mt-0">

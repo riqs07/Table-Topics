@@ -80,7 +80,7 @@ export function CheckInScreen(props: ScreenProps) {
       {data && (
         <section aria-label="This week" className={`mt-6 p-5 ${CARD}`}>
           {/* The state in a line */}
-          <p className="font-display text-cue font-semibold tracking-tight">{open ? (recorded.length === 0 ? "Your first check-in sets your starting point." : current ? "Your check-in is under way." : "Today is check-in day.") : next ? `Next check-in: ${dayWords(next)}.` : "Your first check-in comes after your first day."}</p>
+          <p className="font-display text-cue font-semibold">{open ? (recorded.length === 0 ? "Your first check-in sets your starting point." : current ? "Your check-in is under way." : "Today is check-in day.") : next ? `Next check-in: ${dayWords(next)}.` : "Your first check-in comes after your first day."}</p>
           {/* The day can be changed */}
           <p className="mt-1 text-footnote text-ink-muted">About 6 minutes. <Link href="/settings#check-in" className={TEXT_LINK}>Change the day</Link></p>
         </section>

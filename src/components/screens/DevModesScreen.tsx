@@ -40,7 +40,7 @@ export function DevModesScreen() {
       {/* What this page is */}
       <p className="mt-6 text-footnote font-semibold text-accent">For development</p>
       {/* Heading */}
-      <h1 className="mt-1 font-display text-statement tracking-tight">Every way to practise</h1>
+      <h1 className="mt-1 font-display text-statement">Every way to practise</h1>
       {/* The counts */}
       <p className="mt-2 max-w-[52ch] text-lede text-ink-muted">{entries.length} in all: {entries.filter((entry) => entry.main).length} on Practice’s main list, {entries.filter((entry) => !entry.main).length} extended. Extended ones will move into lessons over time.</p>
       {/* The link in Settings */}
@@ -74,7 +74,7 @@ export function DevModesScreen() {
                   {/* Name, its tag and its count */}
                   <span className="flex flex-wrap items-baseline gap-x-2">
                     {/* Name */}
-                    <span className="font-display text-xl font-semibold leading-tight tracking-tight">{entry.name}</span>
+                    <span className="font-display text-xl font-semibold leading-tight">{entry.name}</span>
                     {/* Tag */}
                     <span className={`rounded-full px-2 py-0.5 text-footnote ${entry.main ? "bg-fill text-fill-ink" : "bg-paper text-ink-muted"}`}>{entry.main ? "On Practice" : "Extended"}</span>
                     {/* Count */}

@@ -95,7 +95,7 @@ export function ScenesScreen(props: ScreenProps) {
           {next ? (
             <>
               {/* Its name and who it is with */}
-              <p data-next-scene={next.id} className="mt-1 font-display text-2xl font-semibold tracking-tight">{next.title}</p>
+              <p data-next-scene={next.id} className="mt-1 font-display text-2xl font-semibold">{next.title}</p>
               {/* Who, and the skill */}
               <p className="text-footnote text-ink-muted">With {findPersona(next.personaId)?.name} · {SKILLS[next.unit] ?? next.unit} · about 2 min</p>
               {/* Go */}
@@ -111,7 +111,7 @@ export function ScenesScreen(props: ScreenProps) {
         {/* Every scene */}
         <section aria-labelledby="all-scenes" className="mt-8">
           {/* The heading */}
-          <h2 id="all-scenes" className="font-display text-xl font-semibold tracking-tight">All scenes</h2>
+          <h2 id="all-scenes" className="font-display text-xl font-semibold">All scenes</h2>
           {/* The list */}
           <ul className={`mt-3 ${CARD_LIST}`}>
             {/* Each scene */}

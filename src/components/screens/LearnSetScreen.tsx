@@ -87,7 +87,7 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
             {/* Name and blurb */}
             <div className="min-w-0 flex-1">
               {/* Name */}
-              <h1 className="font-display text-statement font-semibold tracking-tight">{set.name}</h1>
+              <h1 className="font-display text-statement font-semibold">{set.name}</h1>
               {/* How far through, or how many cards (the blurb is on the set's card on Learn) */}
               <p className="text-footnote text-ink-muted">{progress && setProgress(set.id, progress).read > 0 ? `${setProgress(set.id, progress).read} of ${cards.length} read` : `${cards.length} cards`}</p>
             </div>

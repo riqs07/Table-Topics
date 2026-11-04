@@ -51,11 +51,11 @@ describe("ProfileScreen", () => {
     // Draw it with nothing saved
     render(<ProfileScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the heading and the empty line
-    expect([(await screen.findByText(/No takes measured yet/)).textContent?.includes("Practice"), screen.getByRole("heading", { level: 1 }).textContent]).toEqual([true, "Your speaking profile"]);
+    expect([(await screen.findByText(/No takes measured yet/)).textContent?.includes("Practice"), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("heading", { level: 2, name: "Your speaking profile" }) !== null]).toEqual([true, "You, so far", true]);
   });
 
-  // The one place for how you are doing (decision 109): named "Your progress" in the masthead, the check-ins in their own section before the measures, every measure folded, and History reached from here
-  it("puts the check-ins before the measures, under Your progress", async () => {
+  // The one place for how you are doing (decision 109; the Me tab since the UI rewrite): named "Me" in the masthead, the check-ins in their own section before the measures, every measure folded, and History reached from here
+  it("puts the check-ins before the measures, under Me", async () => {
     // The sample takes, plus two check-ins' reading takes a week apart
     const repository = await sampleRepository();
     // Each check-in's reading
@@ -68,7 +68,7 @@ describe("ProfileScreen", () => {
     const language = await screen.findByRole("region", { name: "Language" });
     // Confirm the masthead's name, the order, the latest day and the links, the fold closed, and the way to History
     expect([
-      screen.getByRole("banner").textContent?.includes("Your progress"),
+      screen.getByRole("banner").textContent?.includes("Me"),
       !!(checkIns.compareDocumentPosition(language) & Node.DOCUMENT_POSITION_FOLLOWING),
       within(checkIns).getByText("Tuesday 13 October") !== null,
       within(checkIns).getAllByRole("link").map((link) => link.getAttribute("href")),
