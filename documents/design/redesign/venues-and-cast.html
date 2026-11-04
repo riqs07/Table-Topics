@@ -1,0 +1,496 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>VoiceLab Venues and Cast</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: three stacked sections (the venue path, Sage on four screens, the blob's moments lab), each with a short note beside or above its phones. */
+:root{--bg:#eceee9;--surface:#f8f9f6;--fg:#1c201d;--muted:#5d655f;--line:#d3d8d1;--chip:#dfe3dc;--frame:#1c201d;--focus:#2c8050;--stage:#fff7ef;--stage-line:#f0e2d6;--accent:#2c8050;--on-accent:#fff;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--round:"Fredoka","Nunito",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121513;--surface:#1a1e1b;--fg:#e6eae7;--muted:#9aa39d;--line:#2c322e;--chip:#252b27;--frame:#000;--focus:#6fd39a;--stage:#1d1916;--stage-line:#3a312b;--accent:#4cbf7c;--on-accent:#0f1f15;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121513;--surface:#1a1e1b;--fg:#e6eae7;--muted:#9aa39d;--line:#2c322e;--chip:#252b27;--frame:#000;--focus:#6fd39a;--stage:#1d1916;--stage-line:#3a312b;--accent:#4cbf7c;--on-accent:#0f1f15;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.45}
+.wrap{max-width:1560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 64px;display:flex;flex-direction:column;gap:30px}
+h1{font-family:var(--round);font-weight:600;font-size:clamp(26px,4vw,38px);line-height:1.05;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:72ch}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.seg{display:inline-flex;background:var(--chip);border-radius:12px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font:inherit;color:var(--fg);border:0;background:transparent;padding:7px 13px;border-radius:9px;cursor:pointer;font-weight:600;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+section.part{display:flex;flex-direction:column;gap:16px}
+.part>header h2{font-family:var(--round);font-weight:600;font-size:26px;margin:0}
+.part>header p{color:var(--muted);margin:4px 0 0;max-width:80ch}
+.split{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:28px;align-items:start}
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.notes h3{margin:0;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.notes table{border-collapse:collapse;font-size:14px;width:100%}
+.notes td{padding:6px 6px 6px 0;border-top:1px solid var(--line);vertical-align:top}
+.notes td:first-child{font-weight:700;white-space:nowrap}
+.phones{display:flex;gap:26px 22px;flex-wrap:wrap;justify-content:center}
+.pcol{display:flex;flex-direction:column;gap:8px;width:min(340px,100%);flex:none;min-width:0}
+.pcol h4{font-family:var(--round);font-weight:600;font-size:17px;margin:0}
+.pcol p{margin:0;color:var(--muted);font-size:13.5px;min-height:40px}
+@media (max-width:900px){.split{grid-template-columns:1fr}}
+
+/* ===== phone (direction B tokens) ===== */
+.p{width:100%;height:720px;border-radius:42px;border:10px solid var(--frame);overflow:hidden;position:relative;background:var(--p-bg);color:var(--p-ink);box-shadow:0 20px 50px rgba(0,0,0,.18);font-family:"Nunito",system-ui,sans-serif}
+.p[data-m="light"]{--p-bg:#fff7ef;--p-card:#fff;--p-ink:#2b2320;--p-muted:#7a6c64;--p-line:#f0e2d6;--p-tabbg:#fff;--p-accent:#3fa66b;--p-accent-d:#2c8050;--p-on-accent:#fff;--sky:#4a68e0;--sun:#f4b73b;--bloom:#e86aae;--leaf:#7cc46a;--plum:#8a63e0;--coral:#ec6a55;--hl:#fff6e6;--bubble:#fff;--soft:#fbeee2;--rough-bg:#fff0d6;--rough-ink:#8a5410;--hilite:#ffe2a8;--sage:#2d5a3d;--sage-shade:#20432c;--room:#fdf3e7;--floor:#ecd9c4;--wood:#c98b5a;--wood-d:#a46b3f;--fabric:#6d86e8}
+.p[data-m="dark"]{--p-bg:#1d1916;--p-card:#2a2420;--p-ink:#fbefe4;--p-muted:#b9a99d;--p-line:#3a312b;--p-tabbg:#231e1a;--p-accent:#4cbf7c;--p-accent-d:#2f8a56;--p-on-accent:#0f1f15;--sky:#3f5bc9;--sun:#e0a530;--bloom:#d45c9d;--leaf:#66ad57;--plum:#7656cc;--coral:#d85c48;--hl:#fff6e6;--bubble:#2f2823;--soft:#2f2823;--rough-bg:#3d2e14;--rough-ink:#f6cf86;--hilite:#6b4e14;--sage:#3e7552;--sage-shade:#2c5a3d;--room:#2c2520;--floor:#3a2f27;--wood:#9a6a44;--wood-d:#7b5233;--fabric:#4c63c4}
+.p .scr{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.p .scr::-webkit-scrollbar{display:none}
+.p svg{display:block}
+.p button{font:inherit;cursor:pointer;color:inherit}
+.status{height:32px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:800;opacity:.8}
+.rnd{font-family:var(--round);font-weight:600}
+.lab{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--p-muted)}
+.card{background:var(--p-card);border:2px solid var(--p-line);border-radius:22px;box-shadow:0 4px 0 var(--p-line)}
+.chunky{border:0;border-radius:16px;padding:14px;width:100%;background:var(--p-accent);color:var(--p-on-accent)!important;font-family:var(--round);font-weight:600;font-size:17px;letter-spacing:.03em;box-shadow:0 5px 0 var(--p-accent-d);text-transform:uppercase}
+.chunky.sm{width:auto;padding:9px 16px;font-size:14px;border-radius:12px;box-shadow:0 4px 0 var(--p-accent-d)}
+.bubble{background:var(--bubble);border:2px solid var(--p-line);border-radius:18px;padding:10px 13px;font-weight:700;font-size:14.5px;position:relative}
+.bubble.l::before,.bubble.r::before{content:"";position:absolute;bottom:14px;width:14px;height:14px;background:var(--bubble);transform:rotate(45deg)}
+.bubble.l::before{left:-9px;border-left:2px solid var(--p-line);border-bottom:2px solid var(--p-line)}
+.bubble.r::before{right:-9px;border-right:2px solid var(--p-line);border-top:2px solid var(--p-line)}
+.tabs{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-around;padding:8px 6px 16px;background:var(--p-tabbg);border-top:2px solid var(--p-line);z-index:3}
+.tabs div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--p-muted);font-weight:800;min-width:60px}
+.tabs div.on{color:var(--p-accent)}
+.tabs i{width:40px;height:26px;display:grid;place-items:center;border-radius:10px}
+.tabs div.on i{background:color-mix(in srgb,var(--p-accent) 18%,transparent)}
+.pad{padding:2px 16px 100px;display:flex;flex-direction:column;gap:14px}
+
+/* venue path */
+.vband{margin:0 14px;border-radius:20px;padding:12px 14px;background:var(--sky);color:#fff;box-shadow:0 5px 0 color-mix(in srgb,var(--sky) 70%,#000)}
+.vband .lab{color:#ffffffcc}
+.vband b{font-family:var(--round);font-weight:600;font-size:20px;display:block}
+.vband small{font-weight:700;opacity:.9}
+.venues{padding:14px 16px 40px;display:flex;flex-direction:column}
+.venue{border-radius:22px;overflow:hidden;background:var(--p-card);border:2px solid var(--p-line);box-shadow:0 4px 0 var(--p-line)}
+.venue .scene{position:relative}
+.venue .meta{padding:10px 12px;display:flex;align-items:center;gap:10px}
+.venue .meta .tx{flex:1;min-width:0}
+.venue .meta b{display:block;font-size:15px;line-height:1.2}
+.venue .meta small{font-size:12px;font-weight:800;color:var(--p-muted)}
+.aud{position:absolute;left:10px;top:10px;background:color-mix(in srgb,var(--p-card) 88%,transparent);border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:800;color:var(--p-ink)}
+.badge{width:30px;height:30px;border-radius:50%;background:var(--p-accent);display:grid;place-items:center;flex:none;color:var(--p-on-accent)}
+.venue.next{opacity:.78}
+.venue.next .scene{filter:saturate(.55)}
+.venue.now{border-color:var(--sun);box-shadow:0 5px 0 color-mix(in srgb,var(--sun) 65%,#000)}
+.venue.boss{background:#2a1f25;border-color:#3a2c33;box-shadow:0 5px 0 #120d10;color:#f6eee6}
+.venue.boss .meta small{color:#d8cad0}
+.walk{height:34px;display:flex;justify-content:center}
+.walk svg{width:120px}
+
+/* sage screens */
+.breath{display:grid;place-items:center;position:relative;height:300px}
+.breath .ringb{position:absolute;width:250px;height:250px;border-radius:50%;border:3px solid color-mix(in srgb,var(--sage) 40%,transparent)}
+.teach{background:var(--sage);color:#fcfcfb;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 5px 0 var(--sage-shade)}
+.teach b{font-family:var(--round);font-weight:600;font-size:24px;line-height:1.1}
+.said{background:var(--p-card);border:2px solid var(--p-line);border-radius:18px;padding:12px;font-size:14.5px;line-height:1.55}
+.said mark{background:var(--hilite);color:inherit;border-radius:6px;padding:0 3px}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--rough-bg);border-radius:26px 26px 0 0;padding:18px 16px 18px;display:flex;flex-direction:column;gap:9px}
+.sheet .peek{position:absolute;right:14px;top:-70px}
+.sheet h3{margin:0;font-size:24px;color:var(--rough-ink)}
+.sheet p{margin:0;font-weight:700;font-size:15px}
+.sheet .q{font-style:italic;color:var(--rough-ink)}
+
+/* ===== moments lab ===== */
+.lab-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:980px){.lab-grid{grid-template-columns:1fr}}
+.stagebox{background:var(--stage);border:1px solid var(--stage-line);border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.rigwrap{position:relative;display:grid;place-items:center;height:330px}
+.rigwrap svg{width:300px;height:300px;max-width:100%}
+.say{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--surface);border:2px solid var(--stage-line);border-radius:16px;padding:8px 14px;font-weight:700;font-family:"Nunito",sans-serif;white-space:nowrap;opacity:0;transition:opacity .25s}
+.say.on{opacity:1}
+.cta{align-self:center;border:0;border-radius:14px;padding:11px 22px;background:var(--accent);color:var(--on-accent);font-family:var(--round);font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase}
+.cta.pulse{animation:pulse .7s ease-out 1}
+@keyframes pulse{40%{transform:scale(1.08)}}
+.moments{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.moments button{font:inherit;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:9px 11px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
+.moments button b{font-size:14px}
+.moments button span{font-size:12px;color:var(--muted)}
+.moments button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.caption{font-size:14px;color:var(--muted);min-height:42px;text-align:center}
+.poses{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pose{background:var(--stage);border:1px solid var(--stage-line);border-radius:16px;padding:8px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.pose svg{width:100%;max-width:120px;height:auto}
+.pose b{font-size:13px}
+.pose span{font-size:11.5px;color:var(--muted);line-height:1.25}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.compare>div{background:var(--stage);border:1px solid var(--stage-line);border-radius:16px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.compare svg{width:110px;height:110px}
+.compare b{font-size:13.5px}
+.compare span{font-size:12px;color:var(--muted)}
+.oldbob{animation:oldbob 1.4s ease-in-out infinite}
+@keyframes oldbob{50%{transform:translateY(-8px)}}
+@media (max-width:560px){.poses{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){.oldbob,.cta.pulse{animation:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Venues, Sage, and a blob with more to say</h1>
+    <p class="lede">Three mockups in direction B. <strong>1.</strong> A course path where each lesson is a bigger room and the audience grows. <strong>2.</strong> Sage, the green coach, as the app’s voice on four screens, with the orange blob as you. <strong>3.</strong> A lab where you can trigger the orange blob’s new “moments” and see the pose sheet.</p>
+  </header>
+  <div class="bar"><span style="font-size:13px;color:var(--muted)">Phones</span>
+    <div class="seg" role="group" aria-label="Phone theme" id="modes"><button type="button" data-m="light">Light</button><button type="button" data-m="dark">Dark</button></div>
+  </div>
+
+  <section class="part" aria-labelledby="h1">
+    <header><h2 id="h1">1 · The venue path</h2><p>“Stop freezing” as a journey from the mirror to a live radio studio. Every lesson stays open; the rooms show where you’re heading, not a lock.</p></header>
+    <div class="split">
+      <div class="notes">
+        <h3>The rooms</h3>
+        <table id="venueTable"></table>
+        <h3>Why it works</h3>
+        <ul>
+          <li>Public speaking really is about a growing audience, so the map means something.</li>
+          <li>The boss isn’t a random end node: Benny is waiting in the last room.</li>
+          <li>Each course gets its own set of rooms (a wedding for Toasts, a lift for Explain it simply), so no two paths look alike.</li>
+          <li>Rooms are scenes, not icons: the same drawing style as the course tiles.</li>
+        </ul>
+      </div>
+      <div class="phones"><div class="pcol"><h4>Course · Stop freezing</h4><p>Scroll the phone. You’re on lesson 2, on the sofa with a friend.</p><div class="p" id="pPath"></div></div></div>
+    </div>
+  </section>
+
+  <section class="part" aria-labelledby="h2">
+    <header><h2 id="h2">2 · Sage, the coach, and where Sage goes</h2><p>Sage speaks for the app; the orange blob is you. Sage appears at the four moments a coach would: greeting you, steadying you before you speak, teaching, and giving one note after.</p></header>
+    <div class="phones" id="sagePhones"></div>
+  </section>
+
+  <section class="part" aria-labelledby="h3">
+    <header><h2 id="h3">3 · The orange blob, more expressive</h2><p>Still most of the time: a breath and a blink. Then one clear move when something happens, with a wind-up, an overshoot and a settle. Tap a moment.</p></header>
+    <div class="lab-grid">
+      <div class="stagebox">
+        <div class="rigwrap"><div class="say" id="say"></div><svg id="rig" viewBox="-30 -10 360 320" aria-label="The blob"></svg></div>
+        <button class="cta" id="cta" type="button" tabindex="-1">Try again</button>
+        <div class="caption" id="caption">Idle: a slow breath and a blink every few seconds. Nothing else.</div>
+        <div class="moments" id="moments"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="notes"><h3>Pose sheet: eight still poses</h3><p style="margin:0;color:var(--muted);font-size:14px">Body language does more than motion. These are drawn once and reused everywhere: Today, results, scenes, videos.</p><div class="poses" id="poses"></div></div>
+        <div class="notes"><h3>Today vs. proposed</h3><div class="compare">
+          <div><svg viewBox="-120 -130 240 240" aria-hidden="true" id="oldBlob"></svg><b>Today: always bobbing</b><span>Loops everywhere start to feel cheap and busy.</span></div>
+          <div><svg viewBox="-30 -10 360 320" aria-hidden="true" id="newBlob"></svg><b>Proposed: still, then a moment</b><span>Breath and blink only, until something happens.</span></div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const BLOB = "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z";
+  const reduce = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } })();
+  const tw = (x, y, s, f = "var(--hl)") => `<path fill="${f}" d="M${x} ${y-s}l${s*.24} ${s*.76} ${s*.76} ${s*.24}-${s*.76} ${s*.24}-${s*.24} ${s*.76}-${s*.24}-${s*.76}-${s*.76}-${s*.24} ${s*.76}-${s*.24}z"/>`;
+
+  // ---------- the warm blob (you), static, any face ----------
+  const FACES = {
+    ready: `<ellipse fill="currentColor" cx="-23.8" cy="-35.8" rx="9.9" ry="14.8"/><ellipse fill="currentColor" cx="23.7" cy="-35.8" rx="9.9" ry="14.8"/><path stroke="currentColor" stroke-width="7.9" stroke-linecap="round" fill="none" d="M-15.8 -4.1q15.8 13.9 31.7 0"/>`,
+    happy: `<path stroke="currentColor" stroke-width="7.9" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M-37.6 -29.9L-23.8 -43.7-9.9 -29.9M9.9 -29.9L23.7 -43.7 37.6 -29.9"/><path fill="currentColor" d="M-23.8 -12h47.5q0 23.7-23.75 23.7t-23.75-23.7z"/>`,
+    wonder: `<circle fill="currentColor" cx="-15.8" cy="-43.7" r="9.9"/><circle fill="currentColor" cx="31.7" cy="-43.7" r="9.9"/><path stroke="currentColor" stroke-width="7.9" stroke-linecap="round" fill="none" d="M-15.8 -4.1q15.8 11.9 31.7 0"/>`,
+    small: `<ellipse fill="currentColor" cx="-20" cy="-38" rx="8" ry="11"/><ellipse fill="currentColor" cx="20" cy="-38" rx="8" ry="11"/><path stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none" d="M-9 -8q9 6 18 0"/>`
+  };
+  const you = (x, y, r, face = "ready") => `<g transform="translate(${x} ${y}) scale(${r/100})"><path fill="#cf7440" d="${BLOB}"/><path fill="#e8935c" transform="translate(-9 -8) scale(0.93)" d="${BLOB}"/><ellipse fill="#fff6e6" opacity=".5" cx="-50" cy="-54" rx="20" ry="12" transform="rotate(-35 -50 -54)"/><g style="color:#2a2420">${FACES[face]}</g></g>`;
+  // a member of the audience: same outline, a cast colour, never apricot
+  const folk = (x, y, r, c, face = "small", look = 0) => `<g transform="translate(${x} ${y}) scale(${r/100})"><path fill="${c}" d="${BLOB}"/><path fill="#000" opacity=".18" d="${BLOB}"/><path fill="${c}" transform="translate(-9 -8) scale(0.93)" d="${BLOB}"/><g style="color:#1d1a17" transform="translate(${look} 0)">${FACES[face]}</g></g>`;
+  const FOLK = ["#8fcf9a", "#9b82e6", "#6f8ff0", "#f08cc0", "#f6c55a", "#7cc4c9"];
+
+  // ---------- Sage (ported from video/src/characters/Sage.tsx) ----------
+  const SX = {
+    calm: {eyes: "lid", brows: [[0,0],[0,0]], mouth: "smile"}, listening: {eyes: "closed", brows: [[-2,0],[-2,0]], mouth: "smile"},
+    encouraging: {eyes: "open", brows: [[8,2],[8,2]], mouth: "big", cheeks: 1}, proud: {eyes: "happy", brows: [[6,0],[6,0]], mouth: "laugh", cheeks: 1},
+    curious: {eyes: "side", brows: [[0,0],[12,-4]], mouth: "small"}, breathe: {eyes: "closed", brows: [[3,0],[3,0]], mouth: "puff", cheeks: 1},
+    thinking: {eyes: "up", brows: [[4,-3],[9,2]], mouth: "side"}, concern: {eyes: "open", brows: [[3,7],[3,7]], mouth: "soft"}
+  };
+  const INK = "#fcfcfb";
+  function sEye(x, kind) {
+    const g = (s) => `<g transform="translate(${x} -30)" fill="${INK}" stroke="${INK}" stroke-linecap="round">${s}</g>`;
+    return g({lid: `<ellipse stroke="none" rx="9" ry="12"/>`, open: `<ellipse stroke="none" rx="10" ry="14"/>`, up: `<ellipse stroke="none" cx="2" cy="-6" rx="9" ry="11"/>`, side: `<ellipse stroke="none" cx="5" rx="9.5" ry="13"/>`,
+      closed: `<path fill="none" stroke-width="6" d="M-11 2Q0 11 11 2"/>`, happy: `<path fill="none" stroke-width="6" d="M-11 6Q0 -8 11 6"/>`}[kind]);
+  }
+  function sMouth(m) {
+    const line = `fill="none" stroke="${INK}" stroke-width="6.5" stroke-linecap="round"`;
+    const open = `fill="#10261a" stroke="${INK}" stroke-width="4.5" stroke-linejoin="round"`;
+    return {smile: `<path ${line} d="M-15 -2Q0 9 15 -2"/>`, big: `<path ${line} d="M-20 -4Q0 14 20 -4"/>`, small: `<ellipse fill="${INK}" cx="3" cy="4" rx="6" ry="7"/>`,
+      side: `<path ${line} d="M-4 4Q6 6 14 -2"/>`, soft: `<path ${line} d="M-10 4Q0 1 10 4"/>`, puff: `<circle fill="${INK}" cy="4" r="4"/>`,
+      laugh: `<g><path ${open} d="M-18 -3H18Q16 16 0 16Q-16 16-18 -3Z"/><ellipse fill="#ec6a55" cy="11" rx="8" ry="4"/></g>`}[m];
+  }
+  function sage(expr = "calm", arms = [6, 6], tilt = 0, breath = 1) {
+    const e = SX[expr];
+    const arm = (side, lift, far) => `<g transform="rotate(${-side * lift} ${side*82} -6)"><ellipse fill="${far ? "var(--sage-shade)" : "var(--sage)"}" cx="${side*104}" cy="26" rx="17" ry="28"/></g>`;
+    const brow = (side, [lift, inner]) => { const cx = side * 24; return `<path fill="none" stroke="${INK}" stroke-width="5.5" stroke-linecap="round" d="M${cx - side*12} ${-52-lift-inner}Q${cx} ${-57-lift} ${cx + side*12} ${-52-lift+inner*.3}"/>`; };
+    return `<g transform="rotate(${tilt} 0 94)"><g transform="translate(0 94) scale(${breath*1.02} ${breath*.95}) translate(0 -94)">
+      ${arm(-1, arms[0], true)}${arm(1, arms[1], false)}
+      <g transform="translate(0 -94)"><path fill="none" stroke="#4f8a43" stroke-width="6" stroke-linecap="round" d="M0 0Q-3 -16 3 -30"/><ellipse fill="#5ea34e" cx="16" cy="-38" rx="16" ry="8" transform="rotate(-30 16 -38)"/><ellipse fill="#7cc46a" cx="-10" cy="-36" rx="15" ry="8" transform="rotate(28 -10 -36)"/></g>
+      <path fill="var(--sage-shade)" d="${BLOB}"/><path fill="var(--sage)" transform="translate(-9 -8) scale(0.93)" d="${BLOB}"/>
+      <ellipse fill="#fff6e6" opacity=".28" cx="-60" cy="-64" rx="16" ry="9" transform="rotate(-35 -60 -64)"/>
+      <g transform="translate(0 8)">${e.cheeks ? `<g fill="#f59a86" opacity=".6"><ellipse cx="-46" cy="-6" rx="13" ry="8"/><ellipse cx="46" cy="-6" rx="13" ry="8"/></g>` : ""}
+        ${brow(-1, e.brows[0])}${brow(1, e.brows[1])}${sEye(-24, e.eyes)}${sEye(24, e.eyes)}${sMouth(e.mouth)}</g>
+    </g></g>`;
+  }
+  const sageSvg = (size, expr, arms, tilt, breath) => `<svg width="${size}" height="${size}" viewBox="-150 -165 300 290" aria-hidden="true">${sage(expr, arms, tilt, breath)}</svg>`;
+
+  const status = `<div class="status"><span>9:41</span><span>●●● ▮</span></div>`;
+  const I = {
+    home: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>`,
+    mic: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/></svg>`,
+    book: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>`,
+    me: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="9" r="4"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></svg>`,
+    check: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`
+  };
+  const tabs = on => `<nav class="tabs">${[["home", "Today"], ["mic", "Practice"], ["book", "Courses"], ["me", "Me"]].map(([k, l]) => `<div class="${l === on ? "on" : ""}"><i>${I[k]}</i>${l}</div>`).join("")}</nav>`;
+
+  // ================= 1. Venues =================
+  const W = 300, H = 140;
+  const floor = (y = 104) => `<rect y="${y}" width="${W}" height="${H - y}" fill="var(--floor)"/>`;
+  const VENUES = [
+    {lesson: "Pause, don’t fill", room: "The mirror", aud: "Just you", state: "done", draw: () => `<rect width="${W}" height="${H}" fill="var(--room)"/>${floor()}
+      <rect x="150" y="16" width="86" height="98" rx="43" fill="var(--wood)"/><rect x="157" y="23" width="72" height="84" rx="36" fill="#cfe3f4"/><path d="M170 40l26-12M178 56l30-14" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+      <g opacity=".55">${you(193, 82, 18, "happy")}</g>${you(108, 104, 30, "happy")}<rect x="250" y="70" width="34" height="40" rx="6" fill="var(--wood-d)"/>`},
+    {lesson: "Answer first", room: "The sofa", aud: "1 friend", state: "now", draw: () => `<rect width="${W}" height="${H}" fill="var(--room)"/>${floor()}
+      <rect x="22" y="22" width="44" height="34" rx="4" fill="var(--sky)" opacity=".5"/><path d="M262 30v60M248 30h28l-6 18h-16z" stroke="var(--wood-d)" stroke-width="4" fill="var(--sun)"/>
+      <rect x="120" y="58" width="150" height="34" rx="14" fill="var(--fabric)"/><rect x="112" y="80" width="166" height="30" rx="12" fill="var(--fabric)"/><rect x="112" y="80" width="166" height="30" rx="12" fill="#000" opacity=".12"/>
+      ${folk(222, 78, 24, FOLK[0], "small", -6)}${you(78, 104, 30, "ready")}`},
+    {lesson: "Three beats", room: "The café", aud: "2 at the table", state: "next", draw: () => `<rect width="${W}" height="${H}" fill="var(--room)"/>${floor()}
+      <rect x="20" y="14" width="110" height="62" rx="8" fill="#cfe3f4"/><path d="M75 14v62M20 45h110" stroke="var(--wood)" stroke-width="4"/>
+      <ellipse cx="190" cy="92" rx="56" ry="10" fill="var(--wood)"/><rect x="186" y="92" width="8" height="24" fill="var(--wood-d)"/>
+      <rect x="172" y="78" width="14" height="12" rx="3" fill="#fff"/><rect x="200" y="78" width="14" height="12" rx="3" fill="#fff"/>
+      ${folk(150, 92, 22, FOLK[1])}${folk(236, 92, 22, FOLK[4])}`},
+    {lesson: "End on purpose", room: "The meeting room", aud: "5 colleagues", state: "next", draw: () => `<rect width="${W}" height="${H}" fill="var(--room)"/>${floor(110)}
+      <rect x="30" y="16" width="70" height="44" rx="6" fill="#fff"/><path d="M40 48l14-14 12 8 22-20" stroke="var(--sky)" stroke-width="4" fill="none" stroke-linecap="round"/>
+      ${[0,1,2,3,4].map(i => folk(120 + i * 36, 78, 17, FOLK[i % 6])).join("")}
+      <rect x="100" y="88" width="190" height="20" rx="8" fill="var(--wood)"/><rect x="170" y="78" width="26" height="12" rx="2" fill="#555"/>`},
+    {lesson: "Go back to your point", room: "The open mic", aud: "12 in the bar", state: "next", draw: () => `<rect width="${W}" height="${H}" fill="#3b2a35"/>
+      <path d="M0 18q75 18 150 0t150 0" stroke="#f6c55a" stroke-width="2" fill="none"/>${[20,60,100,140,180,220,260].map(x => `<circle cx="${x}" cy="${22 + (x%80===20?4:0)}" r="4" fill="#ffe08a"/>`).join("")}
+      <rect x="40" y="70" width="110" height="16" rx="4" fill="var(--wood-d)"/><path d="M96 70V40" stroke="#c9b8bf" stroke-width="4"/><rect x="90" y="30" width="12" height="16" rx="6" fill="#c9b8bf"/>
+      ${Array.from({length: 12}, (_, i) => folk(170 + (i % 6) * 22, 92 + Math.floor(i / 6) * 22, 11, FOLK[i % 6])).join("")}`},
+    {lesson: "Two in a row", room: "The hall", aud: "A full hall", state: "next", draw: () => `<rect width="${W}" height="${H}" fill="#6b2f3a"/>
+      <path d="M0 0h40q-6 60 0 140H0zM300 0h-40q6 60 0 140h40z" fill="#9a3d4c"/><rect x="40" y="56" width="220" height="10" fill="var(--wood)"/>
+      ${Array.from({length: 27}, (_, i) => folk(56 + (i % 9) * 23.5, 84 + Math.floor(i / 9) * 20, 10, FOLK[i % 6])).join("")}`},
+    {lesson: "Benny, the quickfire host", room: "Live on air", aud: "Everyone listening", state: "boss", draw: () => `<rect width="${W}" height="${H}" fill="#1b1418"/>
+      <rect x="196" y="16" width="84" height="26" rx="6" fill="#ef6f5a"/><text x="238" y="34" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="14" fill="#fff">ON AIR</text>
+      <path d="M190 80q14 14 0 28M204 72q22 22 0 44" stroke="#f3a83b" stroke-width="4" fill="none" stroke-linecap="round"/>
+      ${folk(130, 106, 40, "#6f8ff0", "happy")}<path d="M88 66q42-46 84 0" stroke="#222" stroke-width="9" fill="none"/><rect x="80" y="62" width="18" height="28" rx="8" fill="#222"/><rect x="162" y="62" width="18" height="28" rx="8" fill="#222"/>
+      <path d="M60 132V96" stroke="#888" stroke-width="5"/><rect x="50" y="78" width="20" height="26" rx="10" fill="#c9b8bf"/>`}
+  ];
+  document.getElementById("venueTable").innerHTML = VENUES.map((v, i) => `<tr><td>${v.state === "boss" ? "Boss" : "Lesson " + (i + 1)}</td><td>${v.room}<br><span style="color:var(--muted);font-size:13px">${v.aud} · ${v.lesson}</span></td></tr>`).join("");
+  const walk = (i) => `<div class="walk"><svg viewBox="0 0 120 34" aria-hidden="true">${[0,1,2].map(k => `<ellipse cx="${i % 2 ? 44 + k * 16 : 76 - k * 16}" cy="${6 + k * 11}" rx="4" ry="6" fill="var(--p-line)" transform="rotate(${i % 2 ? -25 : 25} ${i % 2 ? 44 + k * 16 : 76 - k * 16} ${6 + k * 11})"/>`).join("")}</svg></div>`;
+  const pathScreen = () => `${status}
+    <div style="display:flex;align-items:center;gap:8px;padding:0 16px 8px"><span style="font-size:22px;color:var(--p-muted)" aria-hidden="true">‹</span><span class="lab">Courses</span></div>
+    <div class="vband"><span class="lab">Course · 6 lessons and a boss</span><b>Stop freezing</b><small>Your audience grows as you go.</small></div>
+    <div class="venues">${VENUES.map((v, i) => `${i ? walk(i) : ""}<div class="venue ${v.state}">
+      <div class="scene"><svg viewBox="0 0 ${W} ${H}" width="100%" aria-hidden="true">${v.draw()}</svg><span class="aud">${v.aud}</span></div>
+      <div class="meta">${v.state === "done" ? `<span class="badge">${I.check}</span>` : ""}<div class="tx"><small>${v.state === "boss" ? "The boss" : "Lesson " + (i + 1) + " · " + v.room}</small><b>${v.lesson}</b></div>
+        ${v.state === "now" ? `<button class="chunky sm" type="button">Start</button>` : v.state === "done" ? `<small>Again</small>` : v.state === "boss" ? `<small>2½ min call</small>` : ""}</div></div>`).join("")}</div>`;
+
+  // ================= 2. Sage screens =================
+  const SAGE = [
+    ["Today", "Sage greets you and sets up the day. Your blob only appears when it’s you doing something.", () => `${status}<div class="pad">
+      <div style="display:flex;align-items:flex-end;gap:6px">${sageSvg(92, "encouraging", [6, 50])}<div class="bubble l" style="flex:1">Evening. Three short ones tonight. Start with a breath.</div></div>
+      <div class="card" style="padding:12px;display:flex;gap:12px;align-items:center"><svg viewBox="0 0 200 200" width="86" height="86" aria-hidden="true"><g transform="rotate(-4 100 100)"><rect x="14" y="14" width="172" height="172" rx="34" fill="var(--sky)"/></g><path d="M150 46 L122 100 h22 l-10 46 34 -60 h-22 z" fill="var(--sun)" stroke="#fff6e6" stroke-width="5" stroke-linejoin="round"/>${you(88, 130, 40, "ready")}</svg>
+        <div style="flex:1;min-width:0"><span class="lab">Rapid Fire · up next</span><div class="rnd" style="font-size:17px;line-height:1.15">What’s a small thing that made your week?</div></div></div>
+      <div class="card" style="padding:12px;opacity:.85"><span class="lab">Then</span><div style="font-weight:700">Pause instead of um · Lesson 2: Answer first</div></div>
+      <button class="chunky" type="button">Start</button>
+    </div>${tabs("Today")}`],
+    ["Before you speak", "A three‑second “take a breath” before any timed take. Sage breathes with you; the question waits.", () => `${status}
+      <div style="padding:6px 18px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:20px;color:var(--p-muted)">✕</span><span class="lab">Rapid Fire</span><span></span></div>
+      <div class="breath"><div class="ringb"></div>${sageSvg(220, "breathe", [40, 40], 0, 1.04)}</div>
+      <div style="text-align:center;padding:0 22px;display:flex;flex-direction:column;gap:8px">
+        <div class="rnd" style="font-size:26px">Breathe in… and out.</div>
+        <div style="color:var(--p-muted);font-weight:700">Then start with your point.</div>
+        <div class="card" style="padding:12px;margin-top:6px;text-align:left"><span class="lab">Your question</span><div class="rnd" style="font-size:17px">What’s a small thing that made your week?</div></div>
+        <button class="chunky" type="button" style="margin-top:6px">I’m ready</button>
+      </div>`],
+    ["Teaching a lesson", "Sage explains the idea; your blob gives its own example (“Here’s mine…”); Sage reacts. Two voices, so it feels like a conversation.", () => `${status}<div class="pad">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px;color:var(--p-muted)">✕</span><div style="flex:1;height:12px;border-radius:999px;background:var(--p-line)"><div style="width:30%;height:100%;border-radius:999px;background:var(--p-accent)"></div></div></div>
+      <span class="lab" style="color:var(--sky)">Lesson 2 · See it</span>
+      <div style="display:flex;align-items:flex-end;gap:4px">${sageSvg(110, "calm", [6, 75], -3)}<div class="teach" style="flex:1"><span style="font-weight:800;font-size:12px;letter-spacing:.07em;text-transform:uppercase;opacity:.8">Sage</span><b>Answer first. Explain after.</b><span style="font-weight:600">Listeners decide what you think from your first sentence.</span></div></div>
+      <div style="display:flex;align-items:flex-end;gap:6px;flex-direction:row-reverse"><svg viewBox="-115 -115 230 230" width="70" height="70" aria-hidden="true">${you(0, 0, 100, "ready")}</svg><div class="bubble r" style="flex:1">Here’s mine. Should everyone learn to cook? “Yes, the basics.” Then why.</div></div>
+      <div style="display:flex;align-items:flex-end;gap:6px"><svg viewBox="-150 -165 300 290" width="64" height="64" aria-hidden="true">${sage("proud", [6, 6])}</svg><div class="bubble l" style="flex:1">That’s it. Three words, and I knew your answer.</div></div>
+      <button class="chunky" type="button">Your turn</button>
+    </div>`],
+    ["After a take", "Sage gives the one note, kindly, in its own words. The blob’s reaction stays with you; Sage’s face matches the note.", () => `${status}
+      <div style="padding:6px 18px;display:flex;gap:12px;align-items:center"><span style="font-size:20px;color:var(--p-muted)">✕</span><div style="flex:1;height:12px;border-radius:999px;background:var(--p-line)"><div style="width:34%;height:100%;border-radius:999px;background:var(--p-accent)"></div></div></div>
+      <div style="padding:8px 18px;display:flex;flex-direction:column;gap:10px">
+        <span class="lab" style="color:var(--sun)">Rapid Fire</span><div class="rnd" style="font-size:20px;line-height:1.15">What’s a small thing that made your week?</div>
+        <div class="said">So, <mark>um</mark>, the best thing this week… I guess it was Sunday? <mark>Um</mark>, I didn’t really do much, <mark>like</mark>, I made pancakes, and <mark>um</mark>, I called my sister.</div>
+      </div>
+      <div class="sheet"><div class="peek">${sageSvg(110, "curious", [6, 30])}</div>
+        <h3 class="rnd">Good start.</h3>
+        <p class="q">“What happened after your second idea? That’s where the ums crept in.”</p>
+        <p>Next take: pause and breathe there instead.</p>
+        <button class="chunky" type="button" style="margin-top:4px">Try again</button>
+      </div>`]
+  ];
+  document.getElementById("sagePhones").innerHTML = SAGE.map(([t, d], i) => `<div class="pcol"><h4>${t}</h4><p>${d}</p><div class="p" data-sage="${i}"></div></div>`).join("");
+
+  // phones render + theme
+  let mode = "light"; try { if (matchMedia("(prefers-color-scheme: dark)").matches) mode = "dark"; } catch (e) {}
+  try { mode = localStorage.getItem("vl-cast-mode") || mode; } catch (e) {}
+  function renderPhones() {
+    const pp = document.getElementById("pPath"); pp.dataset.m = mode; pp.innerHTML = `<div class="scr">${pathScreen()}</div>`;
+    document.querySelectorAll("[data-sage]").forEach(p => { p.dataset.m = mode; p.innerHTML = `<div class="scr">${SAGE[+p.dataset.sage][2]()}</div>`; });
+    document.querySelectorAll("#modes button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === mode)));
+    try { localStorage.setItem("vl-cast-mode", mode); } catch (e) {}
+  }
+  document.getElementById("modes").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { mode = b.dataset.m; renderPhones(); } });
+  renderPhones();
+
+  // ================= 3. The rig =================
+  // State drawn every frame; numbers tween, names (eyes, mouth) switch at a keyframe's start
+  const REST = {lean: 0, sx: 1, sy: 1, dy: 0, lookX: 0, lookY: 0, lid: 0, armL: 12, armR: 12, cheeks: 0, brows: 0, open: 0, spark: 0, eyes: "open", mouth: "smile"};
+  function makeRig(svg) {
+    svg.innerHTML = `<g transform="translate(150 162)">
+      <g data-k="body">
+        <g data-k="armL"><ellipse fill="#cf7440" cx="-90" cy="32" rx="15" ry="26"/></g>
+        <g data-k="armR"><ellipse fill="#e8935c" cx="90" cy="32" rx="15" ry="26"/></g>
+        <path fill="#cf7440" d="${BLOB}"/><path fill="#e8935c" transform="translate(-9 -8) scale(0.93)" d="${BLOB}"/>
+        <ellipse fill="#fff6e6" opacity=".5" cx="-50" cy="-54" rx="20" ry="12" transform="rotate(-35 -50 -54)"/>
+        <g data-k="face" style="color:#2a2420">
+          <g data-k="cheeks" fill="#ec6a55"><ellipse cx="-46" cy="-12" rx="12" ry="7"/><ellipse cx="46" cy="-12" rx="12" ry="7"/></g>
+          <path data-k="brows" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none" d="M-36 -60L-14 -66M14 -66L36 -60"/>
+          <g data-k="eyesOpen"><ellipse data-k="eL" fill="currentColor" cx="-23.8" cy="-35.8" rx="9.9" ry="14.8"/><ellipse data-k="eR" fill="currentColor" cx="23.7" cy="-35.8" rx="9.9" ry="14.8"/>
+            <circle data-k="gL" fill="#fff" cx="-20" cy="-42" r="3"/><circle data-k="gR" fill="#fff" cx="27.5" cy="-42" r="3"/></g>
+          <path data-k="eyesHappy" stroke="currentColor" stroke-width="7.9" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M-37.6 -29.9L-23.8 -43.7-9.9 -29.9M9.9 -29.9L23.7 -43.7 37.6 -29.9"/>
+          <path data-k="m-smile" stroke="currentColor" stroke-width="7.9" stroke-linecap="round" fill="none" d="M-15.8 -4.1q15.8 13.9 31.7 0"/>
+          <path data-k="m-grin" fill="currentColor" d="M-23.8 -12h47.5q0 23.7-23.75 23.7t-23.75-23.7z"/>
+          <path data-k="m-flat" stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none" d="M-10 0h18"/>
+          <ellipse data-k="m-o" fill="currentColor" cx="0" cy="0" rx="8" ry="10"/>
+          <ellipse data-k="m-talk" fill="currentColor" cx="0" cy="-2" rx="11" ry="4"/>
+        </g>
+      </g>
+      <g data-k="spark">${tw(-90, -110, 14, "#f4b73b")}${tw(98, -90, 10, "#f4b73b")}${tw(70, -140, 8, "#f4b73b")}</g>
+    </g>`;
+    const k = n => svg.querySelector(`[data-k="${n}"]`);
+    const el = {body: k("body"), armL: k("armL"), armR: k("armR"), face: k("face"), cheeks: k("cheeks"), brows: k("brows"), open: k("eyesOpen"), eL: k("eL"), eR: k("eR"), gL: k("gL"), gR: k("gR"), happy: k("eyesHappy"), spark: k("spark"),
+      m: {smile: k("m-smile"), grin: k("m-grin"), flat: k("m-flat"), o: k("m-o"), talk: k("m-talk")}};
+    return function draw(s, breath = 0, blink = 0) {
+      const sx = s.sx * (1 + breath * .012), sy = s.sy * (1 - breath * .012);
+      el.body.setAttribute("transform", `translate(0 ${s.dy}) translate(0 94) rotate(${s.lean}) scale(${sx} ${sy}) translate(0 -94)`);
+      el.armL.setAttribute("transform", `rotate(${s.armL} -90 -4)`);
+      el.armR.setAttribute("transform", `rotate(${-s.armR} 90 -4)`);
+      el.face.setAttribute("transform", `translate(${s.lookX} ${s.lookY})`);
+      el.cheeks.setAttribute("opacity", (s.cheeks * .45).toFixed(2));
+      el.brows.setAttribute("opacity", s.brows.toFixed(2));
+      const happy = s.eyes === "happy";
+      el.open.style.display = happy ? "none" : ""; el.happy.style.display = happy ? "" : "none";
+      const lid = Math.min(1, Math.max(s.lid, blink));
+      const ry = Math.max(1.6, 14.8 * (1 - lid));
+      for (const [e, g, x] of [[el.eL, el.gL, -23.8], [el.eR, el.gR, 23.7]]) {
+        e.setAttribute("ry", ry.toFixed(2)); e.setAttribute("cy", (-35.8 + 14.8 * lid * .55).toFixed(2));
+        e.setAttribute("cx", (x + s.lookX * .35).toFixed(2));
+        g.setAttribute("cx", (x + 3.8 + s.lookX * .35).toFixed(2)); g.setAttribute("opacity", lid > .5 ? 0 : 1);
+      }
+      for (const [n, node] of Object.entries(el.m)) node.style.display = n === s.mouth ? "" : "none";
+      el.m.talk.setAttribute("ry", (2 + s.open * 12).toFixed(2));
+      el.spark.setAttribute("opacity", s.spark.toFixed(2));
+    };
+  }
+
+  // easing
+  const E = {
+    inOut: t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
+    out: t => 1 - Math.pow(1 - t, 3),
+    back: t => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+  };
+  const NUM = ["lean", "sx", "sy", "dy", "lookX", "lookY", "lid", "armL", "armR", "cheeks", "brows", "open", "spark"];
+
+  // the moments: [ms, target, easing, say?]
+  const rest = (ms = 450) => [ms, {...REST}, "back"];
+  const MOMENTS = {
+    nod: {name: "You held a pause", hint: "a proud nod", caption: "A held pause: a small wind-up, two nods, a pleased face, then back to rest.",
+      keys: [[160, {sy: .95, sx: 1.03, lid: .35}, "inOut"], [240, {sy: 1, sx: 1, lid: 0, eyes: "happy", cheeks: .8}, "out"], [190, {dy: 9, sy: .95, sx: 1.03}, "inOut"], [260, {dy: 0, sy: 1, sx: 1}, "back"], [170, {dy: 6, sy: .97}, "inOut"], [280, {dy: 0, sy: 1}, "back"], [900, {}, "out"], rest()]},
+    lean: {name: "Your ending trailed off", hint: "leans in, waiting", say: "And then…?", caption: "Trailing off: it leans in and waits, curious rather than disappointed, as if to say “and then?”",
+      keys: [[180, {lean: -3, sx: 1.02, sy: .97}, "inOut"], [420, {lean: 10, lookX: 9, lookY: 2, mouth: "o", sx: 1, sy: 1}, "back"], [1300, {}, "out"], rest(500)]},
+    proud: {name: "You beat your day‑1 number", hint: "a proud puff", caption: "A personal best: it crouches, springs up with arms raised and cheeks warm, holds the moment, and settles.",
+      keys: [[220, {sy: .88, sx: 1.08, lid: .3}, "inOut"], [380, {sy: 1.1, sx: .95, dy: -12, armL: 120, armR: 120, eyes: "happy", mouth: "grin", cheeks: 1, lid: 0, spark: 1}, "back"], [260, {sy: 1, sx: 1, dy: -4}, "out"], [1000, {}, "out"], [500, {...REST, spark: 0}, "back"]]},
+    sheepish: {name: "A rough take", hint: "sheepish, then “hmm”", say: "Hmm. Again?", caption: "A rough take: a small squash and a sideways glance, then it looks up, thinking, ready to go again. Never sad.",
+      keys: [[320, {sy: .9, sx: 1.06, dy: 6, lookX: -9, lookY: 6, lid: .35, mouth: "flat", armR: 165, brows: 1}, "out"], [900, {}, "out"], [450, {sy: 1, sx: 1, dy: 0, lookX: 6, lookY: -7, lid: 0, mouth: "smile", armR: 20, brows: .6}, "back"], [900, {}, "out"], rest()]},
+    turn: {name: "Your turn", hint: "looks at the button", caption: "Your turn: it looks down at the button and gestures toward it. The button pulses once.", cta: true,
+      keys: [[260, {lookX: 6, lookY: 12, lean: 4}, "out"], [300, {armR: 55}, "back"], [1200, {}, "out"], rest()]},
+    voice: {name: "While you speak", hint: "moves with your voice", caption: "While you speak: it grows slightly with your volume and its mouth follows; in your pauses it closes its eyes and goes calm.", voice: true, keys: []}
+  };
+
+  // a player for one rig
+  function player(svg) {
+    const draw = makeRig(svg);
+    let s = {...REST}, queue = [], cur = null, voiceUntil = 0, blinkAt = performance.now() + 2500, blinkEnd = 0, onEnd = null;
+    function play(keys, done) { queue = keys.map(k => k.slice()); cur = null; onEnd = done; }
+    function voice(ms, done) { voiceUntil = performance.now() + ms; onEnd = done; }
+    // a speech-like loudness: phrases with pauses
+    const phrases = [[0, 1.6], [2.3, 3.9], [4.6, 6.4]];
+    function level(t) {
+      for (const [a, b] of phrases) if (t >= a && t <= b) return .35 + .65 * Math.abs(Math.sin(t * 9.3) * Math.sin(t * 3.7 + 1));
+      return 0;
+    }
+    let vStart = 0;
+    function frame(now) {
+      // keyframes
+      if (!cur && queue.length) { const [ms, to, ease, ] = queue.shift(); cur = {ms, to, ease, t0: now, from: {...s}}; if (to.eyes) s.eyes = to.eyes; if (to.mouth) s.mouth = to.mouth; }
+      if (cur) {
+        const t = reduce ? 1 : Math.min(1, (now - cur.t0) / cur.ms), e = E[cur.ease](t);
+        for (const n of NUM) if (n in cur.to) s[n] = cur.from[n] + (cur.to[n] - cur.from[n]) * e;
+        if (t >= 1) { cur = null; if (!queue.length && onEnd) { const f = onEnd; onEnd = null; f(); } }
+      }
+      // voice
+      if (voiceUntil) {
+        if (!vStart) vStart = now;
+        const t = (now - vStart) / 1000, lv = level(t), sm = s._lv = (s._lv || 0) * .75 + lv * .25;
+        const speaking = sm > .08;
+        s.sx = 1 + sm * .035; s.sy = 1 + sm * .055; s.mouth = speaking ? "talk" : "smile"; s.open = sm;
+        s.lid += ((speaking ? 0 : .85) - s.lid) * .08;
+        if (now > voiceUntil) { voiceUntil = 0; vStart = 0; play([rest(400)], onEnd); onEnd = null; }
+      }
+      // blink: every 3.5–6 s, 130 ms, only when eyes are open and nothing is moving fast
+      let blink = 0;
+      if (now > blinkAt) { blinkEnd = now + 130; blinkAt = now + 3500 + Math.random() * 2500; }
+      if (now < blinkEnd && s.eyes === "open" && !reduce) blink = 1;
+      const breath = reduce ? 0 : Math.sin(now / 1000 * Math.PI * 2 / 4.2);
+      draw(s, breath, blink);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    return {play, voice, set(st) { s = {...REST, ...st}; draw(s); }};
+  }
+
+  // main rig + controls
+  const main = player(document.getElementById("rig"));
+  const say = document.getElementById("say"), cap = document.getElementById("caption"), cta = document.getElementById("cta");
+  const mb = document.getElementById("moments");
+  mb.innerHTML = Object.entries(MOMENTS).map(([k, m]) => `<button type="button" data-k="${k}" aria-pressed="false"><b>${m.name}</b><span>${m.hint}</span></button>`).join("");
+  let busy = false;
+  mb.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b || busy) return; const m = MOMENTS[b.dataset.k];
+    busy = true; mb.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    cap.textContent = m.caption; say.textContent = m.say || ""; say.classList.toggle("on", !!m.say);
+    if (m.cta) { cta.classList.remove("pulse"); void cta.offsetWidth; setTimeout(() => cta.classList.add("pulse"), 450); }
+    const done = () => { busy = false; say.classList.remove("on"); };
+    if (m.voice) main.voice(7000, done); else main.play(m.keys, done);
+  });
+
+  // the comparison: today's bob vs the new idle
+  document.getElementById("oldBlob").innerHTML = `<g class="oldbob">${you(0, 0, 100, "ready")}</g>`;
+  player(document.getElementById("newBlob"));
+
+  // pose sheet: still rigs
+  const POSES = [
+    ["Ready", "the default", {}],
+    ["Listening", "leans in, eyes soft", {lean: 7, lid: .7, lookX: 5}],
+    ["Thinking", "looks up, arm raised", {lookX: 7, lookY: -9, armR: 120, mouth: "flat", brows: .6}],
+    ["Proud", "puffed up, arms high", {sy: 1.07, sx: .96, eyes: "happy", mouth: "grin", armL: 120, armR: 120, cheeks: 1}],
+    ["Sheepish", "squashed, glancing away", {sy: .9, sx: 1.06, dy: 6, lookX: -9, lookY: 6, lid: .35, mouth: "flat", armR: 165, brows: 1}],
+    ["Cheering", "arms up, mouth open", {sy: 1.05, eyes: "happy", mouth: "o", armL: 150, armR: 150, cheeks: .8}],
+    ["Waiting", "leans toward you", {lean: 10, lookX: 9, lookY: 2, mouth: "o"}],
+    ["Focused", "half-lidded, steady", {lid: .5, mouth: "flat"}]
+  ];
+  document.getElementById("poses").innerHTML = POSES.map(([n, d], i) => `<div class="pose"><svg viewBox="-30 -10 360 320" data-pose="${i}" aria-hidden="true"></svg><b>${n}</b><span>${d}</span></div>`).join("");
+  document.querySelectorAll("[data-pose]").forEach(svg => { const d = makeRig(svg); d({...REST, ...POSES[+svg.dataset.pose][2]}); });
+})();
+</script>
+
+</body></html>

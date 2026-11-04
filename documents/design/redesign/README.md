@@ -39,6 +39,15 @@
 - Role-play packs, which map onto Scenes and Talk with someone.
 - Choosing the blob's colour or voice at the start (neutral: "may be too much").
 
+## Venues, Sage and the blob's moments (mocked up 2026-11-04)
+
+[venues-and-cast.html](venues-and-cast.html), open in a browser:
+
+- **The venue path** replaces the Duolingo-style course path the user found unoriginal: each lesson is a bigger room, the audience grows, and the course's boss waits in the last one (Stop freezing: mirror, sofa, café, meeting room, open mic, hall, then live on air with Benny). Every lesson stays open. Each course would get its own rooms.
+- **Sage speaks for the app; the orange blob is you.** Sage greets you on Today, breathes with you before a timed take, teaches a lesson's idea while your blob gives its example, and gives the one note after a take. Drawn from `video/src/characters/Sage.tsx` and [../characters/sage.md](../characters/sage.md).
+- **The orange blob's moments:** idle is a breath and a blink only (no constant bobbing, which the user felt could look cheap); a reaction plays once, with a wind-up, an overshoot and a settle: a nod for a held pause, leaning in when an ending trails off, a proud puff for a personal best, sheepish then "hmm" after a rough take, looking at the button for your turn, and moving with your voice while you speak. Eight still poses (ready, listening, thinking, proud, sheepish, cheering, waiting, focused) carry most of the expression.
+- **Open:** the user's blob colour (not attached to apricot); a new colour for "the other person" so Sage only ever means Sage (sage.md, question 3); whether polished rigs move to Rive later.
+
 ## Open questions
 
 1. How playful can the wording get before it reads as childish? Test with real screens.
