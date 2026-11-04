@@ -184,9 +184,11 @@ export function StormBeatC() {
 }
 
 // The combined beat, as a group to place in any scene: all storm, then the calm sweeps over the whole body, and the storm shrinks into a small porthole (frame is local: 0 is the first flash)
-export function StormToCalm({ frame, cx, cy, r, id }: { frame: number; cx: number; cy: number; r: number; id: string }) {
+export function StormToCalm({ frame: raw, cx, cy, r, id, hold = 0 }: { frame: number; cx: number; cy: number; r: number; id: string; hold?: number }) {
   // The frame rate
   const { fps } = useVideoConfig();
+  // The clock for the calm's steps: held back by "hold" frames, so the storm can last longer
+  const frame = raw - hold;
   // How far the calm has swept across (0 = all storm, 1 = all calm)
   const sweep = ease(frame, 20, 62);
   // The storm shrinking into the porthole
@@ -198,7 +200,7 @@ export function StormToCalm({ frame, cx, cy, r, id }: { frame: number; cx: numbe
   // The eyes lifting into happy arches after
   const settle = ease(frame, 64, 80);
   // Lightning: big flashes at the start, then now and then
-  const flash = [0, 6, 40, 96, 118].some((f) => frame >= f && frame < f + 4);
+  const flash = [0, 6, 40, 96, 118].some((f) => raw >= f && raw < f + 4);
   // The seam's x: from past the left edge to past the right edge
   const seamX = cx - r * 1.2 + r * 2.4 * sweep;
   // The jagged seam
@@ -237,7 +239,7 @@ export function StormToCalm({ frame, cx, cy, r, id }: { frame: number; cx: numbe
         <path d="M-18 -6q18 16 36 0" stroke="#2a2420" strokeWidth={7.5} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - smile} />
       </g>
       {/* The storm: in the body, right of the seam and in the porthole, shrinking into it */}
-      <g clipPath={`url(#${id}-body)`}><g clipPath={`url(#${id}-storm)`}><g transform={`translate(${sx} ${sy}) scale(${ss})`}><BigStorm frame={frame} flash={flash} /></g></g></g>
+      <g clipPath={`url(#${id}-body)`}><g clipPath={`url(#${id}-storm)`}><g transform={`translate(${sx} ${sy}) scale(${ss})`}><BigStorm frame={raw} flash={flash} /></g></g></g>
       {/* The glowing seam while it crosses */}
       <g clipPath={`url(#${id}-body)`}><path d={`M${seam.map(([x, y]) => `${x} ${y}`).join(" L")}`} stroke="#fff6d6" strokeWidth={r / 40} fill="none" strokeLinejoin="round" opacity={sweep > 0.02 && sweep < 0.98 ? 1 : 0} /></g>
       {/* The porthole's rim and a glint on its glass */}
@@ -245,7 +247,7 @@ export function StormToCalm({ frame, cx, cy, r, id }: { frame: number; cx: numbe
       {/* (glint) */}
       <path d={`M${cx - pr * 0.6} ${py - pr * 0.55} a${pr * 0.8} ${pr * 0.8} 0 0 1 ${pr * 0.5} -${pr * 0.25}`} stroke="#fff" strokeWidth={r * 0.02} strokeLinecap="round" fill="none" opacity={0.35 * Math.min(1, rim)} />
       {/* A flash over everything on the first strikes */}
-      <rect x={-2000} y={-2000} width={6000} height={6000} fill="#fff6d6" opacity={frame >= 0 && frame < 10 ? 0.1 : 0} />
+      <rect x={-2000} y={-2000} width={6000} height={6000} fill="#fff6d6" opacity={raw >= 0 && raw < 10 ? 0.1 : 0} />
     </g>
   );
 }

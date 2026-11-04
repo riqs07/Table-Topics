@@ -21,7 +21,7 @@ import { TWO_PEOPLE_FRAMES, TwoPeople } from "./demo/TwoPeople";
 // Load the blueprint art test and its length (2026-11-04)
 import { BLUEPRINT_FRAMES, StoryBlueprint } from "./demo/StoryBlueprint";
 // Load the two science reels and their length (2026-11-04)
-import { SCIENCE_FRAMES, ScienceSync, ScienceTransparency } from "./demo/SciencePosts";
+import { SCIENCE_FRAMES, ScienceSync, ScienceTransparency, TRANSPARENCY_FRAMES } from "./demo/SciencePosts";
 // Load the storm-beat ideas (stills)
 import { StormBeat } from "./demo/StormBeat";
 // Load the two refined storm beats (2026-11-04)
@@ -34,7 +34,7 @@ const waiting = delayRender("Loading fonts");
 // The body face, from the app's file
 const body = new FontFace("Atkinson", `url(${atkinson})`, { weight: "200 800" });
 // Load it and the display face, then carry on (a failure still carries on, in the fallback fonts)
-void Promise.all([body.load().then((face) => document.fonts.add(face)), document.fonts.load("700 74px 'Fraunces Variable'"), document.fonts.load("700 74px Fredoka"), document.fonts.load("600 40px Fredoka")]).finally(() => continueRender(waiting));
+void Promise.all([body.load().then((face) => document.fonts.add(face)), document.fonts.load("700 74px 'Fraunces Variable'"), document.fonts.load("700 74px Fredoka"), document.fonts.load("600 40px Fredoka"), document.fonts.load("500 22px 'IBM Plex Mono'"), document.fonts.load("600 22px 'IBM Plex Mono'")]).finally(() => continueRender(waiting));
 
 // The compositions
 export function Root() {
@@ -52,7 +52,7 @@ export function Root() {
       {/* The blueprint of a story: silent, 4:5 */}
       <Composition id="StoryBlueprint" component={StoryBlueprint} durationInFrames={BLUEPRINT_FRAMES} fps={30} width={1080} height={1350} />
       {/* The science reels: silent, 9:16 */}
-      <Composition id="ScienceTransparency" component={ScienceTransparency} durationInFrames={SCIENCE_FRAMES} fps={30} width={1080} height={1920} />
+      <Composition id="ScienceTransparency" component={ScienceTransparency} durationInFrames={TRANSPARENCY_FRAMES} fps={30} width={1080} height={1920} />
       {/* (brains in sync) */}
       <Composition id="ScienceSync" component={ScienceSync} durationInFrames={SCIENCE_FRAMES} fps={30} width={1080} height={1920} />
       {/* The storm-beat ideas, one still each */}
