@@ -36,7 +36,7 @@ function window(frame: number, from: number, to: number, fade = 8) {
 }
 
 // A starry night sky that twinkles, filling the frame
-function Sky({ frame, top, bottom }: { frame: number; top: string; bottom: string }) {
+export function Sky({ frame, top, bottom }: { frame: number; top: string; bottom: string }) {
   // Ninety stars at fixed places
   const stars = Array.from({ length: 90 }, (_, i) => ({ x: (i * 397) % 1080, y: (i * 233) % 1920, r: i % 9 ? 2.2 : 4, phase: i * 0.7 }));
   // The sky and its stars
@@ -53,7 +53,7 @@ function Sky({ frame, top, bottom }: { frame: number; top: string; bottom: strin
 }
 
 // One of the cast, with a soft gradient, a highlight and a face
-function Character({ id, kind, x, y, r, face, look = [0, 0] }: { id: string; kind: "you" | "friend"; x: number; y: number; r: number; face: "calm" | "happy" | "wow" | "tell" | "nervous" | "blank"; look?: [number, number] }) {
+export function Character({ id, kind, x, y, r, face, look = [0, 0] }: { id: string; kind: "you" | "friend"; x: number; y: number; r: number; face: "calm" | "happy" | "wow" | "tell" | "nervous" | "blank"; look?: [number, number] }) {
   // The colours: apricot for you, teal for the friend
   const [light, mid, dark] = kind === "you" ? ["#f7b07c", "#e8935c", "#c96a35"] : ["#5fd6c8", "#2fb3a4", "#1d8476"];
   // The face's ink
