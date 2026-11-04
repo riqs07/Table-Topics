@@ -60,6 +60,21 @@
 3. Does Practice become a grid of illustrated tiles (Wellspoken), or a few big jobs with tiles inside?
 4. What does Me show on day one, before there is any progress?
 
+## The cast (proposed 2026-11-04)
+
+The user: the orange blob stays **you** (every tile is about you), and the cast stays small but can be more than two. Proposed in [cast-lineup.html](cast-lineup.html), all at rest with no arms, told apart by shape first:
+
+| Character | Role | Shape | Colour | Signature |
+|---|---|---|---|---|
+| You | the learner | the original uneven round | apricot | none |
+| Sage | the coach, the app's voice | the round, 10% bigger and settled | pine green (green means Sage) | sprout, permanent brows |
+| The friend (name open) | the other person in conversations, Scenes, role play | an egg | teal (new) | a curl on top |
+| Benny | boss, Stop freezing | wide and round | purple | headphones, quiff |
+| Jules | boss, Beyond "good, you?" | a tall bean | blue (was green) | beanie with a pom-pom |
+| Helen | boss, Explain it simply | an upright rounded square | coral | high bun, glasses |
+
+Open: the friend's name and colour; whether Helen's coral sits too close to your apricot.
+
 ## Next steps
 
 0. **Characters first (the user, 2026-11-04):** settle the cast (you, Sage, the other person, the bosses) as character sheets with shapes, colours, faces and poses at rest without arms, before more screens use them.

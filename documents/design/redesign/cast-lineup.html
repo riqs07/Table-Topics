@@ -1,0 +1,174 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>VoiceLab Cast Lineup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: a lineup band (all six on one ground line, then silhouettes, then 64 px), then one card per character with its role, shape rules and three faces. */
+:root{--bg:#f3efe8;--surface:#fffdf9;--fg:#231f1c;--muted:#6b635c;--line:#e3dbd0;--stage:#fbf3e8;--ground:#e6d7c4;--sil:#231f1c;--chip:#ece5da;--focus:#2c8050;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--round:"Fredoka",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--stage:#1d1a17;--ground:#3a3129;--sil:#efe9e2;--chip:#2b2723;--focus:#6fd39a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--stage:#1d1a17;--ground:#3a3129;--sil:#efe9e2;--chip:#2b2723;--focus:#6fd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.45}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:flex;flex-direction:column;gap:26px}
+h1{font-family:var(--round);font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0}
+h2{font-family:var(--round);font-weight:600;font-size:24px;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:74ch}
+.band{background:var(--stage);border:1px solid var(--line);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:6px;overflow-x:auto}
+.band .row{min-width:760px}
+.band .lbl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.names{display:grid;grid-template-columns:repeat(6,1fr);text-align:center;font-weight:700;font-size:14px;min-width:760px}
+.names span small{display:block;font-weight:600;color:var(--muted);font-size:12px}
+.tiny{display:flex;gap:28px;align-items:end;justify-content:space-around;min-width:760px;padding:6px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.top{display:flex;gap:14px;align-items:center}
+.top .hero{width:130px;height:130px;flex:none;background:var(--stage);border-radius:16px;display:grid;place-items:center}
+.top .hero svg{width:120px;height:120px}
+.top h3{font-family:var(--round);font-weight:600;font-size:24px;margin:0;line-height:1}
+.role{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--chip)}
+.top p{margin:6px 0 0;color:var(--muted);font-size:14px}
+.status{font-size:12.5px;font-weight:700}
+.status.new{color:#c4561f}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin:0}
+.facts dt{font-weight:700;color:var(--muted)}
+.facts dd{margin:0}
+.faces{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.faces div{background:var(--stage);border-radius:14px;padding:6px;text-align:center;font-size:12px;color:var(--muted);font-weight:600}
+.faces svg{width:100%;max-width:96px;height:auto;display:block;margin:0 auto}
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.notes h3{margin:0 0 6px;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.notes ul,.notes ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+@media (max-width:760px){.notes{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>The cast, at rest</h1>
+    <p class="lede">A small cast of six for VoiceLab, drawn the same way (one shaded body, a highlight from the upper left, simple faces) and told apart by <strong>shape first, colour second</strong>. All at rest, so no arms. You stay the orange blob.</p>
+  </header>
+
+  <section class="band" aria-label="Lineup">
+    <span class="lbl">Lineup, side by side</span>
+    <div class="row"><svg id="lineup" viewBox="0 0 1200 300" width="100%" aria-hidden="true"></svg></div>
+    <div class="names" id="names"></div>
+    <span class="lbl" style="margin-top:10px">Silhouette test: each should still read in solid colour</span>
+    <div class="row"><svg id="sil" viewBox="0 0 1200 300" width="100%" aria-hidden="true"></svg></div>
+    <span class="lbl" style="margin-top:10px">At 64 px, the size of a tile on a phone</span>
+    <div class="tiny" id="tiny"></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px" aria-labelledby="ch">
+    <h2 id="ch">Each character</h2>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="notes" aria-label="Notes">
+    <div><h3>Changes from the earlier drafts</h3><ul>
+      <li><strong>Jules goes from green to blue.</strong> Green now belongs to Sage alone, so a green character always means “the coach”.</li>
+      <li><strong>Benny stays purple</strong>, as in the boss concepts (the venue mockup drew him blue by mistake).</li>
+      <li><strong>The friend is new:</strong> the other person in conversations and Scenes, in teal, replacing the light‑green blob so it can’t be mistaken for Sage.</li>
+      <li><strong>No arms at rest</strong> for anyone; arms appear only for a gesture.</li>
+    </ul></div>
+    <div><h3>For you to decide</h3><ol>
+      <li>The friend’s name. Placeholders: Pip, Rio, Nell.</li>
+      <li>Is teal right for the friend, or another colour?</li>
+      <li>Is six the right size: you, two regulars and three bosses? New courses would add a boss each, so it grows slowly.</li>
+      <li>Any character here that doesn’t feel like VoiceLab?</li>
+    </ol></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  // ---------- shapes (each about 200 units tall, base at y=94) ----------
+  const SHAPES = {
+    round: "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z",
+    egg: "M0 -114C52 -114 92 -42 92 10C92 62 52 94 0 94C-52 94 -92 62 -92 10C-92 -42 -52 -114 0 -114Z",
+    wide: "M0 -84C70 -84 124 -46 124 4C124 56 72 94 0 94C-72 94 -124 56 -124 4C-124 -46 -70 -84 0 -84Z",
+    bean: "M-6 -124C42 -128 72 -92 68 -34C64 18 76 58 42 86C20 102 -30 100 -54 80C-78 56 -64 10 -68 -40C-72 -92 -48 -122 -6 -124Z",
+    square: "M-50 -98H50Q90 -98 90 -58V54Q90 94 50 94H-50Q-90 94 -90 54V-58Q-90 -98 -50 -98Z"
+  };
+  const body = (shape, c, sh, hl = .5, sxy = [1, 1]) => `<g transform="translate(0 94) scale(${sxy[0]} ${sxy[1]}) translate(0 -94)"><path fill="${sh}" d="${SHAPES[shape]}"/><path fill="${c}" transform="translate(-9 -8) scale(0.93)" d="${SHAPES[shape]}"/><ellipse fill="#fff6e6" opacity="${hl}" cx="-48" cy="-58" rx="18" ry="11" transform="rotate(-35 -48 -58)"/></g>`;
+  const sil = (shape, sxy = [1, 1]) => `<g transform="translate(0 94) scale(${sxy[0]} ${sxy[1]}) translate(0 -94)"><path fill="var(--sil)" d="${SHAPES[shape]}"/></g>`;
+  const ink = "#2a2420", white = "#fcfcfb";
+  const line = (c, w = 7) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+
+  // ---------- the six ----------
+  const CAST = [
+    {id: "you", name: "You", role: "the learner", status: "Kept", c: "#e8935c", sh: "#cf7440", shape: "round", sxy: [1, 1], scale: 1,
+      blurb: "Every tile and scene is about you. Eager, earnest, a little nervous; puzzled, never ashamed.",
+      facts: [["Shape", "The original uneven round"], ["Colour", "Apricot, yours alone"], ["Signature", "None: the plainest face, so anyone can be it"], ["Moves", "Small hops and squashes when pleased"], ["Says", "“Here’s mine…”"]],
+      face: e => ({
+        rest: `<ellipse fill="${ink}" cx="-24" cy="-36" rx="10" ry="15"/><ellipse fill="${ink}" cx="24" cy="-36" rx="10" ry="15"/><circle fill="#fff" cx="-20" cy="-42" r="3"/><circle fill="#fff" cx="28" cy="-42" r="3"/><path ${line(ink, 8)} d="M-16 -4q16 14 32 0"/>`,
+        happy: `<path ${line(ink, 8)} d="M-38 -30L-24 -44-10 -30M10 -30L24 -44 38 -30"/><path fill="${ink}" d="M-24 -12h48q0 24-24 24t-24-24z"/>`,
+        hmm: `<circle fill="${ink}" cx="-14" cy="-44" r="10"/><circle fill="${ink}" cx="32" cy="-44" r="10"/><path ${line(ink, 6)} d="M-34 -64L-12 -70M14 -70L36 -64"/><path ${line(ink, 7)} d="M-8 0h18"/>`
+      })[e], faces: [["rest", "At rest"], ["happy", "Pleased"], ["hmm", "Hmm"]]},
+    {id: "sage", name: "Sage", role: "the coach", status: "Kept (draft sheet)", c: "#2d5a3d", sh: "#20432c", shape: "round", sxy: [1.12, 1.05], scale: 1, hl: .28,
+      blurb: "Calm, warm, unhurried, with a dry sense of humour. Speaks for the app: greets, steadies, teaches, gives the one note.",
+      facts: [["Shape", "The same round, 10% bigger, settled lower and wider"], ["Colour", "Pine green; green means Sage, always"], ["Signature", "A sprout, and the only permanent brows"], ["Moves", "Slow; swells and nods, never bounces"], ["Says", "“Take a breath. Then start with the point.”"]],
+      extra: `<g transform="translate(0 -100)"><path ${line("#4f8a43", 6)} d="M0 0Q-3 -16 3 -30"/><ellipse fill="#5ea34e" cx="16" cy="-38" rx="16" ry="8" transform="rotate(-30 16 -38)"/><ellipse fill="#7cc46a" cx="-10" cy="-36" rx="15" ry="8" transform="rotate(28 -10 -36)"/></g>`,
+      face: e => ({
+        rest: `<path ${line(white, 5.5)} d="M-36 -52Q-24 -57 -12 -52M12 -52Q24 -57 36 -52"/><ellipse fill="${white}" cx="-24" cy="-30" rx="9" ry="12"/><ellipse fill="${white}" cx="24" cy="-30" rx="9" ry="12"/><path ${line(white, 6.5)} d="M-15 6Q0 17 15 6"/>`,
+        happy: `<path ${line(white, 5.5)} d="M-36 -58Q-24 -63 -12 -58M12 -58Q24 -63 36 -58"/><path ${line(white, 6)} d="M-35 -24Q-24 -38 -13 -24M13 -24Q24 -38 35 -24"/><g fill="#f59a86" opacity=".6"><ellipse cx="-46" cy="2" rx="13" ry="8"/><ellipse cx="46" cy="2" rx="13" ry="8"/></g><path fill="#10261a" stroke="${white}" stroke-width="4.5" d="M-18 5H18Q16 24 0 24Q-16 24-18 5Z"/>`,
+        curious: `<path ${line(white, 5.5)} d="M-36 -52Q-24 -57 -12 -52M12 -60Q24 -69 36 -65"/><ellipse fill="${white}" cx="-19" cy="-30" rx="9.5" ry="13"/><ellipse fill="${white}" cx="29" cy="-30" rx="9.5" ry="13"/><ellipse fill="${white}" cx="3" cy="12" rx="6" ry="7"/>`
+      })[e], faces: [["rest", "Calm"], ["happy", "Proud"], ["curious", "Curious"]]},
+    {id: "friend", name: "The friend", role: "the other person", status: "New", c: "#2fb3a4", sh: "#1f8d80", shape: "egg", sxy: [1, 1], scale: 1,
+      blurb: "Whoever you’re talking to in conversations, Scenes and role play: friendly, a good listener, reacts honestly (pleased, or a little deflated, never cross).",
+      facts: [["Shape", "An egg: taller and narrower at the top than you"], ["Colour", "Teal (new), so it’s never mistaken for Sage"], ["Signature", "A single curl on top"], ["Moves", "Tilts its head to listen; leans back when bored"], ["Says", "“Wait, really? Then what?”"]],
+      extra: `<path ${line("#1f8d80", 9)} d="M2 -112q-4 -22 14 -26q14 -2 10 12"/>`,
+      face: e => ({
+        rest: `<ellipse fill="${ink}" cx="-22" cy="-30" rx="9" ry="12"/><ellipse fill="${ink}" cx="22" cy="-30" rx="9" ry="12"/><circle fill="#fff" cx="-18" cy="-35" r="3"/><circle fill="#fff" cx="26" cy="-35" r="3"/><path ${line(ink, 7)} d="M-12 2q12 10 24 0"/>`,
+        happy: `<path ${line(ink, 7)} d="M-33 -26Q-22 -40 -11 -26M11 -26Q22 -40 33 -26"/><path fill="${ink}" d="M-18 -4h36q0 18-18 18t-18-18z"/>`,
+        flat: `<ellipse fill="${ink}" cx="-22" cy="-28" rx="9" ry="10"/><ellipse fill="${ink}" cx="22" cy="-28" rx="9" ry="10"/><path ${line(ink, 7)} d="M-10 4h20"/>`
+      })[e], faces: [["rest", "Listening"], ["happy", "Pleased"], ["flat", "Deflated"]]},
+    {id: "benny", name: "Benny", role: "boss · Stop freezing", status: "Kept (concept)", c: "#8a63e0", sh: "#6c48c4", shape: "wide", sxy: [1, 1], scale: 1,
+      blurb: "The quickfire radio host. Big energy, fires questions fast, delighted by a quick answer.",
+      facts: [["Shape", "Wide and round: energy"], ["Colour", "Purple"], ["Signature", "Headphones and a quiff"], ["Moves", "Bounces fast, leans in"], ["Says", "“Quick one for you!”"]],
+      extra: `<path ${line("#1e2320", 12)} d="M-104 -10q0 -86 104 -86t104 86"/><rect x="-128" y="-24" width="28" height="44" rx="12" fill="#ec6a55"/><rect x="100" y="-24" width="28" height="44" rx="12" fill="#ec6a55"/><path fill="#1e2320" d="M-30 -86q10 -34 46 -24q-20 2 -14 18z"/>`,
+      face: e => ({
+        rest: `<circle fill="#fff" cx="-30" cy="-30" r="20"/><circle fill="#fff" cx="30" cy="-30" r="20"/><circle fill="#1e2320" cx="-26" cy="-28" r="9"/><circle fill="#1e2320" cx="34" cy="-28" r="9"/><path ${line("#1e2320", 7)} d="M-46 -62L-20 -66M20 -66L46 -62"/><path fill="#1e2320" d="M-30 6h60q0 30-30 30t-30-30z"/><path fill="#ec6a55" d="M-14 26q14 -10 28 0q-6 10-14 10t-14-10z"/>`,
+        happy: `<path ${line("#1e2320", 8)} d="M-46 -26Q-30 -46 -14 -26M14 -26Q30 -46 46 -26"/><path ${line("#1e2320", 7)} d="M-46 -64L-20 -70M20 -70L46 -64"/><path fill="#1e2320" d="M-36 2h72q0 36-36 36t-36-36z"/><path fill="#ec6a55" d="M-16 26q16 -10 32 0q-6 12-16 12t-16-12z"/>`,
+        wow: `<circle fill="#fff" cx="-30" cy="-32" r="22"/><circle fill="#fff" cx="30" cy="-32" r="22"/><circle fill="#1e2320" cx="-30" cy="-32" r="9"/><circle fill="#1e2320" cx="30" cy="-32" r="9"/><path ${line("#1e2320", 7)} d="M-48 -72L-20 -76M20 -76L48 -72"/><ellipse fill="#1e2320" cx="0" cy="18" rx="12" ry="15"/>`
+      })[e], faces: [["rest", "On air"], ["happy", "Delighted"], ["wow", "Ooh!"]]},
+    {id: "jules", name: "Jules", role: "boss · Beyond “good, you?”", status: "Recoloured: green to blue", c: "#4a68e0", sh: "#3550bf", shape: "bean", sxy: [1, 1], scale: 1,
+      blurb: "The quiet one at the party. Short answers until you ask the right question; then opens up.",
+      facts: [["Shape", "Tall and narrow, like a bean: shy"], ["Colour", "Blue (was green)"], ["Signature", "A beanie with a pom-pom"], ["Moves", "Sways, peeks, turns slightly away"], ["Says", "“…oh, it’s nothing, really.”"]],
+      extra: `<path fill="#ec6a55" d="M-62 -78q2 -50 66 -50q62 0 64 46q-64 -14 -130 4z"/><path fill="#c94c3a" d="M-64 -80q66 -20 134 -2l-2 14q-66 -16 -130 2z"/><circle fill="#fff6e6" cx="6" cy="-134" r="13"/>`,
+      face: e => ({
+        rest: `<circle fill="${ink}" cx="-12" cy="-30" r="7"/><circle fill="${ink}" cx="22" cy="-32" r="7"/><g fill="#f59a86" opacity=".7"><ellipse cx="-30" cy="-8" rx="11" ry="6"/><ellipse cx="38" cy="-10" rx="11" ry="6"/></g><path ${line(ink, 6)} d="M0 4q8 5 16 0"/>`,
+        happy: `<path ${line(ink, 6)} d="M-20 -28Q-12 -38 -4 -28M14 -30Q22 -40 30 -30"/><g fill="#f59a86" opacity=".8"><ellipse cx="-30" cy="-8" rx="12" ry="7"/><ellipse cx="38" cy="-10" rx="12" ry="7"/></g><path ${line(ink, 6)} d="M-6 0q12 12 24 0"/>`,
+        shy: `<circle fill="${ink}" cx="-2" cy="-26" r="6"/><circle fill="${ink}" cx="30" cy="-28" r="6"/><g fill="#f59a86" opacity=".9"><ellipse cx="-24" cy="-6" rx="12" ry="7"/><ellipse cx="42" cy="-8" rx="12" ry="7"/></g><path ${line(ink, 6)} d="M8 8h12"/>`
+      })[e], faces: [["rest", "Polite"], ["happy", "Opening up"], ["shy", "Looking away"]]},
+    {id: "helen", name: "Helen", role: "boss · Explain it simply", status: "Kept (concept)", c: "#ec6a55", sh: "#cc4f3c", shape: "square", sxy: [1, 1], scale: 1,
+      blurb: "The director in the lift. Thirty seconds, no patience for jargon, quietly impressed by a clear answer.",
+      facts: [["Shape", "An upright rounded square: authority"], ["Colour", "Coral"], ["Signature", "A high bun and glasses"], ["Moves", "Still; one small nod"], ["Says", "“Bottom line?”"]],
+      extra: `<circle fill="#24140e" cx="0" cy="-116" r="26"/><path fill="#24140e" d="M-84 -60q4 -40 50 -40h68q46 0 50 40q-40 -24 -84 -18q-50 -8 -84 18z"/>`,
+      face: e => ({
+        rest: `<g ${line(ink, 5)}><circle cx="-26" cy="-30" r="18"/><circle cx="26" cy="-30" r="18"/><path d="M-8 -32h16"/></g><path fill="${ink}" d="M-36 -30h20a10 6 0 0 1-20 0z"/><path fill="${ink}" d="M16 -30h20a10 6 0 0 1-20 0z"/><path ${line(ink, 6)} d="M-40 -60L-14 -58M14 -62L40 -70"/><path ${line(ink, 6)} d="M-12 6q12 6 24 -2"/>`,
+        happy: `<g ${line(ink, 5)}><circle cx="-26" cy="-30" r="18"/><circle cx="26" cy="-30" r="18"/><path d="M-8 -32h16"/></g><path ${line(ink, 5)} d="M-34 -28Q-26 -36 -18 -28M18 -28Q26 -36 34 -28"/><path ${line(ink, 6)} d="M-40 -62L-14 -62M14 -62L40 -62"/><path ${line(ink, 6)} d="M-16 4q16 12 32 0"/>`,
+        doubt: `<g ${line(ink, 5)}><circle cx="-26" cy="-30" r="18"/><circle cx="26" cy="-30" r="18"/><path d="M-8 -32h16"/></g><circle fill="${ink}" cx="-26" cy="-28" r="6"/><circle fill="${ink}" cx="26" cy="-28" r="6"/><path ${line(ink, 6)} d="M-40 -58L-14 -56M14 -64L40 -76"/><path ${line(ink, 6)} d="M-10 8h20"/>`
+      })[e], faces: [["rest", "Waiting"], ["happy", "Impressed"], ["doubt", "One brow up"]]}
+  ];
+
+  const char = (c, expr = "rest") => `${body(c.shape, c.c, c.sh, c.hl ?? .5, c.sxy)}${c.extra || ""}<g transform="translate(0 0)">${c.face(expr)}</g>`;
+  const charSil = c => `${sil(c.shape, c.sxy)}${(c.extra || "").replace(/fill="[^"]*"/g, 'fill="var(--sil)"').replace(/stroke="[^"]*"/g, 'stroke="var(--sil)"')}`;
+
+  // lineup: six on one ground line, each in a 200-wide slot, base at y=270, drawn at 0.95 scale
+  const slot = (i, inner, s = .9) => `<g transform="translate(${100 + i * 200} 262) scale(${s}) translate(0 -94)">${inner}</g>`;
+  document.getElementById("lineup").innerHTML = `<rect x="0" y="262" width="1200" height="38" fill="var(--ground)"/>` + CAST.map((c, i) => slot(i, char(c))).join("");
+  document.getElementById("sil").innerHTML = CAST.map((c, i) => slot(i, charSil(c))).join("");
+  document.getElementById("names").innerHTML = CAST.map(c => `<span>${c.name}<small>${c.role}</small></span>`).join("");
+  document.getElementById("tiny").innerHTML = CAST.map(c => `<svg width="64" height="64" viewBox="-140 -170 280 280" aria-label="${c.name} at 64 pixels">${char(c)}</svg>`).join("");
+  document.getElementById("cards").innerHTML = CAST.map(c => `<article class="card">
+    <div class="top"><div class="hero"><svg viewBox="-140 -170 280 280" aria-hidden="true">${char(c)}</svg></div>
+      <div><h3>${c.name}</h3><span class="role">${c.role}</span><div class="status ${/New|Recol/.test(c.status) ? "new" : ""}" style="margin-top:6px">${c.status}</div><p>${c.blurb}</p></div></div>
+    <dl class="facts">${c.facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+    <div class="faces">${c.faces.map(([e, l]) => `<div><svg viewBox="-140 -170 280 280" aria-hidden="true">${char(c, e)}</svg>${l}</div>`).join("")}</div>
+  </article>`).join("");
+})();
+</script>
+
+</body></html>
