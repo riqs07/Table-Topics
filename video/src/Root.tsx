@@ -20,13 +20,15 @@ import voices from "./generated/lessons/index.json";
 import { TWO_PEOPLE_FRAMES, TwoPeople } from "./demo/TwoPeople";
 // Load the panels of Sage's character sheet (stills)
 import { SHEET_PANELS } from "./characters/SageSheet";
+// Load the website commercial and its length (direction B)
+import { COMMERCIAL_FRAMES, Commercial } from "./commercial/Commercial";
 
 // Hold the render until both faces are ready, so no frame is drawn in a fallback font
 const waiting = delayRender("Loading fonts");
 // The body face, from the app's file
 const body = new FontFace("Atkinson", `url(${atkinson})`, { weight: "200 800" });
 // Load it and the display face, then carry on (a failure still carries on, in the fallback fonts)
-void Promise.all([body.load().then((face) => document.fonts.add(face)), document.fonts.load("700 74px 'Fraunces Variable'")]).finally(() => continueRender(waiting));
+void Promise.all([body.load().then((face) => document.fonts.add(face)), document.fonts.load("700 74px 'Fraunces Variable'"), document.fonts.load("600 40px Fredoka"), document.fonts.load("800 20px Nunito")]).finally(() => continueRender(waiting));
 
 // The compositions
 export function Root() {
@@ -41,6 +43,8 @@ export function Root() {
       {LESSON_CLIPS.filter((clip) => clip.id in voices).map((clip) => <Composition key={clip.id} id={`lesson-${clip.id}`} component={LessonClip} defaultProps={{ id: clip.id }} durationInFrames={clipFrames(clip.id)} fps={30} width={LESSON_WIDTH} height={LESSON_HEIGHT} />)}
       {/* The two-person demo: landscape, 1920 by 1080 */}
       <Composition id="TwoPeople" component={TwoPeople} durationInFrames={TWO_PEOPLE_FRAMES} fps={30} width={1920} height={1080} />
+      {/* The website commercial, 1920 by 1080, in the proposed direction B look */}
+      <Composition id="Commercial" component={Commercial} durationInFrames={COMMERCIAL_FRAMES} fps={30} width={1920} height={1080} />
       {/* Sage's character sheet, one still per panel */}
       {SHEET_PANELS.map((panel) => <Composition key={panel.id} id={panel.id} component={panel.component} durationInFrames={1} fps={30} width={panel.width} height={panel.height} />)}
     </>

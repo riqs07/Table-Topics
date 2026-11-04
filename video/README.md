@@ -49,6 +49,22 @@ That renders it at 864 by 1080 and copies it, with a still of its closing card, 
 npx tsx video/scripts/export-clips.ts
 ```
 
+## The website commercial (decision 157)
+
+A 48-second, 1920 by 1080 advert for the website, in the proposed direction B look (the "Playful" redesign, not yet the app's theme): the moment your mind goes blank, then the app's screens as if live (a surprise question, its result, a story, a conversation and how it went, a quick look at scenes, drills, courses and a boss, then and now), ending on "Join the waitlist". It is labelled "A first look at the new VoiceLab", and every number on screen is a sample take, never a claim.
+
+- **Code:** `src/commercial/`. `Commercial.tsx` places the beats (`scenes/*.tsx`, one per beat, each with its own sound cues) and lays the voice, music, sounds and captions over them. `timeline.ts` holds where each piece of the voiceover plays and the captions. `kit.tsx` has the window, camera, cursor, captions and side rail; `Cast.tsx` the cast (you, Sage, the friend, Wobbly); `Tile.tsx` the course tiles; `palette.ts` direction B's colours and faces (Fredoka and Nunito).
+- **Voice:** one take by "Mira – Bright & Friendly Narrator" (`eleven_v4`), `public/commercial/voice.mp3`, cut into pieces at its pauses (ffmpeg's `silencedetect`); a re-recorded take needs the times in `timeline.ts` checked again.
+- **Music and sounds:** made from plain sine waves by `scripts/commercial-audio.mjs` (a quiet electric-piano loop at 92 beats a minute with a pad and bass, held back under the voice; a pop, a tap, a chime and a tick), so they are ours.
+
+```bash
+node scripts/commercial-audio.mjs
+```
+
+```bash
+npx remotion render src/index.ts Commercial out/commercial.mp4
+```
+
 ## A new video
 
 Copy `src/BuyABeat.tsx`, write the phrases, record the voice with a short pause between phrases, save it in `public/`, point `scripts/prepare.mjs` at it, and add a `Composition` in `src/Root.tsx`. Check the frames (one from each phrase, and eight in a row mid-sentence for the mouth) before sharing.

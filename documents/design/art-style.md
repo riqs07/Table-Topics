@@ -108,6 +108,16 @@ Every course has a 15-second short (`video/src/CourseShort.tsx`, one component; 
 - **Voice:** "Mira – Bright & Friendly Narrator" (ElevenLabs, `eleven_v4`), each phrase on its own line with a direction tag where it helps (`[curious]`, `[worried]`, `[warm]`, `[confident]`, `[cheerful]`). When the voice pauses inside a line, or adds a sound of its own (a sigh), set the line's `span` or give the sound its own caption, so the phrases still line up.
 - **End card:** the course tile, "VoiceLab", the course's name and one line on it ("6 short lessons · practise out loud").
 
+### The website commercial (decision 157)
+
+The one video drawn in the proposed direction B look rather than the app's current theme (its colours and faces are in `video/src/commercial/palette.ts` until the app moves over). It differs from the shorts:
+
+- **Landscape:** 1920 by 1080, about 48 seconds, for the website, autoplaying muted, so the captions carry it (one phrase at a time in a cream box under the window).
+- **The app as if live:** each screen sits in a plain rounded window (no real browser's look) and moves as it would in use: words appear as they are spoken, numbers count, charts draw, a cursor taps. Camera moves are slow push-ins towards the action.
+- **The cast of the redesign:** you, Sage, the friend (teal egg) and Wobbly, as on the design canvases, with the same shading as the tiles.
+- **Honest:** labelled "A first look at the new VoiceLab"; the numbers are sample takes, and the advert claims no outcome.
+- **Sound:** Mira's voice over a quiet electric-piano loop, lower under the voice, and four small sounds (pop, tap, chime, tick) only on visible events.
+
 ### Lesson clips (decision 146)
 
 A lesson clip teaches one idea inside a course part's "See it" step. It is not an advert, so it differs from the shorts:
