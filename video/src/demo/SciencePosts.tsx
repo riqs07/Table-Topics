@@ -53,7 +53,7 @@ export function Sky({ frame, top, bottom }: { frame: number; top: string; bottom
 }
 
 // One of the cast, with a soft gradient, a highlight and a face
-export function Character({ id, kind, x, y, r, face, look = [0, 0] }: { id: string; kind: "you" | "friend"; x: number; y: number; r: number; face: "calm" | "happy" | "wow" | "tell" | "nervous" | "blank"; look?: [number, number] }) {
+export function Character({ id, kind, x, y, r, face, look = [0, 0] }: { id: string; kind: "you" | "friend"; x: number; y: number; r: number; face: "calm" | "happy" | "wow" | "tell" | "nervous" | "blank" | "none"; look?: [number, number] }) {
   // The colours: apricot for you, teal for the friend
   const [light, mid, dark] = kind === "you" ? ["#f7b07c", "#e8935c", "#c96a35"] : ["#5fd6c8", "#2fb3a4", "#1d8476"];
   // The face's ink
@@ -73,6 +73,9 @@ export function Character({ id, kind, x, y, r, face, look = [0, 0] }: { id: stri
     // Worried brows, small eyes, a wobbly mouth
     nervous: <><circle cx={-22 + lx} cy={-34 + ly} r={9} fill={ink} /><circle cx={22 + lx} cy={-34 + ly} r={9} fill={ink} /><path d="M-36 -58L-14 -64M14 -64L36 -58" stroke={ink} strokeWidth={6} strokeLinecap="round" /><path d="M-14 0q4 -5 9 0t9 0t9 0" stroke={ink} strokeWidth={6} fill="none" strokeLinecap="round" /></>,
     // Open eyes, a straight mouth: not following
+    // No face, for scenes that draw their own
+    none: null,
+    // (blank)
     blank: <><circle cx={-22 + lx} cy={-30 + ly} r={9} fill={ink} /><circle cx={22 + lx} cy={-30 + ly} r={9} fill={ink} /><path d="M-10 2h20" stroke={ink} strokeWidth={6} strokeLinecap="round" /></>,
   };
   // The drawing, placed and sized
@@ -87,9 +90,9 @@ export function Character({ id, kind, x, y, r, face, look = [0, 0] }: { id: stri
       {/* The highlight */}
       <ellipse cx={-46} cy={-58} rx={18} ry={11} fill="#fff6e6" opacity={0.5} transform="rotate(-35 -46 -58)" />
       {/* The cheeks */}
-      <ellipse cx={-44} cy={kind === "friend" ? -2 : -8} rx={13} ry={8} fill="#ec6a55" opacity={0.3} />
+{face === "none" ? null : <ellipse cx={-44} cy={kind === "friend" ? -2 : -8} rx={13} ry={8} fill="#ec6a55" opacity={0.3} />}
       {/* (the other) */}
-      <ellipse cx={44} cy={kind === "friend" ? -2 : -8} rx={13} ry={8} fill="#ec6a55" opacity={0.3} />
+{face === "none" ? null : <ellipse cx={44} cy={kind === "friend" ? -2 : -8} rx={13} ry={8} fill="#ec6a55" opacity={0.3} />}
       {/* The face (the friend's sits a little lower) */}
       <g transform={`translate(0 ${kind === "friend" ? 6 : 0})`}>{faces[face]}</g>
     </g>

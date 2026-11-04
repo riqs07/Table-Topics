@@ -24,6 +24,8 @@ import { BLUEPRINT_FRAMES, StoryBlueprint } from "./demo/StoryBlueprint";
 import { SCIENCE_FRAMES, ScienceSync, ScienceTransparency } from "./demo/SciencePosts";
 // Load the storm-beat ideas (stills)
 import { StormBeat } from "./demo/StormBeat";
+// Load the two refined storm beats (2026-11-04)
+import { STORM_BEAT_FRAMES, StormBeatA, StormBeatC } from "./demo/StormBeat2";
 // Load the panels of Sage's character sheet (stills)
 import { SHEET_PANELS } from "./characters/SageSheet";
 
@@ -55,6 +57,10 @@ export function Root() {
       <Composition id="ScienceSync" component={ScienceSync} durationInFrames={SCIENCE_FRAMES} fps={30} width={1080} height={1920} />
       {/* The storm-beat ideas, one still each */}
       {(["A", "B", "C", "D"] as const).map((v) => <Composition key={v} id={`StormBeat${v}`} component={StormBeat} defaultProps={{ variant: v }} durationInFrames={60} fps={30} width={1080} height={1920} />)}
+      {/* The refined storm beats */}
+      <Composition id="StormBeatAnimA" component={StormBeatA} durationInFrames={STORM_BEAT_FRAMES} fps={30} width={1080} height={1920} />
+      {/* (C) */}
+      <Composition id="StormBeatAnimC" component={StormBeatC} durationInFrames={STORM_BEAT_FRAMES} fps={30} width={1080} height={1920} />
       {/* Sage's character sheet, one still per panel */}
       {SHEET_PANELS.map((panel) => <Composition key={panel.id} id={panel.id} component={panel.component} durationInFrames={1} fps={30} width={panel.width} height={panel.height} />)}
     </>
