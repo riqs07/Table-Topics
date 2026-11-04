@@ -39,6 +39,8 @@
 - **Special formats** where the content fits: a blueprint for structure, a museum for "value this", a runway for endings, a weather map for reading the room.
 - **Sound:** voice first; one thunderclap beats continuous effects; ambience under the voice.
 
+- **Charts (sketch, 2026-11-04, `redesign/chart-kit.html`):** one chart language from five marks (your voice as a ribbon, a gap for a real pause, a dot for a pause word, pitch as one soft line, last time as a dashed ghost); a headline that the chart proves; your words as the axis where possible; no red (teal for went-well, apricot for pause words, grey for short); colours validated for colour blindness in both themes.
+
 ## Open questions
 
 - Is the night-sky explainer look *the* brand look, or the social one only?

@@ -1,0 +1,132 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>VoiceLab Chart Kit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: an intro and the kit legend, then a grid of chart cards in the app's direction-B card style, each answering one question. */
+:root{
+  --bg:#fff7ef;--card:#ffffff;--ink:#2b2320;--muted:#7a6c64;--line:#f0e2d6;--grid:#f3e9de;
+  --voice:#5b5fc7;--um:#d9773f;--now:#1f9a8a;--ghost:#b8a99c;--band:#e4f5ef;--hl:#fff1c2;
+  --serif:"Fraunces",Georgia,serif;--sans:"Atkinson Hyperlegible",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1d1916;--card:#2a2420;--ink:#fbefe4;--muted:#b9a99d;--line:#3a312b;--grid:#352d27;--voice:#7b7fe0;--um:#cf7a44;--now:#2aa896;--ghost:#6f645b;--band:#1f3a33;--hl:#4a3d14;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d1916;--card:#2a2420;--ink:#fbefe4;--muted:#b9a99d;--line:#3a312b;--grid:#352d27;--voice:#7b7fe0;--um:#cf7a44;--now:#2aa896;--ghost:#6f645b;--band:#1f3a33;--hl:#4a3d14;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:26px 64px;display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0;letter-spacing:-.5px}
+.lede{color:var(--muted);margin:6px 0 0;max-width:74ch}
+.kit{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center}
+.kit b{font-family:var(--serif);font-size:17px;margin-right:6px}
+.kit span{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:22px;box-shadow:0 4px 0 var(--line);padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px;min-width:0;position:relative}
+.q{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.card h2{font-family:var(--serif);font-weight:700;font-size:23px;line-height:1.15;margin:0;letter-spacing:-.3px}
+.card h2 em{font-style:normal;color:var(--now)}
+.card p.note{margin:0;font-size:13px;color:var(--muted)}
+.card svg{width:100%;height:auto;display:block;overflow:visible}
+.words{font-size:18px;line-height:2.5;word-spacing:2px}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--card);font-size:13px;padding:6px 10px;border-radius:10px;opacity:0;transition:opacity .12s;z-index:9;max-width:240px}
+.tip.on{opacity:1}
+.hit{fill:transparent;cursor:pointer}
+.stat{display:flex;gap:18px;align-items:baseline}
+.stat b{font-family:var(--serif);font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:110px 1fr 54px;gap:10px;align-items:center;font-size:13.5px}
+.row small{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.card svg.blob{position:absolute;right:14px;top:12px;width:44px;height:44px}
+.card.hasblob h2{padding-right:48px}
+.why{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.why h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.why ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+@media (max-width:700px){.why{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.draw{animation:draw 1.4s ease-out both}@keyframes draw{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>One chart language for VoiceLab</h1>
+    <p class="lede">A redesign sketch: every chart is built from the same five marks, answers one question in its headline, compares you with yourself, and never uses red. Hover any mark for its value. Example data, not a real user.</p>
+  </header>
+
+  <div class="kit" aria-label="The marks">
+    <b>The kit</b>
+    <span><svg width="46" height="22"><rect x="0" y="6" width="3" height="10" rx="1.5" fill="var(--voice)"/><rect x="5" y="2" width="3" height="18" rx="1.5" fill="var(--voice)"/><rect x="10" y="5" width="3" height="12" rx="1.5" fill="var(--voice)"/><rect x="28" y="4" width="3" height="14" rx="1.5" fill="var(--voice)"/><rect x="33" y="7" width="3" height="8" rx="1.5" fill="var(--voice)"/></svg>Your voice, as a ribbon</span>
+    <span><svg width="34" height="22"><rect x="6" y="9" width="22" height="4" rx="2" fill="var(--now)" opacity=".35"/></svg>A gap is a real pause</span>
+    <span><svg width="16" height="22"><circle cx="8" cy="11" r="5" fill="var(--um)"/></svg>A dot is a pause word</span>
+    <span><svg width="40" height="22"><path d="M2 8 Q14 4 22 10 T38 16" stroke="var(--voice)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Pitch, one soft line</span>
+    <span><svg width="40" height="22"><path d="M2 11 H38" stroke="var(--ghost)" stroke-width="2" stroke-dasharray="4 4"/></svg>Your last time, as a ghost</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="why">
+    <div><h3>The rules behind these</h3><ul>
+      <li>Headline first: the chart only proves the sentence above it.</li>
+      <li>Your words are the axis wherever possible; time only when words won’t fit.</li>
+      <li>Always compared with you: last time or day 1 as a dashed ghost.</li>
+      <li>No red. Teal for what went well, apricot for pause words, never “bad”.</li>
+      <li>One axis, thin marks, rounded ends, light grid; a value on hover, not on every mark.</li>
+    </ul></div>
+    <div><h3>Colour, checked</h3><ul>
+      <li>Voice (indigo), pause word (apricot) and went-well (teal) pass the colour-blind separation checks in light and dark.</li>
+      <li>They also differ by shape (ribbon, dot, band), so nothing relies on colour alone.</li>
+      <li>Dark mode uses its own steps, validated against the dark card.</li>
+      <li>Charts draw themselves once, then stay still (off with reduced motion).</li>
+    </ul></div>
+  </div>
+</div>
+<div class="tip" id="tip" role="status"></div>
+
+<script>
+(() => {
+  // a seeded random so the example data is stable
+  let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const tip = document.getElementById("tip");
+  const hover = (attrs) => `class="hit" data-tip="${attrs}"`;
+  // a voice ribbon: bars across time, gaps for pauses, dots for pause words
+  function ribbon({w = 320, h = 70, n = 70, pauses = [], ums = [], highlight = null, color = "var(--voice)", ghost = false, y0 = 0, draw = true, label = ""}) {
+    seed = label.length * 7 + n; let bars = "", hits = "";
+    const bw = w / n;
+    for (let i = 0; i < n; i++) {
+      const t = i / n; const inPause = pauses.find(([a, b]) => t >= a && t < b);
+      if (inPause) continue;
+      const amp = (.3 + rnd() * .7) * (.65 + .35 * Math.sin(i * .45));
+      const bh = Math.max(4, amp * h * .9);
+      bars += `<rect x="${(i * bw + 1).toFixed(1)}" y="${(y0 + (h - bh) / 2).toFixed(1)}" width="${Math.max(2, bw - 2).toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${ghost ? "none" : color}" ${ghost ? `stroke="var(--ghost)" stroke-width="1.2" stroke-dasharray="2 2"` : ""}/>`;
+    }
+    const bands = pauses.map(([a, b], k) => { const len = ((b - a) * 84).toFixed(1); const isHl = highlight === k; return `<rect x="${a * w}" y="${y0 + h / 2 - 3}" width="${(b - a) * w}" height="6" rx="3" fill="var(--now)" opacity="${isHl ? .9 : .35}"/><rect x="${a * w}" y="${y0}" width="${(b - a) * w}" height="${h}" ${hover(`A ${len}-second pause${isHl ? ", right before your point" : ""}`)}/>`; }).join("");
+    const dots = ums.map(([t, word]) => `<circle cx="${t * w}" cy="${y0 + h + 10}" r="5" fill="var(--um)"/><circle cx="${t * w}" cy="${y0 + h + 10}" r="12" ${hover(`“${word}” at ${(t * 84).toFixed(0)} s`)}/>`).join("");
+    return `<g class="${draw ? "draw" : ""}">${bars}</g>${ghost ? "" : bands + dots}`;
+  }
+  const svg = (w, h, inner, label) => `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}">${inner}</svg>`;
+  const blob = (face = "happy") => `<svg class="blob" width="44" height="44" viewBox="-115 -115 230 230" aria-hidden="true"><path fill="#cf7440" d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z"/><path fill="#e8935c" transform="translate(-9 -8) scale(.93)" d="M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z"/>${face === "happy" ? `<path d="M-38 -28L-24 -42-10 -28M10 -28L24 -42 38 -28" stroke="#2a2420" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path fill="#2a2420" d="M-23 -12h46q0 23-23 23t-23-23z"/>` : `<circle cx="-16" cy="-44" r="10" fill="#2a2420"/><circle cx="32" cy="-44" r="10" fill="#2a2420"/><path d="M-8 0h18" stroke="#2a2420" stroke-width="8" stroke-linecap="round"/>`}</svg>`;
+
+  // the week's pause words a minute, for the progress chart
+  const weeks = [6.1, 5.4, 5.6, 4.2, 3.9, 3.1, 2.8, 2.3];
+
+  const CARDS = [
+    {q: "After a take", h: `You paused <em>right before your point</em>.`, body: () => svg(320, 130, `<g transform="translate(0 26)">` + ribbon({pauses: [[.18, .22], [.41, .48], [.7, .73]], ums: [[.3, "um"], [.86, "so"]], highlight: 1, label: "a"}) + `<path d="M${.445 * 320} 0 V-10" stroke="var(--now)" stroke-width="1.5"/><text x="${.445 * 320}" y="-16" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">1.9 s, then “The best part…”</text></g>`, "Your take as a voice ribbon with three pauses and two pause words; the pause before your point is highlighted"), note: "Gaps are pauses, dots are pause words. The one that mattered is lit.", blob: "happy"},
+    {q: "Your words as the chart", h: `Your endings <em>fell</em> like statements.`, body: () => { const phrases = [["I booked the train", "M0 22 Q60 12 120 16 T150 14", "Held", 0], ["for Friday.", "M0 12 Q50 10 92 30", "Fell", 1], ["We leave", "M0 20 Q40 14 76 16", "Held", 0], ["at six.", "M0 12 Q30 10 58 30", "Fell", 1]]; let x = 0, y = 0, out = ""; phrases.forEach(([w, d, kind, fell], i) => { const wd = w.length * 8.3 + 4; if (x + wd > 320) { x = 0; y += 70; } out += `<g transform="translate(${x} ${y})"><path d="${d}" transform="scale(${wd / (d.includes("150") ? 150 : d.includes("92") ? 92 : d.includes("76") ? 76 : 58)} 1)" stroke="var(--voice)" stroke-width="2.4" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${fell ? `<circle cx="${wd}" cy="30" r="4" fill="var(--now)"/>` : ""}<text x="0" y="54" font-size="17" fill="var(--ink)">${w}</text><rect x="0" y="0" width="${wd}" height="60" ${hover(`${w}: pitch ${kind.toLowerCase()} at the end${fell ? ", a clean statement" : ""}`)}/></g>`; x += wd + 10; }); return svg(320, y + 64, out, "Pitch lines drawn above the words of two sentences; both endings fall"); }, note: "Pitch drawn over the words themselves. A teal dot marks a clean fall at the end."},
+    {q: "Then and now", h: `<em>4 fewer</em> pause words than day 1.`, body: () => `<div class="stat"><b>2.3</b><span>pause words a minute today<br>day 1: 6.1</span></div>` + svg(320, 150, `<text x="0" y="10" font-size="12" fill="var(--muted)">Day 1</text>` + ribbon({y0: 18, h: 40, pauses: [[.6, .62]], ums: [[.05, "um"], [.2, "like"], [.33, "um"], [.5, "so"], [.68, "uh"], [.9, "um"]], color: "var(--ghost)", label: "d1", draw: false}) + `<text x="0" y="92" font-size="12" fill="var(--muted)">Today</text>` + ribbon({y0: 100, h: 40, pauses: [[.18, .22], [.41, .48], [.7, .73]], ums: [[.3, "um"]], highlight: 1, label: "a"}), "Day 1's ribbon in grey with six pause words above today's ribbon with three pauses and one pause word"), note: "Same prompt, two takes, one under the other. Day 1 stays grey: it’s the ghost."},
+    {q: "Over weeks", h: `Pause words have <em>more than halved</em>.`, body: () => { const W = 320, H = 150, x = i => 20 + i * (W - 40) / (weeks.length - 1), y = v => 20 + (7 - v) / 7 * (H - 44); return svg(W, H, `${[0, 2, 4, 6].map(v => `<path d="M20 ${y(v)} H${W - 4}" stroke="var(--grid)" stroke-width="1"/><text x="0" y="${y(v) + 4}" font-size="11" fill="var(--muted)">${v}</text>`).join("")}<path d="M20 ${y(weeks[0])} H${W - 4}" stroke="var(--ghost)" stroke-width="2" stroke-dasharray="4 4"/><text x="${W - 4}" y="${y(weeks[0]) - 6}" text-anchor="end" font-size="11" fill="var(--muted)">day 1</text><path class="draw" d="${weeks.map((v, i) => `${i ? "L" : "M"}${x(i)} ${y(v)}`).join(" ")}" stroke="var(--now)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${weeks.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="${i === weeks.length - 1 ? 6 : 4}" fill="var(--now)" stroke="var(--card)" stroke-width="2"/><rect x="${x(i) - 16}" y="10" width="32" height="${H - 30}" ${hover(`Week ${i + 1}: ${v} a minute`)}/>`).join("")}<text x="${x(weeks.length - 1)}" y="${y(weeks.at(-1)) + 22}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">2.3</text>${weeks.map((_, i) => `<text x="${x(i)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--muted)">W${i + 1}</text>`).join("")}`, "Line chart of pause words a minute over eight weeks, falling from 6.1 to 2.3, with day 1 as a dashed line"); }, note: "One line, one axis, day 1 as a dashed ghost. Hover a week."},
+    {q: "Pause drill", h: `<em>3 of 4</em> pauses landed in the sweet spot.`, body: () => { const vals = [1.4, 0.6, 1.7, 1.2], W = 320, H = 150, base = H - 22, s = v => v / 2.5 * (H - 40); return svg(W, H, `<rect x="0" y="${base - s(2)}" width="${W}" height="${s(2) - s(1)}" fill="var(--band)"/><text x="${W}" y="${base - s(2) - 4}" text-anchor="end" font-size="11" fill="var(--muted)">1–2 s</text><path d="M0 ${base} H${W}" stroke="var(--line)" stroke-width="2"/>${vals.map((v, i) => { const x = 30 + i * 74, ok = v >= 1 && v <= 2; return `<rect class="draw" x="${x}" y="${base - s(v)}" width="40" height="${s(v)}" rx="4" fill="${ok ? "var(--now)" : "var(--ghost)"}"/><text x="${x + 20}" y="${base - s(v) - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${v}s</text><text x="${x + 20}" y="${H - 4}" text-anchor="middle" font-size="11" fill="var(--muted)">mark ${i + 1}</text><rect x="${x - 6}" y="0" width="52" height="${base}" ${hover(`Mark ${i + 1}: ${v} s${ok ? ", in the sweet spot" : ", a little short"}`)}/>`; }).join("")}`, "Bar chart of four pause lengths against a one-to-two-second target band; three are inside it"); }, note: "A short pause is grey, not red. The band is the target."},
+    {q: "History", h: `Your takes, <em>at a glance</em>.`, body: () => `<div class="rows">${[["Rapid Fire", "Today", [[.2, .25], [.5, .56]], [[.4, "um"]]], ["The bad haircut", "Tue", [[.3, .33]], [[.1, "so"], [.6, "um"]]], ["Rapid Fire", "Mon", [[.45, .47]], [[.15, "um"], [.3, "like"], [.7, "um"]]], ["Day 1", "14 Oct", [], [[.1, "um"], [.25, "um"], [.4, "so"], [.55, "uh"], [.8, "um"]]]].map(([n, d, p, u], i) => `<div class="row"><span>${n}</span>${svg(200, 30, ribbon({w: 200, h: 16, n: 40, pauses: p, ums: u, label: n + d, draw: false, color: i === 3 ? "var(--ghost)" : "var(--voice)"}).replace(/r="5"/g, 'r="3"').replace(/cy="(\d+(\.\d+)?)"/g, (m, c) => `cy="${+c - 3}"`), `${n} on ${d}`)}<small>${d}</small></div>`).join("")}</div>`, note: "A tiny fingerprint per take: fewer dots and more gaps over time, visible without opening anything."}
+  ];
+
+  document.getElementById("grid").innerHTML = CARDS.map(c => `<article class="card${c.blob ? " hasblob" : ""}">${c.blob ? blob(c.blob) : ""}<span class="q">${c.q}</span><h2>${c.h}</h2>${c.body()}<p class="note">${c.note}</p></article>`).join("");
+
+  document.addEventListener("pointermove", e => {
+    const t = e.target.closest("[data-tip]");
+    if (!t) { tip.classList.remove("on"); return; }
+    tip.textContent = t.dataset.tip; tip.classList.add("on");
+    tip.style.left = Math.min(innerWidth - 250, e.clientX + 14) + "px"; tip.style.top = (e.clientY + 14) + "px";
+  });
+})();
+</script>
+
+</body></html>
