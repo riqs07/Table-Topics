@@ -26,6 +26,8 @@ import { SCIENCE_FRAMES, ScienceSync, ScienceTransparency, TRANSPARENCY_FRAMES }
 import { StormBeat } from "./demo/StormBeat";
 // Load the two refined storm beats (2026-11-04)
 import { STORM_BEAT_FRAMES, StormBeatA, StormBeatC, StormBeatCombo } from "./demo/StormBeat2";
+// Load the title card (2026-11-04)
+import { TitleCard } from "./demo/TitleCard";
 // Load the panels of Sage's character sheet (stills)
 import { SHEET_PANELS } from "./characters/SageSheet";
 
@@ -63,6 +65,12 @@ export function Root() {
       <Composition id="StormBeatAnimC" component={StormBeatC} durationInFrames={STORM_BEAT_FRAMES} fps={30} width={1080} height={1920} />
       {/* (the combination) */}
       <Composition id="StormBeatCombo" component={StormBeatCombo} durationInFrames={135} fps={30} width={1080} height={1920} />
+      {/* The title card: vertical (reels, stories), 4:5 (feed) and square (profile) */}
+      <Composition id="TitleCardVertical" component={TitleCard} durationInFrames={60} fps={30} width={1080} height={1920} />
+      {/* (4:5) */}
+      <Composition id="TitleCardFeed" component={TitleCard} durationInFrames={60} fps={30} width={1080} height={1350} />
+      {/* (square) */}
+      <Composition id="TitleCardSquare" component={TitleCard} durationInFrames={60} fps={30} width={1080} height={1080} />
       {/* Sage's character sheet, one still per panel */}
       {SHEET_PANELS.map((panel) => <Composition key={panel.id} id={panel.id} component={panel.component} durationInFrames={1} fps={30} width={panel.width} height={panel.height} />)}
     </>
