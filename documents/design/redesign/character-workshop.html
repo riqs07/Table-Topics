@@ -1,0 +1,186 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Character Workshop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: a short intro with the two kept characters, then a grid of twelve accessory-free candidates, each with two faces and Like / Maybe / No. */
+:root{--bg:#f3efe8;--surface:#fffdf9;--fg:#231f1c;--muted:#6b635c;--line:#e3dbd0;--stage:#fbf3e8;--chip:#ece5da;--yes:#2c8050;--maybe:#b7791f;--no:#b44a3c;--focus:#2c8050;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--round:"Fredoka",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--stage:#1d1a17;--chip:#2b2723;--yes:#5fcf8f;--maybe:#e5b04f;--no:#e57a6b;--focus:#6fd39a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171513;--surface:#211e1b;--fg:#efe9e2;--muted:#a69d94;--line:#36302a;--stage:#1d1a17;--chip:#2b2723;--yes:#5fcf8f;--maybe:#e5b04f;--no:#e57a6b;--focus:#6fd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.45}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--round);font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:74ch}
+.head{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:end}
+.status{font-size:13px;color:var(--muted);background:var(--chip);border-radius:999px;padding:4px 10px}
+.kept{display:flex;gap:12px;flex-wrap:wrap}
+.kept div{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px 14px 8px 8px;display:flex;gap:10px;align-items:center}
+.kept svg{width:64px;height:64px}
+.kept b{display:block}
+.kept span{font-size:13px;color:var(--muted)}
+.rules{display:flex;gap:8px;flex-wrap:wrap}
+.rules span{font-size:13px;background:var(--chip);border-radius:999px;padding:4px 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.cand{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.cand[data-v="yes"]{border-color:var(--yes)}
+.cand[data-v="maybe"]{border-color:var(--maybe)}
+.cand[data-v="no"]{opacity:.55}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pair div{background:var(--stage);border-radius:14px;display:flex;flex-direction:column;align-items:center;padding:6px 4px;font-size:12px;color:var(--muted);font-weight:600}
+.pair svg{width:100%;max-width:120px;height:auto}
+.cand h2{font-family:var(--round);font-weight:600;font-size:18px;margin:0;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.cand h2 small{font-family:var(--ui);font-size:12px;color:var(--muted);font-weight:600}
+.cand p{margin:0;font-size:13.5px;color:var(--muted)}
+.vote{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.vote button{font:inherit;font-weight:700;font-size:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:7px 4px;cursor:pointer}
+.vote button[data-c="yes"][aria-pressed="true"]{background:var(--yes);border-color:var(--yes);color:var(--surface)}
+.vote button[data-c="maybe"][aria-pressed="true"]{background:var(--maybe);border-color:var(--maybe);color:var(--surface)}
+.vote button[data-c="no"][aria-pressed="true"]{background:var(--no);border-color:var(--no);color:var(--surface)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.cand input{font:inherit;font-size:13.5px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 9px;width:100%}
+.overall{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.overall label{font-weight:700}
+.overall textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:80px;width:100%}
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Character workshop: rounded, no accessories</h1>
+      <p class="lede">Twelve candidates for the rest of the cast. Each is a plain rounded body told apart only by <strong>proportion, face and colour</strong>, never by hats, glasses or headphones. Each shows a resting face and a reacting one. Mark Like, Maybe or No, and add a word on why. It saves as you go; tell me when you’re done.</p>
+    </div>
+    <span class="status" id="status">Saved on this device</span>
+  </div>
+  <div class="kept" id="kept"></div>
+  <div class="rules"><span>Rounded bodies only</span><span>No accessories</span><span>No arms at rest</span><span>Same shading and highlight as you</span><span>Colours not taken: apricot is you, green is Sage, teal is the friend</span></div>
+  <div class="grid" id="grid"></div>
+  <div class="overall"><label for="overall">Anything else? (what you’d want the bosses or other characters to feel like)</label><textarea id="overall" placeholder="e.g. bosses should feel a bit intimidating but still friendly…"></textarea></div>
+</div>
+
+<script>
+(() => {
+  const ink = "#2a2420";
+  const L = (c, w = 7) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+  // bodies: all rounded, about 200 units tall, base at y=94
+  const S = {
+    round: "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z",
+    egg: "M0 -114C52 -114 92 -42 92 10C92 62 52 94 0 94C-52 94 -92 62 -92 10C-92 -42 -52 -114 0 -114Z",
+    tall: "M0 -124C48 -124 76 -70 76 -12C76 50 46 94 0 94C-46 94 -76 50 -76 -12C-76 -70 -48 -124 0 -124Z",
+    pebble: "M-10 -78C60 -84 126 -48 126 8C126 60 74 94 0 94C-74 94 -124 62 -124 10C-124 -40 -70 -74 -10 -78Z",
+    bun: "M0 -60C76 -60 132 -30 132 22C132 66 82 94 0 94C-82 94 -132 66 -132 22C-132 -30 -76 -60 0 -60Z",
+    drop: "M0 -128C28 -96 96 -40 96 18C96 64 54 94 0 94C-54 94 -96 64 -96 18C-96 -40 -28 -96 0 -128Z",
+    pear: "M0 -110C38 -110 60 -76 62 -40C64 -16 108 10 108 46C108 78 66 94 0 94C-66 94 -108 78 -108 46C-108 10 -64 -16 -62 -40C-60 -76 -38 -110 0 -110Z",
+    topwide: "M0 -100C70 -100 112 -62 112 -14C112 40 62 94 0 94C-62 94 -112 40 -112 -14C-112 -62 -70 -100 0 -100Z",
+    squircle: "M0 -100C80 -100 100 -80 100 -2C100 76 80 94 0 94C-80 94 -100 76 -100 -2C-100 -80 -80 -100 0 -100Z",
+    lean: "M14 -118C66 -116 92 -60 84 -4C76 56 42 94 -6 94C-56 94 -86 54 -80 -6C-74 -64 -38 -120 14 -118Z",
+    blobby: "M4 -104C50 -110 74 -76 98 -50C124 -22 118 30 96 58C72 90 30 96 -6 94C-52 92 -96 74 -108 34C-120 -8 -100 -44 -72 -72C-50 -94 -26 -102 4 -104Z",
+    soft: "M0 -92C62 -92 98 -58 104 -6C110 52 64 94 0 94C-64 94 -110 52 -104 -6C-98 -58 -62 -92 0 -92Z"
+  };
+  const body = (sh, c, d) => `<path fill="${d}" d="${S[sh]}"/><path fill="${c}" transform="translate(-9 -8) scale(0.93)" d="${S[sh]}"/><ellipse fill="#fff6e6" opacity=".45" cx="-46" cy="-50" rx="17" ry="10" transform="rotate(-35 -46 -50)"/>`;
+
+  // faces: each a pair [rest, react]
+  const F = {
+    shiny: (y = -30, gap = 26) => [`<ellipse fill="${ink}" cx="-${gap}" cy="${y}" rx="11" ry="15"/><ellipse fill="${ink}" cx="${gap}" cy="${y}" rx="11" ry="15"/><circle fill="#fff" cx="-${gap - 4}" cy="${y - 6}" r="4"/><circle fill="#fff" cx="${gap + 4}" cy="${y - 6}" r="4"/><path ${L(ink)} d="M-12 ${y + 32}q12 9 24 0"/>`,
+      `<ellipse fill="${ink}" cx="-${gap}" cy="${y - 2}" rx="12" ry="17"/><ellipse fill="${ink}" cx="${gap}" cy="${y - 2}" rx="12" ry="17"/><circle fill="#fff" cx="-${gap - 4}" cy="${y - 9}" r="4.5"/><circle fill="#fff" cx="${gap + 4}" cy="${y - 9}" r="4.5"/><ellipse fill="${ink}" cx="0" cy="${y + 36}" rx="9" ry="11"/>`],
+    dots: (y = -26, gap = 30) => [`<circle fill="${ink}" cx="-${gap}" cy="${y}" r="7"/><circle fill="${ink}" cx="${gap}" cy="${y}" r="7"/><path ${L(ink, 6)} d="M-8 ${y + 22}q8 6 16 0"/>`,
+      `<path ${L(ink, 6)} d="M-${gap + 9} ${y + 3}q9 -12 18 0M${gap - 9} ${y + 3}q9 -12 18 0"/><path ${L(ink, 6)} d="M-14 ${y + 20}q14 14 28 0"/>`],
+    wide: (y = -26, gap = 42) => [`<ellipse fill="${ink}" cx="-${gap}" cy="${y}" rx="9" ry="12"/><ellipse fill="${ink}" cx="${gap}" cy="${y}" rx="9" ry="12"/><path ${L(ink, 6.5)} d="M-18 ${y + 28}q18 10 36 0"/>`,
+      `<ellipse fill="${ink}" cx="-${gap}" cy="${y - 2}" rx="10" ry="14"/><ellipse fill="${ink}" cx="${gap}" cy="${y - 2}" rx="10" ry="14"/><path fill="${ink}" d="M-24 ${y + 20}h48q0 24-24 24t-24-24z"/>`],
+    close: (y = -34, gap = 15) => [`<ellipse fill="${ink}" cx="-${gap}" cy="${y}" rx="8" ry="11"/><ellipse fill="${ink}" cx="${gap}" cy="${y}" rx="8" ry="11"/><path ${L(ink, 6)} d="M-7 ${y + 24}q7 5 14 0"/>`,
+      `<circle fill="${ink}" cx="-${gap}" cy="${y}" r="10"/><circle fill="${ink}" cx="${gap}" cy="${y}" r="10"/><circle fill="#fff" cx="-${gap - 3}" cy="${y - 4}" r="3"/><circle fill="#fff" cx="${gap + 3}" cy="${y - 4}" r="3"/><ellipse fill="${ink}" cx="0" cy="${y + 28}" rx="6" ry="8"/>`],
+    sleepy: (y = -22, gap = 30) => [`<path ${L(ink, 6.5)} d="M-${gap + 11} ${y}q11 8 22 0M${gap - 11} ${y}q11 8 22 0"/><path ${L(ink, 6)} d="M-9 ${y + 24}q9 5 18 0"/>`,
+      `<path fill="${ink}" d="M-${gap + 11} ${y - 2}h22a11 11 0 0 1-22 0z"/><path fill="${ink}" d="M${gap - 11} ${y - 2}h22a11 11 0 0 1-22 0z"/><path ${L(ink, 6)} d="M-14 ${y + 22}q14 10 28 0"/>`],
+    pupils: (y = -30, gap = 28) => [`<circle fill="#fff" cx="-${gap}" cy="${y}" r="18"/><circle fill="#fff" cx="${gap}" cy="${y}" r="18"/><circle fill="${ink}" cx="-${gap - 4}" cy="${y + 2}" r="8"/><circle fill="${ink}" cx="${gap + 4}" cy="${y + 2}" r="8"/><path ${L(ink, 6)} d="M-12 ${y + 34}q12 6 24 0"/>`,
+      `<circle fill="#fff" cx="-${gap}" cy="${y - 2}" r="20"/><circle fill="#fff" cx="${gap}" cy="${y - 2}" r="20"/><circle fill="${ink}" cx="-${gap}" cy="${y - 2}" r="8"/><circle fill="${ink}" cx="${gap}" cy="${y - 2}" r="8"/><path fill="${ink}" d="M-20 ${y + 28}h40q0 22-20 22t-20-22z"/>`],
+    lids: (y = -28, gap = 26) => [`<path fill="${ink}" d="M-${gap + 11} ${y - 2}h22v6a11 9 0 0 1-22 0z"/><path fill="${ink}" d="M${gap - 11} ${y - 2}h22v6a11 9 0 0 1-22 0z"/><path ${L(ink, 6)} d="M-9 ${y + 28}h18"/>`,
+      `<ellipse fill="${ink}" cx="-${gap}" cy="${y}" rx="10" ry="13"/><ellipse fill="${ink}" cx="${gap}" cy="${y}" rx="10" ry="13"/><circle fill="#fff" cx="-${gap - 3}" cy="${y - 5}" r="3.5"/><circle fill="#fff" cx="${gap + 3}" cy="${y - 5}" r="3.5"/><path ${L(ink, 6)} d="M-12 ${y + 26}q12 9 24 0"/>`],
+    low: (y = 4, gap = 24) => [`<ellipse fill="${ink}" cx="-${gap}" cy="${y}" rx="9" ry="12"/><ellipse fill="${ink}" cx="${gap}" cy="${y}" rx="9" ry="12"/><path ${L(ink, 6)} d="M-8 ${y + 24}q8 6 16 0"/>`,
+      `<path ${L(ink, 6.5)} d="M-${gap + 10} ${y + 3}q10 -12 20 0M${gap - 10} ${y + 3}q10 -12 20 0"/><path fill="${ink}" d="M-14 ${y + 16}h28q0 16-14 16t-14-16z"/>`],
+    side: (y = -30, gap = 24, dx = 14) => [`<ellipse fill="${ink}" cx="${-gap + dx}" cy="${y}" rx="9" ry="13"/><ellipse fill="${ink}" cx="${gap + dx}" cy="${y}" rx="9" ry="13"/><path ${L(ink, 6)} d="M${dx - 6} ${y + 28}q8 4 14 -2"/>`,
+      `<ellipse fill="${ink}" cx="-${gap}" cy="${y}" rx="10" ry="14"/><ellipse fill="${ink}" cx="${gap}" cy="${y}" rx="10" ry="14"/><circle fill="#fff" cx="-${gap - 3}" cy="${y - 5}" r="3.5"/><circle fill="#fff" cx="${gap + 3}" cy="${y - 5}" r="3.5"/><path ${L(ink, 6)} d="M-12 ${y + 26}q12 10 24 0"/>`],
+    flat: (y = -24, gap = 28) => [`<rect fill="${ink}" x="-${gap + 9}" y="${y - 4}" width="18" height="8" rx="4"/><rect fill="${ink}" x="${gap - 9}" y="${y - 4}" width="18" height="8" rx="4"/><path ${L(ink, 6)} d="M-10 ${y + 24}q10 4 20 0"/>`,
+      `<ellipse fill="${ink}" cx="-${gap}" cy="${y}" rx="9" ry="12"/><ellipse fill="${ink}" cx="${gap}" cy="${y}" rx="9" ry="12"/><path ${L(ink, 6)} d="M-14 ${y + 20}q14 12 28 0"/>`]
+  };
+
+  const CANDS = [
+    ["A", "Tall oval", "Upright and composed. Reads as someone in charge without needing glasses.", "tall", "#4a68e0", "#3550bf", F.close(-46)],
+    ["B", "Wide pebble", "Low, wide and grounded. Easy‑going energy; good for a host or a laugh.", "pebble", "#8a63e0", "#6c48c4", F.wide(-20, 46)],
+    ["C", "Soft drop", "A gentle point on top. Curious, a little dreamy.", "drop", "#e86aae", "#c94f92", F.shiny(-16, 26)],
+    ["D", "Bun", "Very wide and flat, half‑asleep. Unbothered; hard to impress.", "bun", "#f4b73b", "#d39722", F.sleepy(-8, 40)],
+    ["E", "Big eyes", "Your round, with white eyes and pupils. Very readable reactions.", "soft", "#6f8ff0", "#526fd0", F.pupils(-28, 30)],
+    ["F", "Pear", "Small head, big base. Steady and patient.", "pear", "#9b82e6", "#7d64c8", F.dots(-60, 22)],
+    ["G", "Top‑heavy", "Wide at the top, narrow at the base. Alert, leaning forward.", "topwide", "#ec6a55", "#cc4f3c", F.lids(-34, 30)],
+    ["H", "Squircle", "A soft square. Orderly and direct, without hard corners.", "squircle", "#5b6ee1", "#4352c0", F.flat(-30, 30)],
+    ["I", "Leaning", "Slightly tipped, face turned away. Shy, needs drawing out.", "lean", "#c56cd6", "#a552b6", F.side(-36, 22, 14)],
+    ["J", "Wobbly", "Lumpier outline. Nervous and lively; never still.", "blobby", "#f08cc0", "#d06fa2", F.shiny(-26, 24)],
+    ["K", "Low face", "Face sits low, more forehead. Thoughtful, a bit wise.", "soft", "#7a86a8", "#5e6a8c", F.low(10, 26)],
+    ["L", "Dot eyes", "Your outline, tiny dot eyes set wide. Calm and deadpan.", "round", "#b7546e", "#963e57", F.dots(-30, 36)]
+  ];
+
+  // the two kept characters, for scale
+  const youSvg = `<svg viewBox="-130 -140 260 250" aria-hidden="true">${body("round", "#e8935c", "#cf7440")}${F.shiny(-36, 24)[0]}</svg>`;
+  const friendSvg = `<svg viewBox="-130 -140 260 250" aria-hidden="true">${body("egg", "#2fb3a4", "#1f8d80")}<path ${L("#1f8d80", 9)} d="M2 -112q-4 -22 14 -26q14 -2 10 12"/>${F.shiny(-30, 22)[0]}</svg>`;
+  document.getElementById("kept").innerHTML = `<div>${youSvg}<p style="margin:0"><b>You</b><span>kept</span></p></div><div>${friendSvg}<p style="margin:0"><b>The friend</b><span>kept · the curl is the one question: keep or drop?</span></p></div>`;
+
+  // state
+  const LS = "vl-rounds";
+  let state = {votes: {}, notes: {}, overall: ""};
+  try { const r = JSON.parse(localStorage.getItem(LS) || "null"); if (r) state = {...state, ...r}; } catch (e) {}
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = CANDS.map(([id, name, desc, sh, c, d, [rest, react]]) => `<article class="cand" data-id="${id}">
+    <h2>${name}<small>${id}</small></h2>
+    <div class="pair"><div><svg viewBox="-140 -140 280 250" aria-hidden="true">${body(sh, c, d)}${rest}</svg>At rest</div><div><svg viewBox="-140 -140 280 250" aria-hidden="true">${body(sh, c, d)}${react}</svg>Reacting</div></div>
+    <p>${desc}</p>
+    <div class="vote" role="group" aria-label="Your verdict on ${name}">${[["yes", "Like"], ["maybe", "Maybe"], ["no", "No"]].map(([v, l]) => `<button type="button" data-c="${v}" aria-pressed="false">${l}</button>`).join("")}</div>
+    <input type="text" id="note-${id}" placeholder="Why? (optional)" aria-label="Why, for ${name}">
+  </article>`).join("");
+
+  const statusEl = document.getElementById("status");
+  let doc = null, t = null;
+  function paint() {
+    grid.querySelectorAll(".cand").forEach(card => {
+      const id = card.dataset.id, v = state.votes[id] || "";
+      card.dataset.v = v;
+      card.querySelectorAll(".vote button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.c === v)));
+      const inp = card.querySelector("input"); if (document.activeElement !== inp) inp.value = state.notes[id] || "";
+    });
+    const o = document.getElementById("overall"); if (document.activeElement !== o) o.value = state.overall || "";
+  }
+  function save() {
+    try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {}
+    if (!doc) { statusEl.textContent = "Saved on this device"; return; }
+    statusEl.textContent = "Saving…"; clearTimeout(t);
+    t = setTimeout(async () => {
+      const named = Object.fromEntries(CANDS.map(([id, name]) => [id, name]));
+      try { await doc.set({...state, names: named, updatedAt: new Date().toISOString()}); statusEl.textContent = "Saved"; }
+      catch (e) { statusEl.textContent = "Saved on this device only"; }
+    }, 600);
+  }
+  grid.addEventListener("click", e => {
+    const b = e.target.closest(".vote button"); if (!b) return;
+    const id = b.closest(".cand").dataset.id;
+    state.votes[id] = state.votes[id] === b.dataset.c ? "" : b.dataset.c; paint(); save();
+  });
+  grid.addEventListener("input", e => { const card = e.target.closest(".cand"); if (!card) return; state.notes[card.dataset.id] = e.target.value; save(); });
+  document.getElementById("overall").addEventListener("input", e => { state.overall = e.target.value; save(); });
+  paint();
+
+  (async () => {
+    const db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    if (!db) return;
+    doc = db.doc("workshop/rounds");
+    try {
+      const snap = await doc.get();
+      if (snap.exists) { const d = snap.data(); state = {votes: d.votes || {}, notes: d.notes || {}, overall: d.overall || ""}; paint(); statusEl.textContent = "Saved"; }
+      else statusEl.textContent = "Ready";
+    } catch (e) { doc = null; statusEl.textContent = "Saved on this device only"; }
+  })();
+})();
+</script>
+
+</body></html>
