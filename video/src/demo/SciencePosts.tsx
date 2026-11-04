@@ -6,6 +6,10 @@ import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoCon
 import "@fontsource/fredoka/600.css";
 // (and its bold)
 import "@fontsource/fredoka/700.css";
+// Load the serif used by the first reel (as in the app)
+import "@fontsource-variable/fraunces";
+// (and its italic)
+import "@fontsource-variable/fraunces/wght-italic.css";
 
 // Both reels run 18 seconds at 30 frames a second
 export const SCIENCE_FRAMES = 540;
@@ -142,103 +146,150 @@ function Brand({ frame, at }: { frame: number; at: number }) {
 const edges = (frame: number) => interpolate(frame, [0, 4, SCIENCE_FRAMES - 10, SCIENCE_FRAMES], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
 // ===================== Reel 1: They see far less than you feel =====================
+// Reel 1's type: Fraunces (the app's display serif) for headlines, Atkinson (the app's body face) for the rest
+const SERIF = "'Fraunces Variable', Georgia, serif";
+// (the body face)
+const BODY = "Atkinson, sans-serif";
+
+// A headline in the serif, springing up into place
+function Line({ frame, at, until, y, size, color = "#ffffff", italic = false, font = SERIF, weight = 650, children }: { frame: number; at: number; until: number; y: number; size: number; color?: string; italic?: boolean; font?: string; weight?: number; children: React.ReactNode }) {
+  // The frame rate
+  const { fps } = useVideoConfig();
+  // The spring that lifts it in
+  const s = spring({ frame: frame - at, fps, config: { damping: 16, stiffness: 150 } });
+  // How visible it is
+  const o = frame < at ? 0 : Math.min(s, window(frame, at, until, 10));
+  // The text
+  return <div style={{ position: "absolute", left: 90, right: 90, top: y, textAlign: "center", fontFamily: font, fontWeight: weight, fontStyle: italic ? "italic" : "normal", fontSize: size, lineHeight: 1.12, letterSpacing: font === SERIF ? -1 : 0, color, opacity: o, transform: `translateY(${(1 - s) * 34}px)`, textShadow: "0 4px 30px rgba(0,0,0,0.4)" }}>{children}</div>;
+}
+
 export function ScienceTransparency() {
   // The current frame
   const frame = useCurrentFrame();
   // The frame rate
   const { fps } = useVideoConfig();
-  // The hook's strike-through drawing across the quote (from 1.2 s)
-  const strike = ease(frame, 36, 50);
-  // The character rising into the frame
-  const rise = spring({ frame: frame - 84, fps, config: { damping: 15, stiffness: 120 } });
-  // The window in the body opening
-  const open = ease(frame, 110, 130);
-  // A lightning flash every so often inside the window
-  const flash = [140, 172, 205, 240, 300].some((f) => frame >= f && frame < f + 5);
-  // The two bars growing (how nervous you felt; how nervous you looked)
-  const barYou = ease(frame, 220, 260);
-  // (the audience's view, a little after)
-  const barThem = ease(frame, 236, 276);
-  // The bars' scene showing
-  const barsOn = window(frame, 214, 330, 10);
-  // The character's scene showing
-  const charOn = window(frame, 80, 222, 12);
-  // The payoff scene
-  const payoffOn = window(frame, 324, 420, 10);
+  // You, popping up from below in the first half-second
+  const rise = spring({ frame: frame - 2, fps, config: { damping: 13, stiffness: 140 } });
+  // A small nervous tremble in the hook
+  const tremble = frame < 90 ? Math.sin(frame * 1.9) * 4 : 0;
+  // Where you sit: low in the hook, then up the frame for the storm
+  const lift = ease(frame, 86, 112);
+  // Your centre
+  const cy = 1180 - 180 * lift + (1 - rise) * 700;
+  // Your size: a little bigger once the window opens
+  const size = 250 + 70 * lift;
+  // The thought bubble showing (hook only)
+  const bubble = window(frame, 10, 90, 8);
+  // The window in your body opening
+  const open = ease(frame, 112, 132);
+  // A lightning flash now and then
+  const flash = [140, 170, 196].some((f) => frame >= f && frame < f + 5);
+  // The character scene showing
+  const charOn = window(frame, 0, 216, 12);
+  // The bars and the study (7–13 s)
+  const barsOn = window(frame, 212, 396, 12);
+  // The two bars growing
+  const barYou = ease(frame, 226, 266);
+  // (the audience's, a little after)
+  const barThem = ease(frame, 244, 284);
+  // The study under the bars
+  const study = ease(frame, 300, 318);
+  // The payoff (13–18 s)
+  const payoffOn = window(frame, 392, 540, 12);
+  // The happy blob in the payoff, popping in
+  const pop = spring({ frame: frame - 400, fps, config: { damping: 11, stiffness: 160 } });
   // The reel
   return (
     <AbsoluteFill style={{ opacity: edges(frame) }}>
       {/* The night sky */}
       <Sky frame={frame} top="#24205a" bottom="#08061e" />
-      {/* 0–3 s: the hook, a thought everyone has, then struck out */}
-      <Headline frame={frame} at={0} until={82} y={560} size={92}>“Everyone can see how nervous I am.”</Headline>
-      {/* The strike-through */}
-      <svg viewBox="0 0 1080 1920" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: window(frame, 36, 82, 6) }}>
-        {/* A thick red line drawn across the quote */}
-        <path d={`M120 ${700} L${120 + 840 * strike} ${660}`} stroke="#ff5a6a" strokeWidth={22} strokeLinecap="round" />
-      </svg>
-      {/* "Science says: they can't." */}
-      <Headline frame={frame} at={48} until={82} y={900} size={78} color="#ffd27a">Science says: they can’t.</Headline>
-      {/* 3–7 s: you, calm outside, a storm inside */}
+      {/* 0–7 s: you, nervous, then calm outside with a storm inside */}
       <svg viewBox="0 0 1080 1920" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: charOn }}>
-        {/* The window's clip */}
-        <defs><clipPath id="window"><circle cx={540} cy={1060 + (1 - rise) * 500} r={150 * open} /></clipPath><radialGradient id="storm"><stop offset="0" stopColor="#3a3f7a" /><stop offset="1" stopColor="#141838" /></radialGradient></defs>
-        {/* You, rising into the frame, calm */}
-        <Character id="you1" kind="you" x={540} y={960 + (1 - rise) * 500} r={330} face="calm" />
-        {/* The storm, seen through the window */}
+        {/* The window's clip and the storm's sky */}
+        <defs><clipPath id="window"><circle cx={540} cy={cy + 90} r={150 * open} /></clipPath><radialGradient id="storm"><stop offset="0" stopColor="#3a3f7a" /><stop offset="1" stopColor="#141838" /></radialGradient></defs>
+        {/* A sweat drop in the hook */}
+        <path d={`M${720 + tremble} ${cy - 240} q14 24 0 36 q-14 -12 0 -36z`} fill="#9fd6f6" opacity={frame < 88 ? 1 : 0} />
+        {/* You */}
+        <g transform={`translate(${tremble} 0)`}><Character id="you1" kind="you" x={540} y={cy} r={size} face={frame < 92 ? "nervous" : "calm"} /></g>
+        {/* The storm through the window */}
         <g clipPath="url(#window)">
-          {/* Its dark sky */}
-          <rect x={360} y={880 + (1 - rise) * 500} width={360} height={360} fill="url(#storm)" />
-          {/* Rain falling */}
-          {Array.from({ length: 14 }, (_, i) => <path key={i} d={`M${400 + i * 22} ${((frame * 9 + i * 37) % 260) + 960 + (1 - rise) * 500} l-10 26`} stroke="#9fc4ff" strokeWidth={6} strokeLinecap="round" />)}
+          {/* Its sky */}
+          <rect x={360} y={cy - 90} width={360} height={360} fill="url(#storm)" />
+          {/* Rain */}
+          {Array.from({ length: 14 }, (_, i) => <path key={i} d={`M${400 + i * 22} ${((frame * 9 + i * 37) % 260) + cy - 10} l-10 26`} stroke="#9fc4ff" strokeWidth={6} strokeLinecap="round" />)}
           {/* Clouds */}
-          <ellipse cx={520} cy={990 + (1 - rise) * 500} rx={120} ry={50} fill="#6a6ea8" />
+          <ellipse cx={520} cy={cy + 20} rx={120} ry={50} fill="#6a6ea8" />
           {/* (more) */}
-          <ellipse cx={600} cy={1010 + (1 - rise) * 500} rx={100} ry={44} fill="#5a5e98" />
-          {/* The lightning, flashing */}
-          <path d={`M560 ${1010 + (1 - rise) * 500} l-50 100 h40 l-36 90 96 -126 h-42 l36 -64z`} fill="#ffe08a" opacity={flash ? 1 : 0.35} />
+          <ellipse cx={600} cy={cy + 40} rx={100} ry={44} fill="#5a5e98" />
+          {/* Lightning */}
+          <path d={`M560 ${cy + 40} l-50 100 h40 l-36 90 96 -126 h-42 l36 -64z`} fill="#ffe08a" opacity={flash ? 1 : 0.4} />
         </g>
         {/* The window's rim */}
-        <circle cx={540} cy={1060 + (1 - rise) * 500} r={156 * open} fill="none" stroke="#c96a35" strokeWidth={16} />
-        {/* A flash lighting the whole sky now and then */}
-        <rect width={1080} height={1920} fill="#fff6d6" opacity={flash ? 0.08 : 0} />
+        <circle cx={540} cy={cy + 90} r={156 * open} fill="none" stroke="#c96a35" strokeWidth={16} />
+        {/* A flash lighting the sky */}
+        <rect width={1080} height={1920} fill="#fff6d6" opacity={flash ? 0.07 : 0} />
       </svg>
-      {/* The two labels */}
-      <Headline frame={frame} at={120} until={222} y={330} size={64}>How it <span style={{ color: "#9fece0" }}>looks</span>…</Headline>
+      {/* The hook: your thought, in a bubble over your head */}
+      <div style={{ position: "absolute", left: 120, right: 120, top: 560, opacity: bubble, transform: `scale(${0.85 + 0.15 * Math.min(1, rise)})`, transformOrigin: "50% 100%" }}>
+        {/* The bubble */}
+        <div style={{ background: "#fffaf2", borderRadius: 60, padding: "48px 56px", textAlign: "center", fontFamily: SERIF, fontWeight: 600, fontStyle: "italic", fontSize: 78, lineHeight: 1.1, letterSpacing: -1, color: "#2a1f3a" }}>“Everyone can see how nervous I am.”</div>
+        {/* Its trailing dots */}
+        <div style={{ position: "absolute", left: "50%", bottom: -56, width: 34, height: 34, borderRadius: 99, background: "#fffaf2", transform: "translateX(-10px)" }} />
+        {/* (smaller) */}
+        <div style={{ position: "absolute", left: "50%", bottom: -96, width: 20, height: 20, borderRadius: 99, background: "#fffaf2", transform: "translateX(6px)" }} />
+      </div>
+      {/* The turn, still inside the first three seconds */}
+      <Line frame={frame} at={44} until={90} y={350} size={70} color="#ffd27a">Science says: they can’t.</Line>
+      {/* The labels for the storm */}
+      <Line frame={frame} at={118} until={214} y={300} size={72}>How it <span style={{ color: "#9fece0" }}>looks</span>…</Line>
       {/* (and how it feels) */}
-      <Headline frame={frame} at={150} until={222} y={1300} size={64}>…how it <span style={{ color: "#ffd27a" }}>feels</span>.</Headline>
-      {/* 7–11 s: the finding, as two bars */}
+      <Line frame={frame} at={148} until={214} y={1500} size={72}>…how it <span style={{ color: "#ffd27a" }}>feels</span>.</Line>
+      {/* 7–13 s: the finding, the bars and the study on one page */}
+      <Line frame={frame} at={214} until={396} y={220} size={68}>Speakers think their nerves show <em style={{ color: "#ffd27a" }}>far more</em> than they do.</Line>
+      {/* The bars */}
       <svg viewBox="0 0 1080 1920" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: barsOn }}>
         {/* The base line */}
-        <path d="M200 1260 H880" stroke="#fff" strokeOpacity={0.4} strokeWidth={4} />
-        {/* Your bar: how nervous speakers thought they looked */}
-        <rect x={270} y={1260 - 560 * barYou} width={200} height={560 * barYou} rx={24} fill="#ff8ac4" />
-        {/* The audience's bar: how nervous they actually seemed */}
-        <rect x={610} y={1260 - 260 * barThem} width={200} height={260 * barThem} rx={24} fill="#7fd3e0" />
-        {/* Their glow */}
-        <rect x={270} y={1260 - 560 * barYou} width={200} height={560 * barYou} rx={24} fill="none" stroke="#fff" strokeOpacity={0.3} strokeWidth={4} />
+        <path d="M200 1040 H880" stroke="#fff" strokeOpacity={0.4} strokeWidth={4} />
+        {/* How nervous speakers thought they looked */}
+        <rect x={270} y={1040 - 500 * barYou} width={200} height={500 * barYou} rx={24} fill="#ff8ac4" />
+        {/* How nervous the audience said they looked */}
+        <rect x={610} y={1040 - 230 * barThem} width={200} height={230 * barThem} rx={24} fill="#7fd3e0" />
       </svg>
       {/* The bars' labels */}
-      <div style={{ position: "absolute", top: 1290, left: 200, width: 340, textAlign: "center", fontFamily: DISPLAY, fontWeight: 700, fontSize: 40, color: "#ffb0d8", opacity: barsOn }}>How nervous speakers thought they looked</div>
+      <div style={{ position: "absolute", top: 1066, left: 190, width: 360, textAlign: "center", fontFamily: BODY, fontWeight: 700, fontSize: 38, lineHeight: 1.2, color: "#ffb0d8", opacity: barsOn }}>How nervous speakers thought they looked</div>
       {/* (the audience's) */}
-      <div style={{ position: "absolute", top: 1290, left: 540, width: 340, textAlign: "center", fontFamily: DISPLAY, fontWeight: 700, fontSize: 40, color: "#9fece0", opacity: barsOn }}>How nervous the audience said they looked</div>
-      {/* The finding in words */}
-      <Headline frame={frame} at={218} until={330} y={330} size={68}>Speakers think their nerves show <span style={{ color: "#ffd27a" }}>far more</span> than they do.</Headline>
-      {/* 11–14 s: the payoff */}
-      <Headline frame={frame} at={326} until={420} y={640} size={80}>Just <span style={{ color: "#ffd27a" }}>knowing this</span> helped.</Headline>
+      <div style={{ position: "absolute", top: 1066, left: 530, width: 360, textAlign: "center", fontFamily: BODY, fontWeight: 700, fontSize: 38, lineHeight: 1.2, color: "#9fece0", opacity: barsOn }}>How nervous they looked to the audience</div>
+      {/* The study, on the same page */}
+      <div style={{ position: "absolute", left: 90, right: 90, top: 1290, opacity: Math.min(study, barsOn), transform: `translateY(${(1 - study) * 24}px)`, borderTop: "2px solid rgba(255,255,255,0.3)", paddingTop: 36, color: "#fff" }}>
+        {/* The label */}
+        <div style={{ fontFamily: BODY, fontWeight: 700, fontSize: 28, letterSpacing: 4, color: "#ffd27a" }}>THE STUDY</div>
+        {/* Who and when */}
+        <div style={{ fontFamily: SERIF, fontWeight: 650, fontSize: 48, marginTop: 10, letterSpacing: -0.5 }}>Savitsky & Gilovich, 2003</div>
+        {/* The title */}
+        <div style={{ fontFamily: SERIF, fontStyle: "italic", fontWeight: 450, fontSize: 38, marginTop: 8, lineHeight: 1.2, opacity: 0.92 }}>The illusion of transparency and the alleviation of speech anxiety</div>
+        {/* Where */}
+        <div style={{ fontFamily: BODY, fontSize: 30, marginTop: 12, opacity: 0.7 }}>Journal of Experimental Social Psychology, 39(6), 618–625</div>
+        {/* The bars are illustrative */}
+        <div style={{ fontFamily: BODY, fontSize: 24, marginTop: 10, opacity: 0.5 }}>Bars are an illustration of the finding, not the paper’s figures.</div>
+      </div>
+      {/* 13–18 s: the payoff */}
+      <Line frame={frame} at={394} until={540} y={330} size={84}>Just <em style={{ color: "#ffd27a" }}>knowing this</em> helped.</Line>
       {/* (what it did) */}
-      <Headline frame={frame} at={346} until={420} y={900} size={58} color="#e6e0ff">Speakers who were told felt calmer, and their talks were rated better.</Headline>
-      {/* You, small and happy now */}
+      <Line frame={frame} at={414} until={540} y={600} size={50} color="#e6e0ff" font={BODY} weight={600}>Speakers who were told felt calmer, and their talks were rated better.</Line>
+      {/* You, happy now */}
       <svg viewBox="0 0 1080 1920" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: payoffOn }}>
-        {/* (drawn) */}
-        <Character id="you2" kind="you" x={540} y={1340} r={150} face="happy" />
+        {/* (drawn, popping in) */}
+        <Character id="you2" kind="you" x={540} y={1060} r={190 * Math.max(0, pop)} face="happy" />
       </svg>
-      {/* 14–18 s: the study and the brand */}
-      <Headline frame={frame} at={420} until={540} y={330} size={66}>They see far less than you feel.</Headline>
-      {/* The citation */}
-      <Source frame={frame} at={430} authors="Savitsky & Gilovich (2003)" title="The illusion of transparency and the alleviation of speech anxiety" journal="Journal of Experimental Social Psychology, 39(6), 618–625" />
-      {/* VoiceLab */}
-      <Brand frame={frame} at={450} />
+      {/* The closing line and VoiceLab */}
+      <Line frame={frame} at={440} until={540} y={1300} size={60} italic>They see far less than you feel.</Line>
+      {/* The name */}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 300, textAlign: "center", color: "#fff", opacity: ease(frame, 460, 476) }}>
+        {/* VoiceLab */}
+        <div style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 58, letterSpacing: -1 }}>VoiceLab</div>
+        {/* The line */}
+        <div style={{ fontFamily: BODY, fontSize: 32, opacity: 0.75, marginTop: 4 }}>practise speaking, privately</div>
+      </div>
     </AbsoluteFill>
   );
 }
