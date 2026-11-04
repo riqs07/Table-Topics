@@ -1,0 +1,482 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>VoiceLab Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: a sticky bar (chapters, light/dark), then six chapters, each a heading and a wrapping row of numbered phones with a one-line caption. */
+:root{--bg:#eceee9;--surface:#f8f9f6;--fg:#1c201d;--muted:#5d655f;--line:#d3d8d1;--chip:#dfe3dc;--frame:#1c201d;--focus:#2c8050;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--round:"Fredoka","Nunito",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121513;--surface:#1a1e1b;--fg:#e6eae7;--muted:#9aa39d;--line:#2c322e;--chip:#252b27;--frame:#000;--focus:#6fd39a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121513;--surface:#1a1e1b;--fg:#e6eae7;--muted:#9aa39d;--line:#2c322e;--chip:#252b27;--frame:#000;--focus:#6fd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.45}
+.wrap{max-width:1500px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 64px;display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--round);font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:78ch}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.bar nav{display:flex;gap:6px;flex-wrap:wrap}
+.bar nav a{font-size:13px;font-weight:600;color:var(--fg);text-decoration:none;background:var(--chip);padding:6px 10px;border-radius:999px}
+.seg{display:inline-flex;background:var(--chip);border-radius:12px;padding:3px;gap:2px;margin-left:auto}
+.seg button{font:inherit;color:var(--fg);border:0;background:transparent;padding:6px 12px;border-radius:9px;cursor:pointer;font-weight:600;font-size:13.5px}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+button:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.cast{display:flex;gap:14px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 14px;align-items:center}
+.cast div{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.cast small{color:var(--muted);font-weight:500}
+.chap{display:flex;flex-direction:column;gap:14px;scroll-margin-top:70px}
+.chap>h2{font-family:var(--round);font-weight:600;font-size:26px;margin:0;display:flex;gap:10px;align-items:baseline}
+.chap>h2 small{font-family:var(--ui);font-size:14px;color:var(--muted);font-weight:500}
+.row{display:flex;gap:22px 18px;flex-wrap:wrap}
+.pcol{width:min(300px,100%);flex:none;display:flex;flex-direction:column;gap:8px;min-width:0}
+.pcol h3{margin:0;font-size:15px;display:flex;gap:8px;align-items:baseline}
+.pcol h3 span{font-family:var(--round);color:var(--muted);font-size:13px}
+.pcol p{margin:0;color:var(--muted);font-size:13px;min-height:38px}
+
+/* phone */
+.p{width:100%;height:640px;border-radius:38px;border:9px solid var(--frame);overflow:hidden;position:relative;background:var(--p-bg);color:var(--p-ink);box-shadow:0 16px 40px rgba(0,0,0,.16);font-family:"Nunito",system-ui,sans-serif;font-size:14px}
+.p[data-m="light"]{--p-bg:#fff7ef;--p-card:#fff;--p-ink:#2b2320;--p-muted:#7a6c64;--p-line:#f0e2d6;--p-tabbg:#fff;--p-accent:#3fa66b;--p-accent-d:#2c8050;--p-on-accent:#fff;--sky:#4a68e0;--sun:#f4b73b;--bloom:#e86aae;--leaf:#7cc46a;--plum:#8a63e0;--coral:#ec6a55;--hl:#fff6e6;--bubble:#fff;--soft:#fbeee2;--green-soft:#e4f5e8;--green-ink:#22704a;--rough-bg:#fff0d6;--rough-ink:#8a5410;--hilite:#ffe2a8;--sage:#2d5a3d;--sage-shade:#20432c;--night:#2a1f25}
+.p[data-m="dark"]{--p-bg:#1d1916;--p-card:#2a2420;--p-ink:#fbefe4;--p-muted:#b9a99d;--p-line:#3a312b;--p-tabbg:#231e1a;--p-accent:#4cbf7c;--p-accent-d:#2f8a56;--p-on-accent:#0f1f15;--sky:#3f5bc9;--sun:#e0a530;--bloom:#d45c9d;--leaf:#66ad57;--plum:#7656cc;--coral:#d85c48;--hl:#fff6e6;--bubble:#2f2823;--soft:#2f2823;--green-soft:#1f3a2a;--green-ink:#9be0b4;--rough-bg:#3d2e14;--rough-ink:#f6cf86;--hilite:#6b4e14;--sage:#3e7552;--sage-shade:#2c5a3d;--night:#120d10}
+.p .scr{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.p .scr::-webkit-scrollbar{display:none}
+.p svg{display:block;flex:none}
+.p button{font:inherit;cursor:pointer;color:inherit}
+.st{height:30px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;font-weight:800;opacity:.8}
+.rnd{font-family:var(--round);font-weight:600}
+.lab{font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--p-muted)}
+.pad{padding:2px 14px 92px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--p-card);border:2px solid var(--p-line);border-radius:20px;box-shadow:0 4px 0 var(--p-line)}
+.btn{border:0;border-radius:15px;padding:13px;width:100%;background:var(--p-accent);color:var(--p-on-accent)!important;font-family:var(--round);font-weight:600;font-size:16px;letter-spacing:.03em;box-shadow:0 5px 0 var(--p-accent-d);text-transform:uppercase}
+.btn.sm{width:auto;padding:8px 14px;font-size:13px;border-radius:11px;box-shadow:0 4px 0 var(--p-accent-d)}
+.btn.ghost{background:var(--p-card);color:var(--p-ink)!important;border:2px solid var(--p-line);box-shadow:0 4px 0 var(--p-line)}
+.link{background:none;border:0;color:var(--p-accent);font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.04em;padding:6px}
+.bub{background:var(--bubble);border:2px solid var(--p-line);border-radius:16px;padding:9px 12px;font-weight:700;font-size:13.5px;position:relative}
+.bub.l::before,.bub.r::before,.bub.b::before{content:"";position:absolute;width:12px;height:12px;background:var(--bubble);transform:rotate(45deg)}
+.bub.l::before{left:-8px;bottom:12px;border-left:2px solid var(--p-line);border-bottom:2px solid var(--p-line)}
+.bub.r::before{right:-8px;bottom:12px;border-right:2px solid var(--p-line);border-top:2px solid var(--p-line)}
+.bub.b::before{left:50%;bottom:-8px;margin-left:-6px;border-right:2px solid var(--p-line);border-bottom:2px solid var(--p-line)}
+.top{display:flex;align-items:center;gap:10px;padding:4px 14px}
+.x{font-size:19px;color:var(--p-muted);background:none;border:0;padding:0 2px;line-height:1}
+.pbar{flex:1;height:12px;border-radius:999px;background:var(--p-line);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--p-accent);border-radius:999px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
+.tabs{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-around;padding:7px 4px 14px;background:var(--p-tabbg);border-top:2px solid var(--p-line);z-index:3}
+.tabs div{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--p-muted);font-weight:800;min-width:56px}
+.tabs div.on{color:var(--p-accent)}
+.tabs i{width:38px;height:24px;display:grid;place-items:center;border-radius:9px}
+.tabs div.on i{background:color-mix(in srgb,var(--p-accent) 18%,transparent)}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:10px 14px 16px;background:linear-gradient(to top,var(--p-bg) 78%,transparent);display:flex;flex-direction:column;gap:6px;z-index:2}
+.center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.h{font-family:var(--round);font-weight:600;font-size:24px;line-height:1.1;margin:0}
+.sub{color:var(--p-muted);font-weight:700;margin:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips span{font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--p-bg);color:var(--p-muted)}
+.opt{display:flex;gap:10px;align-items:center;padding:10px 12px;font-weight:800}
+.opt.on{border-color:var(--sky);box-shadow:0 4px 0 color-mix(in srgb,var(--sky) 60%,#000);background:color-mix(in srgb,var(--sky) 10%,var(--p-card))}
+.box{width:22px;height:22px;border-radius:7px;border:2.5px solid var(--p-line);margin-left:auto;flex:none}
+.opt.on .box{background:var(--sky);border-color:var(--sky)}
+.said{background:var(--p-card);border:2px solid var(--p-line);border-radius:16px;padding:11px;font-size:13.5px;line-height:1.55}
+.said mark{background:var(--hilite);color:inherit;border-radius:5px;padding:0 3px}
+.pz{display:inline-block;width:18px;height:7px;border-radius:4px;background:var(--leaf);vertical-align:middle;margin:0 2px}
+.sheet{position:absolute;left:0;right:0;bottom:0;border-radius:24px 24px 0 0;padding:16px 14px 16px;display:flex;flex-direction:column;gap:8px}
+.sheet .peek{position:absolute;right:12px;top:-62px}
+.week{display:flex;justify-content:space-between;background:var(--p-card);border:2px solid var(--p-line);border-radius:16px;padding:8px 10px}
+.week span{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:800;color:var(--p-muted)}
+.week b{width:24px;height:24px;border-radius:8px;background:var(--p-line);display:grid;place-items:center;font-size:12px;color:var(--p-on-accent)}
+.week .d b{background:var(--p-accent)}
+.week .t b{background:transparent;border:2.5px dashed var(--p-accent)}
+.ring{position:absolute;border-radius:50%;border:3px solid color-mix(in srgb,var(--c,var(--sun)) 45%,transparent)}
+.rowi{display:flex;gap:10px;align-items:center;padding:9px 10px}
+.rowi .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;color:#fff}
+.rowi b{display:block;font-size:14px;line-height:1.2}
+.rowi small{color:var(--p-muted);font-weight:700;font-size:11.5px}
+.rowi .r{margin-left:auto;color:var(--p-muted);font-weight:800;font-size:12px;white-space:nowrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{padding:8px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile .art{border-radius:13px;overflow:hidden}
+.tile b{font-size:13.5px;line-height:1.15}
+.tile small{font-size:11px;color:var(--p-muted);font-weight:700}
+.dots{display:inline-flex;gap:3px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--p-line)}
+.dots i.f{background:var(--sun)}
+.nightbg{background:var(--night)!important;color:#f6eee6}
+.confetti i{position:absolute;width:8px;height:12px;border-radius:2px}
+.bob{animation:bob 3.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.pulse{animation:pr 2s ease-out infinite;transform-origin:center}
+@keyframes pr{from{transform:scale(.85);opacity:.8}to{transform:scale(1.3);opacity:0}}
+@media (prefers-reduced-motion:reduce){.bob,.pulse{animation:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>VoiceLab storyboard: direction B</h1>
+    <p class="lede">Thirty screens walking the whole app in the Playful style, with the agreed cast and real VoiceLab content: the first minutes, a day of practice, the practice modes, Courses and Learn, a boss, and your progress. Every phone scrolls. Nothing here is final; it’s for the look and feel.</p>
+  </header>
+  <div class="bar">
+    <nav aria-label="Chapters"><a href="#c1">First minutes</a><a href="#c2">A day</a><a href="#c3">Practice</a><a href="#c4">Courses & Learn</a><a href="#c5">A boss</a><a href="#c6">Progress</a></nav>
+    <div class="seg" role="group" aria-label="Phone theme" id="modes"><button type="button" data-m="light">Light</button><button type="button" data-m="dark">Dark</button></div>
+  </div>
+  <div class="cast" id="cast"></div>
+  <div id="chapters"></div>
+</div>
+
+<script>
+(() => {
+  // ================= the cast =================
+  const S = {
+    round: "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z",
+    egg: "M0 -114C52 -114 92 -42 92 10C92 62 52 94 0 94C-52 94 -92 62 -92 10C-92 -42 -52 -114 0 -114Z",
+    wobbly: "M4 -104C50 -110 74 -76 98 -50C124 -22 118 30 96 58C72 90 30 96 -6 94C-52 92 -96 74 -108 34C-120 -8 -100 -44 -72 -72C-50 -94 -26 -102 4 -104Z",
+    bun: "M0 -60C76 -60 132 -30 132 22C132 66 82 94 0 94C-82 94 -132 66 -132 22C-132 -30 -76 -60 0 -60Z",
+    squircle: "M0 -100C80 -100 100 -80 100 -2C100 76 80 94 0 94C-80 94 -100 76 -100 -2C-100 -80 -80 -100 0 -100Z",
+    pear: "M0 -110C38 -110 60 -76 62 -40C64 -16 108 10 108 46C108 78 66 94 0 94C-66 94 -108 78 -108 46C-108 10 -64 -16 -62 -40C-60 -76 -38 -110 0 -110Z"
+  };
+  const INK = "#2a2420", W = "#fcfcfb";
+  const L = (c, w = 7) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+  const shaded = (sh, c, d, hl = .45, sxy = [1, 1]) => `<g transform="translate(0 94) scale(${sxy[0]} ${sxy[1]}) translate(0 -94)"><path fill="${d}" d="${S[sh]}"/><path fill="${c}" transform="translate(-9 -8) scale(0.93)" d="${S[sh]}"/><ellipse fill="#fff6e6" opacity="${hl}" cx="-48" cy="-56" rx="18" ry="11" transform="rotate(-35 -48 -56)"/></g>`;
+  // faces for the round family (you, the friend, bosses), placed with dy
+  const face = (k, dy = 0, gap = 24, c = INK) => {
+    const y = -34 + dy;
+    return ({
+      ready: `<ellipse fill="${c}" cx="-${gap}" cy="${y}" rx="10" ry="14.5"/><ellipse fill="${c}" cx="${gap}" cy="${y}" rx="10" ry="14.5"/><circle fill="#fff" cx="-${gap-4}" cy="${y-6}" r="3.4"/><circle fill="#fff" cx="${gap+4}" cy="${y-6}" r="3.4"/><path ${L(c, 7.5)} d="M-15 ${y+30}q15 13 30 0"/>`,
+      happy: `<path ${L(c, 7.5)} d="M-${gap+14} ${y+5}L-${gap} ${y-9}-${gap-14} ${y+5}M${gap-14} ${y+5}L${gap} ${y-9} ${gap+14} ${y+5}"/><path fill="${c}" d="M-23 ${y+22}h46q0 23-23 23t-23-23z"/>`,
+      hmm: `<circle fill="${c}" cx="-${gap-8}" cy="${y-8}" r="9.5"/><circle fill="${c}" cx="${gap+8}" cy="${y-8}" r="9.5"/><path ${L(c, 6)} d="M-${gap+12} ${y-30}L-${gap-10} ${y-36}M${gap-10} ${y-36}L${gap+12} ${y-30}"/><path ${L(c, 7)} d="M-8 ${y+34}h18"/>`,
+      sing: `<path ${L(c, 7.5)} d="M-${gap+14} ${y+5}L-${gap} ${y-9}-${gap-14} ${y+5}M${gap-14} ${y+5}L${gap} ${y-9} ${gap+14} ${y+5}"/><ellipse fill="${c}" cx="0" cy="${y+36}" rx="12" ry="13"/>`,
+      wow: `<circle fill="${c}" cx="-${gap}" cy="${y-2}" r="12"/><circle fill="${c}" cx="${gap}" cy="${y-2}" r="12"/><circle fill="#fff" cx="-${gap-4}" cy="${y-7}" r="3.5"/><circle fill="#fff" cx="${gap+4}" cy="${y-7}" r="3.5"/><ellipse fill="${c}" cx="0" cy="${y+36}" rx="8" ry="10"/>`,
+      focus: `<path fill="${c}" d="M-${gap+11} ${y-2}h22v6a11 9 0 0 1-22 0z"/><path fill="${c}" d="M${gap-11} ${y-2}h22v6a11 9 0 0 1-22 0z"/><path ${L(c, 6)} d="M-9 ${y+30}h18"/>`,
+      sleepy: `<path ${L(c, 6.5)} d="M-${gap+11} ${y}q11 8 22 0M${gap-11} ${y}q11 8 22 0"/><path ${L(c, 6)} d="M-9 ${y+24}q9 5 18 0"/>`,
+      flat: `<rect fill="${c}" x="-${gap+9}" y="${y-4}" width="18" height="8" rx="4"/><rect fill="${c}" x="${gap-9}" y="${y-4}" width="18" height="8" rx="4"/><path ${L(c, 6)} d="M-10 ${y+26}q10 4 20 0"/>`,
+      listen: `<path ${L(c, 6.5)} d="M-${gap+11} ${y}q11 8 22 0M${gap-11} ${y}q11 8 22 0"/><path ${L(c, 7)} d="M-13 ${y+28}q13 10 26 0"/>`
+    })[k];
+  };
+  // Sage, ported from the character sheet
+  const SX = {
+    calm: ["lid", [[0,0],[0,0]], "smile"], listening: ["closed", [[-2,0],[-2,0]], "smile"], encouraging: ["open", [[8,2],[8,2]], "big", 1],
+    proud: ["happy", [[6,0],[6,0]], "laugh", 1], curious: ["side", [[0,0],[12,-4]], "small"], breathe: ["closed", [[3,0],[3,0]], "puff", 1], thinking: ["up", [[4,-3],[9,2]], "side"]
+  };
+  function sage(expr = "calm", arms = [0, 0]) {
+    const [eyes, brows, mouth, cheeks] = SX[expr];
+    const eye = x => `<g transform="translate(${x} -30)" fill="${W}" stroke="${W}" stroke-linecap="round">${{lid: `<ellipse stroke="none" rx="9" ry="12"/>`, open: `<ellipse stroke="none" rx="10" ry="14"/>`, up: `<ellipse stroke="none" cx="2" cy="-6" rx="9" ry="11"/>`, side: `<ellipse stroke="none" cx="5" rx="9.5" ry="13"/>`, closed: `<path fill="none" stroke-width="6" d="M-11 2Q0 11 11 2"/>`, happy: `<path fill="none" stroke-width="6" d="M-11 6Q0 -8 11 6"/>`}[eyes]}</g>`;
+    const line = `fill="none" stroke="${W}" stroke-width="6.5" stroke-linecap="round"`;
+    const m = {smile: `<path ${line} d="M-15 -2Q0 9 15 -2"/>`, big: `<path ${line} d="M-20 -4Q0 14 20 -4"/>`, small: `<ellipse fill="${W}" cx="3" cy="4" rx="6" ry="7"/>`, side: `<path ${line} d="M-4 4Q6 6 14 -2"/>`, puff: `<circle fill="${W}" cy="4" r="4"/>`,
+      laugh: `<g><path fill="#10261a" stroke="${W}" stroke-width="4.5" d="M-18 -3H18Q16 16 0 16Q-16 16-18 -3Z"/><ellipse fill="#ec6a55" cy="11" rx="8" ry="4"/></g>`}[mouth];
+    const brow = (side, [lift, inner]) => { const cx = side * 24; return `<path fill="none" stroke="${W}" stroke-width="5.5" stroke-linecap="round" d="M${cx - side*12} ${-52-lift-inner}Q${cx} ${-57-lift} ${cx + side*12} ${-52-lift+inner*.3}"/>`; };
+    const arm = (side, lift, far) => lift < 20 ? "" : `<g transform="rotate(${-side * lift} ${side*90} -4)"><ellipse fill="${far ? "var(--sage-shade,#20432c)" : "var(--sage,#2d5a3d)"}" cx="${side*90}" cy="32" rx="15" ry="26"/></g>`;
+    return `<g transform="translate(0 94) scale(1.02 .95) translate(0 -94)">${arm(-1, arms[0], 1)}${arm(1, arms[1], 0)}
+      <g transform="translate(0 -94)"><path ${L("#4f8a43", 6)} d="M0 0Q-3 -16 3 -30"/><ellipse fill="#5ea34e" cx="16" cy="-38" rx="16" ry="8" transform="rotate(-30 16 -38)"/><ellipse fill="#7cc46a" cx="-10" cy="-36" rx="15" ry="8" transform="rotate(28 -10 -36)"/></g>
+      <path fill="var(--sage-shade,#20432c)" d="${S.round}"/><path fill="var(--sage,#2d5a3d)" transform="translate(-9 -8) scale(0.93)" d="${S.round}"/><ellipse fill="#fff6e6" opacity=".28" cx="-60" cy="-64" rx="16" ry="9" transform="rotate(-35 -60 -64)"/>
+      <g transform="translate(0 8)">${cheeks ? `<g fill="#f59a86" opacity=".6"><ellipse cx="-46" cy="-6" rx="13" ry="8"/><ellipse cx="46" cy="-6" rx="13" ry="8"/></g>` : ""}${brow(-1, brows[0])}${brow(1, brows[1])}${eye(-24)}${eye(24)}${m}</g></g>`;
+  }
+  const CAST = {
+    you: (f = "ready") => `${shaded("round", "#e8935c", "#cf7440", .5)}${face(f)}`,
+    friend: (f = "ready") => `${shaded("egg", "#2fb3a4", "#1f8d80")}<path ${L("#1f8d80", 9)} d="M2 -112q-4 -22 14 -26q14 -2 10 12"/>${face(f, 6, 22)}`,
+    wobbly: (f = "ready") => `${shaded("wobbly", "#f08cc0", "#d06fa2")}${face(f, 6, 24)}`,
+    bun: (f = "sleepy") => `${shaded("bun", "#f4b73b", "#d39722")}${face(f, 30, 40)}`,
+    squircle: (f = "flat") => `${shaded("squircle", "#5b6ee1", "#4352c0")}${face(f, 2, 30)}`,
+    sage: (e = "calm", arms) => sage(e, arms)
+  };
+  const draw = (who, size, a, b, cls = "") => `<svg class="${cls}" width="${size}" height="${size}" viewBox="-140 -160 280 270" aria-hidden="true">${CAST[who](a, b)}</svg>`;
+  const tw = (x, y, s, f = "var(--hl)") => `<path fill="${f}" d="M${x} ${y-s}l${s*.24} ${s*.76} ${s*.76} ${s*.24}-${s*.76} ${s*.24}-${s*.24} ${s*.76}-${s*.24}-${s*.76}-${s*.76}-${s*.24} ${s*.76}-${s*.24}z"/>`;
+  const at = (who, x, y, r, a) => `<g transform="translate(${x} ${y}) scale(${r / 100})">${CAST[who](a)}</g>`;
+  const P = {
+    bolt: `<path d="M150 46 L122 100 h22 l-10 46 34 -60 h-22 z" fill="var(--sun)" stroke="var(--hl)" stroke-width="5" stroke-linejoin="round"/>`,
+    fire: `<path d="M150 58c14 18 24 30 24 46a24 24 0 0 1-48 0c0-12 8-20 12-28 4 10 8 12 12 12 0-10-4-20 0-30z" fill="var(--sun)"/><path d="M128 132h44" stroke="var(--hl)" stroke-width="7" stroke-linecap="round"/>`,
+    chat: `<rect x="114" y="40" width="68" height="48" rx="16" fill="var(--hl)"/><path d="M130 86l-6 16 18-14z" fill="var(--hl)"/><circle cx="134" cy="64" r="5" fill="var(--bloom)"/><circle cx="148" cy="64" r="5" fill="var(--bloom)"/><circle cx="162" cy="64" r="5" fill="var(--bloom)"/>`,
+    waves: `<path d="M140 70q14 24 0 48M156 58q22 36 0 72M172 46q30 48 0 96" stroke="var(--hl)" stroke-width="8" fill="none" stroke-linecap="round"/>`,
+    pause: `<rect x="130" y="54" width="15" height="50" rx="6" fill="var(--hl)"/><rect x="153" y="54" width="15" height="50" rx="6" fill="var(--hl)"/>`,
+    target: `<circle cx="150" cy="70" r="30" fill="var(--hl)"/><circle cx="150" cy="70" r="19" fill="var(--coral)"/><circle cx="150" cy="70" r="8" fill="var(--hl)"/>`,
+    book: `<path d="M118 60q16 -8 32 0q16 -8 32 0v52q-16 -8 -32 0q-16 -8 -32 0z" fill="var(--hl)"/><path d="M150 60v52" stroke="var(--plum)" stroke-width="4"/>`,
+    three: `<circle cx="126" cy="70" r="13" fill="var(--hl)"/><circle cx="154" cy="70" r="13" fill="var(--hl)"/><circle cx="182" cy="70" r="13" fill="var(--hl)"/>`,
+    flag: `<path d="M134 120V44" stroke="var(--hl)" stroke-width="6" stroke-linecap="round"/><path d="M137 46h40l-9 14 9 14h-40z" fill="var(--hl)"/>`,
+    loop: `<path d="M126 70a24 24 0 1 1 24 24" stroke="var(--hl)" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M140 84l12 10-14 8z" fill="var(--hl)"/>`
+  };
+  const tile = (size, ground, prop, who = "you", f = "ready", tilt = -4) => `<svg viewBox="0 0 200 200" width="${size}" height="${size}" aria-hidden="true"><g transform="rotate(${tilt} 100 100)"><rect x="14" y="14" width="172" height="172" rx="34" fill="${ground}"/><circle cx="160" cy="36" r="54" fill="var(--hl)" opacity=".16"/></g>${P[prop] || ""}${at(who, 86, 132, 38, f)}${tw(42, 48, 10)}</svg>`;
+  const scene = (h, ground, prop, who = "you", f = "ready") => `<svg viewBox="0 0 200 110" width="100%" height="${h}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="${ground}"/><circle cx="170" cy="8" r="48" fill="var(--hl)" opacity=".15"/><g transform="translate(6 -20)">${P[prop] || ""}</g>${at(who, 72, 78, 30, f)}${tw(24, 24, 8)}</svg>`;
+
+  const I = {
+    home: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>`,
+    mic: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/></svg>`,
+    book: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>`,
+    me: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="9" r="4"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></svg>`,
+    check: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`,
+    play: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
+    lock: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`,
+    gear: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>`,
+    star: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l3 7 7 .6-5.3 4.6 1.7 7.3L12 17.8 5.6 21.5l1.7-7.3L2 9.6 9 9z"/></svg>`
+  };
+  const st = `<div class="st"><span>9:41</span><span>●●● ▮</span></div>`;
+  const tabs = on => `<nav class="tabs">${[["home", "Today"], ["mic", "Practice"], ["book", "Courses"], ["me", "Me"]].map(([k, l]) => `<div class="${l === on ? "on" : ""}"><i>${I[k]}</i>${l}</div>`).join("")}</nav>`;
+  const topbar = (pct, label = "") => `<div class="top"><button class="x" type="button" aria-label="Close">✕</button>${pct == null ? `<span class="lab" style="flex:1;text-align:center">${label}</span><span style="width:16px"></span>` : `<div class="pbar"><i style="width:${pct}%"></i></div>`}</div>`;
+  const DAYS = ["M","T","W","T","F","S","S"];
+  const week = (done = [0, 1, 2], today = 3) => `<div class="week">${DAYS.map((d, i) => `<span class="${done.includes(i) ? "d" : i === today ? "t" : ""}"><b>${done.includes(i) ? "✓" : ""}</b>${d}</span>`).join("")}</div>`;
+  const wave = (w, h, ums, pauses, color = "var(--p-muted)", dot = "#e8935c", seed = 5) => {
+    let s = seed; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280; let out = "";
+    for (let i = 0; i < 56; i++) { const t = i / 56; if (pauses.some(p => Math.abs(p - t) < .025)) continue; const bh = Math.max(3, (.25 + r() * .75) * h * .85); out += `<rect x="${(t * w).toFixed(1)}" y="${((h - bh) / 2).toFixed(1)}" width="${(w / 56 - 2).toFixed(1)}" height="${bh.toFixed(1)}" rx="1.5" fill="${color}"/>`; }
+    return `<svg viewBox="0 0 ${w} ${h + 12}" width="100%" aria-hidden="true">${out}${ums.map(u => `<circle cx="${u * w}" cy="${h + 6}" r="3.2" fill="${dot}"/>`).join("")}</svg>`;
+  };
+  const Q = "What’s a small thing that made your week?";
+
+  // ================= screens =================
+  const CH = [];
+  const ch = (id, title, sub, screens) => CH.push({id, title, sub, screens});
+
+  ch("c1", "First minutes", "Welcome, one question per screen, the microphone explained", [
+    ["Welcome", "One character, one line, one button. Sage introduces the app; you meet your blob a screen later.", () => `${st}
+      <div style="position:relative;height:330px;display:grid;place-items:center;background:radial-gradient(circle at 50% 60%,color-mix(in srgb,var(--sun) 35%,transparent),transparent 62%)">${draw("sage", 210, "encouraging")}</div>
+      <div class="center" style="padding:0 22px"><h2 class="h" style="font-size:30px">Hi. I’m Sage.</h2><p class="sub">I’ll help you speak with more ease, a few minutes a day. Your recordings stay on this phone.</p></div>
+      <div class="dock"><button class="btn" type="button">Let’s start</button><button class="link" type="button">I’ve been here before</button></div>`],
+    ["What to work on", "Duolingo-style: Sage asks, big picture rows, a progress bar. Pick one or two.", () => `${st}${topbar(35)}
+      <div class="pad" style="padding-bottom:110px">
+        <div style="display:flex;gap:8px;align-items:flex-end">${draw("sage", 70, "curious")}<div class="bub l" style="flex:1">What do you want to get better at most?</div></div>
+        ${[["Telling stories", "fire", "var(--coral)", 1], ["Small talk", "chat", "var(--bloom)", 0], ["Thinking on my feet", "bolt", "var(--sky)", 1], ["How I sound", "waves", "var(--leaf)", 0], ["Speaking at work", "target", "var(--sun)", 0], ["A talk coming up", "flag", "var(--plum)", 0]]
+          .map(([t, pr, g, on]) => `<div class="card opt ${on ? "on" : ""}">${tile(40, g, pr, "you", "ready", 0)}${t}<span class="box"></span></div>`).join("")}
+      </div><div class="dock"><button class="btn" type="button">Continue</button></div>`],
+    ["Before the microphone", "The mic explained in plain words before the browser asks. Your blob shows what it does: it listens.", () => `${st}${topbar(70)}
+      <div class="center" style="padding:20px 22px 0;gap:14px">
+        <div style="position:relative;width:220px;height:220px;display:grid;place-items:center"><span class="ring pulse" style="width:200px;height:200px;--c:#e8935c"></span>${draw("you", 170, "listen")}</div>
+        <h2 class="h">I listen while you speak.</h2>
+        <p class="sub">Your recordings stay on this phone. Your browser will ask for the microphone next.</p>
+        <p style="margin:0;font-size:12.5px;color:var(--p-muted)">The live words come from your phone’s speech service (Apple or Google).</p>
+      </div><div class="dock"><button class="btn" type="button">Allow microphone</button><button class="link" type="button">Not now</button></div>`]
+  ]);
+
+  ch("c2", "A day of practice", "Today, a take from start to finish, and the end of the day", [
+    ["Today", "Sage greets you; the day is a stack of picture cards with one marked now. One big Start.", () => `${st}<div class="pad">
+      <div style="display:flex;gap:6px;align-items:flex-end">${draw("sage", 76, "encouraging")}<div class="bub l" style="flex:1">Evening. Three short ones tonight, about 9 minutes.</div></div>
+      ${week()}
+      <div style="position:relative;height:150px">
+        <div class="card" style="position:absolute;inset:16px 14px auto;height:118px;opacity:.6;transform:scale(.94)"></div>
+        <div class="card" style="position:absolute;inset:8px 7px auto;height:118px;opacity:.8;transform:scale(.97)"></div>
+        <div class="card" style="position:absolute;inset:0 0 auto;height:118px;padding:10px;display:flex;gap:10px;align-items:center;border-color:var(--sun);box-shadow:0 5px 0 color-mix(in srgb,var(--sun) 65%,#000)">${tile(90, "var(--sky)", "bolt", "you", "ready")}<div style="min-width:0"><span class="lab">Now · Rapid Fire</span><div class="rnd" style="font-size:16px;line-height:1.15">${Q}</div><div class="chips" style="margin-top:4px"><span>1–2 min</span><span>1 of 3</span></div></div></div>
+      </div>
+      <button class="btn" type="button">Start</button>
+      <div class="card rowi"><div class="ic" style="background:var(--plum)">${I.star}</div><div><b>Since day 1</b><small>4 fewer pause words a minute</small></div><span class="r">›</span></div>
+    </div>${tabs("Today")}`],
+    ["Take a breath", "Before a timed take, Sage breathes with you for three seconds. The question waits underneath.", () => `${st}${topbar(null, "Rapid Fire")}
+      <div style="position:relative;height:280px;display:grid;place-items:center"><span class="ring" style="width:230px;height:230px;--c:var(--sage)"></span>${draw("sage", 200, "breathe", [40, 40])}</div>
+      <div class="center" style="padding:0 20px;gap:10px"><h2 class="h">Breathe in… and out.</h2><p class="sub">Then start with your point.</p>
+        <div class="card" style="padding:10px 12px;text-align:left;width:100%"><span class="lab">Your question</span><div class="rnd" style="font-size:16px">${Q}</div></div></div>
+      <div class="dock"><button class="btn" type="button">I’m ready</button></div>`],
+    ["Rapid Fire countdown", "Ten seconds to think, then recording starts by itself. The blob counts with you.", () => `${st}${topbar(10)}
+      <div class="center" style="padding:16px 20px 0;gap:10px"><span class="lab" style="color:var(--sun)">Rapid Fire · think</span><h2 class="h">${Q}</h2></div>
+      <div style="position:relative;height:250px;display:grid;place-items:center;margin-top:8px">
+        <svg width="210" height="210" viewBox="0 0 210 210" style="position:absolute" aria-hidden="true"><circle cx="105" cy="105" r="96" stroke="var(--p-line)" stroke-width="12" fill="none"/><circle cx="105" cy="105" r="96" stroke="var(--sun)" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="603" stroke-dashoffset="241" transform="rotate(-90 105 105)"/></svg>
+        <div class="center" style="gap:0">${draw("you", 120, "focus")}<b class="rnd" style="font-size:40px;line-height:1">6</b></div></div>
+      <div class="center" style="padding:0 24px"><p class="sub">Point first, then one example.</p></div>
+      <div class="dock"><button class="btn ghost" type="button">Start now</button></div>`],
+    ["Recording", "Focus mode, no tabs. Your blob sings along; the timing light, level and live words sit underneath.", () => `${st}${topbar(10)}
+      <div style="padding:2px 18px"><span class="lab" style="color:var(--sun)">Rapid Fire</span><div class="rnd" style="font-size:17px;line-height:1.15">${Q}</div></div>
+      <div style="position:relative;height:210px;display:grid;place-items:center"><span class="ring pulse" style="width:170px;height:170px;--c:#e8935c"></span>${draw("you", 150, "sing")}</div>
+      <div style="display:flex;justify-content:center;gap:8px;align-items:center"><b class="rnd" style="font-size:30px">0:47</b><span class="chips"><span>● green at 1:00</span></span></div>
+      <div class="said" style="margin:10px 14px 0;color:var(--p-muted)">I made pancakes, called my sister, and just read for hours. <b style="color:var(--p-ink)">It reminded me that doing nothing…</b></div>
+      <div class="center" style="margin-top:10px"><span class="chips"><span style="background:var(--green-soft);color:var(--green-ink)">Cue: Pause, don’t fill</span></span></div>
+      <div class="dock" style="flex-direction:row;align-items:center;justify-content:space-between"><button class="link" type="button" style="color:var(--p-muted)">Redo</button><button type="button" aria-label="Done" style="width:70px;height:70px;border-radius:50%;border:0;background:var(--p-ink);display:grid;place-items:center;box-shadow:0 5px 0 color-mix(in srgb,var(--p-ink) 60%,#000)"><span style="width:22px;height:22px;border-radius:6px;background:var(--p-bg)"></span></button><button class="link" type="button" style="color:var(--p-muted)">Hide words</button></div>`],
+    ["Listen back", "Hear yourself first, kindly. Tap what worked; notes are optional.", () => `${st}${topbar(50)}
+      <div class="pad">
+        <div style="display:flex;gap:8px;align-items:flex-end">${draw("sage", 64, "listening")}<div class="bub l" style="flex:1">Most people dislike their own voice. Listen like a friendly coach.</div></div>
+        <div class="card" style="padding:10px 12px;display:flex;gap:10px;align-items:center"><button type="button" aria-label="Play" style="width:40px;height:40px;border-radius:50%;border:0;background:var(--p-accent);color:var(--p-on-accent);display:grid;place-items:center;box-shadow:0 3px 0 var(--p-accent-d)">${I.play}</button><div style="flex:1">${wave(200, 26, [.38, .93], [.2, .47, .72])}</div><b>1:24</b></div>
+        <span class="lab">What worked?</span>
+        <div class="chips" style="gap:8px">${["Clear point", "Good pauses", "Steady pace", "Warm", "Strong ending", "More…"].map((t, i) => `<span style="font-size:13px;padding:7px 11px;border:2px solid ${i < 2 ? "var(--p-accent)" : "var(--p-line)"};background:${i < 2 ? "var(--green-soft)" : "var(--p-card)"};color:${i < 2 ? "var(--green-ink)" : "var(--p-ink)"}">${t}</span>`).join("")}</div>
+        <span class="lab">One thing to change?</span>
+        <div class="chips" style="gap:8px">${["Fewer ums", "Ending trailed", "Too fast", "More…"].map((t, i) => `<span style="font-size:13px;padding:7px 11px;border:2px solid ${i === 1 ? "var(--sun)" : "var(--p-line)"};background:${i === 1 ? "var(--rough-bg)" : "var(--p-card)"};color:${i === 1 ? "var(--rough-ink)" : "var(--p-ink)"}">${t}</span>`).join("")}</div>
+      </div><div class="dock"><button class="btn" type="button">See the result</button></div>`],
+    ["Result: a good take", "Your words with real pauses marked, then the slide-up strip. Your blob reacts; one line, one cue.", () => `${st}${topbar(34)}
+      <div style="padding:6px 14px;display:flex;flex-direction:column;gap:8px"><div class="rnd" style="font-size:17px">${Q}</div>
+        <div class="said">The best part of my week was a slow Sunday. <span class="pz"></span> No plans at all. I made pancakes, <mark>um</mark>, called my sister, and read for hours. <span class="pz"></span> It reminded me that doing nothing is sometimes the thing I need most.</div></div>
+      <div class="sheet" style="background:var(--green-soft)"><div class="peek">${draw("you", 86, "happy")}</div>
+        <h3 class="rnd" style="margin:0;font-size:24px;color:var(--green-ink)">That landed!</h3>
+        <p style="margin:0;font-weight:700">You opened with your point and held two real pauses.</p>
+        <div class="chips"><span>1:24 · in the green</span><span>1 pause word</span><span>Cue: Land it, then stop</span></div>
+        <button class="btn" type="button">Continue</button><button class="link" type="button" style="color:var(--green-ink)">Try it once more</button></div>`],
+    ["Result: a rough take", "Never red. Your blob looks puzzled; Sage gives the one note, kindly, in its own words.", () => `${st}${topbar(34)}
+      <div style="padding:6px 14px;display:flex;flex-direction:column;gap:8px"><div class="rnd" style="font-size:17px">${Q}</div>
+        <div class="said">So, <mark>um</mark>, the best thing this week… I guess Sunday? <mark>Um</mark>, I didn’t do much, <mark>like</mark>, I made pancakes, and <mark>um</mark>, called my sister. <span class="pz"></span> And, <mark>uh</mark>, it was nice.</div>
+        <div style="display:flex;justify-content:flex-start;margin-top:4px">${draw("you", 64, "hmm")}</div></div>
+      <div class="sheet" style="background:var(--rough-bg)"><div class="peek">${draw("sage", 92, "curious", [0, 30])}</div>
+        <h3 class="rnd" style="margin:0;font-size:24px;color:var(--rough-ink)">Good start.</h3>
+        <p style="margin:0;font-weight:700;font-style:italic;color:var(--rough-ink)">“What happened after your second idea? That’s where the ums crept in.”</p>
+        <p style="margin:0;font-weight:700">Next take: pause and breathe there instead.</p>
+        <button class="btn" type="button">Try again</button></div>`],
+    ["Day done", "A small celebration, once a day: ticks fill in, time spoken, a kind line. Then Sage suggests one extra, never pushes.", () => `${st}
+      <div style="position:relative;height:270px;display:grid;place-items:center" class="confetti">${["var(--sun)", "var(--bloom)", "var(--sky)", "var(--leaf)", "var(--plum)", "var(--coral)"].map((c, i) => `<i style="background:${c};left:${12 + i * 15}%;top:${18 + (i % 3) * 22}%;transform:rotate(${i * 37}deg)"></i>`).join("")}
+        ${draw("you", 190, "happy")}</div>
+      <div class="center" style="padding:0 20px;gap:10px"><h2 class="h" style="font-size:28px">Done for today.</h2><p class="sub">You spoke for 3 minutes 20. Fourth day this week.</p>${week([0, 1, 2, 3], 9)}
+        <div style="display:flex;gap:6px;align-items:flex-end;width:100%">${draw("sage", 56, "proud")}<div class="bub l" style="flex:1;text-align:left">One more? “Answer first” is 6 minutes.</div></div></div>
+      <div class="dock"><button class="btn" type="button">Back to Today</button></div>`]
+  ]);
+
+  ch("c3", "Practice", "The modes, each in the same style", [
+    ["Practice", "One quick start, then four jobs with pictures, and role-play packs below.", () => `${st}<div class="pad">
+      <h2 class="h" style="font-size:26px">Practice</h2>
+      <div class="card" style="background:var(--sky);border-color:transparent;box-shadow:0 5px 0 color-mix(in srgb,var(--sky) 65%,#000);color:#fff;padding:10px;display:flex;gap:10px;align-items:center">${tile(80, "color-mix(in srgb,var(--sky) 70%,#fff)", "bolt", "you", "wow", 4)}<div><span class="lab" style="color:#fffc">Quick start · 1–2 min</span><div class="rnd" style="font-size:17px;line-height:1.15">Rapid Fire</div><button class="btn sm" type="button" style="margin-top:6px;background:#fff;color:var(--sky)!important;box-shadow:0 4px 0 color-mix(in srgb,var(--sky) 55%,#000)">Go</button></div></div>
+      <div class="grid2">${[["Speak on the spot", "5 ways", "var(--sun)", "bolt", "ready"], ["Tell stories", "8 ways", "var(--coral)", "fire", "happy"], ["Conversations", "Talk, scenes, units", "var(--bloom)", "chat", "ready"], ["Your voice", "Pitch, pace, pauses", "var(--leaf)", "waves", "sing"]]
+        .map(([t, s, g, p, f]) => `<div class="card tile"><div class="art">${scene(84, g, p, "you", f)}</div><b class="rnd">${t}</b><small>${s}</small></div>`).join("")}</div>
+      <span class="lab">Role play</span>
+      <div style="display:flex;gap:8px;overflow:hidden">${[["The Lisbon offer", "News", "var(--plum)"], ["The long week", "Listening", "var(--sky)"]].map(([t, s, g]) => `<div class="card tile" style="flex:1"><div class="art"><svg viewBox="0 0 200 110" width="100%" height="70" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="${g}"/>${at("you", 64, 86, 26)}${at("friend", 132, 84, 26, "happy")}</svg></div><b class="rnd">${t}</b><small>${s}</small></div>`).join("")}</div>
+    </div>${tabs("Practice")}`],
+    ["Story set-up", "Pick a shape, one thing to try and a length. Plan for a minute with the shape in view.", () => `${st}${topbar(null, "Tell a story")}
+      <div class="pad" style="padding-bottom:100px">
+        <div class="card" style="padding:12px;background:var(--coral);border-color:transparent;color:#fff;box-shadow:0 5px 0 color-mix(in srgb,var(--coral) 65%,#000)"><span class="lab" style="color:#fffc">Today’s story</span><div class="rnd" style="font-size:19px;line-height:1.15">A time a plan fell apart, and what you did next.</div></div>
+        <span class="lab">Shape</span>
+        <div class="grid2">${[["Classic", "Set-up, problem, turn, end", 1], ["But and so", "Each step causes the next", 0], ["Then and now", "Before, the change, after", 0], ["One small moment", "Slow down one scene", 0]].map(([t, s, on]) => `<div class="card" style="padding:9px;${on ? "border-color:var(--coral);box-shadow:0 4px 0 color-mix(in srgb,var(--coral) 60%,#000)" : ""}"><b class="rnd" style="font-size:14px">${t}</b><div style="font-size:11.5px;color:var(--p-muted);font-weight:700">${s}</div></div>`).join("")}</div>
+        <span class="lab">One thing to try</span>
+        <div class="chips" style="gap:7px">${["Start in the middle", "Someone’s words", "One vivid detail", "End on the point", "Under a minute"].map((t, i) => `<span style="font-size:12.5px;padding:6px 10px;${i === 2 ? "background:var(--rough-bg);color:var(--rough-ink)" : "background:var(--p-card);border:2px solid var(--p-line);color:var(--p-ink)"}">${t}</span>`).join("")}</div>
+        <span class="lab">Length</span>
+        <div class="grid2"><div class="card" style="padding:9px;text-align:center;border-color:var(--p-accent)"><b>Short</b><div style="font-size:11.5px;color:var(--p-muted)">about a minute</div></div><div class="card" style="padding:9px;text-align:center"><b>Full</b><div style="font-size:11.5px;color:var(--p-muted)">2–3 minutes</div></div></div>
+      </div><div class="dock"><button class="btn" type="button">Plan it</button></div>`],
+    ["Guided story", "You get the plain facts; you make it a story. Nudges suggest what to add.", () => `${st}${topbar(20)}
+      <div class="pad">
+        <span class="lab" style="color:var(--plum)">Guided story · Just the facts</span>
+        <div class="card" style="padding:12px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;gap:10px;align-items:center">${tile(64, "var(--plum)", "book", "you", "wow", 3)}<b class="rnd" style="font-size:20px">The bad haircut</b></div>
+          <ol style="margin:0;padding-left:20px;font-weight:700;display:flex;flex-direction:column;gap:4px"><li>You went for a haircut.</li><li>You wanted a little off the top.</li><li>The barber took a lot off.</li><li>You had a party that night.</li></ol></div>
+        <span class="lab">Make it yours</span>
+        ${["What did you say when you saw the mirror?", "What did your friends say?", "What did you do about it?"].map(n => `<div class="card rowi" style="padding:9px 11px"><span style="color:var(--plum);font-weight:900">+</span><b style="font-weight:700">${n}</b></div>`).join("")}
+        <div style="display:flex;gap:6px;align-items:flex-end">${draw("sage", 54, "calm")}<div class="bub l" style="flex:1">Try a line of what someone said. It turns a list into a scene.</div></div>
+      </div><div class="dock"><button class="btn" type="button">Tell it</button></div>`],
+    ["Talk with someone", "A live call with the friend (here as Priya). Their face shows how it’s going; you answer out loud.", () => `${st}${topbar(null, "Talk with Priya · 3 min")}
+      <div style="padding:6px 14px;display:flex;flex-direction:column;gap:10px">
+        <div class="card" style="padding:10px;display:flex;gap:8px;align-items:center">${draw("friend", 64, "happy")}<div><b class="rnd" style="font-size:16px">Priya</b><div style="font-size:12px;color:var(--p-muted);font-weight:700">Bright, talks fast when excited</div></div></div>
+        <div class="bub l" style="margin-left:6px">Okay, I have to tell someone. I got the offer. The Lisbon job! I start in March!</div>
+        <div class="bub r" style="margin-right:6px;align-self:flex-end;background:var(--green-soft);color:var(--green-ink)">No way, Lisbon! When did you find out?</div>
+        <div class="bub l" style="margin-left:6px">Like ten minutes ago! I was in the lift and I actually squeaked.</div>
+      </div>
+      <div class="dock" style="align-items:center"><span class="chips"><span>Your turn · speak, then tap Done</span></span>
+        <div style="position:relative;display:grid;place-items:center;width:84px;height:84px"><span class="ring pulse" style="width:80px;height:80px;--c:#e8935c"></span>${draw("you", 76, "sing")}</div><button class="btn" type="button">Done</button></div>`],
+    ["Scenes: choose a reply", "Three replies; each changes how they answer. The last reply is yours, out loud.", () => `${st}${topbar(40)}
+      <div class="pad">
+        <svg viewBox="0 0 280 120" width="100%" aria-hidden="true"><rect width="280" height="120" rx="18" fill="var(--soft)"/><rect y="86" width="280" height="34" fill="var(--p-line)"/>${at("you", 80, 96, 34, "ready")}${at("friend", 196, 92, 36, "happy")}<rect x="236" y="28" width="30" height="40" rx="5" fill="var(--sky)" opacity=".5"/></svg>
+        <div class="bub b" style="font-size:13px">Okay, I have to tell someone. I got the offer. The Lisbon job!</div>
+        <span class="lab">What do you say?</span>
+        ${["“No way, Lisbon! When did you find out?”", "“Congrats! I moved abroad once. The first year was brutal.”", "“Nice one, well done.”"].map((t, i) => `<div class="card" style="padding:10px 12px;font-weight:700;${i === 0 ? "border-color:var(--sky);box-shadow:0 4px 0 color-mix(in srgb,var(--sky) 60%,#000)" : ""}">${t}</div>`).join("")}
+      </div><div class="dock"><button class="btn" type="button">Say it</button></div>`],
+    ["Read aloud", "Read-along with the words lighting up as you go; marks show where to pause.", () => `${st}${topbar(45)}
+      <div class="pad">
+        <div style="display:flex;gap:10px;align-items:center">${tile(54, "var(--leaf)", "book", "you", "focus", -3)}<div><span class="lab">Read aloud · part 1 of 3</span><div class="rnd" style="font-size:16px">Kennedy, “We choose to go to the Moon”</div></div></div>
+        <div class="card" style="padding:14px;font-size:17px;line-height:1.7;font-weight:600">
+          <span style="background:var(--green-soft);color:var(--green-ink);border-radius:5px;padding:0 2px">We choose to go to the Moon</span> <b style="color:var(--sun)">‖</b> in this decade and do the other things, <span style="color:var(--p-muted)">not because they are easy, ‖ but because they are hard.</span></div>
+        <div style="display:flex;justify-content:center;gap:8px;align-items:center"><b class="rnd" style="font-size:24px">0:21</b><span class="chips"><span>‖ = pause here</span></span></div>
+        <div style="display:flex;justify-content:center">${draw("you", 90, "sing")}</div>
+      </div><div class="dock"><button class="btn ghost" type="button">Done</button></div>`],
+    ["Voice drill: pitch", "Statement or question: your pitch drawn as a line, falling to state, rising to ask.", () => `${st}${topbar(60)}
+      <div class="pad">
+        <span class="lab" style="color:var(--leaf)">Your voice · Pitch</span><h2 class="h" style="font-size:21px">Statement or question</h2>
+        ${[["I’ll book the train.", "Ends low: a decision", "M10 30 Q 90 18 160 26 T 260 54", "var(--p-accent)"], ["I’ll book the train?", "Ends high: a question", "M10 34 Q 90 26 160 30 T 260 8", "var(--sky)"]].map(([t, s, d, c]) => `<div class="card" style="padding:10px 12px"><b class="rnd" style="font-size:16px">${t}</b><svg viewBox="0 0 270 64" width="100%" aria-hidden="true"><path d="${d}" stroke="${c}" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="260" cy="${d.endsWith("54") ? 54 : 8}" r="7" fill="${c}"/></svg><small style="font-weight:800;color:var(--p-muted)">${s}</small></div>`).join("")}
+        <div style="display:flex;gap:6px;align-items:flex-end">${draw("sage", 54, "proud")}<div class="bub l" style="flex:1">Both clear. Fall to state, rise to invite.</div></div>
+      </div><div class="dock"><button class="btn" type="button">Next pair</button></div>`]
+  ]);
+
+  const LESSONS = [["Pause, don’t fill", "done", "pause", "var(--leaf)", 1], ["Answer first", "now", "target", "var(--sky)", 1], ["Three beats", "next", "three", "var(--plum)", 2], ["End on purpose", "next", "flag", "var(--coral)", 2], ["Go back to your point", "next", "loop", "var(--sun)", 3], ["Two in a row", "next", "bolt", "var(--bloom)", 3]];
+  ch("c4", "Courses and Learn", "Courses and Learn in one tab; a course is tiles getting harder, then a boss", [
+    ["Courses", "Keep going leads; courses as picture tiles; Learn’s card sets below as Quick reads.", () => `${st}<div class="pad">
+      <h2 class="h" style="font-size:26px">Courses</h2>
+      <div class="card" style="padding:10px;display:flex;flex-direction:column;gap:8px"><span class="lab">Keep going</span><div style="display:flex;gap:10px;align-items:center">${tile(72, "var(--sky)", "bolt", "you", "wow")}<div style="flex:1"><b class="rnd" style="font-size:17px">Stop freezing</b><div style="font-size:12.5px;color:var(--p-muted);font-weight:700">Next: Answer first</div><div class="pbar" style="margin-top:6px;height:10px"><i style="width:22%"></i></div></div></div><button class="btn" type="button">Continue</button></div>
+      <div class="grid2">${[["Explain it simply", "var(--sun)", "target", "happy"], ["Stories that land", "var(--plum)", "fire", "happy"], ["Beyond “good, you?”", "var(--bloom)", "chat", "ready"], ["A voice they lean in for", "var(--leaf)", "waves", "sing"]].map(([t, g, p, f], i) => `<div class="card tile">${tile(110, g, p, "you", f, i % 2 ? 4 : -4)}<b class="rnd">${t}</b><small>6 lessons · boss</small></div>`).join("")}</div>
+      <span class="lab">Quick reads</span>
+      <div class="card rowi"><div class="ic" style="background:var(--plum)">${I.star}</div><div><b>Nerves and presence</b><small>7 cards · a minute each</small></div><span class="r">›</span></div>
+    </div>${tabs("Courses")}`],
+    ["A course: tiles to a boss", "Each lesson is its own tile, harder as you go (the dots), leading to the boss. Nothing is locked.", () => `${st}
+      <div style="padding:0 14px 6px;display:flex;align-items:center;gap:6px"><span style="font-size:20px;color:var(--p-muted)">‹</span><span class="lab">Courses</span></div>
+      <div class="card" style="margin:0 14px;padding:12px;background:var(--sky);border-color:transparent;color:#fff;box-shadow:0 5px 0 color-mix(in srgb,var(--sky) 65%,#000)"><span class="lab" style="color:#fffc">6 lessons and a boss</span><div class="rnd" style="font-size:20px">Stop freezing</div></div>
+      <div style="padding:14px 14px 30px;display:flex;flex-direction:column;gap:0">
+        ${LESSONS.map(([n, s, p, g, d], i) => `${i ? `<div style="height:16px;margin-left:${i % 2 ? 60 : 40}%;border-left:3px dashed var(--p-line)"></div>` : ""}<div class="card" style="padding:8px;display:flex;gap:10px;align-items:center;width:86%;margin-left:${i % 2 ? 14 : 0}%;${s === "now" ? "border-color:var(--sun);box-shadow:0 5px 0 color-mix(in srgb,var(--sun) 65%,#000)" : s === "next" ? "opacity:.85" : ""}">${tile(56, g, p, "you", s === "done" ? "happy" : "ready", i % 2 ? 4 : -4)}<div style="flex:1;min-width:0"><span class="lab">Lesson ${i + 1}</span><b style="display:block;font-size:13.5px;line-height:1.15">${n}</b><span class="dots">${[1, 2, 3].map(k => `<i class="${k <= d ? "f" : ""}"></i>`).join("")}</span></div>${s === "done" ? `<span style="width:26px;height:26px;border-radius:50%;background:var(--p-accent);color:var(--p-on-accent);display:grid;place-items:center">${I.check}</span>` : s === "now" ? `<button class="btn sm" type="button">Start</button>` : ""}</div>`).join("")}
+        <div style="height:16px;margin-left:40%;border-left:3px dashed var(--p-line)"></div>
+        <div class="card" style="padding:12px;display:flex;gap:10px;align-items:center;background:var(--night);border-color:#3a2c33;box-shadow:0 5px 0 #000;color:#f6eee6">${draw("wobbly", 72, "ready")}<div><span class="lab" style="color:#d8cad0">The boss · 2½ min</span><b class="rnd" style="display:block;font-size:17px">Wobbly’s quick-fire round</b><span class="dots">${[1, 2, 3].map(() => `<i class="f"></i>`).join("")}</span></div></div>
+      </div>`],
+    ["A lesson: see it", "Sage explains the idea; your blob gives its own example; Sage reacts. Then your turn.", () => `${st}${topbar(30)}
+      <div class="pad">
+        <span class="lab" style="color:var(--sky)">Lesson 2 · See it</span>
+        <div style="display:flex;align-items:flex-end;gap:2px">${draw("sage", 92, "calm", [0, 70])}<div style="flex:1;background:var(--sage);color:#fcfcfb;border-radius:18px;padding:12px;box-shadow:0 5px 0 var(--sage-shade)"><b class="rnd" style="font-size:20px;line-height:1.1;display:block">Answer first. Explain after.</b><span style="font-weight:600;font-size:13px">Listeners decide what you think from your first sentence.</span></div></div>
+        <div style="display:flex;align-items:flex-end;gap:6px;flex-direction:row-reverse">${draw("you", 60, "ready")}<div class="bub r" style="flex:1">Here’s mine. Should everyone learn to cook? “Yes, the basics.” Then why.</div></div>
+        <div style="display:flex;align-items:flex-end;gap:6px">${draw("sage", 56, "proud")}<div class="bub l" style="flex:1">That’s it. Three words, and I knew your answer.</div></div>
+      </div><div class="dock"><button class="btn" type="button">Your turn</button></div>`],
+    ["A Learn card: myth or fact", "Guess first, then the finding, what it means and what to do. Every card ends in practice.", () => `${st}${topbar(40)}
+      <div class="pad">
+        <span class="lab" style="color:var(--plum)">Nerves and presence · Myth or fact?</span>
+        <div class="card" style="padding:14px;background:var(--plum);border-color:transparent;color:#fff;box-shadow:0 5px 0 color-mix(in srgb,var(--plum) 60%,#000)"><b class="rnd" style="font-size:21px;line-height:1.15">“Um” and “uh” are mistakes.</b></div>
+        <div class="grid2"><div class="card" style="padding:10px;text-align:center;font-weight:800;border-color:var(--p-accent);background:var(--green-soft);color:var(--green-ink)">Myth ✓</div><div class="card" style="padding:10px;text-align:center;font-weight:800">Fact</div></div>
+        <div class="card" style="padding:12px;display:flex;flex-direction:column;gap:6px"><span class="lab">What they found</span><span style="font-weight:600">“Uh” and “um” work like words: they tell listeners a short delay is coming.</span><span class="lab">Do this</span><span style="font-weight:700">Don’t fight every one. Swap some for a short silent pause.</span></div>
+        <div class="card rowi">${tile(40, "var(--leaf)", "pause", "you", "focus", 0)}<div><b>Practise it</b><small>Pause drill: Before the point</small></div><span class="r">›</span></div>
+      </div><div class="dock"><button class="btn" type="button">Next card</button></div>`],
+    ["Today’s mission", "One small thing to try for real, off the page. Sage checks in tomorrow.", () => `${st}${topbar(null, "Today’s mission")}
+      <div class="center" style="padding:14px 20px 0;gap:12px">
+        <svg viewBox="0 0 260 150" width="100%" aria-hidden="true"><rect width="260" height="150" rx="22" fill="var(--bloom)"/><circle cx="220" cy="20" r="60" fill="#fff6e6" opacity=".15"/>${at("you", 90, 124, 42, "happy")}${at("friend", 176, 120, 42, "ready")}<rect x="150" y="18" width="70" height="40" rx="14" fill="#fff6e6"/><text x="185" y="45" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="20" fill="var(--bloom)">?</text></svg>
+        <span class="lab">Connection · today</span>
+        <h2 class="h">Ask one follow-up question about something someone tells you.</h2>
+        <div style="display:flex;gap:6px;align-items:flex-end;width:100%">${draw("sage", 56, "encouraging")}<div class="bub l" style="flex:1;text-align:left">Listen for one detail, then ask about it. That’s all.</div></div>
+      </div><div class="dock"><button class="btn" type="button">I’ll try it</button><button class="link" type="button" style="color:var(--p-muted)">Not today</button></div>`]
+  ]);
+
+  ch("c5", "A boss", "The end of a course: a live, short challenge with the course’s boss", [
+    ["The boss brief", "Who you’re facing and what to show. Dark and a little dramatic, but friendly.", () => `<div class="nightbg" style="position:absolute;inset:0">${st}
+      <div class="center" style="padding:6px 20px;gap:8px"><span class="lab" style="color:#f3a83b">Stop freezing · the boss</span>
+        <div style="position:relative;height:200px;width:100%;display:grid;place-items:center;background:radial-gradient(circle at 50% 55%,rgba(240,140,192,.35),transparent 62%)">${draw("wobbly", 180, "wow", null, "bob")}</div>
+        <h2 class="h" style="font-size:28px;color:#f6eee6">Wobbly’s quick-fire round</h2>
+        <p class="sub" style="color:#d8cad0">Six quick questions, about 2½ minutes. Wobbly talks fast and never sits still.</p>
+        <div style="background:#2a1f25;border-radius:16px;padding:12px;text-align:left;width:100%;display:flex;flex-direction:column;gap:6px;font-weight:700;color:#f6eee6"><span class="lab" style="color:#d8cad0">Show what you learned</span><span>✓ Pause, don’t fill</span><span>✓ Answer first</span><span>✓ Land it, then stop</span></div>
+      </div><div class="dock" style="background:linear-gradient(to top,var(--night) 78%,transparent)"><button class="btn" type="button">I’m ready</button></div></div>`],
+    ["The boss call", "Live: Wobbly asks, you answer out loud. A ring shows your answer time; the count shows how far in you are.", () => `<div class="nightbg" style="position:absolute;inset:0">${st}
+      <div class="top"><button class="x" type="button" style="color:#d8cad0">✕</button><div class="pbar" style="background:#3a2c33"><i style="width:33%;background:#f08cc0"></i></div><span style="font-weight:800;font-size:12px;color:#d8cad0">2 of 6</span></div>
+      <div class="center" style="padding:6px 18px;gap:8px">${draw("wobbly", 140, "happy", null, "bob")}
+        <div class="bub b" style="--bubble:#2a1f25;--p-line:#3a2c33;color:#f6eee6">Quick one for you! Best thing you ate this week. Go!</div></div>
+      <div style="position:relative;height:150px;display:grid;place-items:center"><svg width="140" height="140" viewBox="0 0 140 140" style="position:absolute" aria-hidden="true"><circle cx="70" cy="70" r="62" stroke="#3a2c33" stroke-width="9" fill="none"/><circle cx="70" cy="70" r="62" stroke="#f3a83b" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="390" stroke-dashoffset="150" transform="rotate(-90 70 70)"/></svg>${draw("you", 96, "sing")}</div>
+      <div style="padding:0 30px">${wave(240, 24, [], [.4], "#f6eee6", "#ef6f5a", 9)}</div>
+      <p class="center" style="margin:6px 0 0;color:#d8cad0;font-weight:700">0:12 · keep it short</p></div>`],
+    ["Boss beaten", "The big celebration: confetti, the badge (the course tile with a ribbon), and what you showed.", () => `${st}
+      <div style="position:relative;height:250px;display:grid;place-items:center" class="confetti">${["var(--sun)", "var(--bloom)", "var(--sky)", "var(--leaf)", "var(--plum)", "var(--coral)", "var(--sun)", "var(--bloom)"].map((c, i) => `<i style="background:${c};left:${6 + i * 12}%;top:${10 + (i % 4) * 18}%;transform:rotate(${i * 41}deg)"></i>`).join("")}
+        <div style="display:flex;align-items:flex-end;gap:0">${draw("you", 120, "happy")}${draw("wobbly", 110, "happy")}</div></div>
+      <div class="center" style="padding:0 18px;gap:10px"><h2 class="h" style="font-size:28px">You kept up with Wobbly!</h2><p class="sub">Stop freezing, complete.</p>
+        <div class="card" style="padding:10px;display:flex;gap:12px;align-items:center;width:100%;text-align:left">${tile(70, "var(--sky)", "bolt", "you", "happy")}<div><span class="lab">New badge</span><b class="rnd" style="display:block;font-size:16px">Quick on your feet</b><small style="color:var(--p-muted);font-weight:700">6 answers · 1 pause word · all on point</small></div></div></div>
+      <div class="dock"><button class="btn" type="button">Continue</button></div>`]
+  ]);
+
+  ch("c6", "Your progress", "The weekly check-in, Me, then and now, and your takes", [
+    ["Weekly check-in", "The same four parts every week, so you can hear the change. About six minutes; skip any part.", () => `${st}${topbar(null, "Weekly check-in")}
+      <div class="pad">
+        <div style="display:flex;gap:6px;align-items:flex-end">${draw("sage", 70, "encouraging")}<div class="bub l" style="flex:1">Same four parts as last week, so we can hear what changed.</div></div>
+        ${[["The same passage", "Read aloud · 1 min", "book", "var(--leaf)", 1], ["Your elevator pitch", "2 min", "target", "var(--sun)", 1], ["A story", "From this week’s pool", "fire", "var(--coral)", 0], ["A surprise question", "Rapid Fire", "bolt", "var(--sky)", 0]]
+          .map(([t, s, p, g, d], i) => `<div class="card" style="padding:8px;display:flex;gap:10px;align-items:center;${i === 2 ? "border-color:var(--sun);box-shadow:0 5px 0 color-mix(in srgb,var(--sun) 65%,#000)" : ""}">${tile(50, g, p, "you", d ? "happy" : "ready", 0)}<div style="flex:1"><b>${t}</b><div style="font-size:11.5px;color:var(--p-muted);font-weight:700">${s}</div></div>${d ? `<span style="width:24px;height:24px;border-radius:50%;background:var(--p-accent);color:var(--p-on-accent);display:grid;place-items:center">${I.check}</span>` : i === 2 ? `<b style="color:var(--sun);font-size:12px">NEXT</b>` : ""}</div>`).join("")}
+      </div><div class="dock"><button class="btn" type="button">Continue: a story</button></div>`],
+    ["Me", "Progress and settings together. Leads with something you can hear, never with zeros.", () => `${st}<div class="pad">
+      <div style="display:flex;align-items:center;gap:10px">${draw("you", 64, "happy")}<div style="flex:1"><b class="rnd" style="font-size:22px;display:block;line-height:1">You, so far</b><small style="color:var(--p-muted);font-weight:700">Practising since 14 October</small></div><span style="color:var(--p-muted)">${I.gear}</span></div>
+      ${week([0, 1, 2, 4], 9)}
+      <div class="card" style="padding:12px;display:flex;flex-direction:column;gap:8px"><span class="lab">Then and now · Rapid Fire</span><div class="grid2"><div style="background:var(--soft);border-radius:14px;padding:9px"><small style="font-weight:700;color:var(--p-muted)">Day 1</small><b class="rnd" style="display:block;font-size:26px">6.1</b><small style="font-weight:700;color:var(--p-muted)">pause words a min</small></div><div style="background:var(--green-soft);border-radius:14px;padding:9px;color:var(--green-ink)"><small style="font-weight:700">This week</small><b class="rnd" style="display:block;font-size:26px">2.3</b><small style="font-weight:700">pause words a min</small></div></div><button class="btn ghost sm" type="button" style="width:100%">Hear both</button></div>
+      <div class="grid2">${[["23", "takes", "var(--sky)"], ["41 min", "spoken", "var(--leaf)"], ["6", "stories", "var(--coral)"], ["1", "badge", "var(--sun)"]].map(([b, s, c]) => `<div class="card" style="padding:10px;display:flex;gap:8px;align-items:center"><span style="width:30px;height:30px;border-radius:10px;background:${c};flex:none"></span><div><b class="rnd" style="display:block;font-size:18px;line-height:1">${b}</b><small style="font-weight:700;color:var(--p-muted)">${s}</small></div></div>`).join("")}</div>
+    </div>${tabs("Me")}`],
+    ["Then and now", "Day 1 beside today: both recordings, play them in turn, and the measures that changed.", () => `${st}${topbar(null, "Then and now")}
+      <div class="pad">
+        <div style="display:flex;justify-content:space-around;align-items:flex-end">${[["Day 1", "hmm", 72], ["Today", "happy", 92]].map(([l, f, s]) => `<div class="center" style="gap:2px">${draw("you", s, f)}<b class="rnd">${l}</b></div>`).join("")}</div>
+        ${[["Day 1", [.06, .27, .41, .55, .63, .82], [.7]], ["Today", [.38], [.2, .47, .72]]].map(([l, u, p], i) => `<div class="card" style="padding:9px 11px;display:flex;gap:8px;align-items:center"><button type="button" aria-label="Play ${l}" style="width:34px;height:34px;border-radius:50%;border:0;background:${i ? "var(--p-accent)" : "var(--p-muted)"};color:#fff;display:grid;place-items:center">${I.play}</button><div style="flex:1">${wave(200, 22, u, p, "var(--p-muted)", "#e8935c", i ? 7 : 3)}</div></div>`).join("")}
+        <div class="card" style="padding:4px 12px">${[["Pause words a minute", "6.1", "2.3"], ["Real pauses", "1", "5"], ["Length", "0:58", "1:24"]].map(([m, a, b]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:2px solid var(--p-line);font-weight:700"><span>${m}</span><span style="color:var(--p-muted)">${a} → <b style="color:var(--green-ink)">${b}</b></span></div>`).join("")}</div>
+        <div style="display:flex;gap:6px;align-items:flex-end">${draw("sage", 54, "proud")}<div class="bub l" style="flex:1">Hear the pauses? That’s three weeks of practice.</div></div>
+      </div><div class="dock"><button class="btn" type="button">Play both in turn</button></div>`],
+    ["Your takes", "Every take with its mode picture, length and one number; star the ones to keep.", () => `${st}${topbar(null, "Your takes")}
+      <div class="pad">
+        <div class="chips" style="gap:6px">${["All", "Speaking", "Stories", "Reading", "★ Kept"].map((t, i) => `<span style="font-size:12.5px;padding:6px 10px;${i === 0 ? "background:var(--p-accent);color:var(--p-on-accent)" : "background:var(--p-card);border:2px solid var(--p-line);color:var(--p-ink)"}">${t}</span>`).join("")}</div>
+        <span class="lab">This week</span>
+        ${[["Rapid Fire", "Last night · 1:24 · 1 pause word", "var(--sky)", "bolt", 1], ["The bad haircut", "Tue · 0:52 · someone’s words ✓", "var(--plum)", "book", 0], ["Talk with Priya", "Mon · 3:05 · 2 questions asked", "var(--bloom)", "chat", 0]].map(([t, s, g, p, k]) => `<div class="card rowi">${tile(40, g, p, "you", "ready", 0)}<div><b>${t}</b><small>${s}</small></div><span class="r" style="color:${k ? "var(--sun)" : "var(--p-line)"}">${I.star}</span></div>`).join("")}
+        <span class="lab">Earlier</span>
+        ${[["Weekly check-in", "Sun · 4 parts", "var(--leaf)", "target"], ["Rapid Fire · day 1", "14 Oct · your first take", "var(--sky)", "bolt"]].map(([t, s, g, p]) => `<div class="card rowi">${tile(40, g, p, "you", "ready", 0)}<div><b>${t}</b><small>${s}</small></div><span class="r" style="color:var(--sun)">${I.star}</span></div>`).join("")}
+      </div>${tabs("Me")}`]
+  ]);
+
+  // ================= render =================
+  document.getElementById("cast").innerHTML = [["you", "You", "the learner", "ready"], ["sage", "Sage", "the coach", "calm"], ["friend", "The friend", "conversations", "ready"], ["wobbly", "Wobbly", "boss", "ready"], ["bun", "Bun", "boss", "sleepy"], ["squircle", "Squircle", "boss", "flat"]]
+    .map(([k, n, r, f]) => `<div><svg width="40" height="40" viewBox="-140 -160 280 270" aria-hidden="true" style="--sage:#2d5a3d;--sage-shade:#20432c">${CAST[k](f)}</svg><span>${n}<br><small>${r}</small></span></div>`).join("");
+  let n = 0;
+  document.getElementById("chapters").innerHTML = CH.map(c => `<section class="chap" id="${c.id}" aria-labelledby="${c.id}h"><h2 id="${c.id}h">${c.title}<small>${c.sub}</small></h2><div class="row">${c.screens.map(([t, d]) => { n++; return `<div class="pcol"><h3><span>${String(n).padStart(2, "0")}</span>${t}</h3><p>${d}</p><div class="p" data-s="${n - 1}"></div></div>`; }).join("")}</div></section>`).join("");
+  const ALL = CH.flatMap(c => c.screens);
+  let mode = "light"; try { if (matchMedia("(prefers-color-scheme: dark)").matches) mode = "dark"; } catch (e) {}
+  try { mode = localStorage.getItem("vl-story-mode") || mode; } catch (e) {}
+  function render() {
+    document.querySelectorAll(".p[data-s]").forEach(p => { p.dataset.m = mode; p.innerHTML = `<div class="scr">${ALL[+p.dataset.s][2]()}</div>`; });
+    document.querySelectorAll("#modes button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === mode)));
+    try { localStorage.setItem("vl-story-mode", mode); } catch (e) {}
+  }
+  document.getElementById("modes").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { mode = b.dataset.m; render(); } });
+  render();
+})();
+</script>
+
+</body></html>

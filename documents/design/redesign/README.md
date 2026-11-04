@@ -79,6 +79,10 @@ Open: the friend's name and colour; whether Helen's coral sits too close to your
 
 **Working cast for the storyboard (agreed 2026-11-04):** you (the round, apricot), Sage (coach, pine green, sprout), the friend (egg, teal, curl), and three bosses by personality: **Wobbly** for Stop freezing (lively, quick-fire), **Bun** for Beyond "good, you?" (flat, unbothered, hard to draw out), **Squircle** for Explain it simply (orderly, direct). **Pear** is held back for a future boss or a second regular. The bosses can appear elsewhere later; for now this is the layout for storyboarding the new UI.
 
+## The storyboard (2026-11-04)
+
+[storyboard.html](storyboard.html): thirty screens in direction B with the working cast and real content, in six chapters. **First minutes:** welcome (Sage), what to work on, the microphone. **A day:** Today, take a breath, the Rapid Fire countdown, recording, listen back, a good and a rough result, day done. **Practice:** Practice, story set-up, a guided story, talking with someone, choosing a reply in a scene, reading aloud, a pitch drill. **Courses and Learn:** Courses, a course as tiles getting harder to a boss, a lesson's "see it", a myth-or-fact card, today's mission. **A boss:** the brief, the call, beaten. **Progress:** weekly check-in, Me, then and now, your takes.
+
 ## Next steps
 
 0. **Characters first (the user, 2026-11-04):** settle the cast (you, Sage, the other person, the bosses) as character sheets with shapes, colours, faces and poses at rest without arms, before more screens use them.
