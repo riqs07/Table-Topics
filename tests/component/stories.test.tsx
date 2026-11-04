@@ -193,6 +193,16 @@ describe("TellStoryScreen", () => {
     expect([before, screen.getByText(/Spend most of it on what you did/).hasAttribute("data-template-needs"), within(screen.getByRole("group", { name: "Template" })).getAllByRole("button").length, screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([["Who I am", "Interview answer", "Toast", "A choice I made"], true, 8, "/session?mode=story&prompt=sp47&template=interview&length=full"]);
   });
 
+  // The worked example names each beat in its own casing after the first letter, so "I" stays a capital
+  it("keeps the capital I in the example's beat names", async () => {
+    // Draw it for the birthday toast, which opens on the Toast template
+    render(<TellStoryScreen storyId="sp53" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The worked example
+    const example = screen.getByRole("region", { name: "Example: Toast" });
+    // Confirm the first beat keeps its "I" and the rest start lowercase
+    expect([!!within(example).queryByText("(how I know them)"), !!within(example).queryByText("(a story that shows them)")]).toEqual([true, true]);
+  });
+
   // A "Make it a…" guided story asks for its kind and starts on that template; its details are loose, not numbered (decision 153)
   it("asks a Make it a… guided story for its kind, with loose details", async () => {
     // Draw it for the toast to Alex

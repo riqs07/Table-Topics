@@ -177,8 +177,8 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
             <section aria-label={`Example: ${chosen.name}`} data-template-example className={`mt-4 max-w-xl p-4 ${CARD}`}>
               {/* Heading */}
               <p className="text-footnote font-semibold">Example · {chosen.name}</p>
-              {/* The example, beat by beat */}
-              <p className="mt-1 text-footnote">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-accent">({chosen.beats[index]!.name.toLowerCase()})</b> </span>)}</p>
+              {/* The example, beat by beat, each beat named with only its first letter lowered so "I" stays a capital */}
+              <p className="mt-1 text-footnote">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-accent">({chosen.beats[index]!.name.charAt(0).toLowerCase() + chosen.beats[index]!.name.slice(1)})</b> </span>)}</p>
             </section>
 
             {/* Push the band down */}
