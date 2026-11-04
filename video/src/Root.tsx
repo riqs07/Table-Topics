@@ -25,7 +25,7 @@ import { SCIENCE_FRAMES, ScienceSync, ScienceTransparency } from "./demo/Science
 // Load the storm-beat ideas (stills)
 import { StormBeat } from "./demo/StormBeat";
 // Load the two refined storm beats (2026-11-04)
-import { STORM_BEAT_FRAMES, StormBeatA, StormBeatC } from "./demo/StormBeat2";
+import { STORM_BEAT_FRAMES, StormBeatA, StormBeatC, StormBeatCombo } from "./demo/StormBeat2";
 // Load the panels of Sage's character sheet (stills)
 import { SHEET_PANELS } from "./characters/SageSheet";
 
@@ -61,6 +61,8 @@ export function Root() {
       <Composition id="StormBeatAnimA" component={StormBeatA} durationInFrames={STORM_BEAT_FRAMES} fps={30} width={1080} height={1920} />
       {/* (C) */}
       <Composition id="StormBeatAnimC" component={StormBeatC} durationInFrames={STORM_BEAT_FRAMES} fps={30} width={1080} height={1920} />
+      {/* (the combination) */}
+      <Composition id="StormBeatCombo" component={StormBeatCombo} durationInFrames={135} fps={30} width={1080} height={1920} />
       {/* Sage's character sheet, one still per panel */}
       {SHEET_PANELS.map((panel) => <Composition key={panel.id} id={panel.id} component={panel.component} durationInFrames={1} fps={30} width={panel.width} height={panel.height} />)}
     </>

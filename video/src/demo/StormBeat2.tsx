@@ -182,3 +182,85 @@ export function StormBeatC() {
     </AbsoluteFill>
   );
 }
+
+// The combined beat, as a group to place in any scene: all storm, then the calm sweeps over the whole body, and the storm shrinks into a small porthole (frame is local: 0 is the first flash)
+export function StormToCalm({ frame, cx, cy, r, id }: { frame: number; cx: number; cy: number; r: number; id: string }) {
+  // The frame rate
+  const { fps } = useVideoConfig();
+  // How far the calm has swept across (0 = all storm, 1 = all calm)
+  const sweep = ease(frame, 20, 62);
+  // The storm shrinking into the porthole
+  const shrink = ease(frame, 58, 84);
+  // The porthole's rim springing in
+  const rim = spring({ frame: frame - 78, fps, config: { damping: 12, stiffness: 150 } });
+  // The smile drawing on as the calm passes the face
+  const smile = ease(frame, 44, 62);
+  // The eyes lifting into happy arches after
+  const settle = ease(frame, 64, 80);
+  // Lightning: big flashes at the start, then now and then
+  const flash = [0, 6, 40, 96, 118].some((f) => frame >= f && frame < f + 4);
+  // The seam's x: from past the left edge to past the right edge
+  const seamX = cx - r * 1.2 + r * 2.4 * sweep;
+  // The jagged seam
+  const seam = [[0, -1.1], [-0.05, -0.8], [0.04, -0.55], [-0.06, -0.3], [0.05, -0.05], [-0.06, 0.2], [0.04, 0.45], [-0.03, 0.7], [0, 1.0]].map(([dx = 0, dy = 0]) => [seamX + dx * r, cy + dy * r] as const);
+  // The stormy side, right of the seam
+  const stormSide = `M${seam.map(([x, y]) => `${x} ${y}`).join(" L")} L${cx + r * 2} ${cy + r * 1.2} L${cx + r * 2} ${cy - r * 1.2} Z`;
+  // The porthole: centred, low on the body
+  const py = cy + 0.48 * r;
+  // (its radius)
+  const pr = 0.27 * r;
+  // The storm's centre and scale: the whole body at first, the porthole at the end
+  const sx = cx;
+  // (its centre height)
+  const sy = cy + (py - cy) * shrink;
+  // (its scale: from covering the body to fitting the porthole)
+  const ss = (r / 400) * (1.05 - 0.8 * shrink);
+  // The group
+  return (
+    <g>
+      <defs>
+        {/* The body */}
+        <clipPath id={`${id}-body`}><path d={ROUND} transform={`translate(${cx} ${cy}) scale(${r / 100})`} /></clipPath>
+        {/* Where the storm still shows: right of the seam, plus the porthole */}
+        <clipPath id={`${id}-storm`}><path d={stormSide} /><circle cx={cx} cy={py} r={pr} /></clipPath>
+      </defs>
+      {/* You, calm, with a face that smiles as the calm arrives */}
+      <Character id={`${id}-you`} kind="you" x={cx} y={cy} r={r} face="none" />
+      <g transform={`translate(${cx} ${cy}) scale(${r / 100})`}>
+        {/* Cheeks */}
+        <ellipse cx={-46} cy={-10} rx={14} ry={9} fill="#ec6a55" opacity={0.35} />
+        {/* (the other) */}
+        <ellipse cx={46} cy={-10} rx={14} ry={9} fill="#ec6a55" opacity={0.35} />
+        {/* Eyes: soft shut arcs that lift into happy arches */}
+        <path d={`M-38 ${-32 + 4 * settle}q14 ${10 - 20 * settle} 26 0M12 ${-32 + 4 * settle}q14 ${10 - 20 * settle} 26 0`} stroke="#2a2420" strokeWidth={7.5} fill="none" strokeLinecap="round" />
+        {/* The smile */}
+        <path d="M-18 -6q18 16 36 0" stroke="#2a2420" strokeWidth={7.5} fill="none" strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - smile} />
+      </g>
+      {/* The storm: in the body, right of the seam and in the porthole, shrinking into it */}
+      <g clipPath={`url(#${id}-body)`}><g clipPath={`url(#${id}-storm)`}><g transform={`translate(${sx} ${sy}) scale(${ss})`}><BigStorm frame={frame} flash={flash} /></g></g></g>
+      {/* The glowing seam while it crosses */}
+      <g clipPath={`url(#${id}-body)`}><path d={`M${seam.map(([x, y]) => `${x} ${y}`).join(" L")}`} stroke="#fff6d6" strokeWidth={r / 40} fill="none" strokeLinejoin="round" opacity={sweep > 0.02 && sweep < 0.98 ? 1 : 0} /></g>
+      {/* The porthole's rim and a glint on its glass */}
+      <circle cx={cx} cy={py} r={(pr + r * 0.02) * rim} fill="none" stroke="#c96a35" strokeWidth={r * 0.045} />
+      {/* (glint) */}
+      <path d={`M${cx - pr * 0.6} ${py - pr * 0.55} a${pr * 0.8} ${pr * 0.8} 0 0 1 ${pr * 0.5} -${pr * 0.25}`} stroke="#fff" strokeWidth={r * 0.02} strokeLinecap="round" fill="none" opacity={0.35 * Math.min(1, rim)} />
+      {/* A flash over everything on the first strikes */}
+      <rect x={-2000} y={-2000} width={6000} height={6000} fill="#fff6d6" opacity={frame >= 0 && frame < 10 ? 0.1 : 0} />
+    </g>
+  );
+}
+
+// The combined beat on its own, 4.5 seconds
+export function StormBeatCombo() {
+  // The current frame
+  const frame = useCurrentFrame();
+  // The take
+  return (
+    <AbsoluteFill>
+      {/* The sky */}
+      <Sky frame={frame} top="#24205a" bottom="#08061e" />
+      {/* The beat */}
+      <svg viewBox="0 0 1080 1920" width="100%" height="100%" style={{ position: "absolute", inset: 0 }}><StormToCalm frame={frame} cx={CX} cy={CY} r={R} id="combo" /></svg>
+    </AbsoluteFill>
+  );
+}

@@ -10,6 +10,8 @@ import "@fontsource/fredoka/700.css";
 import "@fontsource-variable/fraunces";
 // (and its italic)
 import "@fontsource-variable/fraunces/wght-italic.css";
+// Load the storm beat
+import { StormToCalm } from "./StormBeat2";
 
 // Both reels run 18 seconds at 30 frames a second
 export const SCIENCE_FRAMES = 540;
@@ -176,17 +178,14 @@ export function ScienceTransparency() {
   // A small nervous tremble in the hook
   const tremble = frame < 90 ? Math.sin(frame * 1.9) * 4 : 0;
   // Where you sit: low in the hook, then up the frame for the storm
-  const lift = ease(frame, 86, 112);
+  const lift = ease(frame, 76, 96);
   // Your centre
   const cy = 1180 - 180 * lift + (1 - rise) * 700;
+  // (the lift ends at the beat's place: centre 1000, radius 320)
   // Your size: a little bigger once the window opens
   const size = 250 + 70 * lift;
   // The thought bubble showing (hook only)
   const bubble = window(frame, 10, 90, 8);
-  // The window in your body opening
-  const open = ease(frame, 112, 132);
-  // A lightning flash now and then
-  const flash = [140, 170, 196].some((f) => frame >= f && frame < f + 5);
   // The character scene showing
   const charOn = window(frame, 0, 216, 12);
   // The bars and the study (7–13 s)
@@ -208,29 +207,12 @@ export function ScienceTransparency() {
       <Sky frame={frame} top="#24205a" bottom="#08061e" />
       {/* 0–7 s: you, nervous, then calm outside with a storm inside */}
       <svg viewBox="0 0 1080 1920" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: charOn }}>
-        {/* The window's clip and the storm's sky */}
-        <defs><clipPath id="window"><circle cx={540} cy={cy + 90} r={150 * open} /></clipPath><radialGradient id="storm"><stop offset="0" stopColor="#3a3f7a" /><stop offset="1" stopColor="#141838" /></radialGradient></defs>
         {/* A sweat drop in the hook */}
         <path d={`M${720 + tremble} ${cy - 240} q14 24 0 36 q-14 -12 0 -36z`} fill="#9fd6f6" opacity={frame < 88 ? 1 : 0} />
-        {/* You */}
-        <g transform={`translate(${tremble} 0)`}><Character id="you1" kind="you" x={540} y={cy} r={size} face={frame < 92 ? "nervous" : "calm"} /></g>
-        {/* The storm through the window */}
-        <g clipPath="url(#window)">
-          {/* Its sky */}
-          <rect x={360} y={cy - 90} width={360} height={360} fill="url(#storm)" />
-          {/* Rain */}
-          {Array.from({ length: 14 }, (_, i) => <path key={i} d={`M${400 + i * 22} ${((frame * 9 + i * 37) % 260) + cy - 10} l-10 26`} stroke="#9fc4ff" strokeWidth={6} strokeLinecap="round" />)}
-          {/* Clouds */}
-          <ellipse cx={520} cy={cy + 20} rx={120} ry={50} fill="#6a6ea8" />
-          {/* (more) */}
-          <ellipse cx={600} cy={cy + 40} rx={100} ry={44} fill="#5a5e98" />
-          {/* Lightning */}
-          <path d={`M560 ${cy + 40} l-50 100 h40 l-36 90 96 -126 h-42 l36 -64z`} fill="#ffe08a" opacity={flash ? 1 : 0.4} />
-        </g>
-        {/* The window's rim */}
-        <circle cx={540} cy={cy + 90} r={156 * open} fill="none" stroke="#c96a35" strokeWidth={16} />
-        {/* A flash lighting the sky */}
-        <rect width={1080} height={1920} fill="#fff6d6" opacity={flash ? 0.07 : 0} />
+        {/* You, nervous, until the storm takes over */}
+        {frame < 96 ? <g transform={`translate(${tremble} 0)`}><Character id="you1" kind="you" x={540} y={cy} r={size} face="nervous" /></g> : null}
+        {/* Then: all storm, the calm sweeping over, the storm shrinking into a small porthole */}
+        {frame >= 96 ? <StormToCalm frame={frame - 96} cx={540} cy={1000} r={320} id="beat" /> : null}
       </svg>
       {/* The hook: your thought, in a bubble over your head */}
       <div style={{ position: "absolute", left: 120, right: 120, top: 560, opacity: bubble, transform: `scale(${0.85 + 0.15 * Math.min(1, rise)})`, transformOrigin: "50% 100%" }}>
@@ -244,9 +226,9 @@ export function ScienceTransparency() {
       {/* The turn, still inside the first three seconds */}
       <Line frame={frame} at={44} until={90} y={350} size={70} color="#ffd27a">Science says: they can’t.</Line>
       {/* The labels for the storm */}
-      <Line frame={frame} at={118} until={214} y={300} size={72}>How it <span style={{ color: "#9fece0" }}>looks</span>…</Line>
+      <Line frame={frame} at={100} until={214} y={300} size={72}>How it <span style={{ color: "#ffd27a" }}>feels</span>…</Line>
       {/* (and how it feels) */}
-      <Line frame={frame} at={148} until={214} y={1500} size={72}>…how it <span style={{ color: "#ffd27a" }}>feels</span>.</Line>
+      <Line frame={frame} at={150} until={214} y={1480} size={72}>…how it <span style={{ color: "#9fece0" }}>looks</span>.</Line>
       {/* 7–13 s: the finding, the bars and the study on one page */}
       <Line frame={frame} at={214} until={396} y={220} size={68}>Speakers think their nerves show <em style={{ color: "#ffd27a" }}>far more</em> than they do.</Line>
       {/* The bars */}
