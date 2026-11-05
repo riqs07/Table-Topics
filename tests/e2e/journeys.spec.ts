@@ -119,7 +119,9 @@ test("Rehearse my talk: save, rehearse, saved session, history", async ({ page }
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // It names the talk that was rehearsed
   await expect(page.getByText(/Team update/).first()).toBeVisible();
-  // History, reached from the Me tab (the UI rewrite), lists it
+  // History, reached from the Me tab (the UI rewrite): a result is focus mode without tabs, so close it first
+  await page.getByRole("link", { name: /^Close, back to/ }).click();
+  // Then the Me tab
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Me" }).click();
   // Open the history page
   await page.getByRole("link", { name: "Every session, in History" }).click();
@@ -169,7 +171,7 @@ test("Event prep: date a talk, follow today's step, see progress", async ({ page
   // The saved session opens
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // Go back to the talk
-  await page.getByRole("link", { name: "Back to your talk" }).click();
+  await page.getByRole("complementary").getByRole("link", { name: "Back to your talk", exact: true }).click();
   // The opening shows one of two runs done
   await expect(page.getByRole("list", { name: "Today" }).getByRole("listitem").first()).toContainText("1 of 2");
 });
@@ -419,7 +421,7 @@ test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
   // The answer opens on its results
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The results ask which beats were hit, with the ticks already open under the question (round 4)
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Which beats did you hit?");
+  await expect(page.getByRole("heading", { level: 3 })).toHaveText("Which beats did you hit?");
   // Tick the moment
   await page.getByRole("list", { name: "Listen for" }).getByRole("button", { name: /^Moment/ }).click();
   // Save
@@ -970,7 +972,7 @@ test("Stories: pick a prompt, choose a template, tell it, then tell it again and
   // Plan and tell
   await tellStory(page);
   // The headline from the beats, and what worked
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("2 of 4 beats came through clearly.");
+  await expect(page.getByRole("heading", { level: 3 })).toHaveText("2 of 4 beats came through clearly.");
   // The coach's line and how it could sound
   await expect(page.locator("[data-story-line]")).toContainText("Could sound like");
   // Each beat, the result missing
@@ -1055,7 +1057,7 @@ test("Stories: tell a saved moment properly, and find it in Your stories", async
   // Plan and tell
   await tellStory(page);
   // The telling, with no coach and no rough checklist (decision 126)
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your story.");
+  await expect(page.getByRole("heading", { level: 3 })).toHaveText("Your story.");
   // To Your stories
   await page.getByRole("link", { name: "Your stories", exact: true }).click();
   // The story is listed by the moment's first words, told once

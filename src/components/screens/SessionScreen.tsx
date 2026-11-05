@@ -12,7 +12,7 @@ import { ActionBand } from "@/components/script/ActionBand";
 import { PRESS, PRIMARY, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load focus mode's thin header (second pass)
-import { FocusHeader } from "@/components/script/FocusHeader";
+import { PracticeBar } from "@/components/script/PracticeBar";
 // Load the cast: your blob reacts, Sage gives the one note
 import { Cast } from "@/components/scenes/Cast";
 // Load what was said word by word, and the take's verdict
@@ -522,7 +522,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   return (
     <>
       {/* Focus mode's header: the way out, how far through today's practice, what this was and the step */}
-      <FocusHeader close={{ href: home.href, label: home.label }} title={title} place={plan ? `step ${plan.step} of ${plan.total}` : null} progress={plan ? plan.step / Math.max(1, plan.total) : null} />
+      <PracticeBar close={{ href: home.href, label: home.label }} label={`${title}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} progress={plan ? plan.step / Math.max(1, plan.total) : undefined} className="-mt-4 md:-mt-8" />
       {/* The take on the left, the verdict sliding in on the right (on a phone, the words, then the verdict as a sheet) */}
       <div className="flex flex-col gap-5 md:flex-row md:flex-wrap md:items-start md:gap-9 md:pt-4">
         {/* The take */}
@@ -687,7 +687,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
         {/* A retold story: this telling beside the one before (decision 92) */}
         {story && original && <StoryBeforeAfter original={original} retold={session} pauseWords={view.pauseWords} />}
         {/* The same words told again: the last telling's pitch under this one's (decision 111) */}
-        {story && original && !session.trimmedAt && <LastVsThisCard repo={repo} before={original} after={session} kind="Tell it again" names={{ before: `Last time, ${dayLabel(new Date(original.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}`, after: "This time" }} plays={{ before: "Play last time", after: "Play this time" }} />}
+        {story && original && !session.trimmedAt && <LastVsThisCard repo={repo} pauseWords={view.pauseWords} before={original} after={session} kind="Tell it again" names={{ before: `Last time, ${dayLabel(new Date(original.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}`, after: "This time" }} plays={{ before: "Play last time", after: "Play this time" }} />}
         {/* A short speech's points (decision 77) */}
         <OutlinePoints session={session} />
         {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
@@ -750,7 +750,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* After a part of a full speech, the next part, or the speech's page after the last */}
           {speechPart && <li>{speechPart.part < speechPart.speech.partCount ? <RowLink href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`}>Read part {speechPart.part + 1}</RowLink> : <RowLink href={`/speech?id=${speechPart.speech.id}`}>That was the last part</RowLink>}</li>}
           {/* After a rehearsal, back to the talk and its plan */}
-          {rehearsed && <li><RowLink href={`/talk?id=${rehearsed.id}`}>Back to your talk</RowLink></li>}
+          {rehearsed && secondary.href !== home.href && <li><RowLink href={`/talk?id=${rehearsed.id}`}>Back to your talk</RowLink></li>}
           {/* After small talk, another question, back on its own page */}
           {smallTalk && !quick && <li><RowLink href={`/small-talk/unit?id=${findSmallTalk(session.promptId)?.unit ?? "answering"}`}>Another question</RowLink></li>}
           {/* Back to where it was started (outside today's practice; decision 67), unless the panel already leads there */}
@@ -1180,7 +1180,7 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
           {/* The coach's notes on the retry */}
           {retry.feedback && <p className="mt-5 max-w-[48ch] text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
           {/* The first try's pitch under the second's, phrase by phrase (decision 111) */}
-          {!retry.trimmedAt && takeScript.ready && <LastVsThisCard repo={repo} before={original} after={retry} kind="Second try" names={{ before: "First try", after: "Second try" }} plays={{ before: "Play first try", after: "Play second try" }} script={takeScript.script} />}
+          {!retry.trimmedAt && takeScript.ready && <LastVsThisCard repo={repo} pauseWords={view.pauseWords} before={original} after={retry} kind="Second try" names={{ before: "First try", after: "Second try" }} plays={{ before: "Play first try", after: "Play second try" }} script={takeScript.script} />}
           {/* Listen back to the second try */}
           <div className="max-w-[48ch]"><Playback repo={repo} session={retry} onAudio={(element) => { audio.current = element; }} /></div>
           {/* How the second try's voice sounded (decision 111: the standard voice view on every take with pitch readings) */}

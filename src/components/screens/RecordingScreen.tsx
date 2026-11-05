@@ -12,11 +12,11 @@ import { ActionButton } from "@/components/script/ActionBand";
 import { Footnote } from "@/components/script/Footnote";
 import { Masthead } from "@/components/script/Masthead";
 // Load focus mode's thin header and its key caps (second pass)
-import { FocusHeader, Kbd } from "@/components/script/FocusHeader";
+import { Key, LevelBars, PracticeBar, SingingBlob } from "@/components/script/PracticeBar";
 // Load the cast, for your blob singing while you speak
 import { Cast } from "@/components/scenes/Cast";
 // Load the card and label looks
-import { CARD, LAB } from "@/components/script/textStyles";
+import { BUBBLE, CARD, LAB } from "@/components/script/textStyles";
 // Load the weekly focus, which is the one goal when nothing else sets one
 import { currentFocus, type Focus } from "@/core/focus";
 // Load the never-firing subscription used to tell the browser apart from the server
@@ -104,7 +104,7 @@ import { ALLOW_STEPS, PROBLEM_TEXT } from "@/components/script/microphoneHelp";
 import { autoGainApplied } from "@/audio/microphoneSettings";
 import { levelScale } from "@/core/voiceLevels";
 // Load the voice shape in its forms
-import { StartBlob, StatusBlob, TakeControls, VoiceBlob } from "@/components/script/VoiceShapes";
+import { StartBlob, StatusBlob } from "@/components/script/VoiceShapes";
 // Load the start screen's scene panel (decision 141)
 import { ScenePanel } from "@/components/scenes/ScenePanel";
 // Load the scene names
@@ -1343,9 +1343,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const stopButton = useRef<HTMLButtonElement>(null);
   // Focus it each time a take starts
   useEffect(() => {
-    // Only in focus mode
-    if (focusTake) stopButton.current?.focus({ preventScroll: true });
-  }, [focusTake]);
+    // In focus mode, or beside text to read
+    if (recording) stopButton.current?.focus({ preventScroll: true });
+  }, [recording]);
   // Length wording for this kind of session
   const lengthText = loopTarget !== null ? `${formatClock(loopTarget)} this round` : goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId, storyTake.length) ? `${formatClock(speakingWindow(mode, promptId, storyTake.length)!.start)} to ${formatClock(speakingWindow(mode, promptId, storyTake.length)!.end)}` : mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : mode === "free" ? "as long as you like" : "about a minute";
   // Whether the thinking countdown is showing
@@ -1458,7 +1458,32 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const shapeControl = (
     <>
       {/* While recording: the live voice shape, with the clock inside, which stops the take (and takes focus as recording starts, so the keyboard and screen readers land on it) */}
-      {recording && <VoiceBlob levels={levels} signal={signal} clock={formatClock(elapsed)} onStop={() => void stop()} compact={!!script} paused={paused} focusOnMount />}
+      {recording && script && (
+        // Beside text to read (the Read aloud reference): your blob singing, the clock and your level, then Start over and the round Stop, with Pause under them; a row along the bottom on a phone
+        <div data-script-take className="flex items-center gap-3 md:flex-col md:gap-4">
+          {/* Your blob, singing or resting */}
+          <span aria-hidden="true" className="flex max-md:hidden">{paused ? <Cast who="you" face="ready" still className="size-28" /> : <SingingBlob className="size-28" />}</span>
+          {/* The clock and your level */}
+          <span className="flex items-center gap-3">
+            {/* The clock */}
+            <b className="font-display text-3xl leading-none font-semibold text-ink tabular-nums md:text-5xl">{formatClock(elapsed)}</b>
+            {/* Your level */}
+            <span role="img" aria-label="Microphone level" className="flex max-md:hidden"><LevelBars levels={levels} /></span>
+          </span>
+          {/* Start over and the round Stop */}
+          <span className="flex items-center gap-3 md:gap-4">
+            {/* Start over: discards this take, which can be brought back for a few seconds */}
+            <button type="button" onClick={() => void discard()} className={`${QUIET} whitespace-nowrap max-md:px-3`}>Start over</button>
+            {/* Stop: the take is done */}
+            <button ref={stopButton} type="button" onClick={() => void stop()} aria-label="Stop" data-variant="stop" className="flex size-16 flex-none items-center justify-center rounded-full bg-ink shadow-stop transition-[transform,box-shadow] duration-100 motion-safe:active:translate-y-[3px] md:size-20">
+              {/* The stop square */}
+              <span aria-hidden="true" className="size-6 rounded-lg bg-paper-raised md:size-7" />
+            </button>
+          </span>
+          {/* Pause or resume */}
+          <button type="button" onClick={paused ? resume : () => void pause()} className={`${TEXT_LINK} text-ink-muted`}>{paused ? "Resume" : "Pause"}</button>
+        </div>
+      )}
       {/* Ready, or ready again: the start shape */}
       {!draw && (stage === "ready" || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" || stage === "discarded" || (problem && problem !== "speech-unsupported")) && (
         <StartBlob compact={!!script} onStart={begin} mood={problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "hmm" : "ready"} label={stage === "discarded" ? "Start again" : problem || stage === "nothing-heard" || stage === "too-short" || stage === "save-failed" ? "Try again" : loop && loop.round > 1 ? `Start round ${loop.round}` : mode === "talk" ? "Show my topic" : smallTalk ? findUnit(smallTalk.unit).words.hear : mode === "response" ? "Start thinking" : mode === "story" ? "Plan it" : mode === "rehearse" ? "Start rehearsing" : passage || lesson ? "Start reading" : "Start speaking"} detail={loop && loop.round > 1 ? lengthText : mode === "talk" ? `${think} seconds to start` : smallTalk ? findUnit(smallTalk.unit).words.then : mode === "response" ? `${think / 60} minutes to prepare` : mode === "story" ? "up to a minute, then tell it" : lengthText} />
@@ -1504,14 +1529,11 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   return (
     // One column on a phone, margin plus main column on a computer; dark green while the clock runs (the stage, decision 69)
     <PageFade>
-      <main id="main" data-area={recording || thinking ? "stage" : undefined} className={`mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 ${script ? "pb-40 md:pb-10" : "pb-10"}`}>
-        {/* Focus mode's header: the way out (hidden while a take is under way), how far through, what this is and the step, and the keyboard hints */}
-        <FocusHeader close={busy ? null : home} title={title} place={planStep ? `step ${planStep}${plan ? ` of ${plan.steps.length}` : ""}` : null} progress={progress}>
-          {/* The keyboard hints as key caps, only on devices with a mouse or trackpad (so never on a phone or tablet) */}
-          <span data-keyboard-hint className="hidden items-center gap-1.5 keyboard:inline-flex">{hint.split(" · ").map((part, index) => <span key={part} className="inline-flex items-center gap-1.5">{index > 0 && " "}<Kbd>{part.split(" ")[0]}</Kbd>{` ${part.split(" ").slice(1).join(" ")}`}</span>)}</span>
-          {/* Before reading on a phone: the length, small, in place of the big clock */}
-          {(script || smallTalk) && !busy && <span className="keyboard:hidden md:hidden">{lengthText}</span>}
-        </FocusHeader>
+      <main id="main" data-area={recording || thinking ? "stage" : undefined} className={`mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-2 md:px-14 md:pt-5 ${script ? "pb-40 md:pb-10" : "pb-10"}`}>
+        {/* Focus mode's bar (shared with every practice screen): the way out (hidden while a take is under way), how far through, what this is and the step, and the keyboard hints as key caps (only with a mouse or trackpad, so never on a phone or tablet) */}
+        <PracticeBar close={busy ? null : home} label={`${title}${planStep ? ` · step ${planStep}${plan ? ` of ${plan.steps.length}` : ""}` : ""}`} progress={progress ?? undefined} hints={<span data-keyboard-hint className="hidden items-center gap-1.5 keyboard:inline-flex">{hint.split(" · ").map((part, index) => <span key={part} className="inline-flex items-center gap-1.5">{index > 0 && " "}<Key>{part.split(" ")[0]}</Key>{` ${part.split(" ").slice(1).join(" ")}`}</span>)}</span>} />
+        {/* Before reading on a phone: the length, small, in place of the big clock */}
+        {(script || smallTalk) && !busy && <p className="mt-1 text-footnote font-bold text-ink-muted md:hidden">{lengthText}</p>}
         {/* Inside the weekly check-in, which part this is (decision 100) */}
         {checkIn && <p className="mt-3 text-footnote font-medium text-accent">Weekly check-in · part {CHECK_IN_PARTS.indexOf(checkIn.part) + 1} of {CHECK_IN_PARTS.length}</p>}
         {/* A 4/3/2 round: which, and its time (decision 118) */}
@@ -1543,18 +1565,38 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         )}
 
         {/* Margin and main column on a computer */}
-        <div className={`flex flex-1 flex-col md:grid md:gap-14 md:pt-8 ${focusTake ? "md:grid-cols-1" : "md:grid-cols-[240px_1fr]"}`}>
+        <div className={`flex flex-1 flex-col md:grid md:gap-10 md:pt-8 ${focusTake ? "md:grid-cols-1" : script ? "md:grid-cols-[minmax(0,1fr)_320px]" : "md:grid-cols-[240px_1fr] md:gap-14"}`}>
           {/* Margin: time, length, prompt reminder, discard (in focus mode, its notes move into the right column) */}
-          <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 ${focusTake ? "hidden" : "md:flex"} ${script && !busy ? "flex max-md:mt-0" : smallTalk && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
+          <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 ${focusTake ? "hidden" : "md:flex"} ${script ? "md:order-2" : ""} ${script && !busy ? "flex max-md:mt-0" : smallTalk && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
             {/* The clock, large, only while thinking about a prepared speech (a Table Topic counts down in the shape; while recording the clock is in the shape; decision 77) */}
             {thinking && mode !== "talk" && <p className="font-display text-prompt-xl font-semibold text-ink tabular-nums">{formatClock(Math.ceil(thinkLeft))}</p>}
             {/* The length to aim for, or what the countdown is for (the countdown's own words are in the shape) */}
             {!(thinking && mode === "talk") && <p className={`mt-1 ${recording || ((script || smallTalk) && !busy) ? "max-md:hidden" : ""}`}>{thinking ? "To think" : mode === "free" ? "No time limit" : `Aim for ${lengthText}`}</p>}
             {/* Beside text to read, the voice shape has its own place, never over the text: a bar at the bottom centre of a phone (the page leaves room for it below the text), and under the length in this margin on a computer, staying in view as the text scrolls (decision 89) */}
             {script && (
-              <div data-shape-place className="max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:flex max-md:justify-center max-md:border-t max-md:border-rule max-md:bg-paper-raised max-md:pt-3 max-md:pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:sticky md:top-10 md:mt-6">
+              <div data-shape-place className="max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:flex max-md:justify-center max-md:border-t max-md:border-rule max-md:bg-paper-raised max-md:pt-3 max-md:pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:sticky md:top-10 md:mt-4 md:flex md:flex-col md:items-center md:rounded-[22px] md:border-2 md:border-rule md:bg-card md:px-6 md:py-6 md:shadow-card">
                 {/* The shape for this stage */}
                 {shapeControl}
+              </div>
+            )}
+            {/* Reading aloud: the metronome, before and while reading, on its own card under the shape (decision 128; the Read aloud reference) */}
+            {mode === "read" && services.createMetronome && (
+              <div data-metronome className="mt-4 flex flex-col gap-2 rounded-[22px] border-2 border-rule bg-card px-5 py-4 text-ink shadow-card">
+                {/* Where the text comes from */}
+                {script?.source && <p className="text-footnote font-bold text-ink-muted">{script.source}</p>}
+                {/* On or off */}
+                <CheckRow checked={metronomeChoice.on} onChange={(event) => switchMetronome(event.target.checked)} detail={!recording && metronomeChoice.on ? "A quiet tick to read in time with. Headphones keep it out of the recording." : undefined}>
+                  Metronome
+                </CheckRow>
+                {/* The tempo, while on */}
+                {metronomeChoice.on && (
+                  <label className="flex items-center gap-3 text-footnote text-ink-muted">
+                    {/* The slider */}
+                    <input type="range" min={MIN_TEMPO} max={MAX_TEMPO} step={1} value={metronomeChoice.tempo} onChange={(event) => changeTempo(Number(event.target.value))} aria-label="Metronome beats per minute" className="h-11 w-36 accent-accent" />
+                    {/* The tempo in words */}
+                    <span className="tabular-nums">{metronomeChoice.tempo} beats a minute</span>
+                  </label>
+                )}
               </div>
             )}
             {/* A lesson keeps its tip in view while speaking */}
@@ -1591,27 +1633,6 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} storyLength={storyTake.length} given={roundWindow} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
               </div>
             )}
-            {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
-            {recording && mode === "story" && (
-              <div data-story-template className="order-last mt-3">
-                {/* Show or hide, remembered in this browser */}
-                <CheckRow
-                  checked={templateShown}
-                  onChange={(event) => {
-                    // Remember it
-                    saveStoryTemplateShown(event.target.checked);
-                    // Show it
-                    setTemplateShownChange(event.target.checked);
-                  }}
-                >
-                  {guidedStory ? "Show the facts" : "Show the template"}
-                </CheckRow>
-                {/* The template's beats in order (with any focus), or the guided story's facts */}
-                {templateShown && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />)}
-              </div>
-            )}
-            {/* Beside text to read, the controls sit at the top (the shape floats in the corner) */}
-            {recording && script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
             {/* A discarded take, which can be brought back for a few seconds */}
             {stage === "discarded" && (
               <div role="status" className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 md:mt-0">
@@ -1662,28 +1683,12 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               <>
                 {/* Reading aloud, before starting: the reading scene, carried over from Today or Practice (decision 141) */}
                 {mode === "read" && stage === "ready" && !busy && <ScenePanel scene="read-aloud" name="Read aloud" line={`Aim for ${lengthText}`} className="mt-8 md:mt-0" />}
-                {/* Title and source, before starting */}
-                {!recording && <h1 className={`${mode === "read" && stage === "ready" && !busy ? "mt-5" : "mt-8 md:mt-0"} font-display text-statement`}>{script.title}</h1>}
+                {/* What kind of reading this is, small, then the title, throughout (the Read aloud reference) */}
+                <p className={`${LAB} ${mode === "read" && stage === "ready" && !busy ? "mt-5" : "mt-6 md:mt-0"}`}>{title}</p>
+                {/* The title */}
+                <h1 className="mt-1 font-display text-3xl leading-tight font-semibold md:text-4xl">{script.title}</h1>
                 {/* Who said it, or that it is a practice passage */}
                 {!recording && script.source && <p className="mt-1 text-ink-muted">{script.source}</p>}
-                {/* Reading aloud: the metronome, before and while reading (decision 128) */}
-                {mode === "read" && services.createMetronome && (
-                  <div data-metronome className="mt-4 flex max-w-[52ch] flex-wrap items-center gap-x-6 gap-y-1">
-                    {/* On or off */}
-                    <CheckRow checked={metronomeChoice.on} onChange={(event) => switchMetronome(event.target.checked)} detail={!recording && metronomeChoice.on ? "A quiet tick to read in time with. Headphones keep it out of the recording." : undefined}>
-                      Metronome
-                    </CheckRow>
-                    {/* The tempo, while on */}
-                    {metronomeChoice.on && (
-                      <label className="flex items-center gap-3 text-footnote text-ink-muted">
-                        {/* The slider */}
-                        <input type="range" min={MIN_TEMPO} max={MAX_TEMPO} step={1} value={metronomeChoice.tempo} onChange={(event) => changeTempo(Number(event.target.value))} aria-label="Metronome beats per minute" className="h-11 w-36 accent-accent" />
-                        {/* The tempo in words */}
-                        <span className="tabular-nums">{metronomeChoice.tempo} beats a minute</span>
-                      </label>
-                    )}
-                  </div>
-                )}
                 {/* A lesson's tip, before starting */}
                 {!recording && lesson && (
                   <div className="mt-5 max-w-[52ch] border-l-2 border-accent pl-4">
@@ -1711,7 +1716,18 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {!recording && (lesson?.goal ?? passage?.goal) && <p data-goal className="mt-3 max-w-[52ch] text-footnote"><span className="font-semibold">Goal:</span> {lesson?.goal ?? passage?.goal}</p>}
                 {/* The words to read, large enough to read from a distance, unless hidden to practise from memory */}
                 {!textHidden && (
-  <ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`${recording ? "mt-8" : "mt-6"} max-w-[52ch] whitespace-pre-line font-display text-cue leading-relaxed`} />
+                  <ScriptText tokens={tokens} place={recording ? place : null} guide={recording ? Math.max(place, guide) : null} className={`mt-5 whitespace-pre-line rounded-[22px] border-2 border-rule bg-card px-5 py-5 text-xl leading-[2] shadow-card md:px-8 md:py-7 md:text-2xl`} />
+                )}
+                {/* What the marks mean, while reading */}
+                {!textHidden && recording && (
+                  <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm font-bold text-ink-muted">
+                    {/* The next word */}
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-4.5 rounded-[5px] bg-accent/15" />the next word</span>
+                    {/* A stressed word */}
+                    <span><b className="text-ink">Bold</b> a word to lean on</span>
+                    {/* A pause mark */}
+                    {tokens.some((token) => token.kind === "pause") && <span><span className="text-accent">‖</span> pause here</span>}
+                  </p>
                 )}
               </>
             )}
@@ -1861,14 +1877,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                   {/* The question, big */}
                   {prompt && !smallTalk && mode !== "outline" && <p className="font-display text-2xl leading-tight font-semibold max-md:order-2 md:max-w-[560px] md:text-4xl">{prompt.text}</p>}
                   {/* Your blob singing inside pulsing rings, swelling a little with your voice */}
-                  <div aria-hidden="true" className="relative my-2 flex size-60 items-center justify-center self-center max-md:order-3 md:size-72">
-                    {/* The still ring */}
-                    <span className="absolute inset-5 rounded-full border-4 border-warm/40" />
-                    {/* Two rings pulsing out in turn, while not paused */}
-                    {!paused && <span className="absolute inset-5 rounded-full border-4 border-warm/50 motion-safe:animate-pulse-ring" />}
-                    {!paused && <span className="absolute inset-5 rounded-full border-4 border-warm/50 motion-safe:animate-pulse-ring [animation-delay:1s]" />}
-                    {/* The blob */}
-                    <span className="flex transition-transform duration-150" style={{ transform: `scale(${paused ? 0.94 : 0.96 + (lastLevels.at(-1) ?? 0) * 0.12})` }}><Cast who="you" face={paused ? "ready" : "sing"} still={paused} className="size-44 md:size-52" /></span>
+                  <div aria-hidden="true" className="relative my-6 flex items-center justify-center self-center max-md:order-3">
+                    {/* The blob, singing in its rings (the shared one), or resting while paused */}
+                    <span className="flex transition-transform duration-150" style={{ transform: `scale(${paused ? 0.94 : 0.96 + (lastLevels.at(-1) ?? 0) * 0.12})` }}>{paused ? <Cast who="you" face="ready" still className="size-48 md:size-56" /> : <SingingBlob className="size-48 md:size-56" />}</span>
                   </div>
                   {/* The clock, the timing light and your level */}
                   <div className="flex items-center justify-center gap-2.5 max-md:order-4 md:flex-wrap md:gap-3.5">
@@ -1888,10 +1899,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                     {/* Without a light, the length to aim for */}
                     {!hasLight && <span className="text-footnote font-bold text-ink-muted">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
                     {/* Your level, the latest readings as five bars */}
-                    <span role="img" aria-label="Microphone level" className="flex h-9 items-end gap-1">
-                      {/* Each bar */}
-                      {lastLevels.map((level, index) => <span key={index} className="w-1.5 rounded-full bg-accent transition-[height] duration-100" style={{ height: `${Math.round(18 + Math.min(1, level * 1.6) * 82)}%` }} />)}
-                    </span>
+                    <span role="img" aria-label="Microphone level" className="flex"><LevelBars levels={levels} /></span>
                   </div>
                   {/* Start over, the round Stop, and hide the words (Pause under them) */}
                   <div className="flex flex-col items-center gap-2 max-md:order-7 max-md:mt-2">
@@ -1913,8 +1921,27 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 </section>
                 {/* The right column */}
                 <aside aria-label="While you speak" className="max-md:contents md:flex md:flex-col md:gap-4.5 md:pt-1.5">
+                  {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
+                  {recording && mode === "story" && (
+                    <div data-story-template className="max-md:order-6">
+                      {/* Show or hide, remembered in this browser */}
+                      <CheckRow
+                        checked={templateShown}
+                        onChange={(event) => {
+                          // Remember it
+                          saveStoryTemplateShown(event.target.checked);
+                          // Show it
+                          setTemplateShownChange(event.target.checked);
+                        }}
+                      >
+                        {guidedStory ? "Show the facts" : "Show the template"}
+                      </CheckRow>
+                      {/* The template's beats in order (with any focus), or the guided story's facts */}
+                      {templateShown && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />)}
+                    </div>
+                  )}
                   {/* Your one goal, on the accent's tint (a short cue on a phone) */}
-                  {goal && (
+                  {goal && mode !== "story" && (
                     <div data-goal className="flex flex-col gap-2 rounded-[22px] bg-accent-tint px-5 py-4.5 text-accent-tint-ink max-md:order-6 max-md:items-center max-md:bg-transparent max-md:p-0">
                       {/* The small label */}
                       <span className="text-xs font-extrabold tracking-[.07em] uppercase max-md:sr-only">Your one goal</span>
@@ -1922,6 +1949,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                       <span className="font-display text-2xl leading-tight font-semibold max-md:rounded-full max-md:bg-accent-tint max-md:px-3 max-md:py-1 max-md:font-sans max-md:text-chip max-md:font-extrabold">{goal.head}</span>
                       {/* What it means */}
                       {goal.line && <span className="font-bold max-md:hidden">{goal.line}</span>}
+                    </div>
+                  )}
+                  {/* A story's one goal, from Sage, under the template (the Story reference) */}
+                  {goal && mode === "story" && (
+                    <div data-goal className="flex items-end gap-3 max-md:order-6">
+                      {/* Sage */}
+                      <Cast who="sage" mood="encouraging" className="size-14 flex-none" />
+                      {/* The goal, in a bubble */}
+                      <p className={`${BUBBLE} mb-1 text-footnote`}><span className="sr-only">Your one goal: </span>{goal.head}{goal.line ? ` ${goal.line}` : ""}</p>
                     </div>
                   )}
                   {/* Your words, live */}
