@@ -71,7 +71,7 @@ test("a volume drill shows loudness as thickness", async ({ page }) => {
   // Three takes
   for (let take = 0; take < 3; take++) {
     // Record
-    await page.getByRole("button", { name: /^Record/ }).click();
+    await page.getByRole("button", { name: /^(Record|Next take)/ }).click();
     // Speak for a moment
     await page.waitForTimeout(1500);
     // Stop

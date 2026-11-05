@@ -4,7 +4,7 @@ import { expect, test, useStandIns } from "./support/fixtures";
 // Record one drill take of about a second and a half
 async function recordTake(page: import("@playwright/test").Page): Promise<void> {
   // Start
-  await page.getByRole("button", { name: /Record/ }).click();
+  await page.getByRole("button", { name: /^(Record|Next take)/ }).click();
   // The stop
   const stop = page.getByRole("button", { name: "Stop" });
   // Recording

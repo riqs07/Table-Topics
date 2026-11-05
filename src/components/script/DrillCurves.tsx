@@ -25,8 +25,8 @@ import { SHADOW_PITCH } from "@/content/shadowPitch";
 // The longest gap joined in the model voice's curve, in milliseconds
 const MODEL_GAP_MS = 600;
 
-// A drill take's planned stress: its line with the key word starred, judged against where the voice lifted
-export function TakeStress({ take, text, stress }: { take: TakeRecording; text: string; stress: string }) {
+// A drill take's planned stress: its line with the key word starred, judged against where the voice lifted; line: false leaves the verdict to the screen, which shows it under the card
+export function TakeStress({ take, text, stress, line = true }: { take: TakeRecording; text: string; stress: string; line?: boolean }) {
   // The width the row is drawn in
   const { ref, width } = useRowWidth();
   // How wide words are
@@ -39,7 +39,7 @@ export function TakeStress({ take, text, stress }: { take: TakeRecording; text: 
   return (
     <div ref={ref} data-planned-stress className="mt-3 flex flex-col gap-2">
       {/* The line */}
-      <StressRowView result={result.judged} pitch={result.pitch} width={width} measure={measure} />
+      <StressRowView result={result.judged} pitch={result.pitch} width={width} measure={measure} line={line} />
       {/* The key */}
       <StressKey />
     </div>

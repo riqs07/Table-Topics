@@ -1,18 +1,20 @@
 "use client";
-// Phrase rows (decision 111): a take's pitch phrase by phrase, one tap from "Your voice" on its page. Each phrase has a smooth curve over its words with the usual pitch dashed across it and how it ended; the pause before each phrase sits between the rows; notes only where useful. A player at the top: while it plays, the phrase is highlighted, a playhead moves along its curve and the word is highlighted; tapping a word plays from there
+// Phrase rows (decision 111; second design pass: the practice layout, the rows in a card on the left, how to read them on the right, the not-found card): a take's pitch phrase by phrase, one tap from "Your voice" on its page. Each phrase has a smooth curve over its words with the usual pitch dashed across it and how it ended; the pause before each phrase sits between the rows; notes only where useful. A player at the top: while it plays, the phrase is highlighted, a playhead moves along its curve and the word is highlighted; tapping a word plays from there
 
 // Load React's state, memo, callback and effect tools
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
-import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
+import { PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
+import { NotFoundCard } from "@/components/script/VoiceTakeStage";
+import { Cast } from "@/components/scenes/Cast";
 import { Player } from "@/components/script/Player";
 import { Skeleton } from "@/components/script/Skeleton";
 import { CurveRow, END_COLOURS, EndIcon, useRowWidth, useWordMeasure, type WordLook } from "@/components/script/PitchShapes";
 // Load the shared looks
-import { CARD } from "@/components/script/textStyles";
-import { QUIET, TEXT_LINK } from "@/components/script/Buttons";
+import { CARD, LAB } from "@/components/script/textStyles";
+import { QUIET, SECONDARY } from "@/components/script/Buttons";
 // Load the shared screen starting points, the tab title, the audio, the service words and the script
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 import { usePageTitle } from "@/components/screens/usePageTitle";
@@ -183,72 +185,97 @@ export function PhraseRowsScreen({ sessionId, ...props }: PhraseRowsProps) {
 
   // Draw the page
   return (
-    <main id="main" data-area="results" className={PRACTICE_NARROW}>
+    <main id="main" data-area="results" className={PRACTICE_MAIN}>
       {/* Title and the way back */}
       <PracticeBar close={back} label="Your take · phrase by phrase" />
-      {/* The heading and what the page shows */}
-      <h1 className="mt-4 font-display text-3xl font-semibold">Your voice</h1>
-      {/* Could not be read */}
-      {loadError !== null && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This take could not be loaded. The browser said: “{loadError}” Reload the page to try again.</p>}
-      {/* Not on this device */}
-      {session === null && <p className="mt-4 text-lede text-ink-muted">This take is not on this device. <Link href="/history" data-inline className={TEXT_LINK}>Back to History</Link></p>}
-      {/* Loading */}
-      {loadError === null && session !== null && !pitch && <Skeleton blocks={["h-16", "h-64"]} />}
-      {/* Readings dropped (decision 98) */}
-      {pitch?.state === "trimmed" && <p data-trimmed className="mt-4 text-footnote text-ink-muted">Detailed charts aren’t kept for older takes. The words, numbers and feedback are all here.</p>}
-      {/* Never recorded */}
-      {pitch?.state === "none" && <p className="mt-4 text-footnote text-ink-muted">This take has no pitch readings to draw.</p>}
-      {/* Too little voice, or no words */}
-      {(pitch?.state === "quiet" || pitch?.state === "no-words") && <p className="mt-4 text-footnote text-ink-muted">{pitch.state === "quiet" ? "Too little voice was heard to draw your pitch." : "No words were caught, so there are no phrases to show."}</p>}
-      {/* The phrases */}
-      {ready && session && (
-        <>
-          {/* What the rows show */}
-          <p className="mt-1 max-w-[52ch] text-footnote text-ink-muted">Each row is one phrase. The curve is your pitch above the words you said.{url ? " Tap any word to hear it from there." : ""}</p>
-          {/* The player, or why there is none */}
-          {url ? (
-            <div className="mt-4"><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} gain={playbackGain(session.loudnessScale)} onAudio={(element) => { audio.current = element; }} onTime={(seconds, isPlaying) => { setTime(seconds); setPlaying(isPlaying); }} /></div>
-          ) : (
-            <p className="mt-4 text-footnote text-ink-muted">The recording isn’t kept any more, so the words can’t play. The pitch is all here.</p>
-          )}
-          {/* The key */}
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-footnote text-ink-muted">
-            {/* The usual pitch */}
-            <span className="flex items-center gap-1.5"><svg width="22" height="6" aria-hidden="true" className="text-ink-muted"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" /></svg>Your usual pitch</span>
-            {/* Fell */}
-            <span className="flex items-center gap-1.5"><EndIcon end="fell" />Fell: sounds finished</span>
-            {/* Rose */}
-            <span className="flex items-center gap-1.5"><EndIcon end="rose" />Rose: sounds like a question</span>
-          </div>
-          {/* The rows, in one card */}
-          <div ref={ref} data-phrase-rows className={`mt-4 flex flex-col p-4 ${CARD}`}>
-            {/* Each phrase, with the pause before it */}
-            {shown.map((phrase) => (
-              <div key={phrase.index}>
-                {/* The pause before it */}
-                {phrase.pauseBefore !== null && (
-                  <div className="flex items-center gap-2 py-2 text-footnote text-ink-muted">
-                    {/* A rule */}
-                    <span aria-hidden="true" className="h-px flex-1 bg-rule" />
-                    {/* The length */}
-                    <span>{phrase.pauseBefore.toFixed(1)} s pause</span>
-                    {/* A rule */}
-                    <span aria-hidden="true" className="h-px flex-1 bg-rule" />
+      {/* Not on this device: the card with the way back */}
+      {session === null ? (
+        <div className={PRACTICE_BODY}>
+          <NotFoundCard title="This take is not on this device." line="Takes stay on the device that recorded them, and cleared ones are gone. Your other takes are in History." href="/history" action="Back to History" />
+        </div>
+      ) : (
+        <div className={PRACTICE_BODY}>
+          {/* The label */}
+          <p className={STEP_LABEL}>{session ? `${formatClock(Math.round(session.durationSec))} take` : "Your take"}</p>
+          {/* The heading */}
+          <h1 className="mt-2 font-display text-statement leading-tight font-semibold">Your voice, phrase by phrase</h1>
+          <div className={`mt-6 ${PRACTICE_COLUMNS}`}>
+            <section aria-label="Your phrases" className="flex min-w-0 flex-col">
+              {/* Could not be read */}
+              {loadError !== null && <p role="alert" className="max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">This take could not be loaded. The browser said: “{loadError}” Reload the page to try again.</p>}
+              {/* Loading */}
+              {loadError === null && !pitch && <Skeleton blocks={["h-16", "h-64"]} />}
+              {/* Nothing to draw: readings dropped (decision 98), never recorded, too little voice, or no words */}
+              {pitch && pitch.state !== "ready" && (
+                <div className={`flex items-center gap-4 p-5 ${CARD}`}>
+                  {/* You, puzzled */}
+                  <Cast who="you" face="wonder" className="size-16 flex-none" />
+                  {/* Why */}
+                  <p className="font-bold" data-trimmed={pitch.state === "trimmed" || undefined}>{pitch.state === "trimmed" ? "Detailed charts aren’t kept for older takes. The words, numbers and feedback are all here." : pitch.state === "none" ? "This take has no pitch readings to draw." : pitch.state === "quiet" ? "Too little voice was heard to draw your pitch." : "No words were caught, so there are no phrases to show."}</p>
+                </div>
+              )}
+              {/* The phrases */}
+              {ready && session && (
+                <>
+                  {/* The player, or why there is none */}
+                  {url ? (
+                    <div><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} gain={playbackGain(session.loudnessScale)} onAudio={(element) => { audio.current = element; }} onTime={(seconds, isPlaying) => { setTime(seconds); setPlaying(isPlaying); }} /></div>
+                  ) : (
+                    <p className="text-footnote text-ink-muted">The recording isn’t kept any more, so the words can’t play. The pitch is all here.</p>
+                  )}
+                  {/* The rows, in one card */}
+                  <div ref={ref} data-phrase-rows className={`mt-4 flex flex-col p-4 ${CARD}`}>
+                    {/* Each phrase, with the pause before it */}
+                    {shown.map((phrase) => (
+                      <div key={phrase.index}>
+                        {/* The pause before it */}
+                        {phrase.pauseBefore !== null && (
+                          <div className="flex items-center gap-2 py-2 text-footnote font-bold text-ink-muted">
+                            {/* A rule */}
+                            <span aria-hidden="true" className="h-0.5 flex-1 rounded-full bg-chart-band" />
+                            {/* The length */}
+                            <span>{phrase.pauseBefore.toFixed(1)} s pause</span>
+                            {/* A rule */}
+                            <span aria-hidden="true" className="h-0.5 flex-1 rounded-full bg-chart-band" />
+                          </div>
+                        )}
+                        {/* The phrase */}
+                        <PhraseRow phrase={phrase} pitch={ready} width={width - 32} measure={measure} time={time} playing={playing} current={phrase.index === currentIndex} onWord={url ? playFrom : null} />
+                      </div>
+                    ))}
                   </div>
-                )}
-                {/* The phrase */}
-                <PhraseRow phrase={phrase} pitch={ready} width={width - 32} measure={measure} time={time} playing={playing} current={phrase.index === currentIndex} onWord={url ? playFrom : null} />
-              </div>
-            ))}
+                  {/* More phrases on a long take */}
+                  {ready.phrases.length > shown.length && <p className="mt-4"><button type="button" onClick={() => setShownCount((count) => count + PHRASES_PER_PAGE)} className={QUIET}>Show the next {Math.min(PHRASES_PER_PAGE, ready.phrases.length - shown.length)} phrases</button> <span className="text-footnote text-ink-muted">Showing {shown.length} of {ready.phrases.length}</span></p>}
+                </>
+              )}
+            </section>
+            {/* Beside it: how to read the rows, and the way back */}
+            <aside aria-label="How to read it" className="flex min-w-0 flex-col gap-4">
+              {ready && (
+                <div className={`p-5 ${CARD}`}>
+                  {/* The label */}
+                  <p className={LAB}>How to read it</p>
+                  {/* What the rows show */}
+                  <p className="mt-2 font-bold">Each row is one phrase. The curve is your pitch above the words you said.{url ? " Tap any word to hear it from there." : ""}</p>
+                  {/* The key */}
+                  <div className="mt-3 flex flex-col gap-1.5 text-footnote text-ink-muted">
+                    {/* The usual pitch */}
+                    <span className="flex items-center gap-1.5"><svg width="22" height="6" aria-hidden="true" className="text-ink-muted"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" /></svg>Your usual pitch</span>
+                    {/* Fell */}
+                    <span className="flex items-center gap-1.5"><EndIcon end="fell" />Fell: sounds finished</span>
+                    {/* Rose */}
+                    <span className="flex items-center gap-1.5"><EndIcon end="rose" />Rose: sounds like a question</span>
+                  </div>
+                  {/* Where the word times came from */}
+                  <p className="mt-3 text-footnote text-ink-muted">{ready.precision === "exact" ? "Word timings from deeper analysis." : "Rough word timings: words are placed from the phone’s timings. Deeper analysis gives exact ones."}</p>
+                </div>
+              )}
+              {/* Back to the take */}
+              {session && <p><Link href={back.href} className={SECONDARY}>Back to your take</Link></p>}
+            </aside>
           </div>
-          {/* More phrases on a long take */}
-          {ready.phrases.length > shown.length && <p className="mt-4"><button type="button" onClick={() => setShownCount((count) => count + PHRASES_PER_PAGE)} className={QUIET}>Show the next {Math.min(PHRASES_PER_PAGE, ready.phrases.length - shown.length)} phrases</button> <span className="text-footnote text-ink-muted">Showing {shown.length} of {ready.phrases.length}</span></p>}
-          {/* Where the word times came from */}
-          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">{ready.precision === "exact" ? "Word timings from deeper analysis." : "Rough word timings: words are placed from the phone’s timings. Deeper analysis gives exact ones."}</p>
-        </>
+        </div>
       )}
-      {/* Back to the take */}
-      {session && <p className="mt-6"><Link href={back.href} className={TEXT_LINK}>Back to your take</Link></p>}
     </main>
   );
 }

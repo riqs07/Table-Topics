@@ -13,12 +13,10 @@ import { SpeakerHighIcon } from "@phosphor-icons/react/dist/ssr";
 import { Cast } from "@/components/scenes/Cast";
 // Load the card and label looks
 import { CARD, LAB } from "@/components/script/textStyles";
-// Load the action band
-import { ActionBand } from "@/components/script/ActionBand";
 // Load the shared button looks
-import { QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
-// Load the voice shapes
-import { StartBlob, StatusBlob, VoiceBlob } from "@/components/script/VoiceShapes";
+import { PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+// Load the take stage, the verdict panel and the not-found card
+import { NextLink, NotFoundCard, TakeStage, VERDICT_LOOKS, VerdictPanel, type VerdictTone } from "@/components/script/VoiceTakeStage";
 // Load the take pictures
 import { LevelBars, PitchLine } from "@/components/script/TakeVisuals";
 // Load Next.js's lazy loader
@@ -41,12 +39,12 @@ import { useTakePlayback } from "@/components/screens/useTakePlayback";
 import { drillWithSet, findVoiceDrill, VOICE_MODE_NAMES, type VoiceDrill, type VoiceTake } from "@/content/voice";
 // Load the findings
 import { drillFindings, measureTake } from "@/core/voiceFindings";
+// Load the planned-stress judge, for a take's verdict between takes
+import { drillStress } from "@/core/intonationDrills";
 // Load the usual-pitch rule, for the pitch lines
 import { usualPitch } from "@/core/pitch";
 // Load the next-drill picker
 import { nextVoiceDrill } from "@/core/voicePicks";
-// Load the clock formatter
-import { formatClock } from "@/core/recordingRules";
 // Load the savers
 import { saveVoiceSession, saveWordsToWatch } from "@/data/voiceSessions";
 // Load the recording contracts
@@ -85,6 +83,35 @@ function mixedOrder(count: number): number[] {
   // The mixed order
   return order;
 }
+
+// How a take's line reads: good news, something to work on, or plain (never red)
+function lineTone(line: string): VerdictTone {
+  // Landed as aimed
+  if (/as aimed|as planned|, the target\.|Every word caught|Strong to the last|a clear step up|a clear drop/.test(line)) return "good";
+  // Missed, faded or level
+  if (/^Hard to catch|Aim for|Faded|, not “|No clear peak|about the same level|Lean on/i.test(line)) return "rough";
+  // Anything else
+  return "plain";
+}
+
+// One finished take's verdict: the planned-stress line for a take with a key word, else the drill's own line for it
+function takeVerdict(take: VoiceTake | undefined, recorded: TakeResult | undefined, line: string): { tone: VerdictTone; line: string } {
+  // A take with a key word: did the lift land on it (decision 111)
+  if (take?.stress && recorded) {
+    // The judged line
+    const judged = drillStress(recorded, take.text, take.stress)?.judged;
+    // Its tone and words, or too little voice
+    return judged ? { tone: judged.line.tone === "good" ? "good" : judged.line.tone === "work" ? "rough" : "plain", line: judged.line.text } : { tone: "plain", line: "Too little voice was heard to check the key word." };
+  }
+  // The drill's own line
+  return { tone: lineTone(line), line };
+}
+
+// The question a take's card answers, by what the drill measures
+const REVIEW_QUESTION: Readonly<Record<string, string>> = { words: "Did every word come through?", steps: "How loud was it?", drop: "How loud was it?", endings: "Did it stay strong to the end?", ends: "How did it end?", range: "How did your pitch move?", dialback: "How did your pitch move?", tone: "How did it sound?", shift: "Did the key word get the lift?", stress: "Did the key word get the lift?" };
+
+// What your blob says beside a take's verdict
+const VERDICT_WORDS: Readonly<Record<VerdictTone, string>> = { good: "That one landed.", rough: "Hmm, not quite.", plain: "Take done." };
 
 // The words of a line, for counting which were caught
 const wordsOf = (text: string) => text.split(/[\s,.;:!?“”"]+/).filter(Boolean);
@@ -165,8 +192,14 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
   const [slowLine, setSlowLine] = useState<string | null>(null);
   // The guessing game's order, mixed once
   const [order] = useState(() => shuffle(Math.max(drill?.takes.length ?? 0, ...(written?.sets ?? []).map((takes) => takes.length))));
+  // Showing the take just recorded before the next one (Desktop Screens "PitchDrill")
+  const [reviewing, setReviewing] = useState(false);
+  // The findings so far, a line for each take recorded
+  const sofar = useMemo(() => (drill && takes.length > 0 ? drillFindings(drill, takes) : null), [drill, takes]);
   // The findings, once every take is in
-  const findings = useMemo(() => (drill && takes.length >= drill.takes.length ? drillFindings(drill, takes) : null), [drill, takes]);
+  const findings = drill && takes.length >= drill.takes.length ? sofar : null;
+  // Each recorded take's verdict, for the take list and the take just recorded
+  const verdicts = useMemo(() => takes.map((recorded, index) => takeVerdict(drill?.takes[index], recorded, sofar?.lines[index] ?? "")), [drill, sofar, takes]);
   // The speaker's usual pitch across the takes, for the pitch lines
   const usual = useMemo(() => usualPitch(takes.flatMap((take) => take.pitches)), [takes]);
   // The recordings, for playing back
@@ -221,6 +254,8 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
   const begin = useCallback(async () => {
     // Clear the last notice
     setNotice(null);
+    // On from the take just shown
+    setReviewing(false);
     // Starting
     setStarting(true);
     // Open the microphone and record
@@ -271,6 +306,8 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
     const done = [...takes, take];
     // Keep it
     setTakes(done);
+    // Show it before the next one
+    if (done.length < drill.takes.length) setReviewing(true);
     // The last take: the results, saved
     if (done.length >= drill.takes.length) {
       // Show the results
@@ -296,6 +333,8 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
     setTakes([]);
     // From the first
     setStage("take");
+    // Nothing to show yet
+    setReviewing(false);
     // Not saved yet
     setSaving("idle");
     // No slow round yet
@@ -316,10 +355,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
         <PracticeBar close={{ href: "/voice", label: "Close, back to Your voice" }} label="Voice drill" />
         {/* What happened, and the way back */}
         <div className={PRACTICE_BODY}>
-          {/* What happened */}
-          <h1 className="font-display text-statement font-semibold">That drill could not be found.</h1>
-          {/* The way back */}
-          <p className="mt-4"><Link href="/voice" className={TEXT_LINK}>See every voice drill</Link></p>
+          <NotFoundCard title="That drill could not be found." line="The link may be old. Every voice drill is on Your voice, by what it trains." href="/voice" action="See every voice drill" />
         </div>
       </main>
     );
@@ -333,23 +369,33 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
   const taking = stage !== "results" && current && !choosingSet;
   // Which sentence of how many, for a drill with sentences (counted from 1)
   const sentenceLabel = setIndex !== null && setCount > 0 ? ` · Sentence ${setIndex + 1} of ${setCount}` : "";
+  // The take just recorded, while it shows before the next one
+  const reviewed = reviewing && stage === "take" && !recording && !starting && !stopping ? takes.length - 1 : null;
+  // Its verdict
+  const verdict = reviewed !== null ? verdicts[reviewed] : undefined;
+  // The take the left column is about: the one just recorded, or the one to record
+  const shownIndex = reviewed ?? takes.length;
+  // Its words and cue
+  const shown = stage === "slow" ? slowTake : (drill.takes[shownIndex] ?? current);
+  // Your face and words beside the takes
+  const side = recording ? { face: "sing" as const, words: "Recording." } : verdict ? { face: verdict.tone === "good" ? ("happy" as const) : verdict.tone === "rough" ? ("wonder" as const) : ("ready" as const), words: VERDICT_WORDS[verdict.tone] } : { face: takes.length > 0 ? ("happy" as const) : ("ready" as const), words: takes.length === 0 ? "First take." : takes.length === drill.takes.length - 1 ? "Last one." : `${takes.length} done.` };
 
   // Draw the page
   return (
     <main id="main" className={PRACTICE_MAIN}>
       {/* The bar: the way out, how many takes are done, and which take */}
-      <PracticeBar close={close} progress={stage === "results" ? 1 : takes.length / Math.max(1, drill.takes.length)} label={`${VOICE_MODE_NAMES[drill.kind]} · ${stage === "results" ? "how it went" : stage === "slow" ? "slow round" : `take ${Math.min(takes.length + 1, drill.takes.length)} of ${drill.takes.length}`}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} />
+      <PracticeBar close={close} progress={stage === "results" ? 1 : takes.length / Math.max(1, drill.takes.length)} label={`${VOICE_MODE_NAMES[drill.kind]} · ${stage === "results" ? "how it went" : stage === "slow" ? "slow round" : `take ${Math.min(reviewed !== null ? reviewed + 1 : takes.length + 1, drill.takes.length)} of ${drill.takes.length}`}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} />
 
       {/* A take: what to say and how on the left, the takes so far on the right */}
-      {taking && (
+      {taking && shown && (
         <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
           <section aria-labelledby="take-heading" className="flex min-w-0 flex-col">
             {/* Which take */}
-            <p className={STEP_LABEL}>{stage === "slow" ? `${drill.title} · Slow round` : `${drill.title}${sentenceLabel} · Take ${takes.length + 1} of ${drill.takes.length} · ${current.label}`}</p>
+            <p className={STEP_LABEL}>{stage === "slow" ? `${drill.title} · Slow round` : `${drill.title}${sentenceLabel} · Take ${shownIndex + 1} of ${drill.takes.length} · ${shown.label}`}</p>
             {/* What to say, the key word marked */}
-            <h1 id="take-heading" className="mt-3 font-display text-statement font-semibold md:text-prompt">{stage === "slow" ? current.text : <Stressed text={current.text} word={current.stress} />}</h1>
+            <h1 id="take-heading" className="mt-3 font-display text-statement leading-tight font-semibold md:text-prompt">{stage === "slow" ? shown.text : <Stressed text={shown.text} word={shown.stress} />}</h1>
             {/* How to say it */}
-            <p className="mt-3 max-w-[52ch] text-lede font-semibold text-ink-muted">{current.cue}</p>
+            <p className="mt-3 max-w-[52ch] text-lede font-semibold text-ink-muted">{shown.cue}</p>
             {/* What the drill trains and what good looks like, before the first take (decision 117) */}
             {stage === "take" && takes.length === 0 && !recording && (
               <div className="mt-5 flex max-w-[56ch] flex-col gap-1.5 rounded-[22px] bg-accent-tint px-5 py-4 text-accent-tint-ink">
@@ -365,7 +411,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
             {notice === "too-short" && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">That was too short to measure. Say the whole line, then press Stop.</p>}
             {notice === "nothing-heard" && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">I did not catch anything. Check that the right microphone is selected, then try this take again.</p>}
             {/* A problem, explained plainly */}
-            {shownProblem && <p role="alert" className="mt-4 max-w-[48ch] text-lede">{PROBLEM_TEXT[shownProblem]}</p>}
+            {shownProblem && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">{PROBLEM_TEXT[shownProblem]}</p>}
             {/* A blocked microphone: how to allow it */}
             {shownProblem === "microphone-blocked" && (
               // One step per device
@@ -374,44 +420,69 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
                 {ALLOW_STEPS.map((step) => <li key={step}>{step}</li>)}
               </ul>
             )}
-            {/* The shape: stop while recording, waiting while the microphone opens, otherwise start */}
-            {recording ? (
-              <VoiceBlob levels={levels} signal="none" clock={formatClock(elapsed)} onStop={() => void finish()} compact={false} />
-            ) : stopping ? (
-              <StatusBlob compact={false} label="One moment…" detail="measuring your take" />
-            ) : starting ? (
-              <StatusBlob compact={false} label="Starting…" detail="allow the microphone" />
-            ) : blocked ? null : (
-              <StartBlob compact={false} onStart={() => void begin()} mood={notice || problem ? "hmm" : "ready"} label={notice || problem ? "Try again" : "Record"} detail={stage === "slow" ? "the slow round" : `take ${takes.length + 1} of ${drill.takes.length}`} />
+            {/* The take just recorded: its chart in a card, the verdict under it, then the next take (Desktop Screens "PitchDrill") */}
+            {reviewed !== null && verdict && drill.takes[reviewed] && takes[reviewed] ? (
+              <>
+                <section aria-labelledby="review-heading" data-take-review className={`mt-6 p-5 md:p-6 ${CARD}`}>
+                  {/* Which take */}
+                  <p className={LAB}>Take {reviewed + 1} · {drill.takes[reviewed]!.label}</p>
+                  {/* The question it answers */}
+                  <h2 id="review-heading" className="mt-1 font-display text-xl font-semibold md:text-2xl">{drill.takes[reviewed]!.stress ? "Did the key word get the lift?" : (REVIEW_QUESTION[drill.measure] ?? "How did it sound?")}</h2>
+                  {/* Did the lift land on the key word */}
+                  {drill.takes[reviewed]!.stress && <TakeStress take={takes[reviewed]!} text={drill.takes[reviewed]!.text} stress={drill.takes[reviewed]!.stress!} line={false} />}
+                  {/* The take's curve over its words */}
+                  {drill.measure === "dialback" && <TakeCurve take={takes[reviewed]!} text={drill.takes[reviewed]!.text} label={`${drill.takes[reviewed]!.label}: your pitch line. ${verdict.line}`} />}
+                  {/* Its pitch line, for the other pitch and tone drills */}
+                  {PITCH_MEASURES.has(drill.measure) && drill.measure !== "dialback" && !drill.takes[reviewed]!.stress && <div className="mt-3"><PitchLine pitches={takes[reviewed]!.pitches} usual={usual} label={`${drill.takes[reviewed]!.label}: pitch line. ${verdict.line}`} /></div>}
+                  {/* Loudness as thickness, for the volume drills */}
+                  {drill.kind === "volume" && <TakeThickness take={takes[reviewed]!} text={drill.takes[reviewed]!.text} loudest={loudest} label={drill.takes[reviewed]!.label} />}
+                </section>
+                {/* The verdict, in a few words */}
+                <p role="status" data-take-verdict={verdict.tone} className={`mt-3 rounded-[18px] px-5 py-4 font-display text-lg font-semibold md:text-xl ${VERDICT_LOOKS[verdict.tone]}`}>{verdict.line}</p>
+                {/* The next take, and hearing this one */}
+                <p className="mt-5 flex flex-wrap items-center gap-3">
+                  {/* Record the next take */}
+                  <button type="button" onClick={() => void begin()} data-variant="start" className={PRIMARY}>Next take</button>
+                  {/* Hear it */}
+                  <button type="button" onClick={() => play(reviewed)} className={SECONDARY}><SpeakerHighIcon aria-hidden="true" weight="bold" className="size-5" />{playing === reviewed ? "Playing" : "Hear it"}</button>
+                </p>
+              </>
+            ) : (
+              // The stage: your blob, then Record, or the clock and Stop
+              <TakeStage recording={recording} starting={starting} stopping={stopping} levels={levels} elapsed={elapsed} onStart={() => void begin()} onStop={() => void finish()} blocked={blocked} troubled={!!(notice || problem)} startLabel={notice || problem ? "Try again" : stage === "slow" ? "Record the slow round" : `Record take ${takes.length + 1}`} startDetail={stage === "slow" ? "one word at a time" : `of ${drill.takes.length}`} />
             )}
           </section>
           {/* The takes: done, this one, and the ones to come */}
           {stage === "take" && (
             <aside aria-label="Your takes so far" className="flex min-w-0 flex-col gap-3">
-              {/* You, and where you are */}
-              <div className="flex items-center gap-4">
+              {/* You, and where you are (on a computer; on a phone the stage above already shows your blob) */}
+              <div className="flex items-center gap-4 max-lg:hidden">
                 {/* You */}
-                <Cast who="you" face={recording ? "sing" : takes.length > 0 ? "happy" : "ready"} className="size-20 md:size-24" />
+                <Cast who="you" face={side.face} className="size-20 md:size-24" />
                 {/* Where you are */}
-                <p className="font-display text-cue font-semibold leading-tight">{recording ? "Recording." : takes.length === 0 ? "First take." : takes.length === drill.takes.length - 1 ? "Last one." : `${takes.length} done.`}</p>
+                <p className="font-display text-cue font-semibold leading-tight">{side.words}</p>
               </div>
               {/* Small heading */}
               <p className={`${LAB} mt-1`}>Your takes</p>
               {/* Each take */}
               <ol className="flex flex-col gap-2.5">
                 {drill.takes.map((take, index) => {
+                  // This one: the one just recorded while it shows, else the one to record
+                  const now = index === shownIndex;
                   // Whether it is done, this one, or to come
-                  const state = index < takes.length ? "done" : index === takes.length ? "now" : "next";
+                  const state = now ? "now" : index < takes.length ? "done" : "next";
+                  // Its verdict, once recorded
+                  const done = verdicts[index];
                   // One take
                   return (
-                    <li key={`${take.label}-${index}`} data-take-state={state} className={`rounded-[18px] px-4 py-3 ${state === "now" ? "border-2 border-accent bg-card shadow-picked" : state === "done" ? "bg-paper" : "border-2 border-dashed border-rule"}`}>
+                    <li key={`${take.label}-${index}`} data-take-state={state} className={`rounded-[18px] px-4 py-3 ${state === "now" ? "border-2 border-accent bg-card shadow-picked" : state === "done" ? VERDICT_LOOKS[done?.tone ?? "plain"] : "border-2 border-dashed border-rule"}`}>
                       {/* Its name, and where it is */}
                       <p className="flex items-baseline justify-between gap-3 text-sm font-extrabold">
                         <span>Take {index + 1} · {take.label}</span>
-                        <span className={state === "now" ? "text-accent-tint-ink" : "text-ink-muted"}>{state === "done" ? "Done" : state === "now" ? "This take" : index === takes.length + 1 ? "Up next" : ""}</span>
+                        <span className={state === "now" ? "text-accent-tint-ink" : state === "done" ? "" : "text-ink-muted"}>{state === "done" ? (done?.tone === "good" ? "Landed" : done?.tone === "rough" ? "Hmm" : "Done") : state === "now" ? "This take" : index === shownIndex + 1 ? "Up next" : ""}</span>
                       </p>
-                      {/* What to do, for this one and the next */}
-                      {state !== "done" && <p className="mt-1 text-sm font-semibold text-ink-muted">{take.cue}</p>}
+                      {/* What it showed, once recorded; what to do, for this one and the next (on a computer; on a phone the cue is just above) */}
+                      {done ? <p className="mt-1 text-sm font-bold">{done.line}</p> : index <= shownIndex + 1 && <p className="mt-1 text-sm font-semibold text-ink-muted max-lg:hidden">{take.cue}</p>}
                     </li>
                   );
                 })}
@@ -423,91 +494,87 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
 
       {/* The results */}
       {stage === "results" && findings && (
-        <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
-          <section aria-labelledby="results-heading" className="flex min-w-0 flex-col">
-            {/* Which drill */}
-            <p className={STEP_LABEL}>{drill.title}</p>
-            {/* The headline */}
-            <h1 id="results-heading" className="mt-2 font-display text-statement font-semibold">{findings.headline}</h1>
-            {/* How loud each take was, side by side */}
-            {LEVEL_MEASURES.has(drill.measure) && <div className={`mt-6 p-5 ${CARD}`}><LevelBars takes={drill.takes.map((take, index) => ({ label: take.label, level: findings.measures[index]?.level ?? 0 }))} /></div>}
-            {/* Stress and tone: can a listener tell the takes apart? */}
-            {(drill.measure === "stress" || drill.measure === "tone") && <GuessGame options={drill.takes.map((take) => (drill.measure === "stress" ? take.label.replace(/^Stress “|”$/g, "") : take.label))} order={order} play={play} question={drill.measure === "stress" ? "Which word was stressed?" : "Which feeling was it?"} />}
-            {/* Each take: its name, its line, a way to hear it, and its pitch line */}
-            <ol aria-label="Your takes" className="mt-6 flex flex-col gap-3">
-              {/* Each take */}
-              {drill.takes.map((take, index) => (
-                <li key={`${take.label}-${index}`} className={`p-5 ${CARD}`}>
-                  {/* Its name, line and play button */}
-                  <div className="flex items-start justify-between gap-3">
-                    {/* Its name and line */}
-                    <div className="min-w-0">
-                      {/* Its name */}
-                      <p className={LAB}>{take.label}</p>
-                      {/* What it showed */}
-                      <p className="mt-1 font-bold">{findings.lines[index]}</p>
+        <div className={PRACTICE_BODY}>
+          {/* Which drill */}
+          <p className={STEP_LABEL}>{drill.title}{sentenceLabel}</p>
+          {/* The headline */}
+          <h1 id="results-heading" className="mt-2 max-w-[28ch] font-display text-statement leading-tight font-semibold">{findings.headline}</h1>
+          <div className={`mt-6 ${PRACTICE_COLUMNS}`}>
+            <section aria-labelledby="results-heading" className="flex min-w-0 flex-col">
+              {/* How loud each take was, side by side */}
+              {LEVEL_MEASURES.has(drill.measure) && <div className={`mb-6 p-5 ${CARD}`}><p className={LAB}>How loud each take was</p><div className="mt-3"><LevelBars takes={drill.takes.map((take, index) => ({ label: take.label, level: findings.measures[index]?.level ?? 0 }))} /></div></div>}
+              {/* Stress and tone: can a listener tell the takes apart? */}
+              {(drill.measure === "stress" || drill.measure === "tone") && <div className="mb-6"><GuessGame options={drill.takes.map((take) => (drill.measure === "stress" ? take.label.replace(/^Stress “|”$/g, "") : take.label))} order={order} play={play} question={drill.measure === "stress" ? "Which word was stressed?" : "Which feeling was it?"} /></div>}
+              {/* Each take: its name, its line, a way to hear it, and its pitch line */}
+              <ol aria-label="Your takes" className="flex flex-col gap-3">
+                {/* Each take */}
+                {drill.takes.map((take, index) => (
+                  <li key={`${take.label}-${index}`} className={`p-5 ${CARD}`}>
+                    {/* Its name, line and play button */}
+                    <div className="flex items-start justify-between gap-3">
+                      {/* Its name and line */}
+                      <div className="min-w-0">
+                        {/* Its name */}
+                        <p className={LAB}>Take {index + 1} · {take.label}</p>
+                        {/* What it showed */}
+                        <p className="mt-1 font-display text-lg font-semibold">{findings.lines[index]}</p>
+                      </div>
+                      {/* Hear it */}
+                      <button type="button" onClick={() => play(index)} aria-label={`Play ${take.label}`} className={QUIET}><SpeakerHighIcon aria-hidden="true" weight="bold" className="size-4.5" />{playing === index ? "Playing" : "Play"}</button>
                     </div>
-                    {/* Hear it */}
-                    <button type="button" onClick={() => play(index)} aria-label={`Play ${take.label}`} className={QUIET}><SpeakerHighIcon aria-hidden="true" weight="bold" className="size-4.5" />{playing === index ? "Playing" : "Play"}</button>
-                  </div>
-                  {/* The stress drill: did the lift land on the key word (planned stress, decision 111) */}
-                  {take.stress && takes[index] && <TakeStress take={takes[index]} text={take.text} stress={take.stress} />}
-                  {/* Exaggerate, then dial back: the take's curve over its words (decision 117) */}
-                  {drill.measure === "dialback" && takes[index] && <TakeCurve take={takes[index]} text={take.text} label={`${take.label}: your pitch line. ${findings.lines[index] ?? ""}`} />}
-                  {/* Its pitch, for the other pitch and tone drills */}
-                  {PITCH_MEASURES.has(drill.measure) && drill.measure !== "dialback" && !take.stress && <div className="mt-3"><PitchLine pitches={takes[index]?.pitches ?? []} usual={usual} label={`${take.label}: pitch line. ${findings.lines[index] ?? ""}`} /></div>}
-                  {/* The volume drills: the line thicker where louder (decision 111) */}
-                  {drill.kind === "volume" && takes[index] && <TakeThickness take={takes[index]} text={take.text} loudest={loudest} label={take.label} />}
-                </li>
-              ))}
-            </ol>
-            {/* For the pitch lines: what the dashed line is */}
-            {PITCH_MEASURES.has(drill.measure) && drill.measure !== "stress" && drill.measure !== "dialback" && usual !== null && <p className="mt-2 text-footnote text-ink-muted">The dashed line is your usual pitch; up is higher.</p>}
-            {/* For the curves over the words: what the dashed line is */}
-            {drill.measure === "dialback" && <p className="mt-2 text-footnote text-ink-muted">The dashed line is each take’s own usual pitch; up is higher.</p>}
-            {/* For the stress takes: the key */}
-            {drill.measure === "shift" && <p className="mt-2 text-footnote text-ink-muted">The dashed circle is the word to stress; the dot is where your highest pitch landed.</p>}
-            {/* For the thick lines: what the thickness is */}
-            {drill.kind === "volume" && <p className="mt-2 text-footnote text-ink-muted">Thicker where you were louder. The dashed line is your usual pitch.</p>}
-          </section>
-          {/* The side: you, the slow round, saving, and what next */}
-          <aside aria-label="What next" className="flex min-w-0 flex-col gap-4">
-            {/* You, pleased */}
-            <div className="flex items-center gap-4">
-              {/* You */}
-              <Cast who="you" face="happy" className="size-20 md:size-24" />
-              {/* Done */}
-              <p className="font-display text-cue font-semibold leading-tight">{drill.takes.length} takes done.</p>
+                    {/* The stress drill: did the lift land on the key word (planned stress, decision 111) */}
+                    {take.stress && takes[index] && <TakeStress take={takes[index]} text={take.text} stress={take.stress} />}
+                    {/* Exaggerate, then dial back: the take's curve over its words (decision 117) */}
+                    {drill.measure === "dialback" && takes[index] && <TakeCurve take={takes[index]} text={take.text} label={`${take.label}: your pitch line. ${findings.lines[index] ?? ""}`} />}
+                    {/* Its pitch, for the other pitch and tone drills */}
+                    {PITCH_MEASURES.has(drill.measure) && drill.measure !== "dialback" && !take.stress && <div className="mt-3"><PitchLine pitches={takes[index]?.pitches ?? []} usual={usual} label={`${take.label}: pitch line. ${findings.lines[index] ?? ""}`} /></div>}
+                    {/* The volume drills: the line thicker where louder (decision 111) */}
+                    {drill.kind === "volume" && takes[index] && <TakeThickness take={takes[index]} text={take.text} loudest={loudest} label={take.label} />}
+                  </li>
+                ))}
+              </ol>
+              {/* For the pitch lines: what the dashed line is */}
+              {PITCH_MEASURES.has(drill.measure) && drill.measure !== "stress" && drill.measure !== "dialback" && usual !== null && <p className="mt-2 text-footnote text-ink-muted">The dashed line is your usual pitch; up is higher.</p>}
+              {/* For the curves over the words: what the dashed line is */}
+              {drill.measure === "dialback" && <p className="mt-2 text-footnote text-ink-muted">The dashed line is each take’s own usual pitch; up is higher.</p>}
+              {/* For the stress takes: the key */}
+              {drill.measure === "shift" && <p className="mt-2 text-footnote text-ink-muted">The dashed circle is the word to stress; the dot is where your highest pitch landed.</p>}
+              {/* For the thick lines: what the thickness is */}
+              {drill.kind === "volume" && <p className="mt-2 text-footnote text-ink-muted">Thicker where you were louder. The dashed line is your usual pitch.</p>}
+            </section>
+            {/* The side: you, the slow round, saving, and what next (first on a phone, so the next step is near the top) */}
+            <div className="max-lg:order-first lg:sticky lg:top-6">
+              <VerdictPanel tone="good" face="happy" headingId="done-heading" heading={`${drill.takes.length} takes done.`}>
+                {/* What it was */}
+                <p className="font-bold text-ink">{drill.intro}</p>
+                {/* Clear sounds: the hard words once more, slowly */}
+                {drill.measure === "words" && missed.length > 0 && (
+                  <section aria-labelledby="slow-heading" className={`p-4 text-ink ${CARD}`}>
+                    {/* Its name */}
+                    <h3 id="slow-heading" className="font-display text-xl font-semibold">Slow round</h3>
+                    {/* What it is */}
+                    <p className="mt-2 font-semibold">Say the hard words once more, slowly: {missed.join(", ")}. They join your words to watch in the warm-up.</p>
+                    {/* How it went, or the way in */}
+                    {slowLine ? <p role="status" className="mt-3 font-bold">{slowLine}</p> : <p className="mt-4"><button type="button" onClick={() => setStage("slow")} className={SECONDARY}>Say them slowly</button></p>}
+                  </section>
+                )}
+                {/* How the save went */}
+                {saving === "saving" && <p role="status" className="text-footnote font-bold">Saving…</p>}
+                {saving === "failed" && (
+                  <p role="alert" className="flex flex-wrap items-center gap-3 font-bold">
+                    {/* What happened */}
+                    <span>This drill could not be saved.</span>
+                    {/* Try again */}
+                    <button type="button" onClick={() => void save(takes)} className={SECONDARY}>Try saving again</button>
+                  </p>
+                )}
+                {/* Once saved: today's next step, or the next drill of this kind */}
+                {saving === "saved" && (plan ? (plan.next ? <NextLink action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <NextLink action="Finish today’s practice" aside="back to Today" href="/" />) : nextDrill ? <NextLink action="Next drill" aside={nextDrill.title} href={`/voice/drill?id=${nextDrill.id}`} /> : null)}
+                {/* Do it again */}
+                <button type="button" onClick={again} className={`${TEXT_LINK} self-center uppercase tracking-[.04em]`}>Do this drill again</button>
+              </VerdictPanel>
             </div>
-            {/* Clear sounds: the hard words once more, slowly */}
-            {drill.measure === "words" && missed.length > 0 && (
-              <section aria-labelledby="slow-heading" className={`p-5 ${CARD}`}>
-                {/* Its name */}
-                <h2 id="slow-heading" className="font-display text-xl font-semibold">Slow round</h2>
-                {/* What it is */}
-                <p className="mt-2 max-w-[48ch] font-semibold">Say the hard words once more, slowly: {missed.join(", ")}. They join your words to watch in the warm-up.</p>
-                {/* How it went, or the way in */}
-                {slowLine ? <p role="status" className="mt-3 max-w-[48ch] font-bold">{slowLine}</p> : <p className="mt-4"><button type="button" onClick={() => setStage("slow")} className={SECONDARY}>Say them slowly</button></p>}
-              </section>
-            )}
-            {/* How the save went */}
-            {saving === "saving" && <p role="status" className="text-footnote text-ink-muted">Saving…</p>}
-            {saving === "failed" && (
-              <p role="alert" className="flex flex-wrap items-center gap-3 font-bold">
-                {/* What happened */}
-                <span>This drill could not be saved.</span>
-                {/* Try again */}
-                <button type="button" onClick={() => void save(takes)} className={SECONDARY}>Try saving again</button>
-              </p>
-            )}
-            {/* Once saved: today's next step, or the next drill of this kind; and again */}
-            <p className="flex flex-wrap items-center gap-3">
-              {/* The main action */}
-              {saving === "saved" && (plan ? (plan.next ? <ActionBand action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <ActionBand action="Finish today’s practice" aside="back to Today" href="/" />) : nextDrill ? <ActionBand action="Next drill" aside={nextDrill.title} href={`/voice/drill?id=${nextDrill.id}`} /> : null)}
-              {/* Do it again */}
-              <button type="button" onClick={again} className={QUIET}>Do this drill again</button>
-            </p>
-          </aside>
+          </div>
         </div>
       )}
     </main>
