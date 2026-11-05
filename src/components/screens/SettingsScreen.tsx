@@ -292,7 +292,7 @@ function Group({ id, title, children }: { id: string; title: string; children: R
   return (
     <section aria-labelledby={id} className="mt-10">
       {/* The group's heading */}
-      <h2 id={id} className="font-display text-2xl font-semibold tracking-tight">{title}</h2>
+      <h2 id={id} className="font-display text-2xl font-semibold">{title}</h2>
       {/* Its sections */}
       {children}
     </section>

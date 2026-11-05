@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/script/Skeleton";
 import { CourseLoadFailed } from "@/components/script/CourseLoadFailed";
 // Load the shared looks
 import { SECTION_HEADING } from "@/components/script/textStyles";
+import { TileRow } from "@/components/script/TileRow";
 import { PAGE } from "@/components/script/layout";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -30,13 +31,13 @@ import { readPracticeFocus, type FocusAreaId } from "@/core/practiceFocus";
 import { COURSES, type Course } from "@/content/courses";
 
 // One course as a card
-export function CourseRow({ course, progress, note }: { course: Course; progress: CourseProgress; note?: string }) {
+export function CourseRow({ course, progress, note, layout = "row" }: { course: Course; progress: CourseProgress; note?: string; layout?: "row" | "stacked" | "hero" }) {
   // How far through
   const count = courseCount(course, progress);
   // Its tile, if it has one
   const tile = courseTile(course.id);
   // The card
-  return <CourseCard href={`/courses/course?id=${course.id}`} name={course.title} blurb={course.blurb} icon={LightningIcon} art={tile ? <CourseTile name={tile} motion="few" className="size-18" /> : undefined} done={count.done} total={count.total} note={note ?? (count.done > 0 && count.done < count.total ? "In progress" : undefined)} count={`${course.lessons.length} lessons · ${coursePlaces(course).length} parts`} />;
+  return <CourseCard href={`/courses/course?id=${course.id}`} name={course.title} blurb={course.blurb} icon={LightningIcon} art={tile ? <CourseTile name={tile} motion="few" className={layout === "row" ? "size-18" : "size-28"} /> : undefined} layout={layout} done={count.done} total={count.total} note={note ?? (count.done > 0 && count.done < count.total ? "In progress" : undefined)} count={`${course.lessons.length} lessons · ${coursePlaces(course).length} parts`} />;
 }
 
 // Draw the tab
@@ -82,22 +83,29 @@ export function CoursesScreen(props: ScreenProps) {
         <>
           {/* Your course, when there is one */}
           {yours && (
-            <section aria-labelledby="your-course" className="mt-8">
+            <section aria-labelledby="your-course" data-wide className="mt-8">
               {/* Heading */}
-              <h2 id="your-course" className={SECTION_HEADING}>Your course</h2>
-              {/* The card */}
-              <div className="mt-3 md:max-w-[calc(50%-0.375rem)]"><CourseRow course={yours} progress={data.progress} note={courseCount(yours, data.progress).done > 0 ? "Carry on" : "For your focus"} /></div>
+              <h2 id="your-course" className={SECTION_HEADING}>Keep going</h2>
+              {/* The big card */}
+              <div className="mt-3"><CourseRow course={yours} progress={data.progress} layout="hero" note={courseCount(yours, data.progress).done > 0 ? "Carry on" : "For your focus"} /></div>
             </section>
           )}
           {/* Every other course */}
-          <section aria-labelledby="all-courses" className="mt-8">
+          <section aria-labelledby="all-courses" data-wide className="mt-8">
             {/* Heading */}
             <h2 id="all-courses" className={SECTION_HEADING}>{yours ? "More courses" : "All courses"}</h2>
             {/* The cards */}
-            <ul className="mt-3 grid gap-3 md:grid-cols-2">
+            <ul className="mt-3 grid grid-cols-2 gap-3.5 md:gap-5 lg:grid-cols-3">
               {/* Each course, your focus's marked */}
-              {COURSES.filter((course) => course !== yours).map((course) => <li key={course.id}><CourseRow course={course} progress={data.progress} note={focus.includes(course.focus) ? "For your focus" : undefined} /></li>)}
+              {COURSES.filter((course) => course !== yours).map((course) => <li key={course.id}><CourseRow layout="stacked" course={course} progress={data.progress} note={focus.includes(course.focus) ? "For your focus" : undefined} /></li>)}
             </ul>
+          </section>
+          {/* Learn's cards, as quick reads: one idea and a move to try (UI rewrite: Learn lives under Courses) */}
+          <section aria-labelledby="quick-reads" data-wide className="mt-8">
+            {/* Heading */}
+            <h2 id="quick-reads" className={SECTION_HEADING}>Quick reads</h2>
+            {/* The way in */}
+            <div className="mt-3 md:max-w-xl"><TileRow href="/learn" label="Learn" title="Quick reads" detail="One idea and a move to try, about a minute each" ground="plum" prop="book" face="wonder" tilt={4} /></div>
           </section>
         </>
       )}

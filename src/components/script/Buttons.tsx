@@ -10,13 +10,13 @@ import type { ReactNode } from "react";
 // A small squash when pressed, so a tap feels answered (decision 69; motion-safe, so reduced motion keeps it still)
 export const PRESS = "transition-transform duration-100 motion-safe:active:scale-[.97]";
 // The main action inside a page: filled, rounded, at least 44 pixels tall; when it cannot be used yet it turns a solid quiet gray (never see-through)
-export const PRIMARY = `inline-flex min-h-11 items-center justify-center rounded-2xl bg-fill px-5 font-semibold ${PRESS} text-fill-ink hover:opacity-90 disabled:cursor-not-allowed disabled:bg-rule disabled:text-ink-muted disabled:hover:opacity-100`;
+export const PRIMARY = `inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-fill px-6 font-display text-button font-semibold uppercase tracking-[.03em] text-fill-ink shadow-chunky transition-[transform,box-shadow] duration-100 hover:brightness-105 motion-safe:active:translate-y-[3px] active:shadow-chunky-pressed disabled:cursor-not-allowed disabled:bg-rule disabled:text-ink-muted disabled:shadow-none disabled:hover:brightness-100 disabled:active:translate-y-0`;
 // A second choice beside it: outlined in ink
-export const SECONDARY = `inline-flex min-h-11 items-center justify-center rounded-2xl border-2 border-ink px-4 text-ink hover:bg-paper disabled:cursor-not-allowed disabled:border-rule disabled:text-ink-muted ${PRESS}`;
+export const SECONDARY = `inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-2 border-rule bg-card px-5 font-extrabold text-ink shadow-ledge transition-[transform,box-shadow] duration-100 hover:border-ink-muted motion-safe:active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:text-ink-muted disabled:shadow-none`;
 // A way out or a "not now": a quiet outlined button, so it reads as a choice and not as a footnote
-export const QUIET = `inline-flex min-h-11 items-center justify-center rounded-2xl border-2 border-rule px-4 text-ink-muted hover:border-ink hover:text-ink disabled:cursor-not-allowed ${PRESS}`;
+export const QUIET = `inline-flex min-h-11 items-center justify-center gap-2 rounded-[14px] border-2 border-rule bg-card px-4 font-bold text-ink-muted shadow-ledge transition-[transform,box-shadow] duration-100 hover:text-ink motion-safe:active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed`;
 // A link to another page or section, in plain words
-export const TEXT_LINK = "inline-flex min-h-11 items-center underline decoration-ink-muted underline-offset-4 hover:decoration-ink";
+export const TEXT_LINK = "inline-flex min-h-11 items-center font-extrabold text-accent-tint-ink underline decoration-transparent underline-offset-4 hover:decoration-current";
 
 // What a button-styled link needs
 interface ButtonLinkProps {

@@ -89,7 +89,7 @@ export function ListeningScreen(props: ScreenProps) {
           {next ? (
             <>
               {/* Who tells it */}
-              <p data-next-story={next.id} className="mt-1 font-display text-2xl font-semibold tracking-tight">A story from {findPersona(next.personaId)?.name}</p>
+              <p data-next-story={next.id} className="mt-1 font-display text-2xl font-semibold">A story from {findPersona(next.personaId)?.name}</p>
               {/* The level */}
               <p className="text-footnote text-ink-muted">{LEVELS[next.level].name} · about 2 min</p>
               {/* Go */}
@@ -106,7 +106,7 @@ export function ListeningScreen(props: ScreenProps) {
         {([1, 2, 3] as ListenLevel[]).map((level) => (
           <section key={level} aria-labelledby={`level-${level}`} className="mt-8">
             {/* The level's name */}
-            <h2 id={`level-${level}`} className="font-display text-xl font-semibold tracking-tight">{LEVELS[level].name}</h2>
+            <h2 id={`level-${level}`} className="font-display text-xl font-semibold">{LEVELS[level].name}</h2>
             {/* What it asks */}
             <p className="text-footnote text-ink-muted">{LEVELS[level].about}</p>
             {/* Its stories */}

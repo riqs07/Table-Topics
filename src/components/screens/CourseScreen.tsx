@@ -11,7 +11,9 @@ import { Player } from "@/components/script/Player";
 import { Skeleton } from "@/components/script/Skeleton";
 import { CourseLoadFailed } from "@/components/script/CourseLoadFailed";
 // Load the shared looks
-import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
+import { BUBBLE, CARD, LAB_ON_TINT, SECTION_HEADING } from "@/components/script/textStyles";
+import { Buddy } from "@/components/scenes/Buddy";
+import { GROUND_TINT, type TileGround } from "@/components/scenes/ModeTile";
 import { PAGE } from "@/components/script/layout";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -27,7 +29,7 @@ import { COURSES, type Course } from "@/content/courses";
 import type { SessionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the course tiles and which one stands for a course or lesson (decision 142)
-import { CourseTile } from "@/components/scenes/CourseTile";
+import { CourseTile, courseTileGround } from "@/components/scenes/CourseTile";
 import { courseTile, lessonTile } from "@/components/scenes/tileFor";
 // Load the hand-drawn celebration (decision 134)
 import { Drawing } from "@/components/script/Drawing";
@@ -117,24 +119,24 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
       {/* Title and a way back to Practice */}
       <Masthead title="Course" nav={false} close={{ href: "/courses", label: "Close, back to Courses" }} />
       {/* The course's tile beside its label and name, when it has one (decision 142) */}
-      <div className="mt-6 flex items-center gap-4">
+      <div className={`mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[22px] border-2 border-rule p-4 md:p-5 ${courseTile(course.id) ? GROUND_TINT[courseTileGround(courseTile(course.id)!).replace(/^art-/, "") as TileGround] ?? "bg-card" : "bg-card"}`}>
         {/* The tile, moving gently */}
         {courseTile(course.id) && <CourseTile name={courseTile(course.id)!} className="size-24 flex-none md:size-28" />}
-        {/* The label and name */}
-        <div className="min-w-0">
-          {/* The course */}
-          <p className="text-footnote font-semibold text-accent">Course{course.draft ? " · draft lessons" : ""}</p>
+        {/* The label, name and what it does */}
+        <div className="min-w-0 flex-[1_1_18rem]">
+          {/* The course and how far along */}
+          <p className={LAB_ON_TINT}>Course{course.draft ? " · draft lessons" : ""}{data.status === "ready" ? ` · lesson ${next ? next.lessonNumber : course.lessons.length} of ${course.lessons.length}` : ""}</p>
           {/* Its name */}
-          <h1 className="mt-1 font-display text-statement tracking-tight">{course.title}</h1>
+          <h1 className="mt-1 font-display text-statement font-semibold">{course.title}</h1>
+          {/* What it does, and how it is paced */}
+          <p className="mt-1 max-w-[56ch] font-semibold text-ink">{course.blurb} {course.lessons.length} lessons, each in a few short parts. Do as many as you like.</p>
         </div>
       </div>
-      {/* What it does, and how it is paced */}
-      <p className="mt-2 max-w-[52ch] text-lede">{course.blurb} {course.lessons.length} lessons, each in a few short parts. Do as many as you like.</p>
       {/* What you can do by the end */}
       {course.outcomes.length > 0 && (
-        <section aria-label="By the end" className="mt-5 max-w-md rounded-2xl bg-warm-tint p-4 text-warm-ink">
+        <section aria-label="By the end" className="mt-5 max-w-xl rounded-[22px] bg-warm-tint p-4 text-warm-ink">
           {/* Heading */}
-          <p className="text-footnote font-semibold">By the end you will</p>
+          <p className="text-xs font-extrabold tracking-[.07em] uppercase">By the end you will</p>
           {/* The outcomes */}
           <ul className="mt-2 list-disc space-y-1 pl-5 text-ink">
             {/* Each */}
@@ -150,11 +152,11 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
           {/* Every part done: first against latest */}
           {!next && <CourseDone repo={repo} course={course} takes={data.takes} />}
           {/* The lessons */}
-          <ol className="mt-6 flex flex-col gap-6">
-            {/* Each lesson */}
+          <ol className="relative mt-8 flex flex-col gap-6 before:absolute before:top-6 before:bottom-6 before:left-1/2 before:hidden before:border-l-6 before:border-dotted before:border-rule md:before:block">
+            {/* Each lesson, winding left and right along the dotted path */}
             {course.lessons.map((lesson, lessonIndex) => (
-              // One lesson with its parts
-              <li key={lesson.id}>
+              // One lesson with its parts, a card on the path
+              <li key={lesson.id} className={`relative p-4 md:w-[min(100%,26rem)] ${CARD} ${lessonIndex % 2 ? "md:ml-auto" : ""}`}>
                 {/* Its tile beside its heading, line and count (decision 142) */}
                 <div className="flex items-center gap-3">
                   {/* The tile, playing a few rounds then resting */}
@@ -164,25 +166,25 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
                     {/* Its heading and count */}
                     <h2 className={SECTION_HEADING}>{lessonIndex + 1}. {lesson.title}</h2>
                     {/* Its line and how far through */}
-                    <p className="text-footnote text-ink-muted">{lesson.blurb} · {lessonCount(lesson, progress).done} of {lesson.parts.length} {lesson.parts.length === 1 ? "part" : "parts"} done</p>
+                    <p className="text-footnote font-bold text-ink-muted">{lesson.blurb} · {lessonCount(lesson, progress).done} of {lesson.parts.length} {lesson.parts.length === 1 ? "part" : "parts"} done</p>
                   </div>
                 </div>
                 {/* Its parts */}
-                <ol className="mt-2 divide-y divide-rule">
+                <ol className="mt-3 flex flex-col gap-1">
                   {/* Each part, open to start whatever is done */}
                   {lesson.parts.map((part, partIndex) => (
                     // One part
                     <li key={part.id}>
                       {/* The whole row is the link */}
-                      <Link href={partHref(part.id)} data-course-part={part.id} className="flex min-h-14 items-center gap-3 py-2">
+                      <Link href={partHref(part.id)} data-course-part={part.id} className={`flex min-h-14 items-center gap-3 rounded-2xl px-2 py-2 hover:bg-paper ${next?.part.id === part.id ? "bg-warm-tint" : ""}`}>
                         {/* Done, next, or open */}
                         <PathMark mark={isPartDone(progress, part.id) ? "done" : next?.part.id === part.id ? "next" : "open"} number={partIndex + 1} />
                         {/* Its name and length */}
                         <span className="min-w-0 flex-1">
                           {/* Name */}
-                          <span className="block font-medium">{part.title}</span>
+                          <span className="block font-extrabold">{part.title}</span>
                           {/* Length, and "Up next" on the next one */}
-                          <span className="block text-footnote text-ink-muted">{next?.part.id === part.id ? "Up next · " : ""}about {partMinutes(part)} min</span>
+                          <span className="block text-footnote font-bold text-ink-muted">{next?.part.id === part.id ? "Up next · " : ""}about {partMinutes(part)} min</span>
                         </span>
                       </Link>
                     </li>
@@ -191,6 +193,13 @@ export function CourseScreen({ courseId, ...props }: ScreenProps & { courseId: s
               </li>
             ))}
           </ol>
+          {/* The blob, keeping you company on the path */}
+          <div className="mt-6 flex items-end gap-3">
+            {/* The blob, wondering */}
+            <Buddy face="wonder" className="size-16" />
+            {/* What it says */}
+            <p className={`${BUBBLE} mb-2 max-w-[30ch] text-footnote`}>Every lesson is open. Skip ahead any time.</p>
+          </div>
           {/* Carry on, or start */}
           {next && <div className="mt-8"><ActionBand action={count.done === 0 ? "Start" : "Continue"} aside={`Lesson ${next.lessonNumber}, part ${next.partNumber}`} href={partHref(next.part.id)} /></div>}
         </>

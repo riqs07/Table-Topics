@@ -271,7 +271,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
           {/* Progress (top on a phone, margin on a computer) */}
           <aside className={`mt-5 self-start p-5 md:mt-0 ${CARD}`}>
             {/* Progress as one sentence, or a note that there is only one recording so far */}
-            <h2 className="font-display text-cue font-semibold tracking-tight">{!pauseWords ? `${rows.length} ${rows.length === 1 ? "session" : "sessions"} so far.` : progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h2>
+            <h2 className="font-display text-cue font-semibold">{!pauseWords ? `${rows.length} ${rows.length === 1 ? "session" : "sessions"} so far.` : progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h2>
             {/* The trend, once there are two first tries (it counts pause words, so not when they are hidden) */}
             {pauseWords && trend.length >= 2 && <Trend values={trend} />}
             {/* Listen to the first recording, if its audio is kept */}

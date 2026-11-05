@@ -133,7 +133,7 @@ function WrapUp({ place, takes, onDone }: { place: PartPlace; takes: ReadonlyArr
       {/* Done */}
       <p className="text-footnote font-semibold text-accent">Part {place.partNumber} of {place.lesson.parts.length} done</p>
       {/* What changed, or a plain finish */}
-      <h1 className="mt-1 max-w-[30ch] font-display text-statement tracking-tight">{line ?? part.title}</h1>
+      <h1 className="mt-1 max-w-[30ch] font-display text-statement">{line ?? part.title}</h1>
       {/* The goal it was about */}
       {part.practice && <p className="mt-2 max-w-[52ch] text-lede">You were working on: {part.practice.goal}</p>}
       {/* The full results */}
@@ -205,7 +205,7 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
       {step === "learn" && (
         <div className="mt-6 flex flex-1 flex-col">
           {/* The idea, large */}
-          <h1 className="max-w-[24ch] font-display text-statement tracking-tight">{part.learn.headline}</h1>
+          <h1 className="max-w-[24ch] font-display text-statement">{part.learn.headline}</h1>
           {/* A few sentences */}
           <p className="mt-3 max-w-[52ch] text-lede">{part.learn.body}</p>
           {/* Instead of, and try */}
@@ -237,7 +237,7 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
       {step === "see" && part.see && (
         <div className="mt-6 flex flex-1 flex-col">
           {/* Heading */}
-          <h1 className="font-display text-statement tracking-tight">{part.see.clip ? "Watch it" : "See it done"}</h1>
+          <h1 className="font-display text-statement">{part.see.clip ? "Watch it" : "See it done"}</h1>
           {/* Our own lesson clip (decision 146): 4:5, tap to play, its words burned in and readable below instead */}
           {part.see.clip && (
             <figure data-lesson-clip className="mt-5 w-full max-w-sm">

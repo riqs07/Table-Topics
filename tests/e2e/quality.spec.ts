@@ -7,10 +7,10 @@ test("moves focus to the new page's heading after navigating", async ({ page }) 
   await page.goto("/practice");
   // Let it settle
   await page.waitForLoadState("networkidle");
-  // Go to Learn with the main navigation
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Learn" }).click();
-  // Wait for Learn's heading
-  await expect(page.getByRole("heading", { level: 1, name: "Learn" })).toBeVisible();
+  // Go to Courses with the main navigation
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Courses" }).click();
+  // Wait for its heading
+  await expect(page.getByRole("heading", { level: 1, name: "Courses" })).toBeVisible();
   // Focus lands on it
   await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).toBe("H1");
 });

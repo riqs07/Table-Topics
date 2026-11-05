@@ -29,7 +29,7 @@ export function FingerprintCard({ print }: { print: Fingerprint }) {
       {/* What it is */}
       <p className={LABEL}>Your take at a glance</p>
       {/* The headline */}
-      <h2 id="glance-heading" className="font-display text-cue font-semibold tracking-tight">{print.headline}</h2>
+      <h2 id="glance-heading" className="font-display text-cue font-semibold">{print.headline}</h2>
       {/* The strip */}
       <svg viewBox={`0 0 ${STRIP.width} ${STRIP.height - 14}`} preserveAspectRatio="none" role="img" aria-label={`The whole take as a strip: ${print.stretches.length} stretches of speech, ${print.ums.length} pause ${print.ums.length === 1 ? "word" : "words"}, ${print.peaks.length} pitch ${print.peaks.length === 1 ? "peak" : "peaks"} and ${print.midPauses.length} ${print.midPauses.length === 1 ? "pause" : "pauses"} mid-sentence.`} className="mt-1 h-[70px] w-full">
         {/* The pause words, as ticks at the top */}

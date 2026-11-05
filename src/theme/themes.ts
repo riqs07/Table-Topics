@@ -30,6 +30,150 @@ const SYSTEM_SERIF = "Georgia, 'Times New Roman', serif";
 
 // Every theme, keyed by id
 export const THEMES = {
+  // Picture-book warmth: cream, a chunky green, bright tiles, Fredoka over Nunito (the UI rewrite, 2026-11-04; direction B "Playful" from the redesign stills)
+  playful: {
+    // The theme's name
+    name: "Playful",
+    // What the theme is going for
+    description: "Warm cream, chunky green buttons, cards with a solid edge, bright tiles and the blob. Fredoka headlines over Nunito text.",
+    // Colors for each mode
+    colors: {
+      // Daytime colors
+      light: {
+        // Page background: the soft cream inset inside cards and the plain tiles
+        "paper": "#fbeee2",
+        // Lifted surfaces: the page itself, warm cream
+        "paper-raised": "#fff7ef",
+        // Main text: warm dark brown, never black
+        "ink": "#2b2320",
+        // Secondary text
+        "ink-muted": "#6c5e56",
+        // Card edges, the solid shadow under cards, dividing lines
+        "rule": "#f0e2d6",
+        // Record button, progress bars and the one fix
+        "accent": "#287549",
+        // Text on the accent
+        "accent-ink": "#ffffff",
+        // A soft tint of the accent: the current tab, done marks and good news
+        "accent-tint": "#e4f5e8",
+        // Text on the accent tint
+        "accent-tint-ink": "#22704a",
+        // The chunky main buttons and the action band
+        "fill": "#287549",
+        // Text on the chunky buttons
+        "fill-ink": "#ffffff",
+        // Cards lifted off the page
+        "card": "#ffffff",
+        // The warm accent, for highlights and celebration shapes
+        "warm": "#e8935c",
+        // Text on the warm tint
+        "warm-ink": "#8a4416",
+        // A soft warm background for what is next, and a rough take (never red)
+        "warm-tint": "#fff0d6",
+        // Marks drawn on the warm accent
+        "on-warm": "#2a2420",
+        // Filler words in a transcript
+        "filler": "#6c5e56",
+        // Keyboard focus outline
+        "focus-ring": "#287549",
+        // Table Topics timing light (green)
+        "light-green": "#2e7d32",
+        // Table Topics timing light (yellow)
+        "light-yellow": "#a87a00",
+        // Table Topics timing light (red)
+        "light-red": "#c0392b",
+        // The blob's shaded side on course tiles
+        "warm-shade": "#cf7440",
+        // Tile grounds: sky
+        "art-sky": "#4a68e0",
+        // (sun)
+        "art-sun": "#f4b73b",
+        // (bloom)
+        "art-bloom": "#e86aae",
+        // (leaf)
+        "art-leaf": "#7cc46a",
+        // (plum)
+        "art-plum": "#8a63e0",
+        // (coral)
+        "art-coral": "#ec6a55",
+        // (cream)
+        "art-cream": "#fff6e6",
+      },
+      // Night colors: warm brown-black
+      dark: {
+        // Page background: the soft cream inset inside cards and the plain tiles
+        "paper": "#2f2823",
+        // Lifted surfaces: the page itself, warm cream
+        "paper-raised": "#1d1916",
+        // Main text: warm dark brown, never black
+        "ink": "#fbefe4",
+        // Secondary text
+        "ink-muted": "#b9a99d",
+        // Card edges, the solid shadow under cards, dividing lines
+        "rule": "#3a312b",
+        // Record button, progress bars and the one fix
+        "accent": "#4cbf7c",
+        // Text on the accent
+        "accent-ink": "#0f1f15",
+        // A soft tint of the accent: the current tab, done marks and good news
+        "accent-tint": "#1f3a2a",
+        // Text on the accent tint
+        "accent-tint-ink": "#9be0b4",
+        // The chunky main buttons and the action band
+        "fill": "#4cbf7c",
+        // Text on the chunky buttons
+        "fill-ink": "#0f1f15",
+        // Cards lifted off the page
+        "card": "#2a2420",
+        // The warm accent, for highlights and celebration shapes
+        "warm": "#e8935c",
+        // Text on the warm tint
+        "warm-ink": "#f6cf86",
+        // A soft warm background for what is next, and a rough take (never red)
+        "warm-tint": "#3d2e14",
+        // Marks drawn on the warm accent
+        "on-warm": "#1d1916",
+        // Filler words in a transcript
+        "filler": "#b9a99d",
+        // Keyboard focus outline
+        "focus-ring": "#6fd39a",
+        // Table Topics timing light (green)
+        "light-green": "#66bb6a",
+        // Table Topics timing light (yellow)
+        "light-yellow": "#e8b923",
+        // Table Topics timing light (red)
+        "light-red": "#f26b5b",
+        // The blob's shaded side on course tiles
+        "warm-shade": "#c46a38",
+        // Tile grounds: sky
+        "art-sky": "#3f5bc9",
+        // (sun)
+        "art-sun": "#e0a530",
+        // (bloom)
+        "art-bloom": "#d45c9d",
+        // (leaf)
+        "art-leaf": "#66ad57",
+        // (plum)
+        "art-plum": "#7656cc",
+        // (coral)
+        "art-coral": "#d85c48",
+        // (cream)
+        "art-cream": "#f3e9d6",
+      },
+    },
+    // Results and Learn keep the page's own cream; practising stays light too, with the blob on stage
+    areas: {
+      // Learn: a touch of sand
+      learn: { light: { "paper-raised": "#fff4e6" }, dark: { "paper-raised": "#201b17" } },
+    },
+    // Nunito for text, Fredoka for headings, buttons and numbers
+    fonts: {
+      // Running text
+      body: `var(--font-nunito), ${SYSTEM_SANS}`,
+      // Headings, buttons and big numbers
+      display: `var(--font-fredoka), ${SYSTEM_SANS}`,
+    },
+  },
   // Warm paper and ink with a terracotta accent (recommended direction)
   notebook: {
     // The theme's name
@@ -54,6 +198,10 @@ export const THEMES = {
         "accent": "#a94a28",
         // Text on the accent
         "accent-ink": "#fffcf6",
+        // A soft tint of the accent: the current tab, done marks and good news (UI rewrite)
+        "accent-tint": "#f6e3da",
+        // Text on the accent tint
+        "accent-tint-ink": "#8a3a1e",
         // Large filled areas: the action band, main buttons, icon tiles
         "fill": "#a94a28",
         // Text on large filled areas
@@ -111,6 +259,10 @@ export const THEMES = {
         "accent": "#e08a66",
         // Text on the accent
         "accent-ink": "#1d1a17",
+        // A soft tint of the accent: the current tab, done marks and good news (UI rewrite)
+        "accent-tint": "#3a2a22",
+        // Text on the accent tint
+        "accent-tint-ink": "#f2c3a1",
         // Large filled areas: the action band, main buttons, icon tiles
         "fill": "#e08a66",
         // Text on large filled areas
@@ -185,6 +337,10 @@ export const THEMES = {
         "accent": "#2d5a3d",
         // Text on the accent
         "accent-ink": "#fcfcfb",
+        // A soft tint of the accent: the current tab, done marks and good news (UI rewrite)
+        "accent-tint": "#e3eee6",
+        // Text on the accent tint
+        "accent-tint-ink": "#234a31",
         // Large filled areas: the action band, main buttons, icon tiles
         "fill": "#2d5a3d",
         // Text on large filled areas
@@ -242,6 +398,10 @@ export const THEMES = {
         "accent": "#6fae84",
         // Text on the accent
         "accent-ink": "#161917",
+        // A soft tint of the accent: the current tab, done marks and good news (UI rewrite)
+        "accent-tint": "#1f3a2a",
+        // Text on the accent tint
+        "accent-tint-ink": "#9be0b4",
         // Large filled areas: the action band, main buttons, icon tiles
         "fill": "#3d6b4e",
         // Text on large filled areas
@@ -328,6 +488,10 @@ export const THEMES = {
         "accent": "#333333",
         // Text on the accent
         "accent-ink": "#ffffff",
+        // A soft tint of the accent: the current tab, done marks and good news (UI rewrite)
+        "accent-tint": "#ececec",
+        // Text on the accent tint
+        "accent-tint-ink": "#1f1f1f",
         // Large filled areas: the action band, main buttons, icon tiles
         "fill": "#333333",
         // Text on large filled areas
@@ -385,6 +549,10 @@ export const THEMES = {
         "accent": "#d9d9d9",
         // Text on the accent
         "accent-ink": "#161616",
+        // A soft tint of the accent: the current tab, done marks and good news (UI rewrite)
+        "accent-tint": "#333333",
+        // Text on the accent tint
+        "accent-tint-ink": "#f0f0f0",
         // Large filled areas: the action band, main buttons, icon tiles
         "fill": "#d9d9d9",
         // Text on large filled areas
@@ -436,4 +604,4 @@ export const THEMES = {
 export type ThemeId = keyof typeof THEMES;
 
 // The app's theme, chosen at checkpoint C6
-export const DEFAULT_THEME: ThemeId = "calm-studio";
+export const DEFAULT_THEME: ThemeId = "playful";

@@ -143,7 +143,7 @@ export function CheckInRunScreen(props: ScreenProps) {
       {state && !state.open && (
         <section className="mt-8">
           {/* Headline */}
-          <h1 className="font-display text-statement font-semibold tracking-tight">Not a check-in day.</h1>
+          <h1 className="font-display text-statement font-semibold">Not a check-in day.</h1>
           {/* When */}
           <p className="mt-3 max-w-[48ch] text-lede">{state.next ? `Your next check-in is on ${state.next}.` : "Your next check-in comes soon."}</p>
           {/* The check-ins so far */}
@@ -154,7 +154,7 @@ export function CheckInRunScreen(props: ScreenProps) {
       {state && state.open && !finished && upNext && (
         <>
           {/* Headline */}
-          <h1 className="mt-6 font-display text-statement font-semibold tracking-tight">{state.week === 1 ? "Your first check-in." : `Check-in ${state.week}.`}</h1>
+          <h1 className="mt-6 font-display text-statement font-semibold">{state.week === 1 ? "Your first check-in." : `Check-in ${state.week}.`}</h1>
           {/* What it is */}
           <p className="mt-2 max-w-[48ch] text-ink-muted">{state.week === 1 ? `About ${CHECK_IN_MINUTES} minutes. The same four parts every week, so you can hear the change.` : `About ${CHECK_IN_MINUTES} minutes, the same four parts as last time.`}</p>
           {/* The four parts */}
@@ -180,7 +180,7 @@ export function CheckInRunScreen(props: ScreenProps) {
             {/* Which part */}
             <p className="text-footnote text-ink-muted">Part {CHECK_IN_PARTS.indexOf(upNext) + 1} of {CHECK_IN_PARTS.length}</p>
             {/* What it asks, or (for the surprise question) that it stays hidden */}
-            <p className="mt-1 max-w-[40ch] font-display text-cue font-semibold tracking-tight">{partPrompt(upNext, state.week).text ?? "A question you’ll see when you start."}</p>
+            <p className="mt-1 max-w-[40ch] font-display text-cue font-semibold">{partPrompt(upNext, state.week).text ?? "A question you’ll see when you start."}</p>
             {/* Skip it, or stop for now */}
             <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
               {/* Skip */}
@@ -209,7 +209,7 @@ function Finished({ state, current }: { state: RunState; current: CheckIn }) {
   return (
     <section aria-label="Check-in done" className="mt-6 flex flex-1 flex-col">
       {/* Headline */}
-      <h1 className="font-display text-statement font-semibold tracking-tight motion-safe:animate-rise">{state.week === 1 && recorded ? "Your starting point is saved." : "Check-in done."}</h1>
+      <h1 className="font-display text-statement font-semibold motion-safe:animate-rise">{state.week === 1 && recorded ? "Your starting point is saved." : "Check-in done."}</h1>
       {/* What happens next */}
       <p className="mt-2 max-w-[48ch] text-lede">{!recorded ? "Every part was skipped this time." : state.first ? "Hear it beside where you started." : "Next week you’ll do the same four parts and hear the difference."}</p>
       {/* Each part, linking to its take */}

@@ -244,7 +244,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
         {/* Title and the way out */}
         <Masthead title="Shadowing" nav={false} close={{ href: "/voice", label: "Close, back to Your voice" }} />
         {/* What happened */}
-        <h1 className="mt-8 font-display text-statement font-semibold tracking-tight">That passage could not be found.</h1>
+        <h1 className="mt-8 font-display text-statement font-semibold">That passage could not be found.</h1>
         {/* The way back */}
         <p className="mt-4"><Link href="/voice#shadowing" className={TEXT_LINK}>See every passage</Link></p>
       </main>
@@ -269,7 +269,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
           {/* Where it comes from */}
           <p className="text-footnote font-semibold text-accent">{passage.source}</p>
           {/* Its name */}
-          <h1 id="shadow-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">{passage.title}</h1>
+          <h1 id="shadow-heading" className="mt-1 font-display text-statement font-semibold">{passage.title}</h1>
           {/* How it works */}
           <p className="mt-3 max-w-[48ch] text-lede">Listen to each phrase, then say it back the same way. Then the whole passage.</p>
           {/* What good looks like and how it will be shown (decision 117) */}
@@ -299,7 +299,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
           {/* Which step */}
           <p className="text-footnote font-semibold text-accent">{passage.title} · {step < passage.phrases.length ? `Phrase ${step + 1} of ${passage.phrases.length}` : "Whole passage"}</p>
           {/* What to say */}
-          <h1 id="step-heading" className="mt-3 font-display text-statement font-semibold tracking-tight">{current.text}</h1>
+          <h1 id="step-heading" className="mt-3 font-display text-statement font-semibold">{current.text}</h1>
           {/* What to copy */}
           <p className="mt-3 max-w-[48ch] text-lede">{current.copy}</p>
           {/* Listen to the model */}
@@ -364,7 +364,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
           {/* Which passage */}
           <p className="text-footnote font-semibold text-accent">{passage.title}</p>
           {/* The headline */}
-          <h1 id="done-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">{shadowHeadline(takes.flatMap((item, index) => (item ? [paceMatch(item.durationSec, model[index] ?? null)] : [])))}</h1>
+          <h1 id="done-heading" className="mt-1 font-display text-statement font-semibold">{shadowHeadline(takes.flatMap((item, index) => (item ? [paceMatch(item.durationSec, model[index] ?? null)] : [])))}</h1>
           {/* A line per take */}
           <ol aria-label="Your takes" className="mt-6 flex flex-col gap-3">
             {/* Each step with a take */}

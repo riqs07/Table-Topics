@@ -279,7 +279,7 @@ describe("RecordingScreen", () => {
     // Its panel, named for the morph
     const panel = await waitFor(() => document.querySelector("[data-scene-panel]") as HTMLElement);
     // What it shows before starting
-    const before = [panel.getAttribute("data-scene-panel"), panel.textContent, !!panel.querySelector("[data-scene][data-motion='few']")];
+    const before = [panel.getAttribute("data-scene-panel"), panel.textContent, !!panel.querySelector("[data-mode-tile][data-motion='few']")];
     // Show the topic
     fireEvent.click(screen.getByRole("button", { name: /Show my topic/ }));
     // Let the screen move on

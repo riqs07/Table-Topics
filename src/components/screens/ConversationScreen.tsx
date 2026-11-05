@@ -208,7 +208,7 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
       {/* Title and the way out */}
       <Masthead title="Conversation" nav={false} close={{ href: "/conversations", label: "Close, back to Conversations" }} />
       {/* What happened */}
-      <h1 className="mt-8 font-display text-statement font-semibold tracking-tight">That person could not be found.</h1>
+      <h1 className="mt-8 font-display text-statement font-semibold">That person could not be found.</h1>
       {/* The way back */}
       <p className="mt-4"><Link href="/conversations" className={TEXT_LINK}>See everyone to talk with</Link></p>
     </main>
@@ -1362,7 +1362,7 @@ function Conversation({ persona, skill, situationId, autostart = false, services
           {/* What this is */}
           <p className="text-footnote font-semibold text-accent">Talk with someone</p>
           {/* The situation (decision 127) */}
-          <h1 id="talk-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">{scenario.title}</h1>
+          <h1 id="talk-heading" className="mt-1 font-display text-statement font-semibold">{scenario.title}</h1>
           {/* Where you are */}
           <p className="mt-3 max-w-[48ch] text-lede">{named(scenario.setting)}</p>
           {/* Who it is with, picked for you */}
@@ -1408,7 +1408,7 @@ function Conversation({ persona, skill, situationId, autostart = false, services
           {/* A call could not start: why, in one line (decision 121) */}
           {callNote && <p role="status" data-call-note className="mt-2 max-w-[48ch] text-footnote text-ink-muted">{callNote}</p>}
           {/* Their latest line, announced as it changes */}
-          <h1 id="line-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold tracking-tight">{caption || "…"}</h1>
+          <h1 id="line-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold">{caption || "…"}</h1>
           {/* Not caught last time */}
           {missed && phase === "you" && <p role="status" className="mt-3 text-lede">That wasn’t caught. Say it again, then tap Done.</p>}
           {/* A problem, explained plainly */}
@@ -1458,7 +1458,7 @@ function Conversation({ persona, skill, situationId, autostart = false, services
           {/* Who, where, and that it is a call */}
           <p className="text-footnote font-semibold text-accent">{persona.name} · {scenario.title} · Phone call</p>
           {/* The latest line, yours or theirs, announced as it changes */}
-          <h1 id="call-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold tracking-tight">{caption || "…"}</h1>
+          <h1 id="call-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold">{caption || "…"}</h1>
           {/* Speaking or listening */}
           <StatusBlob compact={false} label={callSpeaking ? persona.name : "Your turn"} detail={callSpeaking ? "is talking · talk over them any time" : "just talk"} />
           {/* How it works */}
@@ -1474,7 +1474,7 @@ function Conversation({ persona, skill, situationId, autostart = false, services
       {(phase === "empty" || phase === "lost") && (
         <section aria-labelledby="empty-heading" className="mt-8 md:max-w-2xl">
           {/* What happened */}
-          <h1 id="empty-heading" className="font-display text-statement font-semibold tracking-tight">{phase === "lost" ? "The conversation couldn’t continue, so nothing was saved." : "Nothing was heard from you, so nothing was saved."}</h1>
+          <h1 id="empty-heading" className="font-display text-statement font-semibold">{phase === "lost" ? "The conversation couldn’t continue, so nothing was saved." : "Nothing was heard from you, so nothing was saved."}</h1>
           {/* Try again */}
           <p className="mt-6"><button type="button" onClick={() => void begin()} className={PRIMARY}>Start again</button></p>
         </section>
@@ -1484,7 +1484,7 @@ function Conversation({ persona, skill, situationId, autostart = false, services
       {phase === "failed" && (
         <section aria-labelledby="failed-heading" className="mt-8 md:max-w-2xl">
           {/* What happened */}
-          <h1 id="failed-heading" role="alert" className="font-display text-statement font-semibold tracking-tight">This conversation could not be saved.</h1>
+          <h1 id="failed-heading" role="alert" className="font-display text-statement font-semibold">This conversation could not be saved.</h1>
           {/* Try again */}
           <p className="mt-6"><button type="button" onClick={() => void save()} className={SECONDARY}>Try saving again</button></p>
         </section>

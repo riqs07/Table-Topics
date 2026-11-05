@@ -84,7 +84,7 @@ test("Analysis: record a Rapid Fire take, see all its measures, then the profile
   // On to the whole profile
   await page.getByRole("link", { name: "Your whole speaking profile" }).click();
   // The profile shows the language measures of speaking on the spot
-  await expect(page.getByRole("heading", { name: "Your speaking profile", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your speaking profile", level: 2 })).toBeVisible();
   // (the language group)
   await expect(page.getByRole("region", { name: "Language" })).toBeVisible();
 });
@@ -117,10 +117,8 @@ test("Rehearse my talk: save, rehearse, saved session, history", async ({ page }
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // It names the talk that was rehearsed
   await expect(page.getByText(/Team update/).first()).toBeVisible();
-  // History, reached from Settings through your progress (decision 109), lists it
-  await page.locator("header").getByRole("link", { name: "Settings" }).click();
-  // Your progress
-  await page.getByRole("link", { name: "Your speaking profile and history" }).click();
+  // History, reached from the Me tab (the UI rewrite), lists it
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Me" }).click();
   // Open the history page
   await page.getByRole("link", { name: "Every session, in History" }).click();
   // At least one session row
@@ -771,14 +769,14 @@ test("Appearance: follows the phone by default, and Light keeps it light", async
   // Open Today with nothing saved
   await page.goto("/");
   // The paper is the dark one: with nothing chosen the app follows the phone (decision 89; light until then, decision 70)
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#161917");
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#2f2823");
   // Choose Light in Settings
   await page.goto("/settings");
   await page.getByRole("button", { name: "Light" }).click();
   // Open another page from scratch
   await page.goto("/practice");
   // It stays light on a phone set to dark
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#f3ece2");
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#fbeee2");
 });
 
 test("Appearance: choose dark in Settings and it stays dark after a reload", async ({ page }) => {
@@ -793,7 +791,7 @@ test("Appearance: choose dark in Settings and it stays dark after a reload", asy
   // It is still dark
   await expect(page.locator("html")).toHaveAttribute("data-mode", "dark");
   // Its background is the dark paper, not the light one
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#161917");
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vl-paper").trim())).toBe("#2f2823");
 });
 
 // What the deeper-analysis route answers in the browser checks (decision 91): a short verbatim transcript and voice numbers, as the real route shapes them
@@ -1128,10 +1126,10 @@ test("Practice: every kind of practice is within two taps", async ({ page }) => 
     // Its drills are there to start
     await expect(page.getByRole("link", { name: new RegExp(drill) }).first()).toBeVisible();
   }
-  // The lessons: the Learn tab, then Speaking skills
-  await page.goto("/practice");
+  // The lessons: Quick reads (Learn) inside the Courses tab, then Speaking skills
+  await page.goto("/courses");
   // Tap one
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Learn" }).click();
+  await page.getByRole("link", { name: /^Quick reads/ }).click();
   // Tap two
   await page.getByRole("link", { name: /^Speaking skills/ }).click();
   // Its cards, each leading to a lesson

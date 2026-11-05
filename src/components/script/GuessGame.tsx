@@ -104,7 +104,7 @@ export function GuessGame({ options, order, play, question }: GuessGameProps) {
       {done && (
         <>
           {/* How many */}
-          <p role="status" className="mt-2 font-display text-statement font-semibold tracking-tight">{right} of {order.length}</p>
+          <p role="status" className="mt-2 font-display text-statement font-semibold">{right} of {order.length}</p>
           {/* What it means */}
           <p className="mt-2 max-w-[48ch] text-lede">{right === order.length ? "Every one came through. The difference was clear." : right * 2 >= order.length ? "Most came through. Make the others more different." : "Hard to tell apart. Exaggerate more than feels natural."}</p>
           {/* Again */}

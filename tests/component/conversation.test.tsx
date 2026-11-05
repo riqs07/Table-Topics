@@ -404,8 +404,8 @@ describe("conversations elsewhere", () => {
     render(<ConversationsScreen repository={createRepository(new MemoryStore())} now={NOW} coachReady={() => false} />);
     // Wait for it to settle
     await screen.findByRole("link", { name: "Quick play" });
-    // Confirm the panel and its scene
-    expect([document.querySelector("[data-scene-panel]")?.getAttribute("data-scene-panel"), !!document.querySelector("[data-scene-panel] [data-scene='conversation']")]).toEqual(["conversation", true]);
+    // Confirm the panel and its tile (a mode tile since the UI rewrite)
+    expect([document.querySelector("[data-scene-panel]")?.getAttribute("data-scene-panel"), !!document.querySelector("[data-scene-panel] [data-mode-tile='chat']")]).toEqual(["conversation", true]);
   });
 
   // Without the coach, only the situations with recorded lines, and Quick play goes to the next person's own

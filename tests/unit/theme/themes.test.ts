@@ -14,16 +14,22 @@ const MODES = ["light", "dark"] as const;
 
 // Group the checks about the theme set
 describe("themes", () => {
-  // The design system calls for three starter themes
-  it("offers the three starter themes", () => {
+  // The three starter themes, and the playful theme of the UI rewrite
+  it("offers the starter themes and the playful theme", () => {
     // Confirm the theme ids
-    expect(Object.keys(THEMES).sort()).toEqual(["calm-studio", "gray", "notebook"]);
+    expect(Object.keys(THEMES).sort()).toEqual(["calm-studio", "gray", "notebook", "playful"]);
   });
 
-  // Calm studio was chosen at checkpoint C6
-  it("uses the calm studio theme chosen at C6", () => {
+  // The UI rewrite (2026-11-04) chose the playful direction from the redesign stills
+  it("uses the playful theme chosen for the UI rewrite", () => {
     // Confirm the app theme
-    expect(DEFAULT_THEME).toBe("calm-studio");
+    expect(DEFAULT_THEME).toBe("playful");
+  });
+
+  // The playful theme: Fredoka headlines over Nunito text, a chunky green accent
+  it("sets the playful theme in Fredoka and Nunito with a green accent", () => {
+    // Confirm the fonts and the accent
+    expect([THEMES.playful.fonts.display.includes("--font-fredoka"), THEMES.playful.fonts.body.includes("--font-nunito"), THEMES.playful.colors.light.accent]).toEqual([true, true, "#287549"]);
   });
 
   // At C6 the accent was changed from sage to forest green

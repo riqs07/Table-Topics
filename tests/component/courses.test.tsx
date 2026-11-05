@@ -262,7 +262,7 @@ describe("CoursesScreen", () => {
     // Draw it
     render(<CoursesScreen repository={focused} now={NOW} />);
     // Your course, once the focus is read
-    await waitFor(() => expect(hrefs("Your course")).toEqual(["/courses/course?id=stories-that-land"]));
+    await waitFor(() => expect(hrefs("Keep going")).toEqual(["/courses/course?id=stories-that-land"]));
     // The rest
     const rest = hrefs("More courses");
     // Clear
@@ -270,7 +270,7 @@ describe("CoursesScreen", () => {
     // Stop freezing started, with no focus
     render(<CoursesScreen repository={await seeded([[BEAT1, "a", "2026-10-27T10:00:00Z"]])} now={NOW} />);
     // Confirm the started course first, saying so
-    await waitFor(() => expect([hrefs("Your course"), screen.getByRole("region", { name: "Your course" }).textContent?.includes("Carry on")]).toEqual([["/courses/course?id=stop-freezing"], true]));
+    await waitFor(() => expect([hrefs("Keep going"), screen.getByRole("region", { name: "Keep going" }).textContent?.includes("Carry on")]).toEqual([["/courses/course?id=stop-freezing"], true]));
     // Clear
     cleanup();
     // Nothing started and no focus
@@ -278,7 +278,7 @@ describe("CoursesScreen", () => {
     // Every course under one heading
     const all = await waitFor(() => hrefs("All courses"));
     // Confirm the rest left out the focus's course, and all twelve with no "Your course" (two for each focus area since decision 155)
-    expect([rest.length, rest.includes("/courses/course?id=stories-that-land"), all.length, screen.queryByRole("region", { name: "Your course" })]).toEqual([11, false, 12, null]);
+    expect([rest.length, rest.includes("/courses/course?id=stories-that-land"), all.length, screen.queryByRole("region", { name: "Keep going" })]).toEqual([11, false, 12, null]);
   });
 
   // Each course with how far through

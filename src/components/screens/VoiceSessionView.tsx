@@ -35,7 +35,7 @@ export function VoiceSessionView({ session, now, plan }: { session: SessionRecor
         {/* Which drill */}
         <p className="text-footnote font-semibold text-accent">{name ?? "Voice drill"}</p>
         {/* The headline */}
-        <h1 id="voice-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">{voice?.headline ?? "Done."}</h1>
+        <h1 id="voice-heading" className="mt-1 font-display text-statement font-semibold">{voice?.headline ?? "Done."}</h1>
         {/* A line per take */}
         {voice && voice.takes.length > 0 && (
           <ol aria-label="Your takes" className="mt-6 flex flex-col gap-3">

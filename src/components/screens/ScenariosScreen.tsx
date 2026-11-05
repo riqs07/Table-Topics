@@ -118,7 +118,7 @@ export function ScenariosScreen({ services = browserRecordingServices, planStep 
       {finished && (
         <section aria-label="Result" className="mt-8 flex flex-1 flex-col">
           {/* How many best */}
-          <h1 className="font-display text-statement tracking-tight">{tiers.filter((tier) => tier === "best").length} of {tiers.length} best.</h1>
+          <h1 className="font-display text-statement">{tiers.filter((tier) => tier === "best").length} of {tiers.length} best.</h1>
           {/* What happens next */}
           <p className="mt-3 max-w-[52ch] text-lede">A move you missed comes back in a new situation next time. Choosing is the warm-up; saying it aloud and trying it for real are what change things.</p>
           {/* A real try (not inside today's practice, which shows the mission on Today) */}

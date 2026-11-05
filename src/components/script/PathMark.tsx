@@ -9,7 +9,7 @@ import type { LessonMark } from "@/core/lessonPath";
 export function PathMark({ mark, number }: { mark: LessonMark; number: number }) {
   // Done: a filled rounded tile with a tick
   if (mark === "done") return (
-    <span className="flex size-9 flex-none items-center justify-center rounded-xl bg-fill text-fill-ink">
+    <span className="flex size-10 flex-none items-center justify-center rounded-full bg-fill text-fill-ink shadow-chunky-pressed">
       {/* The tick */}
       <CheckIcon aria-hidden="true" weight="bold" className="size-5" />
       {/* Said aloud */}
@@ -17,5 +17,5 @@ export function PathMark({ mark, number }: { mark: LessonMark; number: number })
     </span>
   );
   // Next or still open: the number on a rounded tile, warm when next
-  return <span className={`flex size-9 flex-none items-center justify-center rounded-xl font-semibold tabular-nums ${mark === "next" ? "bg-warm text-on-warm" : "bg-paper text-ink-muted"}`}>{number}</span>;
+  return <span className={`flex size-10 flex-none items-center justify-center rounded-full font-display text-lg font-semibold tabular-nums ${mark === "next" ? "bg-art-sun text-on-warm shadow-sun ring-4 ring-art-sun/35" : "bg-paper text-ink-muted shadow-ledge"}`}>{number}</span>;
 }

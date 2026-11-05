@@ -62,7 +62,7 @@ export function ListenPlayScreen({ storyId, ...props }: ListenPlayProps) {
         {/* Title, with the way back */}
         <Masthead title="Active listening" nav={false} close={{ href: "/listening", label: "Close, back to Active listening" }} />
         {/* The note */}
-        <h1 className="mt-8 font-display text-statement tracking-tight">That story isn’t here.</h1>
+        <h1 className="mt-8 font-display text-statement">That story isn’t here.</h1>
         {/* The way back */}
         <p className="mt-4"><Link href="/listening" className={TEXT_LINK}>Choose another story</Link></p>
       </main>
@@ -241,11 +241,11 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
           {/* Their reply */}
           {reply && <p data-reply className="max-w-[85%] rounded-[18px] bg-card px-4 py-3 shadow-card"><span className="block text-footnote text-ink-muted">{name}</span>{reply}</p>}
           {/* The headline */}
-          <h1 className="mt-6 font-display text-statement tracking-tight">{result.core ? "You heard what mattered." : `You caught ${result.caught} of ${result.details.length} details.`}</h1>
+          <h1 className="mt-6 font-display text-statement">{result.core ? "You heard what mattered." : `You caught ${result.caught} of ${result.details.length} details.`}</h1>
           {/* Nothing caught */}
           {!transcript?.trim() && <p className="mt-2 text-footnote">No words were caught, so nothing could be checked. Try again when you can speak.</p>}
           {/* The story, marked */}
-          <h2 className="mt-6 font-display text-xl font-semibold tracking-tight">What {name} said</h2>
+          <h2 className="mt-6 font-display text-xl font-semibold">What {name} said</h2>
           {/* Its words with the details and what mattered */}
           <p data-story-marked className="mt-2 max-w-[60ch] text-lede leading-relaxed">
             {/* Each piece */}
@@ -256,7 +256,7 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
           {/* Why it mattered */}
           <p className="mt-4 border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote text-ink-muted">What mattered</span>{story.core.why}</p>
           {/* Each check */}
-          <h2 className="mt-6 font-display text-xl font-semibold tracking-tight">Your answer</h2>
+          <h2 className="mt-6 font-display text-xl font-semibold">Your answer</h2>
           {/* The checks */}
           <ul className="mt-2 flex flex-col gap-2">
             {/* Passed or not, with its words */}

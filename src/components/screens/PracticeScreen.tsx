@@ -42,9 +42,11 @@ import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
 // Load the shared link look and press effect
 import { TEXT_LINK } from "@/components/script/Buttons";
 // Load the blob scenes (decision 136)
-import { Scene, type SceneName } from "@/components/scenes/Scene";
+import { type SceneName } from "@/components/scenes/Scene";
 // Load the scene card and the shape of one kind of practice (shared with Today)
 import { WayCard, type Way } from "@/components/script/WayCard";
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 // Load React's fragment, to place the groups in order
@@ -61,16 +63,18 @@ function WayRow({ way }: { way: Way }) {
   const words = (
     <>
       {/* Its scene (still, apart from blinking; decision 136), or the icon, on a faint tile as on the course cards */}
-      <span aria-hidden="true" className={`flex size-12 flex-none items-center justify-center rounded-[14px] ${way.href ? "bg-warm-tint text-warm-ink" : "bg-paper text-ink-muted"}`}>
-        {/* The scene or the icon */}
-        {way.scene ? <Scene name={way.scene} motion="still" className="size-12" /> : <way.icon className="size-6" />}
-      </span>
+      {way.scene ? <ModeTile ground={SCENE_TILES[way.scene].ground} prop={SCENE_TILES[way.scene].prop} face={SCENE_TILES[way.scene].face} still scene={way.scene} className="size-14" /> : (
+        <span aria-hidden="true" className={`flex size-12 flex-none items-center justify-center rounded-[14px] ${way.href ? "bg-warm-tint text-warm-ink" : "bg-paper text-ink-muted"}`}>
+          {/* The icon */}
+          <way.icon className="size-6" />
+        </span>
+      )}
       {/* Name and detail */}
       <span className="min-w-0 flex-1">
         {/* The name */}
-        <span className="block font-display text-xl font-semibold leading-tight tracking-tight">{way.name}</span>
+        <span className="block font-display text-xl font-semibold leading-tight">{way.name}</span>
         {/* What it is */}
-        <span className="block text-footnote text-ink-muted">{way.detail}</span>
+        <span className="block text-footnote font-bold text-ink-muted">{way.detail}</span>
       </span>
     </>
   );
@@ -103,7 +107,7 @@ function Group({ id, title, ways, more, focus = false }: { id: string; title: st
       {/* Heading, and the way to everything */}
       <div className="flex items-baseline justify-between gap-4">
         {/* Run-in heading */}
-        <h2 id={id} className={SECTION_HEADING}>{title}{focus && <span className="ml-2 rounded-full bg-warm-tint px-2 py-0.5 align-middle text-footnote font-normal normal-case tracking-normal text-warm-ink">Your focus</span>}</h2>
+        <h2 id={id} className={SECTION_HEADING}>{title}{focus && <span className="ml-2 rounded-full bg-accent-tint px-2.5 py-1 align-middle font-body text-chip font-extrabold text-accent-tint-ink">Your focus</span>}</h2>
         {/* Everything in this group, on its own page */}
         {more && <Link href={more.href} className={`${TEXT_LINK} text-footnote`}>{more.label}</Link>}
         {/* Or the rest, opened here */}
@@ -345,9 +349,9 @@ export function PracticeScreen(props: ScreenProps) {
 
         {/* The five that do the most work (decision 125), as scene cards: the focus's one big across the top, the other four two by two (decision 136) */}
         {main && (
-          <ul aria-label="Main ways to practise" className="mt-6 grid grid-cols-2 gap-3">
+          <ul aria-label="Main ways to practise" data-wide className="mt-6 grid grid-cols-2 gap-3.5 md:grid-cols-4 md:gap-5">
             {/* The big one */}
-            <li className="col-span-2"><WayCard way={main.featured} big forFocus={main.forFocus} shared /></li>
+            <li className="col-span-2 md:col-span-4"><WayCard way={main.featured} big forFocus={main.forFocus} shared /></li>
             {/* The others, arriving one after another */}
             {main.rest.map((way, index) => <li key={way.name}><WayCard way={way} delay={(index + 1) * 70} shared /></li>)}
           </ul>

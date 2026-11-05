@@ -6,13 +6,16 @@ import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the back arrow
-import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
+import { CaretLeftIcon, ClockIcon, FireIcon, GearIcon, MicrophoneIcon, SparkleIcon } from "@phosphor-icons/react/dist/ssr";
+import type { Icon } from "@phosphor-icons/react";
+import { Buddy } from "@/components/scenes/Buddy";
+import { TileRow } from "@/components/script/TileRow";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
 // Load the page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load the button looks
-import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, QUIET, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared text and card looks
 import { CARD, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the page shell
@@ -79,7 +82,7 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
   // A quiet note about the weekly summary
   const [summaryNote, setSummaryNote] = useState("");
   // Name the tab
-  usePageTitle(sessionId ? "All measures for this take" : "Your speaking profile");
+  usePageTitle(sessionId ? "All measures for this take" : "Me");
 
   // Measure any older takes, load everything, then ask for the weekly summary when due
   useEffect(() => {
@@ -132,11 +135,17 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
   return (
     <main id="main" className={PAGE}>
       {/* The area it heads, the one place for how you are doing, reached from Settings with the gear marked (decision 109) */}
-      <Masthead title="Your progress" section="settings" />
-      {/* The way back: to the take, or to Settings */}
-      <p className="mt-2">{sessionId ? <Link href={`/sessions?id=${encodeURIComponent(sessionId)}`} className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to the take</Link> : <Link href="/settings" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to Settings</Link>}</p>
-      {/* The page's name */}
-      <PageTitle title={sessionId ? "All measures for this take" : "Your speaking profile"}>{sessionId ? null : "Your usual against your recent takes. Compared only with yourself."}</PageTitle>
+      <Masthead title="Me" section="me" />
+      {/* For one take: the way back to it, and the page's name */}
+      {sessionId && <p className="mt-2"><Link href={`/sessions?id=${encodeURIComponent(sessionId)}`} className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to the take</Link></p>}
+      {/* (its name) */}
+      {sessionId && <PageTitle title="All measures for this take" />}
+      {/* The whole profile: who you are so far, your numbers, and the ways to your takes and settings (UI rewrite: Me is a tab) */}
+      {!sessionId && <MeHeader sessions={loaded?.sessions ?? null} />}
+      {/* (the profile's own heading) */}
+      {!sessionId && <h2 className={`${SECTION_HEADING} mt-10`}>Your speaking profile</h2>}
+      {/* (what it compares) */}
+      {!sessionId && <p className="mt-1 max-w-[56ch] font-semibold text-ink-muted">Your usual against your recent takes. Compared only with yourself.</p>}
       {/* While older takes are measured */}
       {measuring && <p role="status" className="mt-4 text-ink-muted">Measuring your earlier takes…</p>}
       {/* A failure, with the way forward */}
@@ -144,6 +153,70 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
       {/* The content, once loaded */}
       {loaded && today && (sessionId ? <TakeTable sessionId={sessionId} loaded={loaded} now={today} /> : <WholeProfile loaded={loaded} now={today} summaryNote={summaryNote} />)}
     </main>
+  );
+}
+
+// The top of Me: you so far, four numbers, and the ways to your takes, check-ins and settings
+function MeHeader({ sessions }: { sessions: ReadonlyArray<SessionRecord> | null }) {
+  // The first take's day, when there is one
+  const first = sessions && sessions.length > 0 ? sessions.reduce((earliest, item) => (item.createdAt < earliest ? item.createdAt : earliest), sessions[0]!.createdAt) : null;
+  // Minutes spoken in all
+  const minutes = sessions ? Math.round(sessions.reduce((sum, item) => sum + item.durationSec, 0) / 60) : 0;
+  // Stories told
+  const stories = sessions ? sessions.filter((item) => item.mode === "story").length : 0;
+  // Days with practice
+  const days = sessions ? new Set(sessions.map((item) => item.createdAt.slice(0, 10))).size : 0;
+  // The four numbers, each with its tile colour and icon
+  const stats: ReadonlyArray<[string, string, string, Icon]> = [
+    [String(sessions?.length ?? 0), sessions?.length === 1 ? "take" : "takes", "bg-art-sky", MicrophoneIcon],
+    [`${minutes} min`, "spoken", "bg-art-leaf", ClockIcon],
+    [String(stories), stories === 1 ? "story told" : "stories told", "bg-art-coral", FireIcon],
+    [String(days), days === 1 ? "day practised" : "days practised", "bg-art-plum", SparkleIcon],
+  ];
+  // The block
+  return (
+    <div data-wide className="mt-4 flex flex-col gap-5">
+      {/* You, so far, with the way to Settings */}
+      <div className="flex items-center justify-between gap-4">
+        {/* The blob and the words */}
+        <div className="flex items-center gap-4">
+          {/* The blob, pleased */}
+          <Buddy face="happy" className="size-18 md:size-22" />
+          {/* The words */}
+          <div>
+            {/* The page's name */}
+            <h1 className="font-display text-statement font-semibold">You, so far</h1>
+            {/* Since when */}
+            <p className="font-bold text-ink-muted">{first ? `Practising since ${new Date(first).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}` : "Your first take will show up here."}</p>
+          </div>
+        </div>
+        {/* Settings, on a computer (on a phone the Settings card below is enough) */}
+        <Link href="/settings" className={`${QUIET} hidden md:inline-flex`}><GearIcon aria-hidden="true" weight="bold" className="size-5" />Settings</Link>
+      </div>
+      {/* The numbers, never zeros made to look like failure: counts only */}
+      {sessions && sessions.length > 0 && (
+        <ul aria-label="Your numbers" className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          {/* Each number */}
+          {stats.map(([value, label, colour, StatIcon]) => (
+            <li key={label} className={`flex items-center gap-3 p-3.5 ${CARD}`}>
+              {/* Its icon on its colour */}
+              <span aria-hidden="true" className={`flex size-11 flex-none items-center justify-center rounded-[14px] text-art-cream ${colour}`}><StatIcon weight="fill" className="size-5" /></span>
+              {/* The number and what it counts */}
+              <span className="flex flex-col"><b className="font-display text-2xl leading-none font-semibold">{value}</b><span className="text-footnote font-bold text-ink-muted">{label}</span></span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {/* The ways on */}
+      <div className="grid gap-3 sm:grid-cols-3 md:gap-4">
+        {/* Every take */}
+        <TileRow href="/history" label="History" title="Your takes" detail="Every session, newest first" ground="sky" prop="mic" face="ready" tilt={-4} />
+        {/* The check-ins */}
+        <TileRow href="/check-in" label="Weekly" title="Check-ins" detail="Hear the change week to week" ground="sun" prop="cal" face="ready" tilt={4} />
+        {/* Settings */}
+        <TileRow href="/settings" label="Yours" title="Settings" detail="Focus, reminders, look and data" ground="leaf" prop="star" face="happy" tilt={-4} />
+      </div>
+    </div>
   );
 }
 
@@ -203,7 +276,7 @@ function CheckIns({ sessions }: { sessions: ReadonlyArray<SessionRecord> }) {
             {/* The latest, and how many */}
             <p className={LABEL}>Latest · {checkIns.length === 1 ? "your first" : `${checkIns.length} so far`}</p>
             {/* Its day */}
-            <p className="mt-1 font-display text-cue font-semibold tracking-tight">{dayWords(latest.day)}</p>
+            <p className="mt-1 font-display text-cue font-semibold">{dayWords(latest.day)}</p>
             {/* The days before, the latest six */}
             {checkIns.length > 1 && (
               <ul aria-label="Check-in days" className="mt-2 flex flex-wrap gap-1.5">
@@ -255,7 +328,7 @@ function SummaryCard({ summary, now }: { summary: SummaryRecord; now: Date }) {
       {/* What it is and when */}
       <p className={LABEL}>Weekly coach summary · {dayLabel(new Date(summary.createdAt), now)}</p>
       {/* The headline */}
-      <p className="mt-1 font-display text-cue font-semibold tracking-tight">{summary.headline}</p>
+      <p className="mt-1 font-display text-cue font-semibold">{summary.headline}</p>
       {/* Next week's focus */}
       <p className="mt-3 text-lede"><em>Next week.</em> {summary.focus}</p>
       {/* The rest, folded */}

@@ -43,7 +43,7 @@ interface TellStoryProps extends ScreenProps {
 }
 
 // The look of a choice button: filled when chosen
-const choice = (chosen: boolean) => `min-h-11 rounded-xl border-2 px-3 py-2 text-left ${PRESS} ${chosen ? "border-fill bg-fill text-fill-ink" : "border-rule bg-card"}`;
+const choice = (chosen: boolean) => `min-h-11 rounded-[14px] border-2 px-3 py-2 text-left font-extrabold ${PRESS} ${chosen ? "border-accent bg-accent-tint text-accent-tint-ink shadow-picked" : "border-rule bg-card shadow-ledge"}`;
 
 // The address that starts the planning minute and the telling
 export function tellSessionHref(storyId: string, take: StoryTake, planStep: number | null = null): string {
@@ -129,7 +129,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
             {/* Where it came from */}
             {(momentId || guided) && <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Guided story"}</p>}
             {/* The prompt, a guided story's title, or the moment in the user's words */}
-            <h1 className={`${momentId || guided ? "mt-1" : "mt-6"} font-display tracking-tight ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
+            <h1 className={`${momentId || guided ? "mt-1" : "mt-6"} font-display ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
             {/* A guided story's facts and nudges, with the template named (decision 93) */}
             {guided && <GuidedStoryCard story={guided} take={take} />}
 
@@ -145,7 +145,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                     {/* Its name (the suggested one is chosen at the start, so it needs no label) */}
                     <span className="block font-semibold">{item.name}</span>
                     {/* The chosen one: what it is for, and its beats in one line (the others' are a tap away, so the first screen stays short) */}
-                    {template === item.id && <><span className="block text-footnote opacity-80">{item.forWhat}</span><span className="mt-1 block text-footnote">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span></>}
+                    {template === item.id && <><span className="block text-footnote font-bold">{item.forWhat}</span><span className="mt-1 block text-footnote">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span></>}
                   </button>
                 ))}
               </div>
@@ -167,7 +167,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                     {/* Its name */}
                     <span className="block font-semibold">{item.name}</span>
                     {/* How long */}
-                    <span className="block text-footnote opacity-80">{item.detail}</span>
+                    <span className="block text-footnote font-bold">{item.detail}</span>
                   </button>
                 ))}
               </div>

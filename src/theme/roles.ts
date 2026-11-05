@@ -16,6 +16,10 @@ export const ROLES = [
   "accent",
   // Text placed on the accent color
   "accent-ink",
+  // A soft tint of the accent: the current tab, done marks and good news (UI rewrite)
+  "accent-tint",
+  // Text on the accent tint
+  "accent-tint-ink",
   // Large filled areas: the action band, main buttons and icon tiles (quieter than the accent in dark mode)
   "fill",
   // Text placed on a large filled area
@@ -92,6 +96,8 @@ export const CONTRAST_RULES: ReadonlyArray<ContrastRule> = [
   { foreground: "filler", background: "paper-raised", minimum: TEXT },
   // Text on the record button and fix highlight
   { foreground: "accent-ink", background: "accent", minimum: TEXT },
+  // Text on the accent tint (the current tab, good news)
+  { foreground: "accent-tint-ink", background: "accent-tint", minimum: TEXT },
   // Text on the action band, main buttons and icon tiles
   { foreground: "fill-ink", background: "fill", minimum: TEXT },
   // Text on cards

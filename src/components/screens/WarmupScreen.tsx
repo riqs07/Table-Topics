@@ -134,7 +134,7 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
           {/* The warm-up scene (carried over from Today's step) */}
           <ScenePanel scene="warm-up" line="Loosen up before you speak." className="mb-6" />
           {/* What it is */}
-          <h1 id="warmup-heading" className="font-display text-statement font-semibold tracking-tight">A one-minute warm-up.</h1>
+          <h1 id="warmup-heading" className="font-display text-statement font-semibold">A one-minute warm-up.</h1>
           {/* How it works */}
           <p className="mt-3 max-w-[48ch] text-lede">Three moves, about {moveSeconds} seconds each. Nothing is recorded.</p>
           {/* The moves */}
@@ -166,7 +166,7 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
           {/* Which move */}
           <p className="text-footnote font-semibold text-accent">Move {move + 1} of {routine.length} · {SET_NAMES[current.set]}</p>
           {/* Its name */}
-          <h1 id="move-heading" className="mt-1 font-display text-statement font-semibold tracking-tight">{current.name}</h1>
+          <h1 id="move-heading" className="mt-1 font-display text-statement font-semibold">{current.name}</h1>
           {/* What to do */}
           <p className="mt-3 max-w-[48ch] text-lede">{cue}</p>
           {/* The countdown on the shape, which skips ahead when tapped */}
@@ -190,7 +190,7 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
       {done && (
         <section aria-labelledby="done-heading" className="mt-8 md:max-w-2xl">
           {/* The word */}
-          <h1 id="done-heading" className="font-display text-statement font-semibold tracking-tight">Warmed up.</h1>
+          <h1 id="done-heading" className="font-display text-statement font-semibold">Warmed up.</h1>
           {/* What it was for */}
           <p className="mt-3 max-w-[48ch] text-lede">Breath, face and mouth are ready. Speak while they are.</p>
         </section>

@@ -109,8 +109,8 @@ describe("HomeScreen", () => {
     const start = await screen.findByRole("link", { name: "Start" });
     // The choices
     const choices = within(screen.getByRole("group", { name: "What do you want to get better at most?" })).getAllByRole("button");
-    // Confirm the hand-drawn greeter (decision 134), the heading, what VoiceLab keeps, what a session gives, the question with six choices, no tabs, and that Start leads into the first step
-    expect([document.querySelector("[data-drawing='welcome']")?.getAttribute("alt"), screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/VoiceLab keeps your recordings on this device/), !!screen.getByText("Every take ends with one change to try."), screen.getByRole("heading", { level: 2, name: "What do you want to get better at most?" }).tagName, choices.map((choice) => choice.firstChild?.textContent), screen.queryByRole("navigation", { name: "Main" }), start.getAttribute("href")]).toEqual(["", "Welcome to VoiceLab", true, true, "H2", ["Telling stories", "Small talk and conversations", "Thinking on my feet", "How I sound", "Speaking at work", "A talk coming up"], null, FIRST_STEP]);
+    // Confirm Sage greeting (the UI rewrite; the hand-drawn greeter before it, decision 134), the heading, what VoiceLab keeps, what a session gives, the question with six choices, no tabs, and that Start leads into the first step
+    expect([document.querySelector("[data-buddy='sage']")?.getAttribute("aria-hidden"), screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/VoiceLab keeps your recordings on this device/), !!screen.getByText("Every take ends with one change to try."), screen.getByRole("heading", { level: 2, name: "What do you want to get better at most?" }).tagName, choices.map((choice) => choice.firstChild?.textContent), screen.queryByRole("navigation", { name: "Main" }), start.getAttribute("href")]).toEqual(["true", "Welcome to VoiceLab", true, true, "H2", ["Telling stories", "Small talk and conversations", "Thinking on my feet", "How I sound", "Speaking at work", "A talk coming up"], null, FIRST_STEP]);
     // Pick three: the third replaces the first
     for (const name of [/^Telling stories/, /^How I sound/, /^Speaking at work/]) await userEvent.click(screen.getByRole("button", { name }));
     // Confirm two are picked
@@ -250,7 +250,7 @@ describe("HomeScreen", () => {
     expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.queryByText(/^0 of/), steps[0]?.getAttribute("href")]).toEqual([["Step 1: Free talk", "Step 2: Learn", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=2`, null, FIRST_STEP]);
   });
 
-  // Each step's mark is its blob scene where its kind has one, in place of the number: the next one moving, the others still; a Learn card has the light bulb (decisions 137 and 139)
+  // Each step's picture is its kind's mode tile (the UI rewrite; a blob scene before, decisions 137 and 139): the next one moving, the others still
   it("shows each step's scene, the next one moving", async () => {
     // The welcome was already skipped
     localStorage.setItem("voicelab-welcome-seen", "yes");
@@ -258,16 +258,12 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={emptyRepository()} now={NOW} />);
     // The steps
     const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
-    // The first two steps' scene and how much it moves
-    const scenes = steps.slice(0, 3).map((step) => [step.querySelector("[data-step-scene]")?.getAttribute("data-step-scene") ?? null, step.querySelector("[data-scene]")?.getAttribute("data-motion") ?? null]);
+    // The first three steps' kind and how much its tile moves
+    const scenes = steps.slice(0, 3).map((step) => [step.querySelector("[data-step-scene]")?.getAttribute("data-step-scene") ?? null, step.querySelector("[data-mode-tile]")?.getAttribute("data-motion") ?? null]);
     // The marks' visible text: none on a scene, the number on a step without one
     const numbers = steps.slice(0, 3).map((step) => step.querySelector("[data-step-scene]") ? null : step.querySelector("span")?.textContent);
-    // Each of those scenes appears once on Today, so each may glide into its screen (decision 141)
-    const shared = steps.slice(0, 3).map((step) => step.querySelector("[data-step-scene]")?.hasAttribute("data-shared"));
-    // Confirm all three carry their name
-    expect(shared).toEqual([true, true, true]);
     // Confirm free talk's scene moving in place of its number, then the Learn card's bulb and the Rapid Fire pick still, with no numbers showing
-    expect([scenes, numbers]).toEqual([[["free-talk", "loop"], ["learn", "still"], ["rapid-fire", "still"]], [null, null, null]]);
+    expect([scenes, numbers]).toEqual([[["free-talk", "few"], ["learn", "still"], ["rapid-fire", "still"]], [null, null, null]]);
   });
 
   // A talk with a date takes the first pick, and a past date does not count
@@ -336,7 +332,7 @@ describe("HomeScreen", () => {
     // The warm-up's mark is its scene: reading aloud, still and faded now it is done, with the tick said as "Done" (decision 137)
     const warmScene = (await screen.findByRole("link", { name: "Step 2: Warm up" })).querySelector("[data-step-scene]");
     // Confirm it
-    expect([warmScene?.getAttribute("data-step-scene"), warmScene?.querySelector("[data-scene]")?.getAttribute("data-motion"), !!warmScene?.querySelector(".opacity-55"), warmScene?.textContent]).toEqual(["read-aloud", "still", true, "Done"]);
+    expect([warmScene?.getAttribute("data-step-scene"), warmScene?.querySelector("[data-mode-tile]")?.getAttribute("data-motion"), !!warmScene?.querySelector(".opacity-55"), warmScene?.textContent]).toEqual(["read-aloud", "still", true, "Done"]);
     // Confirm the heading, the done mark, no band, step 1 marked as the current step instead (decision 138), and no suggestions yet
     expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), screen.queryByRole("link", { name: /^Continue/ }), screen.getByRole("link", { current: "step" }).getAttribute("aria-label"), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, null, "Step 1: Learn", null]);
   });
