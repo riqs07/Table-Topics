@@ -11,7 +11,9 @@ import { TIER_NAMES, type Scenario, type Tier } from "@/content/scenarios";
 import type { RecordingServices } from "@/audio/services";
 // Load the shared press effect and looks
 import { PRESS } from "@/components/script/Buttons";
-import { CARD, LAB, LAB_ON_TINT } from "@/components/script/textStyles";
+import { BUBBLE, CARD, LAB, LAB_ON_TINT } from "@/components/script/textStyles";
+// Load the split of a situation into its set-up and the other person's line
+import { situationParts } from "@/core/scenarios";
 // Load the cast, for your blob
 import { Cast } from "@/components/scenes/Cast";
 
@@ -45,6 +47,8 @@ export function ScenarioItem({ scenario, services, onAnswer, onSaid, layout = "s
   const [chosen, setChosen] = useState<number | null>(null);
   // The best reply's place
   const best = scenario.options.findIndex((option) => option.tier === "best");
+  // The situation's set-up, and the other person's line when it ends on one
+  const parts = situationParts(scenario.situation);
 
   // Choose a reply
   function choose(position: number) {
@@ -66,15 +70,27 @@ export function ScenarioItem({ scenario, services, onAnswer, onSaid, layout = "s
     <div className="flex flex-col gap-5">
       {/* The heading, when given */}
       {heading}
-      {/* The situation, on the warm tint */}
+      {/* The set-up, on the warm tint (the whole situation when it does not end on someone's line) */}
       <div className="rounded-[22px] bg-warm-tint px-5 py-4 text-warm-ink">
-        {/* Heading */}
-        <p className={LAB_ON_TINT}>The situation</p>
+        {/* Heading: who it is with, when named */}
+        <p className={LAB_ON_TINT}>{scenario.who ? `With ${scenario.who}` : "The situation"}</p>
         {/* The words */}
-        <p className="mt-1 max-w-[56ch] text-lede leading-snug font-bold">{scenario.situation}</p>
+        <p className="mt-1 max-w-[56ch] text-lede leading-snug font-bold">{parts.setup}</p>
       </div>
-      {/* The friend, in two columns: who you are answering, pleased when the reply lands */}
-      {layout === "columns" && <Cast who="friend" face={picked ? (good ? "happy" : "flat") : "ready"} className="hidden size-36 self-center lg:block" />}
+      {/* Their line, said by the friend in a white bubble: on a computer in two columns the friend stands large with their name under them and the bubble below; otherwise the friend sits small beside the bubble */}
+      {parts.line && (
+        <div data-scenario-line className={layout === "columns" ? "flex items-end gap-3 lg:flex-col lg:items-stretch lg:gap-4" : "flex items-end gap-3"}>
+          {/* The friend, pleased when the reply lands, and their name */}
+          <div className={`flex flex-none flex-col items-center gap-1 ${layout === "columns" ? "lg:self-center" : ""}`}>
+            {/* The friend */}
+            <Cast who="friend" face={picked ? (good ? "happy" : "flat") : "ready"} className={layout === "columns" ? "size-14 lg:size-32" : "size-14"} />
+            {/* Their name, when the situation gives one */}
+            {scenario.who && <span className={`font-display font-semibold ${layout === "columns" ? "text-sm lg:text-xl" : "text-sm"}`}>{scenario.who}</span>}
+          </div>
+          {/* Their line */}
+          <p className={`${BUBBLE} mb-6 min-w-0 flex-1 rounded-[24px] px-5 py-4 font-display text-xl leading-snug font-semibold ${layout === "columns" ? "lg:mb-0 lg:text-2xl" : ""}`}>{parts.line}</p>
+        </div>
+      )}
     </div>
   );
   // The question, the replies, the reveal and the way on

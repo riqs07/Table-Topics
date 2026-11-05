@@ -152,9 +152,9 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {!(today && answers && missions) && <Skeleton blocks={["h-40", "h-28", "h-56"]} />}
       {/* Everything that depends on them, at once */}
       {today && answers && missions && (<>
-      {/* The drill beside the person to talk with and the recipe, the page's full width on a computer */}
+      {/* One grid, the page's full width on a computer: the drill with the lessons straight under it on the left, the main action, the person to talk with, the recipe, the moments and the missions on the right */}
       <div data-wide className="grid items-start gap-x-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-      {/* The drill */}
+      {/* The drill, the lessons, the lists and your answers */}
       <div className="min-w-0">
       {/* Today's question, with a way to get another */}
       {question && (
@@ -182,61 +182,6 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         </section>
       )}
 
-      </div>
-      {/* The person to talk with, and the recipe */}
-      <div className="min-w-0 lg:[&>section:first-child]:mt-5">
-      {/* The same skill in a whole conversation with someone (decision 83) */}
-      {partner && (
-        <section aria-labelledby="partner-heading" className="mt-10">
-          {/* Run-in heading */}
-          <h2 id="partner-heading" className={SECTION_HEADING}>Try it in a conversation</h2>
-          {/* The person */}
-          <ul className="mt-3">
-            {/* One card: the friend, who they are, how long, and a chevron */}
-            <li>
-              <Link href={`/conversations/talk?id=${partner.id}&skill=${unitId}`} className={`flex min-h-18 items-center gap-3.5 px-4 py-3 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
-                {/* The friend */}
-                <Cast who="friend" face="happy" className="size-14 flex-none" />
-                {/* Who */}
-                <span className="min-w-0 flex-1"><span className="block font-display text-lg leading-tight font-semibold">Talk with {partner.name}</span><span className="block text-footnote font-bold text-ink-muted">{partner.tagline}</span></span>
-                {/* How long */}
-                <span className={CHIP}>1 min</span>
-                {/* The chevron */}
-                <CaretRightIcon aria-hidden="true" weight="bold" className="size-5 flex-none text-ink-muted" />
-              </Link>
-            </li>
-          </ul>
-        </section>
-      )}
-
-      {/* The recipe, taught on the page itself */}
-      <section aria-labelledby="recipe" className="mt-10">
-        {/* Run-in heading */}
-        <h2 id="recipe" className={SECTION_HEADING}>{unit.words.recipe}, in four beats</h2>
-        {/* The beats */}
-        <ol className={`mt-3 ${CARD_LIST}`}>
-          {/* Each beat */}
-          {unit.beats.map((beat, index) => (
-            // One beat: its name and what it means (why it works is in the lessons, decision 63)
-            <li key={beat.id} className="flex items-center gap-3.5 py-3">
-              {/* Its number, on the soft green */}
-              <span aria-hidden="true" className="flex size-9 flex-none items-center justify-center rounded-xl bg-accent-tint font-display font-semibold text-accent-tint-ink">{index + 1}</span>
-              {/* Its words */}
-              <span>
-                {/* Name and reminder */}
-                <span className="block font-bold"><strong className="font-display text-lg font-semibold">{beat.name}.</strong> {beat.reminder}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      </div>
-      </div>
-      {/* The lessons and lists beside the moments and missions */}
-      <div data-wide className="grid items-start gap-x-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-      {/* The lessons, the lists and your answers */}
-      <div className="min-w-0">
       {/* The lessons, as a path */}
       <section aria-labelledby="lessons" className="mt-10">
         {/* Run-in heading */}
@@ -320,8 +265,60 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       )}
 
       </div>
-      {/* The moments and the missions */}
-      <div className="min-w-0">
+      {/* The main action, the person to talk with, the recipe, the moments and the missions */}
+      <div className="min-w-0 lg:[&>a]:mt-5 lg:[&>a]:mb-0 lg:[&>section:first-of-type]:mt-6">
+      {/* The main action (sticky at the foot of a phone, at the top of the right column on a computer, so it is on the first screen): this unit's next lesson (named by number, as the page names the unit, so a long unit name never squeezes the title), or its drill once the lessons are done */}
+      {nextLesson ? (
+        <ActionBand action={`Lesson ${nextLesson.number}`} aside={nextLesson.title} href={answerHref(nextLesson.id)} />
+      ) : (
+        question && <ActionBand action={unit.words.band} aside={unit.id === "listening" ? unit.words.then : question.text} href={answerHref(question.id)} />
+      )}
+      {/* The same skill in a whole conversation with someone (decision 83) */}
+      {partner && (
+        <section aria-labelledby="partner-heading" className="mt-10">
+          {/* Run-in heading */}
+          <h2 id="partner-heading" className={SECTION_HEADING}>Try it in a conversation</h2>
+          {/* The person */}
+          <ul className="mt-3">
+            {/* One card: the friend, who they are, how long, and a chevron */}
+            <li>
+              <Link href={`/conversations/talk?id=${partner.id}&skill=${unitId}`} className={`flex min-h-18 items-center gap-3.5 px-4 py-3 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
+                {/* The friend */}
+                <Cast who="friend" face="happy" className="size-14 flex-none" />
+                {/* Who */}
+                <span className="min-w-0 flex-1"><span className="block font-display text-lg leading-tight font-semibold">Talk with {partner.name}</span><span className="block text-footnote font-bold text-ink-muted">{partner.tagline}</span></span>
+                {/* How long */}
+                <span className={CHIP}>1 min</span>
+                {/* The chevron */}
+                <CaretRightIcon aria-hidden="true" weight="bold" className="size-5 flex-none text-ink-muted" />
+              </Link>
+            </li>
+          </ul>
+        </section>
+      )}
+
+      {/* The recipe, taught on the page itself */}
+      <section aria-labelledby="recipe" className="mt-10">
+        {/* Run-in heading */}
+        <h2 id="recipe" className={SECTION_HEADING}>{unit.words.recipe}, in four beats</h2>
+        {/* The beats */}
+        <ol className={`mt-3 ${CARD_LIST}`}>
+          {/* Each beat */}
+          {unit.beats.map((beat, index) => (
+            // One beat: its name and what it means (why it works is in the lessons, decision 63)
+            <li key={beat.id} className="flex items-center gap-3.5 py-3">
+              {/* Its number, on the soft green */}
+              <span aria-hidden="true" className="flex size-9 flex-none items-center justify-center rounded-xl bg-accent-tint font-display font-semibold text-accent-tint-ink">{index + 1}</span>
+              {/* Its words */}
+              <span>
+                {/* Name and reminder */}
+                <span className="block font-bold"><strong className="font-display text-lg font-semibold">{beat.name}.</strong> {beat.reminder}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {/* One moment a day: material for the next time someone asks */}
       {today && unit.id === "answering" && (
         <section id="moments" aria-labelledby="moments-heading" className="mt-10 scroll-mt-6">
@@ -388,13 +385,6 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       </div>
       </div>
       </>)}
-
-      {/* The main action: this unit's next lesson (named by number, as the page names the unit, so a long unit name never squeezes the title), or its drill once the lessons are done */}
-      {nextLesson ? (
-        <ActionBand action={`Lesson ${nextLesson.number}`} aside={nextLesson.title} href={answerHref(nextLesson.id)} />
-      ) : (
-        question && <ActionBand action={unit.words.band} aside={unit.id === "listening" ? unit.words.then : question.text} href={answerHref(question.id)} />
-      )}
     </main>
   );
 }

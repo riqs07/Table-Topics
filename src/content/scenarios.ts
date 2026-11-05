@@ -26,6 +26,8 @@ export interface Scenario {
   move: string;
   // A short name
   title: string;
+  // The name of the person who speaks the quoted line in the situation, when the situation names them (shown under the friend on the scenario's page)
+  who?: string;
   // The situation, two or three lines
   situation: string;
   // The replies, in the order shown (the best one's place varies)
@@ -42,7 +44,7 @@ export interface Scenario {
 export const SCENARIOS: ReadonlyArray<Scenario> = [
   // 1. Good news
   {
-    id: "sc-job-offer", move: "good-news", title: "The job offer",
+    id: "sc-job-offer", who: "Priya", move: "good-news", title: "The job offer",
     situation: "At lunch, your coworker Priya puts her phone down, grinning. “I just got the offer. The Lisbon job. I start in March!”",
     options: [
       { text: "“No way, Lisbon! When did you hear? What did you do when you read it?”", tier: "best", pattern: "Real reaction, then about the moment", why: "Real enthusiasm, and it asks her to relive the moment. That is the reply linked to more trust and closeness." },
@@ -54,7 +56,7 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
   },
   // 2. Free information
   {
-    id: "sc-half-marathon", move: "follow-up", title: "The half marathon",
+    id: "sc-half-marathon", who: "Tom", move: "follow-up", title: "The half marathon",
     situation: "At a friend's party, you ask Tom how his weekend was. “Mostly recovering. I ran my first half marathon on Saturday.”",
     options: [
       { text: "“Cool. So how do you know Hannah?”", tier: "misstep", pattern: "Topic switch", why: "It drops the most interesting thing he said." },
@@ -78,7 +80,7 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
   },
   // 4. Listening before fixing
   {
-    id: "sc-brutal-week", move: "listen-first", title: "The brutal week",
+    id: "sc-brutal-week", who: "Sam", move: "listen-first", title: "The brutal week",
     situation: "Your friend Sam sighs. “Work's been brutal. My manager moved the deadline up again, and I'm the only one on the project.”",
     options: [
       { text: "“You should push back. Or honestly, start looking for something else.”", tier: "flat", pattern: "Advice nobody asked for", why: "It may be right, but too soon. Sam hasn't asked." },
@@ -150,7 +152,7 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
   },
   // 10. Bad news
   {
-    id: "sc-interview", move: "listen-first", title: "The interview",
+    id: "sc-interview", who: "Jo", move: "listen-first", title: "The interview",
     situation: "Your friend Jo texts, then calls. “I didn't get the job. I was so sure after the second interview.”",
     options: [
       { text: "“Their loss. Something better will come along.”", tier: "flat", pattern: "Quick cheer-up", why: "Meant kindly, but it skips past how Jo feels right now." },
@@ -173,7 +175,7 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
   },
   // 12. Apologising
   {
-    id: "sc-missed-deadline", move: "apology", title: "The missed deadline",
+    id: "sc-missed-deadline", who: "Aisha", move: "apology", title: "The missed deadline",
     situation: "You promised your colleague Aisha the figures by Tuesday. It's Thursday, and she had to stall her client. She says: “I really needed those.”",
     options: [
       { text: "“Sorry, it's been a crazy week, everything landed at once.”", tier: "flat", pattern: "Sorry plus excuse", why: "The reason may be true, but it takes the focus off what it cost her." },
@@ -206,7 +208,7 @@ export const SCENARIOS: ReadonlyArray<Scenario> = [
   },
   // 15. Sharing a win
   {
-    id: "sc-promotion", move: "share-win", title: "The promotion",
+    id: "sc-promotion", who: "Kai", move: "share-win", title: "The promotion",
     situation: "You just got promoted. At dinner, your friend Kai asks: “So what's new with you?”",
     options: [
       { text: "“Ugh, so exhausted, they've promoted me again and now I have to manage people.”", tier: "misstep", pattern: "Humblebrag", why: "Bragging hidden in a complaint was liked less than plain bragging, and less than plain complaining." },

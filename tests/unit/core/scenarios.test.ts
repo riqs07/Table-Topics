@@ -1,7 +1,7 @@
 // Load the test helpers from the test runner
 import { describe, expect, it } from "vitest";
 // Load the rules being checked
-import { firstTries, nextScenarios } from "@/core/scenarios";
+import { firstTries, nextScenarios, situationParts } from "@/core/scenarios";
 // Load the scenarios and the cards
 import { SCENARIOS, findScenario } from "@/content/scenarios";
 import { LEARN_CARDS } from "@/content/learn";
@@ -51,5 +51,28 @@ describe("scenarios", () => {
   it("counts first tries", () => {
     // One best first, one improved later
     expect(firstTries({ a: answered("best", "best"), b: answered("misstep", "best") })).toEqual({ best: 1, total: 2 });
+  });
+});
+
+// The situation split into its set-up and the other person's line, for the friend's speech bubble (second design pass, Desktop Screens "SceneReply")
+describe("situationParts", () => {
+  it("splits a situation at the quoted line", () => {
+    // The set-up before the quote, the quote itself as the line
+    expect(situationParts("At lunch, Priya puts her phone down, grinning. “I just got the offer. I start in March!”")).toEqual({ setup: "At lunch, Priya puts her phone down, grinning.", line: "“I just got the offer. I start in March!”" });
+  });
+
+  it("keeps a situation with words after the quote whole", () => {
+    // Text after the quote means the line is not the last thing said, so nothing is split off
+    expect(situationParts("Marcus says: “We should wait.” You think waiting would cost you.")).toEqual({ setup: "Marcus says: “We should wait.” You think waiting would cost you.", line: null });
+  });
+
+  it("keeps a situation with no quote whole", () => {
+    // No line to give the friend
+    expect(situationParts("You're asking IT for a new laptop.")).toEqual({ setup: "You're asking IT for a new laptop.", line: null });
+  });
+
+  it("names a speaker only where a situation has a line of theirs, and the name is in its words", () => {
+    // Every named scenario has a line, and its name appears in the situation
+    expect(SCENARIOS.filter((scenario) => scenario.who).every((scenario) => situationParts(scenario.situation).line !== null && scenario.situation.includes(scenario.who!))).toBe(true);
   });
 });

@@ -5,6 +5,18 @@ import { SCENARIOS, type Scenario } from "@/content/scenarios";
 // Load the record type
 import type { ScenarioProgress } from "@/data/records";
 
+// A situation split for the scene layout (second design pass, Desktop Screens "SceneReply"): the set-up, and the other person's line when the situation ends on one (from its first opening quote mark to the end); otherwise the whole situation stays the set-up and there is no line
+export function situationParts(situation: string): { setup: string; line: string | null } {
+  // Where the first quote opens
+  const open = situation.indexOf("“");
+  // Where the last quote closes
+  const close = situation.lastIndexOf("”");
+  // No quote, or words after it: keep it whole
+  if (open < 0 || close < open || situation.slice(close + 1).trim() !== "") return { setup: situation, line: null };
+  // The set-up before the quote, and the quote as the line
+  return { setup: situation.slice(0, open).trim(), line: situation.slice(open).trim() };
+}
+
 // How many scenarios a quick practice holds
 export const QUICK_COUNT = 3;
 
