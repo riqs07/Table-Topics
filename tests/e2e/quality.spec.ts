@@ -115,7 +115,7 @@ test("offers a skip link to the content as the first Tab stop", async ({ page })
   expect(await page.evaluate(() => !!document.activeElement?.closest("main") && !document.activeElement?.closest("nav, header"))).toBe(true);
 });
 
-// The read-aloud start shape never covers the text: under the length in the margin on a computer, in a bar at the bottom centre of a phone with the text at full width (round 4)
+// The read-aloud start shape never covers the text: beside it on a computer (in the side card since the second design pass, after "Reading aloud"), in a bar at the bottom centre of a phone with the text at full width (round 4)
 test("keeps the read-aloud shape off the text at both widths", async ({ page }) => {
   // A computer-sized window
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -126,8 +126,8 @@ test("keeps the read-aloud shape off the text at both widths", async ({ page }) 
   const start = page.getByRole("button", { name: /Start reading/ });
   // Where each is
   const [text, shape] = [await passage.boundingBox(), await start.boundingBox()];
-  // On a computer the shape sits left of the text
-  expect((shape?.x ?? 0) + (shape?.width ?? 0)).toBeLessThan(text?.x ?? 0);
+  // On a computer the shape sits wholly to one side of the text, never across it
+  expect((shape?.x ?? 0) + (shape?.width ?? 0) < (text?.x ?? 0) || (shape?.x ?? 0) > (text?.x ?? 0) + (text?.width ?? 0)).toBe(true);
   // Now a phone
   await page.setViewportSize({ width: 390, height: 844 });
   // Scroll to the end

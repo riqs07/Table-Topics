@@ -31,8 +31,8 @@ for (const course of COURSES) {
       await page.goto(takeHref(part, 1)!);
       // The course line and the goal
       await expect(page.locator("[data-course-take]")).toContainText(`${course.title} · lesson`);
-      // (the goal)
-      await expect(page.locator("[data-course-take]")).toContainText(part.practice.goal);
+      // (the goal, shown before speaking in the "Your one goal" card since the second design pass)
+      await expect(page.getByText(part.practice.goal, { exact: true }).first()).toBeVisible();
     }
   });
 }

@@ -175,21 +175,6 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                 {chosen.needs && <p data-template-needs className="mt-2 rounded-2xl bg-accent-tint px-4 py-3 text-footnote font-bold text-accent-tint-ink">{chosen.needs}</p>}
               </div>
 
-              {/* One thing to try, as pills (storyboard 13); none is fine, and the one picked shows how */}
-              <div role="group" aria-labelledby="focus-label">
-                {/* Label */}
-                <p id="focus-label" className={LAB}>One thing to try</p>
-                {/* The focuses */}
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  {STORY_FOCUSES.map((item) => (
-                    // One focus, in the warm tint when picked
-                    <button key={item.id} type="button" aria-pressed={focus === item.id} onClick={() => pickFocus(item.id)} className={`inline-flex min-h-11 items-center rounded-full border-2 px-4 text-sm font-extrabold ${PRESS} ${focus === item.id ? "border-warm bg-warm-tint text-warm-ink" : "border-rule bg-card text-ink shadow-ledge hover:border-ink-muted"}`}>{item.name}</button>
-                  ))}
-                </div>
-                {/* How to do the one picked */}
-                {focusInfo && <p data-focus-tip className="mt-2 text-footnote font-bold text-ink-muted">{focusInfo.tip}</p>}
-              </div>
-
               {/* The length, before the example so the Start band never covers it on a phone */}
               <div role="group" aria-labelledby="length-label">
                 {/* Label */}
@@ -206,6 +191,21 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* One thing to try, as pills (storyboard 13), after the length so the first phone screen stays under its word budget; none is fine, and the one picked shows how */}
+              <div role="group" aria-labelledby="focus-label">
+                {/* Label */}
+                <p id="focus-label" className={LAB}>One thing to try</p>
+                {/* The focuses */}
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {STORY_FOCUSES.map((item) => (
+                    // One focus, in the warm tint when picked
+                    <button key={item.id} type="button" aria-pressed={focus === item.id} onClick={() => pickFocus(item.id)} className={`inline-flex min-h-11 items-center rounded-full border-2 px-4 text-sm font-extrabold ${PRESS} ${focus === item.id ? "border-warm bg-warm-tint text-warm-ink" : "border-rule bg-card text-ink shadow-ledge hover:border-ink-muted"}`}>{item.name}</button>
+                  ))}
+                </div>
+                {/* How to do the one picked */}
+                {focusInfo && <p data-focus-tip className="mt-2 text-footnote font-bold text-ink-muted">{focusInfo.tip}</p>}
               </div>
 
               {/* A short worked example of the chosen template, each beat named */}
