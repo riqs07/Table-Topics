@@ -1,12 +1,12 @@
 "use client";
-// One Connect unit's page: today's practice, the recipe, the lessons as a path, the unit's own extras (moments, things people say), and your recent answers in it (decision 57)
+// One Connect unit's page: today's practice, the recipe, the lessons as a path, the unit's own extras (moments, things people say), and your recent answers in it (decision 57). Second design pass, extrapolated from a job's list of ways on Practice and a course's page: "‹ Everyday conversation", the unit's tile on its tint, today's drill on a white card with the friend saying it in a bubble, the person to talk with beside the friend, the recipe's beats and the lessons as numbered rows (the sun next, a green tick done), and the chunky band for the next lesson
 
 // Load React's state, effect and external-store tools
 import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
-// Load the chevron for lesson rows
-import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the chevrons for the way back and the rows, and the tick for a tried mission
+import { CaretLeftIcon, CaretRightIcon, CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { PRESS, PRIMARY, QUIET, RowLink, TEXT_LINK } from "@/components/script/Buttons";
@@ -20,8 +20,10 @@ import { PathMark } from "@/components/script/PathMark";
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the small-talk content
 import { MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_QUESTIONS, drillBank, drillForDay, findSmallTalk, findUnit, lessonsFor, responseLabel, unitOf, type UnitId } from "@/content/smallTalk";
-// Load the units' icons
-import { UNIT_ICONS } from "@/components/script/unitIcons";
+// Load the units' tiles, the mode tile and its tints, and the cast (second design pass)
+import { UNIT_TILES } from "@/components/scenes/groundLooks";
+import { GROUND_TINT, ModeTile } from "@/components/scenes/ModeTile";
+import { Cast } from "@/components/scenes/Cast";
 // Load the conversation personas and situations, for this unit's person to talk with (decisions 83 and 84)
 import { PERSONAS, findScenario } from "@/content/conversations";
 // Load the beat counter
@@ -40,7 +42,7 @@ import { loadMissions } from "@/data/missions";
 import { missionsInUnit } from "@/core/missions";
 import { LEVEL_WORDS } from "@/content/missions";
 // Load the shared heading look
-import { SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
+import { BUBBLE, CARD, CARD_LIST, CHIP, CHIP_GOOD, LAB, LAB_ON_TINT, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -122,20 +124,27 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
   const marks = lessonPath(lessons.map((lesson) => lesson.id), counts);
   // Today's drill in this unit
   const question = today ? drillForDay(unit.id, today, offset) : null;
+  // The unit's tile
+  const tile = UNIT_TILES[unit.id];
 
   // Draw the page
   return (
     <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="Practice" section="practice" />
-      {/* Back to Connect */}
-      <p className="mt-2"><Link href="/practice" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Practice</Link></p>
-      {/* Icon, name, and when it is for */}
-      <div className="mt-2 flex items-center gap-4">
-        {/* The icon on an accent tile */}
-        <span aria-hidden="true" className="flex size-16 flex-none items-center justify-center rounded-[18px] bg-warm-tint text-warm-ink">{(() => { const IconShape = UNIT_ICONS[unit.id]; return <IconShape className="size-9" />; })()}</span>
-        {/* Name (when it is for is on its card on Connect, decision 63) */}
-        <p className="min-w-0 flex-1 font-display text-statement">{unit.name}</p>
+      {/* Back to every unit */}
+      <p className="mt-1 md:-mt-12"><Link href="/small-talk" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote text-ink-muted`}><CaretLeftIcon aria-hidden="true" weight="bold" className="size-4" />Everyday conversation</Link></p>
+      {/* The unit's band on its tile's tint: the tile, how many lessons and the name (as a job's list of ways on Practice) */}
+      <div className={`mt-3 flex items-center gap-4 rounded-[22px] p-4 md:gap-5 md:p-5 ${GROUND_TINT[tile.ground]}`}>
+        {/* The unit's tile */}
+        <ModeTile ground={tile.ground} prop={tile.prop} face={tile.face} tilt={-4} motion="loop" className="size-20 md:size-24" />
+        {/* The words */}
+        <div className="flex min-w-0 flex-col gap-0.5">
+          {/* What it is, and how many lessons */}
+          <p className={LAB_ON_TINT}>Everyday conversation · {lessons.length} lessons</p>
+          {/* Its name (the page's heading is the drill below) */}
+          <p className="font-display text-statement leading-tight font-semibold">{unit.name}</p>
+        </div>
       </div>
 
       {/* Until today's date and the answers are read, a quiet placeholder, so the page appears in one piece (decision 76) */}
@@ -144,13 +153,22 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {today && answers && missions && (<>
       {/* Today's question, with a way to get another */}
       {question && (
-        <section aria-label={unit.words.practice} className="mt-4">
+        <section aria-label={unit.words.practice} className={`mt-5 p-5 md:p-6 ${CARD}`}>
           {/* Small heading */}
-          <p className="text-footnote text-ink-muted">{unit.words.kicker}</p>
-          {/* What is said (a story stays hidden until afterwards; a described moment or situation a size smaller, decision 95) */}
-          <h1 className={`mt-1 font-display ${unit.drill === "situation" ? "text-cue" : "text-statement"}`}>{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
+          <p className={LAB}>{unit.words.kicker}</p>
+          {/* What is said, by the friend in a bubble (a story stays hidden until afterwards; a described moment or situation on the warm tint, a size smaller, decision 95) */}
+          {unit.drill === "situation" ? (
+            <h1 className="mt-2 rounded-[18px] bg-warm-tint px-5 py-4 font-display text-cue leading-snug font-semibold text-warm-ink">{question.text}</h1>
+          ) : (
+            <div className="mt-3 flex items-end gap-3 md:gap-4">
+              {/* The friend */}
+              <Cast who="friend" face="happy" className="size-16 flex-none md:size-20" />
+              {/* What they say */}
+              <h1 className={`${BUBBLE} mb-2 min-w-0 flex-1 rounded-[24px] px-5 py-4 font-display text-cue leading-tight font-semibold md:text-statement`}>{unit.id === "listening" ? "Someone tells you about their day." : question.text}</h1>
+            </div>
+          )}
           {/* Reply, or move along */}
-          <p className="mt-3 flex flex-wrap gap-3">
+          <p className="mt-5 flex flex-wrap gap-3">
             {/* Reply, the main choice */}
             <Link href={answerHref(question.id)} className={PRIMARY}>{unit.words.start}</Link>
             {/* Another */}
@@ -165,9 +183,20 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           {/* Run-in heading */}
           <h2 id="partner-heading" className={SECTION_HEADING}>Try it in a conversation</h2>
           {/* The person */}
-          <ul className={`mt-2 ${CARD_LIST}`}>
-            {/* One row */}
-            <li><RowLink href={`/conversations/talk?id=${partner.id}&skill=${unitId}`} meta="1 min"><span className="block font-semibold">Talk with {partner.name}</span><span className="block text-footnote text-ink-muted">{partner.tagline}</span></RowLink></li>
+          <ul className="mt-3">
+            {/* One card: the friend, who they are, how long, and a chevron */}
+            <li>
+              <Link href={`/conversations/talk?id=${partner.id}&skill=${unitId}`} className={`flex min-h-18 items-center gap-3.5 px-4 py-3 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
+                {/* The friend */}
+                <Cast who="friend" face="happy" className="size-14 flex-none" />
+                {/* Who */}
+                <span className="min-w-0 flex-1"><span className="block font-display text-lg leading-tight font-semibold">Talk with {partner.name}</span><span className="block text-footnote font-bold text-ink-muted">{partner.tagline}</span></span>
+                {/* How long */}
+                <span className={CHIP}>1 min</span>
+                {/* The chevron */}
+                <CaretRightIcon aria-hidden="true" weight="bold" className="size-5 flex-none text-ink-muted" />
+              </Link>
+            </li>
           </ul>
         </section>
       )}
@@ -210,13 +239,13 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           {/* Each beat */}
           {unit.beats.map((beat, index) => (
             // One beat: its name and what it means (why it works is in the lessons, decision 63)
-            <li key={beat.id} className="flex gap-4 py-3">
-              {/* Its number */}
-              <span aria-hidden="true" className="w-5 flex-none font-display text-cue text-accent">{index + 1}</span>
+            <li key={beat.id} className="flex items-center gap-3.5 py-3">
+              {/* Its number, on the soft green */}
+              <span aria-hidden="true" className="flex size-9 flex-none items-center justify-center rounded-xl bg-accent-tint font-display font-semibold text-accent-tint-ink">{index + 1}</span>
               {/* Its words */}
               <span>
                 {/* Name and reminder */}
-                <span className="block"><strong className="font-display text-xl font-normal">{beat.name}.</strong> {beat.reminder}</span>
+                <span className="block font-bold"><strong className="font-display text-lg font-semibold">{beat.name}.</strong> {beat.reminder}</span>
               </span>
             </li>
           ))}
@@ -240,9 +269,9 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
                 {/* Title (the idea is in the lesson itself, decision 63) */}
                 <span className="min-w-0 flex-1">
                   {/* "Next" above the lesson to do next */}
-                  {marks[index] === "next" && <span className="block text-footnote font-semibold text-accent">Next</span>}
+                  {marks[index] === "next" && <span className={`mb-1 ${CHIP_GOOD}`}>Next</span>}
                   {/* Title, with the unit and number read before it (the visible words stay in the name; WCAG 2.5.3) */}
-                  <span className="block font-semibold leading-snug"><span className="sr-only">{unit.name} lesson {lesson.number}: </span>{lesson.title}</span>
+                  <span className="block font-extrabold leading-snug"><span className="sr-only">{unit.name} lesson {lesson.number}: </span>{lesson.title}</span>
                 </span>
                 {/* The chevron */}
                 <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
@@ -306,9 +335,9 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
               // One mission
               <li key={item.mission.id} data-tried={item.tried} className="flex gap-3 py-3">
                 {/* Its mark: filled once tried */}
-                <span aria-hidden="true" className={`mt-1 size-4 flex-none rounded-full border-2 ${item.tried ? "border-fill bg-fill" : "border-rule"}`} />
+                <span aria-hidden="true" className={`flex size-8 flex-none items-center justify-center rounded-[10px] ${item.tried ? "bg-fill text-fill-ink" : "bg-rule"}`}>{item.tried && <CheckIcon weight="bold" className="size-4" />}</span>
                 {/* What to try, and whether it is done */}
-                <span><span className="block">{item.mission.task}</span><span className="block text-footnote text-ink-muted">{item.tried ? "Tried" : LEVEL_WORDS[item.mission.level]}</span></span>
+                <span><span className="block font-bold">{item.mission.task}</span><span className="block text-footnote font-bold text-ink-muted">{item.tried ? "Tried" : LEVEL_WORDS[item.mission.level]}</span></span>
               </li>
             ))}
           </ul>

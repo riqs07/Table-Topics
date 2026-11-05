@@ -1,18 +1,25 @@
 "use client";
-// One Learn card, one screen at a time: the question, what research found, what it means, what to do, and remembering it
+// One Learn card, one screen at a time: the question, what research found, what it means, what to do, and remembering it. Second design pass (storyboard 22, "A Learn card: myth or fact"): focus mode (the cross, the chunky bar, the set and the kind in green capitals), the claim on its set's colour, Myth and Fact as big choices marked once guessed, the finding and what to do on white cards, Sage saying what it means, "Practise it" as a row with the practice's tile, and the chunky Next at the foot
 
 // Load React's tools
 import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
-import { Masthead } from "@/components/script/Masthead";
 import { SwipeDeck } from "@/components/script/SwipeDeck";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-// Load the icons for the real-world step and the practice link
-import { ArrowRightIcon, CaretRightIcon, GlobeHemisphereWestIcon } from "@phosphor-icons/react/dist/ssr";
-// Load the shared press effect
-import { PRESS } from "@/components/script/Buttons";
+// Load the focus-mode bar (second design pass)
+import { PracticeBar } from "@/components/script/PracticeBar";
+// Load the icons for the real-world step, the practice link and a right guess
+import { CaretRightIcon, CheckIcon, GlobeHemisphereWestIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the shared press effect and looks
+import { PRESS, PRIMARY } from "@/components/script/Buttons";
+import { BUBBLE, CARD, CHIP, LAB } from "@/components/script/textStyles";
+// Load the cast, the mode tile, and which tile stands for a practice and a set
+import { Cast } from "@/components/scenes/Cast";
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { tileForHref } from "@/components/scenes/tileForHref";
+import { GROUND_BAND, learnSetGround } from "@/components/scenes/groundLooks";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the scenarios, their item and progress saving
@@ -56,28 +63,27 @@ const GUESSES: ReadonlyArray<{ verdict: Verdict; label: string }> = [
   { verdict: "mixed", label: "Somewhere between" },
 ];
 
-// A small italic heading over a screen
-function Kicker({ children }: { children: string }) {
-  // The heading
-  return <p className="mt-6 text-footnote text-ink-muted md:mt-0">{children}</p>;
-}
+// The page in focus mode: one column, the bar across its top (the deck's screens bleed to the phone's edges, so the sides are padded to match)
+const CARD_PAGE = "mx-auto flex min-h-dvh w-full max-w-3xl flex-col bg-paper-raised px-6 md:px-8";
 
-// The card's last step: a row that starts the practice that fits it best, so every card ends in doing (decision 96)
+// The card's last step: a row that starts the practice that fits it best, so every card ends in doing (decision 96), with that practice's tile (storyboard 22)
 function PractiseRow({ label, href }: { label: string; href: string }) {
-  // The whole row is the link: a filled arrow tile, "Practise it" over the session's name, and a chevron
+  // The practice's tile
+  const tile = tileForHref(href);
+  // The whole row is the link: the tile, "Practise it" over the session's name, and a chevron
   return (
-    <Link href={href} data-practise-link className={`mt-6 flex min-h-16 items-center gap-3 rounded-2xl border-2 border-fill bg-card px-4 py-3 ${PRESS} hover:bg-paper`}>
-      {/* The arrow on a filled tile */}
-      <span aria-hidden="true" className="flex size-10 flex-none items-center justify-center rounded-xl bg-fill text-fill-ink"><ArrowRightIcon className="size-6" /></span>
+    <Link href={href} data-practise-link className={`mt-5 flex min-h-18 items-center gap-3.5 px-4 py-3 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
+      {/* The practice's tile */}
+      <ModeTile ground={tile.ground} prop={tile.prop} face={tile.face} tilt={-4} motion="still" className="size-14" />
       {/* What it starts */}
       <span className="min-w-0 flex-1">
         {/* Heading */}
-        <span className="block text-footnote font-semibold text-ink-muted">Practise it</span>
+        <span className="block font-display text-lg leading-tight font-semibold">Practise it</span>
         {/* The session's name */}
-        <span className="block font-semibold leading-snug">{label}</span>
+        <span className="block text-footnote font-bold text-ink-muted">{label}</span>
       </span>
       {/* The chevron */}
-      <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
+      <CaretRightIcon aria-hidden="true" weight="bold" className="size-5 flex-none text-ink-muted" />
     </Link>
   );
 }
@@ -136,24 +142,33 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   if (!card) {
     // Say so, with a way back
     return (
-      <main id="main" data-area="learn" className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
-        {/* Heading */}
-        <Masthead title="Learn" section="learn" />
-        {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
-        <h1 className="sr-only">Learn</h1>
-        {/* Explanation */}
-        <p data-inline className="mt-6 text-lede">There is no such card. <Link href="/learn" className="underline underline-offset-4">Back to Learn</Link></p>
+      <main id="main" data-area="learn" className={CARD_PAGE}>
+        {/* The bar, with the way back to Learn */}
+        <PracticeBar close={{ href: "/learn", label: "Close, back to Learn" }} label="Learn" />
+        {/* The message, on a card with your blob wondering */}
+        <section className={`mt-8 flex flex-col items-center gap-4 px-6 py-10 text-center ${CARD}`}>
+          {/* Your blob, puzzled */}
+          <Cast who="you" face="wonder" className="size-28" />
+          {/* The page's heading */}
+          <h1 className="font-display text-statement leading-tight font-semibold">Learn</h1>
+          {/* What happened */}
+          <p data-inline className="font-bold text-ink-muted">There is no such card.</p>
+          {/* The way back */}
+          <Link href="/learn" className={PRIMARY}>Back to Learn</Link>
+        </section>
       </main>
     );
   }
 
   // The card's set
   const set = LEARN_SETS.find((item) => item.id === card.set);
+  // The set's colours, for the claim
+  const band = GROUND_BAND[learnSetGround(card.set)];
   // The card after this one
   const next = LEARN_CARDS[LEARN_CARDS.findIndex((item) => item.id === card.id) + 1];
 
   // Where to go on to from the last screen: today's next step, or the next card, or back to the set
-  const finish = plan ? { label: plan.next ? `Next: step ${plan.step + 1}` : "Finish today\u2019s practice", href: plan.next ? plan.next.href : "/" } : next ? { label: "Next card", href: `/learn/card?id=${next.id}` } : { label: `Back to ${set?.name ?? "Learn"}`, href: `/learn/set?id=${card.set}` };
+  const finish = plan ? { label: plan.next ? `Next: step ${plan.step + 1}` : "Finish today’s practice", href: plan.next ? plan.next.href : "/" } : next ? { label: "Next card", href: `/learn/card?id=${next.id}` } : { label: `Back to ${set?.name ?? "Learn"}`, href: `/learn/set?id=${card.set}` };
 
   // The screens: the question, the finding, the meaning, what to do, and a scenario on cards that have one
   const screens = [
@@ -161,77 +176,94 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
     <div key="question">
       {/* Opened from Today: the Learn scene, carried over from the step */}
       {planStep && <ScenePanel scene="learn" line="One idea, about a minute to read." className="mb-6" />}
-      {/* What kind of card, when it is not a plain explainer (the set's name is already the page title; decision 79) */}
-      {card.kind !== "explainer" && <Kicker>{card.kind === "myth-or-fact" ? "Myth or fact?" : "Try it"}</Kicker>}
-      {/* The question, set like a headline */}
-      <h1 className="mt-2 font-display text-prompt font-semibold">{card.title}</h1>
+      {/* The question, set like a headline on the set's colour */}
+      <div className={`rounded-[24px] px-6 py-5 md:px-7 md:py-6 ${band.band}`}>
+        {/* The question */}
+        <h1 className="font-display text-prompt leading-tight font-semibold">{card.title}</h1>
+      </div>
       {/* A myth-or-fact guess, before the research */}
       {card.verdict && (
-        <div className="mt-6">
+        <div className="mt-5">
           {/* The ask */}
-          <p className="text-ink-muted">Guess first.</p>
+          <p className={LAB}>Guess first</p>
           {/* The guesses */}
-          <div role="group" aria-label="Your guess" className="mt-2 flex flex-wrap gap-2">
+          <div role="group" aria-label="Your guess" className="mt-2 flex flex-wrap gap-3">
             {/* Each guess */}
-            {GUESSES.map((option) => (
-              // One guess, filled once chosen
-              <button key={option.verdict} type="button" aria-pressed={guess === option.verdict} disabled={guess !== null} onClick={() => setGuess(option.verdict)} className={`min-h-12 flex-1 rounded-[14px] border-2 px-4 font-semibold ${PRESS} ${guess === option.verdict ? "border-fill bg-fill text-fill-ink" : "border-rule bg-card disabled:opacity-60"}`}>{option.label}</button>
-            ))}
+            {GUESSES.map((option) => {
+              // Whether this is the guess, and whether it was right
+              const [picked, right] = [guess === option.verdict, option.verdict === card.verdict];
+              // One guess: a big white choice, then green once picked and right, warm once picked and wrong, the answer's edge green
+              return (
+                <button key={option.verdict} type="button" aria-pressed={picked} disabled={guess !== null} onClick={() => setGuess(option.verdict)} className={`inline-flex min-h-14 flex-1 basis-32 items-center justify-center gap-2 rounded-[18px] border-2 px-4 font-display text-xl font-semibold shadow-ledge ${PRESS} ${picked ? (right ? "border-accent bg-accent-tint text-accent-tint-ink" : "border-warm bg-warm-tint text-warm-ink") : guess && right ? "border-accent bg-card" : guess ? "border-rule bg-card text-ink-muted" : "border-rule bg-card hover:border-accent"}`}>
+                  {option.label}
+                  {/* A tick on the answer, once guessed */}
+                  {guess && right && <CheckIcon aria-hidden="true" weight="bold" className="size-5" />}
+                </button>
+              );
+            })}
           </div>
           {/* The answer, once guessed */}
-          {guess && <p role="status" className="mt-4 rounded-2xl bg-card px-4 py-3 font-display text-cue font-semibold motion-safe:animate-pop">{VERDICT_WORDS[card.verdict]} {guess === card.verdict ? "You got it." : ""}</p>}
+          {guess && <p role="status" className={`mt-4 rounded-[18px] px-5 py-3.5 font-display text-cue font-semibold motion-safe:animate-pop ${guess === card.verdict ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>{VERDICT_WORDS[card.verdict]} {guess === card.verdict ? "You got it." : ""}</p>}
         </div>
       )}
     </div>,
     // 2. What the research found
-    <div key="finding">
+    <div key="finding" className={`p-5 md:p-6 ${CARD}`}>
       {/* Heading */}
-      <Kicker>What the research found</Kicker>
+      <p className={LAB}>What the research found</p>
       {/* The finding */}
-      <p className="mt-2 max-w-[52ch] text-cue leading-snug">{card.finding}</p>
+      <p className="mt-2 max-w-[52ch] text-cue leading-snug font-bold">{card.finding}</p>
       {/* The evidence and source */}
-      <p className="mt-4 text-footnote text-ink-muted">
+      <p className="mt-4 border-t-2 border-rule pt-3 text-footnote font-bold text-ink-muted">
         {/* The label in words */}
-        <strong className="font-normal text-ink">{EVIDENCE_LABELS[card.evidence]}.</strong>{" "}
+        <strong className="font-extrabold text-ink">{EVIDENCE_LABELS[card.evidence]}.</strong>{" "}
         {/* The source */}
         {card.source.url ? <a href={card.source.url} data-inline target="_blank" rel="noreferrer" className="underline underline-offset-4">{card.source.text}</a> : card.source.text}
       </p>
     </div>,
-    // 3. What it means
-    <div key="meaning">
-      {/* Heading */}
-      <Kicker>What it means</Kicker>
-      {/* The meaning, set large */}
-      <p className="mt-2 max-w-[40ch] font-display text-statement font-semibold">{card.meaning}</p>
+    // 3. What it means, said by Sage
+    <div key="meaning" className="flex items-end gap-3 md:gap-4">
+      {/* Sage */}
+      <Cast who="sage" mood="encouraging" className="size-16 flex-none md:size-22" />
+      {/* The bubble */}
+      <div className={`${BUBBLE} mb-2 min-w-0 flex-1 px-5 py-4`}>
+        {/* Heading */}
+        <p className={LAB}>What it means</p>
+        {/* The meaning, set large */}
+        <p className="mt-1.5 max-w-[40ch] font-display text-2xl leading-tight font-semibold md:text-statement">{card.meaning}</p>
+      </div>
     </div>,
     // 4. What to do
     <div key="do">
-      {/* Heading */}
-      <Kicker>What to do</Kicker>
       {/* The advice */}
-      <p className="mt-2 max-w-[52ch] text-cue leading-snug">{card.doThis}</p>
+      <div className={`p-5 md:p-6 ${CARD}`}>
+        {/* Heading */}
+        <p className={LAB}>Do this</p>
+        {/* The advice */}
+        <p className="mt-2 max-w-[52ch] text-cue leading-snug font-extrabold">{card.doThis}</p>
+      </div>
       {/* A short exercise to say aloud, on try-it cards */}
       {card.exercise && (
-        <div className="mt-6 rounded-2xl bg-warm-tint p-4">
+        <div className="mt-5 rounded-[22px] bg-warm-tint p-5 text-warm-ink">
           {/* Heading */}
-          <p className="text-footnote text-ink-muted">Try it now</p>
+          <p className="text-xs font-extrabold tracking-[.07em] uppercase">Try it now</p>
           {/* The exercise */}
-          <p className="mt-1 text-lede">{card.exercise}</p>
+          <p className="mt-1 text-lede font-bold text-ink">{card.exercise}</p>
           {/* Record it and hear it back */}
           <QuickRecorder services={services} action="Record it" maxSec={30} />
         </div>
       )}
       {/* A small step to try for real, away from the app */}
       {card.outThere && (
-        <div className="mt-6 flex gap-3 rounded-2xl bg-card p-4">
+        <div className={`mt-5 flex gap-3.5 p-4 ${CARD}`}>
           {/* The icon */}
-          <span aria-hidden="true" className="flex size-10 flex-none items-center justify-center rounded-xl bg-warm-tint text-warm-ink"><GlobeHemisphereWestIcon className="size-6" /></span>
+          <span aria-hidden="true" className="flex size-12 flex-none items-center justify-center rounded-[14px] bg-art-sky text-art-cream"><GlobeHemisphereWestIcon weight="bold" className="size-6" /></span>
           {/* The step */}
           <span>
             {/* Heading */}
-            <span className="block text-footnote font-semibold text-warm-ink">Try it for real</span>
+            <span className="block font-display text-lg leading-tight font-semibold">Try it for real</span>
             {/* The step itself */}
-            <span className="mt-1 block">{card.outThere}</span>
+            <span className="mt-1 block font-bold text-ink-muted">{card.outThere}</span>
           </span>
         </div>
       )}
@@ -242,7 +274,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
     ...(scenario ? [
       <div key="scenario">
         {/* Heading */}
-        <Kicker>{`Try it: ${scenario.title}`}</Kicker>
+        <p className={LAB}>{`Try it: ${scenario.title}`}</p>
         {/* The item */}
         <div className="mt-2"><ScenarioItem scenario={scenario} services={services} onAnswer={(tier) => { if (today) void saveScenarioAnswer(repo, scenario.id, tier, today); }} /></div>
         {/* The practice that fits, the last thing on the card */}
@@ -251,11 +283,16 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
     ] : []),
   ];
 
+  // What kind of card, in the bar's label when it is not a plain explainer
+  const kind = card.kind === "myth-or-fact" ? " · Myth or fact?" : card.kind === "explainer" ? "" : " · Try it";
+
   // Draw the page
   return (
-    <main id="main" data-area="learn" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
-      {/* The set's name, with a way out instead of the tab bar */}
-      <Masthead title={set?.name ?? "Learn"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: `/learn/set?id=${card.set}`, label: `Close, back to ${set?.name ?? "Learn"}` }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
+    <main id="main" data-area="learn" className={CARD_PAGE}>
+      {/* The bar: the way out, how far through the card, and the set and kind */}
+      <PracticeBar close={planStep ? { href: "/", label: "Close, back to Today" } : { href: `/learn/set?id=${card.set}`, label: `Close, back to ${set?.name ?? "Learn"}` }} progress={(index + 1) / screens.length} label={`${set?.name ?? "Learn"}${kind}`} />
+      {/* Inside today's practice, which step this is */}
+      {plan && <p className="mt-3"><span className={CHIP}>Step {plan.step} of {plan.total}</span></p>}
       {/* The screens */}
       <SwipeDeck screens={screens} index={index} onIndex={setIndex} label={card.title} finish={finish} />
     </main>

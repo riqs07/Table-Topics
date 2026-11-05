@@ -16,7 +16,9 @@ import { CourseLoadFailed } from "@/components/script/CourseLoadFailed";
 import { BUBBLE, CARD, LAB, PBAR, SECTION_HEADING } from "@/components/script/textStyles";
 import { PRESS, PRIMARY, TEXT_LINK } from "@/components/script/Buttons";
 import { Buddy } from "@/components/scenes/Buddy";
-import { GROUND_TINT, type TileGround } from "@/components/scenes/ModeTile";
+import type { TileGround } from "@/components/scenes/ModeTile";
+// Load the header band's colours for each ground
+import { GROUND_BAND } from "@/components/scenes/groundLooks";
 import { PAGE } from "@/components/script/layout";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -38,21 +40,8 @@ import { courseTile, lessonTile } from "@/components/scenes/tileFor";
 // Load the hand-drawn celebration (decision 134)
 import { Drawing } from "@/components/script/Drawing";
 
-// The header band's colours for each ground: the full colour where its words read clearly on it, else its soft tint with ink words (plum, bloom and coral are too mid-toned for small words in either light or dark)
-const BAND: Readonly<Record<TileGround, { band: string; track: string; fill: string }>> = {
-  // Blue, light words
-  sky: { band: "bg-art-sky text-art-cream shadow-band", track: "bg-art-cream/30", fill: "bg-art-cream" },
-  // Yellow, dark words
-  sun: { band: "bg-art-sun text-on-warm shadow-band", track: "bg-on-warm/15", fill: "bg-on-warm" },
-  // Green, dark words
-  leaf: { band: "bg-art-leaf text-on-warm shadow-band", track: "bg-on-warm/15", fill: "bg-on-warm" },
-  // Pink, on its tint
-  bloom: { band: `${GROUND_TINT.bloom} text-ink shadow-card`, track: "bg-card", fill: "bg-art-bloom" },
-  // Purple, on its tint
-  plum: { band: `${GROUND_TINT.plum} text-ink shadow-card`, track: "bg-card", fill: "bg-art-plum" },
-  // Coral, on its tint
-  coral: { band: `${GROUND_TINT.coral} text-ink shadow-card`, track: "bg-card", fill: "bg-art-coral" },
-};
+// The header band's colours for each ground (shared with Learn's sets and the small-talk units)
+const BAND = GROUND_BAND;
 
 // Where each lesson sits across the path, as a share of its width, in turn
 const PATH_X: ReadonlyArray<number> = [0.3, 0.7, 0.46, 0.26, 0.46, 0.64, 0.42];
@@ -306,10 +295,19 @@ export function CourseScreen({ courseId, header, ...props }: ScreenProps & { cou
       <main id="main" className={PAGE}>
         {/* Title and navigation, in Courses */}
         <Masthead title="Course" section="courses" />
-        {/* The page's heading */}
-        <h1 className="mt-4 font-display text-statement font-semibold md:-mt-12">Course</h1>
-        {/* The message */}
-        <p className="mt-2 text-lede">This course could not be found. <Link href="/courses" className={TEXT_LINK} data-inline>Back to Courses</Link></p>
+        {/* The way back */}
+        <p className="mt-1 md:-mt-12"><Link href="/courses" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote text-ink-muted`}><CaretLeftIcon aria-hidden="true" weight="bold" className="size-4" />All courses</Link></p>
+        {/* The message, on a card with your blob puzzled (extrapolated from the course page's band and cards) */}
+        <section className={`mt-3 flex flex-col items-center gap-4 px-6 py-10 text-center ${CARD}`}>
+          {/* Your blob, puzzled */}
+          <Buddy face="wonder" className="size-28" />
+          {/* The page's heading */}
+          <h1 className="font-display text-statement leading-tight font-semibold">Course</h1>
+          {/* What happened */}
+          <p className="font-bold text-ink-muted">This course could not be found.</p>
+          {/* The way back */}
+          <Link href="/courses" className={PRIMARY}>Back to Courses</Link>
+        </section>
       </main>
     );
   }

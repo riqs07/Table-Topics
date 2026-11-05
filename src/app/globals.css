@@ -463,6 +463,28 @@
   /* Turned to make a point */
   transform: rotate(45deg);
 }
+/* A filled bubble (Sage saying a lesson's idea, storyboard 21): its tail in the fill colour, with no edge */
+.vl-bubble.vl-bubble-fill::before {
+  /* The fill colour */
+  background: var(--vl-fill);
+  /* No edge to show */
+  border-color: var(--vl-fill);
+}
+/* A bubble whose speaker stands on its right (your blob giving its own example, storyboard 21): the tail on the right side */
+.vl-bubble.vl-bubble-right::before {
+  /* Off the left */
+  left: auto;
+  /* Half out of the right side */
+  right: -10px;
+  /* No edge on the left and bottom */
+  border-left: 0;
+  /* (bottom) */
+  border-bottom: 0;
+  /* The edge on the top and right, the sides that now face out */
+  border-top: 2px solid var(--vl-rule);
+  /* (right) */
+  border-right: 2px solid var(--vl-rule);
+}
 
 /* The blob scenes (decision 136): parts turn and grow around points given in the drawing's own units */
 .vl-scene * {
