@@ -130,7 +130,7 @@ To workshop with the user. One idea with three parts: each mode declares what it
 
 ## Later: a UX redesign (added 2026-10-31)
 
-Once the app is in a workable, finished state, redesign the user experience and the look as one coherent system, keeping the content, the code underneath and the app's spirit. Not started; the user will say when.
+Once the app is in a workable, finished state, redesign the user experience and the look as one coherent system, keeping the content, the code underneath and the app's spirit. Not started; the user will say when. **Explored 2026-11-04 and 05:** direction B ("Playful") chosen, desktop and phone screens drawn, 20 of today's screens remade, a website commercial made (decision 157); the feedback model and the AI budget are still open. See [handoff/redesign-and-feedback-2026-11.md](handoff/redesign-and-feedback-2026-11.md).
 
 - **Why:** the app grew one idea at a time and now has many good parts without one plan tying them together.
 - **How:** build a new interface alongside the current one, screen by screen behind a switch, on the same logic, storage and content (about 60% of the code and 179 of the 225 test files carry over; the screens and their tests are rebuilt). Users' saved practice keeps working throughout.

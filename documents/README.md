@@ -51,6 +51,7 @@ A private, practice-alone app for public speaking. The user answers a topic, reh
 | 34 | [research/storytelling-2026-10.md](research/storytelling-2026-10.md) | What makes a good spoken story, how stories improve over tellings, which story types the app lacks (who I am, interview answer, toast, values), and how a given-details mode should work? | 15 min |
 | 35 | [plan-story-types.md](plan-story-types.md) | How do the stories you'll need (who I am, interview answer, toast, a choice I made) and the five-step guided-story dial work, and where do they appear? (Built, decisions 152 to 154) | 4 min |
 | 36 | [plan-boss-levels.md](plan-boss-levels.md) | How would a boss level (a live voice challenge at the end of a course) work: unlock, the three first bosses and their tests, losing and winning, cost? (Agreed in outline, not built) | 4 min |
+| 37 | [handoff/redesign-and-feedback-2026-11.md](handoff/redesign-and-feedback-2026-11.md) | Where the direction B redesign stands: what the user decided, the design canvases and the commercial, how feedback and the AI budget might work (still open), and what walking today's app turned up | 8 min |
 
 ## Inspector checklist
 
