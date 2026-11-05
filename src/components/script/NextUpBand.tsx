@@ -9,7 +9,7 @@ import type { SceneName } from "@/components/scenes/Scene";
 // Load the mode tile
 import { ModeTile } from "@/components/scenes/ModeTile";
 // Load each kind's tile
-import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+import { SCENE_TILES, type ModeTileLook } from "@/components/scenes/modeTileFor";
 // Load the carried-over wrapper
 import { SharedScene } from "@/components/scenes/SharedScene";
 // Load the press effect
@@ -34,12 +34,12 @@ interface NextUpBandProps {
   go: string;
   // The band's name for screen readers
   ariaLabel: string;
+  // The tile, when the next one has its own (the same as its card in the list below); the kind's otherwise
+  look?: ModeTileLook;
 }
 
 // The band
-export function NextUpBand({ scene, label, name, line, href, go, ariaLabel }: NextUpBandProps) {
-  // The kind's tile
-  const look = SCENE_TILES[scene];
+export function NextUpBand({ scene, label, name, line, href, go, ariaLabel, look = SCENE_TILES[scene] }: NextUpBandProps) {
   // The sky band, the tile, the words, the button
   return (
     <section aria-label={ariaLabel} data-scene-panel={scene} className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[22px] bg-art-sky p-4 pb-5 text-art-cream shadow-band md:flex-nowrap md:gap-x-6 md:px-7 md:py-5 md:pb-6">

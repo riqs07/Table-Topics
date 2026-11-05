@@ -6,13 +6,13 @@ import { useEffect, useState, type FormEvent } from "react";
 // Load the app's link
 import Link from "next/link";
 // Load the back arrow
-import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared button styles
-import { PRIMARY, QUIET, SecondaryLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the page heading with the main navigation
 import { Masthead } from "@/components/script/Masthead";
-// Load the card for a page that has nothing to show
-import { StopCard } from "@/components/script/StopCard";
+// Load Sage's not-found line
+import { NotFound } from "@/components/script/SageSays";
 // Load the mode tile
 import { ModeTile } from "@/components/scenes/ModeTile";
 // Load each kind's tile
@@ -67,6 +67,33 @@ function BackToTalks() {
   return <p className="mt-1 md:-mt-12"><Link href="/rehearse" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" weight="bold" className="size-4" />Your talks</Link></p>;
 }
 
+// The whole talk's three rungs of the memory ladder, as rows
+const WHOLE_RUNGS: ReadonlyArray<{ ladder: Ladder; name: string }> = [
+  // With the text
+  { ladder: "full", name: "with the text" },
+  // From keywords
+  { ladder: "keywords", name: "from keywords" },
+  // From memory
+  { ladder: "none", name: "from memory" },
+];
+
+// One part to rehearse as a row: its number, its opening words, a green "Rehearse" and a chevron, the whole row a link
+function PartRow({ href, mark, words, extra }: { href: string; mark: string; words: string; extra?: string }) {
+  // The row
+  return (
+    <Link href={href} className={`flex min-h-16 items-center gap-4 py-2.5 hover:text-accent ${PRESS}`}>
+      {/* The number */}
+      <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full bg-paper font-display font-semibold">{mark}</span>
+      {/* The words */}
+      <span className="min-w-0 flex-1 truncate font-semibold">{words}</span>
+      {/* What the row does */}
+      <span className="flex-none font-extrabold text-accent-tint-ink">Rehearse{extra && <span className="sr-only"> {extra}</span>}</span>
+      {/* The chevron */}
+      <CaretRightIcon aria-hidden="true" weight="bold" className="size-5 flex-none text-ink-muted" />
+    </Link>
+  );
+}
+
 // The talk's page
 export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string }) {
   // The repository and today (null until in the browser)
@@ -77,6 +104,8 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   const [dateInput, setDateInput] = useState("");
   // The browser's reason when the talk could not be read, so the page explains instead of staying empty
   const [loadError, setLoadError] = useState<string | null>(null);
+  // How many times reading was tried, so Try again reads once more
+  const [attempt, setAttempt] = useState(0);
 
   // Load the talk and its rehearsals
   useEffect(() => {
@@ -99,7 +128,8 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo, talkId]);
+    // Read again on each try
+  }, [repo, talkId, attempt]);
 
   // Save the date (or clear it when the field is empty)
   async function saveDate(event: FormEvent) {
@@ -115,22 +145,39 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
     setLoaded({ ...loaded, talk });
   }
 
-  // The talk could not be read: why, and the way back
+  // The talk could not be read: Sage with what happened, the browser's reason on a card, and Try again (Today's pattern)
   if (!loaded && loadError !== null) {
-    // Say so, in one card
+    // Say so
     return (
       <main id="main" className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Your talk" section="practice" />
         {/* The way back */}
         <BackToTalks />
-        {/* What happened */}
-        <div className="mt-4">
-          <StopCard who="you" face="wonder" label="Your talk" title="This talk couldn’t be loaded." detail={<span role="alert">This talk could not be loaded. The browser said: “{loadError}” Reload the page to try again.</span>}>
-            {/* The way back */}
-            <Link href="/rehearse" className={PRIMARY}>Back to your talks</Link>
-          </StopCard>
-        </div>
+        {/* What happened and the ways forward */}
+        <section role="alert" className="mt-4 flex max-w-2xl flex-col gap-5">
+          {/* Sage, puzzled, with what happened in the bubble */}
+          <div className="flex items-end gap-3">
+            {/* The coach */}
+            <Cast who="sage" mood="thinking" className="size-20 flex-none md:size-24" />
+            {/* What happened */}
+            <h1 className={`${BUBBLE} mb-3 font-display text-xl font-semibold md:text-2xl`}>This talk could not be loaded.</h1>
+          </div>
+          {/* The browser's reason, on a card */}
+          <div className={`p-5 ${CARD}`}>
+            {/* The small label */}
+            <p className={LAB}>What the browser said</p>
+            {/* The reason and what to do */}
+            <p className="mt-1.5 font-semibold">“{loadError}” Try again; if it keeps happening, reload the page.</p>
+          </div>
+          {/* Try again, or go back */}
+          <p className="flex flex-wrap items-center gap-3">
+            {/* Try again */}
+            <button type="button" onClick={() => { setLoadError(null); setAttempt(attempt + 1); }} className={PRIMARY}>Try again</button>
+            {/* The list of talks */}
+            <Link href="/rehearse" className={SECONDARY}>Back to your talks</Link>
+          </p>
+        </section>
       </main>
     );
   }
@@ -138,22 +185,15 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   // Still loading, or not yet in the browser
   if (!loaded || !today) return <main id="main" className={PAGE}><Masthead title="Your talk" section="practice" /></main>;
 
-  // The talk is not here
+  // The talk is not here: Sage says so, with one way back
   if (!loaded.talk) {
-    // Say so, with a way back
+    // Say so
     return (
       <main id="main" className={PAGE}>
         {/* Heading and navigation */}
         <Masthead title="Your talk" section="practice" />
-        {/* The way back */}
-        <BackToTalks />
-        {/* The note */}
-        <div className="mt-4">
-          <StopCard who="you" face="wonder" label="Your talk" title="This talk isn’t here." detail="This talk is not on this device. It may have been deleted, or saved in another browser.">
-            {/* The way back */}
-            <Link href="/rehearse" className={PRIMARY}>Back to your talks</Link>
-          </StopCard>
-        </div>
+        {/* Sage's line and the way back */}
+        <NotFound title="This talk is not on this device. It may have been deleted, or saved in another browser." back={{ href: "/rehearse", label: "Back to your talks" }} className="mt-4" />
       </main>
     );
   }
@@ -174,6 +214,8 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
   const todays = loaded.sessions.filter((session) => dayKey(new Date(session.createdAt)) === dayKey(today));
   // Runs done for each task
   const done = taskProgress(tasks, todays);
+  // The task to do next: the first not yet done enough (the page's one chunky button)
+  const nextTask = tasks.findIndex((task, index) => (done[index] ?? 0) < task.times);
   // Whole run-throughs, oldest first
   const runs = runTimes(loaded.sessions, talk.id);
 
@@ -232,8 +274,8 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
                     <span className="min-w-0 flex-1 font-display text-lg font-semibold">{task.label}</span>
                     {/* How many runs so far */}
                     <span className={(done[index] ?? 0) >= task.times ? CHIP_GOOD : CHIP}>{done[index] ?? 0} of {task.times}</span>
-                    {/* Open the rehearsal */}
-                    <SecondaryLink href={rehearseHref(talk.id, task.sectionIndex, task.ladder)}>Rehearse</SecondaryLink>
+                    {/* Open the rehearsal: chunky for the next one, white for the rest */}
+                    <Link href={rehearseHref(talk.id, task.sectionIndex, task.ladder)} className={index === nextTask ? PRIMARY : SECONDARY}>Rehearse</Link>
                   </li>
                 ))}
               </ul>
@@ -249,39 +291,25 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
               <p className={`${BUBBLE} mb-4 max-w-[52ch] rounded-[22px] px-5 py-4 text-lede leading-snug`}>{daysLeft === null ? "Set the date of the talk and VoiceLab will plan each day until then: sections first, then the opening and close, then whole runs with less and less text." : "The date has passed. Rehearse any part below, or set a new date for a plan."}</p>
             </div>
           )}
+          {/* No plan: the whole talk, with the text, is the one chunky way to start */}
+          {(daysLeft === null || daysLeft < 0) && <p><Link href={rehearseHref(talk.id, null, "full")} className={`${PRIMARY} w-full max-w-md`}>Rehearse the whole talk</Link></p>}
 
-          {/* Every part, any time */}
+          {/* Every part, any time, as rows */}
           <section aria-labelledby="any-part">
             {/* Heading */}
             <h2 id="any-part" className={SECTION_HEADING}>Practise any part</h2>
-            {/* One row per section, then the whole talk */}
+            {/* How sections are made, under the heading */}
+            <p className="mt-1 text-footnote font-bold text-ink-muted">Sections are split at blank lines in your text.</p>
+            {/* One row per section, then the whole talk at each rung */}
             <ul className={`mt-3 ${CARD_LIST}`}>
               {/* Each section */}
               {sections.map((section, index) => (
-                // One section
-                <li key={index} className="flex min-h-16 items-center gap-4 py-2.5">
-                  {/* Its number */}
-                  <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full bg-paper font-display font-semibold">{index + 1}</span>
-                  {/* The start of it */}
-                  <span className="min-w-0 flex-1 truncate font-semibold"><span className="sr-only">{index + 1}. </span>{section.split("\n")[0]}</span>
-                  {/* Rehearse it */}
-                  <SecondaryLink href={rehearseHref(talk.id, index, "full")} label={`section ${index + 1}`}>Rehearse</SecondaryLink>
-                </li>
+                // One section, the whole row a link
+                <li key={index}><PartRow href={rehearseHref(talk.id, index, "full")} mark={String(index + 1)} words={section.split("\n")[0] ?? ""} extra={`section ${index + 1}`} /></li>
               ))}
               {/* The whole talk, at each rung */}
-              <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
-                {/* Its name */}
-                <span className="min-w-0 flex-[1_1_100%] font-display text-lg font-semibold">The whole talk</span>
-                {/* With the text */}
-                <SecondaryLink href={rehearseHref(talk.id, null, "full")}>with the text</SecondaryLink>
-                {/* From keywords */}
-                <SecondaryLink href={rehearseHref(talk.id, null, "keywords")}>from keywords</SecondaryLink>
-                {/* From memory */}
-                <SecondaryLink href={rehearseHref(talk.id, null, "none")}>from memory</SecondaryLink>
-              </li>
+              {WHOLE_RUNGS.map((rung) => <li key={rung.ladder}><PartRow href={rehearseHref(talk.id, null, rung.ladder)} mark="✦" words={`The whole talk, ${rung.name}`} /></li>)}
             </ul>
-            {/* How sections are made */}
-            <p className="mt-2 text-footnote font-bold text-ink-muted">Sections are split at blank lines in your text.</p>
           </section>
         </div>
 

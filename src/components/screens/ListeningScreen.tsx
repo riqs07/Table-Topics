@@ -86,7 +86,7 @@ export function ListeningScreen(props: ScreenProps) {
         <HubTitle title="Active listening" line="Someone tells you a story, once. Answer out loud, then see which details you caught and whether you heard what mattered." figure={<span className="flex items-end gap-1"><Cast who="friend" face="happy" className="size-16" /><Cast who="you" face="listen" className="size-18" /></span>} />
         {/* The next one, on the sky (its name stays hidden until afterwards, so it gives nothing away; the tile carried over from the Practice card, decision 141) */}
         <div data-wide className="mt-5 md:mt-7">
-          <NextUpBand scene="listening" ariaLabel="Next story" label={next ? `Next up · ${LEVELS[next.level].name} · about 2 min` : "Next up"} name={next ? <span data-next-story={next.id}>A story from {findPersona(next.personaId)?.name}</span> : null} line="Listen for what happened, how it felt, and what matters to them." href={next ? listenHref(next.id) : null} go="Listen" />
+          <NextUpBand scene="listening" look={next ? { ground: LEVEL_GROUNDS[next.level], prop: "ear", face: "listen" } : undefined} ariaLabel="Next story" label={next ? `Next up · ${LEVELS[next.level].name} · about 2 min` : "Next up"} name={next ? <span data-next-story={next.id}>A story from {findPersona(next.personaId)?.name}</span> : null} line="Listen for what happened, how it felt, and what matters to them." href={next ? listenHref(next.id) : null} go="Listen" />
         </div>
         {/* Reading failed: the list still works */}
         {failed && <p role="alert" className="mt-3 text-footnote font-bold">Your past answers couldn’t be read, so every story shows as new. Listening still works.</p>}

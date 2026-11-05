@@ -22,8 +22,8 @@ import { BUBBLE, CARD, LAB, LAB_ON_TINT, PBAR, PBAR_FILL } from "@/components/sc
 import { ModeTile } from "@/components/scenes/ModeTile";
 import { SCENE_TILES } from "@/components/scenes/modeTileFor";
 import { SharedScene } from "@/components/scenes/SharedScene";
-// Load the card for a practice that stopped short
-import { StopCard } from "@/components/script/StopCard";
+// Load Sage's not-found line
+import { NotFound } from "@/components/script/SageSays";
 // Load the shared screen starting points and today's practice position
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 import { usePlanNav } from "@/components/screens/usePlanNav";
@@ -69,14 +69,8 @@ export function ListenPlayScreen({ storyId, ...props }: ListenPlayProps) {
       <main id="main" className={PRACTICE_MAIN}>
         {/* The bar, with the way back */}
         <PracticeBar close={{ href: "/listening", label: "Close, back to Active listening" }} label="Active listening" />
-        {/* The note and the way back, in one card with the friend */}
-        <div className={`${PRACTICE_BODY} max-w-3xl`}>
-          {/* The card */}
-          <StopCard who="friend" face="wonder" label="Active listening" title="That story isn’t here." detail="The link may be old. Every story is on the Active listening page.">
-            {/* The way back */}
-            <Link href="/listening" className={PRIMARY}>Choose another story</Link>
-          </StopCard>
-        </div>
+        {/* Sage says so, with the way back */}
+        <div className={PRACTICE_BODY}><NotFound title="That story isn’t here." back={{ href: "/listening", label: "Choose another story" }} className="" /></div>
       </main>
     );
   }

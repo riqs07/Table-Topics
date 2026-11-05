@@ -16,6 +16,8 @@ import { TileRow } from "@/components/script/TileRow";
 import { Cast } from "@/components/scenes/Cast";
 // Load each skill's tile
 import { skillTile } from "@/components/scenes/skillTileFor";
+// Load the tile's look type
+import type { ModeTileLook } from "@/components/scenes/modeTileFor";
 // Load the face names
 import type { FaceName } from "@/components/scenes/Scene";
 // Load the shared heading look
@@ -43,6 +45,14 @@ const MOOD_WORDS = { pleased: "at best they were pleased", easy: "at best they w
 
 // The blob's face on a scene's tile, from how the best play left them
 const MOOD_FACES: Readonly<Record<keyof typeof MOOD_WORDS, FaceName>> = { pleased: "happy", easy: "ready", deflated: "flat" };
+
+// A scene's tile: its skill's, the blob's face from how its best play left them (the same on the band and its card)
+function sceneLook(unit: string, played: SceneProgress | undefined): ModeTileLook {
+  // The skill's tile
+  const look = skillTile(unit);
+  // With the face from the mood, once played
+  return played ? { ...look, face: MOOD_FACES[moodFor(Number(played.bestWarmth) || 0)] } : look;
+}
 
 // Draw the page
 export function ScenesScreen(props: ScreenProps) {
@@ -94,7 +104,7 @@ export function ScenesScreen(props: ScreenProps) {
         <HubTitle title="Scenes" line="A short conversation. Choose your replies and they answer to what you chose. The last reply is yours, out loud." figure={<span className="flex items-end gap-1"><Cast who="you" face="wonder" className="size-18" /><Cast who="friend" face="ready" className="size-16" /></span>} />
         {/* The next one, on the sky (the tile carried over from the Practice card, decision 141) */}
         <div data-wide className="mt-5 md:mt-7">
-          <NextUpBand scene="scenes" ariaLabel="Next scene" label="Next up · about 2 min" name={next ? <span data-next-scene={next.id}>{next.title}</span> : null} line={next ? `With ${findPersona(next.personaId)?.name} · ${SKILLS[next.unit] ?? next.unit}` : undefined} href={next ? sceneHref(next.id) : null} go="Play this scene" />
+          <NextUpBand scene="scenes" look={next ? sceneLook(next.unit, progress?.[next.id]) : undefined} ariaLabel="Next scene" label="Next up · about 2 min" name={next ? <span data-next-scene={next.id}>{next.title}</span> : null} line={next ? `With ${findPersona(next.personaId)?.name} · ${SKILLS[next.unit] ?? next.unit}` : undefined} href={next ? sceneHref(next.id) : null} go="Play this scene" />
         </div>
         {/* Reading failed: the list still works */}
         {failed && <p role="alert" className="mt-3 text-footnote font-bold">Your past plays couldn’t be read, so every scene shows as new. Playing still works.</p>}
@@ -110,14 +120,14 @@ export function ScenesScreen(props: ScreenProps) {
               const played = progress?.[scene.id];
               // How the best play left them
               const mood = played ? moodFor(Number(played.bestWarmth) || 0) : null;
-              // Its skill's tile
-              const look = skillTile(scene.unit);
+              // Its tile, as on the band
+              const look = sceneLook(scene.unit, played);
               // Who, the skill, and how it last went
               const detail = `${SKILLS[scene.unit] ?? scene.unit}${played && mood ? ` · played ${played.plays === 1 ? "once" : `${played.plays} times`}, ${MOOD_WORDS[mood]}` : " · not played yet"}`;
               // Its card, a link into the scene
               return (
                 <li key={scene.id}>
-                  <TileRow href={sceneHref(scene.id)} label={`With ${findPersona(scene.personaId)?.name}`} title={scene.title} detail={detail} ground={look.ground} prop={look.prop} face={mood ? MOOD_FACES[mood] : look.face} tilt={index % 2 ? 4 : -4} />
+                  <TileRow href={sceneHref(scene.id)} label={`With ${findPersona(scene.personaId)?.name}`} title={scene.title} detail={detail} ground={look.ground} prop={look.prop} face={look.face} tilt={index % 2 ? 4 : -4} />
                 </li>
               );
             })}

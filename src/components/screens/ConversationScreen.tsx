@@ -13,6 +13,8 @@ import { PRESS, PRIMARY, QUIET, SECONDARY } from "@/components/script/Buttons";
 import { BUBBLE, CARD, LAB } from "@/components/script/textStyles";
 // Load the cast
 import { Cast } from "@/components/scenes/Cast";
+// Load Sage's not-found line
+import { NotFound } from "@/components/script/SageSays";
 // Load the card for a practice that stopped short
 import { StopCard } from "@/components/script/StopCard";
 // Load the face names
@@ -214,14 +216,8 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
     <main id="main" className={PRACTICE_MAIN}>
       {/* The bar, with the way out */}
       <PracticeBar close={{ href: "/conversations", label: "Close, back to Conversations" }} label="Talk with someone" />
-      {/* What happened, and the way back */}
-      <div className={`${PRACTICE_BODY} max-w-3xl`}>
-        {/* The card */}
-        <StopCard who="friend" face="wonder" label="Talk with someone" title="That person could not be found." detail="The link may be old. Everyone you can talk with is on the Conversations page.">
-          {/* The way back */}
-          <Link href="/conversations" className={PRIMARY}>See everyone to talk with</Link>
-        </StopCard>
-      </div>
+      {/* Sage says so, with the way back */}
+      <div className={PRACTICE_BODY}><NotFound title="That person could not be found." back={{ href: "/conversations", label: "See everyone to talk with" }} className="" /></div>
     </main>
   );
 }

@@ -32,7 +32,7 @@ test("Scenes: from Practice, choose two replies, answer out loud, see how it wen
   // On to the turn
   await page.getByRole("button", { name: "Carry on" }).click();
   // Answer out loud
-  await page.getByRole("button", { name: "Answer" }).click();
+  await page.getByRole("button", { name: "Start speaking" }).click();
   // Let the stand-in say every word, then stop
   await expect(page.getByTestId("quick-words")).toContainText("mum", { timeout: 15_000 });
   // Stop

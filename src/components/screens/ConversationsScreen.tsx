@@ -78,7 +78,7 @@ export function ConversationsScreen({ coachReady = passphraseSaved, ...props }: 
         <HubTitle title="Talk with someone" line="A few exchanges out loud, about a minute. Then see how you did on one goal." figure={<span className="flex items-end gap-1"><Cast who="you" face="ready" className="size-18" /><Cast who="friend" face="happy" className="size-16" /></span>} />
         {/* Quick play: the situation picked, on the sky (the tile carried over from the Practice card, decision 141) */}
         <div data-wide className="mt-5 md:mt-7">
-          <NextUpBand scene="conversation" ariaLabel="Quick play" label="Quick play · we pick, it starts" name={quick ? <span data-quick-pick>{quick.scenario.title}</span> : null} line={quick ? `With ${quick.persona.name}. Goal: ${goalFor(quick.scenario).text}` : undefined} href={quick ? conversationAddress(quick.persona, quick.scenario) : null} go="Quick play" />
+          <NextUpBand scene="conversation" look={quick ? skillTile(quick.scenario.unit) : undefined} ariaLabel="Quick play" label="Quick play · we pick, it starts" name={quick ? <span data-quick-pick>{quick.scenario.title}</span> : null} line={quick ? `With ${quick.persona.name}. Goal: ${goalFor(quick.scenario).text}` : undefined} href={quick ? conversationAddress(quick.persona, quick.scenario) : null} go="Quick play" />
         </div>
         {/* Or choose a situation, grouped by skill */}
         {done && (

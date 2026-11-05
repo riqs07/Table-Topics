@@ -50,7 +50,7 @@ function fakeVoice() {
 // Record a take and finish it
 async function speakAndFinish(name: string) {
   // Start recording
-  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
+  fireEvent.click(screen.getByRole("button", { name: "Start speaking" }));
   // Stop
   fireEvent.click(await screen.findByRole("button", { name: "Stop" }));
   // On to the end

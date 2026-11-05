@@ -16,8 +16,8 @@ import { Cast } from "@/components/scenes/Cast";
 import { ModeTile } from "@/components/scenes/ModeTile";
 import { SCENE_TILES } from "@/components/scenes/modeTileFor";
 import { SharedScene } from "@/components/scenes/SharedScene";
-// Load the card for a practice that stopped short
-import { StopCard } from "@/components/script/StopCard";
+// Load Sage's not-found line
+import { NotFound } from "@/components/script/SageSays";
 // Load the face names
 import type { FaceName } from "@/components/scenes/Scene";
 // Load the shared button looks
@@ -82,14 +82,8 @@ export function ScenePlayScreen({ sceneId, ...props }: ScenePlayProps) {
       <main id="main" className={PRACTICE_MAIN}>
         {/* The bar, with the way back */}
         <PracticeBar close={{ href: "/scenes", label: "Close, back to Scenes" }} label="Scenes" />
-        {/* The note and the way back, in one card with the friend */}
-        <div className={`${PRACTICE_BODY} max-w-3xl`}>
-          {/* The card */}
-          <StopCard who="friend" face="wonder" label="Scenes" title="That scene isn’t here." detail="The link may be old. Every scene is on the Scenes page.">
-            {/* The way back */}
-            <Link href="/scenes" className={PRIMARY}>Choose another scene</Link>
-          </StopCard>
-        </div>
+        {/* Sage says so, with the way back */}
+        <div className={PRACTICE_BODY}><NotFound title="That scene isn’t here." back={{ href: "/scenes", label: "Choose another scene" }} className="" /></div>
       </main>
     );
   }
@@ -315,9 +309,9 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
               <button type="button" onClick={() => void hearAgain()} className={QUIET}><SpeakerHighIcon aria-hidden="true" weight="bold" className="size-4.5" />Hear it again</button>
             </div>
           )}
-          {/* The conversation so far, before their latest line */}
+          {/* The conversation so far, before their latest line (left out on a phone while you speak, so Start speaking is in reach) */}
           {earlier.length > 0 && (
-            <ol aria-label="The conversation" className="flex flex-col gap-2">
+            <ol aria-label="The conversation" className={`flex flex-col gap-2 ${phase === "speak" ? "max-lg:hidden" : ""}`}>
               {/* Each line */}
               {earlier.map((line, index) => (
                 <li key={index} data-said={line.who} className={`max-w-[90%] rounded-[18px] px-4 py-2.5 text-footnote ${line.who === "them" ? "self-start border-2 border-rule bg-card" : "self-end bg-warm-tint text-warm-ink"}`}>
@@ -430,19 +424,22 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
               {chosen && <p className="mt-1"><button type="button" onClick={onward} className={PRIMARY}>Carry on</button></p>}
             </section>
           )}
-          {/* Your turn, out loud: ahead while choosing, then the recorder */}
+          {/* Your turn, out loud (SceneReply's card): ahead while choosing, then the chunky START SPEAKING on the right, the blob singing in rings while you speak */}
           {(options || phase === "speak") && (
-            <section aria-label="Your turn" className={`flex flex-col gap-1 p-5 ${phase === "speak" ? CARD : "rounded-[22px] border-2 border-dashed border-rule"}`}>
-              {/* When */}
-              <p className={LAB}>{phase === "speak" ? "Your turn, out loud" : phase === "first" ? "After two choices" : "After one more choice"}</p>
-              {/* What */}
-              <p className="font-display text-cue font-semibold">Now say it out loud</p>
-              {/* What to do */}
-              <p className="max-w-[52ch] font-semibold text-ink-muted">{scene.final.ask} Up to 45 seconds.</p>
+            <section aria-label="Your turn" className={`flex flex-wrap items-center gap-x-6 gap-y-3 p-5 ${phase === "speak" ? CARD : "rounded-[22px] border-2 border-dashed border-rule"}`}>
+              {/* The words */}
+              <div className="flex min-w-0 flex-[1_1_16rem] flex-col gap-1">
+                {/* When */}
+                <p className={LAB}>{phase === "speak" ? "Your turn, out loud" : phase === "first" ? "After two choices" : "After one more choice"}</p>
+                {/* What */}
+                <p className="font-display text-cue font-semibold">Now say it out loud</p>
+                {/* What to do */}
+                <p className="max-w-[52ch] font-semibold text-ink-muted">{scene.final.ask} Up to 45 seconds.</p>
+              </div>
               {/* Record it, once it is your turn */}
-              {phase === "speak" && <QuickRecorder services={services} action="Answer" maxSec={45} onDone={setTranscript} look="round" />}
+              {phase === "speak" && <div className="-mt-4 min-w-0 max-md:w-full md:max-w-sm"><QuickRecorder services={services} action="Start speaking" maxSec={45} onDone={setTranscript} /></div>}
               {/* On, once a take is done */}
-              {phase === "speak" && transcript !== null && <p className="mt-4"><button type="button" onClick={finish} className={PRIMARY}>Done, hear what {name} says</button></p>}
+              {phase === "speak" && transcript !== null && <p className="basis-full"><button type="button" onClick={finish} className={PRIMARY}>Done, hear what {name} says</button></p>}
             </section>
           )}
           {/* How it went */}
