@@ -1,7 +1,7 @@
 # Roadmap
 
 **Purpose:** The order VoiceLab is built in. Every milestone starts with tests, and every milestone lists where you step in.
-**Last updated:** 2026-10-31
+**Last updated:** 2026-11-05
 
 Checkpoint IDs (C#) are defined in [checkpoints.md](checkpoints.md). The riskiest assumptions are tested first (milestone 1), because their answers can reshape later milestones, especially 5 and 10.
 
@@ -127,6 +127,68 @@ To workshop with the user. One idea with three parts: each mode declares what it
 - **Which feedback and charts to show:** each mode shows the few results that match its purpose (a reading: pace, pauses and stress against the text; Rapid Fire: the point and its structure, the start, pause words; a story: its beats), with the rest one tap away, instead of every measure after every take.
 - **Open any time or limited:** a core set always open (to decide: reading and voice drills, which cost nothing, and a daily allowance of the AI-heavy modes), others unlocked through courses or limited a day, as boss levels are.
 - **Questions:** which modes are always open; how big the daily allowance is, and whether a paid plan lifts it; which charts belong to each mode; whether "on request" feedback feels like a loss to users.
+
+### Proposal: which analysis each mode uses (added 2026-11-05)
+
+To consider going forward, with the user. Not agreed yet.
+
+**What each kind of analysis costs** (prices from `src/config/limits.ts`; the Sonnet figure is an estimate):
+
+| Layer | What it does | Cost per use |
+|---|---|---|
+| On the phone | Live words, pace, pauses, pitch, volume, matching a reading word by word, ready-written feedback (`localChange`) | Free |
+| Speech analysis on the server | AssemblyAI's word-for-word transcript (keeps pause words, times every word) and the voice worker's measures | About 0.5¢ a minute |
+| Text AI feedback | Claude reads the transcript and writes keep, change and retry cue | Sonnet about 1 to 3¢ a take, mostly its thinking (estimate); Haiku about a tenth of that |
+| AI that talks back | Haiku writes each line, ElevenLabs speaks it | About 10 to 15¢ a conversation |
+| Real-time voice agent | The ElevenLabs agent (boss calls, Phone call beta) | About 8¢ a minute, so about 25¢ a boss attempt |
+
+Speech analysis costs less than text feedback. What holds it back is privacy (the audio leaves the phone), not money, which is why it stays opt-in.
+
+**The rule:**
+
+1. What a mode trains decides the kind of analysis. Content (the point, structure, story beats, answering the question) needs the transcript and AI. Delivery (pace, pauses, pitch, volume) needs phone measures, with ready-written wording. Pause words need the word-for-word server transcript, since the browser drops them (risk R1).
+2. How often a mode is used and what is at stake decides the model: Sonnet for rare, high-stakes takes; Haiku or feedback on request for frequent, routine ones.
+
+**Mode by mode:**
+
+| Mode | Trains | Analysis | AI |
+|---|---|---|---|
+| Rapid Fire | The point, structure, starting fast | Phone, plus server speech analysis when the week's focus is pause words | Sonnet every take |
+| Prepared speech, stories you'll need | Structure, ending | Phone | Sonnet every take |
+| Tell a story | Beats | Phone story checks | Sonnet on the first telling; Haiku on "Tell it again", a narrower comparison |
+| Guided stories, Story dice | Shaping given facts | Phone | Haiku |
+| 4/3/2 | Tightening | Phone measures each round | One call on the last round only, compared with the first (about two thirds less than a call per round) |
+| Your talk, Free talk, short speech | Rehearsal | Phone; server speech analysis is worth it here (long takes, real events) | On request ("Get coach feedback") |
+| Talk with someone | Back and forth | Phone turn timings | Haiku for the lines (as now); one Sonnet call for the feedback at the end |
+| Small talk, Active listening | Specific moves, catching details | Phone; details caught checked by keyword first | Haiku, only when the keyword check cannot decide |
+| Scenes, quick scenarios, lessons, one moment a day | One move | Phone | None; ready-written feedback |
+| Read aloud, whole speeches, pause drill, voice drills, shadowing, warm-up | Delivery | Phone (the text is known) | None |
+| Weekly check-in | Progress | Server speech analysis by default when the setting is on: these are the takes compared over months | One Sonnet call for the comparison; the weekly summary moves off Opus (decision 6 already suspects it is overkill) |
+| Boss levels | Everything a course taught | Turn timings decided by the app's rules, plus a strict judge | The only real-time agent use |
+
+**The boss:** keeping the costly voice rare and earned (one attempt a day, after a whole course, under a monthly cap) is the right control; a keen user costs a few dollars a month. To check: whether the agent has a fixed monthly plan fee (about $99 is quoted above, unconfirmed), which would matter more than the per-minute price while users are few. In reserve: run a boss on the Live (beta) stack (AssemblyAI streaming, Haiku, ElevenLabs speech) for roughly half the cost, at the price of a slower, less natural feel.
+
+**Cost levers, biggest first:**
+
+1. Lower `COACH_EFFORT` (still "medium", marked to tune at C10) or move routine modes to Haiku: per-take Sonnet thinking is likely the largest recurring cost. Check it against a coach-quality test set (below) so feedback does not get worse.
+2. A daily allowance of AI feedback, with the ready-written feedback always there once it is used up.
+3. No AI call after a couple of retries in a row; by the third try the phone measure says whether the fix landed.
+4. Prompt caching is already on for every coach (`src/server/coach.ts`). Confirm the usage figures show cache reads: a system prompt shorter than the model's minimum cacheable length is not cached.
+
+**Before a commercial launch:** the voice worker's emotion model (audEERING) is marked personal use only (`voice-worker/README.md`); licence it or remove it.
+
+### Proposal: making the feedback loop close (added 2026-11-05)
+
+To consider going forward, with the user. The loop is speak, one fix, retry, see the change. The last step is loose today.
+
+1. **A target for each fix:** the coach also returns which thing its change is about (a rubric item such as `pointFirst` or `ending`, or a measure such as pause words, pace or pitch range), and the retry checks that same thing with evidence ("your point came in sentence 4; this time sentence 1"). Today the retry shows the week's focus number (`src/core/focusMeasure.ts`), which may not be what the coach asked for.
+2. **Check quotes on the server:** a quote in keep or change that is not in the transcript (fuzzy match) is regenerated or dropped.
+3. **One fix across days:** a "current fix" that stays until it has landed two or three times, and a one-line pattern from the on-device profile sent to the coach, so it neither repeats one fix forever nor jumps between fixes.
+4. **Hear the moment:** tapping the quoted words plays that part of the recording (word times from deeper analysis where there are some), then V1's "Hear it smoothly".
+5. **A coach-quality test set:** 30 to 50 transcripts (short takes, recognition errors, stammer mode, off topic, retries where the fix landed and where it did not), each reply scored against the coach's own rules. Needed before changing models or effort.
+6. **Know whether feedback helps:** a private, on-device count of retries and fixes that landed, and an optional tap on the change: "That's not what I said" (a recognition error, which also feeds the test set) or "Not useful".
+
+**Order suggested:** 1 and 2 together, then 5, then the rest.
 
 ## Later: a UX redesign (added 2026-10-31)
 
