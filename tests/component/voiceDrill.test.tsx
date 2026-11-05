@@ -53,10 +53,10 @@ function draw(drillId: string, options: { supported?: boolean; heard?: string[];
   return { repository, clock };
 }
 
-// Record one take of the given length
+// Record one take of the given length (after the first, the take just recorded shows with "Next take", Desktop Screens "PitchDrill")
 async function recordTake(clock: { advance: (ms: number) => void }, ms = 2500) {
   // Start
-  fireEvent.click(await screen.findByRole("button", { name: /Record|Try again/ }));
+  fireEvent.click(await screen.findByRole("button", { name: /Record|Try again|Next take/ }));
   // Wait for the stop shape
   const stop = await screen.findByRole("button", { name: "Stop" });
   // Let a few loudness readings in
@@ -75,12 +75,16 @@ describe("VoiceDrillScreen", () => {
     const { repository, clock } = draw("v01");
     // The first take's line and what it trains
     expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText(/Take 1 of 3 · Friend beside you/), !!screen.getByText(findVoiceDrill("v01")!.intro)]).toEqual(["Good morning, everyone. Let’s get started.", true, true]);
-    // Three takes
-    for (let take = 0; take < 3; take += 1) await recordTake(clock);
+    // The first take
+    await recordTake(clock);
+    // It shows before the next one (Desktop Screens "PitchDrill"): its card, its line as the verdict, and Next take
+    expect([!!(await screen.findByRole("region", { name: "How loud was it?" })), document.querySelector("[data-take-verdict]")?.textContent, !!screen.getByRole("button", { name: "Next take" }), !!screen.getByRole("button", { name: "Hear it" })]).toEqual([true, "Your starting level.", true, true]);
+    // The other two takes
+    for (let take = 1; take < 3; take += 1) await recordTake(clock);
     // The results: the same level each time is not three clear steps
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Make each step a clear jump up.");
     // One bar and one line per take
-    expect([within(screen.getByRole("list", { name: "How loud each take was" })).getAllByRole("listitem").length, within(screen.getByRole("list", { name: "Your takes" })).getAllByRole("listitem").map((item) => item.querySelector("p")?.textContent)]).toEqual([3, ["Friend beside you", "Meeting room", "Back of the hall"]]);
+    expect([within(screen.getByRole("list", { name: "How loud each take was" })).getAllByRole("listitem").length, within(screen.getByRole("list", { name: "Your takes" })).getAllByRole("listitem").map((item) => item.querySelector("p")?.textContent)]).toEqual([3, ["Take 1 · Friend beside you", "Take 2 · Meeting room", "Take 3 · Back of the hall"]]);
     // Saved as a voice session with its lines, then the next volume drill offered
     await waitFor(async () => expect((await repository.listSessions()).map((session) => [session.mode, session.promptId, session.voice?.kind, session.voice?.takes.length, session.audioKey])).toEqual([["voice", "v01", "volume", 3, null]]));
     // The band leads to the next volume drill

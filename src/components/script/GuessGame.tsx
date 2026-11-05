@@ -5,6 +5,10 @@
 import { useState } from "react";
 // Load the shared button looks
 import { PRIMARY, QUIET, SECONDARY } from "@/components/script/Buttons";
+// Load the card look
+import { CARD } from "@/components/script/textStyles";
+// Load the cast (the friend you hand the phone to)
+import { Cast } from "@/components/scenes/Cast";
 
 // What the game needs
 interface GuessGameProps {
@@ -61,9 +65,14 @@ export function GuessGame({ options, order, play, question }: GuessGameProps) {
 
   // Draw the game
   return (
-    <section aria-labelledby="guess-heading" className="mt-6 rounded-3xl bg-card p-5 md:max-w-2xl">
-      {/* Its name */}
-      <h2 id="guess-heading" className="font-display text-xl font-semibold">Guessing game</h2>
+    <section aria-labelledby="guess-heading" className={`p-5 ${CARD}`}>
+      {/* The friend who guesses, and the game's name */}
+      <div className="flex items-center gap-3">
+        {/* The friend */}
+        <Cast who="friend" face="wonder" className="size-12" />
+        {/* Its name */}
+        <h2 id="guess-heading" className="font-display text-xl font-semibold">Guessing game</h2>
+      </div>
       {/* Before starting: how it works */}
       {round < 0 && (
         <>

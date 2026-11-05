@@ -66,10 +66,10 @@ function draw(drillId: string, options: { set?: number | null; swings?: number[]
   return { repository, clock };
 }
 
-// Record one take
+// Record one take (after the first, the take just recorded shows with "Next take")
 async function recordTake(clock: { advance: (ms: number) => void }) {
   // Start
-  fireEvent.click(await screen.findByRole("button", { name: /Record/ }));
+  fireEvent.click(await screen.findByRole("button", { name: /Record|Next take/ }));
   // The stop
   const stop = await screen.findByRole("button", { name: "Stop" });
   // A couple of seconds of readings

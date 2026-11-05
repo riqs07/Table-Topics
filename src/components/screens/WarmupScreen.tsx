@@ -1,14 +1,23 @@
 "use client";
-// A one-minute warm-up: three moves of about 20 seconds, with their cues, and nothing recorded (decision 80; the microphone stays off)
+// A one-minute warm-up (second design pass: the practice layout in two columns, the moves as numbered rows, Sage beside them, a countdown ring as in storyboard 6, and the verdict panel at the end): three moves of about 20 seconds, with their cues, and nothing recorded (decision 80; the microphone stays off)
 
 // Load React's state, effect and memo tools
 import { useEffect, useMemo, useState } from "react";
-// Load the practice bar and the one-column page
-import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
-// Load the action band
-import { ActionBand } from "@/components/script/ActionBand";
+// Load the practice bar, the page around it, the columns and the step label
+import { PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
 // Load the shared button looks
-import { PRESS, PRIMARY, TEXT_LINK } from "@/components/script/Buttons";
+import { PRIMARY, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+// Load the speech bubble look
+import { BUBBLE } from "@/components/script/textStyles";
+// Load the verdict panel, the next step and the numbered rows
+import { NextLink, NumberedRows, VerdictPanel } from "@/components/script/VoiceTakeStage";
+// Load the cast
+import { Cast } from "@/components/scenes/Cast";
+// Load the mode tile and the warm-up's look
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+// Load the wrapper that carries the tile over from Today (decision 141)
+import { SharedScene } from "@/components/scenes/SharedScene";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the plan position
@@ -23,8 +32,6 @@ import { topWordsToWatch } from "@/core/wordsToWatch";
 import { markWarmupDone } from "@/data/dailyPlan";
 // Load the set names
 import type { WarmupSet } from "@/content/voice";
-// Load the panel with a step's scene, carried over from Today (decision 141)
-import { ScenePanel } from "@/components/scenes/ScenePanel";
 
 // How long each move lasts, in seconds
 const MOVE_SECONDS = 20;
@@ -122,84 +129,130 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
   // The cue, with a trouble word added to the line to say when there is one
   const cue = current?.set === "say" && watch.length > 0 ? `${current.cue} Then say “${watch.join(", ")}”, slowly.` : current?.cue;
 
+  // The warm-up's tile
+  const tile = SCENE_TILES["warm-up"];
+  // Sage's word beside the routine (the move's cue is already under its name)
+  const sageLine = done ? "Breath, face and mouth are ready. Speak while they are." : current ? "Nice and easy. Nothing is recorded." : "Loosen up before you speak. Nothing is recorded.";
+
   // Draw the page
   return (
-    <main id="main" className={PRACTICE_NARROW}>
+    <main id="main" className={PRACTICE_MAIN}>
       {/* Title and the way out */}
       <PracticeBar close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/voice", label: "Close, back to Your voice" }} progress={routine.length > 0 ? Math.max(0, Math.min(move, routine.length)) / routine.length : 0} label={`Warm-up${move >= 0 && move < routine.length ? ` · move ${move + 1} of ${routine.length}` : ""}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} />
 
-      {/* Before starting: the routine */}
-      {move < 0 && (
-        <section aria-labelledby="warmup-heading" className="mt-8 md:max-w-2xl">
-          {/* The warm-up scene (carried over from Today's step) */}
-          <ScenePanel scene="warm-up" line="Loosen up before you speak." className="mb-6" />
-          {/* What it is */}
-          <h1 id="warmup-heading" className="font-display text-statement font-semibold">A one-minute warm-up.</h1>
-          {/* How it works */}
-          <p className="mt-3 max-w-[48ch] text-lede">Three moves, about {moveSeconds} seconds each. Nothing is recorded.</p>
-          {/* The moves */}
-          <ol aria-label="Moves" className="mt-5 flex flex-col gap-2">
-            {/* Each move */}
-            {routine.map((item, index) => (
-              // One move on a rounded tile
-              <li key={item.id} className="flex items-center gap-3 rounded-2xl bg-card px-3 py-2.5">
-                {/* Its number */}
-                <span aria-hidden="true" className="flex size-8 flex-none items-center justify-center rounded-lg bg-warm-tint font-semibold text-warm-ink">{index + 1}</span>
-                {/* Its set and name */}
-                <span><span className="block text-footnote text-ink-muted">{SET_NAMES[item.set]}</span><span className="block font-semibold">{item.name}</span></span>
-              </li>
-            ))}
-          </ol>
-          {/* Start, or a different routine */}
-          <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
-            {/* Start */}
-            <button type="button" onClick={next} disabled={routine.length === 0} className={PRIMARY}>Start</button>
-            {/* Another routine */}
-            <button type="button" onClick={() => setOffset(offset + 1)} className={TEXT_LINK}>Another routine</button>
-          </p>
-        </section>
-      )}
+      <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
+        {/* Before starting: the routine */}
+        {move < 0 && (
+          <section aria-labelledby="warmup-heading" className="flex min-w-0 flex-col">
+            {/* The warm-up's tile (carried over from Today's step, decision 141), the label and the name */}
+            <div data-scene-panel="warm-up" className="flex items-center gap-4 md:gap-5">
+              {/* The tile */}
+              <SharedScene scene="warm-up"><span className="flex flex-none"><ModeTile ground={tile.ground} prop={tile.prop} face={tile.face} tilt={-4} scene="warm-up" className="size-20 md:size-28" /></span></SharedScene>
+              {/* The words */}
+              <div className="min-w-0">
+                {/* The label */}
+                <p className={STEP_LABEL}>Your voice · 1 min</p>
+                {/* What it is */}
+                <h1 id="warmup-heading" className="mt-1 font-display text-statement leading-tight font-semibold">A one-minute warm-up.</h1>
+              </div>
+            </div>
+            {/* How it works */}
+            <p className="mt-4 max-w-[48ch] text-lede font-semibold text-ink-muted">Three moves, about {moveSeconds} seconds each. Nothing is recorded.</p>
+            {/* The moves */}
+            <div className="mt-5"><NumberedRows label="Moves" rows={routine.map((item) => ({ key: item.id, over: SET_NAMES[item.set], text: item.name }))} /></div>
+            {/* Start, or a different routine */}
+            <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+              {/* Start */}
+              <button type="button" onClick={next} disabled={routine.length === 0} className={PRIMARY}>Start</button>
+              {/* Another routine */}
+              <button type="button" onClick={() => setOffset(offset + 1)} className={TEXT_LINK}>Another routine</button>
+            </p>
+          </section>
+        )}
 
-      {/* A move under way */}
-      {current && (
-        <section aria-labelledby="move-heading" className="mt-8 flex flex-col md:max-w-2xl">
-          {/* Which move */}
-          <p className="text-footnote font-semibold text-accent">Move {move + 1} of {routine.length} · {SET_NAMES[current.set]}</p>
-          {/* Its name */}
-          <h1 id="move-heading" className="mt-1 font-display text-statement font-semibold">{current.name}</h1>
-          {/* What to do */}
-          <p className="mt-3 max-w-[48ch] text-lede">{cue}</p>
-          {/* The countdown on the shape, which skips ahead when tapped */}
-          <button type="button" onClick={next} aria-label={`Next move (${left} seconds left)`} className={`relative mx-auto my-8 flex size-56 items-center justify-center rounded-full md:mx-0 ${PRESS}`}>
-            {/* The halo, turning slowly */}
-            <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-dashed border-warm opacity-60 motion-safe:animate-spin-slow" />
-            {/* The shape */}
-            <span aria-hidden="true" className="absolute inset-4 rounded-full bg-warm shadow-card motion-safe:animate-morph" />
-            {/* The seconds left, and what a tap does */}
-            <span className="relative flex flex-col items-center text-on-warm">
-              {/* Seconds */}
-              <span aria-hidden="true" className="font-display text-prompt-xl font-semibold tabular-nums">{left}</span>
-              {/* The action */}
-              <span aria-hidden="true" className="text-footnote font-semibold">Next</span>
-            </span>
-          </button>
-        </section>
-      )}
+        {/* A move under way: its name and cue, then your blob in a ring that runs down (storyboard "Rapid Fire countdown") */}
+        {current && (
+          <section aria-labelledby="move-heading" className="flex min-w-0 flex-col">
+            {/* Which move */}
+            <p className={STEP_LABEL}>Move {move + 1} of {routine.length} · {SET_NAMES[current.set]}</p>
+            {/* Its name */}
+            <h1 id="move-heading" className="mt-2 font-display text-statement leading-tight font-semibold md:text-prompt">{current.name}</h1>
+            {/* What to do */}
+            <p className="mt-3 max-w-[48ch] text-lede font-semibold text-ink-muted">{cue}</p>
+            {/* The ring: its track, the time left in leaf, your blob and the seconds */}
+            <div data-countdown className="relative mt-6 flex size-60 items-center justify-center self-center md:size-64 md:self-start">
+              <svg aria-hidden="true" viewBox="0 0 120 120" className="absolute inset-0 size-full -rotate-90">
+                {/* The track */}
+                <circle cx="60" cy="60" r="54" fill="none" strokeWidth="8" className="stroke-rule" />
+                {/* The time left */}
+                <circle cx="60" cy="60" r="54" fill="none" strokeWidth="8" strokeLinecap="round" strokeDasharray="339.3" strokeDashoffset={339.3 * (1 - left / Math.max(1, moveSeconds))} className="stroke-art-leaf transition-[stroke-dashoffset] duration-500" />
+              </svg>
+              {/* Your blob, moving with you, and the seconds */}
+              <span aria-hidden="true" className="relative flex flex-col items-center">
+                {/* The blob */}
+                <Cast who="you" face={current.set === "breath" ? "puff" : "sing"} className="size-24 md:size-28" />
+                {/* The seconds left */}
+                <span className="font-display text-6xl leading-none font-semibold tabular-nums">{left}</span>
+              </span>
+            </div>
+            {/* Skip ahead */}
+            <p className="mt-6 self-center md:self-start"><button type="button" onClick={next} aria-label={`Next move (${left} seconds left)`} className={SECONDARY}>Next move</button></p>
+          </section>
+        )}
 
-      {/* Done */}
-      {done && (
-        <section aria-labelledby="done-heading" className="mt-8 md:max-w-2xl">
-          {/* The word */}
-          <h1 id="done-heading" className="font-display text-statement font-semibold">Warmed up.</h1>
-          {/* What it was for */}
-          <p className="mt-3 max-w-[48ch] text-lede">Breath, face and mouth are ready. Speak while they are.</p>
-        </section>
-      )}
+        {/* Done */}
+        {done && (
+          <section aria-labelledby="done-heading" className="flex min-w-0 flex-col">
+            {/* The label */}
+            <p className={STEP_LABEL}>Three moves done</p>
+            {/* The word */}
+            <h1 id="done-heading" className="mt-2 font-display text-statement leading-tight font-semibold">Warmed up.</h1>
+            {/* The moves, ticked */}
+            <div className="mt-5"><NumberedRows label="Moves done" rows={routine.map((item) => ({ key: item.id, over: SET_NAMES[item.set], text: item.name }))} /></div>
+          </section>
+        )}
 
-      {/* Push the band down */}
-      <div className="flex-1" />
-      {/* Once done: the reading it warmed up for, today's next step, or back */}
-      {done && (after ? <ActionBand action="Start reading" aside="your warm-up step" href={after} /> : plan ? (plan.next ? <ActionBand action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <ActionBand action="Finish today’s practice" aside="back to Today" href="/" />) : <ActionBand action="Back to Your voice" aside="more voice drills" href="/voice" />)}
+        {/* Beside it: Sage's word, the moves as they go, and once done the next step */}
+        <aside aria-label="Your coach" className="flex min-w-0 flex-col gap-4">
+          {/* Sage and the word */}
+          {!done && (
+            <div className="flex items-end gap-3">
+              {/* Sage */}
+              <Cast who="sage" mood={current ? "breathe" : "encouraging"} className="size-18 flex-none md:size-22" />
+              {/* The word */}
+              <p className={`${BUBBLE} mb-2`}>{sageLine}</p>
+            </div>
+          )}
+          {/* The moves as they go */}
+          {current && (
+            <ol aria-label="The routine" className="flex flex-col gap-2.5">
+              {routine.map((item, index) => {
+                // Whether it is done, this one, or to come
+                const state = index === move ? "now" : index < move ? "done" : "next";
+                // One move
+                return (
+                  <li key={item.id} data-move-state={state} className={`rounded-[18px] px-4 py-3 ${state === "now" ? "border-2 border-accent bg-card shadow-picked" : state === "done" ? "bg-paper" : "border-2 border-dashed border-rule"}`}>
+                    {/* Its name, and where it is */}
+                    <p className="flex items-baseline justify-between gap-3 text-sm font-extrabold">
+                      <span>{SET_NAMES[item.set]} · {item.name}</span>
+                      <span className={state === "now" ? "text-accent-tint-ink" : "text-ink-muted"}>{state === "done" ? "Done" : state === "now" ? "Now" : index === move + 1 ? "Up next" : ""}</span>
+                    </p>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+          {/* Once done: the reading it warmed up for, today's next step, or back */}
+          {done && (
+            <VerdictPanel tone="good" face="happy" headingId="warm-done-panel" heading="Ready to speak.">
+              {/* What it was for */}
+              <p className="font-bold text-ink">{sageLine}</p>
+              {/* The next step */}
+              {after ? <NextLink action="Start reading" aside="your warm-up step" href={after} /> : plan ? (plan.next ? <NextLink action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <NextLink action="Finish today’s practice" aside="back to Today" href="/" />) : <NextLink action="Back to Your voice" aside="more voice drills" href="/voice" />}
+            </VerdictPanel>
+          )}
+        </aside>
+      </div>
     </main>
   );
 }

@@ -6,7 +6,7 @@ import { useMemo } from "react";
 // Load the text view
 import { PitchText } from "@/components/script/PitchText";
 // Load the shared card look and the button looks
-import { CARD } from "@/components/script/textStyles";
+import { CARD, LAB } from "@/components/script/textStyles";
 import { PrimaryLink, SECONDARY } from "@/components/script/Buttons";
 // Load the hook that reads the deeper analysis's words
 import { useServerWords } from "@/components/screens/useServerWords";
@@ -91,7 +91,7 @@ export function VoiceSection({ repo, session, usual, hide, fluency, script = nul
   return (
     <section aria-labelledby="voice-section-heading" className={`mt-5 p-5 ${CARD}`}>
       {/* Small heading */}
-      <h2 id="voice-section-heading" className="text-footnote font-semibold text-ink-muted">Your voice</h2>
+      <h2 id="voice-section-heading" className={LAB}>Your voice</h2>
       {/* The words with their pitch */}
       {ready && <PitchText phrases={ready.phrases} />}
       {/* No words caught: the voice alone */}

@@ -23,7 +23,7 @@ import type { Repository } from "@/data/repository";
 const LINE_LOOKS = { work: "rounded-[10px] bg-warm-tint px-2.5 py-2 text-warm-ink", good: "text-accent", plain: "text-ink-muted" } as const;
 
 // One clause: its curve over its words, the key words circled, the highest point marked, and its line
-export function StressRowView({ result, pitch, width, measure }: { result: StressResult; pitch: PitchWords; width: number; measure: (text: string, bold: boolean) => number }) {
+export function StressRowView({ result, pitch, width, measure, line: showLine = true }: { result: StressResult; pitch: PitchWords; width: number; measure: (text: string, bold: boolean) => number; line?: boolean }) {
   // The words as drawn: the key words and the highest word in bold
   const words = result.words.map((word) => ({ ...word, peak: result.row.targets.includes(word.ref) || word === result.highest }));
   // The words in rows with their curves
@@ -43,7 +43,7 @@ export function StressRowView({ result, pitch, width, measure }: { result: Stres
         return <CurveRow key={index} width={width} words={result.words} slots={line.slots} path={smoothPath(line.points)} label={`${result.hit === true ? "Your highest point landed on the key word" : result.hit === false ? `Your highest point landed on “${result.highest?.text ?? ""}”, not the key word` : "Your pitch through this line"}.`} targets={targets} dot={dot} look={(place) => (result.row.targets.includes(result.words[place]!.ref) ? "target" : result.highest && result.words[place] === result.highest ? "top" : "plain")} />;
       })}
       {/* Where the lift went */}
-      <p className={`mt-1 text-footnote leading-snug ${LINE_LOOKS[result.line.tone]}`}>{result.line.text}</p>
+      {showLine && <p className={`mt-1 text-footnote leading-snug ${LINE_LOOKS[result.line.tone]}`}>{result.line.text}</p>}
     </div>
   );
 }

@@ -23,17 +23,20 @@ interface FoldCardProps {
   count?: number;
   // The list
   children: ReactNode;
+  // A picture at the start of the row, such as a mode tile (second design pass; optional, the row's words take the display face beside it)
+  art?: ReactNode;
 }
 
 // Draw the fold
-export function FoldCard({ id, name, detail, count, children }: FoldCardProps) {
+export function FoldCard({ id, name, detail, count, children, art }: FoldCardProps) {
   // A card that opens and closes
   return (
     <details id={id} className={`group scroll-mt-6 px-4 ${CARD}`}>
       {/* The row */}
       <summary className={`flex min-h-14 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden ${PRESS}`}>
         {/* Name and what it is */}
-        <span className="min-w-0 flex-1"><span className="block font-semibold">{name}</span>{detail && <span className="block text-footnote text-ink-muted">{detail}</span>}</span>
+        {art}
+        <span className="min-w-0 flex-1"><span className={art ? "block font-display text-lg leading-tight font-semibold" : "block font-semibold"}>{name}</span>{detail && <span className="block text-footnote text-ink-muted">{detail}</span>}</span>
         {/* How many */}
         {count !== undefined && <span className="text-footnote text-ink-muted">{count}</span>}
         {/* The chevron, turning down when open */}
