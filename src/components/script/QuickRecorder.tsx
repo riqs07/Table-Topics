@@ -24,6 +24,8 @@ interface QuickRecorderProps {
   maxSec?: number;
   // The button's look: the small one by default, or the references' big round microphone with its name under it (Desktop Screens "Listening", the answer out loud)
   look?: "small" | "round";
+  // Whether it is the screen's second action (the white button until it records), so it never competes with the chunky one
+  quiet?: boolean;
   // Called with what was said once it stops
   onDone?: (said: string) => void;
 }
@@ -32,7 +34,7 @@ interface QuickRecorderProps {
 type Stage = "ready" | "recording" | "done" | "blocked";
 
 // Draw the recorder
-export function QuickRecorder({ services, action, maxSec = 30, onDone, look = "small" }: QuickRecorderProps) {
+export function QuickRecorder({ services, action, maxSec = 30, onDone, look = "small", quiet = false }: QuickRecorderProps) {
   // Where it is
   const [stage, setStage] = useState<Stage>("ready");
   // The words heard so far
@@ -142,7 +144,7 @@ export function QuickRecorder({ services, action, maxSec = 30, onDone, look = "s
           {/* While recording: you, singing in rings */}
           {stage === "recording" && <SingingBlob className="size-16" />}
           {/* The button: chunky green to start, dark and chunky to stop, white to try again */}
-          <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={stage === "recording" ? `inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-ink px-6 font-display text-button font-semibold uppercase tracking-[.03em] text-paper-raised shadow-chunky ${PRESS}` : stage === "done" ? SECONDARY : PRIMARY}>
+          <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={stage === "recording" ? `inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-ink px-6 font-display text-button font-semibold uppercase tracking-[.03em] text-paper-raised shadow-chunky ${PRESS}` : stage === "done" || quiet ? SECONDARY : PRIMARY}>
             {/* Its icon */}
             {stage === "recording" ? <StopIcon aria-hidden="true" weight="fill" className="size-5" /> : stage === "done" ? <ArrowCounterClockwiseIcon aria-hidden="true" weight="bold" className="size-5" /> : <MicrophoneIcon aria-hidden="true" weight="bold" className="size-5" />}
             {/* Its words */}

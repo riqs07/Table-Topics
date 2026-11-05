@@ -176,7 +176,7 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
                     {/* Typed */}
                     <textarea id="mission-note" value={note} onChange={(event) => setNote(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border-2 border-rule bg-paper p-3 text-lede" />
                     {/* Or said */}
-                    <div className="mt-1"><QuickRecorder services={services} action="Say it instead" maxSec={45} onDone={(said) => setNote((previous) => [previous.trim(), said.trim()].filter(Boolean).join(" "))} /></div>
+                    <div className="mt-1"><QuickRecorder services={services} action="Say it instead" maxSec={45} quiet onDone={(said) => setNote((previous) => [previous.trim(), said.trim()].filter(Boolean).join(" "))} /></div>
                     {/* Save */}
                     <p className="mt-6"><button type="button" disabled={outcome === null || saving} onClick={() => void save({ tried: true, outcome, tooMuch: false })} className={`${PRIMARY} w-full`}>Save how it went</button></p>
                   </>
