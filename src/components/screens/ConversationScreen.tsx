@@ -8,11 +8,13 @@ import Link from "next/link";
 // Load the practice bar, the page around it, and the blob singing while you speak
 import { LevelBars, PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar, STEP_LABEL, SingingBlob } from "@/components/script/PracticeBar";
 // Load the shared button looks
-import { PRESS, PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, QUIET, SECONDARY } from "@/components/script/Buttons";
 // Load the shared card, label and bubble looks
 import { BUBBLE, CARD, LAB } from "@/components/script/textStyles";
 // Load the cast
 import { Cast } from "@/components/scenes/Cast";
+// Load the card for a practice that stopped short
+import { StopCard } from "@/components/script/StopCard";
 // Load the face names
 import type { FaceName } from "@/components/scenes/Scene";
 // Load the microphone help
@@ -213,11 +215,12 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
       {/* The bar, with the way out */}
       <PracticeBar close={{ href: "/conversations", label: "Close, back to Conversations" }} label="Talk with someone" />
       {/* What happened, and the way back */}
-      <div className={PRACTICE_BODY}>
-        {/* What happened */}
-        <h1 className="font-display text-statement font-semibold">That person could not be found.</h1>
-        {/* The way back */}
-        <p className="mt-4"><Link href="/conversations" className={TEXT_LINK}>See everyone to talk with</Link></p>
+      <div className={`${PRACTICE_BODY} max-w-3xl`}>
+        {/* The card */}
+        <StopCard who="friend" face="wonder" label="Talk with someone" title="That person could not be found." detail="The link may be old. Everyone you can talk with is on the Conversations page.">
+          {/* The way back */}
+          <Link href="/conversations" className={PRIMARY}>See everyone to talk with</Link>
+        </StopCard>
       </div>
     </main>
   );
@@ -1596,25 +1599,27 @@ function Conversation({ persona, skill, situationId, autostart = false, services
         </div>
       )}
 
-      {/* Nothing heard from you, or the connection dropped first */}
+      {/* Nothing heard from you, or the connection dropped first: the call ended, in one card with the friend */}
       {(phase === "empty" || phase === "lost") && (
-        <section aria-labelledby="empty-heading" className={`${PRACTICE_BODY} flex max-w-2xl flex-col items-start gap-6`}>
-          {/* The friend, puzzled with you */}
-          <Cast who="friend" face="flat" className="size-24" />
-          {/* What happened */}
-          <h1 id="empty-heading" className="font-display text-statement font-semibold">{phase === "lost" ? "The conversation couldn’t continue, so nothing was saved." : "Nothing was heard from you, so nothing was saved."}</h1>
-          {/* Try again */}
-          <p className="flex flex-wrap gap-3"><button type="button" onClick={() => void begin()} className={PRIMARY}>Start again</button><Link href="/conversations" className={QUIET}>Back to Conversations</Link></p>
+        <section aria-labelledby="empty-heading" className={`${PRACTICE_BODY} max-w-3xl`}>
+          {/* The friend, puzzled with you, and what happened */}
+          <StopCard who="friend" face="flat" headingId="empty-heading" label="The call ended" title={phase === "lost" ? "The conversation couldn’t continue, so nothing was saved." : "Nothing was heard from you, so nothing was saved."} detail={phase === "lost" ? "The connection dropped before you said anything. Start again when you’re ready." : `Check the microphone is on, then answer ${persona.name} out loud.`}>
+            {/* Try again */}
+            <button type="button" onClick={() => void begin()} className={PRIMARY}>Start again</button>
+            {/* Or leave */}
+            <Link href="/conversations" className={QUIET}>Back to Conversations</Link>
+          </StopCard>
         </section>
       )}
 
-      {/* Saving failed */}
+      {/* Saving failed: the same card, with the way to try again */}
       {phase === "failed" && (
-        <section aria-labelledby="failed-heading" className={`${PRACTICE_BODY} flex max-w-2xl flex-col items-start gap-6`}>
+        <section aria-labelledby="failed-heading" className={`${PRACTICE_BODY} max-w-3xl`}>
           {/* What happened */}
-          <h1 id="failed-heading" role="alert" className="font-display text-statement font-semibold">This conversation could not be saved.</h1>
-          {/* Try again */}
-          <p><button type="button" onClick={() => void save()} className={SECONDARY}>Try saving again</button></p>
+          <StopCard who="friend" face="side-left" headingId="failed-heading" alert label="Not saved yet" title="This conversation could not be saved." detail="Your words are still here. Try saving again.">
+            {/* Try again */}
+            <button type="button" onClick={() => void save()} className={PRIMARY}>Try saving again</button>
+          </StopCard>
         </section>
       )}
     </main>

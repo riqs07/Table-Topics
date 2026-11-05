@@ -678,12 +678,12 @@ test("Conversation with the coach: a chosen situation, written lines", async ({ 
   await page.route("**/api/feedback", (route) => route.fulfill({ json: { feedback: { keep: "You asked an open question.", change: "Follow up on the radios.", retryCue: "Ask about his last detail.", conversation: { yours: "what do you do outside of work", better: "What do you get up to outside work?" } } } }));
   // The page of situations
   await page.goto("/conversations");
-  // Choose the evening class
-  await page.getByLabel("Or choose a situation").selectOption("class");
+  // The evening class's card, among the situations
+  const evening = page.getByRole("region", { name: "Or choose a situation" }).getByRole("link", { name: /Before an evening class/ });
   // Its goal
-  await expect(page.locator("[data-picked-goal]")).toHaveText("Goal: Ask two follow-up questions.");
+  await expect(evening).toContainText("Goal: Ask two follow-up questions.");
   // Start it: nobody lives there, so the first person in turn (Maya) answers, and it starts by itself
-  await page.getByRole("link", { name: "Start this one" }).click();
+  await evening.click();
   // The written opening
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Oh. Hey. Early too?", { timeout: 20_000 });
   // Your turn
