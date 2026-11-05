@@ -9,10 +9,8 @@ test("Scenes: from Practice, choose two replies, answer out loud, see how it wen
   await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
   // Practice, then the Scenes row
   await page.goto("/practice");
-  // Open the rest of Practice, where the groups are
-  await page.getByRole("button", { name: /More ways to practise/ }).click();
-  // The row
-  await page.getByRole("link", { name: /^Scenes/ }).click();
+  // The role play's card (second design pass)
+  await page.getByRole("list", { name: "Role plays" }).getByRole("link", { name: /^Scenes/ }).click();
   // The list, with the first scene next
   await expect(page.locator("[data-next-scene]")).toHaveText("The Lisbon offer");
   // Play it

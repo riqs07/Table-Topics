@@ -53,20 +53,43 @@ function failingOnce(base: Repository): Repository {
 // Group the checks about the course page
 describe("CourseScreen", () => {
   // The course, its lessons and parts, the next one marked, and the way on
-  it("lists every lesson and part, marks the next, and carries on", async () => {
+  // Second design pass: the lessons are markers on a path; the chosen one (the next, at first) shows its parts and starts the first not done
+  it("lists every lesson on the path, shows the next lesson's parts, and starts the next part", async () => {
     // The first part done
     const repository = await seeded([[BEAT1, "a", "2026-10-27T10:00:00Z"]]);
     // Draw it
     render(<CourseScreen courseId="stop-freezing" repository={repository} now={NOW} />);
     // Wait for the parts
     await screen.findByText("Pause, don’t fill");
-    // Every part is a link, the next marked "Up next"
-    const parts = document.querySelectorAll("[data-course-part]");
-    // Confirm the title, no draft note (the words are final, decision 144), 16 parts, the next part's note, and Continue to it
-    expect([screen.getByRole("heading", { level: 1 }).textContent, screen.queryByText(/draft lessons/), parts.length, document.querySelector(`[data-course-part="${BEAT2}"]`)?.textContent?.includes("Up next"), screen.getByRole("link", { name: /Continue/ }).getAttribute("href")]).toEqual(["Stop freezing", null, 16, true, `/courses/part?id=${BEAT2}`]);
+    // The lesson card's part links
+    const parts = () => [...document.querySelectorAll("[data-lesson-card] [data-course-part]")].map((link) => link.getAttribute("data-course-part"));
+    // The lessons on the path, the next one up next
+    const nodes = [...document.querySelectorAll("[data-lesson-node]")].map((node) => node.textContent);
+    // Confirm the title and where you are, no draft note (the words are final, decision 144), six lessons, the first lesson's three parts with the next marked, and Start to it
+    expect([screen.getByRole("heading", { level: 1 }).textContent, screen.getByText(/^Course · lesson/).textContent, screen.queryByText(/draft lessons/), nodes.length, nodes[0], parts(), document.querySelector(`[data-course-part="${BEAT2}"]`)?.textContent?.includes("Up next"), screen.getByRole("link", { name: "Start part 2" }).getAttribute("href")]).toEqual(["Stop freezing", "Course · lesson 1 of 6", null, 6, "Lesson 1: Buy a beatUp next", ["sf-beat-1", "sf-beat-2", "sf-beat-3"], true, `/courses/part?id=${BEAT2}`]);
+    // Choose the second lesson on the path
+    fireEvent.click(screen.getByRole("button", { name: /^Lesson 2: Point first/ }));
+    // Confirm its parts and its start
+    expect([parts(), screen.getByRole("link", { name: "Start part 1" }).getAttribute("href")]).toEqual([["sf-point-1", "sf-point-2", "sf-point-3"], `/courses/part?id=${POINT1}`]);
   });
 
-  // The course's tile moves gently at the top; each lesson's tile plays a few rounds and rests (decision 142)
+  // On a phone each lesson is a card that opens its parts in place, the next one with Start
+  it("opens a lesson card's parts in place", async () => {
+    // Draw it with nothing done
+    render(<CourseScreen courseId="stop-freezing" repository={await seeded()} now={NOW} />);
+    // The phone's lesson list
+    const list = await screen.findByRole("list", { name: "Lessons" });
+    // Its third lesson's button
+    const third = within(list).getByRole("button", { name: /^Lesson 3/ });
+    // Closed at first
+    const before = third.getAttribute("aria-expanded");
+    // Open it
+    fireEvent.click(third);
+    // Confirm it opened with its parts, and the first lesson's Start
+    expect([before, third.getAttribute("aria-expanded"), within(list).getAllByRole("link").filter((link) => link.hasAttribute("data-course-part")).length, within(list).getByRole("link", { name: "Start lesson 1" }).getAttribute("href")]).toEqual(["false", "true", 3, `/courses/part?id=${BEAT1}`]);
+  });
+
+  // The chosen lesson's tile plays a few rounds and rests; the lesson cards' tiles keep still (decision 142)
   it("shows the course's tile and one for each lesson", async () => {
     // Draw it
     render(<CourseScreen courseId="stop-freezing" repository={await seeded()} now={NOW} />);
@@ -74,8 +97,8 @@ describe("CourseScreen", () => {
     await screen.findByText("Pause, don’t fill");
     // Each tile's name and how much it moves
     const tiles = [...document.querySelectorAll("[data-course-tile]")].map((tile) => [tile.getAttribute("data-course-tile"), tile.getAttribute("data-motion")]);
-    // Confirm the course's, then the six lessons' in order
-    expect(tiles).toEqual([["stop-freezing", "loop"], ["buy-a-beat", "few"], ["point-first", "few"], ["point-reason-example", "few"], ["land-it", "few"], ["back-on-track", "few"], ["the-run", "few"]]);
+    // Confirm the chosen lesson's, playing a few rounds, then the six lessons' cards in order, still
+    expect(tiles).toEqual([["buy-a-beat", "few"], ["buy-a-beat", "still"], ["point-first", "still"], ["point-reason-example", "still"], ["land-it", "still"], ["back-on-track", "still"], ["the-run", "still"]]);
   });
 
   // Every part done: the course is complete, with first and latest takes
@@ -264,29 +287,31 @@ describe("CoursesScreen", () => {
     // Your course, once the focus is read
     await waitFor(() => expect(hrefs("Keep going")).toEqual(["/courses/course?id=stories-that-land"]));
     // The rest
-    const rest = hrefs("More courses");
+    const rest = hrefs("For you");
     // Clear
     cleanup();
     // Stop freezing started, with no focus
     render(<CoursesScreen repository={await seeded([[BEAT1, "a", "2026-10-27T10:00:00Z"]])} now={NOW} />);
-    // Confirm the started course first, saying so
-    await waitFor(() => expect([hrefs("Keep going"), screen.getByRole("region", { name: "Keep going" }).textContent?.includes("Carry on")]).toEqual([["/courses/course?id=stop-freezing"], true]));
+    // Confirm the started course first, saying so, with its next lesson
+    await waitFor(() => expect([hrefs("Keep going"), screen.getByRole("region", { name: "Keep going" }).textContent?.includes("Next: Lesson 1, Buy a beat · about")]).toEqual([["/courses/course?id=stop-freezing"], true]));
     // Clear
     cleanup();
     // Nothing started and no focus
     render(<CoursesScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Every course under one heading
-    const all = await waitFor(() => hrefs("All courses"));
-    // Confirm the rest left out the focus's course, and all twelve with no "Your course" (two for each focus area since decision 155)
-    expect([rest.length, rest.includes("/courses/course?id=stories-that-land"), all.length, screen.queryByRole("region", { name: "Keep going" })]).toEqual([11, false, 12, null]);
+    // Every course under one heading, the first five shown
+    const first = await waitFor(() => hrefs("All courses"));
+    // Show them all
+    fireEvent.click(screen.getByRole("button", { name: "All 12" }));
+    // Confirm the rest left out the focus's course, five shown then all twelve with no "Keep going" (two for each focus area since decision 155)
+    expect([rest.length, rest.includes("/courses/course?id=stories-that-land"), first.length, hrefs("All courses").length, screen.queryByRole("region", { name: "Keep going" })]).toEqual([5, false, 5, 12, null]);
   });
 
   // Each course with how far through
   it("lists the courses", async () => {
     // One part done
     render(<CoursesScreen repository={await seeded([[BEAT1, "a", "2026-10-27T10:00:00Z"]])} now={NOW} />);
-    // Confirm the card and its count
-    const card = await screen.findByRole("link", { name: /Stop freezing, 1 of 16/ });
+    // Confirm the card and its count, in lessons
+    const card = await screen.findByRole("link", { name: /Stop freezing, 0 of 6 lessons/ });
     // Confirm where it leads, and its tile in place of the icon (decision 142)
     expect([card.getAttribute("href"), card.querySelector("[data-course-tile]")?.getAttribute("data-course-tile")]).toEqual(["/courses/course?id=stop-freezing", "stop-freezing"]);
   });

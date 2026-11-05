@@ -33,7 +33,9 @@ test("Course: a part from the Courses tab through two tries to the wrap-up", asy
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Courses" }).click();
   // The course's card
   await page.getByRole("link", { name: /^Stop freezing/ }).click();
-  // The course page, with lesson 2's first part
+  // The course page: lesson 2 on the path, then its first part (second design pass)
+  await page.getByRole("button", { name: /^Lesson 2: Point first/ }).click();
+  // (the part)
   await page.locator('[data-course-part="sf-point-1"]').click();
   // Learn: the idea
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Say your answer first. Explain after.");
@@ -65,8 +67,10 @@ test("Course: a part from the Courses tab through two tries to the wrap-up", asy
   await expect(page.getByText("Part 1 of 3 done")).toBeVisible();
   // (the next part)
   await expect(page.getByRole("link", { name: /^Next part/ })).toHaveAttribute("href", "/courses/part?id=sf-point-2");
-  // Back on the course page, the part is marked done
+  // Back on the course page, the part is marked done (lesson 1 still holds the next part, so lesson 2 is chosen on the path)
   await page.goto("/courses/course?id=stop-freezing");
+  // (lesson 2)
+  await page.getByRole("button", { name: /^Lesson 2: Point first/ }).click();
   // (its mark)
   await expect(page.locator('[data-course-part="sf-point-1"]')).toContainText("Done");
 });

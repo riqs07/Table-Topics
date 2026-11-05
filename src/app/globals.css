@@ -112,6 +112,16 @@
   --shadow-picked: 0 3px 0 var(--vl-accent);
   /* The chunky main button's darker underside (UI rewrite) */
   --shadow-chunky: 0 5px 0 color-mix(in srgb, var(--vl-fill) 68%, black);
+  /* A coloured band's darker lower edge, from its own colour: Practice's quick start, a course's header (second pass) */
+  --shadow-band: inset 0 -6px 0 color-mix(in srgb, black 22%, transparent);
+  /* A course path's open lesson disc: a deeper ledge in a darker cream (second pass) */
+  --shadow-disc: 0 6px 0 color-mix(in srgb, var(--vl-rule) 82%, black);
+  /* The next lesson's sunny disc ledge (second pass) */
+  --shadow-disc-sun: 0 6px 0 color-mix(in srgb, var(--vl-art-sun) 70%, black);
+  /* A done lesson's green disc ledge (second pass) */
+  --shadow-disc-done: 0 6px 0 color-mix(in srgb, var(--vl-fill) 68%, black);
+  /* A light button's ledge sitting on a coloured band (second pass) */
+  --shadow-on-band: 0 5px 0 color-mix(in srgb, black 28%, transparent);
   /* The same underside, pressed down */
   --shadow-chunky-pressed: 0 2px 0 color-mix(in srgb, var(--vl-fill) 68%, black);
   /* Something arriving with a small overshoot (week squares, ticks, the done badge) */

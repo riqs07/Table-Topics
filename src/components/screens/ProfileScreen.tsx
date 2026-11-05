@@ -6,16 +6,15 @@ import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the back arrow
-import { CaretLeftIcon, ClockIcon, FireIcon, GearIcon, MicrophoneIcon, SparkleIcon } from "@phosphor-icons/react/dist/ssr";
-import type { Icon } from "@phosphor-icons/react";
-import { Buddy } from "@/components/scenes/Buddy";
-import { TileRow } from "@/components/script/TileRow";
+import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the top of Me (second design pass)
+import { MeTop } from "@/components/screens/MeTop";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
 // Load the page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load the button looks
-import { PRESS, QUIET, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared text and card looks
 import { CARD, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the page shell
@@ -37,7 +36,7 @@ import { requestWeeklySummary } from "@/data/summaryClient";
 // Load the saved passphrase
 import { readPassphrase } from "@/data/passphrase";
 // Load the record types
-import { RATING_SCALES, type AnalysisRecord, type SessionRecord, type SummaryRecord } from "@/data/records";
+import { RATING_SCALES, type AnalysisRecord, type SessionRecord, type SettingsRecord, type SummaryRecord } from "@/data/records";
 // Load how often the speaker's own call matched the measure (decision 116)
 import { calibration } from "@/core/ratingCompare";
 // Load the usual zone (decision 115)
@@ -81,6 +80,10 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
   const [measuring, setMeasuring] = useState(false);
   // A quiet note about the weekly summary
   const [summaryNote, setSummaryNote] = useState("");
+  // The settings, for Me's Settings rows and whether pause words are counted
+  const [settings, setSettings] = useState<SettingsRecord | null>(null);
+  // The takes, read at once for the top of Me (the profile below waits for older takes to be measured)
+  const [takes, setTakes] = useState<SessionRecord[] | null>(null);
   // Name the tab
   usePageTitle(sessionId ? "All measures for this take" : "Me");
 
@@ -90,6 +93,13 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
     if (!today) return;
     // Ignore results once the screen closes
     let cancelled = false;
+    // The settings and the takes, for the top of the page
+    if (!sessionId) {
+      // The settings
+      repo.getSettings(today).then((read) => !cancelled && setSettings(read), () => undefined);
+      // The takes
+      repo.listSessions().then((read) => !cancelled && setTakes(read), () => undefined);
+    }
     // Read everything
     const load = async (): Promise<Loaded> => ({ sessions: await repo.listSessions(), analyses: await repo.listAnalyses(), summaries: await repo.listSummaries() });
     // In order
@@ -140,83 +150,33 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
       {sessionId && <p className="mt-2"><Link href={`/sessions?id=${encodeURIComponent(sessionId)}`} className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to the take</Link></p>}
       {/* (its name) */}
       {sessionId && <PageTitle title="All measures for this take" />}
-      {/* The whole profile: who you are so far, your numbers, and the ways to your takes and settings (UI rewrite: Me is a tab) */}
-      {!sessionId && <MeHeader sessions={loaded?.sessions ?? null} />}
-      {/* (the profile's own heading) */}
-      {!sessionId && <h2 className={`${SECTION_HEADING} mt-10`}>Your speaking profile</h2>}
-      {/* (what it compares) */}
-      {!sessionId && <p className="mt-1 max-w-[56ch] font-semibold text-ink-muted">Your usual against your recent takes. Compared only with yourself.</p>}
-      {/* While older takes are measured */}
-      {measuring && <p role="status" className="mt-4 text-ink-muted">Measuring your earlier takes…</p>}
-      {/* A failure, with the way forward */}
-      {error && <p role="alert" className="mt-4 max-w-[48ch]">The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
-      {/* The content, once loaded */}
-      {loaded && today && (sessionId ? <TakeTable sessionId={sessionId} loaded={loaded} now={today} /> : <WholeProfile loaded={loaded} now={today} summaryNote={summaryNote} />)}
-    </main>
-  );
-}
-
-// The top of Me: you so far, four numbers, and the ways to your takes, check-ins and settings
-function MeHeader({ sessions }: { sessions: ReadonlyArray<SessionRecord> | null }) {
-  // The first take's day, when there is one
-  const first = sessions && sessions.length > 0 ? sessions.reduce((earliest, item) => (item.createdAt < earliest ? item.createdAt : earliest), sessions[0]!.createdAt) : null;
-  // Minutes spoken in all
-  const minutes = sessions ? Math.round(sessions.reduce((sum, item) => sum + item.durationSec, 0) / 60) : 0;
-  // Stories told
-  const stories = sessions ? sessions.filter((item) => item.mode === "story").length : 0;
-  // Days with practice
-  const days = sessions ? new Set(sessions.map((item) => item.createdAt.slice(0, 10))).size : 0;
-  // The four numbers, each with its tile colour and icon
-  const stats: ReadonlyArray<[string, string, string, Icon]> = [
-    [String(sessions?.length ?? 0), sessions?.length === 1 ? "take" : "takes", "bg-art-sky", MicrophoneIcon],
-    [`${minutes} min`, "spoken", "bg-art-leaf", ClockIcon],
-    [String(stories), stories === 1 ? "story told" : "stories told", "bg-art-coral", FireIcon],
-    [String(days), days === 1 ? "day practised" : "days practised", "bg-art-plum", SparkleIcon],
-  ];
-  // The block
-  return (
-    <div data-wide className="mt-4 flex flex-col gap-5">
-      {/* You, so far, with the way to Settings */}
-      <div className="flex items-center justify-between gap-4">
-        {/* The blob and the words */}
-        <div className="flex items-center gap-4">
-          {/* The blob, pleased */}
-          <Buddy face="happy" className="size-18 md:size-22" />
-          {/* The words */}
-          <div>
-            {/* The page's name */}
-            <h1 className="font-display text-statement font-semibold">You, so far</h1>
-            {/* Since when */}
-            <p className="font-bold text-ink-muted">{first ? `Practising since ${new Date(first).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}` : "Your first take will show up here."}</p>
-          </div>
-        </div>
-        {/* Settings, on a computer (on a phone the Settings card below is enough) */}
-        <Link href="/settings" className={`${QUIET} hidden md:inline-flex`}><GearIcon aria-hidden="true" weight="bold" className="size-5" />Settings</Link>
-      </div>
-      {/* The numbers, never zeros made to look like failure: counts only */}
-      {sessions && sessions.length > 0 && (
-        <ul aria-label="Your numbers" className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-          {/* Each number */}
-          {stats.map(([value, label, colour, StatIcon]) => (
-            <li key={label} className={`flex items-center gap-3 p-3.5 ${CARD}`}>
-              {/* Its icon on its colour */}
-              <span aria-hidden="true" className={`flex size-11 flex-none items-center justify-center rounded-[14px] text-art-cream ${colour}`}><StatIcon weight="fill" className="size-5" /></span>
-              {/* The number and what it counts */}
-              <span className="flex flex-col"><b className="font-display text-2xl leading-none font-semibold">{value}</b><span className="text-footnote font-bold text-ink-muted">{label}</span></span>
-            </li>
-          ))}
-        </ul>
+      {/* One take's measures */}
+      {sessionId && (
+        <>
+          {/* While older takes are measured */}
+          {measuring && <p role="status" className="mt-4 text-ink-muted">Measuring your earlier takes…</p>}
+          {/* A failure, with the way forward */}
+          {error && <p role="alert" className="mt-4 max-w-[48ch]">The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
+          {/* The table, once loaded */}
+          {loaded && today && <TakeTable sessionId={sessionId} loaded={loaded} now={today} />}
+        </>
       )}
-      {/* The ways on */}
-      <div className="grid gap-3 sm:grid-cols-3 md:gap-4">
-        {/* Every take */}
-        <TileRow href="/history" label="History" title="Your takes" detail="Every session, newest first" ground="sky" prop="mic" face="ready" tilt={-4} />
-        {/* The check-ins */}
-        <TileRow href="/check-in" label="Weekly" title="Check-ins" detail="Hear the change week to week" ground="sun" prop="cal" face="ready" tilt={4} />
-        {/* Settings */}
-        <TileRow href="/settings" label="Yours" title="Settings" detail="Focus, reminders, look and data" ground="leaf" prop="star" face="happy" tilt={-4} />
-      </div>
-    </div>
+      {/* The whole of Me: you so far, then and now, your numbers, your takes and Settings (second design pass), then the speaking profile under them */}
+      {!sessionId && (
+        <MeTop repo={repo} sessions={takes ?? loaded?.sessions ?? null} settings={settings} now={today}>
+          {/* The profile's own heading */}
+          <h2 className={`${SECTION_HEADING} mt-4`}>Your speaking profile</h2>
+          {/* What it compares */}
+          <p className="mt-1 max-w-[56ch] font-semibold text-ink-muted">Your usual against your recent takes. Compared only with yourself.</p>
+          {/* While older takes are measured */}
+          {measuring && <p role="status" className="mt-4 text-ink-muted">Measuring your earlier takes…</p>}
+          {/* A failure, with the way forward */}
+          {error && <p role="alert" className="mt-4 max-w-[48ch]">The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
+          {/* The content, once loaded */}
+          {loaded && today && <WholeProfile loaded={loaded} now={today} summaryNote={summaryNote} />}
+        </MeTop>
+      )}
+    </main>
   );
 }
 
