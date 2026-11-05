@@ -38,7 +38,7 @@ import { dayLabel } from "@/core/copy";
 import type { SessionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the shared heading and card looks
-import { CARD, CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, CARD_LIST, LAB, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -187,11 +187,11 @@ export function StoriesScreen(props: ScreenProps) {
       {todays && (
         <section aria-labelledby="today-story" className={`mt-5 flex flex-col gap-4 p-4 md:flex-row md:items-center md:gap-6 md:p-5 ${CARD}`}>
           {/* The prompt on the story's coral, large */}
-          <div className="min-w-0 flex-1 rounded-[18px] bg-art-coral px-5 py-4 text-fill-ink shadow-band">
-            {/* Heading (on the coral, in the card's own words) */}
-            <h2 id="today-story" className="text-xs font-extrabold tracking-[.07em] uppercase">Today’s story</h2>
-            {/* The prompt */}
-            <p className="mt-1 font-display text-cue leading-tight font-semibold">{todays.text}</p>
+          <div className="min-w-0 flex-1">
+            {/* Heading (above the coral, where small words keep their contrast) */}
+            <h2 id="today-story" className={LAB}>Today’s story</h2>
+            {/* The prompt, large on the coral */}
+            <p className="mt-2 rounded-[18px] bg-art-coral px-5 py-4 font-display text-cue leading-tight font-semibold text-fill-ink shadow-band">{todays.text}</p>
           </div>
           {/* The suggested template and Tell it */}
           <div className="flex flex-col gap-3 md:w-56 md:flex-none">

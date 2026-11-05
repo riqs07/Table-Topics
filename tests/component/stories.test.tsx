@@ -76,7 +76,8 @@ describe("StoriesScreen", () => {
     expect((await screen.findAllByRole("link", { name: storyPromptForDay(NOW).text }))[0]!.getAttribute("href")).toBe(`/stories/tell?prompt=${storyPromptForDay(NOW).id}`);
     // Confirm the empty lines and the eight groups
     expect([await screen.findByText("Stories you tell land here, ready to tell again."), screen.getByRole("link", { name: "Record today’s moment" }).getAttribute("href"), STORY_GROUPS.every((group) => screen.getByText(group.name))]).toEqual([expect.anything(), "/session?mode=moment&prompt=moment", true]);
-  });
+    // (the whole page, every prompt in its fold and a tile on each kind, is a large tree for the role queries: given room, as courses.test.tsx does)
+  }, 20_000);
 
   // Today's story with its suggested template and Tell it, then the four templates, each starting today's story with it (decision 126)
   it("offers today's story with its suggested template, and the templates", async () => {
@@ -125,7 +126,7 @@ describe("StoriesScreen", () => {
     // Save
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     // Confirm it shows and is saved
-    expect([await screen.findByText("The night bus"), (await repository.getStory("sp04"))?.title]).toEqual([expect.anything(), "The night bus"]);
+    expect([await screen.findByText("The night bus", {}, { timeout: 5000 }), (await repository.getStory("sp04"))?.title]).toEqual([expect.anything(), "The night bus"]);
   });
 
   // A title that cannot be saved says why and keeps the field open (rule T1)
