@@ -5,6 +5,8 @@
 import { useSearchParams } from "next/navigation";
 // Load the screens
 import { CourseScreen } from "@/components/screens/CourseScreen";
+// Load the illustrated course headers (the Illustration Study)
+import { CourseHeader } from "@/components/scenes/CourseHeader";
 import { CoursePartScreen } from "@/components/screens/CoursePartScreen";
 import { CourseRevisitScreen } from "@/components/screens/CourseRevisitScreen";
 // Load the step type
@@ -18,7 +20,10 @@ export function CourseFromAddress() {
   // The address's query
   const params = useSearchParams();
   // The course
-  return <CourseScreen key={params.get("id") ?? ""} courseId={params.get("id") ?? ""} />;
+  // The course's id from the address
+  const id = params.get("id") ?? "";
+  // The course, its illustrated scene at the top of its band
+  return <CourseScreen key={id} courseId={id} header={<CourseHeader course={id} fit="cover" className="h-44 overflow-hidden rounded-2xl md:h-60" />} />;
 }
 
 // The part and step named in the address

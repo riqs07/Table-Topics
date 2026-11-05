@@ -353,7 +353,7 @@ export function CourseScreen({ courseId, header, ...props }: ScreenProps & { cou
         {/* The count, said */}
         {data.status === "ready" && <p className="sr-only">{lessons.done} of {lessons.total} lessons done.</p>}
         {/* A slot for an illustrated course header */}
-        {header && <div data-course-header-slot className="w-full">{header}</div>}
+        {header && <div data-course-header-slot className="order-first -mx-1 -mt-1 w-[calc(100%+0.5rem)] md:-mx-2 md:w-[calc(100%+1rem)]">{header}</div>}
       </div>
       {/* Loading, failed, or the lessons */}
       {data.status === "loading" && <Skeleton blocks={["h-40", "h-40"]} />}
