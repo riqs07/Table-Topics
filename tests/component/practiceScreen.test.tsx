@@ -227,7 +227,7 @@ describe("PracticeWaysScreen", () => {
   it("says so for an unknown list", async () => {
     // Draw it
     render(<PracticeWaysScreen job="nothing" repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Confirm the message and the way back
-    expect([screen.getByText(/There is no list by that name/).textContent, screen.getByRole("link", { name: "Back to Practice" }).getAttribute("href")]).toEqual(["There is no list by that name. Back to Practice", "/practice"]);
+    // Confirm the message (Sage says it as the page's heading, second design pass) and the way back
+    expect([screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to Practice" }).getAttribute("href")]).toEqual(["There is no list by that name.", "/practice"]);
   });
 });

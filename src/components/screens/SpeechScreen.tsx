@@ -1,5 +1,5 @@
 "use client";
-// One full speech: its parts in order, each about a minute, marked done or next, with the next one to read
+// One full speech: its parts in order, each about a minute, marked done or next, with the next one to read (second design pass, extrapolated from Desktop Screens "CoursePath" and "ReadAloud": "‹ Read aloud", the reading tile in a header card with how far along as a chunky bar, the parts as rows in one card with their marks, the next one marked "Up next", and the chunky band to read it)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -21,6 +21,17 @@ import { lessonPath } from "@/core/lessonPath";
 import { lengthLabel, readingTime } from "@/core/readingLength";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
+// Load the list page's header and Sage's line
+import { BackLink, HubHeader } from "@/components/script/HubHeader";
+import { NotFound } from "@/components/script/SageSays";
+// Load the reading tile
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+// Load the shared looks
+import { CARD_LIST, CHIP, CHIP_GOOD, PBAR, PBAR_FILL } from "@/components/script/textStyles";
+import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
+
+// The way back to the readings
+const BACK = { href: "/skills#readings", label: "Read aloud" };
 
 // The first few words of a part, so each row can be told apart
 function opening(part: string): string {
@@ -67,11 +78,11 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
     return (
       <main id="main" className={PAGE}>
         {/* Heading and navigation */}
-        <Masthead title="Speech" section="skills" />
-        {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
-        <h1 className="sr-only">Speech</h1>
-        {/* The explanation */}
-        <p data-inline className="mt-6 text-lede text-ink-muted">This speech is not in the library. <Link href="/skills#readings" className="underline underline-offset-4">Back to the readings</Link></p>
+        <Masthead title="VoiceLab" section="skills" />
+        {/* The way back */}
+        <BackLink {...BACK} />
+        {/* Sage says what happened, with the way back as the one action */}
+        <NotFound title="This speech is not in the library." back={{ href: BACK.href, label: "Back to the readings" }} className="mt-4" />
       </main>
     );
   }
@@ -91,44 +102,46 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
 
   // Draw the page
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 md:[&>:not(header,nav,[data-action-band])]:max-w-3xl">
+    <main id="main" className={`${PAGE} flex flex-col`}>
       {/* Heading and navigation */}
-      <Masthead title={speech.title} section="skills" />
-      {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
-      <h1 className="sr-only">{speech.title}</h1>
-      {/* Who, where and when */}
-      <p className="mt-6 text-lede">{speech.speaker}. {speech.occasion}.</p>
-      {/* How long, in how many parts, and how far along */}
-      <p className="mt-2 text-footnote text-ink-muted">{speech.parts.length === 1 ? `One part, ${total}` : `${speech.parts.length} parts, ${total}`}{done === 0 ? "" : done === speech.parts.length ? " · all read" : ` · ${done} read`}</p>
-      {/* The parts */}
-      <ol aria-label="Parts" className="mt-6">
+      <Masthead title="VoiceLab" section="skills" />
+      {/* The way back, the reading tile, the speech's name, who gave it and where, and how far along */}
+      <HubHeader back={BACK} look={SCENE_TILES["read-aloud"]} title={speech.title} line={`${speech.speaker}. ${speech.occasion}.`}>
+        {/* How long, in how many parts, and how far along: a chunky bar counted in parts once one is read */}
+        <div className="flex basis-full flex-col gap-2">
+          {/* The bar, only once there is something on it (never a row of zeros) */}
+          {done > 0 && <span role="progressbar" aria-label="Parts read" aria-valuemin={0} aria-valuemax={speech.parts.length} aria-valuenow={done} className={`${PBAR} max-w-md`}><span className={PBAR_FILL} style={{ width: `${(done / speech.parts.length) * 100}%` }} /></span>}
+          {/* The words */}
+          <p className="text-footnote font-bold text-ink">{speech.parts.length === 1 ? `One part, ${total}` : `${speech.parts.length} parts, ${total}`}{done === 0 ? "" : done === speech.parts.length ? " · all read" : ` · ${done} read`}</p>
+        </div>
+      </HubHeader>
+      {/* The parts, as rows in one card */}
+      <ol aria-label="Parts" className={`mt-5 ${CARD_LIST}`}>
         {/* Each part */}
         {speech.parts.map((part, index) => (
-          // One part, joined to the next by a line
-          <li key={index} className="relative">
-            {/* The line to the next part (not after the last) */}
-            {index < speech.parts.length - 1 && <span aria-hidden="true" className="absolute top-14 bottom-0 left-[17px] w-0.5 bg-rule" />}
+          // One part
+          <li key={index}>
             {/* The whole row starts the reading */}
-            <Link href={`/session?mode=read&prompt=${ids[index]}`} className="relative flex items-start gap-x-4 py-4 hover:text-accent">
+            <Link href={`/session?mode=read&prompt=${ids[index]}`} className={`flex min-h-18 items-center gap-x-4 py-3 hover:text-accent ${PRESS}`}>
               {/* Its mark on the path */}
               <PathMark mark={marks[index] ?? "open"} number={index + 1} />
-              {/* Its opening words and length */}
+              {/* Its opening words */}
               <span className="min-w-0 flex-1">
-                {/* "Next" above the part to read next */}
-                {marks[index] === "next" && <span className="block text-footnote font-medium text-accent">Next</span>}
+                {/* "Up next" above the part to read next */}
+                {marks[index] === "next" && <span className={`${CHIP_GOOD} mb-1`}>Up next</span>}
                 {/* The opening words, with what the row does read before them (the visible words stay in the name; WCAG 2.5.3) */}
-                <span className="block text-lede"><span className="sr-only">Read part {index + 1}: </span>{opening(part)}</span>
-                {/* How long */}
-                <span className="block text-footnote text-ink-muted">{lengthLabel(readingTime(part))}</span>
+                <span className={`block leading-snug ${marks[index] === "done" ? "font-semibold text-ink-muted" : "font-bold"}`}><span className="sr-only">Read part {index + 1}: </span>{opening(part)}</span>
               </span>
+              {/* How long, as a pill */}
+              <span className={`${CHIP} flex-none max-sm:hidden`}>{lengthLabel(readingTime(part))}</span>
             </Link>
           </li>
         ))}
       </ol>
       {/* The short highlight, and where the text comes from */}
-      <p className="mt-6 mb-6 border-t border-rule pt-3 text-footnote text-ink-muted">
+      <p className="mt-5 text-footnote font-semibold text-ink-muted">
         {/* The highlight */}
-        {highlight && <><Link data-inline href={`/session?mode=read&prompt=${highlight.id}`} className="underline underline-offset-4">Read the short highlight</Link> ({lengthLabel(readingTime(highlight.body))}). </>}
+        {highlight && <><Link data-inline href={`/session?mode=read&prompt=${highlight.id}`} className={TEXT_LINK}>Read the short highlight</Link> ({lengthLabel(readingTime(highlight.body))}). </>}
         {/* The source */}
         Text: {speech.textNote}. Public domain.
       </p>

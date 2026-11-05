@@ -1,10 +1,8 @@
 "use client";
-// A mission's debrief, by taps and by voice: did you try it, how it went (1 to 5), what you noticed, then how it went, against the prediction for older tries that have one (decision 52; new tries have none since decision 104)
+// A mission's debrief, by taps and by voice: did you try it, how it went (1 to 5), what you noticed, then how it went, against the prediction for older tries that have one (decision 52; new tries have none since decision 104). Second design pass, after storyboard 23 ("Today's mission"): the two of you in a scene, the move as a small label, the task large, Sage with the habit to drop (or how it went), then the answers in a card and one chunky button
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
-// Load Next.js's link component
-import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
@@ -24,7 +22,15 @@ import { debriefMission, loadMissions } from "@/data/missions";
 // Load the record type
 import type { MissionRecord } from "@/data/records";
 // Load the shared button looks
-import { PRIMARY } from "@/components/script/Buttons";
+import { PRESS, PRIMARY } from "@/components/script/Buttons";
+// Load the shared card and label looks
+import { CARD, LAB } from "@/components/script/textStyles";
+// Load the two of you in a scene, and Sage's line
+import { SceneCast } from "@/components/scenes/SceneCast";
+import { NotFound, SageSays } from "@/components/script/SageSays";
+
+// The look of an answer: white with a ledge, edged in the accent with a green ledge when chosen (as the story set-up's choices)
+const choice = (chosen: boolean) => `inline-flex min-h-12 items-center rounded-[14px] border-2 bg-card px-4 font-extrabold ${PRESS} ${chosen ? "border-accent shadow-picked" : "border-rule shadow-card hover:border-ink-muted"}`;
 
 // Draw the debrief
 export function MissionScreen({ recordId, from = "learn", services = browserRecordingServices, ...props }: ScreenProps & { recordId: string; from?: "today" | "learn"; services?: RecordingServices }) {
@@ -83,61 +89,66 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
     <main id="main" className={PRACTICE_NARROW}>
       {/* Title and a way back to Today */}
       <PracticeBar close={{ href: origin.href, label: `Close, back to ${origin.name}` }} label={mission?.move ? `Mission · ${mission.move}` : "Mission"} />
-      {/* Missing */}
-      {record === null && <h1 className="sr-only">Mission</h1>}
-      {/* Missing */}
-      {record === null && <p className="mt-8 text-lede">This mission could not be found. <Link href={origin.href} className="underline underline-offset-4">Back to {origin.name}</Link></p>}
+      {/* Missing: Sage says so, with the way back */}
+      {record === null && <NotFound title="This mission could not be found." back={{ href: origin.href, label: `Back to ${origin.name}` }} />}
       {/* The debrief */}
       {record && mission && (
         <div className="flex flex-1 flex-col">
-          {/* The task */}
-          <p className="mt-6 text-footnote text-ink-muted">The mission</p>
-          {/* Its words */}
-          <h1 className="mt-1 font-display text-statement">{mission.task}</h1>
+          {/* The two of you, as in the storyboard's mission: pleased once it went well */}
+          <SceneCast mood={record.status === "done" && (record.outcome ?? 0) >= 4 ? "pleased" : "easy"} speaking={false} name="The other person" you={record.status === "done" && (record.outcome ?? 0) >= 4 ? "happy" : "side"} className="mt-6 bg-art-bloom/25" />
+          {/* The move, as a small label */}
+          <p className={`${LAB} mt-5 text-center`}>{mission.move} · the mission</p>
+          {/* The task, large */}
+          <h1 className="mx-auto mt-2 max-w-[22ch] text-center font-display text-statement leading-tight font-semibold">{mission.task}</h1>
           {/* Debriefed: the outcome against the prediction, and what they noticed */}
           {record.status === "done" ? (
-            <section aria-label="How it went" className="mt-6">
-              {/* The comparison */}
-              <p role="status" className="text-lede">{compareLine(record)}</p>
+            <section aria-label="How it went" className="mt-6 flex flex-col gap-4">
+              {/* Sage says how it went */}
+              <SageSays mood="proud"><p role="status">{compareLine(record)}</p></SageSays>
               {/* Their note */}
-              {record.note && <p className="mt-4 border-l-2 border-rule pl-3 text-lede"><span className="block text-footnote text-ink-muted">What you noticed</span>{record.note}</p>}
+              {record.note && <p className={`${CARD} px-5 py-4 text-lede`}><span className={`${LAB} block`}>What you noticed</span>{record.note}</p>}
               {/* Stepping back */}
-              {record.tooMuch && <p className="mt-4 text-lede">Next time, the mission steps back to an easier one.</p>}
+              {record.tooMuch && <p className="text-lede font-semibold">Next time, the mission steps back to an easier one.</p>}
             </section>
           ) : (
             <>
-              {/* What they expected, when they guessed (the guess is optional) */}
-              {record.predicted !== null && <p className="mt-3 text-footnote text-ink-muted">You expected it to go {SCALE_WORDS[record.predicted]?.toLowerCase()} ({record.predicted} of 5).</p>}
-              {/* Did you try it */}
-              <p className="mt-6 font-medium">Did you try it?</p>
-              {/* The answers */}
-              <div role="group" aria-label="Did you try it?" className="mt-2 flex flex-wrap gap-2">
-                {/* Yes */}
-                <button type="button" aria-pressed={tried === true} onClick={() => setTried(true)} className={`inline-flex min-h-11 items-center border px-4 ${tried === true ? "border-fill bg-fill text-fill-ink" : "border-rule hover:border-accent"}`}>Yes</button>
-                {/* No chance */}
-                <button type="button" disabled={saving} onClick={() => void save({ tried: false, outcome: null, tooMuch: false })} className="inline-flex min-h-11 items-center border border-rule px-4 hover:border-accent">Didn’t get a chance</button>
-                {/* Too much */}
-                <button type="button" disabled={saving} onClick={() => void save({ tried: false, outcome: null, tooMuch: true })} className="inline-flex min-h-11 items-center border border-rule px-4 hover:border-accent">Too much for now</button>
+              {/* Sage with the one habit to drop while trying it */}
+              <SageSays mood="encouraging" className="mt-5">{mission.drop}</SageSays>
+              {/* The debrief, in a card */}
+              <div className={`mt-6 flex flex-col p-5 md:p-6 ${CARD}`}>
+                {/* What they expected, when they guessed (the guess is optional) */}
+                {record.predicted !== null && <p className="mb-4 text-footnote font-semibold text-ink-muted">You expected it to go {SCALE_WORDS[record.predicted]?.toLowerCase()} ({record.predicted} of 5).</p>}
+                {/* Did you try it */}
+                <p className="font-display text-xl font-semibold">Did you try it?</p>
+                {/* The answers */}
+                <div role="group" aria-label="Did you try it?" className="mt-3 flex flex-wrap gap-2.5">
+                  {/* Yes */}
+                  <button type="button" aria-pressed={tried === true} onClick={() => setTried(true)} className={choice(tried === true)}>Yes</button>
+                  {/* No chance */}
+                  <button type="button" disabled={saving} onClick={() => void save({ tried: false, outcome: null, tooMuch: false })} className={choice(false)}>Didn’t get a chance</button>
+                  {/* Too much */}
+                  <button type="button" disabled={saving} onClick={() => void save({ tried: false, outcome: null, tooMuch: true })} className={choice(false)}>Too much for now</button>
+                </div>
+                {/* Tried: how it went and what they noticed */}
+                {tried && (
+                  <>
+                    {/* How it went */}
+                    <p className="mt-6 font-display text-xl font-semibold">How did it go?</p>
+                    {/* The scale */}
+                    <ScaleChoice label="How did it go?" value={outcome} onChoose={setOutcome} />
+                    {/* What they noticed, asked the mission's own way when it has one (decision 95) */}
+                    <label htmlFor="mission-note" className="mt-6 block font-display text-xl font-semibold">{mission.notice ?? "What did you notice about them?"} <span className="font-sans text-base font-bold text-ink-muted">(optional)</span></label>
+                    {/* Typed */}
+                    <textarea id="mission-note" value={note} onChange={(event) => setNote(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border-2 border-rule bg-paper p-3 text-lede" />
+                    {/* Or said */}
+                    <div className="mt-1"><QuickRecorder services={services} action="Say it instead" maxSec={45} onDone={(said) => setNote((previous) => [previous.trim(), said.trim()].filter(Boolean).join(" "))} /></div>
+                    {/* Save */}
+                    <p className="mt-6"><button type="button" disabled={outcome === null || saving} onClick={() => void save({ tried: true, outcome, tooMuch: false })} className={`${PRIMARY} w-full`}>Save and compare</button></p>
+                  </>
+                )}
               </div>
-              {/* Tried: how it went and what they noticed */}
-              {tried && (
-                <>
-                  {/* How it went */}
-                  <p className="mt-6 font-medium">How did it go?</p>
-                  {/* The scale */}
-                  <ScaleChoice label="How did it go?" value={outcome} onChoose={setOutcome} />
-                  {/* What they noticed, asked the mission's own way when it has one (decision 95) */}
-                  <label htmlFor="mission-note" className="mt-6 block font-medium">{mission.notice ?? "What did you notice about them?"} <span className="text-ink-muted">(optional)</span></label>
-                  {/* Typed */}
-                  <textarea id="mission-note" value={note} onChange={(event) => setNote(event.target.value)} rows={3} className="mt-2 w-full border border-rule bg-paper p-3 text-lede" />
-                  {/* Or said */}
-                  <div className="mt-2"><QuickRecorder services={services} action="Say it instead" maxSec={45} onDone={(said) => setNote((previous) => [previous.trim(), said.trim()].filter(Boolean).join(" "))} /></div>
-                  {/* Save */}
-                  <p className="mt-6"><button type="button" disabled={outcome === null || saving} onClick={() => void save({ tried: true, outcome, tooMuch: false })} className={PRIMARY}>Save and compare</button></p>
-                </>
-              )}
               {/* Privacy */}
-              <p className="mt-6 text-footnote text-ink-muted">Your notes stay on this phone.</p>
+              <p className="mt-4 text-center text-footnote font-semibold text-ink-muted">Your notes stay on this phone.</p>
             </>
           )}
           {/* Push the band down */}

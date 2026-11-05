@@ -10,6 +10,9 @@ import type { ReactNode } from "react";
 import { PRESS } from "./Buttons";
 // Load the card look
 import { CARD } from "./textStyles";
+// Load the mode tile and its look type
+import { ModeTile } from "@/components/scenes/ModeTile";
+import type { ModeTileLook } from "@/components/scenes/modeTileFor";
 
 // What a fold shows
 interface FoldCardProps {
@@ -21,19 +24,23 @@ interface FoldCardProps {
   detail?: string;
   // How many things are inside
   count?: number;
+  // A mode tile beside the name (second design pass), when the group is a kind of practice
+  look?: ModeTileLook;
   // The list
   children: ReactNode;
 }
 
 // Draw the fold
-export function FoldCard({ id, name, detail, count, children }: FoldCardProps) {
+export function FoldCard({ id, name, detail, count, look, children }: FoldCardProps) {
   // A card that opens and closes
   return (
     <details id={id} className={`group scroll-mt-6 px-4 ${CARD}`}>
       {/* The row */}
       <summary className={`flex min-h-14 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden ${PRESS}`}>
-        {/* Name and what it is */}
-        <span className="min-w-0 flex-1"><span className="block font-semibold">{name}</span>{detail && <span className="block text-footnote text-ink-muted">{detail}</span>}</span>
+        {/* The group's tile, when it has one (still, apart from blinking) */}
+        {look && <ModeTile ground={look.ground} prop={look.prop} face={look.face} still className="size-12 flex-none" />}
+        {/* Name and what it is (the name in the display face once the row has a tile) */}
+        <span className="min-w-0 flex-1"><span className={look ? "block font-display text-lg leading-tight font-semibold" : "block font-semibold"}>{name}</span>{detail && <span className={look ? "block text-footnote font-bold text-ink-muted" : "block text-footnote text-ink-muted"}>{detail}</span>}</span>
         {/* How many */}
         {count !== undefined && <span className="text-footnote text-ink-muted">{count}</span>}
         {/* The chevron, turning down when open */}
