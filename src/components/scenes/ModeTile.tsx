@@ -1,11 +1,13 @@
-// Mode tiles (UI rewrite): a picture-book tile for a kind of practice, a section or a Today step. The same family as the course tiles (a tilted ground, the shaded blob, one prop, a sparkle), but built from a ground, a prop and a face, so any card can have one without a new drawing
+// Mode tiles (UI rewrite): a picture-book tile for a kind of practice, a section or a Today step. The same family as the course tiles, in the same lit frame (a tilted ground lit from the upper left, land, grain, the lit blob, one prop, a sparkle), but built from a ground, a prop and a face, so any card can have one without a new drawing
 
 // Load the shaded body and the sparkle shared with the course tiles
 import { Body, Twinkle } from "@/components/scenes/tiles/parts";
 // Load the face names
 import type { FaceName, SceneMotion, SceneName } from "@/components/scenes/Scene";
-// Load React's node type
-import type { ReactNode } from "react";
+// Load React's node type and its tool for a unique id
+import { useId, type ReactNode } from "react";
+// Load the lit frame shared with the course tiles
+import { TileFrame } from "@/components/scenes/art/TileFrame";
 
 // The six tile grounds
 export type TileGround = "sky" | "sun" | "bloom" | "leaf" | "plum" | "coral";
@@ -54,7 +56,7 @@ const PROPS: Record<TileProp, ReactNode> = {
   // A speech bubble: conversations
   chat: <><rect className="fill-art-cream" x="114" y="40" width="68" height="48" rx="16" /><path className="fill-art-cream" d="M130 86l-6 16 18-14z" /><circle className="fill-art-bloom" cx="134" cy="64" r="5" /><circle className="fill-art-bloom" cx="148" cy="64" r="5" /><circle className="fill-art-bloom" cx="162" cy="64" r="5" /></>,
   // Sound waves: your voice
-  waves: <path className="stroke-art-cream" strokeWidth="8" fill="none" strokeLinecap="round" d="M140 70q14 24 0 48M156 58q22 36 0 72M172 46q30 48 0 96" />,
+  waves: <path className="stroke-art-cream" strokeWidth="8" fill="none" strokeLinecap="round" d="M132 70q14 24 0 48M148 58q22 36 0 72M164 46q30 48 0 96" />,
   // A pause sign: pausing
   pause: <><rect className="fill-art-cream" x="130" y="54" width="15" height="50" rx="6" /><rect className="fill-art-cream" x="153" y="54" width="15" height="50" rx="6" /></>,
   // A bullseye: point first
@@ -70,13 +72,13 @@ const PROPS: Record<TileProp, ReactNode> = {
   // An open book: reading and quick reads
   book: <><path className="fill-art-cream" d="M118 60q16 -8 32 0q16 -8 32 0v52q-16 -8 -32 0q-16 -8 -32 0z" /><path className="stroke-art-plum" strokeWidth="4" d="M150 60v52" /></>,
   // Three dots: three points, a prepared speech
-  three: <><circle className="fill-art-cream" cx="126" cy="70" r="13" /><circle className="fill-art-cream" cx="154" cy="70" r="13" /><circle className="fill-art-cream" cx="182" cy="70" r="13" /></>,
+  three: <><circle className="fill-art-cream" cx="120" cy="70" r="12" /><circle className="fill-art-cream" cx="146" cy="70" r="12" /><circle className="fill-art-cream" cx="172" cy="70" r="12" /></>,
   // A flag: the end of a course, a goal
   flag: <><path className="stroke-art-cream" strokeWidth="6" strokeLinecap="round" d="M134 120V44" /><path className="fill-art-cream" d="M137 46h40l-9 14 9 14h-40z" /></>,
   // A loop arrow: try again, a random pick
   loop: <><path className="stroke-art-cream" strokeWidth="9" fill="none" strokeLinecap="round" d="M126 70a24 24 0 1 1 24 24" /><path className="fill-art-cream" d="M140 84l12 10-14 8z" /></>,
   // A star: progress, a win
-  star: <path className="fill-art-sun" d="M150 40l10 22 24 3-18 16 5 24-21-12-21 12 5-24-18-16 24-3z" />,
+  star: <path className="fill-art-sun stroke-art-cream" strokeWidth="5" strokeLinejoin="round" d="M150 40l10 22 24 3-18 16 5 24-21-12-21 12 5-24-18-16 24-3z" />,
   // A microphone: recording
   mic: <><rect className="fill-art-cream" x="138" y="40" width="26" height="50" rx="13" /><path className="stroke-art-cream" strokeWidth="6" fill="none" strokeLinecap="round" d="M128 76a23 23 0 0 0 46 0M151 99v16" /></>,
   // A door: a scene, a place to walk into
@@ -85,22 +87,30 @@ const PROPS: Record<TileProp, ReactNode> = {
 
 // A mode tile, sized by the class given (it is square)
 export function ModeTile({ ground, prop, face = "ready", tilt = -4, still = false, motion = "few", scene, className = "size-24" }: { ground: TileGround; prop: TileProp; face?: FaceName; tilt?: number; still?: boolean; motion?: SceneMotion; scene?: SceneName; className?: string }) {
-  // The drawing, hidden from screen readers
+  // An id for the clip and the light, unique on the page and safe inside url()
+  const id = `mode-${useId().replace(/[^a-zA-Z0-9-]/g, "")}`;
+  // The tile in its lit frame (the ground lit from the upper left, the land, the grain; art/TileFrame.tsx), hidden from screen readers; the prop and the blob stand upright on it
   return (
-    <svg aria-hidden="true" data-mode-tile={prop} data-scene={scene} data-motion={still ? "still" : motion} viewBox="0 0 200 200" fill="none" className={`vl-scene flex-none overflow-visible ${className}`}>
-      {/* The ground and its soft light, leaning together */}
-      <g transform={`rotate(${tilt} 100 100)`}>
-        {/* The rounded square */}
-        <rect className={GROUND_FILL[ground]} x="14" y="14" width="172" height="172" rx="34" />
-        {/* A big soft light in the upper right */}
-        <circle className="fill-art-cream opacity-15" cx="160" cy="36" r="54" />
-      </g>
-      {/* The prop that tells the idea */}
-      {PROPS[prop]}
-      {/* The blob, lower left of middle */}
-      <Body x={86} y={132} r={38} face={face} />
-      {/* One sparkle in the empty corner */}
-      <Twinkle x={42} y={46} size={10} />
-    </svg>
+    <TileFrame
+      id={id}
+      fill={GROUND_FILL[ground]}
+      tilt={tilt}
+      motion={still ? "still" : motion}
+      className={`flex-none ${className}`}
+      data={{ "data-mode-tile": prop, "data-scene": scene }}
+      upright={
+        <>
+          {/* The prop that tells the idea */}
+          <g filter={`url(#${id}-drop)`}>{PROPS[prop]}</g>
+          {/* The blob, lower left of middle */}
+          <Body x={86} y={132} r={38} face={face} />
+          {/* One sparkle in the empty corner */}
+          <Twinkle x={42} y={46} size={10} />
+        </>
+      }
+    >
+      {/* Nothing leans with the ground but the land */}
+      {() => null}
+    </TileFrame>
   );
 }

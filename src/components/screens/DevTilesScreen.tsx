@@ -1,5 +1,5 @@
 "use client";
-// Every course tile on one page, for development (decision 145): course by course, each tile at 240 px beside the same tile at 64 px, the size it must still read at (art style, section 3). "?course=" shows one course; "?still=1" stills the motion for screenshots
+// Every drawing in the course art on one page, for development (decision 145; art style, section 6): course by course, its header scene, then each tile at 240 px beside the same tile at 64 px, the size it must still read at (art style, section 3); then every mode tile. "?course=" shows one course (and leaves out the mode tiles); "?still=1" stills the motion for screenshots
 
 // Load Next.js's address reader
 import { useSearchParams } from "next/navigation";
@@ -12,6 +12,13 @@ import { usePageTitle } from "@/components/screens/usePageTitle";
 // Load the tile and which tile stands for what
 import { CourseTile } from "@/components/scenes/CourseTile";
 import { courseTile, lessonTile } from "@/components/scenes/tileFor";
+// Load the course headers
+import { CourseHeader } from "@/components/scenes/CourseHeader";
+// Load the mode tiles and which stands for each kind of practice
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+// Load the scene names
+import type { SceneName } from "@/components/scenes/Scene";
 // Load the courses
 import { COURSES } from "@/content/courses";
 
@@ -41,6 +48,11 @@ export function DevTilesScreen() {
           <section key={course.id} aria-label={course.title} className="mt-8">
             {/* Its name */}
             <h2 className={SECTION_HEADING}>{course.title}</h2>
+            {/* Its header scene, as wide as the page */}
+            <div className="mt-4 overflow-hidden rounded-3xl">
+              {/* The scene */}
+              <CourseHeader course={course.id} motion={motion} />
+            </div>
             {/* Its tiles */}
             <ul className="mt-4 flex flex-wrap gap-6">
               {tiles.map((tile) => (
@@ -60,6 +72,29 @@ export function DevTilesScreen() {
           </section>
         );
       })}
+      {/* Every mode tile, unless one course is asked for */}
+      {!only && (
+        <section aria-label="Mode tiles" className="mt-8">
+          {/* Its name */}
+          <h2 className={SECTION_HEADING}>Mode tiles</h2>
+          {/* Each kind of practice's tile */}
+          <ul className="mt-4 flex flex-wrap gap-6">
+            {(Object.entries(SCENE_TILES) as [SceneName, (typeof SCENE_TILES)[SceneName]][]).map(([scene, look]) => (
+              <li key={scene} data-dev-mode-tile={scene} className="flex w-[240px] flex-col gap-2">
+                {/* Large */}
+                <ModeTile {...look} scene={scene} still={motion === "still"} className="size-[240px]" />
+                {/* Small, with its name */}
+                <div className="flex items-center gap-3">
+                  {/* At 64 px */}
+                  <ModeTile {...look} still={motion === "still"} className="size-16 shrink-0" />
+                  {/* Its name */}
+                  <p className="text-footnote">{scene}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }

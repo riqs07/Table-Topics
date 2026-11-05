@@ -17,7 +17,7 @@ export const STOP_FREEZING_TILES = {
       {/* (more) */}
       <circle className="fill-art-cream" cx="150" cy="96" r="2.5" />
       {/* The blob, floating up a little */}
-      <Move loop="t-float"><Body x={100} y={110} r={46} face="happy" /></Move>
+      <Move loop="t-float"><Body x={100} y={110} r={46} face="happy" shadow={false} /></Move>
       {/* The block of ice over its lower half */}
       <rect className="fill-art-cream opacity-75" x="44" y="118" width="112" height="62" rx="12" />
       {/* The ice's shine */}
@@ -149,7 +149,7 @@ export const STOP_FREEZING_TILES = {
         {/* The cords */}
         <path className="stroke-art-cream" strokeWidth={2} d="M52 66 88 104M100 66v36M148 66l-36 38" />
         {/* The blob */}
-        <Body x={100} y={118} r={24} face="ready" />
+        <Body x={100} y={118} r={24} face="ready" shadow={false} />
       </Move>
       {/* Sparkles */}
       <Twinkle x={160} y={96} size={10} />

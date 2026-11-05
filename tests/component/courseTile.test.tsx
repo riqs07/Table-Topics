@@ -50,6 +50,22 @@ describe("CourseTile", () => {
     expect([motion(), motion("few"), motion("still")]).toEqual(["loop", "few", "still"]);
   });
 
+  // The Illustration Study's richer rendering: the tile turns the light on for its blob, lights its ground with a gradient of its own and lays a grain over it, all named after its own clip
+  it("lights each tile: its blob's light, a lit ground and a grain", () => {
+    // Draw one
+    const { container } = render(<CourseTile name="buy-a-beat" />);
+    // Its root
+    const svg = container.querySelector("svg") as SVGSVGElement;
+    // Its clip's id
+    const id = container.querySelector("clipPath")?.id;
+    // The switch for the blob's lit details, the blob's light, the lit ground and the grain
+    const result = [svg.style.getPropertyValue("--vl-art-on"), svg.style.getPropertyValue("--vl-art-lit"), !!container.querySelector(`[fill="url(#${id}-ground)"]`), !!container.querySelector(`[filter="url(#${id}-grain)"]`)];
+    // Confirm each, the ground's gradient made from its own role
+    expect(result).toEqual(["1", `url(#${id}-lit)`, true, true]);
+    // Confirm the ground's gradient reads the theme's colour, not a raw one
+    expect(container.querySelector(`#${id}-ground stop`)?.getAttribute("style")).toContain("var(--vl-art-leaf)");
+  });
+
   // Two tiles on one page each keep their background shapes inside their own tile
   it("gives each tile its own clip", () => {
     // Draw two
