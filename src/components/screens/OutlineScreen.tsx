@@ -7,7 +7,7 @@ import { useState, useSyncExternalStore } from "react";
 import type { Outline } from "@/core/outline";
 // Load the script-page building blocks
 import { ActionBand, ActionButton } from "@/components/script/ActionBand";
-import { Masthead } from "@/components/script/Masthead";
+import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
 // Load the shared button looks
 import { PRESS, QUIET } from "@/components/script/Buttons";
 // Load the plan rules
@@ -52,9 +52,9 @@ function OutlineForm({ draft }: { draft: Outline | null }) {
 
   // Draw it
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" className={PRACTICE_NARROW}>
       {/* Title, with a way back to Practice */}
-      <Masthead title="Short speech" nav={false} close={{ href: "/practice", label: "Close, back to Practice" }} />
+      <PracticeBar close={{ href: "/practice", label: "Close, back to Practice" }} label="Short speech" />
       {/* The heading */}
       <h1 className="mt-6 font-display text-statement font-semibold">Plan a short speech.</h1>
       {/* What it is about */}

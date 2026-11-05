@@ -29,19 +29,21 @@ interface TileRowProps {
   face?: FaceName;
   // Which way the tile leans
   tilt?: number;
+  // The smaller card (Practice's role plays: a 72-pixel tile, the name a size down; on a phone the tile sits above the words, two cards across)
+  small?: boolean;
 }
 
 // The card: the tile, then the label, name and detail
-export function TileRow({ href, label, title, detail, ground, prop, face = "ready", tilt = -4 }: TileRowProps) {
+export function TileRow({ href, label, title, detail, ground, prop, face = "ready", tilt = -4, small = false }: TileRowProps) {
   // One link, the whole card
   return (
-    <Link href={href} className={`flex h-full items-center gap-4 p-3.5 pr-4 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
+    <Link href={href} className={`flex h-full items-center ${small ? "flex-col items-start gap-2.5 p-3.5 md:flex-row md:items-center md:gap-3.5 md:py-3" : "gap-4 p-3.5 pr-4"} ${CARD} ${PRESS} hover:-translate-y-0.5`}>
       {/* The picture */}
-      <ModeTile ground={ground} prop={prop} face={face} tilt={tilt} className="size-20" />
+      <ModeTile ground={ground} prop={prop} face={face} tilt={tilt} className={small ? "size-16 md:size-18" : "size-20"} />
       {/* The words */}
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <span className={`flex min-w-0 flex-col gap-0.5 ${small ? "" : "flex-1"}`}>
         {/* The name (first, so the link is named by it) */}
-        <span className="font-display text-xl leading-tight font-semibold">{title}</span>
+        <span className={`font-display leading-tight font-semibold ${small ? "text-lg" : "text-xl"}`}>{title}</span>
         {/* The label above it, unless it is the title */}
         {label !== title && <span className={`${LAB} order-first`}>{label}</span>}
         {/* The detail */}

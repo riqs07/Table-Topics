@@ -3,8 +3,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 // Load the tools for drawing a screen and finding things on it
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-// Load the screen being checked
+// Load the screens being checked
 import { PracticeScreen } from "@/components/screens/PracticeScreen";
+import { PracticeWaysScreen } from "@/components/screens/PracticeWaysScreen";
 // Load the in-memory store and repository
 import { MemoryStore } from "@/data/memoryStore";
 import { createRepository } from "@/data/repository";
@@ -14,8 +15,8 @@ import { promptForDay, tableTopicForDay } from "@/content/prompts";
 import { NEEDED_TYPES, neededPromptForDay, storyPromptForDay } from "@/content/stories";
 // Load today's Story dice (decision 153)
 import { connectStoryForDay } from "@/content/guidedStories";
-// Load the small-talk lessons (decision 95)
-import { SMALL_TALK_LESSONS } from "@/content/smallTalk";
+// Load the small-talk lessons and units (decision 95)
+import { SMALL_TALK_LESSONS, UNITS } from "@/content/smallTalk";
 // Load a sample session builder
 import { makeSession, makeTalk } from "../support/fixtures";
 
@@ -25,160 +26,54 @@ const NOW = new Date(2026, 9, 15, 10);
 // Remove the drawn screen after each check
 afterEach(cleanup);
 
-// Open "More ways to practise", where the groups live (decision 125)
-async function openMore(): Promise<void> {
-  // Tap it
-  fireEvent.click(await screen.findByRole("button", { name: "More ways to practise" }));
+// A list's rows as [name, address]
+function rowsOf(list: HTMLElement): Array<[string | null | undefined, string | null]> {
+  // Each link's name and address
+  return within(list).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
+}
+
+// Draw one job's list and read its rows
+async function jobRows(job: string, repository = createRepository(new MemoryStore())): Promise<Array<[string | null | undefined, string | null]>> {
+  // Draw the list
+  render(<PracticeWaysScreen job={job} repository={repository} now={NOW} />);
+  // Its rows
+  return rowsOf(await screen.findByRole("list", { name: "Ways to practise" }));
 }
 
 // Group the checks about the Practice page
 describe("PracticeScreen", () => {
-  // The five that do the most work come first (the check-in comes to Today on its day), and everything else waits under "More ways to practise" (decision 125)
-  it("shows the five main ways to practise, with the rest one tap away", async () => {
+  // Second design pass: one quick start (Rapid Fire), then four jobs with pictures, each opening its list of ways
+  it("shows Rapid Fire as the quick start, then the four jobs", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // The main list's rows as [name, address]
-    const main = within(await screen.findByRole("list", { name: "Main ways to practise" })).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
-    // Confirm the five, in order, with no check-in row
-    expect(main).toEqual([["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Tell a story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Talk with someone", "/conversations"], ["Read aloud", "/skills"]]);
-    // The rest is closed: no groups yet
-    const more = screen.getByRole("button", { name: "More ways to practise" });
-    // Closed at first
-    const before = [more.getAttribute("aria-expanded"), screen.queryByRole("heading", { name: "Your voice" })];
-    // Open it
-    fireEvent.click(more);
-    // Confirm closed, then the groups open
-    expect([before, screen.getByRole("button", { name: "Fewer ways to practise" }).getAttribute("aria-expanded"), !!screen.getByRole("heading", { name: "Your voice" })]).toEqual([["false", null], "true", true]);
+    // The jobs' cards, once drawn
+    const jobs = rowsOf(await screen.findByRole("list", { name: "Jobs" }));
+    // The quick start
+    const quick = document.querySelector("[data-way-card='big']") as HTMLElement;
+    // Confirm the quick start leads to today's surprise question with its tile, and the four jobs in their usual order
+    expect([quick.getAttribute("href"), quick.querySelector("[data-scene]")?.getAttribute("data-scene"), within(quick).getByText("Quick start · 1–2 min").textContent, jobs]).toEqual([`/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`, "rapid-fire", "Quick start · 1–2 min", [["Speak on the spot", "/practice/ways?job=on-the-spot"], ["Tell stories", "/practice/ways?job=stories"], ["Conversations", "/practice/ways?job=conversation"], ["Your voice", "/practice/ways?job=voice"]]]);
   });
 
-  // Each group shows its first few rows, each leading to its own screen, with "See all" for the rest (decision 108)
-  it("shows each group's first few rows, each leading to its own screen", async () => {
+  // Each job card says how many ways its list holds, so the card and the list always agree
+  it("counts each job's ways on its card", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Open the rest, where the groups are
-    await openMore();
-    // A group's rows as [name, address] ("See all" first, where it is a link)
-    const rows = async (name: string) => within((await screen.findByRole("heading", { name })).closest("section") as HTMLElement).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href")]);
-    // Confirm the stories group, second of the groups (the courses' heading sits above them, decision 131), with today's story, telling one again and guided stories, the moments under "See all" (decision 92)
-    expect([await rows("Tell stories"), screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses").indexOf("Tell stories")]).toEqual([[["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"]], 1]);
-    // Confirm the other groups: everyday conversation's three (Scenes and Active listening after Talk with someone, decisions 149 and 150; the next unit and the moment under "See all"), the voice group's warm-up and the first two modes (clear sounds with the word lists as one row), and speaking on the spot's three
-    expect([await rows("Everyday conversation"), await rows("Your voice"), await rows("Speak on the spot")]).toEqual([
-      [["Talk with someone", "/conversations"], ["Scenes", "/scenes"], ["Active listening", "/listening"]],
-      [[undefined, "/voice"], ["Warm-up", "/voice/warmup"], ["Clear sounds", "/voice/drill?id=c01"], ["Volume", "/voice/drill?id=v01"]],
-      [["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Read aloud", "/skills"]],
-    ]);
+    // The stories card
+    const stories = within(await screen.findByRole("list", { name: "Jobs" })).getByRole("link", { name: /^Tell stories/ });
+    // Confirm the count of the stories list (four, the four you'll need, Story dice and every story) and the first names
+    expect(stories.textContent).toContain(`${4 + NEEDED_TYPES.length + 2} ways · Today’s story, Tell one again, Guided stories…`);
   });
 
-  // Tell stories' "See all" opens the rest in place: the moments, the four stories you'll need (each today's prompt of its kind), Story dice and every story (decisions 152 to 154)
-  it("opens the rest of Tell stories in place, with the stories you'll need and Story dice", async () => {
+  // The role plays are small tile cards, with "All" leading to their whole list
+  it("shows the role plays, with a way to all of them", async () => {
     // Draw the page
     render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Open the rest, where the groups are
-    await openMore();
-    // The group
-    const group = within((await screen.findByRole("heading", { name: "Tell stories" })).closest("section") as HTMLElement);
-    // Open its "See all"
-    fireEvent.click(group.getByRole("button", { name: "See all" }));
-    // Every row as [name, address, scene]
-    const rows = group.getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, link.getAttribute("href"), link.querySelector("[data-scene]")?.getAttribute("data-scene") ?? null]);
-    // Confirm the rows after the first three
-    expect(rows.slice(3)).toEqual([["From your moments", "/stories#from-moments", "moment"], ...NEEDED_TYPES.map((type) => [type.name, `/stories/tell?prompt=${neededPromptForDay(type.group, NOW).id}`, type.template]), ["Story dice", `/stories/tell?prompt=${connectStoryForDay(NOW).id}`, "story-dice"], ["All stories", "/stories", null]]);
-  });
-
-  // Speaking on the spot has no page of its own, so its "See all" opens the rest in place: free talk and the short speech, two taps from Practice (decision 108)
-  it("opens the rest of speaking on the spot in place", async () => {
-    // Draw the page
-    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Open the rest, where the groups are
-    await openMore();
-    // The group
-    const spot = within((await screen.findByRole("heading", { name: "Speak on the spot" })).closest("section") as HTMLElement);
-    // Its "See all"
-    const all = spot.getByRole("button", { name: "See all" });
-    // Closed at first: no free talk
-    const before = [all.getAttribute("aria-expanded"), spot.queryByRole("link", { name: /^Free talk/ })];
-    // Open it
-    fireEvent.click(all);
-    // Confirm closed then open, with every row
-    expect([before, spot.getByRole("button", { name: "Show fewer" }).getAttribute("aria-expanded"), spot.getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent)]).toEqual([["false", null], "true", ["Rapid Fire", "Prepared speech", "Read aloud", "4/3/2", "Free talk", "Short speech"]]);
-  });
-
-  // The voice group shows what is next: the modes done least come first, so a done mode makes room (decision 108)
-  it("puts the voice modes done least first", async () => {
-    // A repository with clear sounds and volume each done once
-    const repository = createRepository(new MemoryStore());
-    // A clear-sounds drill
-    await repository.saveSession(makeSession({ id: "c", mode: "voice", promptId: "c01" }));
-    // A volume drill
-    await repository.saveSession(makeSession({ id: "v", mode: "voice", promptId: "v01" }));
-    // Draw the page
-    render(<PracticeScreen repository={repository} now={NOW} />);
-    // Open the rest, where the groups are
-    await openMore();
-    // The voice group
-    const voice = within((await screen.findByRole("heading", { name: "Your voice" })).closest("section") as HTMLElement);
-    // Confirm pitch and tone now follow the warm-up
-    await waitFor(() => expect(voice.getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent).slice(1)).toEqual(["Warm-up", "Pitch and stress", "Tone"]));
-  });
-
-  // Read aloud sits with speaking on the spot (decision 93), the openings drill is gone (decision 106), and the lessons moved to Learn, so there is no Build a skill group (decision 107)
-  it("puts Read aloud under Speak on the spot, with no openings drill and no Build a skill group", async () => {
-    // Draw the page
-    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // Open the rest, where the groups are
-    await openMore();
-    // The on-the-spot group
-    const spot = (await screen.findByRole("heading", { name: "Speak on the spot" })).closest("section") as HTMLElement;
-    // Confirm Read aloud is there, and no openings row, Build a skill group or lesson link anywhere
-    await waitFor(() => expect([!!within(spot).queryByRole("link", { name: /^Read aloud/ }), screen.queryByText("Openings and closings"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/bookends"), screen.queryByRole("heading", { name: "Build a skill" }), screen.queryAllByRole("link").some((link) => link.getAttribute("href")?.includes("mode=lesson"))]).toEqual([true, null, false, null, false]));
-  });
-
-  // The conversation group shows the next unit only, with "See all" for the seven (decision 95): once the first four units' lessons are done, Reading the room and its first lesson
-  it("shows the next conversation unit, with its next lesson, when conversation is the focus", async () => {
-    // A repository with every lesson of the first four units answered, and conversation as the focus (which shows a fourth row, where the unit sits since decision 149)
-    const repository = createRepository(new MemoryStore());
-    // The focus
-    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["conversation"] });
-    // Save one answer per lesson
-    for (const lesson of SMALL_TALK_LESSONS.filter((item) => ["answering", "asking", "listening", "news"].includes(item.unit))) await repository.saveSession(makeSession({ id: lesson.id, mode: "smalltalk", promptId: lesson.id }));
-    // Draw the page
-    render(<PracticeScreen repository={repository} now={NOW} />);
-    // Open the rest, where the groups are
-    await openMore();
-    // The unit's row, once the answers are read
-    const row = await screen.findByRole("link", { name: /^Reading the room/ });
-    // Confirm where it leads and what it says next
-    expect([row.getAttribute("href"), row.textContent?.includes("Next: lesson 1, Notice changes, not signals")]).toEqual(["/small-talk/unit?id=room", true]);
-  });
-
-  // Q&A practice is removed (decision 61): no row, even after a prepared speech
-  it("does not offer Q&A practice", async () => {
-    // A repository with a prepared speech
-    const repository = createRepository(new MemoryStore());
-    // Save it
-    await repository.saveSession(makeSession({ id: "r1", mode: "response" }));
-    // Draw the page
-    render(<PracticeScreen repository={repository} now={NOW} />);
-    // Wait for the page to draw
-    await screen.findByRole("link", { name: /^Rapid Fire/ });
-    // Confirm there is no Q&A row
-    expect(screen.queryByText(/Q&A/)).toBeNull();
-  });
-
-  // Your talks are hidden for now: no section and no way in from here
-  it("does not list your talks", async () => {
-    // A repository with a saved talk
-    const repository = createRepository(new MemoryStore());
-    // The talk
-    await repository.saveTalk(makeTalk({ id: "pitch", title: "Pitch", eventDate: "2026-10-17" }));
-    // Draw the page
-    render(<PracticeScreen repository={repository} now={NOW} />);
-    // Open the rest, where the groups are
-    await openMore();
-    // Wait for the page
-    await screen.findByRole("heading", { name: "Speak on the spot" });
-    // Confirm no talks section and no link to rehearse
-    expect([screen.queryByRole("region", { name: "Your talks" }), screen.queryByText("Pitch"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/rehearse")]).toEqual([null, null, false]);
+    // The cards
+    const cards = rowsOf(await screen.findByRole("list", { name: "Role plays" }));
+    // The way to all of them
+    const all = screen.getByRole("link", { name: /^All \d+ role plays$/ });
+    // Confirm the four cards and where "All" leads, with the count of the whole list (four ways and every small-talk unit)
+    expect([cards, all.getAttribute("href"), all.textContent]).toEqual([[["Talk with someone", "/conversations"], ["Scenes", "/scenes"], ["Active listening", "/listening"], ["Quick scenarios", "/learn/scenarios"]], "/practice/ways?job=role-play", `All ${4 + UNITS.length} role plays`]);
   });
 
   // The courses have their own tab now, so Practice shows none (decision 148)
@@ -189,58 +84,26 @@ describe("PracticeScreen", () => {
     await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["stories"] });
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
-    // Wait for the main ways to practise
-    await screen.findByRole("list", { name: "Main ways to practise" });
-    // Confirm no course cards (the Courses tab aside) and no Courses heading on the page
+    // Wait for the jobs
+    await screen.findByRole("list", { name: "Jobs" });
+    // Confirm no course cards and no Courses heading on the page
     expect([document.querySelectorAll("main a[href^='/courses/course']").length, screen.queryByRole("heading", { name: "Courses" })]).toEqual([0, null]);
   });
 
-  // With a focus, its group comes first and says so; a talk coming up brings back "Your talk" and the short speech first (decision 97)
-  it("puts the focus group first", async () => {
+  // With a focus, its job comes first and says so (decision 97)
+  it("puts the focus's job first, marked", async () => {
     // A repository with two areas picked
     const repository = createRepository(new MemoryStore());
     // How I sound and a talk coming up
     await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["voice", "talk"] });
     // Draw the page
     render(<PracticeScreen repository={repository} now={NOW} />);
-    // Open the rest, where the groups are
-    await openMore();
     // Wait for the order to follow the focus
-    await waitFor(() => expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses")[0]).toBe("Your voiceYour focus"));
-    // The headings in order
-    const headings = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent).filter((text) => text !== "Courses");
-    // The on-the-spot rows' names
-    const spot = within(screen.getByRole("region", { name: /^Speak on the spot/ })).getAllByRole("link").map((link) => link.querySelector(".font-display")?.textContent);
-    // Confirm the order, the marks, and the first rows
-    expect([headings.slice(0, 5), spot.slice(0, 3)]).toEqual([["Your voiceYour focus", "Speak on the spotYour focus", "Tell stories", "Everyday conversation"], ["Your talk", "Short speech", "Rapid Fire"]]);
-  });
-
-  // The main ways are scene cards: with no focus Rapid Fire is the big one, moving all the time, and the other four play a few rounds then rest (decision 136)
-  it("shows the main ways as scene cards, Rapid Fire big with no focus", async () => {
-    // Draw the page
-    render(<PracticeScreen repository={createRepository(new MemoryStore())} now={NOW} />);
-    // The list
-    const list = await screen.findByRole("list", { name: "Main ways to practise" });
-    // Each card's size, name, scene and how much it moves
-    const cards = [...list.querySelectorAll("[data-way-card]")].map((card) => [card.getAttribute("data-way-card"), card.querySelector(".font-display")?.textContent, card.querySelector("[data-scene]")?.getAttribute("data-scene"), card.querySelector("[data-scene]")?.getAttribute("data-motion")]);
-    // Confirm the big one first, then the four, with no focus mark
-    expect([cards, screen.queryByText("Your focus")]).toEqual([[["big", "Rapid Fire", "rapid-fire", "loop"], ["small", "Prepared speech", "prepared-speech", "few"], ["small", "Tell a story", "story", "few"], ["small", "Talk with someone", "conversation", "few"], ["small", "Read aloud", "read-aloud", "few"]], null]);
-  });
-
-  // With a focus, its main way is the big card and says so, still named by its own name (decision 136)
-  it("makes the focus's main way the big card", async () => {
-    // A repository with telling stories picked
-    const repository = createRepository(new MemoryStore());
-    // The focus
-    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["stories"] });
-    // Draw the page
-    render(<PracticeScreen repository={repository} now={NOW} />);
-    // Wait for the big card to follow the focus
-    await waitFor(() => expect(document.querySelector("[data-way-card='big'] .font-display")?.textContent).toBe("Tell a story"));
-    // The big card
-    const big = document.querySelector("[data-way-card='big']") as HTMLElement;
-    // Confirm its mark, its link's name starting with the way's name, and the others in their usual order
-    expect([within(big).getByText("Your focus").textContent, screen.getByRole("link", { name: /^Tell a story/ }) === big, [...document.querySelectorAll("[data-way-card='small'] .font-display")].map((name) => name.textContent)]).toEqual(["Your focus", true, ["Rapid Fire", "Prepared speech", "Talk with someone", "Read aloud"]]);
+    await waitFor(() => expect(rowsOf(screen.getByRole("list", { name: "Jobs" }))[0]?.[0]).toBe("Your voice"));
+    // The cards' names and marks
+    const cards = within(screen.getByRole("list", { name: "Jobs" })).getAllByRole("link").map((link) => [link.querySelector(".font-display")?.textContent, !!within(link).queryByText("Your focus")]);
+    // Confirm the focus's two first and marked, then the others
+    expect(cards).toEqual([["Your voice", true], ["Speak on the spot", true], ["Tell stories", false], ["Conversations", false]]);
   });
 
   // This week's challenge off the page lives here, and ticking it saves it as done
@@ -253,5 +116,118 @@ describe("PracticeScreen", () => {
     fireEvent.click(await screen.findByRole("checkbox"));
     // Confirm it is saved with a completion time, and shows as ticked
     await waitFor(async () => expect([(await repository.listChallenges())[0]?.completedAt, (screen.getByRole("checkbox") as HTMLInputElement).checked]).toEqual([NOW.toISOString(), true]));
+  });
+
+  // Q&A practice is removed (decision 61): no row, even after a prepared speech
+  it("does not offer Q&A practice", async () => {
+    // A repository with a prepared speech
+    const repository = createRepository(new MemoryStore());
+    // Save it
+    await repository.saveSession(makeSession({ id: "r1", mode: "response" }));
+    // Draw the page
+    render(<PracticeScreen repository={repository} now={NOW} />);
+    // Wait for the page to draw
+    await screen.findByRole("list", { name: "Jobs" });
+    // Confirm there is no Q&A row
+    expect(screen.queryByText(/Q&A/)).toBeNull();
+  });
+});
+
+// Group the checks about one job's list of ways
+describe("PracticeWaysScreen", () => {
+  // Speaking on the spot: Rapid Fire, a prepared speech, reading aloud (decision 93), 4/3/2 (decision 126), free talk and the short speech (decision 73), with no openings drill (decision 106) and no lessons (decision 107)
+  it("lists every way to speak on the spot", async () => {
+    // The rows
+    const rows = await jobRows("on-the-spot");
+    // Confirm them, and no openings drill or lesson anywhere
+    expect([rows, screen.queryByText("Openings and closings"), screen.queryAllByRole("link").some((link) => link.getAttribute("href") === "/bookends" || link.getAttribute("href")?.includes("mode=lesson"))]).toEqual([[["Rapid Fire", `/session?mode=talk&prompt=${tableTopicForDay(NOW, 1).id}`], ["Prepared speech", `/session?mode=response&prompt=${promptForDay(NOW, 1).id}`], ["Read aloud", "/skills"], ["4/3/2", "/practice/four-three-two"], ["Free talk", "/session?mode=free&prompt=free"], ["Short speech", "/practice/outline"]], null, false]);
+  });
+
+  // Telling stories: today's story, telling one again, guided stories, the moments, the four stories you'll need (each today's prompt of its kind), Story dice and every story (decisions 92, 152 to 154)
+  it("lists every way to tell stories, with the stories you'll need and Story dice", async () => {
+    // The rows
+    const rows = await jobRows("stories");
+    // Confirm them
+    expect(rows).toEqual([["Today’s story", `/stories/tell?prompt=${storyPromptForDay(NOW).id}`], ["Tell one again", "/stories#your-stories"], ["Guided stories", "/stories#guided-stories"], ["From your moments", "/stories#from-moments"], ...NEEDED_TYPES.map((type) => [type.name, `/stories/tell?prompt=${neededPromptForDay(type.group, NOW).id}`]), ["Story dice", `/stories/tell?prompt=${connectStoryForDay(NOW).id}`], ["All stories", "/stories"]]);
+  });
+
+  // Everyday conversation: a whole conversation, Scenes and Active listening first (decisions 149 and 150), then the next unit, the moment note and every unit
+  it("lists the conversation ways, with the next unit", async () => {
+    // The rows
+    const rows = await jobRows("conversation");
+    // Confirm them (the first unit until the sessions are read)
+    expect(rows).toEqual([["Talk with someone", "/conversations"], ["Scenes", "/scenes"], ["Active listening", "/listening"], ["Answering", "/small-talk/unit?id=answering"], ["One moment a day", expect.stringContaining("/session?mode=moment")], ["Small talk", "/small-talk"]]);
+  });
+
+  // The conversation list's unit is the next one (decision 95): once the first four units' lessons are done, Reading the room and its first lesson
+  it("shows the next conversation unit, with its next lesson", async () => {
+    // A repository with every lesson of the first four units answered
+    const repository = createRepository(new MemoryStore());
+    // Save one answer per lesson
+    for (const lesson of SMALL_TALK_LESSONS.filter((item) => ["answering", "asking", "listening", "news"].includes(item.unit))) await repository.saveSession(makeSession({ id: lesson.id, mode: "smalltalk", promptId: lesson.id }));
+    // Draw the list
+    render(<PracticeWaysScreen job="conversation" repository={repository} now={NOW} />);
+    // The unit's row, once the answers are read
+    const row = await screen.findByRole("link", { name: /^Reading the room/ });
+    // Confirm where it leads and what it says next
+    expect([row.getAttribute("href"), row.textContent?.includes("Next: lesson 1, Notice changes, not signals")]).toEqual(["/small-talk/unit?id=room", true]);
+  });
+
+  // The voice list shows what is next: the modes done least come first, so a done mode moves down (decision 108)
+  it("puts the voice modes done least first", async () => {
+    // A repository with clear sounds and volume each done once
+    const repository = createRepository(new MemoryStore());
+    // A clear-sounds drill
+    await repository.saveSession(makeSession({ id: "c", mode: "voice", promptId: "c01" }));
+    // A volume drill
+    await repository.saveSession(makeSession({ id: "v", mode: "voice", promptId: "v01" }));
+    // Draw the list
+    render(<PracticeWaysScreen job="voice" repository={repository} now={NOW} />);
+    // The list
+    const list = await screen.findByRole("list", { name: "Ways to practise" });
+    // Confirm pitch and tone now follow the warm-up
+    await waitFor(() => expect(rowsOf(list).map(([name]) => name).slice(0, 3)).toEqual(["Warm-up", "Pitch and stress", "Tone"]));
+  });
+
+  // With a talk coming up as a focus, "Your talk" and the short speech come first (decision 97); without it, no talk anywhere (decision 49)
+  it("brings back your talk and the short speech first for a talk coming up", async () => {
+    // A repository with a talk coming up as the focus, and a saved talk
+    const repository = createRepository(new MemoryStore());
+    // The focus
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["talk"] });
+    // Draw the list
+    render(<PracticeWaysScreen job="on-the-spot" repository={repository} now={NOW} />);
+    // Wait for the focus to be read
+    await waitFor(() => expect(rowsOf(screen.getByRole("list", { name: "Ways to practise" })).map(([name]) => name).slice(0, 3)).toEqual(["Your talk", "Short speech", "Rapid Fire"]));
+    // Its focus mark
+    expect(screen.getByText("Your focus")).toBeTruthy();
+  });
+
+  // Your talks are hidden for now: without the focus, no link to rehearse
+  it("does not list your talks without the focus", async () => {
+    // A repository with a saved talk
+    const repository = createRepository(new MemoryStore());
+    // The talk
+    await repository.saveTalk(makeTalk({ id: "pitch", title: "Pitch", eventDate: "2026-10-17" }));
+    // The rows
+    const rows = await jobRows("on-the-spot", repository);
+    // Confirm no talk and no link to rehearse
+    expect([screen.queryByText("Pitch"), rows.some(([, href]) => href === "/rehearse")]).toEqual([null, false]);
+  });
+
+  // The role plays: the four packs and every small-talk unit
+  it("lists every role play", async () => {
+    // The rows
+    const rows = await jobRows("role-play");
+    // Confirm them
+    expect(rows).toEqual([["Talk with someone", "/conversations"], ["Scenes", "/scenes"], ["Active listening", "/listening"], ["Quick scenarios", "/learn/scenarios"], ...UNITS.map((unit) => [unit.name, `/small-talk/unit?id=${unit.id}`])]);
+  });
+
+  // An unknown list says so, with the way back
+  it("says so for an unknown list", async () => {
+    // Draw it
+    render(<PracticeWaysScreen job="nothing" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // Confirm the message and the way back
+    expect([screen.getByText(/There is no list by that name/).textContent, screen.getByRole("link", { name: "Back to Practice" }).getAttribute("href")]).toEqual(["There is no list by that name. Back to Practice", "/practice"]);
   });
 });

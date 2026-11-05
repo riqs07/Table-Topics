@@ -189,7 +189,7 @@ describe("Conversation turns", () => {
     // Your turn
     await screen.findByRole("button", { name: "Done" });
     // Her line was stopped, and tap mode shows no countdown, only the line to tap Done (seen, and announced)
-    expect([log.includes("stop"), document.querySelector("[data-turn-cue]"), screen.getAllByText("Your turn. Tap Done when you’ve finished.").map((line) => line.getAttribute("role"))]).toEqual([true, null, [null, "status"]]);
+    expect([log.includes("stop"), document.querySelector("[data-turn-cue]"), !!screen.getByText("Tap Done when you’ve finished."), screen.getAllByText("Your turn. Tap Done when you’ve finished.").map((line) => line.getAttribute("role"))]).toEqual([true, null, true, ["status"]]);
   });
 
   // A key press mid-turn (a keyboard or screen reader user) holds the end until it has been quiet for a while after

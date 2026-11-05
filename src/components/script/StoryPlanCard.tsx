@@ -44,33 +44,33 @@ export function StoryPlanCard({ take }: { take: StoryTake }) {
   const plan = planBeats(take);
   // The focus, if any
   const focus = findStoryFocus(take.focus);
-  // The name, the beats numbered, and the focus with its tip
+  // The name, the beats numbered, and the focus with its tip (laid out as the template card in Desktop Screens "StoryTell")
   return (
-    <section aria-label="Your beats" data-story-plan="full" className={`mt-6 max-w-md p-4 ${CARD}`}>
+    <section aria-label="Your beats" data-story-plan="full" className={`mt-6 max-w-lg px-5 py-5 md:px-6 ${CARD}`}>
       {/* Name and what it is for */}
-      <p className="text-footnote text-ink-muted"><span className="font-semibold text-ink">{plan.name}</span> · {plan.about}</p>
+      <p className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1"><span className="font-display text-xl font-semibold">{plan.name}</span><span className="text-sm font-bold text-ink-muted">{plan.about}</span></p>
       {/* The beats */}
-      <ol className="mt-3 flex flex-col gap-1.5 text-lede">
-        {/* Each beat, numbered */}
+      <ol className="mt-3 flex flex-col">
+        {/* Each beat, numbered in a ring */}
         {plan.beats.map((beat, index) => (
           // One beat
-          <li key={beat} className="flex items-start gap-3">
+          <li key={beat} className="flex min-h-12 items-center gap-3.5 border-t-2 border-rule py-2 first:border-t-0">
             {/* Its number */}
-            <span aria-hidden="true" className="flex size-6 flex-none items-center justify-center rounded-lg bg-warm-tint text-footnote font-semibold text-warm-ink">{index + 1}</span>
+            <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full border-2 border-rule font-display text-sm font-semibold text-ink-muted">{index + 1}</span>
             {/* The beat */}
-            <span>{beat}</span>
+            <span className="text-lg font-bold">{beat}</span>
           </li>
         ))}
       </ol>
       {/* The focus for this telling */}
       {focus && (
-        <div className="mt-4 border-t border-rule pt-3">
+        <div className="mt-3 rounded-2xl bg-warm-tint px-4 py-3 text-warm-ink">
           {/* Small heading */}
-          <p className="text-footnote text-ink-muted">Your focus</p>
+          <p className="text-xs font-extrabold uppercase tracking-[.07em]">Your focus</p>
           {/* The focus and how */}
-          <p className="mt-1 font-semibold">{focus.name}</p>
+          <p className="mt-1 font-extrabold">{focus.name}</p>
           {/* How to do it */}
-          <p className="text-footnote text-ink-muted">{focus.tip}</p>
+          <p className="text-sm font-semibold">{focus.tip}</p>
         </div>
       )}
     </section>

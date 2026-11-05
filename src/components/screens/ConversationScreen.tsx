@@ -5,14 +5,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 // Load Next.js's link component
 import Link from "next/link";
-// Load the masthead
-import { Masthead } from "@/components/script/Masthead";
+// Load the practice bar, the page around it, and the blob singing while you speak
+import { LevelBars, PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar, STEP_LABEL, SingingBlob } from "@/components/script/PracticeBar";
 // Load the shared button looks
 import { PRESS, PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
-// Load the shared card look
-import { CARD } from "@/components/script/textStyles";
-// Load the voice shapes
-import { StartBlob, StatusBlob, VoiceBlob } from "@/components/script/VoiceShapes";
+// Load the shared card, label and bubble looks
+import { BUBBLE, CARD, LAB } from "@/components/script/textStyles";
+// Load the cast
+import { Cast } from "@/components/scenes/Cast";
+// Load the face names
+import type { FaceName } from "@/components/scenes/Scene";
 // Load the microphone help
 import { ALLOW_STEPS, PROBLEM_TEXT } from "@/components/script/microphoneHelp";
 // Load the shared screen starting points
@@ -204,13 +206,16 @@ export function ConversationScreen({ characterId, ...rest }: ConversationScreenP
   if (persona) return <Conversation persona={persona} {...rest} />;
   // Unknown: say so, with the way back
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
-      {/* Title and the way out */}
-      <Masthead title="Conversation" nav={false} close={{ href: "/conversations", label: "Close, back to Conversations" }} />
-      {/* What happened */}
-      <h1 className="mt-8 font-display text-statement font-semibold">That person could not be found.</h1>
-      {/* The way back */}
-      <p className="mt-4"><Link href="/conversations" className={TEXT_LINK}>See everyone to talk with</Link></p>
+    <main id="main" className={PRACTICE_MAIN}>
+      {/* The bar, with the way out */}
+      <PracticeBar close={{ href: "/conversations", label: "Close, back to Conversations" }} label="Talk with someone" />
+      {/* What happened, and the way back */}
+      <div className={PRACTICE_BODY}>
+        {/* What happened */}
+        <h1 className="font-display text-statement font-semibold">That person could not be found.</h1>
+        {/* The way back */}
+        <p className="mt-4"><Link href="/conversations" className={TEXT_LINK}>See everyone to talk with</Link></p>
+      </div>
     </main>
   );
 }
@@ -222,7 +227,7 @@ function GoalChip({ goal, turns }: { goal: ConversationGoal; turns: ReadonlyArra
   // What it counts
   const what = goal.kind === "questions" ? "Questions back" : "Follow-ups";
   // The chip
-  return <p data-goal-chip className={`mt-2 inline-flex self-start rounded-full px-3 py-1 text-footnote font-semibold ${progress.met ? "bg-accent/15 text-accent" : "bg-paper text-ink-muted"}`}>{what}: {Math.min(progress.done, progress.target)} of {progress.target}{progress.met ? " ✓" : ""}</p>;
+  return <p data-goal-chip className={`inline-flex self-start rounded-full px-3 py-1 text-chip font-extrabold ${progress.met ? "bg-fill text-fill-ink" : "bg-card text-accent-tint-ink"}`}>{what}: {Math.min(progress.done, progress.target)} of {progress.target}{progress.met ? " ✓" : ""}</p>;
 }
 
 // The conversation itself
@@ -1349,147 +1354,285 @@ function Conversation({ persona, skill, situationId, autostart = false, services
   // The situation's words, with the name filled in
   const named = (text: string) => scenarioText(text, persona);
 
+  // How far the goal has got, for the friend's face
+  const goalMet = goalProgress(goal, measureConversation(turnsShown)).met;
+  // The friend's face: listening while you speak, deflated when your words were missed, pleased once the goal is met, otherwise at ease
+  const friendFace: FaceName = phase === "you" ? (missed ? "flat" : "listen") : goalMet ? "happy" : phase === "thinking" ? "side-left" : "ready";
+  // What the friend is doing, under their name
+  const friendDoing = phase === "you" ? "is listening" : phase === "thinking" ? (caption ? "is listening" : "is about to speak") : phase === "saving" ? "" : "is talking";
+  // The bar's label while talking: who, where, and the turn
+  const talkLabel = `${persona.name} · ${scenario.title}${talking ? ` · Turn ${Math.min(END_AFTER_TURNS, yourTurnCount(turnsShown) + 1)} of ${END_AFTER_TURNS}` : ""}`;
+  // The clock in the cross's place while the conversation runs
+  const clockLead = (
+    <span className="flex items-baseline gap-1.5 tabular-nums">
+      {/* The time so far */}
+      <span className="font-display text-xl font-semibold">{formatClock(elapsed)}</span>
+      {/* Out of */}
+      <span className="text-base font-extrabold text-ink-muted">of {formatClock(CONVERSATION_LIMIT_SECONDS)}</span>
+    </span>
+  );
+  // The way out, before and after (none mid-conversation; End saves it instead)
+  const closeLink = talking || phase === "call" || phase === "saving" ? null : { href: "/conversations", label: "Close, back to Conversations" };
+
   // Draw the page
   return (
-    // Dark while you speak (the stage, decision 69)
-    <main id="main" data-area={recording ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
-      {/* Title, the time, and the way out (none mid-conversation; End saves it instead) */}
-      <Masthead title="Conversation" nav={false} close={talking || phase === "call" || phase === "saving" ? null : { href: "/conversations", label: "Close, back to Conversations" }}>{phase === "call" ? `${formatClock(elapsed)} of ${formatClock(CONVERSATION_LIMIT_SECONDS)}` : talking ? `Turn ${Math.min(END_AFTER_TURNS, yourTurnCount(turnsShown) + 1)} of ${END_AFTER_TURNS}` : ""}</Masthead>
+    <main id="main" className={PRACTICE_MAIN}>
+      {/* The bar: the way out or the clock, how far through, who and where */}
+      <PracticeBar close={closeLink} lead={clockLead} progress={phase === "intro" ? 0 : phase === "empty" || phase === "lost" || phase === "failed" ? undefined : elapsed / CONVERSATION_LIMIT_SECONDS} label={phase === "intro" ? "Talk with someone" : talkLabel} />
 
       {/* Before starting: the situation and what to practise (once the earlier conversations are counted) */}
       {phase === "intro" && earlier !== null && (
-        <section aria-labelledby="talk-heading" className="mt-8 md:max-w-2xl">
-          {/* What this is */}
-          <p className="text-footnote font-semibold text-accent">Talk with someone</p>
-          {/* The situation (decision 127) */}
-          <h1 id="talk-heading" className="mt-1 font-display text-statement font-semibold">{scenario.title}</h1>
-          {/* Where you are */}
-          <p className="mt-3 max-w-[48ch] text-lede">{named(scenario.setting)}</p>
-          {/* Who it is with, picked for you */}
-          <p data-talking-with className="mt-3 text-footnote text-ink-muted">You’ll talk with <span className="font-semibold text-ink">{persona.name}</span> · {persona.tagline}</p>
-          {/* The one goal (decision 127) */}
-          <div data-goal className={`mt-5 p-4 ${CARD}`}>
-            {/* Small heading */}
-            <p className="text-footnote font-semibold text-accent">Your goal</p>
-            {/* The goal */}
-            <p className="mt-1 font-display text-cue font-semibold leading-tight">{goal.text}</p>
-            {/* How */}
-            <p className="mt-1 text-footnote">{named(goal.detail)}</p>
-          </div>
-          {/* How hard, with written lines (decision 120) */}
-          {written && <DifficultyPicker chosen={difficulty} name={persona.name} onChoose={chooseDifficulty} />}
-          {/* The coach could not be reached */}
-          {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
-          {/* How it works */}
-          <p className="mt-4 max-w-[52ch] text-footnote text-ink-muted">A few exchanges, about a minute. {persona.name} speaks first. {callChosen ? "A phone call (beta, change this in Settings): no turns to end, and you can talk over each other." : liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. {callChosen ? "During the call your voice goes to ElevenLabs and is not kept." : liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
-          {/* No speech-to-text in this browser */}
-          {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
-          {/* Start, or another situation */}
-          {supported && (
-            <p className="mt-6 flex flex-wrap gap-3">
-              {/* Start */}
-              <button type="button" onClick={() => void begin()} className={PRIMARY}>Start</button>
-              {/* Another situation, when lines are written */}
-              {written && !picked && <button type="button" onClick={() => setSkipped(skipped + 1)} className={QUIET}>Another situation</button>}
-            </p>
-          )}
-        </section>
+        <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
+          <section aria-labelledby="talk-heading" className="flex flex-col">
+            {/* What this is */}
+            <p className={STEP_LABEL}>Talk with someone · live</p>
+            {/* The situation (decision 127) */}
+            <h1 id="talk-heading" className="mt-2 font-display text-statement font-semibold md:text-prompt">{scenario.title}</h1>
+            {/* Where you are */}
+            <p className="mt-3 max-w-[48ch] text-lede">{named(scenario.setting)}</p>
+            {/* Who it is with, picked for you */}
+            <div data-talking-with className={`mt-6 flex items-center gap-4 p-4 ${CARD}`}>
+              {/* The friend */}
+              <Cast who="friend" face="ready" className="size-16" />
+              {/* Their name and what they are like */}
+              <p className="min-w-0 flex-1">
+                <span className="sr-only">You’ll talk with </span>
+                <span className="block font-display text-xl font-semibold">{persona.name}</span>
+                <span className="block text-footnote font-bold text-ink-muted">{persona.tagline}</span>
+              </p>
+            </div>
+            {/* How hard, with written lines (decision 120) */}
+            {written && <DifficultyPicker chosen={difficulty} name={persona.name} onChoose={chooseDifficulty} />}
+            {/* The coach could not be reached */}
+            {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
+            {/* No speech-to-text in this browser */}
+            {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
+            {/* Start, or another situation */}
+            {supported && (
+              <p className="mt-6 flex flex-wrap gap-3">
+                {/* Start */}
+                <button type="button" onClick={() => void begin()} className={`${PRIMARY} min-w-40`}>Start</button>
+                {/* Another situation, when lines are written */}
+                {written && !picked && <button type="button" onClick={() => setSkipped(skipped + 1)} className={QUIET}>Another situation</button>}
+              </p>
+            )}
+          </section>
+          {/* The side: the goal and how it works */}
+          <aside aria-label="Before you start" className="flex flex-col gap-4">
+            {/* The one goal (decision 127) */}
+            <div data-goal className="flex flex-col gap-1.5 rounded-[22px] bg-accent-tint p-5 text-accent-tint-ink">
+              {/* Small heading */}
+              <p className={STEP_LABEL}>Your goal</p>
+              {/* The goal */}
+              <p className="font-display text-cue font-semibold leading-tight">{goal.text}</p>
+              {/* How */}
+              <p className="text-footnote font-bold">{named(goal.detail)}</p>
+            </div>
+            {/* How it works */}
+            <p className="text-footnote font-bold text-ink-muted">A few exchanges, about a minute. {persona.name} speaks first. {callChosen ? "A phone call (beta, change this in Settings): no turns to end, and you can talk over each other." : liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. {callChosen ? "During the call your voice goes to ElevenLabs and is not kept." : liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
+          </aside>
+        </div>
       )}
 
       {/* The conversation */}
       {(talking || phase === "saving") && (
-        <section aria-labelledby="line-heading" className="mt-8 flex flex-col md:max-w-2xl">
-          {/* Who is talking, and where (decision 127) */}
-          <p className="text-footnote font-semibold text-accent"><span data-who-talking>{phase === "you" ? "Your turn" : `${persona.name} is talking`}</span> · {scenario.title}{liveOn ? <span data-live="on"> · Live</span> : null}</p>
-          {/* The goal, counted as you go (decision 127) */}
-          {phase !== "saving" && <GoalChip goal={goal} turns={turnsShown} />}
-          {/* Live could not start or dropped: why, in one line (decision 119) */}
-          {liveNote && <p role="status" data-live-note className="mt-2 max-w-[48ch] text-footnote text-ink-muted">{liveNote}</p>}
-          {/* A call could not start: why, in one line (decision 121) */}
-          {callNote && <p role="status" data-call-note className="mt-2 max-w-[48ch] text-footnote text-ink-muted">{callNote}</p>}
-          {/* Their latest line, announced as it changes */}
-          <h1 id="line-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold">{caption || "…"}</h1>
-          {/* Not caught last time */}
-          {missed && phase === "you" && <p role="status" className="mt-3 text-lede">That wasn’t caught. Say it again, then tap Done.</p>}
-          {/* A problem, explained plainly */}
-          {problem && phase === "you" && <p role="alert" className="mt-4 max-w-[48ch] text-lede">{PROBLEM_TEXT[problem]}</p>}
-          {/* A blocked microphone: how to allow it */}
-          {problem === "microphone-blocked" && phase === "you" && (
-            // One step per device
-            <ul aria-label="How to allow the microphone" className="mt-3 max-w-[52ch] list-disc space-y-2 pl-5 text-lede">
-              {/* Each step */}
-              {ALLOW_STEPS.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          )}
-          {/* The shape: them speaking, their line on its way, your turn, or saving */}
-          {phase === "saving" ? (
-            <StatusBlob compact={false} label="Saving…" detail="one moment" />
-          ) : phase === "them" ? (
-            <StartBlob compact={false} label={persona.name} detail="is talking · tap to talk" ariaLabel={`Interrupt ${persona.name} and start your turn`} onStart={interrupt} />
-          ) : phase === "thinking" ? (
-            <StatusBlob compact={false} label={persona.name} detail={caption ? "is listening" : "is about to speak"} mood={caption ? "listening" : "thinking"} />
-          ) : recording ? (
-            <VoiceBlob levels={levels} signal="none" clock={formatClock(turnSeconds)} onStop={() => void done()} compact={false} action="Done" />
-          ) : stopping ? (
-            <StatusBlob compact={false} label="One moment…" detail="catching your words" />
-          ) : problem ? (
-            <StartBlob compact={false} onStart={() => void yourTurn()} mood="hmm" label="Try again" detail="your turn" />
-          ) : (
-            <StatusBlob compact={false} label="Your turn" detail="allow the microphone" />
-          )}
-          {/* What to do while recording: tap Done, or the countdown when turns end by themselves */}
-          {recording && !auto && <p className="text-center text-footnote text-ink-muted md:text-left">Your turn. Tap Done when you’ve finished.</p>}
-          {recording && auto && !liveOn && <TurnCueLine cue={cue} />}
-          {recording && liveOn && <p data-live-turn className="mt-1 text-center text-footnote text-ink-muted md:text-left">Live. Your turn ends when you finish, or tap Done.</p>}
-          {/* A turn that ended by itself, for a few seconds: carry on */}
-          {canResume && (phase === "thinking" || phase === "them") && <p className="mt-3 text-center md:text-left"><button type="button" onClick={resume} className={SECONDARY}>I wasn’t finished</button></p>}
-          {/* While developing: how long their first sound took after your turn ended */}
-          {DEVELOPMENT && latency !== null && <p data-latency={latency} className="mt-2 text-center text-footnote text-ink-muted md:text-left">Reply sound {(latency / 1000).toFixed(1)} s after your turn ended (development only)</p>}
-          {/* Whose turn it is, for screen readers */}
-          <p role="status" className="sr-only">{talking ? announcement : ""}</p>
-          {/* End early, saving what was said */}
-          {talking && !stopping && <p className="mt-4 text-center md:text-left"><button type="button" onClick={() => void end()} className={QUIET}>End conversation</button></p>}
-        </section>
+        <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
+          <section aria-labelledby="line-heading" className="flex min-w-0 flex-col gap-6">
+            {/* Who is talking, and where (decision 127) */}
+            <p className="sr-only"><span data-who-talking>{phase === "you" ? "Your turn" : `${persona.name} is talking`}</span> · {scenario.title}{liveOn ? <span data-live="on"> · Live</span> : null}</p>
+            {/* The friend and their latest line */}
+            <div className="flex items-end gap-3 md:gap-6">
+              {/* The friend, their face showing how it is going */}
+              <div className="flex flex-none flex-col items-center">
+                {/* The drawing */}
+                <Cast who="friend" face={friendFace} label={`${persona.name}${friendDoing ? `, ${friendDoing}` : ""}`} className="size-20 md:size-44" />
+                {/* Their name */}
+                <span aria-hidden="true" className="mt-1 font-display text-xl font-semibold md:text-2xl">{persona.name}</span>
+                {/* What they are doing */}
+                <span aria-hidden="true" className="text-sm font-bold text-ink-muted">{friendDoing}{liveOn ? " · live" : ""}</span>
+              </div>
+              {/* Their line, in a bubble */}
+              <div className={`${BUBBLE} mb-10 min-w-0 flex-1 rounded-[28px] px-5 py-4 shadow-card md:mb-16 md:px-7 md:py-6`}>
+                {/* Whose line */}
+                <span className={LAB}>{persona.name}</span>
+                {/* Their latest line, announced as it changes */}
+                <h1 id="line-heading" aria-live="polite" className="mt-1.5 font-display text-cue font-semibold md:text-statement">{caption || "…"}</h1>
+              </div>
+            </div>
+            {/* Live could not start or dropped: why, in one line (decision 119) */}
+            {liveNote && <p role="status" data-live-note className="max-w-[48ch] text-footnote text-ink-muted">{liveNote}</p>}
+            {/* A call could not start: why, in one line (decision 121) */}
+            {callNote && <p role="status" data-call-note className="max-w-[48ch] text-footnote text-ink-muted">{callNote}</p>}
+            {/* Your side: the dark stage while you speak */}
+            <div role="group" aria-label="Your turn" data-recording={recording || undefined} className="flex flex-wrap items-center gap-6 rounded-[28px] bg-ink p-5 text-paper-raised md:p-7">
+              {/* You: singing in rings while you speak, otherwise waiting */}
+              {recording ? <SingingBlob className="size-32 md:size-40" ringClass="stroke-warm" /> : <Cast who="you" face={phase === "saving" || stopping ? "ready" : problem ? "wonder" : phase === "you" ? "ready" : "side-left"} className="size-24 md:size-32" />}
+              {/* What is happening */}
+              <div className="flex min-w-0 flex-[1_1_14rem] flex-col gap-2">
+                {/* Whose side */}
+                <span className={`${LAB} text-paper-raised/70`}>You</span>
+                {/* The state, in words */}
+                <span className="font-display text-cue font-semibold md:text-statement">{phase === "saving" ? "Saving…" : recording ? "Your turn" : stopping ? "One moment…" : phase === "you" ? (problem ? "Try again" : "Your turn") : `${persona.name}’s turn`}</span>
+                {/* The detail */}
+                {recording && !auto && <span className="font-bold text-paper-raised/75">Tap Done when you’ve finished.</span>}
+                {recording && auto && !liveOn && <TurnCueLine cue={cue} />}
+                {recording && liveOn && <span data-live-turn className="font-bold text-paper-raised/75">Live. Your turn ends when you finish, or tap Done.</span>}
+                {phase === "saving" && <span role="status" className="font-bold text-paper-raised/75">Saving the conversation, one moment</span>}
+                {stopping && <span role="status" className="font-bold text-paper-raised/75">Catching your words</span>}
+                {phase === "thinking" && <span role="status" className="font-bold text-paper-raised/75">{caption ? `${persona.name} is listening` : `${persona.name} is about to speak`}</span>}
+                {phase === "you" && !recording && !stopping && !problem && <span role="status" className="font-bold text-paper-raised/75">Allow the microphone</span>}
+                {/* Not caught last time */}
+                {missed && phase === "you" && <p role="status" className="font-bold text-paper-raised">That wasn’t caught. Say it again, then tap Done.</p>}
+                {/* A problem, explained plainly */}
+                {problem && phase === "you" && <p role="alert" className="max-w-[48ch] font-bold text-paper-raised">{PROBLEM_TEXT[problem]}</p>}
+                {/* A blocked microphone: how to allow it */}
+                {problem === "microphone-blocked" && phase === "you" && (
+                  // One step per device
+                  <ul aria-label="How to allow the microphone" className="max-w-[52ch] list-disc space-y-2 pl-5 text-paper-raised/85">
+                    {/* Each step */}
+                    {ALLOW_STEPS.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                )}
+                {/* Your voice's level while you speak */}
+                {recording && (
+                  <span className="mt-1 flex items-center gap-4">
+                    {/* The bars */}
+                    <LevelBars levels={levels} />
+                    {/* How long this turn has run */}
+                    <span className="font-display text-xl font-semibold tabular-nums text-paper-raised/80">{formatClock(turnSeconds)}</span>
+                  </span>
+                )}
+                {/* While developing: how long their first sound took after your turn ended */}
+                {DEVELOPMENT && latency !== null && <p data-latency={latency} className="text-footnote text-paper-raised/70">Reply sound {(latency / 1000).toFixed(1)} s after your turn ended (development only)</p>}
+              </div>
+              {/* The actions: Done (or talk now, or try again), then end */}
+              <div className="flex flex-none flex-col items-center gap-4 max-md:w-full md:ml-auto">
+                {/* Done, a big round button, while you speak */}
+                {recording && <button type="button" onClick={() => void done()} aria-label="Done" className={`grid size-28 place-items-center rounded-full bg-fill font-display text-cue font-semibold text-fill-ink shadow-chunky transition-[transform,box-shadow] duration-100 motion-safe:active:translate-y-[3px] active:shadow-chunky-pressed max-md:h-14 max-md:w-full max-md:rounded-2xl max-md:text-button max-md:uppercase ${PRESS}`}>Done</button>}
+                {/* While they talk: talk now, cutting in */}
+                {phase === "them" && <button type="button" onClick={interrupt} aria-label={`Interrupt ${persona.name} and start your turn`} className={`${SECONDARY} max-md:w-full`}>Talk now</button>}
+                {/* A problem: try again */}
+                {problem && phase === "you" && !recording && !stopping && <button type="button" onClick={() => void yourTurn()} className={`${PRIMARY} max-md:w-full`}>Try again</button>}
+                {/* A turn that ended by itself, for a few seconds: carry on */}
+                {canResume && (phase === "thinking" || phase === "them") && <button type="button" onClick={resume} className={`${SECONDARY} max-md:w-full`}>I wasn’t finished</button>}
+                {/* End early, saving what was said */}
+                {talking && !stopping && <button type="button" onClick={() => void end()} className={`${QUIET} max-md:w-full`}>End conversation</button>}
+              </div>
+            </div>
+            {/* Whose turn it is, for screen readers */}
+            <p role="status" className="sr-only">{talking ? announcement : ""}</p>
+          </section>
+          {/* The side: the goal and the conversation so far */}
+          <ConversationSide name={persona.name} goal={goal} turns={turnsShown} saving={phase === "saving"} />
+        </div>
       )}
 
       {/* A phone call with the agent (decision 121) */}
       {phase === "call" && (
-        <section aria-labelledby="call-heading" data-call className="mt-8 flex flex-col md:max-w-2xl">
-          {/* Who, where, and that it is a call */}
-          <p className="text-footnote font-semibold text-accent">{persona.name} · {scenario.title} · Phone call</p>
-          {/* The latest line, yours or theirs, announced as it changes */}
-          <h1 id="call-heading" aria-live="polite" className="mt-3 font-display text-statement font-semibold">{caption || "…"}</h1>
-          {/* Speaking or listening */}
-          <StatusBlob compact={false} label={callSpeaking ? persona.name : "Your turn"} detail={callSpeaking ? "is talking · talk over them any time" : "just talk"} />
-          {/* How it works */}
-          <p className="text-center text-footnote text-ink-muted md:text-left">On a call: no turns to end. Talk when you like; {persona.name} can be interrupted.</p>
-          {/* Whose turn, for screen readers */}
-          <p role="status" className="sr-only">{announcement}</p>
-          {/* Hang up, saving what was said */}
-          <p className="mt-4 text-center md:text-left"><button type="button" onClick={() => void finishCall()} className={SECONDARY}>End call</button></p>
-        </section>
+        <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
+          <section aria-labelledby="call-heading" data-call className="flex min-w-0 flex-col gap-6">
+            {/* Who, where, and that it is a call */}
+            <p className={STEP_LABEL}>{persona.name} · {scenario.title} · Phone call</p>
+            {/* The friend and the latest line */}
+            <div className="flex items-end gap-3 md:gap-6">
+              {/* The friend */}
+              <div className="flex flex-none flex-col items-center">
+                {/* The drawing */}
+                <Cast who="friend" face={callSpeaking ? "ready" : "listen"} className="size-20 md:size-44" />
+                {/* Their name */}
+                <span className="mt-1 font-display text-xl font-semibold md:text-2xl">{persona.name}</span>
+                {/* What they are doing */}
+                <span className="text-sm font-bold text-ink-muted">{callSpeaking ? "is talking" : "is listening"}</span>
+              </div>
+              {/* The latest line, yours or theirs, announced as it changes */}
+              <div className={`${BUBBLE} mb-10 min-w-0 flex-1 rounded-[28px] px-5 py-4 shadow-card md:mb-16 md:px-7 md:py-6`}>
+                <h1 id="call-heading" aria-live="polite" className="font-display text-cue font-semibold md:text-statement">{caption || "…"}</h1>
+              </div>
+            </div>
+            {/* Your side */}
+            <div role="group" aria-label="Your turn" className="flex flex-wrap items-center gap-6 rounded-[28px] bg-ink p-5 text-paper-raised md:p-7">
+              {/* You, singing while it is your turn */}
+              {callSpeaking ? <Cast who="you" face="side-left" className="size-24 md:size-32" /> : <SingingBlob className="size-32 md:size-40" />}
+              {/* Speaking or listening */}
+              <div role="status" className="flex min-w-0 flex-[1_1_14rem] flex-col gap-2">
+                {/* Whose turn */}
+                <span className="font-display text-cue font-semibold md:text-statement">{callSpeaking ? persona.name : "Your turn"}</span>
+                {/* What to do */}
+                <span className="font-bold text-paper-raised/75">{callSpeaking ? "is talking · talk over them any time" : "just talk"}</span>
+              </div>
+              {/* Hang up, saving what was said */}
+              <button type="button" onClick={() => void finishCall()} className={`${SECONDARY} max-md:w-full md:ml-auto`}>End call</button>
+            </div>
+            {/* How it works */}
+            <p className="text-footnote font-bold text-ink-muted">On a call: no turns to end. Talk when you like; {persona.name} can be interrupted.</p>
+            {/* Whose turn, for screen readers */}
+            <p role="status" className="sr-only">{announcement}</p>
+          </section>
+          {/* The side: the goal */}
+          <ConversationSide name={persona.name} goal={goal} turns={[]} saving={false} />
+        </div>
       )}
 
       {/* Nothing heard from you, or the connection dropped first */}
       {(phase === "empty" || phase === "lost") && (
-        <section aria-labelledby="empty-heading" className="mt-8 md:max-w-2xl">
+        <section aria-labelledby="empty-heading" className={`${PRACTICE_BODY} flex max-w-2xl flex-col items-start gap-6`}>
+          {/* The friend, puzzled with you */}
+          <Cast who="friend" face="flat" className="size-24" />
           {/* What happened */}
           <h1 id="empty-heading" className="font-display text-statement font-semibold">{phase === "lost" ? "The conversation couldn’t continue, so nothing was saved." : "Nothing was heard from you, so nothing was saved."}</h1>
           {/* Try again */}
-          <p className="mt-6"><button type="button" onClick={() => void begin()} className={PRIMARY}>Start again</button></p>
+          <p className="flex flex-wrap gap-3"><button type="button" onClick={() => void begin()} className={PRIMARY}>Start again</button><Link href="/conversations" className={QUIET}>Back to Conversations</Link></p>
         </section>
       )}
 
       {/* Saving failed */}
       {phase === "failed" && (
-        <section aria-labelledby="failed-heading" className="mt-8 md:max-w-2xl">
+        <section aria-labelledby="failed-heading" className={`${PRACTICE_BODY} flex max-w-2xl flex-col items-start gap-6`}>
           {/* What happened */}
           <h1 id="failed-heading" role="alert" className="font-display text-statement font-semibold">This conversation could not be saved.</h1>
           {/* Try again */}
-          <p className="mt-6"><button type="button" onClick={() => void save()} className={SECONDARY}>Try saving again</button></p>
+          <p><button type="button" onClick={() => void save()} className={SECONDARY}>Try saving again</button></p>
         </section>
       )}
     </main>
+  );
+}
+
+// The side of a conversation (TalkCall's right column): what to practise, counted as you go, the conversation so far, and whose voices these are
+function ConversationSide({ name, goal, turns, saving }: { name: string; goal: ConversationGoal; turns: ReadonlyArray<ConversationTurn>; saving: boolean }) {
+  // The side column
+  return (
+    <aside aria-label="The conversation so far" className="flex min-w-0 flex-col gap-4 lg:pt-1">
+      {/* What to practise, and how far it got (decision 127) */}
+      <div data-goal className="flex flex-col gap-2 rounded-[22px] bg-accent-tint p-5 text-accent-tint-ink">
+        {/* Small heading */}
+        <span className={STEP_LABEL}>Practise</span>
+        {/* The goal */}
+        <span className="text-lg font-bold leading-snug">{goal.text}</span>
+        {/* Counted as you go */}
+        {!saving && <GoalChip goal={goal} turns={turns} />}
+      </div>
+      {/* The conversation so far */}
+      {turns.length > 0 && (
+        <div className={`p-5 ${CARD}`}>
+          {/* Small heading */}
+          <p className={LAB}>So far</p>
+          {/* Each turn, the latest in full ink */}
+          <ol className="mt-2.5 flex flex-col divide-y-2 divide-rule text-footnote text-ink-muted">
+            {turns.map((turn, index) => (
+              <li key={index} className="flex flex-col gap-0.5 py-2.5 first:pt-0 last:pb-0">
+                {/* Who */}
+                <b className="text-sm text-ink">{turn.who === "you" ? "You" : name}</b>
+                {/* What */}
+                <span className={index === turns.length - 1 ? "font-bold text-ink" : ""}>{turn.text}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+      {/* Whose voices */}
+      <p className="text-sm font-bold text-ink-muted">{name}’s voice is AI, by ElevenLabs. Your browser turns your words into text.</p>
+    </aside>
   );
 }
 
@@ -1544,14 +1687,14 @@ function TurnCueLine({ cue }: { cue: TurnCue | null }) {
   const filled = cue && (cue.phase === "pausing" || cue.phase === "holding") ? Math.floor(cue.progress * CUE_STEPS) : 0;
   // The marks and the words
   return (
-    <div data-turn-cue={cue?.phase ?? "waiting"} data-turn-progress={filled} className="mt-1 flex flex-col items-center gap-1.5 md:items-start">
+    <div data-turn-cue={cue?.phase ?? "waiting"} data-turn-progress={filled} className="flex flex-col items-start gap-1.5">
       {/* The marks, for sighted people (the words say the same) */}
       <div aria-hidden="true" className="flex gap-1">
         {/* Each mark */}
-        {Array.from({ length: CUE_STEPS }, (_, index) => <span key={index} className={`h-1.5 w-7 rounded-full ${index < filled ? "bg-accent" : "bg-rule"}`} />)}
+        {Array.from({ length: CUE_STEPS }, (_, index) => <span key={index} className={`h-1.5 w-7 rounded-full ${index < filled ? "bg-accent" : "bg-paper-raised/25"}`} />)}
       </div>
       {/* The words */}
-      <p className="text-center text-footnote text-ink-muted md:text-left">{cueText(cue)}</p>
+      <p className="font-bold text-paper-raised/75">{cueText(cue)}</p>
     </div>
   );
 }

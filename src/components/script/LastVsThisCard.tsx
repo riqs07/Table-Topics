@@ -19,6 +19,13 @@ import { curveLines, describePhrase, type Phrase, type PitchWords } from "@/core
 import { smoothPath } from "@/core/pitchClean";
 // Load the range rule
 import { rangeOf } from "@/core/voiceFeedback";
+// Load the kit's ribbons, the end of a curve and the tiny copy's check
+import { endPoint, ribbonFromMini } from "@/core/chartKit";
+import { isMiniFingerprint } from "@/core/miniFingerprint";
+import { formatRate } from "@/core/copy";
+// Load the kit's then-and-now ribbons and key
+import { ThenAndNow } from "@/components/charts/ThenAndNow";
+import { ChartKey } from "@/components/charts/ChartKey";
 // Load the record type
 import type { FullSession } from "@/data/records";
 // Load the repository type
@@ -40,6 +47,8 @@ interface LastVsThisProps {
   plays?: { before: string; after: string };
   // The text both takes read, for a reading (null otherwise)
   script?: string | null;
+  // Whether pause words are shown (decision 79): the ribbons' dots and the pause-word number
+  pauseWords?: boolean;
 }
 
 // One of this take's phrases with the last take's curve under it (or alone)
@@ -50,13 +59,13 @@ function PairRows({ phrase, pitch, under, width, measure }: { phrase: Phrase; pi
   return (
     <div className="flex flex-col gap-1">
       {/* The rows, the last take's curve dashed under each */}
-      {lines.map((line, index) => <CurveRow key={index} width={width} words={phrase.words} slots={line.slots} path={smoothPath(line.points)} under={under ? under(line.slots) : null} label={`This try: ${describePhrase(phrase)}${under ? " The last try is the dashed line." : ""}`} look={(place) => (phrase.words[place]!.peak ? "peak" : "plain")} />)}
+      {lines.map((line, index) => <CurveRow key={index} width={width} words={phrase.words} slots={line.slots} path={smoothPath(line.points)} under={under ? under(line.slots) : null} fell={phrase.ending === "fell" && index === lines.length - 1 ? endPoint(line.points) : null} label={`This try: ${describePhrase(phrase)}${under ? " The last try is the dashed line." : ""}`} look={(place) => (phrase.words[place]!.peak ? "peak" : "plain")} />)}
     </div>
   );
 }
 
 // The card
-export function LastVsThisCard({ repo, before, after, kind, names, plays = { before: "Play last try", after: "Play this try" }, script = null }: LastVsThisProps) {
+export function LastVsThisCard({ repo, before, after, kind, names, plays = { before: "Play last try", after: "Play this try" }, script = null, pauseWords = true }: LastVsThisProps) {
   // Both takes' service words, once read
   const [serverBefore, serverAfter] = [useServerWords(repo, before.id), useServerWords(repo, after.id)];
   // Both recordings
@@ -86,6 +95,8 @@ export function LastVsThisCard({ repo, before, after, kind, names, plays = { bef
   const shown = pairsToShow(pairs, 3);
   // The headline, only for a clear change
   const headline = alone ? null : changeHeadline(pairs, { before: rangeOf(before), after: rangeOf(after) });
+  // Both takes' ribbons, from the tiny copies kept on them (none when either has no copy)
+  const ribbons = isMiniFingerprint(before.fingerprint) && isMiniFingerprint(after.fingerprint) ? { before: ribbonFromMini(before.fingerprint, before.durationSec), after: ribbonFromMini(after.fingerprint, after.durationSec) } : null;
   // Where each take's shown stretch starts, for its play button
   const startAt = { before: shown[0]?.before.start ?? 0, after: shown[0]?.after.start ?? now.phrases[0]?.start ?? 0 };
 
@@ -112,6 +123,8 @@ export function LastVsThisCard({ repo, before, after, kind, names, plays = { bef
       {headline ? <h2 id={`last-this-${after.id}`} className={`mt-1 ${SECTION_HEADING}`}>{headline}</h2> : <h2 id={`last-this-${after.id}`} className="sr-only">Last try and this try</h2>}
       {/* The picture */}
       <div ref={ref} className={`mt-3 flex flex-col gap-4 p-4 ${CARD}`}>
+        {/* Then and now: both takes as ribbons, the last one grey, with the pause words a minute when shown */}
+        {ribbons && <ThenAndNow before={ribbons.before} after={ribbons.after} names={{ before: names.before, after: names.after }} pauseWords={pauseWords} stat={pauseWords ? { value: formatRate(after.fillersPerMinute), caption: "pause words a minute this try", then: `last try: ${formatRate(before.fillersPerMinute)}` } : null} />}
         {/* The last take's readings are gone: said quietly, this take alone */}
         {alone && <p className="text-footnote text-ink-muted">{pitchBefore.state === "trimmed" ? "The last try’s detailed readings aren’t kept any more, so only this try is shown." : "The last try has no pitch readings to compare, so only this try is shown."}</p>}
         {alone && now.phrases[0] && <PairRows phrase={now.phrases[0]} pitch={now} under={null} width={width - 32} measure={measure} />}
@@ -119,13 +132,8 @@ export function LastVsThisCard({ repo, before, after, kind, names, plays = { bef
         {!alone && shown.length === 0 && <p className="text-footnote text-ink-muted">The two takes don’t share enough words to line up.</p>}
         {/* Each matched phrase, the last take dashed under this one */}
         {!alone && shown.map((pair) => <PairRows key={pair.after.index} phrase={pair.after} pitch={now} under={(slots) => smoothPath(overlayPoints(pair, now.tickMs, slots, pair.after.words))} width={width - 32} measure={measure} />)}
-        {/* The key */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-footnote text-ink-muted">
-          {/* The last take, when drawn */}
-          {!alone && shown.length > 0 && <span className="flex items-center gap-1.5"><svg width="22" height="6" aria-hidden="true" className="text-ink-muted"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="2.5" strokeDasharray="6 4" /></svg>{names.before}</span>}
-          {/* This take */}
-          <span className="flex items-center gap-1.5"><svg width="22" height="6" aria-hidden="true" className="text-accent"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="3" /></svg>{names.after}</span>
-        </div>
+        {/* The key: the ghost, your line, a clean fall */}
+        <ChartKey items={[...(!alone && shown.length > 0 ? [{ kind: "ghost" as const, name: names.before }] : []), { kind: "pitch", name: names.after }, ...(shown.some((pair) => pair.after.ending === "fell") || (alone && now.phrases[0]?.ending === "fell") ? [{ kind: "fell" as const, name: "A clean fall at the end" }] : [])]} />
         {/* Both recordings, when kept */}
         {(urlBefore || urlAfter) && (
           <div className="flex gap-2">

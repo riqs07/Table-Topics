@@ -13,7 +13,7 @@ export type SceneMotion = "loop" | "few" | "still";
 export const BLOB = "M0 -100C58.8 -100 106 -53.2 106 0C106 50.4 61.6 94 0 94C-58.8 94 -103 53.2 -103 0C-103 -56 -56 -100 0 -100Z";
 
 // The blob's faces, each drawn 48 by 34 and placed on the outline
-export type FaceName = "ready" | "wow" | "sing" | "happy" | "down" | "up" | "wonder" | "puff" | "side" | "side-left" | "flat";
+export type FaceName = "ready" | "wow" | "sing" | "happy" | "down" | "up" | "wonder" | "puff" | "side" | "side-left" | "flat" | "listen";
 
 // One face's features, in the current colour
 export function Face({ face }: { face: FaceName }) {
@@ -95,6 +95,15 @@ export function Face({ face }: { face: FaceName }) {
           <circle className="fill-current" cx="40" cy="6" r="5" />
           {/* The smile */}
           <path className="stroke-current" d="M16 26q8 6 16 0" />
+        </>
+      )}
+      {/* Listening (the UI rewrite's second pass): eyes shut in a smile and a small smile, hearing someone out */}
+      {face === "listen" && (
+        <>
+          {/* The shut eyes, curved up */}
+          <path className="stroke-current" d="M6 10q6 5 12 0M30 10q6 5 12 0" />
+          {/* The smile */}
+          <path className="stroke-current" d="M17 25q7 6 14 0" />
         </>
       )}
       {/* Puffing: eyes shut, a little round mouth and pink cheeks */}

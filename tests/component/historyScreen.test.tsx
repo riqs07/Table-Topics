@@ -38,7 +38,7 @@ describe("HistoryScreen", () => {
     // Draw the screen with no data
     render(<HistoryScreen repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the empty line, the sleeping blob (decision 134), a real main heading even when empty, and the way back to your progress, where History is reached from (decision 109)
-    expect([!!(await screen.findByText(/Nothing here yet/)), !!document.querySelector("[data-blob-character='sleepy']"), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to your progress" }).getAttribute("href")]).toEqual([true, true, "History", "/profile"]);
+    expect([!!(await screen.findByText(/Nothing here yet/)), !!document.querySelector("[data-blob-character='sleepy']"), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to Me" }).getAttribute("href")]).toEqual([true, true, "Your takes", "/profile"]);
   });
 
   // The empty state offers one thing to do
@@ -75,8 +75,8 @@ describe("HistoryScreen", () => {
     const links = within(await screen.findByRole("list", { name: "Sessions" })).getAllByRole("link");
     // Confirm one row per first try (8 full sessions and 1 warm-up in the sample)
     expect(links).toHaveLength(9);
-    // Confirm the newest row shows the first try and the retry, with the unit
-    expect(links[0]!.textContent).toMatch(/Today · tried twice\d\.\d, then \d\.\dpause words a minute/);
+    // Confirm the newest row shows the first try and the retry, with the unit (short on a phone, in full from small screens up)
+    expect(links[0]!.textContent).toMatch(/Today · tried twice\d\.\d, then \d\.\da minutepause words a minute/);
     // Confirm it links to that session
     expect(links[0]!.getAttribute("href")).toBe("/sessions?id=sample-7");
     // Reading aloud only: none in the sample

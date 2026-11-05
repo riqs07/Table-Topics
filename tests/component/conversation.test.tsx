@@ -435,7 +435,7 @@ describe("conversations elsewhere", () => {
     // The turns
     const turns = within(screen.getByRole("list", { name: "The conversation" })).getAllByRole("listitem").map((item) => item.textContent);
     // Each part
-    expect([!!screen.getByText("With Theo · Before an evening class · 1:35"), headline.textContent, !!screen.getByText("Goal: Ask two follow-up questions."), !!screen.getByText("You did 45% of the talking and asked 1 question."), !!screen.getByText("“do you like your job”"), !!screen.getByText("What do you look for at the flea markets?"), turns, screen.getByRole("link", { name: /Try it again/ }).getAttribute("href")]).toEqual([true, "1 of 2 follow-up questions.", true, true, true, true, ["TheoWell… I fix up old radios.", "Youoh what kind of radios"], "/conversations/talk?id=theo&situation=class&start=1"]);
+    expect([!!screen.getByText("With Theo · Before an evening class · 1:35"), headline.textContent, !!screen.getByText("Goal: Ask two follow-up questions."), !!screen.getByText("You did 45% of the talking and asked 1 question."), !!screen.getByText("“do you like your job”"), !!screen.getByText("What do you look for at the flea markets?"), turns, screen.getByRole("link", { name: /Talk again/ }).getAttribute("href")]).toEqual([true, "1 of 2 follow-up questions.", true, true, true, true, ["TheoWell… I fix up old radios.", "Youoh what kind of radios"], "/conversations/talk?id=theo&situation=class&start=1"]);
     // Close it
     cleanup();
     // Draw History

@@ -8,8 +8,9 @@ import { planBeats } from "@/components/script/StoryPlanCard";
 import { findGuidedLevel, guidedLevel, type GuidedStory } from "@/content/guidedStories";
 // Load the story set-up type
 import type { StoryTake } from "@/data/records";
-// Load the shared card look
-import { CARD } from "@/components/script/textStyles";
+// Load the shared card and label looks, and the plus
+import { CARD, LAB } from "@/components/script/textStyles";
+import { PlusIcon } from "@phosphor-icons/react/dist/ssr";
 
 // Draw the card
 export function GuidedStoryCard({ story, take }: { story: GuidedStory; take: StoryTake }) {
@@ -19,47 +20,50 @@ export function GuidedStoryCard({ story, take }: { story: GuidedStory; take: Sto
   const focus = findStoryFocus(take.focus);
   // Its level on the dial: the heading, and whether the details come in story order (decision 153)
   const level = findGuidedLevel(guidedLevel(story));
-  // The facts numbered, the twist, the nudges, then the shape and focus by name
+  // The facts numbered, the twist, the nudges, then the shape and focus by name (laid out as the storyboard's "Guided story")
   return (
-    <section aria-label="Your facts" data-guided-card="full" className={`mt-6 max-w-md p-4 ${CARD}`}>
-      {/* "Make it a…": the kind of story to tell (decision 153) */}
-      {story.template && <p data-make-it className="mb-2 font-display text-cue font-semibold">{findStoryTemplate(story.template).makeIt ?? `Make it a ${findStoryTemplate(story.template).name.toLowerCase()}`}</p>}
-      {/* Small heading: the facts in order, out of order, or four things to use */}
-      <p className="text-footnote font-semibold">{level.heading}</p>
-      {/* The facts */}
-      <ol className="mt-3 flex flex-col gap-1.5 text-lede" data-ordered={level.ordered}>
-        {/* Each fact, numbered */}
-        {story.facts.map((fact, index) => (
-          // One fact
-          <li key={fact} className="flex items-start gap-3">
-            {/* Its number in story order, or a plain mark when the details are loose */}
-            <span aria-hidden="true" className="flex size-6 flex-none items-center justify-center rounded-lg bg-warm-tint text-footnote font-semibold text-warm-ink">{level.ordered ? index + 1 : "•"}</span>
-            {/* The fact */}
-            <span>{fact}</span>
-          </li>
-        ))}
-        {/* The twist, marked */}
-        {story.twist && (
-          <li data-twist className="flex items-start gap-3">
-            {/* The mark */}
-            <span className="flex-none rounded-lg bg-fill px-1.5 py-0.5 text-footnote font-semibold text-fill-ink">Twist</span>
-            {/* The twist */}
-            <span className="font-semibold">{story.twist}</span>
-          </li>
-        )}
-      </ol>
-      {/* What to add */}
-      <div className="mt-4 border-t border-rule pt-3">
+    <section aria-label="Your facts" data-guided-card="full" className="mt-6 flex max-w-lg flex-col gap-4">
+      {/* The facts, on their own card */}
+      <div className={`px-5 py-5 ${CARD}`}>
+        {/* "Make it a…": the kind of story to tell (decision 153) */}
+        {story.template && <p data-make-it className="mb-2 font-display text-cue font-semibold leading-tight">{findStoryTemplate(story.template).makeIt ?? `Make it a ${findStoryTemplate(story.template).name.toLowerCase()}`}</p>}
+        {/* Small heading: the facts in order, out of order, or four things to use */}
+        <p className={LAB}>{level.heading}</p>
+        {/* The facts */}
+        <ol className="mt-3 flex flex-col gap-2 text-lg font-bold" data-ordered={level.ordered}>
+          {/* Each fact, numbered */}
+          {story.facts.map((fact, index) => (
+            // One fact
+            <li key={fact} className="flex items-start gap-3">
+              {/* Its number in story order, or a plain mark when the details are loose */}
+              <span aria-hidden="true" className="mt-0.5 grid size-7 flex-none place-items-center rounded-full bg-warm-tint font-display text-sm font-semibold text-warm-ink">{level.ordered ? index + 1 : "•"}</span>
+              {/* The fact */}
+              <span>{fact}</span>
+            </li>
+          ))}
+          {/* The twist, marked */}
+          {story.twist && (
+            <li data-twist className="flex items-start gap-3">
+              {/* The mark */}
+              <span className="flex-none rounded-full bg-fill px-2.5 py-0.5 text-chip font-extrabold uppercase tracking-[.05em] text-fill-ink">Twist</span>
+              {/* The twist */}
+              <span>{story.twist}</span>
+            </li>
+          )}
+        </ol>
+        {/* The template and the focus, by name (the facts are the beats here) */}
+        <p className="mt-4 border-t-2 border-rule pt-3 text-sm font-bold"><span className="text-ink-muted">Template:</span> <span>{shape.name}</span>{focus && <> · <span className="text-ink-muted">Focus:</span> <span>{focus.name}</span></>}</p>
+      </div>
+      {/* What to add, each nudge a row with a plus */}
+      <div>
         {/* Small heading */}
-        <p className="text-footnote text-ink-muted">Make it yours</p>
+        <p className={LAB}>Make it yours</p>
         {/* The nudges */}
-        <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-5">
+        <ul className="mt-2 flex flex-col gap-2">
           {/* Each nudge */}
-          {story.nudges.map((nudge) => <li key={nudge}>{nudge}</li>)}
+          {story.nudges.map((nudge) => <li key={nudge} className="flex items-start gap-3 rounded-[18px] border-2 border-rule bg-card px-4 py-3 font-bold shadow-ledge"><PlusIcon aria-hidden="true" weight="bold" className="mt-1 size-4 flex-none text-art-plum" />{nudge}</li>)}
         </ul>
       </div>
-      {/* The template and the focus, by name (the facts are the beats here) */}
-      <p className="mt-4 border-t border-rule pt-3 text-footnote"><span className="text-ink-muted">Template:</span> <span className="font-semibold">{shape.name}</span>{focus && <> · <span className="text-ink-muted">Focus:</span> <span className="font-semibold">{focus.name}</span></>}</p>
     </section>
   );
 }

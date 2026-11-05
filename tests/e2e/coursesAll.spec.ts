@@ -7,7 +7,7 @@ import { COURSES } from "@/content/courses";
 // Load the course rules, for each part's addresses
 import { coursePlaces, partHref, takeHref } from "@/core/courses";
 
-// One check per course: its page lists every part, and every part's idea and recorder open with the course line
+// One check per course: its page lists every lesson on the path, and every part's idea and recorder open with the course line
 for (const course of COURSES) {
   // The check
   test(`Course pages: ${course.title}`, async ({ page }) => {
@@ -17,8 +17,8 @@ for (const course of COURSES) {
     const places = coursePlaces(course);
     // The course page
     await page.goto(`/courses/course?id=${course.id}`);
-    // Every part listed
-    await expect(page.locator("[data-course-part]")).toHaveCount(places.length);
+    // Every lesson on the path (second design pass: the chosen lesson's parts show beside it)
+    await expect(page.locator("[data-lesson-node]")).toHaveCount(course.lessons.length);
     // Each part
     for (const { part } of places) {
       // Its idea

@@ -7,8 +7,8 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import Link from "next/link";
 // Load the speaker icon
 import { SpeakerHighIcon } from "@phosphor-icons/react/dist/ssr";
-// Load the masthead
-import { Masthead } from "@/components/script/Masthead";
+// Load the practice bar and the one-column page
+import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
 // Load the action band
 import { ActionBand } from "@/components/script/ActionBand";
 // Load the shared button looks
@@ -240,9 +240,9 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
   if (!passage) {
     // Say so, with the way back
     return (
-      <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+      <main id="main" className={PRACTICE_NARROW}>
         {/* Title and the way out */}
-        <Masthead title="Shadowing" nav={false} close={{ href: "/voice", label: "Close, back to Your voice" }} />
+        <PracticeBar close={{ href: "/voice", label: "Close, back to Your voice" }} label="Shadowing" />
         {/* What happened */}
         <h1 className="mt-8 font-display text-statement font-semibold">That passage could not be found.</h1>
         {/* The way back */}
@@ -258,10 +258,10 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
 
   // Draw the page
   return (
-    // Dark while a take records (the stage, decision 69)
-    <main id="main" data-area={recording ? "stage" : undefined} className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    // The page while practising, one column
+    <main id="main" className={PRACTICE_NARROW}>
       {/* Title, step and the way out */}
-      <Masthead title="Shadowing" nav={false} close={close}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
+      <PracticeBar close={close} progress={steps.length > 0 ? Math.max(0, Math.min(step, steps.length)) / steps.length : 0} label={`Shadowing${step >= 0 && step < steps.length ? ` · step ${step + 1} of ${steps.length}` : ""}${plan ? ` · today ${plan.step} of ${plan.total}` : ""}`} />
 
       {/* Before starting: the passage and how it works */}
       {step < 0 && (

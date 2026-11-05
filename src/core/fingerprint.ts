@@ -8,6 +8,8 @@ import { fillerPieces } from "@/core/fillers";
 import { DEFAULT_LAG } from "@/core/wordAlign";
 // Load the spacing of the readings
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
+// Load the Chart Kit's ribbon
+import { ribbonFromLevels, ribbonSlots, type Ribbon } from "@/core/chartKit";
 // Load the tiny copy's shape and sizes
 import { MINI_BINS, MINI_LEVELS, type MiniFingerprint } from "@/core/miniFingerprint";
 
@@ -50,6 +52,8 @@ export interface Fingerprint {
   headline: string;
   // A second line, when the volume fell away at the end (or null)
   note: string | null;
+  // The take as the Chart Kit's ribbon (second design pass), or null for a take too short to fill it; missing on fingerprints made before it
+  ribbon?: Ribbon | null;
 }
 
 // The stretches of speech in some loudness readings, split at silences of at least some seconds
@@ -180,6 +184,8 @@ export function takeFingerprint(input: { levels: ReadonlyArray<number>; tickMs: 
     headline: fingerprintHeadline({ betweenPauses: input.betweenPauses, midPauses: input.midPauses.length, ums: input.ums, duration: input.duration }),
     // The volume at the end
     note: fell ? "The last stretch is lighter: your volume dropped as you finished." : null,
+    // The Chart Kit's ribbon from the same readings, with the pause words (null when too short to fill it)
+    ribbon: ribbonFromLevels(input.levels, input.tickMs, input.ums, ribbonSlots((input.levels.length * input.tickMs) / 1000)),
   };
 }
 

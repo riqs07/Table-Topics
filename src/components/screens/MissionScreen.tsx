@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { Masthead } from "@/components/script/Masthead";
+import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
 import { ScaleChoice } from "@/components/script/MissionCard";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
 // Load the shared screen starting points
@@ -80,9 +80,9 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
 
   // Draw the page
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" className={PRACTICE_NARROW}>
       {/* Title and a way back to Today */}
-      <Masthead title="Mission" nav={false} close={{ href: origin.href, label: `Close, back to ${origin.name}` }}>{mission?.move ?? ""}</Masthead>
+      <PracticeBar close={{ href: origin.href, label: `Close, back to ${origin.name}` }} label={mission?.move ? `Mission · ${mission.move}` : "Mission"} />
       {/* Missing */}
       {record === null && <h1 className="sr-only">Mission</h1>}
       {/* Missing */}

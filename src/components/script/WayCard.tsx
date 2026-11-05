@@ -1,7 +1,9 @@
-// A card for one way to practise (UI rewrite): a picture-book tile on its ground's tint over the name and what it is; the big one, across the top of Practice, lays them side by side with a Go button
+// The ways to practise as cards (second design pass, Desktop Screens "Practice"): the quick start as a wide band on the sky with a white Go button, a job as a picture card (its tile on its ground's tint over the name and a line), and one way as a row with its tile in a job's list
 
 // Load Next.js's link component
 import Link from "next/link";
+// Load the chevron at the end of a row
+import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the icon type
 import type { Icon } from "@phosphor-icons/react";
 // Load the scene names (each kind of practice has one)
@@ -15,7 +17,7 @@ import { PRESS } from "@/components/script/Buttons";
 // Load the carried-over wrapper and the transition that fades the pages
 import { GLIDE, SharedScene } from "@/components/scenes/SharedScene";
 // Load the card and pill looks
-import { CARD, CHIP_GOOD, LAB_ON_TINT } from "@/components/script/textStyles";
+import { CARD, CHIP_GOOD } from "@/components/script/textStyles";
 
 // One way to practise
 export interface Way {
@@ -32,50 +34,105 @@ export interface Way {
 }
 
 // The tile for a way: its kind's, or a microphone on sky
-function lookFor(way: Way): ModeTileLook {
+export function lookFor(way: Way): ModeTileLook {
   // Its kind's tile, or the default
   return way.scene ? SCENE_TILES[way.scene] : { ground: "sky", prop: "mic", face: "ready" };
 }
 
-// The card; shared carries the tile into the screen it opens (decision 141)
-export function WayCard({ way, big = false, forFocus = false, delay = 0, shared = false }: { way: Way; big?: boolean; forFocus?: boolean; delay?: number; shared?: boolean }) {
+// The quick start's Go, drawn like a white chunky button on the band
+const GO = "min-h-12 items-center rounded-2xl bg-art-cream px-7 font-display text-button font-semibold tracking-[.03em] text-art-sky uppercase shadow-on-band md:min-h-13 md:px-8";
+
+// The quick start across the top of Practice: the way's tile on the sky, a label, the name, a line, and a white Go (the whole band is the link; it glides its tile into the screen it opens, decision 141)
+export function QuickStart({ way, label, title, line }: { way: Way; label: string; title: string; line: string }) {
   // Its tile
   const look = lookFor(way);
-  // The tile itself, gliding into the next screen where asked
-  const tile = <ModeTile ground={look.ground} prop={look.prop} face={look.face} tilt={big ? 4 : delay % 140 ? 4 : -4} motion={big ? "loop" : "few"} scene={way.scene} className={big ? "size-28 md:size-34" : "size-26 md:size-30"} />;
-  // (carried over)
-  const carried = shared && way.scene ? <SharedScene scene={way.scene}><span className="flex">{tile}</span></SharedScene> : tile;
-  // The picture: on its tint over the words, or (big) beside them
-  const art = big ? carried : (
-    <span aria-hidden="true" className={`flex h-32 items-center justify-center md:h-36 ${GROUND_TINT[look.ground]}`}>
-      {/* The tile */}
-      {carried}
-    </span>
-  );
+  // The tile, moving all the time, carried into the next screen
+  const tile = <ModeTile ground={look.ground} prop={look.prop} face={look.face} tilt={4} motion="loop" scene={way.scene} className="size-22 md:size-34" />;
+  // (carried over where it has a scene)
+  const art = way.scene ? <SharedScene scene={way.scene}><span className="flex">{tile}</span></SharedScene> : tile;
   // The words
   const words = (
-    <span className={`flex min-w-0 flex-col gap-1 ${big ? "flex-[1_1_14rem]" : "p-3.5 pt-3 md:p-4"}`}>
+    <span className="flex min-w-0 flex-[1_1_12rem] flex-col gap-1 md:flex-[1_1_18rem] md:gap-1.5">
       {/* The name (first, so the link is named by it) */}
-      <span className={`font-display leading-tight font-semibold ${big ? "text-3xl md:text-4xl" : "text-xl"}`}>{way.name}</span>
-      {/* The focus mark, or what the big one is, drawn above the name */}
-      {forFocus ? <span className={`${CHIP_GOOD} order-first self-start`}>Your focus</span> : big && way.scene === "rapid-fire" && <span className={`${LAB_ON_TINT} order-first`}>Quick start · 1–2 min</span>}
-      {/* What it is */}
-      <span className={`leading-snug font-bold ${big ? "text-lg text-ink" : "text-footnote text-ink-muted"}`}>{way.detail}</span>
+      <span className="font-display text-2xl leading-tight font-semibold md:text-3xl"><span className="md:hidden">{way.name}</span><span className="hidden md:inline">{title}</span></span>
+      {/* The label above it */}
+      <span className="order-first text-xs font-extrabold tracking-[.07em] whitespace-nowrap uppercase">{label}</span>
+      {/* The line (on a computer) */}
+      <span className="hidden font-bold md:block">{line}</span>
+      {/* On a phone, the Go under the name */}
+      {way.href && <span aria-hidden="true" className={`${GO} mt-2 inline-flex self-start md:hidden`}>Go</span>}
     </span>
   );
-  // The big one's look: its ground's tint, a Go button on the right; the others: a card with the picture on top
-  const shape = big ? `flex flex-wrap items-center gap-x-6 gap-y-3 rounded-[22px] border-2 border-rule p-4 pr-5 shadow-card md:p-5 md:pr-7 ${GROUND_TINT[look.ground]}` : `flex h-full flex-col overflow-hidden ${CARD}`;
-  // Arriving one after another
-  const arrive = { animationDelay: `${delay}ms` };
-  // A link when it can start, else a quiet card
+  // The band's look: the sky, light words, a darker lower edge
+  const shape = "flex items-center gap-x-4 md:gap-x-6 gap-y-3 rounded-[22px] bg-art-sky p-4 pb-5 text-art-cream shadow-band md:px-7 md:py-5 md:pb-6";
+  // A link once it can start, else a quiet band
   return way.href ? (
-    <Link href={way.href} transitionTypes={shared && way.scene ? GLIDE : undefined} data-way-card={big ? "big" : "small"} style={arrive} className={`${shape} ${PRESS} motion-safe:animate-rise hover:-translate-y-0.5`}>
+    <Link href={way.href} transitionTypes={way.scene ? GLIDE : undefined} data-way-card="big" className={`${shape} ${PRESS} motion-safe:animate-rise hover:-translate-y-0.5`}>
       {/* The picture and the words */}
       {art}{words}
-      {/* The big one's Go, drawn like the chunky button (the whole card is the link) */}
-      {big && <span aria-hidden="true" className="ml-auto inline-flex min-h-13 items-center rounded-2xl bg-fill px-8 font-display text-button font-semibold tracking-[.03em] text-fill-ink uppercase shadow-chunky">Go</span>}
+      {/* On a computer, the Go at the end (the whole band is the link) */}
+      <span aria-hidden="true" className={`${GO} ml-auto hidden md:inline-flex`}>Go</span>
     </Link>
   ) : (
-    <div data-way-card={big ? "big" : "small"} style={arrive} className={`${shape} text-ink-muted motion-safe:animate-rise`}>{art}{words}</div>
+    <div data-way-card="big" className={shape}>{art}{words}</div>
+  );
+}
+
+// A picture card: a tile on its ground's tint over the name and a line (with more of it on a computer, on one line), such as one of Practice's four jobs or a course
+export function PictureCard({ href, name, line, more, look, tilt = -4, chip, delay = 0 }: { href: string; name: string; line: string; more?: string; look: ModeTileLook; tilt?: number; chip?: string; delay?: number }) {
+  // The card, one link
+  return (
+    <Link href={href} data-picture-card style={{ animationDelay: `${delay}ms` }} className={`flex h-full flex-col overflow-hidden ${CARD} ${PRESS} motion-safe:animate-rise hover:-translate-y-0.5`}>
+      {/* The tile on its tint */}
+      <span aria-hidden="true" className={`relative flex h-32 items-center justify-center md:h-38 ${GROUND_TINT[look.ground]}`}>
+        {/* The tile, playing a few rounds then resting */}
+        <ModeTile ground={look.ground} prop={look.prop} face={look.face} tilt={tilt} motion="few" className="size-26 md:size-32" />
+      </span>
+      {/* The words */}
+      <span className="flex min-w-0 flex-col gap-1 p-3.5 pt-3 md:px-4 md:pt-3.5 md:pb-4">
+        {/* The name (first, so the link is named by it) */}
+        <span className="font-display text-lg leading-tight font-semibold md:text-xl">{name}</span>
+        {/* A mark above the name, such as "Your focus" */}
+        {chip && <span className={`${CHIP_GOOD} order-first self-start`}>{chip}</span>}
+        {/* The line */}
+        <span className="text-footnote leading-snug font-bold text-ink-muted md:truncate">{line}{more && <span className="hidden md:inline"> · {more}</span>}</span>
+      </span>
+    </Link>
+  );
+}
+
+// One way as a row in a job's list: its tile (or icon), the name and the line, the whole row a link (quiet and not a link while it cannot start)
+export function WayRow({ way }: { way: Way }) {
+  // Its tile, when its kind has one
+  const look = way.scene ? SCENE_TILES[way.scene] : null;
+  // The words, shared by both forms
+  const words = (
+    <>
+      {/* Its tile (still, apart from blinking; decision 136), or the icon on a tinted tile */}
+      {look ? <ModeTile ground={look.ground} prop={look.prop} face={look.face} still scene={way.scene} className="size-14" /> : (
+        <span aria-hidden="true" className={`flex size-12 flex-none items-center justify-center rounded-[14px] ${way.href ? "bg-warm-tint text-warm-ink" : "bg-paper text-ink-muted"}`}>
+          {/* The icon */}
+          <way.icon weight="bold" className="size-6" />
+        </span>
+      )}
+      {/* Name and detail */}
+      <span className="min-w-0 flex-1">
+        {/* The name */}
+        <span className="block font-display text-lg leading-tight font-semibold">{way.name}</span>
+        {/* What it is */}
+        <span className="block text-footnote font-bold text-ink-muted">{way.detail}</span>
+      </span>
+    </>
+  );
+  // A row that starts it, or a quiet row
+  return way.href ? (
+    <Link href={way.href} className={`flex min-h-18 items-center gap-4 py-3 hover:text-accent ${PRESS}`}>
+      {/* Tile and words */}
+      {words}
+      {/* The chevron */}
+      <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
+    </Link>
+  ) : (
+    <div className="flex min-h-18 items-center gap-4 py-3 text-ink-muted">{words}</div>
   );
 }

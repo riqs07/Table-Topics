@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { Masthead } from "@/components/script/Masthead";
+import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
 import { ScenarioItem } from "@/components/script/ScenarioItem";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -98,9 +98,9 @@ export function ScenariosScreen({ services = browserRecordingServices, planStep 
 
   // Draw it
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
+    <main id="main" className={PRACTICE_NARROW}>
       {/* Title, with a way back to Learn */}
-      <Masthead title="Scenarios" nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/learn", label: "Close, back to Learn" }}>{plan ? `Step ${plan.step} of ${plan.total}` : round && !finished ? `${index + 1} of ${round.length}` : ""}</Masthead>
+      <PracticeBar close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/learn", label: "Close, back to Learn" }} progress={round ? (finished ? 1 : index / round.length) : 0} label={`Scenarios${round && !finished ? ` · ${index + 1} of ${round.length}` : ""}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} />
       {/* Opened from Today, before the first answer: the conversation scene, carried over from the step */}
       {planStep && index === 0 && !finished && <ScenePanel scene="conversation" line="Choose the best reply, then say it." />}
       {/* One scenario */}
