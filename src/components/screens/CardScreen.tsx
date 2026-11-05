@@ -9,17 +9,21 @@ import Link from "next/link";
 import { SwipeDeck } from "@/components/script/SwipeDeck";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
 // Load the focus-mode bar (second design pass)
-import { PracticeBar } from "@/components/script/PracticeBar";
+import { PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
 // Load the icons for the real-world step, the practice link and a right guess
 import { CaretRightIcon, CheckIcon, GlobeHemisphereWestIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the shared press effect and looks
-import { PRESS, PRIMARY } from "@/components/script/Buttons";
+import { PRESS } from "@/components/script/Buttons";
 import { BUBBLE, CARD, CHIP, LAB } from "@/components/script/textStyles";
 // Load the cast, the mode tile, and which tile stands for a practice and a set
 import { Cast } from "@/components/scenes/Cast";
 import { ModeTile } from "@/components/scenes/ModeTile";
 import { tileForHref } from "@/components/scenes/tileForHref";
-import { GROUND_BAND, learnSetGround } from "@/components/scenes/groundLooks";
+import { GROUND_SOLID, GROUND_SQUARE, learnSetGround } from "@/components/scenes/groundLooks";
+// Load each set's icon
+import { LEARN_SET_ICONS } from "@/components/script/learnSetIcons";
+// Load the shared not-found card
+import { NotFound } from "@/components/script/SageSays";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the scenarios, their item and progress saving
@@ -63,8 +67,6 @@ const GUESSES: ReadonlyArray<{ verdict: Verdict; label: string }> = [
   { verdict: "mixed", label: "Somewhere between" },
 ];
 
-// The page in focus mode: one column, the bar across its top (the deck's screens bleed to the phone's edges, so the sides are padded to match)
-const CARD_PAGE = "mx-auto flex min-h-dvh w-full max-w-3xl flex-col bg-paper-raised px-6 md:px-8";
 
 // The card's last step: a row that starts the practice that fits it best, so every card ends in doing (decision 96), with that practice's tile (storyboard 22)
 function PractiseRow({ label, href }: { label: string; href: string }) {
@@ -142,20 +144,11 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   if (!card) {
     // Say so, with a way back
     return (
-      <main id="main" data-area="learn" className={CARD_PAGE}>
+      <main id="main" data-area="learn" className={PRACTICE_MAIN}>
         {/* The bar, with the way back to Learn */}
         <PracticeBar close={{ href: "/learn", label: "Close, back to Learn" }} label="Learn" />
-        {/* The message, on a card with your blob wondering */}
-        <section className={`mt-8 flex flex-col items-center gap-4 px-6 py-10 text-center ${CARD}`}>
-          {/* Your blob, puzzled */}
-          <Cast who="you" face="wonder" className="size-28" />
-          {/* The page's heading */}
-          <h1 className="font-display text-statement leading-tight font-semibold">Learn</h1>
-          {/* What happened */}
-          <p data-inline className="font-bold text-ink-muted">There is no such card.</p>
-          {/* The way back */}
-          <Link href="/learn" className={PRIMARY}>Back to Learn</Link>
-        </section>
+        {/* Sage, puzzled, says so as the page's heading, then the way back (the shared not-found pattern) */}
+        <div className={PRACTICE_BODY}><NotFound title="There is no such card." back={{ href: "/learn", label: "Back to Learn" }} className="mt-6" /></div>
       </main>
     );
   }
@@ -163,7 +156,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   // The card's set
   const set = LEARN_SETS.find((item) => item.id === card.set);
   // The set's colours, for the claim
-  const band = GROUND_BAND[learnSetGround(card.set)];
+  const ground = learnSetGround(card.set);
   // The card after this one
   const next = LEARN_CARDS[LEARN_CARDS.findIndex((item) => item.id === card.id) + 1];
 
@@ -177,7 +170,7 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
       {/* Opened from Today: the Learn scene, carried over from the step */}
       {planStep && <ScenePanel scene="learn" line="One idea, about a minute to read." className="mb-6" />}
       {/* The question, set like a headline on the set's colour */}
-      <div className={`rounded-[24px] px-6 py-5 md:px-7 md:py-6 ${band.band}`}>
+      <div className={`rounded-[24px] px-6 py-5 shadow-band md:px-7 md:py-6 ${GROUND_SOLID[ground]}`}>
         {/* The question */}
         <h1 className="font-display text-prompt leading-tight font-semibold">{card.title}</h1>
       </div>
@@ -286,15 +279,55 @@ export function CardScreen({ cardId, services = browserRecordingServices, planSt
   // What kind of card, in the bar's label when it is not a plain explainer
   const kind = card.kind === "myth-or-fact" ? " · Myth or fact?" : card.kind === "explainer" ? "" : " · Try it";
 
-  // Draw the page
+  // Each screen's name, for the side card's list
+  const names = [card.verdict ? "Guess" : "The idea", "What they found", "What it means", "Do this", ...(scenario ? ["Try it"] : [])];
+  // This card's place in its set
+  const inSet = LEARN_CARDS.filter((item) => item.set === card.set);
+  // The set's icon
+  const SetIcon = LEARN_SET_ICONS[card.set];
+
+  // Draw the page: the bar across the top, the screens in the main column and, on a computer, the set's card beside them
   return (
-    <main id="main" data-area="learn" className={CARD_PAGE}>
+    <main id="main" data-area="learn" className={PRACTICE_MAIN}>
       {/* The bar: the way out, how far through the card, and the set and kind */}
       <PracticeBar close={planStep ? { href: "/", label: "Close, back to Today" } : { href: `/learn/set?id=${card.set}`, label: `Close, back to ${set?.name ?? "Learn"}` }} progress={(index + 1) / screens.length} label={`${set?.name ?? "Learn"}${kind}`} />
-      {/* Inside today's practice, which step this is */}
-      {plan && <p className="mt-3"><span className={CHIP}>Step {plan.step} of {plan.total}</span></p>}
-      {/* The screens */}
-      <SwipeDeck screens={screens} index={index} onIndex={setIndex} label={card.title} finish={finish} />
+      <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS} flex-1 max-lg:items-stretch`}>
+        {/* The screens (on a phone they fill the height, so Next sits at the foot) */}
+        <div className="flex min-w-0 flex-col">
+          {/* Inside today's practice, which step this is */}
+          {plan && <p className="mt-1"><span className={CHIP}>Step {plan.step} of {plan.total}</span></p>}
+          {/* The deck, Next quiet until a myth-or-fact guess is made */}
+          <SwipeDeck screens={screens} index={index} onIndex={setIndex} label={card.title} finish={finish} nextQuiet={index === 0 && !!card.verdict && guess === null} />
+        </div>
+        {/* The set's card: its icon, where this card sits, and the card's screens (on a computer) */}
+        <section aria-label="This card" className={`hidden flex-col gap-4 p-5 lg:flex ${CARD}`}>
+          {/* The icon and the set */}
+          <div className="flex items-center gap-4">
+            {/* The icon on the set's colour */}
+            <span aria-hidden="true" className={`flex size-14 flex-none items-center justify-center rounded-[16px] ${GROUND_SQUARE[ground]}`}><SetIcon weight="bold" className="size-7" /></span>
+            {/* The words */}
+            <div className="flex min-w-0 flex-col gap-0.5">
+              {/* Where this card sits */}
+              <span className={LAB}>Quick reads · card {inSet.findIndex((item) => item.id === card.id) + 1} of {inSet.length}</span>
+              {/* The set */}
+              <span className="font-display text-xl leading-tight font-semibold">{set?.name ?? "Learn"}</span>
+            </div>
+          </div>
+          {/* The card's screens, done, now and to come */}
+          <ol aria-label="The card's screens" className="flex flex-col gap-2 border-t-2 border-rule pt-4">
+            {/* Each screen */}
+            {names.map((name, position) => (
+              // One screen: its mark and its name
+              <li key={name} aria-current={position === index ? "step" : undefined} className={`flex min-h-9 items-center gap-3 font-extrabold ${position > index ? "text-ink-muted" : ""}`}>
+                {/* The mark */}
+                <span aria-hidden="true" className={`flex size-8 flex-none items-center justify-center rounded-[10px] font-display font-semibold ${position < index ? "bg-fill text-fill-ink" : position === index ? "bg-art-sun text-on-warm" : "bg-rule text-ink"}`}>{position < index ? <CheckIcon weight="bold" className="size-4" /> : position + 1}</span>
+                {/* The name */}
+                {name}
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
     </main>
   );
 }

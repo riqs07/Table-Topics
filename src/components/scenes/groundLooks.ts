@@ -40,6 +40,22 @@ export const GROUND_SQUARE: Readonly<Record<TileGround, string>> = {
   coral: "bg-art-coral text-on-warm",
 };
 
+// A block of large words on each ground's full colour (a Learn card's claim, storyboard 22): light words on blue and purple, dark words on the rest, each pair at least 3:1 for large bold text in every theme (checked: plum 3.96, sky 4.5, bloom 5.18, coral 4.93, leaf 7.26, sun 8.52 with the light palette)
+export const GROUND_SOLID: Readonly<Record<TileGround, string>> = {
+  // Blue, light words
+  sky: "bg-art-sky text-art-cream",
+  // Yellow, dark words
+  sun: "bg-art-sun text-on-warm",
+  // Green, dark words
+  leaf: "bg-art-leaf text-on-warm",
+  // Pink, dark words
+  bloom: "bg-art-bloom text-on-warm",
+  // Purple, light words
+  plum: "bg-art-plum text-art-cream",
+  // Coral, dark words
+  coral: "bg-art-coral text-on-warm",
+};
+
 // The grounds in turn, so neighbouring sets differ (plum, bloom and leaf first, as on Courses' "Quick reads")
 const TURN: ReadonlyArray<TileGround> = ["plum", "bloom", "leaf", "sky", "sun", "coral"];
 

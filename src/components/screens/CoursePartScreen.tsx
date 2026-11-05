@@ -11,6 +11,8 @@ import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 import { ActionBand } from "@/components/script/ActionBand";
 import { Skeleton } from "@/components/script/Skeleton";
 import { CourseLoadFailed } from "@/components/script/CourseLoadFailed";
+// Load the shared not-found card
+import { NotFound } from "@/components/script/SageSays";
 // Load the focus-mode bar and its page layouts (second design pass)
 import { PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
 // Load the shared looks
@@ -187,6 +189,8 @@ function WrapUp({ place, takes, onDone }: { place: PartPlace; takes: ReadonlyArr
       </div>
     );
   }
+  // Whether it went the other way: more pause words on the second try than the first
+  const rough = !!part.practice && part.practice.measure === "fillers" && !!first && !!second && second.fillersPerMinute > first.fillersPerMinute;
   // What changed between the tries, or the one try's value
   const line = part.practice && first && second ? compareLine(part.practice.measure, first, second) : part.practice && last ? (() => {
     // The value
@@ -199,13 +203,8 @@ function WrapUp({ place, takes, onDone }: { place: PartPlace; takes: ReadonlyArr
     <div className={PRACTICE_COLUMNS}>
       {/* The part's goal, its results and when it comes back */}
       <div className="flex min-w-0 flex-col gap-5">
-        {/* Where it was */}
-        <div>
-          {/* The lesson */}
-          <p className={LAB}>{place.course.title} · Lesson {place.lessonNumber}</p>
-          {/* The part */}
-          <p className="mt-1 font-display text-3xl leading-tight font-semibold">{part.title}</p>
-        </div>
+        {/* The part (the bar above already says the course, lesson and part) */}
+        <p className="font-display text-3xl leading-tight font-semibold">{part.title}</p>
         {/* The goal it was about */}
         {part.practice && (
           <div className="rounded-[22px] bg-accent-tint px-5 py-4 text-accent-tint-ink">
@@ -229,16 +228,18 @@ function WrapUp({ place, takes, onDone }: { place: PartPlace; takes: ReadonlyArr
           </div>
         )}
       </div>
-      {/* The green panel: done, what changed and the way on (first on a phone) */}
-      <section aria-label="Part done" className="order-first flex flex-col gap-3 rounded-[28px] bg-accent-tint p-6 text-accent-tint-ink lg:order-none">
-        {/* Your blob, pleased */}
-        <Cast who="you" face="happy" className="size-20" />
+      {/* The panel: done, what changed and the way on (first on a phone), green when it went well and warm with Sage when the pause words went up (the result's verdict colours) */}
+      <section aria-label="Part done" className={`order-first flex flex-col gap-3 rounded-[28px] p-6 lg:order-none ${rough ? "bg-warm-tint text-warm-ink" : "bg-accent-tint text-accent-tint-ink"}`}>
+        {/* Your blob, pleased, or Sage, encouraging */}
+        {rough ? <Cast who="sage" mood="encouraging" className="size-20" /> : <Cast who="you" face="happy" className="size-20" />}
         {/* Done */}
         <p className="text-xs font-extrabold tracking-[.07em] uppercase">Part {place.partNumber} of {place.lesson.parts.length} done</p>
         {/* What changed, or a plain finish */}
         <h1 className="font-display text-3xl leading-tight font-semibold">{line ?? part.title}</h1>
-        {/* The next part, or back to the course */}
-        <div className="md:[&>a]:mt-3 md:[&>a]:mb-1">{after ? <ActionBand action="Next part" aside={`Lesson ${after.lessonNumber}, part ${after.partNumber} · ${after.part.title}`} href={partHref(after.part.id)} /> : <ActionBand action="Back to the course" aside="every part done" href={`/courses/course?id=${place.course.id}`} />}</div>
+        {/* The next part, or back to the course: the chunky button inside the panel, as Result's Continue */}
+        {after ? <Link href={partHref(after.part.id)} className={`${PRIMARY} mt-2 w-full`}>Next part<span className="sr-only">: lesson {after.lessonNumber}, part {after.partNumber}, {after.part.title}</span></Link> : <Link href={`/courses/course?id=${place.course.id}`} className={`${PRIMARY} mt-2 w-full`}>Back to the course</Link>}
+        {/* What comes next, said small */}
+        {after && <p className="text-center text-footnote font-bold">Next: lesson {after.lessonNumber}, part {after.partNumber} · {after.part.title}</p>}
         {/* Or back to Today */}
         <p className="text-center"><Link href="/" className={TEXT_LINK}>Back to today’s practice</Link></p>
       </section>
@@ -264,19 +265,8 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
       <main id="main" className={PRACTICE_MAIN}>
         {/* The bar, with the way back to Courses */}
         <PracticeBar close={{ href: "/courses", label: "Close, back to Courses" }} label="Lesson" />
-        {/* The message, on a card with your blob wondering */}
-        <div className={PRACTICE_BODY}>
-          <section className={`mx-auto mt-6 flex max-w-xl flex-col items-center gap-4 px-6 py-10 text-center ${CARD}`}>
-            {/* Your blob, puzzled */}
-            <Cast who="you" face="wonder" className="size-28" />
-            {/* The page's heading */}
-            <h1 className="font-display text-statement leading-tight font-semibold">This lesson could not be found.</h1>
-            {/* What to do */}
-            <p className="font-bold text-ink-muted">Every course and its lessons are on the Courses page.</p>
-            {/* The way back */}
-            <Link href="/courses" className={PRIMARY}>Back to Courses</Link>
-          </section>
-        </div>
+        {/* Sage, puzzled, says so as the page's heading, then the way back (the shared not-found pattern) */}
+        <div className={PRACTICE_BODY}><NotFound title="This lesson could not be found." back={{ href: "/courses", label: "Back to Courses" }} className="mt-6" /></div>
       </main>
     );
   }
@@ -337,7 +327,7 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
   return (
     <main id="main" className={PRACTICE_MAIN}>
       {/* The bar: the way back to the course, how far through the part, and the step */}
-      <PracticeBar close={close} progress={progress} label={`Lesson ${lessonNumber} · ${STEP_NAMES[step]}`} />
+      <PracticeBar close={close} progress={progress} label={`${place.course.title} · Lesson ${lessonNumber} · Part ${place.partNumber} · ${step === "try" && part.practice && part.practice.tries > 1 ? `Try ${Math.min(attempt, part.practice.tries)} of ${part.practice.tries}` : STEP_NAMES[step]}`} />
 
       {/* Learn: Sage says the idea, then the weaker way against the better one */}
       {step === "learn" && (
@@ -394,8 +384,6 @@ export function CoursePartScreen({ partId, step: askedStep = "learn", attempt = 
       {step === "try" && part.practice && (
         <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
           <div className="flex min-w-0 flex-col items-center gap-4 text-center">
-            {/* Which try */}
-            <p className={LAB}>{part.practice.tries > 1 ? `Try ${Math.min(attempt, part.practice.tries)} of ${part.practice.tries}` : "Your try"}</p>
             {/* The page's heading */}
             <h1 className="font-display text-statement leading-tight font-semibold">Your turn</h1>
             {/* Your blob, waiting where it will sing, in a soft ring */}

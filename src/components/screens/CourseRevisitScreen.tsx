@@ -6,10 +6,11 @@ import { useEffect, useRef } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
-import { ActionBand } from "@/components/script/ActionBand";
 import { Player } from "@/components/script/Player";
 import { Skeleton } from "@/components/script/Skeleton";
 import { CourseLoadFailed } from "@/components/script/CourseLoadFailed";
+// Load the shared not-found card
+import { NotFound } from "@/components/script/SageSays";
 // Load the focus-mode bar and its page layouts (second design pass)
 import { PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
 // Load the shared looks
@@ -85,6 +86,8 @@ export function CourseRevisitScreen({ partId, takeId, ...props }: ScreenProps & 
   }, [before, now, partId, repo]);
   // The question
   const question = place?.part.practice ? practicePromptText(place.part.practice) : undefined;
+  // Whether it went the other way: more pause words this time
+  const rough = !!place?.part.practice && place.part.practice.measure === "fillers" && !!now && !!before && now.fillersPerMinute > before.fillersPerMinute;
   // Whether there is a comparison to show
   const found = data.status === "ready" && !!place?.part.practice && !!now && !!before;
 
@@ -100,19 +103,8 @@ export function CourseRevisitScreen({ partId, takeId, ...props }: ScreenProps & 
         {data.status === "loading" && <Skeleton blocks={["h-24", "h-56"]} />}
         {/* Could not be read */}
         {data.status === "failed" && <CourseLoadFailed retry={data.retry} />}
-        {/* Missing: your blob puzzled, and the way back */}
-        {data.status === "ready" && !found && (
-          <section className={`mx-auto mt-6 flex max-w-xl flex-col items-center gap-4 px-6 py-10 text-center ${CARD}`}>
-            {/* Your blob, puzzled */}
-            <Cast who="you" face="wonder" className="size-28" />
-            {/* The page's heading */}
-            <h1 className="font-display text-statement leading-tight font-semibold">Back again</h1>
-            {/* What happened */}
-            <p className="font-bold text-ink-muted">These answers could not be found.</p>
-            {/* The way back */}
-            <Link href="/" className={PRIMARY}>Back to Today</Link>
-          </section>
-        )}
+        {/* Missing: Sage, puzzled, says so as the page's heading, then the way back (the shared not-found pattern) */}
+        {data.status === "ready" && !found && <NotFound title="These answers could not be found." back={{ href: "/", label: "Back to Today" }} />}
         {/* The comparison */}
         {found && place?.part.practice && now && before && (
           <div className={PRACTICE_COLUMNS}>
@@ -130,16 +122,16 @@ export function CourseRevisitScreen({ partId, takeId, ...props }: ScreenProps & 
                 <Answer repo={repo} take={now} label="This time" />
               </section>
             </div>
-            {/* The green panel: what changed, the goal and the way on (first on a phone) */}
-            <section aria-label="What changed" className="order-first flex flex-col gap-3 rounded-[28px] bg-accent-tint p-6 text-accent-tint-ink lg:order-none">
-              {/* Your blob, pleased */}
-              <Cast who="you" face="happy" className="size-20" />
+            {/* The panel: what changed, the goal and the way on (first on a phone), green when it went better and warm with Sage when it went the other way */}
+            <section aria-label="What changed" className={`order-first flex flex-col gap-3 rounded-[28px] p-6 lg:order-none ${rough ? "bg-warm-tint text-warm-ink" : "bg-accent-tint text-accent-tint-ink"}`}>
+              {/* Your blob, pleased, or Sage, encouraging */}
+              {rough ? <Cast who="sage" mood="encouraging" className="size-20" /> : <Cast who="you" face="happy" className="size-20" />}
               {/* What changed */}
               <p data-revisit-line className="font-display text-2xl leading-tight font-semibold">{compareLine(place.part.practice.measure, before, now) ?? "Hear both answers side by side."}</p>
               {/* The goal it was about */}
               <p className="font-bold">The goal was: {place.part.practice.goal}</p>
               {/* Done */}
-              <div className="md:[&>a]:mt-3 md:[&>a]:mb-1"><ActionBand action="Done" aside="back to Today" href="/" /></div>
+              <Link href="/" className={`${PRIMARY} mt-2 w-full`}>Done<span className="sr-only">, back to Today</span></Link>
               {/* Or once more */}
               <p className="text-center"><Link href={takeHref(place.part, 1, true)!} className={TEXT_LINK}>Answer it once more</Link></p>
             </section>

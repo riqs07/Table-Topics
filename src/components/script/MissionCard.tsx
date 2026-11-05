@@ -15,7 +15,7 @@ import { acceptMission, skipMission } from "@/data/missions";
 import type { MissionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the shared button looks
-import { PRESS, PRIMARY, QUIET, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared card, label and bubble looks (second design pass)
 import { BUBBLE, CARD, LAB } from "@/components/script/textStyles";
 // Load the cast (you, the friend and Sage) and the tile tints
@@ -134,8 +134,8 @@ export function MissionCard({ repo, now, state, onChange, compact = false }: Mis
           </details>
           {/* Accept, or not today */}
           <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-            {/* Accept */}
-            <button type="button" onClick={() => void accept()} disabled={saving} className={PRIMARY}>I’ll try it</button>
+            {/* Accept (a second choice on Learn, whose chunky action is the next card) */}
+            <button type="button" onClick={() => void accept()} disabled={saving} className={SECONDARY}>I’ll try it</button>
             {/* Skip */}
             <button type="button" onClick={() => void skip()} disabled={saving} className={QUIET}>Not today</button>
           </p>

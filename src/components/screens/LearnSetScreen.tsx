@@ -21,11 +21,12 @@ import { setProgress, type LearnProgress } from "@/core/learn";
 // Load progress
 import { loadLearnProgress } from "@/data/learnProgress";
 // Load the shared looks
-import { PRESS, PRIMARY, TEXT_LINK } from "@/components/script/Buttons";
-import { CARD, CARD_LIST, CHIP_GOOD, PBAR } from "@/components/script/textStyles";
+import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
+import { CARD_LIST, CHIP_GOOD, PBAR } from "@/components/script/textStyles";
 // Load the set's colours, and the cast for the missing set
 import { GROUND_BAND, learnSetGround } from "@/components/scenes/groundLooks";
-import { Cast } from "@/components/scenes/Cast";
+// Load the shared not-found card
+import { NotFound } from "@/components/script/SageSays";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 // Load the tab title helper
@@ -76,19 +77,8 @@ export function LearnSetScreen({ setId, ...props }: ScreenProps & { setId: strin
       <Masthead title="Learn" section="learn" />
       {/* Back to all sets */}
       <p className="mt-1 md:-mt-12"><Link href="/learn" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote text-ink-muted`}><CaretLeftIcon aria-hidden="true" weight="bold" className="size-4" />All sets</Link></p>
-      {/* An unknown set: your blob puzzled, and the way back */}
-      {!set && (
-        <section className={`mt-3 flex flex-col items-center gap-4 px-6 py-10 text-center ${CARD}`}>
-          {/* Your blob, puzzled */}
-          <Cast who="you" face="wonder" className="size-28" />
-          {/* The page's heading */}
-          <h1 className="font-display text-statement leading-tight font-semibold">Quick reads</h1>
-          {/* What happened */}
-          <p className="font-bold text-ink-muted">There is no such set.</p>
-          {/* The way back */}
-          <Link href="/learn" className={PRIMARY}>See every set</Link>
-        </section>
-      )}
+      {/* An unknown set: Sage, puzzled, says so as the page's heading, then the way back (the shared not-found pattern) */}
+      {!set && <NotFound title="There is no such set." back={{ href: "/learn", label: "See every set" }} className="mt-4" />}
       {/* The set */}
       {set && (() => {
         // The set's icon

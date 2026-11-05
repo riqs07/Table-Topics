@@ -9,7 +9,7 @@ import Link from "next/link";
 import { CaretLeftIcon, CaretRightIcon, CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { PRESS, PRIMARY, QUIET, RowLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, QUIET, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the folded group card
 import { FoldCard } from "@/components/script/FoldCard";
 // Load the loading placeholder
@@ -24,6 +24,7 @@ import { MOMENT_PROMPT, QUESTION_GROUPS, SMALL_TALK_QUESTIONS, drillBank, drillF
 import { UNIT_TILES } from "@/components/scenes/groundLooks";
 import { GROUND_TINT, ModeTile } from "@/components/scenes/ModeTile";
 import { Cast } from "@/components/scenes/Cast";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
 // Load the conversation personas and situations, for this unit's person to talk with (decisions 83 and 84)
 import { PERSONAS, findScenario } from "@/content/conversations";
 // Load the beat counter
@@ -135,7 +136,7 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {/* Back to every unit */}
       <p className="mt-1 md:-mt-12"><Link href="/small-talk" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote text-ink-muted`}><CaretLeftIcon aria-hidden="true" weight="bold" className="size-4" />Everyday conversation</Link></p>
       {/* The unit's band on its tile's tint: the tile, how many lessons and the name (as a job's list of ways on Practice) */}
-      <div className={`mt-3 flex items-center gap-4 rounded-[22px] p-4 md:gap-5 md:p-5 ${GROUND_TINT[tile.ground]}`}>
+      <div data-wide className={`mt-3 flex items-center gap-4 rounded-[22px] p-4 md:gap-5 md:p-5 ${GROUND_TINT[tile.ground]}`}>
         {/* The unit's tile */}
         <ModeTile ground={tile.ground} prop={tile.prop} face={tile.face} tilt={-4} motion="loop" className="size-20 md:size-24" />
         {/* The words */}
@@ -151,6 +152,10 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
       {!(today && answers && missions) && <Skeleton blocks={["h-40", "h-28", "h-56"]} />}
       {/* Everything that depends on them, at once */}
       {today && answers && missions && (<>
+      {/* The drill beside the person to talk with and the recipe, the page's full width on a computer */}
+      <div data-wide className="grid items-start gap-x-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      {/* The drill */}
+      <div className="min-w-0">
       {/* Today's question, with a way to get another */}
       {question && (
         <section aria-label={unit.words.practice} className={`mt-5 p-5 md:p-6 ${CARD}`}>
@@ -169,14 +174,17 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
           )}
           {/* Reply, or move along */}
           <p className="mt-5 flex flex-wrap gap-3">
-            {/* Reply, the main choice */}
-            <Link href={answerHref(question.id)} className={PRIMARY}>{unit.words.start}</Link>
+            {/* Reply (a white button: the page's chunky action is the band for the next lesson) */}
+            <Link href={answerHref(question.id)} className={SECONDARY}>{unit.words.start}</Link>
             {/* Another */}
             <button type="button" onClick={() => setOffset(offset + 1)} className={QUIET}>{unit.words.another}</button>
           </p>
         </section>
       )}
 
+      </div>
+      {/* The person to talk with, and the recipe */}
+      <div className="min-w-0 lg:[&>section:first-child]:mt-5">
       {/* The same skill in a whole conversation with someone (decision 83) */}
       {partner && (
         <section aria-labelledby="partner-heading" className="mt-10">
@@ -198,35 +206,6 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
               </Link>
             </li>
           </ul>
-        </section>
-      )}
-
-      {/* One moment a day: material for the next time someone asks */}
-      {today && unit.id === "answering" && (
-        <section id="moments" aria-labelledby="moments-heading" className="mt-10 scroll-mt-6">
-          {/* Run-in heading */}
-          <h2 id="moments-heading" className={SECTION_HEADING}>One moment a day</h2>
-          {/* Today's state, in a few words */}
-          <p className="mt-2 text-ink-muted">{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Today\u2019s moment is saved." : "One thing from today worth telling."}</p>
-          {/* Record one */}
-          <p className="mt-2"><Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className={TEXT_LINK}>{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Add another moment" : "Record today\u2019s moment"}</Link></p>
-          {/* The latest few, in the words they were said */}
-          {moments.length > 0 && (
-            <ul aria-label="Your moments" className={`mt-2 ${CARD_LIST}`}>
-              {/* Each moment */}
-              {moments.slice(0, RECENT_MOMENTS).map((moment) => (
-                // One moment: the day, then what was said
-                <li key={moment.id} className="py-3">
-                  {/* The day */}
-                  <span className="block text-footnote text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
-                  {/* The words */}
-                  <span className="block text-lede">{moment.transcript || "(no words were caught)"}</span>
-                  {/* Tell it properly, as a story (decision 92) */}
-                  {moment.transcript.trim() !== "" && <Link href={`/stories/tell?moment=${encodeURIComponent(moment.id)}`} className={`${TEXT_LINK} text-footnote`}>Tell it properly</Link>}
-                </li>
-              ))}
-            </ul>
-          )}
         </section>
       )}
 
@@ -252,6 +231,12 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         </ol>
       </section>
 
+      </div>
+      </div>
+      {/* The lessons and lists beside the moments and missions */}
+      <div data-wide className="grid items-start gap-x-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      {/* The lessons, the lists and your answers */}
+      <div className="min-w-0">
       {/* The lessons, as a path */}
       <section aria-labelledby="lessons" className="mt-10">
         {/* Run-in heading */}
@@ -318,6 +303,62 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         </section>
       )}
 
+      {/* The user's recent answers */}
+      {answers && answers.length > 0 && today && (
+        <section aria-labelledby="your-answers" className="mt-10 mb-6">
+          {/* Run-in heading */}
+          <h2 id="your-answers" className={SECTION_HEADING}>Your answers</h2>
+          {/* The most recent */}
+          <ul className={`mt-2 ${CARD_LIST}`}>
+            {/* Each answer */}
+            {answers.slice(0, RECENT_ANSWERS).map((answer) => (
+              // One answer: its question, day, and beats
+              <li key={answer.id}><RowLink href={`/sessions?id=${answer.id}`} meta={`${beatCount(answer)} of 4`}>{answerLabel(answer.promptId)} <span className="block text-footnote text-ink-muted">{dayLabel(new Date(answer.createdAt), today)}</span></RowLink></li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      </div>
+      {/* The moments and the missions */}
+      <div className="min-w-0">
+      {/* One moment a day: material for the next time someone asks */}
+      {today && unit.id === "answering" && (
+        <section id="moments" aria-labelledby="moments-heading" className="mt-10 scroll-mt-6">
+          {/* Run-in heading */}
+          <h2 id="moments-heading" className={SECTION_HEADING}>One moment a day</h2>
+          {/* Today's state and the way to record one, on a card with the moment's tile */}
+          <div className={`mt-3 flex items-center gap-4 p-4 ${CARD}`}>
+          {/* The moment's tile */}
+          <ModeTile ground={SCENE_TILES.moment.ground} prop={SCENE_TILES.moment.prop} face={SCENE_TILES.moment.face} tilt={4} className="size-16" />
+          {/* The words */}
+          <div className="min-w-0">
+          {/* Today's state, in a few words */}
+          <p className="font-bold text-ink-muted">{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Today\u2019s moment is saved." : "One thing from today worth telling."}</p>
+          {/* Record one */}
+          <p><Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className={TEXT_LINK}>{moments.some((moment) => dayKey(new Date(moment.createdAt)) === dayKey(today)) ? "Add another moment" : "Record today\u2019s moment"}</Link></p>
+          </div>
+          </div>
+          {/* The latest few, in the words they were said */}
+          {moments.length > 0 && (
+            <ul aria-label="Your moments" className={`mt-2 ${CARD_LIST}`}>
+              {/* Each moment */}
+              {moments.slice(0, RECENT_MOMENTS).map((moment) => (
+                // One moment: the day, then what was said
+                <li key={moment.id} className="py-3">
+                  {/* The day */}
+                  <span className="block text-footnote text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
+                  {/* The words */}
+                  <span className="block text-lede">{moment.transcript || "(no words were caught)"}</span>
+                  {/* Tell it properly, as a story (decision 92) */}
+                  {moment.transcript.trim() !== "" && <Link href={`/stories/tell?moment=${encodeURIComponent(moment.id)}`} className={`${TEXT_LINK} text-footnote`}>Tell it properly</Link>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
       {/* This unit's missions: the real-world tries, easiest first, marked once tried (decision 95) */}
       {missionsInUnit(unit.id, missions).length > 0 && (
         <section aria-labelledby="unit-missions" className="mt-10">
@@ -344,22 +385,8 @@ export function SmallTalkScreen({ unitId, ...props }: ScreenProps & { unitId: Un
         </section>
       )}
 
-      {/* The user's recent answers */}
-      {answers && answers.length > 0 && today && (
-        <section aria-labelledby="your-answers" className="mt-10 mb-6">
-          {/* Run-in heading */}
-          <h2 id="your-answers" className={SECTION_HEADING}>Your answers</h2>
-          {/* The most recent */}
-          <ul className={`mt-2 ${CARD_LIST}`}>
-            {/* Each answer */}
-            {answers.slice(0, RECENT_ANSWERS).map((answer) => (
-              // One answer: its question, day, and beats
-              <li key={answer.id}><RowLink href={`/sessions?id=${answer.id}`} meta={`${beatCount(answer)} of 4`}>{answerLabel(answer.promptId)} <span className="block text-footnote text-ink-muted">{dayLabel(new Date(answer.createdAt), today)}</span></RowLink></li>
-            ))}
-          </ul>
-        </section>
-      )}
-
+      </div>
+      </div>
       </>)}
 
       {/* The main action: this unit's next lesson (named by number, as the page names the unit, so a long unit name never squeezes the title), or its drill once the lessons are done */}

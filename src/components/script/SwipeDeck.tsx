@@ -6,7 +6,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the shared button looks
-import { PRIMARY, QUIET } from "@/components/script/Buttons";
+import { PRIMARY, QUIET, SECONDARY } from "@/components/script/Buttons";
 
 // What the deck needs
 interface SwipeDeckProps {
@@ -20,10 +20,12 @@ interface SwipeDeckProps {
   label: string;
   // On the last screen, where to go on to, in place of Next (such as the next card or today's next step)
   finish?: { label: string; href: string } | null;
+  // Next drawn quiet (a second choice, not the chunky one) while the screen still asks for something first, such as a guess; it still works
+  nextQuiet?: boolean;
 }
 
 // Draw the deck
-export function SwipeDeck({ screens, index, onIndex, label, finish = null }: SwipeDeckProps) {
+export function SwipeDeck({ screens, index, onIndex, label, finish = null, nextQuiet = false }: SwipeDeckProps) {
   // The sliding row
   const row = useRef<HTMLDivElement | null>(null);
   // The screen a button or key is sliding to, while the slide is under way (its scroll events are not swipes)
@@ -92,11 +94,11 @@ export function SwipeDeck({ screens, index, onIndex, label, finish = null }: Swi
   return (
     <section aria-roledescription="carousel" aria-label={label} className="flex flex-1 flex-col">
       {/* The screens, side by side, one in view at a time */}
-      <div ref={row} onScroll={onScroll} role="region" aria-label="Screens" tabIndex={0} className="-mx-6 flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:mx-0">
+      <div ref={row} onScroll={onScroll} role="region" aria-label="Screens" tabIndex={0} className="-mx-4 flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:mx-0">
         {/* Each screen */}
         {screens.map((screen, position) => (
           // One screen, the full width of the row
-          <div key={position} role="group" aria-roledescription="slide" aria-label={`${position + 1} of ${screens.length}`} aria-hidden={position !== index} inert={position !== index} className="flex w-full flex-none snap-start flex-col px-6 pt-5 pb-6 md:px-0 md:pt-7">
+          <div key={position} role="group" aria-roledescription="slide" aria-label={`${position + 1} of ${screens.length}`} aria-hidden={position !== index} inert={position !== index} className="flex w-full flex-none snap-start flex-col px-4 pt-3 pb-6 md:px-0 md:pt-2">
             {/* Its content */}
             {screen}
           </div>
@@ -110,7 +112,7 @@ export function SwipeDeck({ screens, index, onIndex, label, finish = null }: Swi
         {index === last && finish ? (
           <Link href={finish.href} className={`${PRIMARY} flex-1`}>{finish.label}</Link>
         ) : (
-          <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${PRIMARY} flex-1 disabled:invisible`}>Next</button>
+          <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${nextQuiet ? SECONDARY : PRIMARY} flex-1 disabled:invisible`}>Next</button>
         )}
       </div>
     </section>
