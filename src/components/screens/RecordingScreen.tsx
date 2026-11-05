@@ -420,6 +420,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const [needsPrimer, setNeedsPrimer] = useState(false);
   // What to do once the microphone is allowed from the explanation
   const afterPrimer = useRef<(() => void) | null>(null);
+  // Whether the browser has answered "will you ask for the microphone?" (a start waits for it, so the explanation is never skipped by a fast tap)
+  const primerAnswered = useRef(false);
+  // A start tapped before that answer, run once it comes
+  const startBeforeAnswer = useRef<(() => void) | null>(null);
   // An unsupported browser always shows that problem
   const stage: Stage = supported ? flowStage : UNSUPPORTED;
   // Words heard so far
@@ -1145,13 +1149,40 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // Before the first ever recording, find out whether the browser will ask for the microphone
   useEffect(() => {
     // Nothing to check, or already explained in this browser
-    if (!services.micPermission || readMicExplained()) return;
+    if (!services.micPermission || readMicExplained()) {
+      // So a start never waits for an answer
+      primerAnswered.current = true;
+      // Done
+      return;
+    }
     // Ignore the answer if the screen closes first
     let cancelled = false;
     // Ask the browser without prompting
     void services.micPermission().then((permission) => {
+      // Gone already
+      if (cancelled) return;
       // Explain first only when the browser is about to ask (or cannot say)
-      if (!cancelled && (permission === "prompt" || permission === "unknown")) setNeedsPrimer(true);
+      const explain = permission === "prompt" || permission === "unknown";
+      // Remember it
+      if (explain) setNeedsPrimer(true);
+      // The answer is in
+      primerAnswered.current = true;
+      // A start tapped before the answer came (the start is on screen at once): explain first, or start now
+      const waiting = startBeforeAnswer.current;
+      // (taken)
+      startBeforeAnswer.current = null;
+      // Nothing was waiting
+      if (!waiting) return;
+      // The explanation first, then the start
+      if (explain) {
+        // Remember the start for afterwards
+        afterPrimer.current = waiting;
+        // Show the explanation
+        setStage("mic-primer");
+      } else {
+        // Start now
+        waiting();
+      }
     });
     // Mark as closed when leaving
     return () => {
@@ -1187,6 +1218,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     const drawFirst = mode === "talk" && stage === "ready" && promptText !== null && motionWelcome();
     // The start: the question asked, the draw, the countdown, or recording
     const go = smallTalk && findUnit(smallTalk.unit).drill === "heard" ? () => void ask(smallTalk.question) : drawFirst ? () => setDraw(drawSteps(promptText!, TABLE_TOPICS.map((topic) => topic.text), Date.now())) : think > 0 ? beginThinking : () => void start();
+    // The browser has not said yet whether it will ask (a fast tap): wait for its answer, which then explains or starts
+    if (!primerAnswered.current) {
+      // Hold the start
+      startBeforeAnswer.current = go;
+      // Stop here
+      return;
+    }
     // The first ever recording: explain the microphone, and start once it is allowed
     if (needsPrimer) {
       // Remember the start for afterwards
@@ -1996,7 +2034,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               )}
               {/* Your one goal, on the accent's tint (its line left out on a phone) */}
               {goal && mode !== "story" && (
-                <div data-goal className="flex flex-col gap-2 rounded-[22px] bg-accent-tint px-5 py-4.5 text-accent-tint-ink max-md:order-6 max-md:gap-1 max-md:py-3.5">
+                <div data-goal-card className="flex flex-col gap-2 rounded-[22px] bg-accent-tint px-5 py-4.5 text-accent-tint-ink max-md:order-6 max-md:gap-1 max-md:py-3.5">
                   {/* The small label */}
                   <span className="text-xs font-extrabold tracking-[.07em] uppercase">Your one goal</span>
                   {/* The goal */}
@@ -2113,7 +2151,7 @@ function OutlinePlan({ outline, compact }: { outline: Outline; compact: boolean 
 function GoalCard({ goal }: { goal: { label: string; head: string; line: string | null } }) {
   // The card
   return (
-    <div data-goal className="flex flex-col gap-2 rounded-[22px] bg-accent-tint px-5 py-4.5 text-left text-accent-tint-ink">
+    <div data-goal-card className="flex flex-col gap-2 rounded-[22px] bg-accent-tint px-5 py-4.5 text-left text-accent-tint-ink">
       {/* The small label */}
       <span className="text-xs font-extrabold tracking-[.07em] uppercase">{goal.label}</span>
       {/* The goal */}

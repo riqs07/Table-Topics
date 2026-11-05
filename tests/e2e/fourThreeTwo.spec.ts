@@ -29,6 +29,8 @@ async function tellRound(page: Page, round: number, seconds: number): Promise<vo
 
 // From the 4/3/2 page (decision 126), tell today's story three times, shorter each time, then compare the rounds
 test("4/3/2: tell today's story three times, shorter each time, then compare the rounds", async ({ page }) => {
+  // Three recorded rounds and a results page: about 25 s alone, past the 60 s budget when the whole suite runs four at a time, so it gets three times the budget (2026-11-05)
+  test.slow();
   // The stand-in speech tells a story
   await useStandIns(page, STORY_SPOKEN);
   // A clock the check runs forward

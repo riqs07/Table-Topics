@@ -217,7 +217,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
               </section>
 
               {/* Start: a minute to plan, then tell it */}
-              <ActionBand action="Start planning" aside="next: a minute to plan, then tell it" href={tellSessionHref(storyId, take, planStep)} />
+              <ActionBand action="Start planning" aside="a minute, then tell it" href={tellSessionHref(storyId, take, planStep)} />
             </div>
           </div>
         )}

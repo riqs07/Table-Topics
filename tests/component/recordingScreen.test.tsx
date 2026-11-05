@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 // Fake recording services that a check can drive by hand
-function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string | string[]; permission?: MicPermission; voice?: boolean; stopDelayMs?: number } = {}) {
+function fakeServices(options: { supported?: boolean; micError?: string; finalText?: string | string[]; permission?: MicPermission; permissionGate?: Promise<void>; voice?: boolean; stopDelayMs?: number } = {}) {
   // What the voice was asked to say
   const said: string[] = [];
   // How many times the microphone was asked for
@@ -61,7 +61,7 @@ function fakeServices(options: { supported?: boolean; micError?: string; finalTe
     // A voice that notes what it said, only when the check asks for one
     ...(options.voice ? { speak: async (text: string) => (said.push(text), null) } : {}),
     // The permission check, only when the check gives one (like a browser that can say)
-    ...(options.permission ? { micPermission: async () => options.permission ?? "unknown" } : {}),
+    ...(options.permission ? { micPermission: async () => (await options.permissionGate, options.permission ?? "unknown") } : {}),
     // A transcriber the check can drive
     createTranscriber: () => ({
       // Remember the callbacks
@@ -155,7 +155,7 @@ describe("RecordingScreen", () => {
     // The right column
     const side = screen.getByRole("complementary", { name: "While you speak" });
     // The goal (the week's focus, with nothing else to set one) and the words
-    const shown = [!!side.querySelector("[data-goal]")?.textContent?.startsWith("Your one goal"), !!within(side).getByText("home")];
+    const shown = [!!side.querySelector("[data-goal-card]")?.textContent?.startsWith("Your one goal"), !!within(side).getByText("home")];
     // Hide the words
     fireEvent.click(screen.getByRole("button", { name: "Hide words" }));
     // Confirm both, then the words hidden with a way to show them again
@@ -1189,6 +1189,24 @@ describe("RecordingScreen", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
     // Confirm recording starts with no explanation this time
     expect([!!(await screen.findByRole("button", { name: /Stop/ })), screen.queryByRole("heading", { name: "VoiceLab listens through your microphone." })]).toEqual([true, null]);
+  });
+
+  // A tap before the browser has answered still gets the explanation first (the browser suite caught a fast tap skipping it once the start was on screen at once)
+  it("explains the microphone even when Start is tapped before the browser answers", async () => {
+    // A fresh browser
+    localStorage.clear();
+    // The browser's answer, held back until the check lets it go
+    let answer: () => void = () => {};
+    // (the gate)
+    const permissionGate = new Promise<void>((resolve) => (answer = resolve));
+    // Draw with a browser that will ask, slowly
+    const { fake } = draw({}, { permission: "prompt", permissionGate });
+    // Start at once
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // The answer arrives
+    await act(async () => answer());
+    // Confirm the explanation shows and the microphone was not asked for
+    expect([!!(await screen.findByRole("heading", { name: "VoiceLab listens through your microphone." })), fake.micAsks()]).toEqual([true, 0]);
   });
 
   // A browser that already allows the microphone needs no explanation
