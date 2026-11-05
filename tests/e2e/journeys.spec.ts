@@ -652,7 +652,7 @@ test("Conversation: talk with Maya, then see the conversation", async ({ page })
   // The goal first: questions back at the party
   await expect(page.getByRole("heading", { level: 1 })).toContainText("questions back");
   // Try the same situation again
-  await expect(page.locator("[data-action-band]")).toContainText("Try it again");
+  await expect(page.getByRole("link", { name: /Talk again/ })).toBeVisible();
 });
 
 // A conversation with the coach set up (decisions 84 and 127): a situation chosen from the list, started by itself, each line written for it and played in the persona's voice (the route stood in, with a real recording as the audio), and the situation on the results
