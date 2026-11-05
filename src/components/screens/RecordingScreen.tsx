@@ -11,6 +11,14 @@ import Link from "next/link";
 import { ActionButton } from "@/components/script/ActionBand";
 import { Footnote } from "@/components/script/Footnote";
 import { Masthead } from "@/components/script/Masthead";
+// Load focus mode's thin header and its key caps (second pass)
+import { FocusHeader, Kbd } from "@/components/script/FocusHeader";
+// Load the cast, for your blob singing while you speak
+import { Cast } from "@/components/scenes/Cast";
+// Load the card and label looks
+import { CARD, LAB } from "@/components/script/textStyles";
+// Load the weekly focus, which is the one goal when nothing else sets one
+import { currentFocus, type Focus } from "@/core/focus";
 // Load the never-firing subscription used to tell the browser apart from the server
 import { subscribeToNothing } from "@/components/screens/screenBasics";
 // Load the recording contracts
@@ -206,7 +214,22 @@ const UNSUPPORTED: Stage = { problem: "speech-unsupported" };
 const METER_BARS = 24;
 
 // Draw the transcript so far, with fillers marked and unsettled words lighter
-function LiveWords({ text, marks = true }: { text: LiveText; marks?: boolean }) {
+function LiveWords({ text, marks = true, card = false }: { text: LiveText; marks?: boolean; card?: boolean }) {
+  // In the words card (second pass): the settled words quieter, the words still being heard in bold ink, pause words softly highlighted
+  if (card) {
+    // The words, large and easy to read
+    return (
+      <p className="text-xl leading-relaxed text-ink-muted">
+        {/* Settled words, piece by piece */}
+        {(marks ? markFillers(text.final) : [{ text: text.final, filler: false }]).map((piece, index) =>
+          // Fillers softly highlighted, everything else plain
+          piece.filler ? <mark key={index} className="rounded-md bg-art-sun/35 px-1 text-ink">{piece.text}</mark> : <span key={index}>{piece.text}</span>,
+        )}
+        {/* Words still being worked out, in bold */}
+        {text.interim && <b className="font-bold text-ink"> {text.interim}</b>}
+      </p>
+    );
+  }
   // Settled words with fillers marked (unless pause words are hidden; decision 79), then words still being heard
   return (
     <p className="max-w-[34ch] font-display text-cue">
@@ -648,6 +671,10 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
 
   // Whether pause words are marked in the live words (decision 79; marked until Settings is read)
   const [pauseWords, setPauseWords] = useState(true);
+  // The week's focus, the one goal shown while speaking when no retry cue or course goal sets one (second pass)
+  const [weekFocus, setWeekFocus] = useState<Focus | null>(null);
+  // Whether the live words are hidden while speaking (some find them distracting)
+  const [wordsHidden, setWordsHidden] = useState(false);
   // Read it once
   useEffect(() => {
     // Ignore the answer if the screen closes first
@@ -656,6 +683,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     repo.getSettings(clock()).then((settings) => {
       // Keep it if still open
       if (!cancelled) setPauseWords(pauseWordsShown(settings));
+      // And the week's focus, as Today works it out
+      if (!cancelled) setWeekFocus(currentFocus({ focusIndex: settings.focusIndex, focusStartedOn: new Date(settings.focusStartedOn) }, clock()).focus);
     });
     // Mark as closed when leaving
     return () => {
@@ -1308,6 +1337,15 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   const recording = stage === "recording";
   // The problem to explain, if any
   const problem = typeof stage === "object" ? stage.problem : null;
+  // Focus mode while speaking without text to read (second pass, the Recording reference): the question and your singing blob on the left, your one goal and your words on the right
+  const focusTake = recording && !script;
+  // The round Stop button, which takes focus as recording starts, so the keyboard and screen readers land on it
+  const stopButton = useRef<HTMLButtonElement>(null);
+  // Focus it each time a take starts
+  useEffect(() => {
+    // Only in focus mode
+    if (focusTake) stopButton.current?.focus({ preventScroll: true });
+  }, [focusTake]);
   // Length wording for this kind of session
   const lengthText = loopTarget !== null ? `${formatClock(loopTarget)} this round` : goalSeconds ? `a ${formatClock(goalSeconds)} goal` : script ? `about ${Math.max(1, Math.round(readingSeconds(script.body) / 60))} min` : mode === "warmup" ? `${target} seconds` : speakingWindow(mode, promptId, storyTake.length) ? `${formatClock(speakingWindow(mode, promptId, storyTake.length)!.start)} to ${formatClock(speakingWindow(mode, promptId, storyTake.length)!.end)}` : mode === "qa" ? `a ${formatClock(target)} goal` : mode === "moment" ? "under a minute" : mode === "free" ? "as long as you like" : "about a minute";
   // Whether the thinking countdown is showing
@@ -1381,6 +1419,17 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   // What the countdown says to screen readers: once at the start, then only the last three seconds (the shown number changes every second without being read)
   const countdownSpoken = countdown > 3 ? `${think} seconds to think. Recording starts by itself.` : countdown > 0 ? String(countdown) : "";
 
+  // The one goal while speaking: last try's cue on a retry, a course part's goal, or the week's focus
+  const goal = retryCue ? { head: retryCue, line: ownNote ? `Your note: ${ownNote}` : cueFromCoach ? "The coach’s cue from your last try." : "Picked from your last try’s numbers." } : coursePlace?.part.practice ? { head: coursePlace.part.practice.goal, line: null } : weekFocus ? { head: weekFocus.title, line: weekFocus.description } : null;
+  // How far the take has got against its target, for the header's bar
+  const share = recording ? Math.min(1, elapsed / Math.max(1, target)) : 0;
+  // The bar: inside today's practice, the steps done plus this one's share; otherwise this take's share while recording
+  const progress = planStep && plan ? (planStep - 1 + share) / Math.max(1, plan.steps.length) : recording ? share : null;
+  // The latest five level readings, for the level bars
+  const lastLevels = levels.slice(-5);
+  // Which lamp of the three is lit
+  const lamp = signal === "green" ? 0 : signal === "yellow" ? 1 : signal === "red" || signal === "overtime" ? 2 : -1;
+
   // Before the first ever recording: what the microphone is for, before the browser asks
   if (stage === "mic-primer") {
     // Draw the explanation on its own
@@ -1419,7 +1468,27 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
       {/* A Rapid Fire topic being drawn: the shape waits (decision 133) */}
       {draw && <StatusBlob compact={!!script} label="Get ready" detail="picking a topic" live={false} />}
       {/* A Table Topic's countdown: no early start, just the time left */}
-      {thinking && mode === "talk" && <StatusBlob compact={!!script} label="Get ready" detail={`starting in ${countdown}`} live={false} />}
+      {thinking && mode === "talk" && (
+        // A sun ring running down round your blob, the seconds left big under its face (storyboard "Rapid Fire countdown")
+        <div data-countdown className="relative mt-6 flex size-64 items-center justify-center self-center md:mt-8 md:self-start">
+          {/* The ring: its track, and the time left in sun */}
+          <svg aria-hidden="true" viewBox="0 0 120 120" className="absolute inset-0 size-full -rotate-90">
+            {/* The track */}
+            <circle cx="60" cy="60" r="54" fill="none" strokeWidth="8" className="stroke-rule" />
+            {/* The time left */}
+            <circle cx="60" cy="60" r="54" fill="none" strokeWidth="8" strokeLinecap="round" strokeDasharray="339.3" strokeDashoffset={339.3 * (1 - thinkLeft / Math.max(1, think))} className="stroke-art-sun transition-[stroke-dashoffset] duration-200" />
+          </svg>
+          {/* Your blob, thinking, and the seconds */}
+          <span className="relative flex flex-col items-center">
+            {/* The blob */}
+            <Cast who="you" face="flat" className="size-28" />
+            {/* The seconds left */}
+            <span aria-hidden="true" className="font-display text-6xl leading-none font-semibold tabular-nums">{countdown}</span>
+          </span>
+        </div>
+      )}
+      {/* Under it, what happens next */}
+      {thinking && mode === "talk" && <p className="mt-4 font-bold text-ink-muted md:self-start">Recording starts by itself.</p>}
       {/* What the countdown says to screen readers: at the start and in the last three seconds only */}
       {thinking && mode === "talk" && <p role="status" data-testid="countdown-spoken" className="sr-only">{countdownSpoken}</p>}
       {/* While a small-talk question is said aloud */}
@@ -1436,13 +1505,13 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     // One column on a phone, margin plus main column on a computer; dark green while the clock runs (the stage, decision 69)
     <PageFade>
       <main id="main" data-area={recording || thinking ? "stage" : undefined} className={`mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10 ${script ? "pb-40 md:pb-10" : "pb-10"}`}>
-        {/* Navigation (hidden while recording), title and keyboard hint */}
-        <Masthead title={title} nav={false} close={busy ? null : home}>
-          {/* The keyboard hint, only on devices with a mouse or trackpad (so never on a phone or tablet) */}
-          <span data-keyboard-hint className="hidden keyboard:inline">{hint}</span>
+        {/* Focus mode's header: the way out (hidden while a take is under way), how far through, what this is and the step, and the keyboard hints */}
+        <FocusHeader close={busy ? null : home} title={title} place={planStep ? `step ${planStep}${plan ? ` of ${plan.steps.length}` : ""}` : null} progress={progress}>
+          {/* The keyboard hints as key caps, only on devices with a mouse or trackpad (so never on a phone or tablet) */}
+          <span data-keyboard-hint className="hidden items-center gap-1.5 keyboard:inline-flex">{hint.split(" · ").map((part, index) => <span key={part} className="inline-flex items-center gap-1.5">{index > 0 && " "}<Kbd>{part.split(" ")[0]}</Kbd>{` ${part.split(" ").slice(1).join(" ")}`}</span>)}</span>
           {/* Before reading on a phone: the length, small, in place of the big clock */}
           {(script || smallTalk) && !busy && <span className="keyboard:hidden md:hidden">{lengthText}</span>}
-        </Masthead>
+        </FocusHeader>
         {/* Inside the weekly check-in, which part this is (decision 100) */}
         {checkIn && <p className="mt-3 text-footnote font-medium text-accent">Weekly check-in · part {CHECK_IN_PARTS.indexOf(checkIn.part) + 1} of {CHECK_IN_PARTS.length}</p>}
         {/* A 4/3/2 round: which, and its time (decision 118) */}
@@ -1459,8 +1528,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         {/* Inside today's practice, which step this is */}
         {planStep && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 text-footnote">
-            {/* The step */}
-            <p className="font-medium text-accent">Today’s practice · step {planStep}{plan ? ` of ${plan.steps.length}` : ""}</p>
+            {/* The step, for screen readers (the header shows it) */}
+            <p className="sr-only">Today’s practice · step {planStep}{plan ? ` of ${plan.steps.length}` : ""}</p>
             {/* Before speaking: a way to put the step off without it counting as done (decision 77) */}
             {skippable && !busy && (
               <span className="flex flex-wrap gap-x-4">
@@ -1474,9 +1543,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         )}
 
         {/* Margin and main column on a computer */}
-        <div className="flex flex-1 flex-col md:grid md:grid-cols-[240px_1fr] md:gap-14 md:pt-8">
-          {/* Margin: time, length, prompt reminder, discard */}
-          <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 md:flex ${script && !busy ? "flex max-md:mt-0" : smallTalk && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
+        <div className={`flex flex-1 flex-col md:grid md:gap-14 md:pt-8 ${focusTake ? "md:grid-cols-1" : "md:grid-cols-[240px_1fr]"}`}>
+          {/* Margin: time, length, prompt reminder, discard (in focus mode, its notes move into the right column) */}
+          <aside className={`mt-5 flex-col text-footnote text-ink-muted md:mt-0 ${focusTake ? "hidden" : "md:flex"} ${script && !busy ? "flex max-md:mt-0" : smallTalk && !busy ? "hidden" : "flex"} ${recording || thinking ? "max-md:order-last max-md:mt-6" : ""}`}>
             {/* The clock, large, only while thinking about a prepared speech (a Table Topic counts down in the shape; while recording the clock is in the shape; decision 77) */}
             {thinking && mode !== "talk" && <p className="font-display text-prompt-xl font-semibold text-ink tabular-nums">{formatClock(Math.ceil(thinkLeft))}</p>}
             {/* The length to aim for, or what the countdown is for (the countdown's own words are in the shape) */}
@@ -1491,7 +1560,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             {/* A lesson keeps its tip in view while speaking */}
             {recording && lesson && <p className="mt-6 border-t border-rule pt-3">{lesson.tip}</p>}
             {/* A Record Response keeps its hints in view while speaking */}
-            {recording && angles.length > 0 && <Hints angles={angles} compact />}
+            {recording && !focusTake && angles.length > 0 && <Hints angles={angles} compact />}
             {/* Push the way out down */}
             <div className="hidden flex-1 md:block" />
             {/* Leave while thinking (while recording, Pause and Discard sit by the shape) */}
@@ -1508,8 +1577,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             {stage === "ready" && !busy && !script && !smallTalk && !problem && !loop && READY_SCENES[mode] && <ScenePanel {...READY_SCENES[mode]!} />}
             {/* Opened from Today, small talk and rehearsing show their step's scene the same way */}
             {stage === "ready" && !busy && !problem && !loop && planStep !== null && TODAY_SCENES[mode] && <ScenePanel {...TODAY_SCENES[mode]!} className="mt-3 mb-6 md:mt-0" />}
-            {/* While recording: one status line (recording or paused, and the timing words), the question, and, beside text to read, the controls (decision 77) */}
-            {recording && (
+            {/* While recording beside text to read: one status line (recording or paused, and the timing words) and the controls (decision 77) */}
+            {recording && script && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 {/* Recording or paused */}
                 <p role="status" className="flex items-center gap-2 text-footnote font-semibold text-warm">
@@ -1522,11 +1591,9 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
                 {hasLight ? <TimingLight signal={signal} mode={mode} promptId={promptId} storyLength={storyTake.length} given={roundWindow} /> : <span className="text-footnote text-ink-muted md:hidden">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
               </div>
             )}
-            {/* The question being answered, above the shape */}
-            {recording && prompt && !smallTalk && !script && <p className="mt-3 max-w-[30ch] font-display text-cue font-semibold">{prompt.text}</p>}
             {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
             {recording && mode === "story" && (
-              <div data-story-template className="mt-3">
+              <div data-story-template className="order-last mt-3">
                 {/* Show or hide, remembered in this browser */}
                 <CheckRow
                   checked={templateShown}
@@ -1776,16 +1843,102 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               </div>
             )}
 
-            {/* While recording: the meter and the words */}
-            {recording && (
-              <>
-                {/* The live voice shape, with the clock inside (beside text to read, it sits in its own place; see below) */}
-                {!script && shapeControl}
-                {/* Pause and discard, under the shape */}
-                {!script && <TakeControls paused={paused} onPause={() => void pause()} onResume={resume} onDiscard={() => void discard()} />}
-                {/* Words so far, the latest few lines, older ones fading (not while reading: the text itself is on screen) */}
-                {(!script || textHidden) && <div className="mt-6 flex max-h-[3.7em] flex-col justify-end overflow-hidden text-cue [mask-image:linear-gradient(to_bottom,transparent,black_45%)]"><LiveWords text={text} marks={pauseWords} /></div>}
-              </>
+            {/* Reading from memory: the words so far, the latest few lines, older ones fading */}
+            {recording && script && textHidden && <div className="mt-6 flex max-h-[3.7em] flex-col justify-end overflow-hidden text-cue [mask-image:linear-gradient(to_bottom,transparent,black_45%)]"><LiveWords text={text} marks={pauseWords} /></div>}
+
+            {/* Focus mode: on a computer the question, your blob, the clock and the controls on the left, your one goal and your words on the right; on a phone one column, the controls last (storyboard "Recording") */}
+            {focusTake && (
+              <div data-focus-take className="flex flex-col gap-5 md:grid md:grid-cols-[repeat(auto-fit,minmax(360px,1fr))] md:items-start md:gap-10">
+                {/* The left column */}
+                <section aria-label="Your take" className="max-md:contents md:flex md:flex-col md:items-center md:gap-4.5 md:text-center">
+                  {/* Recording or paused (the dot breathes only while recording and when motion is welcome) */}
+                  <p role="status" className="flex items-center gap-2 text-footnote font-extrabold text-warm-ink max-md:order-1 md:justify-center">
+                    {/* The dot */}
+                    <span aria-hidden="true" className={`inline-block size-2.5 rounded-full bg-warm ${paused ? "" : "motion-safe:animate-breathe"}`} />
+                    {/* The word */}
+                    {paused ? "Paused" : "Recording"}
+                  </p>
+                  {/* The question, big */}
+                  {prompt && !smallTalk && mode !== "outline" && <p className="font-display text-2xl leading-tight font-semibold max-md:order-2 md:max-w-[560px] md:text-4xl">{prompt.text}</p>}
+                  {/* Your blob singing inside pulsing rings, swelling a little with your voice */}
+                  <div aria-hidden="true" className="relative my-2 flex size-60 items-center justify-center self-center max-md:order-3 md:size-72">
+                    {/* The still ring */}
+                    <span className="absolute inset-5 rounded-full border-4 border-warm/40" />
+                    {/* Two rings pulsing out in turn, while not paused */}
+                    {!paused && <span className="absolute inset-5 rounded-full border-4 border-warm/50 motion-safe:animate-pulse-ring" />}
+                    {!paused && <span className="absolute inset-5 rounded-full border-4 border-warm/50 motion-safe:animate-pulse-ring [animation-delay:1s]" />}
+                    {/* The blob */}
+                    <span className="flex transition-transform duration-150" style={{ transform: `scale(${paused ? 0.94 : 0.96 + (lastLevels.at(-1) ?? 0) * 0.12})` }}><Cast who="you" face={paused ? "ready" : "sing"} still={paused} className="size-44 md:size-52" /></span>
+                  </div>
+                  {/* The clock, the timing light and your level */}
+                  <div className="flex items-center justify-center gap-2.5 max-md:order-4 md:flex-wrap md:gap-3.5">
+                    {/* The clock */}
+                    <b className="font-display text-4xl leading-none font-semibold tabular-nums md:text-5xl">{formatClock(elapsed)}</b>
+                    {/* The timing light as three lamps and its words */}
+                    {hasLight && (
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-rule bg-card px-3 py-1.5">
+                        {/* The lamps: green, yellow, red, the one lit filled */}
+                        <span aria-hidden="true" className={`size-3 rounded-full ${lamp === 0 ? "bg-light-green" : "bg-rule"}`} />
+                        <span aria-hidden="true" className={`size-3 rounded-full ${lamp === 1 ? "bg-light-yellow" : "bg-rule"}`} />
+                        <span aria-hidden="true" className={`size-3 rounded-full ${lamp === 2 ? "bg-light-red" : "bg-rule"}`} />
+                        {/* The words */}
+                        <TimingLight signal={signal} mode={mode} promptId={promptId} storyLength={storyTake.length} given={roundWindow} />
+                      </span>
+                    )}
+                    {/* Without a light, the length to aim for */}
+                    {!hasLight && <span className="text-footnote font-bold text-ink-muted">{mode === "free" ? "As long as you like" : `Aim for ${lengthText}`}</span>}
+                    {/* Your level, the latest readings as five bars */}
+                    <span role="img" aria-label="Microphone level" className="flex h-9 items-end gap-1">
+                      {/* Each bar */}
+                      {lastLevels.map((level, index) => <span key={index} className="w-1.5 rounded-full bg-accent transition-[height] duration-100" style={{ height: `${Math.round(18 + Math.min(1, level * 1.6) * 82)}%` }} />)}
+                    </span>
+                  </div>
+                  {/* Start over, the round Stop, and hide the words (Pause under them) */}
+                  <div className="flex flex-col items-center gap-2 max-md:order-7 max-md:mt-2">
+                    {/* The row */}
+                    <div className="flex items-center gap-3 md:gap-5">
+                      {/* Start over: discards this take, which can be brought back for a few seconds */}
+                      <button type="button" onClick={() => void discard()} className={`${QUIET} whitespace-nowrap max-md:px-3`}>Start over</button>
+                      {/* Stop: the take is done */}
+                      <button ref={stopButton} type="button" onClick={() => void stop()} aria-label="Stop" data-variant="stop" className="flex size-23 flex-none items-center justify-center rounded-full bg-ink shadow-stop transition-[transform,box-shadow] duration-100 motion-safe:active:translate-y-[3px]">
+                        {/* The stop square */}
+                        <span aria-hidden="true" className="size-7.5 rounded-lg bg-paper-raised" />
+                      </button>
+                      {/* Hide or show the live words */}
+                      <button type="button" onClick={() => setWordsHidden(!wordsHidden)} className={`${QUIET} whitespace-nowrap max-md:px-3`}>{wordsHidden ? "Show words" : "Hide words"}</button>
+                    </div>
+                    {/* Pause or resume */}
+                    <button type="button" onClick={paused ? resume : () => void pause()} className={`${TEXT_LINK} text-ink-muted`}>{paused ? "Resume" : "Pause"}</button>
+                  </div>
+                </section>
+                {/* The right column */}
+                <aside aria-label="While you speak" className="max-md:contents md:flex md:flex-col md:gap-4.5 md:pt-1.5">
+                  {/* Your one goal, on the accent's tint (a short cue on a phone) */}
+                  {goal && (
+                    <div data-goal className="flex flex-col gap-2 rounded-[22px] bg-accent-tint px-5 py-4.5 text-accent-tint-ink max-md:order-6 max-md:items-center max-md:bg-transparent max-md:p-0">
+                      {/* The small label */}
+                      <span className="text-xs font-extrabold tracking-[.07em] uppercase max-md:sr-only">Your one goal</span>
+                      {/* The goal */}
+                      <span className="font-display text-2xl leading-tight font-semibold max-md:rounded-full max-md:bg-accent-tint max-md:px-3 max-md:py-1 max-md:font-sans max-md:text-chip max-md:font-extrabold">{goal.head}</span>
+                      {/* What it means */}
+                      {goal.line && <span className="font-bold max-md:hidden">{goal.line}</span>}
+                    </div>
+                  )}
+                  {/* Your words, live */}
+                  <div className={`flex min-h-32 flex-col gap-2.5 px-5.5 py-5 max-md:order-5 md:min-h-65 ${CARD}`}>
+                    {/* The small label */}
+                    <span className={`${LAB} max-md:sr-only`}>Your words</span>
+                    {/* Hidden, still being heard */}
+                    {wordsHidden ? <p className="text-lede font-bold text-ink-muted">Words hidden. They’re still being heard.</p> : text.final || text.interim ? <LiveWords text={text} marks={pauseWords} card /> : <p className="text-lede font-bold text-ink-muted">Your words show here as you speak.</p>}
+                  </div>
+                  {/* Where the live words come from */}
+                  <p className="text-sm font-bold text-ink-muted max-md:order-8">The live words come from your browser’s speech service, so they’re rough.</p>
+                  {/* A lesson keeps its tip in view while speaking */}
+                  {lesson && <p className="text-footnote text-ink-muted max-md:order-8">{lesson.tip}</p>}
+                  {/* A prepared speech keeps its hints in view while speaking */}
+                  {angles.length > 0 && <div className="text-footnote text-ink-muted max-md:order-8"><Hints angles={angles} compact /></div>}
+                </aside>
+              </div>
             )}
 
 

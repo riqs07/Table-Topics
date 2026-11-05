@@ -82,15 +82,6 @@ describe("main navigation", () => {
     ["Compare check-ins", "Today", async () => <CheckInCompareScreen repository={createRepository(new MemoryStore())} now={NOW} />],
     // Settings
     ["Settings", "Me", async () => <SettingsScreen repository={createRepository(new MemoryStore())} now={NOW} />],
-    // A session's results belong to where that kind of session lives (here speaking on the spot)
-    ["a session", "Practice", async () => {
-      // A repository with one session
-      const repository = createRepository(new MemoryStore());
-      // Save it
-      await repository.saveSession(makeSession({ id: "s1" }));
-      // The session page
-      return <SessionScreen sessionId="s1" repository={repository} now={NOW} />;
-    }],
     // A missing session still offers a way out
     ["a missing session", null, async () => <SessionScreen sessionId="nope" repository={createRepository(new MemoryStore())} now={NOW} />],
   ])("is on the %s screen", async (_name, current, build) => {
@@ -98,5 +89,17 @@ describe("main navigation", () => {
     render(await build());
     // Confirm the links and the marked page
     expect(await readNavigation()).toEqual({ links: DESTINATIONS, current });
+  });
+
+  // A take's result is focus mode (the Result reference, second pass): no tabs or rail, and the cross leads back to where that kind of session lives (here speaking on the spot)
+  it("leaves a take's result in focus mode, with the way back to Practice", async () => {
+    // A repository with one session
+    const repository = createRepository(new MemoryStore());
+    // Save it
+    await repository.saveSession(makeSession({ id: "s1" }));
+    // The session page
+    render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
+    // Confirm the cross and no main navigation
+    expect([(await screen.findByRole("link", { name: /^Close, back to/ })).getAttribute("href"), screen.queryByRole("navigation", { name: "Main" })]).toEqual(["/practice", null]);
   });
 });

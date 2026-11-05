@@ -115,7 +115,7 @@ describe("the new Connect units on screen", () => {
     // Draw the result
     render(<SessionScreen sessionId="r1" repository={repository} now={NOW} />);
     // Confirm the moment, all four beats, the better response with its label, and the next moment
-    expect([!!(await screen.findByText("The moment")), screen.getByText("All four beats.").tagName, !!screen.getByText("A better response"), !!screen.getByText("You seem busy. Do you need to head off?"), screen.getByRole("link", { name: /^Next one/ }).getAttribute("href")]).toEqual([true, "H1", true, true, "/session?mode=smalltalk&prompt=sr02"]);
+    expect([!!(await screen.findByText("The moment")), screen.getByText("All four beats.").tagName, !!screen.getByText("A better response"), !!screen.getByText("You seem busy. Do you need to head off?"), screen.getByRole("link", { name: /^Next one/ }).getAttribute("href")]).toEqual([true, "H3", true, true, "/session?mode=smalltalk&prompt=sr02"]);
     // Draw History instead
     cleanup();
     // History
@@ -133,7 +133,7 @@ describe("the new Connect units on screen", () => {
     // The beats
     const beats = await screen.findByRole("list", { name: "The beats" });
     // Confirm the situation label, all four beats, and the phone's quotes
-    expect([!!screen.getByText("The situation"), screen.getByText("All four beats.").tagName, !!within(beats).getByText("“kettle”"), !!within(beats).getByText("“i'll let you”, “good luck”")]).toEqual([true, "H1", true, true]);
+    expect([!!screen.getByText("The situation"), screen.getByText("All four beats.").tagName, !!within(beats).getByText("“kettle”"), !!within(beats).getByText("“i'll let you”, “good luck”")]).toEqual([true, "H3", true, true]);
     // An upgraded question with the coach's version
     cleanup();
     // Its repository

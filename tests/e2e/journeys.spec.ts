@@ -11,10 +11,12 @@ test("Rapid Fire: from the welcome through Practice, countdown, recording, saved
   await useStandIns(page);
   // Start at home
   await page.goto("/");
-  // A first visit has one Start and no tabs (decision 78)
+  // A first visit has Sage's hello, one button and no tabs (decision 78; storyboard "Welcome")
   await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
-  // Start
-  await page.getByRole("link", { name: "Start", exact: true }).click();
+  // On to the question
+  await page.getByRole("button", { name: "Let’s start" }).click();
+  // Continue with nothing picked
+  await page.getByRole("link", { name: "Continue", exact: true }).click();
   // It opens today's first step: on day one, free talk (decision 78)
   await expect(page).toHaveURL(/\/session\?mode=free&prompt=free&plan=1/);
   // Close it (practising hides the tab bar), back to Today
@@ -246,8 +248,10 @@ test("Today's practice: day one speaks first, then the card, then on to the pick
   await useStandIns(page, "Today I walked to work and the sun was out so I took the long way round past the river");
   // Start at Today
   await page.goto("/");
-  // The welcome's Start opens the first step straight away
-  await page.getByRole("link", { name: "Start", exact: true }).click();
+  // The welcome's Continue opens the first step straight away
+  await page.getByRole("button", { name: "Let’s start" }).click();
+  // (Continue)
+  await page.getByRole("link", { name: "Continue", exact: true }).click();
   // Step 1 of 4 on day one: free talk (decision 78)
   await expect(page.getByText("Today’s practice · step 1 of 4")).toBeVisible();
   // Start speaking
@@ -278,10 +282,12 @@ test("Today's practice: day one speaks first, then the card, then on to the pick
 test("Focus: the welcome's pick steers Today, Practice and Learn", async ({ page }) => {
   // Start at Today as a new user
   await page.goto("/");
+  // On to the question
+  await page.getByRole("button", { name: "Let’s start" }).click();
   // Pick telling stories
   await page.getByRole("button", { name: /^Telling stories/ }).click();
-  // Start
-  await page.getByRole("link", { name: "Start", exact: true }).click();
+  // Continue
+  await page.getByRole("link", { name: "Continue", exact: true }).click();
   // Day one still starts by speaking (decision 78), with the stories course's first part as a fifth step (decision 144)
   await expect(page.getByText("Today’s practice · step 1 of 5")).toBeVisible();
   // Back on Today
@@ -323,7 +329,7 @@ test("Focus: an existing user answers the card on Today once", async ({ page }) 
   // After a reload, still answered
   await page.reload();
   // (no card)
-  await expect(page.getByRole("heading", { name: /short steps|Pick up where/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^(Today|Tonight)$|Pick up where/ })).toBeVisible();
   // (still no card)
   await expect(page.getByRole("region", { name: "What do you want to get better at most?" })).toHaveCount(0);
 });

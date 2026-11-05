@@ -110,6 +110,10 @@
   --shadow-sun: 0 3px 0 var(--vl-warm-shade);
   /* A picked choice's green ledge (UI rewrite) */
   --shadow-picked: 0 3px 0 var(--vl-accent);
+  /* A picked picture row on the welcome, edged in sky (second pass) */
+  --shadow-sky: 0 4px 0 var(--vl-art-sky);
+  /* The round Stop button while recording, its ledge in darker ink (second pass) */
+  --shadow-stop: 0 6px 0 color-mix(in srgb, var(--vl-ink) 60%, black);
   /* The chunky main button's darker underside (UI rewrite) */
   --shadow-chunky: 0 5px 0 color-mix(in srgb, var(--vl-fill) 68%, black);
   /* The same underside, pressed down */
@@ -140,6 +144,55 @@
   --animate-drift: vl-drift 3s ease-out infinite both;
   /* A spark by the blob twinkling (decision 134) */
   --animate-twinkle: vl-twinkle 1.4s ease-in-out infinite;
+  /* A ring pulsing out from the singing blob while recording (second pass) */
+  --animate-pulse-ring: vl-pulse-ring 2s ease-out infinite;
+  /* The verdict panel sliding in from the right after a take (second pass) */
+  --animate-slide-in: vl-slide-in 500ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+  /* The verdict sheet sliding up on a phone (second pass) */
+  --animate-sheet: vl-sheet 550ms cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
+  /* A confetti piece flying out from the blob and staying where it lands (second pass, day done) */
+  --animate-confetti: vl-confetti 900ms cubic-bezier(0.15, 0.7, 0.3, 1) both;
+  /* Pulse: a ring growing and fading */
+  @keyframes vl-pulse-ring {
+    /* At the blob's edge */
+    0% {
+      transform: scale(0.85);
+      opacity: 0.9;
+    }
+    /* Grown and gone */
+    100% {
+      transform: scale(1.16);
+      opacity: 0;
+    }
+  }
+  /* Slide in: from a little to the right, faded */
+  @keyframes vl-slide-in {
+    from {
+      transform: translateX(48px);
+      opacity: 0;
+    }
+  }
+  /* Sheet: from below, faded */
+  @keyframes vl-sheet {
+    from {
+      transform: translateY(60px);
+      opacity: 0;
+    }
+  }
+  /* Confetti: from the centre, small, out to where it rests */
+  @keyframes vl-confetti {
+    0% {
+      transform: translate(0, 0) scale(0.3) rotate(0deg);
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--turn));
+      opacity: 1;
+    }
+  }
   /* Blink: open nearly all the time, shut for a moment */
   @keyframes vl-blink {
     /* Open */

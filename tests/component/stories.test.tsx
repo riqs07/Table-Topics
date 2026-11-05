@@ -318,7 +318,7 @@ describe("SessionScreen, stories", () => {
     // Draw it
     render(<SessionScreen sessionId="a" repository={repository} now={NOW} />);
     // Confirm the prompt, the headline, no checklist, rough-guess line or beats card, and the retelling's address
-    expect([!!(await screen.findByText(/running late for something that mattered/)), screen.getByRole("heading", { level: 1 }).textContent, screen.queryByRole("list", { name: "What I heard" }), screen.queryByText(/Rough guesses/), document.querySelector("[data-your-beats]"), screen.getByRole("link", { name: /Tell it again/ }).getAttribute("href")]).toEqual([true, "Your story.", null, null, null, "/session?mode=story&prompt=sp04&retryOf=a"]);
+    expect([!!(await screen.findByText(/running late for something that mattered/)), screen.getByRole("heading", { level: 3 }).textContent, screen.queryByRole("list", { name: "What I heard" }), screen.queryByText(/Rough guesses/), document.querySelector("[data-your-beats]"), screen.getByRole("link", { name: /Tell it again/ }).getAttribute("href")]).toEqual([true, "Your story.", null, null, null, "/session?mode=story&prompt=sp04&retryOf=a"]);
   });
 
   // With the coach: what worked at the top, your line and how it could sound, and each beat of the template strong, weak or missing (decision 126)
@@ -330,7 +330,7 @@ describe("SessionScreen, stories", () => {
     // The beats
     const beats = await screen.findByRole("region", { name: /Your beats/ });
     // Confirm the headline, what worked at the top (and not again at the bottom), the line and its gap, and each beat's status and quote
-    expect([screen.getByRole("heading", { level: 1 }).textContent, document.querySelector("[data-story-worked]")?.textContent, screen.queryByText("What to keep."), !!screen.getByText("“she goes don't worry”"), screen.getByText("[how you felt]").tagName, [...beats.querySelectorAll("[data-beat]")].map((item) => `${item.getAttribute("data-beat")} ${item.getAttribute("data-status")}`), !!within(beats).getByText("“the train stopped dead”"), within(beats).getByRole("heading").textContent]).toEqual(["2 of 4 beats came through clearly.", "What workedYou opened in the action.", null, true, "EM", ["problem strong", "tried weak", "result missing", "matters strong"], true, "Your beats · Client win"]);
+    expect([screen.getByRole("heading", { level: 3 }).textContent, document.querySelector("[data-story-worked]")?.textContent, screen.queryByText("What to keep."), !!screen.getByText("“she goes don't worry”"), screen.getByText("[how you felt]").tagName, [...beats.querySelectorAll("[data-beat]")].map((item) => `${item.getAttribute("data-beat")} ${item.getAttribute("data-status")}`), !!within(beats).getByText("“the train stopped dead”"), within(beats).getByRole("heading").textContent]).toEqual(["2 of 4 beats came through clearly.", "What workedYou opened in the action.", null, true, "EM", ["problem strong", "tried weak", "result missing", "matters strong"], true, "Your beats · Client win"]);
   });
 
   // A story you'll need shows what its kind needs, as the phone heard it; an everyday story shows no such card (decision 152)
@@ -350,7 +350,7 @@ describe("SessionScreen, stories", () => {
     // (drawn)
     render(<SessionScreen sessionId="e" repository={repository} now={NOW} />);
     // Confirm the checks and the note, then no card for the everyday story
-    expect([checks, note, await screen.findByRole("heading", { level: 1 }).then(() => document.querySelector("[data-type-needs]"))]).toEqual([[["moment", "true"], ["quality", "true"], ["raise", "false"]], "Finish with “please raise your glasses: to…”", null]);
+    expect([checks, note, await screen.findByRole("heading", { level: 3 }).then(() => document.querySelector("[data-type-needs]"))]).toEqual([[["moment", "true"], ["quality", "true"], ["raise", "false"]], "Finish with “please raise your glasses: to…”", null]);
   });
 
   // A retelling: how it compared, what it worked on, and the beats that came through last time and this time
@@ -449,7 +449,7 @@ describe("guided stories", () => {
     // Its added list
     const list = await screen.findByRole("list", { name: "What you added" });
     // Confirm the heading, the label, nothing added, the facts count and the missing gorilla
-    expect([screen.getByRole("heading", { name: "What you added" }).tagName, !!screen.getByText("Your guided story"), within(list).getAllByRole("listitem").map((item) => item.getAttribute("data-added")), within(screen.getByRole("region", { name: "The facts" })).getByText(/2 of 4 heard/).textContent, document.querySelectorAll("[data-fact-missing]").length, screen.queryByRole("list", { name: "What I heard" })]).toEqual(["H1", true, ["false", "false", "false", "false", "false"], "The facts · 2 of 4 heard", 2, null]);
+    expect([screen.getByRole("heading", { name: "What you added" }).tagName, !!screen.getByRole("heading", { level: 1 }).textContent, within(list).getAllByRole("listitem").map((item) => item.getAttribute("data-added")), within(screen.getByRole("region", { name: "The facts" })).getByText(/2 of 4 heard/).textContent, document.querySelectorAll("[data-fact-missing]").length, screen.queryByRole("list", { name: "What I heard" })]).toEqual(["H3", true, ["false", "false", "false", "false", "false"], "The facts · 2 of 4 heard", 2, null]);
     // Remove it
     cleanup();
     // Draw the coached one
