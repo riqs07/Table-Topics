@@ -270,12 +270,12 @@ export function TalkScreen({ talkId, ...props }: ScreenProps & { talkId: string 
                 {tasks.map((task, index) => (
                   // One task: its name, the runs so far as a pill, and the rehearsal
                   <li key={index} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-                    {/* What to rehearse */}
-                    <span className="min-w-0 flex-1 font-display text-lg font-semibold">{task.label}</span>
+                    {/* What to rehearse (its own line on a phone, so the name never wraps beside the pill and the button) */}
+                    <span className="min-w-0 basis-full font-display text-lg font-semibold sm:flex-1 sm:basis-auto">{task.label}</span>
                     {/* How many runs so far */}
                     <span className={(done[index] ?? 0) >= task.times ? CHIP_GOOD : CHIP}>{done[index] ?? 0} of {task.times}</span>
                     {/* Open the rehearsal: chunky for the next one, white for the rest */}
-                    <Link href={rehearseHref(talk.id, task.sectionIndex, task.ladder)} className={index === nextTask ? PRIMARY : SECONDARY}>Rehearse</Link>
+                    <Link href={rehearseHref(talk.id, task.sectionIndex, task.ladder)} className={`${index === nextTask ? PRIMARY : SECONDARY} ml-auto`}>Rehearse</Link>
                   </li>
                 ))}
               </ul>

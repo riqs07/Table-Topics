@@ -5,7 +5,9 @@
 import { useEffect, useState } from "react";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
+import { PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
+// Load the verdict panel and its tones
+import { VerdictPanel, type VerdictTone } from "@/components/script/VoiceTakeStage";
 import { ScaleChoice } from "@/components/script/MissionCard";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
 // Load the shared screen starting points
@@ -104,38 +106,51 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
   // The mission
   const mission = record ? findMission(record.missionId) : undefined;
 
+  // Where the debrief stands, for the bar: did you try it (1), how it went (2), how it went, saved (3)
+  const step = record?.status === "done" ? 3 : tried ? 2 : 1;
+  // How the finished try reads: green for 4 or 5, warm for 1 or 2, plain for 3 or when it was not tried (FIXES decision 6)
+  const tone: VerdictTone = record?.status === "done" && record.tried && record.outcome !== null ? (record.outcome >= 4 ? "good" : record.outcome <= 2 ? "rough" : "plain") : "plain";
+
   // Draw the page
   return (
-    <main id="main" className={PRACTICE_NARROW}>
-      {/* Title and a way back to Today */}
-      <PracticeBar close={{ href: origin.href, label: `Close, back to ${origin.name}` }} label={mission?.move ? `Mission · ${mission.move}` : "Mission"} />
+    <main id="main" className={PRACTICE_MAIN}>
+      {/* The bar: the way back, how far through the debrief, the mission's move and the step */}
+      <PracticeBar close={{ href: origin.href, label: `Close, back to ${origin.name}` }} progress={record && mission ? step / 3 : undefined} label={record && mission ? `Mission · ${mission.move} · step ${step} of 3` : "Mission"} />
       {/* Missing: Sage says so, with the way back */}
-      {record === null && <NotFound title="This mission could not be found." back={{ href: origin.href, label: `Back to ${origin.name}` }} />}
-      {/* The debrief */}
+      {record === null && <div className={PRACTICE_BODY}><NotFound title="This mission could not be found." back={{ href: origin.href, label: `Back to ${origin.name}` }} className="mt-4" /></div>}
+      {/* The debrief, in the two practice columns: the mission on the left, the answers (or how it went) on the right */}
       {record && mission && (
-        <div className="flex flex-1 flex-col">
-          {/* The two of you, as in the storyboard's mission: pleased once it went well */}
-          <MissionScene pleased={record.status === "done" && (record.outcome ?? 0) >= 4} />
-          {/* The move, as a small label */}
-          <p className={`${LAB} mt-5 text-center`}>{mission.move} · the mission</p>
-          {/* The task, large */}
-          <h1 className="mx-auto mt-2 max-w-[22ch] text-center font-display text-statement leading-tight font-semibold">{mission.task}</h1>
-          {/* Debriefed: the outcome against the prediction, and what they noticed */}
+        <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
+          {/* The mission */}
+          <div className="flex min-w-0 flex-col">
+            {/* The two of you, as in the storyboard's mission: pleased once it went well */}
+            <MissionScene pleased={tone === "good"} />
+            {/* The move, as a small label */}
+            <p className={`${LAB} mt-5`}>{mission.move} · the mission</p>
+            {/* The task, large */}
+            <h1 className="mt-2 max-w-[24ch] font-display text-statement leading-tight font-semibold">{mission.task}</h1>
+            {/* Sage with the one habit to drop while trying it */}
+            <SageSays mood="encouraging" className="mt-5">{mission.drop}</SageSays>
+          </div>
+          {/* The answers, or how it went */}
+          <div className="flex min-w-0 flex-col">
+          {/* Debriefed: the verdict panel, coloured and faced by the answer, then what they noticed */}
           {record.status === "done" ? (
-            <section aria-label="How it went" className="mt-6 flex flex-col gap-4">
-              {/* Sage says how it went */}
-              <SageSays mood="proud"><p role="status">{compareLine(record)}</p></SageSays>
+            <section aria-label="How it went" className="flex flex-col gap-4">
+              {/* The verdict: the comparison as its headline */}
+              <VerdictPanel tone={tone} headingId="mission-verdict" heading={<span role="status">{compareLine(record)}</span>}>
+                {/* Stepping back */}
+                {record.tooMuch && <p className="font-bold">Next time, the mission steps back to an easier one.</p>}
+              </VerdictPanel>
               {/* Their note */}
               {record.note && <p className={`${CARD} px-5 py-4 text-lede`}><span className={`${LAB} block`}>What you noticed</span>{record.note}</p>}
-              {/* Stepping back */}
-              {record.tooMuch && <p className="text-lede font-semibold">Next time, the mission steps back to an easier one.</p>}
+              {/* Back to where it was opened from */}
+              <ActionBand action={`Back to ${origin.name}`} aside="done" href={origin.href} inCard />
             </section>
           ) : (
             <>
-              {/* Sage with the one habit to drop while trying it */}
-              <SageSays mood="encouraging" className="mt-5">{mission.drop}</SageSays>
               {/* The debrief, in a card */}
-              <div className={`mt-6 flex flex-col p-5 md:p-6 ${CARD}`}>
+              <div className={`flex flex-col p-5 md:p-6 ${CARD}`}>
                 {/* What they expected, when they guessed (the guess is optional) */}
                 {record.predicted !== null && <p className="mb-4 text-footnote font-semibold text-ink-muted">You expected it to go {SCALE_WORDS[record.predicted]?.toLowerCase()} ({record.predicted} of 5).</p>}
                 {/* Did you try it */}
@@ -171,8 +186,7 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
               <p className="mt-4 text-center text-footnote font-semibold text-ink-muted">Your notes stay on this phone.</p>
             </>
           )}
-          {/* Back to where it was opened from, once debriefed */}
-          {record.status === "done" && <div className="mt-2"><ActionBand action={`Back to ${origin.name}`} aside="done" href={origin.href} /></div>}
+          </div>
         </div>
       )}
     </main>
