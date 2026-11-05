@@ -6,7 +6,9 @@ import { useEffect, useRef, useState } from "react";
 // Load the player
 import { Player } from "@/components/script/Player";
 // Load the shared press effect (decision 79)
-import { PRESS } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, SECONDARY } from "@/components/script/Buttons";
+// Load the blob singing in rings, for while you speak (Desktop Screens "Recording")
+import { SingingBlob } from "@/components/script/PracticeBar";
 // Load the icons for the round look: the microphone, stop, and again
 import { ArrowCounterClockwiseIcon, MicrophoneIcon, StopIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the recording contracts
@@ -136,9 +138,17 @@ export function QuickRecorder({ services, action, maxSec = 30, onDone, look = "s
           <span className="font-display text-xl font-semibold">{stage === "recording" ? "Stop" : stage === "done" ? "Try again" : action}</span>
         </button>
       ) : (
-        <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={`inline-flex min-h-11 items-center rounded-2xl px-4 font-semibold ${PRESS} ${stage === "recording" ? "bg-ink text-paper-raised" : "border-2 border-ink"}`}>
-          {stage === "recording" ? "Stop" : stage === "done" ? "Try again" : action}
-        </button>
+        <span className="flex flex-wrap items-center gap-4">
+          {/* While recording: you, singing in rings */}
+          {stage === "recording" && <SingingBlob className="size-16" />}
+          {/* The button: chunky green to start, dark and chunky to stop, white to try again */}
+          <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={stage === "recording" ? `inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-ink px-6 font-display text-button font-semibold uppercase tracking-[.03em] text-paper-raised shadow-chunky ${PRESS}` : stage === "done" ? SECONDARY : PRIMARY}>
+            {/* Its icon */}
+            {stage === "recording" ? <StopIcon aria-hidden="true" weight="fill" className="size-5" /> : stage === "done" ? <ArrowCounterClockwiseIcon aria-hidden="true" weight="bold" className="size-5" /> : <MicrophoneIcon aria-hidden="true" weight="bold" className="size-5" />}
+            {/* Its words */}
+            {stage === "recording" ? "Stop" : stage === "done" ? "Try again" : action}
+          </button>
+        </span>
       )}
       {/* A refused microphone */}
       {stage === "blocked" && <p role="alert" className="mt-2 text-footnote">The microphone is blocked. Allow it for this site, then try again.</p>}
