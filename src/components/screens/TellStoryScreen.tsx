@@ -11,11 +11,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { Masthead } from "@/components/script/Masthead";
+import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
 // Load the shared button looks
 import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
-// Load the shared card look
-import { CARD } from "@/components/script/textStyles";
+// Load the shared card and label looks
+import { CARD, LAB } from "@/components/script/textStyles";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the story content
@@ -42,8 +42,8 @@ interface TellStoryProps extends ScreenProps {
   initialFocus?: StoryFocus | null;
 }
 
-// The look of a choice button: filled when chosen
-const choice = (chosen: boolean) => `min-h-11 rounded-[14px] border-2 px-3 py-2 text-left font-extrabold ${PRESS} ${chosen ? "border-accent bg-accent-tint text-accent-tint-ink shadow-picked" : "border-rule bg-card shadow-ledge"}`;
+// The look of a choice card: white with a ledge, edged in the accent with a green ledge when chosen
+const choice = (chosen: boolean) => `min-h-14 rounded-[18px] border-2 bg-card px-4 py-3 text-left ${PRESS} ${chosen ? "border-accent shadow-picked" : "border-rule shadow-card hover:border-ink-muted"}`;
 
 // The address that starts the planning minute and the telling
 export function tellSessionHref(storyId: string, take: StoryTake, planStep: number | null = null): string {
@@ -111,81 +111,90 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
   // Draw the page
   return (
     <PageFade>
-      <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
-        {/* Title, with a way back */}
-        <Masthead title="Tell a story" nav={false} close={close} />
+      <main id="main" className={PRACTICE_MAIN}>
+        {/* The bar: the way out, the first of three steps (set up, plan, tell) */}
+        <PracticeBar close={close} progress={1 / 3} label={guided ? "Guided story · step 1 of 3" : "Tell a story · step 1 of 3"} />
         {/* A story that cannot be found */}
         {unknown ? (
-          <>
-            {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+          <div className={PRACTICE_BODY}>
+            {/* The page's heading for screen readers and the keyboard, since this state draws no visible one */}
             <h1 className="sr-only">Tell a story</h1>
             {/* Where it went */}
-            <p role="alert" className="mt-6 max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
-          </>
+            <p role="alert" className="max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
+          </div>
         ) : (
-          <>
-            {/* The scene, carried over from the Practice card (decision 141): a story you'll need's own, Story dice, the signpost for another guided story, the campfire otherwise (decisions 152 and 153) */}
-            <ScenePanel scene={storyScene({ neededTemplate: findStoryTemplate(suggested).family === "needed" ? suggested : null, guidedLevel: guided ? guidedLevel(guided) : null })} name={guided ? (guided.level === "connect" ? "Story dice" : "Guided story") : findStoryTemplate(suggested).family === "needed" ? findStoryTemplate(suggested).name : "Tell a story"} line="Plan it in a minute, then tell it." className="mt-6" />
-            {/* Where it came from */}
-            {(momentId || guided) && <p className="mt-6 text-footnote text-ink-muted">{momentId ? "From your moment" : "Guided story"}</p>}
-            {/* The prompt, a guided story's title, or the moment in the user's words */}
-            <h1 className={`${momentId || guided ? "mt-1" : "mt-6"} font-display ${momentId ? "text-statement" : "text-prompt"} md:max-w-[24ch]`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
-            {/* A guided story's facts and nudges, with the template named (decision 93) */}
-            {guided && <GuidedStoryCard story={guided} take={take} />}
-
-            {/* The template */}
-            <div role="group" aria-labelledby="template-label" className="mt-8">
-              {/* Label */}
-              <p id="template-label" className="font-semibold">Template</p>
-              {/* The templates, only the chosen one showing what it is for and its beats */}
-              <div className="mt-2 grid max-w-xl gap-2">
-                {shown.map((item) => (
-                  // One template, filled when chosen
-                  <button key={item.id} type="button" aria-pressed={template === item.id} onClick={() => setTemplate(item.id)} className={choice(template === item.id)}>
-                    {/* Its name (the suggested one is chosen at the start, so it needs no label) */}
-                    <span className="block font-semibold">{item.name}</span>
-                    {/* The chosen one: what it is for, and its beats in one line (the others' are a tap away, so the first screen stays short) */}
-                    {template === item.id && <><span className="block text-footnote font-bold">{item.forWhat}</span><span className="mt-1 block text-footnote">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span></>}
-                  </button>
-                ))}
+          <div className={`${PRACTICE_BODY} grid items-start gap-8 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-10`}>
+            {/* The story: its prompt (or facts), and the scene carried over */}
+            <div className="flex min-w-0 flex-col gap-5">
+              {/* The prompt, a guided story's title, or the moment in the user's words, on the story's coral card */}
+              <div className="rounded-[22px] bg-art-coral px-6 py-5 text-fill-ink shadow-ledge">
+                {/* Where it came from */}
+                <p className="text-xs font-extrabold uppercase tracking-[.07em]">{momentId ? "From your moment" : guided ? "Guided story" : "Today’s story"}</p>
+                {/* The words */}
+                <h1 className={`mt-1.5 font-display font-semibold ${momentId ? "text-cue" : "text-cue md:text-statement"}`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
               </div>
-              {/* The other family's templates, a tap away */}
-              {!showAll && <button type="button" onClick={() => setShowAll(true)} className={`${TEXT_LINK} text-footnote`}>Show all templates</button>}
-              {/* What a story you'll need needs, in a line (decision 152) */}
-              {chosen.needs && <p data-template-needs className="mt-2 max-w-xl border-l-2 border-accent pl-3 text-footnote">{chosen.needs}</p>}
+              {/* A guided story's facts and nudges, with the template named (decision 93) */}
+              {guided && <GuidedStoryCard story={guided} take={take} />}
+              {/* The scene, carried over from the Practice card (decision 141): a story you'll need's own, Story dice, the signpost for another guided story, the campfire otherwise (decisions 152 and 153) */}
+              <ScenePanel scene={storyScene({ neededTemplate: findStoryTemplate(suggested).family === "needed" ? suggested : null, guidedLevel: guided ? guidedLevel(guided) : null })} name={guided ? (guided.level === "connect" ? "Story dice" : "Guided story") : findStoryTemplate(suggested).family === "needed" ? findStoryTemplate(suggested).name : "Tell a story"} line="Plan it in a minute, then tell it." className="" />
             </div>
 
-            {/* The length, before the example so the Start band never covers it on a phone */}
-            <div role="group" aria-labelledby="length-label" className="mt-6">
-              {/* Label */}
-              <p id="length-label" className="font-semibold">How long?</p>
-              {/* The two lengths */}
-              <div className="mt-2 grid max-w-sm grid-cols-2 gap-2">
-                {STORY_LENGTHS.map((item) => (
-                  // One length, filled when chosen
-                  <button key={item.id} type="button" aria-pressed={length === item.id} onClick={() => setLength(item.id)} className={choice(length === item.id)}>
-                    {/* Its name */}
-                    <span className="block font-semibold">{item.name}</span>
-                    {/* How long */}
-                    <span className="block text-footnote font-bold">{item.detail}</span>
-                  </button>
-                ))}
+            {/* The set-up: the template, the length, an example, then start */}
+            <div className="flex min-w-0 flex-col gap-6">
+              {/* The template */}
+              <div role="group" aria-labelledby="template-label">
+                {/* Label */}
+                <p id="template-label" className={LAB}>Template</p>
+                {/* The templates, as cards, two across; the chosen one shows what it is for */}
+                <div className="mt-2.5 grid grid-cols-2 gap-3">
+                  {shown.map((item) => (
+                    // One template, edged in the accent when chosen
+                    <button key={item.id} type="button" aria-pressed={template === item.id} onClick={() => setTemplate(item.id)} className={choice(template === item.id)}>
+                      {/* Its name (the suggested one is chosen at the start, so it needs no label) */}
+                      <span className="block font-display text-lg font-semibold leading-tight">{item.name}</span>
+                      {/* Its beats in one line */}
+                      <span className="mt-1 block text-sm font-bold text-ink-muted">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span>
+                      {/* The chosen one: what it is for */}
+                      {template === item.id && <span className="mt-1.5 block text-sm font-extrabold text-accent-tint-ink">{item.forWhat}</span>}
+                    </button>
+                  ))}
+                </div>
+                {/* The other family's templates, a tap away */}
+                {!showAll && <button type="button" onClick={() => setShowAll(true)} className={`${TEXT_LINK} text-footnote`}>Show all templates</button>}
+                {/* What a story you'll need needs, in a line (decision 152) */}
+                {chosen.needs && <p data-template-needs className="mt-2 rounded-2xl bg-accent-tint px-4 py-3 text-footnote font-bold text-accent-tint-ink">{chosen.needs}</p>}
               </div>
+
+              {/* The length, before the example so the Start band never covers it on a phone */}
+              <div role="group" aria-labelledby="length-label">
+                {/* Label */}
+                <p id="length-label" className={LAB}>Length</p>
+                {/* The two lengths */}
+                <div className="mt-2.5 grid max-w-md grid-cols-2 gap-3">
+                  {STORY_LENGTHS.map((item) => (
+                    // One length, edged when chosen
+                    <button key={item.id} type="button" aria-pressed={length === item.id} onClick={() => setLength(item.id)} className={choice(length === item.id)}>
+                      {/* Its name */}
+                      <span className="block font-display text-lg font-semibold">{item.name}</span>
+                      {/* How long */}
+                      <span className="block text-sm font-bold text-ink-muted">{item.detail}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* A short worked example of the chosen template, each beat named */}
+              <section aria-label={`Example: ${chosen.name}`} data-template-example className={`p-5 ${CARD}`}>
+                {/* Heading */}
+                <p className={LAB}>Example · {chosen.name}</p>
+                {/* The example, beat by beat */}
+                <p className="mt-2 leading-relaxed">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-sm font-extrabold text-accent-tint-ink">({chosen.beats[index]!.name.toLowerCase()})</b> </span>)}</p>
+              </section>
+
+              {/* Start: a minute to plan, then tell it */}
+              <ActionBand action="Start" aside="a minute to plan" href={tellSessionHref(storyId, take, planStep)} />
             </div>
-
-            {/* A short worked example of the chosen template, each beat named */}
-            <section aria-label={`Example: ${chosen.name}`} data-template-example className={`mt-4 max-w-xl p-4 ${CARD}`}>
-              {/* Heading */}
-              <p className="text-footnote font-semibold">Example · {chosen.name}</p>
-              {/* The example, beat by beat */}
-              <p className="mt-1 text-footnote">{chosen.example.map((piece, index) => <span key={index}>{piece} <b className="text-accent">({chosen.beats[index]!.name.toLowerCase()})</b> </span>)}</p>
-            </section>
-
-            {/* Push the band down */}
-            <div className="flex-1" />
-            {/* Start: a minute to plan, then tell it */}
-            <ActionBand action="Start" aside="a minute to plan" href={tellSessionHref(storyId, take, planStep)} />
-          </>
+          </div>
         )}
       </main>
     </PageFade>

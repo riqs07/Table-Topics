@@ -3,8 +3,8 @@
 
 // Load React's state, effect and memo tools
 import { useEffect, useMemo, useState } from "react";
-// Load the masthead
-import { Masthead } from "@/components/script/Masthead";
+// Load the practice bar and the one-column page
+import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
 // Load the action band
 import { ActionBand } from "@/components/script/ActionBand";
 // Load the shared button looks
@@ -124,9 +124,9 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
 
   // Draw the page
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main id="main" className={PRACTICE_NARROW}>
       {/* Title and the way out */}
-      <Masthead title="Warm-up" nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/voice", label: "Close, back to Your voice" }}>{plan ? `Step ${plan.step} of ${plan.total}` : ""}</Masthead>
+      <PracticeBar close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/voice", label: "Close, back to Your voice" }} progress={routine.length > 0 ? Math.max(0, Math.min(move, routine.length)) / routine.length : 0} label={`Warm-up${move >= 0 && move < routine.length ? ` · move ${move + 1} of ${routine.length}` : ""}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} />
 
       {/* Before starting: the routine */}
       {move < 0 && (

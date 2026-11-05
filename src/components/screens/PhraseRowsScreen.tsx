@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the script-page building blocks
-import { Masthead } from "@/components/script/Masthead";
+import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
 import { Player } from "@/components/script/Player";
 import { Skeleton } from "@/components/script/Skeleton";
 import { CurveRow, END_COLOURS, EndIcon, useRowWidth, useWordMeasure, type WordLook } from "@/components/script/PitchShapes";
@@ -183,9 +183,9 @@ export function PhraseRowsScreen({ sessionId, ...props }: PhraseRowsProps) {
 
   // Draw the page
   return (
-    <main id="main" data-area="results" className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-paper-raised px-6 pt-6 pb-16 md:px-14 md:pt-10">
+    <main id="main" data-area="results" className={PRACTICE_NARROW}>
       {/* Title and the way back */}
-      <Masthead title="Your take" nav={false} close={back} />
+      <PracticeBar close={back} label="Your take · phrase by phrase" />
       {/* The heading and what the page shows */}
       <h1 className="mt-4 font-display text-3xl font-semibold">Your voice</h1>
       {/* Could not be read */}

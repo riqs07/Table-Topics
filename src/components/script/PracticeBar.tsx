@@ -18,6 +18,9 @@ import type { FaceName } from "@/components/scenes/Scene";
 // The page while practising: the cream page edge to edge, no navigation
 export const PRACTICE_MAIN = "flex min-h-dvh flex-col bg-paper-raised px-4 pb-16 md:px-12";
 
+// A practice page with one column, the bar across its top (the screens without a two-column reference)
+export const PRACTICE_NARROW = "mx-auto flex min-h-dvh w-full max-w-3xl flex-col bg-paper-raised px-4 pb-16 md:px-8";
+
 // The content under the bar: centred, as wide as the references' computer layout
 export const PRACTICE_BODY = "mx-auto mt-4 w-full max-w-[1240px] md:mt-6";
 

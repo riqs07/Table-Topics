@@ -22,17 +22,19 @@ interface SceneCastProps {
   labels?: boolean;
   // Your face, when it should say something (looking at them by default)
   you?: FaceName;
+  // The other person on the left and you on the right (the listening screen), instead of you first
+  friendFirst?: boolean;
   // Extra classes for the panel
   className?: string;
 }
 
 // Draw the two people on their panel
-export function SceneCast({ mood, speaking, name, labels = false, you = "side", className = "" }: SceneCastProps) {
+export function SceneCast({ mood, speaking, name, labels = false, you = "side", friendFirst = false, className = "" }: SceneCastProps) {
   // How they look, said for screen readers
   const said = mood === "pleased" ? `${name} looks pleased` : mood === "deflated" ? `${name} looks a little deflated` : `${name} looks at ease`;
-  // A soft panel with a floor, you on the left and them on the right
+  // A soft panel with a floor, you on the left and them on the right (or the other way round)
   return (
-    <div role="img" aria-label={said} data-mood={mood} data-speaking={speaking || undefined} className={`relative flex items-end justify-around gap-4 overflow-hidden rounded-[22px] bg-paper px-6 pt-6 pb-4 ${className}`}>
+    <div role="img" aria-label={said} data-mood={mood} data-speaking={speaking || undefined} className={`relative flex items-end justify-around gap-4 overflow-hidden rounded-[22px] bg-paper px-6 pt-6 pb-4 ${friendFirst ? "flex-row-reverse" : ""} ${className}`}>
       {/* The floor */}
       <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/4 bg-rule/50" />
       {/* You, looking at them */}
@@ -44,7 +46,7 @@ export function SceneCast({ mood, speaking, name, labels = false, you = "side", 
       </span>
       {/* While they speak: three small arcs from them towards you */}
       {speaking && (
-        <svg aria-hidden="true" viewBox="0 0 60 50" className="vl-rings relative mb-8 h-12 w-14 flex-none">
+        <svg aria-hidden="true" viewBox="0 0 60 50" className={`vl-rings relative mb-8 h-12 w-14 flex-none ${friendFirst ? "-scale-x-100" : ""}`}>
           {/* The arcs, nearest first */}
           <path className="p-ring fill-none stroke-friend" strokeWidth="5" strokeLinecap="round" d="M42 10q-10 15 0 30" />
           {/* (the middle one) */}
