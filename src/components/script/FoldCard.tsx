@@ -33,9 +33,9 @@ export function FoldCard({ id, name, detail, count, children }: FoldCardProps) {
       {/* The row */}
       <summary className={`flex min-h-14 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden ${PRESS}`}>
         {/* Name and what it is */}
-        <span className="min-w-0 flex-1"><span className="block font-semibold">{name}</span>{detail && <span className="block text-footnote text-ink-muted">{detail}</span>}</span>
+        <span className="min-w-0 flex-1"><span className="block font-display text-lg leading-tight font-semibold">{name}</span>{detail && <span className="block text-footnote font-bold text-ink-muted">{detail}</span>}</span>
         {/* How many */}
-        {count !== undefined && <span className="text-footnote text-ink-muted">{count}</span>}
+        {count !== undefined && <span className="text-footnote font-extrabold text-ink-muted">{count}</span>}
         {/* The chevron, turning down when open */}
         <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted transition-transform group-open:rotate-90" />
       </summary>

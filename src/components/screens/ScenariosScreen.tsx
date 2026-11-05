@@ -1,5 +1,5 @@
 "use client";
-// Quick scenarios: three situations one at a time (a missed move comes back in a new situation), then how the first tries went (decision 54); also a step of today's practice (decision 72)
+// Quick scenarios: three situations one at a time (a missed move comes back in a new situation), then how the first tries went (decision 54); also a step of today's practice (decision 72) Second design pass: focus mode with the practice bar, the scenario's name large, the item drawn after Desktop Screens "SceneReply", the chunky full-width Next, and the round's result on the green panel of a result
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ActionBand } from "@/components/script/ActionBand";
 import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
 import { ScenarioItem } from "@/components/script/ScenarioItem";
+import { Skeleton } from "@/components/script/Skeleton";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the browser's recording services, and their type
@@ -29,6 +30,8 @@ import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
 import { planHref } from "@/core/planSteps";
 // Load the panel with a step's scene, carried over from Today (decision 141)
 import { ScenePanel } from "@/components/scenes/ScenePanel";
+// Load the cast, for your blob on the result
+import { Cast } from "@/components/scenes/Cast";
 
 // Draw the page
 export function ScenariosScreen({ services = browserRecordingServices, planStep = null, ...props }: ScreenProps & { services?: RecordingServices; planStep?: number | null }) {
@@ -103,24 +106,30 @@ export function ScenariosScreen({ services = browserRecordingServices, planStep 
       <PracticeBar close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/learn", label: "Close, back to Learn" }} progress={round ? (finished ? 1 : index / round.length) : 0} label={`Scenarios${round && !finished ? ` · ${index + 1} of ${round.length}` : ""}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} />
       {/* Opened from Today, before the first answer: the conversation scene, carried over from the step */}
       {planStep && index === 0 && !finished && <ScenePanel scene="conversation" line="Choose the best reply, then say it." />}
+      {/* Until the round is chosen, a quiet placeholder (decision 76) */}
+      {!round && <Skeleton blocks={["h-12", "h-24", "h-56"]} />}
       {/* One scenario */}
       {scenario && !finished && (
         <section key={scenario.id} aria-label={scenario.title} className="mt-6">
           {/* Its name, the page's heading (the round's result has its own once finished) */}
-          <h1 className="text-footnote font-normal text-ink-muted">{scenario.title}</h1>
+          <h1 className="font-display text-statement leading-tight font-semibold">{scenario.title}</h1>
           {/* The item */}
-          <div className="mt-2"><ScenarioItem scenario={scenario} services={services} onAnswer={answer} /></div>
-          {/* On to the next, once answered */}
-          {tiers.length > index && <p className="mt-6"><button type="button" onClick={() => setIndex(index + 1)} className={PRIMARY}>{index + 1 < (round?.length ?? 0) ? "Next scenario" : "Finish"}</button></p>}
+          <div className="mt-4"><ScenarioItem scenario={scenario} services={services} onAnswer={answer} /></div>
+          {/* On to the next, once answered: the chunky button, full width */}
+          {tiers.length > index && <p className="mt-6"><button type="button" onClick={() => setIndex(index + 1)} className={`${PRIMARY} w-full`}>{index + 1 < (round?.length ?? 0) ? "Next scenario" : "Finish"}</button></p>}
         </section>
       )}
-      {/* The round's result */}
+      {/* The round's result: the green panel of a result (Desktop Screens "Result"), your blob pleased or wondering */}
       {finished && (
-        <section aria-label="Result" className="mt-8 flex flex-1 flex-col">
-          {/* How many best */}
-          <h1 className="font-display text-statement">{tiers.filter((tier) => tier === "best").length} of {tiers.length} best.</h1>
-          {/* What happens next */}
-          <p className="mt-3 max-w-[52ch] text-lede">A move you missed comes back in a new situation next time. Choosing is the warm-up; saying it aloud and trying it for real are what change things.</p>
+        <section aria-label="Result" className="mt-6 flex flex-1 flex-col">
+          <div className="flex flex-col items-start gap-3 rounded-[28px] bg-accent-tint p-6 text-accent-tint-ink">
+            {/* Your blob */}
+            <Cast who="you" face={tiers.some((tier) => tier === "best") ? "happy" : "wonder"} className="size-20" />
+            {/* How many best */}
+            <h1 className="font-display text-statement leading-tight font-semibold">{tiers.filter((tier) => tier === "best").length} of {tiers.length} best.</h1>
+            {/* What happens next */}
+            <p className="max-w-[52ch] font-bold">A move you missed comes back in a new situation next time. Choosing is the warm-up; saying it aloud and trying it for real are what change things.</p>
+          </div>
           {/* A real try (not inside today's practice, which shows the mission on Today) */}
           {!planStep && <p className="mt-4"><Link href="/learn#missions" className={TEXT_LINK}>Today’s mission</Link></p>}
           {/* Push the band down */}

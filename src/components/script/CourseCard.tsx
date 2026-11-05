@@ -32,6 +32,8 @@ interface CourseCardProps {
   count?: string;
   // What the count is of on the wide card's bar, such as "lessons"
   unit?: string;
+  // The icon square's colours on a row, such as a Learn set's ground (the warm tint when left out)
+  tone?: string;
 }
 
 // The chunky bar with its count, such as "1 of 6"
@@ -53,7 +55,7 @@ function Bar({ done, total, wide }: { done: number; total: number; wide: boolean
 }
 
 // Draw the card
-export function CourseCard({ href, name, blurb, icon: IconShape, art, done, total, note, count, unit, layout = "row" }: CourseCardProps & { layout?: "row" | "stacked" | "hero" }) {
+export function CourseCard({ href, name, blurb, icon: IconShape, art, done, total, note, count, unit, tone = "bg-warm-tint text-warm-ink", layout = "row" }: CourseCardProps & { layout?: "row" | "stacked" | "hero" }) {
   // Whether it has been started (a single card has no progress to show)
   const started = done > 0 && total > 1;
   // The name, with the progress read out after it (the visible count and bar are decorative), so the link's name is its visible text (WCAG 2.5.3)
@@ -101,7 +103,7 @@ export function CourseCard({ href, name, blurb, icon: IconShape, art, done, tota
     <Link href={href} className={`flex h-full min-h-20 items-center gap-4 p-4 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
       {/* The picture */}
       {art ? <span aria-hidden="true" className="flex flex-none">{art}</span> : (
-        <span aria-hidden="true" className="flex size-14 flex-none items-center justify-center rounded-2xl bg-warm-tint text-warm-ink">
+        <span aria-hidden="true" className={`flex size-14 flex-none items-center justify-center rounded-[16px] ${tone}`}>
           {/* The icon */}
           <IconShape weight="bold" className="size-7" />
         </span>

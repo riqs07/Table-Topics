@@ -1,5 +1,5 @@
 "use client";
-// One screen at a time, swiped sideways on a phone (with Back and Next buttons, the arrow keys, and a "2 of 5" marker)
+// One screen at a time, swiped sideways on a phone (with Back and Next buttons, the arrow keys, and a "2 of 5" marker for screen readers); the page shows how far through in its practice bar, and Next is the chunky full-width button (storyboard 22)
 
 // Load React's tools
 import { useEffect, useRef, type ReactNode } from "react";
@@ -91,31 +91,26 @@ export function SwipeDeck({ screens, index, onIndex, label, finish = null }: Swi
   // Draw it
   return (
     <section aria-roledescription="carousel" aria-label={label} className="flex flex-1 flex-col">
-      {/* Where you are: one segment per screen across the top, those seen filled */}
-      <span aria-hidden="true" className="mt-4 flex gap-1.5">
-        {/* Each screen's segment */}
-        {screens.map((_, position) => <span key={position} className={`h-1.5 flex-1 rounded-full transition-[background-color,transform] duration-300 ${position <= index ? "bg-accent" : "bg-rule"} ${position === index ? "scale-y-150" : ""}`} />)}
-      </span>
       {/* The screens, side by side, one in view at a time */}
       <div ref={row} onScroll={onScroll} role="region" aria-label="Screens" tabIndex={0} className="-mx-6 flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:mx-0">
         {/* Each screen */}
         {screens.map((screen, position) => (
           // One screen, the full width of the row
-          <div key={position} role="group" aria-roledescription="slide" aria-label={`${position + 1} of ${screens.length}`} aria-hidden={position !== index} inert={position !== index} className="flex w-full flex-none snap-start flex-col justify-center-safe px-6 pb-[10vh] md:px-0">
+          <div key={position} role="group" aria-roledescription="slide" aria-label={`${position + 1} of ${screens.length}`} aria-hidden={position !== index} inert={position !== index} className="flex w-full flex-none snap-start flex-col px-6 pt-5 pb-6 md:px-0 md:pt-7">
             {/* Its content */}
             {screen}
           </div>
         ))}
       </div>
       {/* Back and Next at the foot, in reach of a thumb */}
-      <div className="mt-4 mb-6 flex items-center gap-3 md:justify-end">
+      <div className="mt-2 mb-6 flex items-center gap-3">
         {/* Back (hidden on the first screen) */}
         <button type="button" onClick={() => go(index - 1)} disabled={index === 0} className={`${QUIET} disabled:hidden`}>Back</button>
         {/* Next, filling the rest of the row; on the last screen, where to go on to (or nothing) */}
         {index === last && finish ? (
-          <Link href={finish.href} className={`${PRIMARY} flex-1 md:min-w-40 md:flex-none`}>{finish.label}</Link>
+          <Link href={finish.href} className={`${PRIMARY} flex-1`}>{finish.label}</Link>
         ) : (
-          <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${PRIMARY} flex-1 disabled:invisible md:min-w-40 md:flex-none`}>Next</button>
+          <button type="button" onClick={() => go(index + 1)} disabled={index === last} className={`${PRIMARY} flex-1 disabled:invisible`}>Next</button>
         )}
       </div>
     </section>
