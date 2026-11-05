@@ -37,7 +37,7 @@ export function wordWidth(text: string, bold = false): number {
 }
 
 // The widest a row of curve and words is drawn, in pixels, so a few words do not spread across a wide screen
-export const MOST_ROW_WIDTH = 560;
+export const MOST_ROW_WIDTH = 860;
 
 // How wide words are in the small text, measured on a hidden word in the page's own type (so the real font and size are used), with a generous guess where nothing can be measured; measured afresh once the fonts have loaded
 export function useWordMeasure(): (text: string, bold: boolean) => number {

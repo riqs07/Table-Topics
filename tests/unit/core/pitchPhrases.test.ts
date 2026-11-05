@@ -174,7 +174,7 @@ describe("layout", () => {
     // One word over three readings, the middle one silent
     const points = rowPoints([0, null, 20], 100, [{ index: 0, left: 0, width: 100 }], [{ start: 0, end: 0.2 }]);
     // A point, a gap, a point held inside the picture
-    expect(points).toEqual([{ x: 0, y: 34 }, null, { x: 100, y: 4 }]);
+    expect(points).toEqual([{ x: 0, y: 64 }, null, { x: 100, y: 4 }]);
     // Up is higher pitch
     expect(yForStep(2)).toBeLessThan(yForStep(0));
   });
@@ -214,7 +214,7 @@ describe("stretchPoints", () => {
     // Five readings over two seconds, against a row of the first second
     const points = stretchPoints([0, 1, null, 3, 4], 0, 2, [{ index: 0, left: 0, width: 100 }], [{ start: 0, end: 1 }]);
     // The first three: at 0, 0.5 and 1 second
-    expect(points).toEqual([{ x: 0, y: 34 }, { x: 50, y: 29.5 }, null]);
+    expect(points).toEqual([{ x: 0, y: 64 }, { x: 50, y: 56 }, null]);
     // Too few readings
     expect(stretchPoints([1], 0, 1, [{ index: 0, left: 0, width: 10 }], [{ start: 0, end: 1 }])).toEqual([]);
   });
@@ -255,10 +255,10 @@ describe("curves flow instead of stepping", () => {
     const before = shape(rowPoints(pitch.steps, 100, slots, phrase.words));
     // Drawn from the smoothed readings
     const after = shape(rowPoints(pitch.curve, 100, slots, phrase.words));
-    // Before: a jump of more than a dozen pixels and flat runs of several readings (the plateaus)
-    expect([before.jump > 12, before.flat >= 3]).toEqual([true, true]);
-    // After: the cliff becomes a slope, no jump over half the old one
-    expect([after.jump <= 7, after.jump * 2 < before.jump]).toEqual([true, true]);
+    // Before: a jump of more than about two and a half steps (8 px a step) and flat runs of several readings (the plateaus)
+    expect([before.jump > 21, before.flat >= 3]).toEqual([true, true]);
+    // After: the cliff becomes a slope (no jump over about a step and a half), no jump over half the old one
+    expect([after.jump <= 12.5, after.jump * 2 < before.jump]).toEqual([true, true]);
   });
 
   // Peaks still come from the cleaned readings

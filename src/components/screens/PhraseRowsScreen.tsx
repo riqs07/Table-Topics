@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/script/Skeleton";
 import { CurveRow, END_COLOURS, EndIcon, useRowWidth, useWordMeasure, type WordLook } from "@/components/script/PitchShapes";
 // Load the shared looks
 import { CARD, LAB } from "@/components/script/textStyles";
-import { QUIET, SECONDARY } from "@/components/script/Buttons";
+import { PRIMARY, QUIET, SECONDARY } from "@/components/script/Buttons";
 // Load the shared screen starting points, the tab title, the audio, the service words and the script
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 import { usePageTitle } from "@/components/screens/usePageTitle";
@@ -191,7 +191,7 @@ export function PhraseRowsScreen({ sessionId, ...props }: PhraseRowsProps) {
       {/* Not on this device: the card with the way back */}
       {session === null ? (
         <div className={PRACTICE_BODY}>
-          <NotFoundCard title="This take is not on this device." line="Takes stay on the device that recorded them, and cleared ones are gone. Your other takes are in History." href="/history" action="Back to History" />
+          <NotFoundCard title="This take is not on this device." href="/history" action="Back to History" />
         </div>
       ) : (
         <div className={PRACTICE_BODY}>
@@ -207,11 +207,13 @@ export function PhraseRowsScreen({ sessionId, ...props }: PhraseRowsProps) {
               {loadError === null && !pitch && <Skeleton blocks={["h-16", "h-64"]} />}
               {/* Nothing to draw: readings dropped (decision 98), never recorded, too little voice, or no words */}
               {pitch && pitch.state !== "ready" && (
-                <div className={`flex items-center gap-4 p-5 ${CARD}`}>
+                <div className={`flex flex-wrap items-center gap-4 p-5 ${CARD}`}>
                   {/* You, puzzled */}
                   <Cast who="you" face="wonder" className="size-16 flex-none" />
                   {/* Why */}
-                  <p className="font-bold" data-trimmed={pitch.state === "trimmed" || undefined}>{pitch.state === "trimmed" ? "Detailed charts aren’t kept for older takes. The words, numbers and feedback are all here." : pitch.state === "none" ? "This take has no pitch readings to draw." : pitch.state === "quiet" ? "Too little voice was heard to draw your pitch." : "No words were caught, so there are no phrases to show."}</p>
+                  <p className="min-w-0 flex-[1_1_16rem] font-bold" data-trimmed={pitch.state === "trimmed" || undefined}>{pitch.state === "trimmed" ? "Detailed charts aren’t kept for older takes. The words, numbers and feedback are all here." : pitch.state === "none" ? "This take has no pitch readings to draw." : pitch.state === "quiet" ? "Too little voice was heard to draw your pitch." : "No words were caught, so there are no phrases to show."}</p>
+                  {/* The one way on: back to the take, where the words and numbers are */}
+                  {session && <Link href={back.href} className={`${PRIMARY} max-sm:w-full`}>Back to your take</Link>}
                 </div>
               )}
               {/* The phrases */}
@@ -260,7 +262,7 @@ export function PhraseRowsScreen({ sessionId, ...props }: PhraseRowsProps) {
                   {/* The key */}
                   <div className="mt-3 flex flex-col gap-1.5 text-footnote text-ink-muted">
                     {/* The usual pitch */}
-                    <span className="flex items-center gap-1.5"><svg width="22" height="6" aria-hidden="true" className="text-ink-muted"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" /></svg>Your usual pitch</span>
+                    <span className="flex items-center gap-1.5"><svg width="22" height="6" aria-hidden="true"><line x1="1" y1="3" x2="21" y2="3" className="stroke-rule" strokeWidth="2" strokeLinecap="round" /></svg>Your usual pitch (the light line)</span>
                     {/* Fell */}
                     <span className="flex items-center gap-1.5"><EndIcon end="fell" />Fell: sounds finished</span>
                     {/* Rose */}
@@ -268,10 +270,10 @@ export function PhraseRowsScreen({ sessionId, ...props }: PhraseRowsProps) {
                   </div>
                   {/* Where the word times came from */}
                   <p className="mt-3 text-footnote text-ink-muted">{ready.precision === "exact" ? "Word timings from deeper analysis." : "Rough word timings: words are placed from the phone’s timings. Deeper analysis gives exact ones."}</p>
+                  {/* Back to the take, in the card (the player is the main thing on this page) */}
+                  {session && <Link href={back.href} className={`${SECONDARY} mt-4 w-full`}>Back to your take</Link>}
                 </div>
               )}
-              {/* Back to the take */}
-              {session && <p><Link href={back.href} className={SECONDARY}>Back to your take</Link></p>}
             </aside>
           </div>
         </div>

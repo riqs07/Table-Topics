@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 // Load the practice bar, the page around it, the columns and the step label
 import { PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
 // Load the shared button looks
-import { PRIMARY, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { PRIMARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the speech bubble look
 import { BUBBLE } from "@/components/script/textStyles";
 // Load the verdict panel, the next step and the numbered rows
@@ -196,7 +196,7 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
               </span>
             </div>
             {/* Skip ahead */}
-            <p className="mt-6 self-center md:self-start"><button type="button" onClick={next} aria-label={`Next move (${left} seconds left)`} className={SECONDARY}>Next move</button></p>
+            <p className="mt-6 self-center md:self-start"><button type="button" onClick={next} aria-label={`Next move (${left} seconds left)`} className={PRIMARY}>Next move</button></p>
           </section>
         )}
 
@@ -208,7 +208,7 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
             {/* The word */}
             <h1 id="done-heading" className="mt-2 font-display text-statement leading-tight font-semibold">Warmed up.</h1>
             {/* The moves, ticked */}
-            <div className="mt-5"><NumberedRows label="Moves done" rows={routine.map((item) => ({ key: item.id, over: SET_NAMES[item.set], text: item.name }))} /></div>
+            <div className="mt-5"><NumberedRows label="Moves done" done rows={routine.map((item) => ({ key: item.id, over: SET_NAMES[item.set], text: item.name }))} /></div>
           </section>
         )}
 
@@ -244,11 +244,11 @@ export function WarmupScreen({ planStep = null, then = null, moveSeconds = MOVE_
           )}
           {/* Once done: the reading it warmed up for, today's next step, or back */}
           {done && (
-            <VerdictPanel tone="good" face="happy" headingId="warm-done-panel" heading="Ready to speak.">
+            <VerdictPanel tone="good" headingId="warm-done-panel" heading="Ready to speak.">
               {/* What it was for */}
               <p className="font-bold text-ink">{sageLine}</p>
               {/* The next step */}
-              {after ? <NextLink action="Start reading" aside="your warm-up step" href={after} /> : plan ? (plan.next ? <NextLink action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <NextLink action="Finish today’s practice" aside="back to Today" href="/" />) : <NextLink action="Back to Your voice" aside="more voice drills" href="/voice" />}
+              {after ? <NextLink action="Start reading" aside="your warm-up step" href={after} /> : plan ? (plan.next ? <NextLink action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <NextLink action="Finish today’s practice" aside="back to Today" href="/" />) : <NextLink action="Back to Your voice" aside="More voice drills" href="/voice" />}
             </VerdictPanel>
           )}
         </aside>

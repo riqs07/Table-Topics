@@ -1,26 +1,23 @@
 "use client";
-// Your voice: the warm-up, then every voice drill by mode, each mode a folded card (decision 80). Second design pass, extrapolated from Practice and a job's list of ways: "‹ Practice", the job's tile on its leaf tint, the warm-up as a row with its tile, and each mode's fold with its own tile
+// Your voice: the warm-up, then every voice drill by mode, each mode a folded card (decision 80). Second design pass, extrapolated from Practice and a job's list of ways: "‹ Practice", the job's tile on its leaf tint, the warm-up as the band to start on, and each mode's fold with its own tile, in columns across the page (fix round: hub pages use the full width)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
 // Load the masthead
 import { Masthead } from "@/components/script/Masthead";
-// Load Next.js's link component
-import Link from "next/link";
-// Load the back arrow and the warm-up's icon
-import { CaretLeftIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
-// Load the whole-row link and the text link
-import { RowLink, TEXT_LINK } from "@/components/script/Buttons";
-// Load the row for one way, with its tile
-import { WayRow } from "@/components/script/WayCard";
-// Load the mode tile and its tints
-import { GROUND_TINT, ModeTile } from "@/components/scenes/ModeTile";
+// Load the whole-row link
+import { RowLink } from "@/components/script/Buttons";
+// Load the hub header (the way back, the tile on its tint and the name) and the band to start on
+import { HubHeader } from "@/components/script/HubHeader";
+import { NextUpBand } from "@/components/script/NextUpBand";
+// Load the mode tile
+import { ModeTile } from "@/components/scenes/ModeTile";
 // Load the tile look type
 import type { ModeTileLook } from "@/components/scenes/modeTileFor";
 // Load the folded group card
 import { FoldCard, useOpenFoldFromAddress } from "@/components/script/FoldCard";
 // Load the card looks and the section heading
-import { CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
+import { SECTION_HEADING } from "@/components/script/textStyles";
 // Load the page shell
 import { PAGE } from "@/components/script/layout";
 // Load the shared screen starting points
@@ -76,45 +73,29 @@ export function VoiceScreen(props: ScreenProps) {
   // How many drills there are in all, for the header
   const total = VOICE_DRILLS.length + TRICKY_WORDS.length + PAUSE_DRILLS.length + SHADOW_PASSAGES.length;
   // A mode's tile at the start of its fold
-  const tile = (look: ModeTileLook) => <ModeTile ground={look.ground} prop={look.prop} face={look.face} still className="size-14" />;
+  const tile = (look: ModeTileLook) => <ModeTile ground={look.ground} prop={look.prop} face={look.face} still className="size-16" />;
 
   // Draw it
   return (
     <main id="main" className={PAGE}>
       {/* Heading and navigation */}
-      <Masthead title="Practice" section="practice" />
-      {/* The way back */}
-      <p className="mt-1 md:-mt-12"><Link href="/practice" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" weight="bold" className="size-4" />Practice</Link></p>
-      {/* The job's tile on its tint, its name and how many drills (as a job's list of ways) */}
-      <div className={`mt-3 flex items-center gap-4 rounded-[22px] border-2 border-rule p-4 md:gap-5 md:p-5 ${GROUND_TINT.leaf}`}>
-        {/* The tile */}
-        <ModeTile ground="leaf" prop="waves" face="sing" tilt={-4} motion="loop" className="size-20 md:size-24" />
-        {/* The words */}
-        <div className="min-w-0">
-          {/* The page's name */}
-          <h1 className="font-display text-statement leading-tight font-semibold">Your voice</h1>
-          {/* What it is */}
-          <p className="font-bold text-ink">Warm up, then train how you sound. {total} drills.</p>
-        </div>
+      <Masthead title="VoiceLab" section="practice" />
+      {/* The way back, then the job's tile on its leaf tint, its name and how many drills (as a job's list of ways), across the page */}
+      <div data-wide>
+        <HubHeader back={{ href: "/practice", label: "Practice" }} look={{ ground: "leaf", prop: "waves", face: "sing" }} title="Your voice" line={`Warm up, then train how you sound. ${total} drills.`} />
       </div>
 
-      {/* The warm-up */}
-      <section aria-labelledby="warmup" className="mt-7">
-        {/* Heading */}
-        <h2 id="warmup" className={SECTION_HEADING}>Warm-up</h2>
-        {/* One row */}
-        <ul className={`mt-3 ${CARD_LIST}`}>
-          {/* Today's routine */}
-          <li><WayRow way={{ name: "A one-minute routine", detail: "Breath, face and mouth. Nothing is recorded.", href: "/voice/warmup", icon: WindIcon, scene: "warm-up" }} /></li>
-        </ul>
-      </section>
+      {/* The warm-up, first, as the band to start on (the tile carried over from Today, decision 141) */}
+      <div data-wide className="mt-5 md:mt-7">
+        <NextUpBand scene="warm-up" ariaLabel="Warm-up" label="Warm up first · 1 min" name="A one-minute routine" line="Breath, face and mouth. Nothing is recorded." href="/voice/warmup" go="Warm up" />
+      </div>
 
-      {/* Every drill, by mode */}
-      <section aria-labelledby="drills" className="mt-8">
+      {/* Every drill, by mode: the folds in columns across the page */}
+      <section aria-labelledby="drills" data-wide className="mt-8">
         {/* Heading */}
         <h2 id="drills" className={SECTION_HEADING}>Drills</h2>
         {/* The modes */}
-        <div className="mt-3 flex flex-col gap-3">
+        <div className="mt-3 grid items-start gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
           {/* Clear sounds, volume, pitch and stress, tone */}
           {(["clear", "volume", "pitch", "tone"] as const).map((kind) => {
             // The mode's drills
