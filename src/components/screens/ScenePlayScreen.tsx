@@ -367,7 +367,7 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
                 {options.map((option, position) => (
                   <div key={option.text} className="flex flex-col">
                     {/* One reply: a button before choosing, then marked with its tier and pattern */}
-                    <button type="button" disabled={picked !== null} onClick={() => choose(options, position)} data-tier={chosen ? option.tier : undefined} className={`relative z-10 min-h-14 rounded-[18px] border-2 px-5 py-3.5 text-left text-lg font-bold ${PRESS} ${position === picked ? "-rotate-[0.6deg] border-accent bg-card text-ink shadow-picked" : chosen ? "border-transparent bg-paper text-ink-muted opacity-75" : "border-transparent bg-paper text-ink-muted hover:border-accent hover:bg-card hover:text-ink"}`}>
+                    <button type="button" disabled={picked !== null} onClick={() => choose(options, position)} data-tier={chosen ? option.tier : undefined} className={`relative z-10 min-h-14 rounded-[18px] border-2 px-5 py-3.5 text-left text-lg font-bold ${PRESS} ${position === picked ? "-rotate-[0.6deg] border-accent bg-card text-ink shadow-picked" : chosen ? "border-transparent bg-paper text-ink-muted" : "border-transparent bg-paper text-ink-muted hover:border-accent hover:bg-card hover:text-ink"}`}>
                       {/* The words */}
                       <span className="block">{option.text}</span>
                       {/* Once chosen: its tier and the pattern behind it (the chosen one's is in the reveal) */}
@@ -400,7 +400,7 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
           )}
           {/* Your turn, out loud: ahead while choosing, then the recorder */}
           {(options || phase === "speak") && (
-            <section aria-label="Your turn" className={`flex flex-col gap-1 p-5 ${CARD} ${phase === "speak" ? "" : "opacity-80"}`}>
+            <section aria-label="Your turn" className={`flex flex-col gap-1 p-5 ${phase === "speak" ? CARD : "rounded-[22px] border-2 border-dashed border-rule"}`}>
               {/* When */}
               <p className={LAB}>{phase === "speak" ? "Your turn, out loud" : phase === "first" ? "After two choices" : "After one more choice"}</p>
               {/* What */}

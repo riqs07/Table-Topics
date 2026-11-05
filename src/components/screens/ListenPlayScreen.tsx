@@ -261,7 +261,7 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
 
         {/* You: your answer out loud, or how it went */}
         {phase !== "done" ? (
-          <section aria-label={phase === "answer" ? "Your answer" : "Answering"} className={`flex min-w-0 flex-col gap-4 p-5 md:p-7 ${CARD} ${phase === "intro" ? "opacity-70" : ""}`}>
+          <section aria-label={phase === "answer" ? "Your answer" : "Answering"} className={`flex min-w-0 flex-col gap-4 p-5 md:p-7 ${CARD}`}>
             {/* Small heading */}
             <p className={LAB}>Your answer, out loud</p>
             {/* The ask */}

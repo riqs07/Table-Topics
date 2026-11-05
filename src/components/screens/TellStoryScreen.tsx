@@ -127,11 +127,11 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
             {/* The story: its prompt (or facts), and the scene carried over */}
             <div className="flex min-w-0 flex-col gap-5">
               {/* The prompt, a guided story's title, or the moment in the user's words, on the story's coral card */}
-              <div className="rounded-[22px] bg-art-coral px-6 py-5 text-fill-ink shadow-ledge">
-                {/* Where it came from */}
-                <p className="text-xs font-extrabold uppercase tracking-[.07em]">{momentId ? "From your moment" : guided ? "Guided story" : "Today’s story"}</p>
-                {/* The words */}
-                <h1 className={`mt-1.5 font-display font-semibold ${momentId ? "text-cue" : "text-cue md:text-statement"}`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
+              <div>
+                {/* Where it came from (above the card, where small words keep their contrast) */}
+                <p className={LAB}>{momentId ? "From your moment" : guided ? "Guided story" : "Today’s story"}</p>
+                {/* The words, large on the coral card */}
+                <h1 className={`mt-2 rounded-[22px] bg-art-coral px-6 py-5 font-display font-semibold text-fill-ink shadow-ledge ${momentId ? "text-cue" : "text-cue md:text-statement"}`}>{prompt ? prompt.text : guided ? guided.title : moment.status === "loading" ? "…" : moment.text}</h1>
               </div>
               {/* A guided story's facts and nudges, with the template named (decision 93) */}
               {guided && <GuidedStoryCard story={guided} take={take} />}
