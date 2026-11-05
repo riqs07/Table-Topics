@@ -25,12 +25,32 @@ import type { MissionRecord } from "@/data/records";
 import { PRESS, PRIMARY } from "@/components/script/Buttons";
 // Load the shared card and label looks
 import { CARD, LAB } from "@/components/script/textStyles";
-// Load the two of you in a scene, and Sage's line
-import { SceneCast } from "@/components/scenes/SceneCast";
+// Load the cast, and Sage's line
+import { Cast } from "@/components/scenes/Cast";
 import { NotFound, SageSays } from "@/components/script/SageSays";
 
 // The look of an answer: white with a ledge, edged in the accent with a green ledge when chosen (as the story set-up's choices)
-const choice = (chosen: boolean) => `inline-flex min-h-12 items-center rounded-[14px] border-2 bg-card px-4 font-extrabold ${PRESS} ${chosen ? "border-accent shadow-picked" : "border-rule shadow-card hover:border-ink-muted"}`;
+const choice = (chosen: boolean) => `flex min-h-14 w-full items-center justify-center rounded-2xl border-2 bg-card px-4 text-center font-display text-lg font-semibold ${PRESS} ${chosen ? "border-accent shadow-picked" : "border-rule shadow-card hover:border-ink-muted"}`;
+
+// The mission's scene (storyboard 23): you and the friend on the pink ground, the friend's bubble holding one prop, a question mark; both happy once it went well. Decorative, so the words carry the meaning
+function MissionScene({ pleased }: { pleased: boolean }) {
+  // The pink panel, a soft light circle behind, the two of you standing on its lower edge
+  return (
+    <div aria-hidden="true" data-mission-scene className="relative mt-6 flex h-40 items-end justify-center gap-6 overflow-hidden rounded-[22px] bg-art-bloom pb-3 shadow-band md:h-44">
+      {/* A soft light circle in the upper right, as the tiles have */}
+      <span className="absolute -top-10 -right-8 size-40 rounded-full bg-art-cream/20" />
+      {/* You */}
+      <Cast who="you" face={pleased ? "happy" : "ready"} className="relative size-24 md:size-28" />
+      {/* The friend, with a question in a bubble */}
+      <span className="relative flex flex-col items-center">
+        {/* The bubble with the question mark */}
+        <span className="mb-1 rounded-2xl bg-art-cream px-3.5 py-0.5 font-display text-2xl font-semibold text-art-bloom shadow-ledge">?</span>
+        {/* The friend */}
+        <Cast who="friend" face={pleased ? "happy" : "ready"} className="size-24 md:size-28" />
+      </span>
+    </div>
+  );
+}
 
 // Draw the debrief
 export function MissionScreen({ recordId, from = "learn", services = browserRecordingServices, ...props }: ScreenProps & { recordId: string; from?: "today" | "learn"; services?: RecordingServices }) {
@@ -95,7 +115,7 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
       {record && mission && (
         <div className="flex flex-1 flex-col">
           {/* The two of you, as in the storyboard's mission: pleased once it went well */}
-          <SceneCast mood={record.status === "done" && (record.outcome ?? 0) >= 4 ? "pleased" : "easy"} speaking={false} name="The other person" you={record.status === "done" && (record.outcome ?? 0) >= 4 ? "happy" : "side"} className="mt-6 bg-art-bloom/25" />
+          <MissionScene pleased={record.status === "done" && (record.outcome ?? 0) >= 4} />
           {/* The move, as a small label */}
           <p className={`${LAB} mt-5 text-center`}>{mission.move} · the mission</p>
           {/* The task, large */}
@@ -121,7 +141,7 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
                 {/* Did you try it */}
                 <p className="font-display text-xl font-semibold">Did you try it?</p>
                 {/* The answers */}
-                <div role="group" aria-label="Did you try it?" className="mt-3 flex flex-wrap gap-2.5">
+                <div role="group" aria-label="Did you try it?" className="mt-3 grid gap-2.5 sm:grid-cols-3">
                   {/* Yes */}
                   <button type="button" aria-pressed={tried === true} onClick={() => setTried(true)} className={choice(tried === true)}>Yes</button>
                   {/* No chance */}
@@ -143,7 +163,7 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
                     {/* Or said */}
                     <div className="mt-1"><QuickRecorder services={services} action="Say it instead" maxSec={45} onDone={(said) => setNote((previous) => [previous.trim(), said.trim()].filter(Boolean).join(" "))} /></div>
                     {/* Save */}
-                    <p className="mt-6"><button type="button" disabled={outcome === null || saving} onClick={() => void save({ tried: true, outcome, tooMuch: false })} className={`${PRIMARY} w-full`}>Save and compare</button></p>
+                    <p className="mt-6"><button type="button" disabled={outcome === null || saving} onClick={() => void save({ tried: true, outcome, tooMuch: false })} className={`${PRIMARY} w-full`}>Save how it went</button></p>
                   </>
                 )}
               </div>
@@ -151,10 +171,8 @@ export function MissionScreen({ recordId, from = "learn", services = browserReco
               <p className="mt-4 text-center text-footnote font-semibold text-ink-muted">Your notes stay on this phone.</p>
             </>
           )}
-          {/* Push the band down */}
-          <div className="flex-1" />
           {/* Back to where it was opened from, once debriefed */}
-          {record.status === "done" && <div className="mt-8"><ActionBand action={`Back to ${origin.name}`} aside="done" href={origin.href} /></div>}
+          {record.status === "done" && <div className="mt-2"><ActionBand action={`Back to ${origin.name}`} aside="done" href={origin.href} /></div>}
         </div>
       )}
     </main>

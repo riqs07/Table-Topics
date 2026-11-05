@@ -53,7 +53,7 @@ export function HubHeader({ back, look, scene, title, line, chip, children }: Hu
       {/* The way back */}
       <BackLink {...back} />
       {/* The tile on its tint, the words beside it, in a card with a ledge */}
-      <div data-hub-header data-scene-panel={scene} className={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[22px] border-2 border-rule p-4 shadow-card md:gap-x-5 md:p-5 ${GROUND_TINT[look.ground]}`}>
+      <div data-hub-header data-wide data-scene-panel={scene} className={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[22px] border-2 border-rule p-4 shadow-card md:gap-x-5 md:p-5 ${GROUND_TINT[look.ground]}`}>
         {/* The tile, carried over from the card when it has a scene */}
         {scene ? <SharedScene scene={scene}><span className="flex flex-none">{tile}</span></SharedScene> : <span className="flex flex-none">{tile}</span>}
         {/* The words */}

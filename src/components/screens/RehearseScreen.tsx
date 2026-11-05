@@ -6,7 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the shared button looks
-import { PRESS, PRIMARY, QUIET, SecondaryLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, PrimaryLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the page heading with the main navigation, the list page's header and Sage's line
 import { Masthead } from "@/components/script/Masthead";
 import { HubHeader } from "@/components/script/HubHeader";
@@ -127,7 +127,9 @@ export function RehearseScreen(props: ScreenProps) {
       <HubHeader back={{ href: "/practice/ways?job=on-the-spot", label: "Speak on the spot" }} look={SCENE_TILES["your-talk"]} title="Your talks" line="Paste a talk you are preparing, or your notes for it. Rehearse it with the timer, then compare runs from different days. Your talks stay on this device." />
 
       {/* Saved talks */}
-      <section className="mt-8">
+      {/* Two columns on a computer: the saved talks, then the form beside them */}
+      <div data-wide className="mt-8 grid items-start gap-8 lg:grid-cols-2">
+      <section>
         {/* Small heading */}
         <h2 className={SECTION_HEADING}>Saved talks</h2>
         {/* Nothing yet: Sage points at the first step */}
@@ -148,7 +150,7 @@ export function RehearseScreen(props: ScreenProps) {
                 <span className="block text-footnote font-bold text-ink-muted">about {Math.round(readingSeconds(talk.body) / 60)} min{talk.goalMinutes ? ` · goal ${talk.goalMinutes} min` : ""}{today && talk.eventDate ? ` · ${daysAway(daysUntil(talk.eventDate, today))}` : ""}</span>
               </span>
               {/* Rehearse it */}
-              <SecondaryLink href={`/session?mode=rehearse&prompt=${talk.id}`} label={`“${talk.title}”`}>Rehearse</SecondaryLink>
+              <PrimaryLink href={`/session?mode=rehearse&prompt=${talk.id}`} label={`“${talk.title}”`}>Rehearse</PrimaryLink>
               {/* Delete, with a confirmation step */}
               {confirming === talk.id ? (
                 <span className="flex items-center gap-3">
@@ -158,7 +160,7 @@ export function RehearseScreen(props: ScreenProps) {
                   <button type="button" onClick={() => setConfirming(null)} className={TEXT_LINK}>Keep it</button>
                 </span>
               ) : (
-                <button type="button" onClick={() => setConfirming(talk.id)} aria-label={`Delete “${talk.title}”`} className={QUIET}>Delete</button>
+                <button type="button" onClick={() => setConfirming(talk.id)} aria-label={`Delete “${talk.title}”`} className={`${TEXT_LINK} px-2 text-ink-muted`}>Delete</button>
               )}
             </li>
           ))}
@@ -166,7 +168,7 @@ export function RehearseScreen(props: ScreenProps) {
       </section>
 
       {/* Add a talk, in a card */}
-      <form onSubmit={(event) => void save(event)} className={`mt-9 flex flex-col gap-4 p-5 md:p-6 ${CARD}`}>
+      <form onSubmit={(event) => void save(event)} className={`flex flex-col gap-4 p-5 md:p-6 ${CARD}`}>
         {/* Small heading */}
         <h2 className={SECTION_HEADING}>Add a talk</h2>
         {/* Title */}
@@ -200,11 +202,12 @@ export function RehearseScreen(props: ScreenProps) {
             <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className={FIELD} />
           </label>
         </div>
-        {/* Save */}
-        <button type="submit" className={`${PRIMARY} mt-1 w-full md:w-auto md:self-start`}>Save talk</button>
+        {/* Save: the chunky one for a new user, a second choice once a saved talk has its own Rehearse */}
+        <button type="submit" className={`${talks && talks.length > 0 ? SECONDARY : PRIMARY} mt-1 w-full md:w-auto md:self-start`}>Save talk</button>
         {/* Message */}
         {message && <p role="status" className="text-ink-muted">{message}</p>}
       </form>
+      </div>
     </main>
   );
 }

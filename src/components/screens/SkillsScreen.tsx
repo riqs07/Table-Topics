@@ -73,7 +73,7 @@ function FullSpeechList({ heading, speeches, counts }: { heading: string; speech
   return (
     <>
       {/* One card per speech, two across on a wider screen (the group's row names it) */}
-      <ul aria-label={heading} className="mt-2 grid gap-3 sm:grid-cols-2">
+      <ul aria-label={heading} className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {/* Each speech */}
         {speeches.map((speech) => {
           // Parts read at least once
@@ -104,7 +104,7 @@ function SpeechCards({ items }: { items: ReadonlyArray<Passage> }) {
   return (
     <>
       {/* One card per speech, two across on a wider screen (the group's row names it) */}
-      <ul aria-label="Short readings" className="mt-2 grid gap-3 sm:grid-cols-2">
+      <ul aria-label="Short readings" className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {/* Each speech */}
         {items.map((item) => (
           // One card
@@ -178,7 +178,7 @@ export function SkillsScreen(props: ScreenProps) {
         <HubHeader back={{ href: "/practice/ways?job=on-the-spot", label: "Speak on the spot" }} look={SCENE_TILES["read-aloud"]} scene="read-aloud" title="Read aloud" line="Famous speeches and plain passages, at your own pace. A part at a time, about a minute each." />
 
         {/* Up next: the next part to read (decision 79), as Courses' "Keep going": the whole card is the link, with a chunky button drawn on it */}
-        <section aria-labelledby="up-next" className="mt-7">
+        <section aria-labelledby="up-next" data-wide className="mt-7">
           {/* Heading */}
           <h2 id="up-next" className={SECTION_HEADING}>Up next</h2>
           {/* The next part to read */}
@@ -204,7 +204,7 @@ export function SkillsScreen(props: ScreenProps) {
         </section>
 
         {/* Every text, one row per group that opens its own list */}
-        <section aria-labelledby="everything" className="mt-8">
+        <section aria-labelledby="everything" data-wide className="mt-8">
           {/* Heading */}
           <h2 id="everything" className={SECTION_HEADING}>Everything</h2>
           {/* The groups, each with its tile */}

@@ -27,7 +27,7 @@ import { NotFound } from "@/components/script/SageSays";
 // Load the reading tile
 import { SCENE_TILES } from "@/components/scenes/modeTileFor";
 // Load the shared looks
-import { CARD_LIST, CHIP, CHIP_GOOD, PBAR, PBAR_FILL } from "@/components/script/textStyles";
+import { CARD, CARD_LIST, CHIP, CHIP_GOOD, LAB, PBAR, PBAR_FILL } from "@/components/script/textStyles";
 import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
 
 // The way back to the readings
@@ -102,7 +102,7 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
 
   // Draw the page
   return (
-    <main id="main" className={`${PAGE} flex flex-col`}>
+    <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="VoiceLab" section="skills" />
       {/* The way back, the reading tile, the speech's name, who gave it and where, and how far along */}
@@ -115,8 +115,12 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
           <p className="text-footnote font-bold text-ink">{speech.parts.length === 1 ? `One part, ${total}` : `${speech.parts.length} parts, ${total}`}{done === 0 ? "" : done === speech.parts.length ? " · all read" : ` · ${done} read`}</p>
         </div>
       </HubHeader>
+      {/* Two columns on a computer, as desk-CoursePath: the parts on the left, the part up next with its chunky button on the right (in view at once); one column on a phone, the button pinned to the bottom */}
+      <div data-wide className="mt-5 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
+      {/* The parts and the credits */}
+      <div className="min-w-0">
       {/* The parts, as rows in one card */}
-      <ol aria-label="Parts" className={`mt-5 ${CARD_LIST}`}>
+      <ol aria-label="Parts" className={CARD_LIST}>
         {/* Each part */}
         {speech.parts.map((part, index) => (
           // One part
@@ -145,10 +149,20 @@ export function SpeechScreen({ speechId, ...props }: ScreenProps & { speechId: s
         {/* The source */}
         Text: {speech.textNote}. Public domain.
       </p>
-      {/* Push the action down */}
-      <div className="flex-1" />
-      {/* Read the next part */}
-      <ActionBand action={done === speech.parts.length ? "Read it again" : `Read part ${nextIndex + 1}`} aside={lengthLabel(readingTime(speech.parts[nextIndex] ?? ""))} href={`/session?mode=read&prompt=${ids[nextIndex]}`} />
+      </div>
+      {/* The part up next, with the one main action (kept in view on a computer) */}
+      <aside aria-label="Up next" className={`lg:sticky lg:top-6 lg:p-5 ${CARD} max-lg:contents`}>
+        {/* Which part and its opening words (on a computer; the list marks it on a phone) */}
+        <div className="max-lg:hidden">
+          {/* Which part */}
+          <p className={LAB}>{done === speech.parts.length ? "All read · start again" : `Up next · part ${nextIndex + 1} of ${speech.parts.length}`}</p>
+          {/* Its opening words */}
+          <p className="mt-2 font-display text-xl leading-snug font-semibold">{opening(speech.parts[nextIndex] ?? "")}</p>
+        </div>
+        {/* Read the next part */}
+        <ActionBand action={done === speech.parts.length ? "Read it again" : `Read part ${nextIndex + 1}`} aside={lengthLabel(readingTime(speech.parts[nextIndex] ?? ""))} href={`/session?mode=read&prompt=${ids[nextIndex]}`} inCard />
+      </aside>
+      </div>
     </main>
   );
 }

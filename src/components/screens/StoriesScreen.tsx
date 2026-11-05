@@ -13,7 +13,7 @@ import { HubHeader } from "@/components/script/HubHeader";
 import { SageSays } from "@/components/script/SageSays";
 // Load the mode tile, each kind's tile, the scene names and a story's scene
 import { ModeTile } from "@/components/scenes/ModeTile";
-import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+import { SCENE_TILES, type ModeTileLook } from "@/components/scenes/modeTileFor";
 import type { SceneName } from "@/components/scenes/Scene";
 import { storyScene } from "@/components/scenes/sceneFor";
 // Load the shared button and row looks
@@ -47,6 +47,37 @@ const MOMENTS_SHOWN = 5;
 
 // A story told again's tile
 const TELL_AGAIN = SCENE_TILES["tell-again"];
+
+// A story card's own action: a solid soft-green button with a ledge (not an outline, and not a second chunky primary beside today's Tell it)
+const RETELL = `inline-flex min-h-12 items-center justify-center rounded-[14px] bg-accent-tint px-5 font-extrabold text-accent-tint-ink shadow-ledge transition-[transform,box-shadow] duration-100 hover:brightness-105 motion-safe:active:translate-y-[2px] active:shadow-none`;
+
+// Each group of prompts' tile: one idea in a glance, neighbouring groups on different grounds
+const GROUP_TILES: Readonly<Record<string, ModeTileLook>> = {
+  // Something went wrong
+  wrong: { ground: "coral", prop: "q", face: "wonder" },
+  // A small win
+  win: { ground: "sun", prop: "star", face: "happy" },
+  // A first time
+  first: { ground: "sky", prop: "flag", face: "wow" },
+  // Someone who changed your mind
+  person: { ground: "bloom", prop: "chat", face: "happy" },
+  // A place
+  place: { ground: "leaf", prop: "door", face: "wonder" },
+  // A surprise
+  surprise: { ground: "plum", prop: "star", face: "wow" },
+  // Something learned
+  lesson: { ground: "sky", prop: "book", face: "ready" },
+  // Something funny
+  funny: { ground: "sun", prop: "fire", face: "happy" },
+  // Who you are (as the story you'll need)
+  who: SCENE_TILES["who-i-am"],
+  // Interview questions
+  interview: SCENE_TILES.interview,
+  // Toasts and thank-yous
+  toast: SCENE_TILES.toast,
+  // A choice you made
+  values: SCENE_TILES.choice,
+};
 
 // Where telling a prompt starts
 export const tellHref = (promptId: string, template?: string) => `/stories/tell?prompt=${encodeURIComponent(promptId)}${template ? `&template=${template}` : ""}`;
@@ -110,11 +141,11 @@ function StoryRow({ story, repo, now, onRenamed }: { story: LibraryStory; repo: 
           <button type="button" onClick={() => { setEditing(false); setDraft(story.title); setError(""); }} className={QUIET}>Cancel</button>
         </form>
       ) : (
-        <p className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <p className="flex items-start justify-between gap-x-3">
           {/* The title */}
           <span className="min-w-0 font-display text-xl font-semibold leading-tight">{story.title}</span>
           {/* Rename */}
-          <button type="button" onClick={() => setEditing(true)} aria-label={`Rename “${story.title}”`} className={`${TEXT_LINK} text-footnote text-ink-muted`}>Rename</button>
+          <button type="button" onClick={() => setEditing(true)} aria-label={`Rename “${story.title}”`} className={`${TEXT_LINK} -mt-2.5 flex-none text-footnote text-ink-muted`}>Rename</button>
         </p>
       )}
       {/* Why saving failed */}
@@ -126,7 +157,7 @@ function StoryRow({ story, repo, now, onRenamed }: { story: LibraryStory; repo: 
       {/* Tell it again, and see the last telling */}
       <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
         {/* Tell it again */}
-        <Link href={retellHref(story)} aria-label={`Tell “${story.title}” again`} className={SECONDARY}>Tell it again</Link>
+        <Link href={retellHref(story)} aria-label={`Tell “${story.title}” again`} className={RETELL}>Tell it again</Link>
         {/* The last telling */}
         <Link href={`/sessions?id=${encodeURIComponent(story.latest.id)}`} className={`${TEXT_LINK} text-footnote`}>Last telling</Link>
       </p>
@@ -185,7 +216,7 @@ export function StoriesScreen(props: ScreenProps) {
 
       {/* Today's story, with the template suggested for it (decision 126): the coral card of the set-up, then Tell it as the chunky button (as Courses' "Keep going") */}
       {todays && (
-        <section aria-labelledby="today-story" className={`mt-5 flex flex-col gap-4 p-4 md:flex-row md:items-center md:gap-6 md:p-5 ${CARD}`}>
+        <section aria-labelledby="today-story" data-wide className={`mt-5 flex flex-col gap-4 p-4 md:flex-row md:items-center md:gap-6 md:p-5 ${CARD}`}>
           {/* The prompt on the story's coral, large */}
           <div className="min-w-0 flex-1">
             {/* Heading (above the coral, where small words keep their contrast) */}
@@ -207,12 +238,12 @@ export function StoriesScreen(props: ScreenProps) {
       {loadError !== null && <div role="alert" className="mt-8"><SageSays mood="curious">Your stories could not be loaded. The browser said: “{loadError}” <button type="button" onClick={reload} className={TEXT_LINK}>Try again</button></SageSays></div>}
 
       {/* Your stories */}
-      <section aria-labelledby="your-stories" className="mt-9">
+      <section aria-labelledby="your-stories" data-wide className="mt-9">
         {/* Heading */}
         <h2 id="your-stories" className={SECTION_HEADING}>Your stories</h2>
         {/* The list, or what will be here */}
         {loaded && loaded.stories.length > 0 && today ? (
-          <ul aria-label="Your stories" className="mt-3 grid gap-3.5 lg:grid-cols-2">
+          <ul aria-label="Your stories" className="mt-3 grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
             {/* Each story */}
             {loaded.stories.map((story) => <StoryRow key={`${story.id}-${story.title}`} story={story} repo={repo} now={today} onRenamed={reload} />)}
           </ul>
@@ -222,7 +253,7 @@ export function StoriesScreen(props: ScreenProps) {
       </section>
 
       {/* The stories you'll need (decision 152): each opens today's prompt of its kind, told with its template, as tile cards two across */}
-      <section aria-labelledby="needed" id="stories-youll-need" className="mt-9 scroll-mt-6">
+      <section aria-labelledby="needed" id="stories-youll-need" data-wide className="mt-9 scroll-mt-6">
         {/* Heading */}
         <h2 id="needed" className={SECTION_HEADING}>Stories you’ll need</h2>
         {/* What they are */}
@@ -251,13 +282,13 @@ export function StoriesScreen(props: ScreenProps) {
       </section>
 
       {/* The templates: each starts today's story told with it (decision 126); the everyday ones only, since the stories you'll need come with their own prompts */}
-      <section aria-labelledby="templates" className="mt-9">
+      <section aria-labelledby="templates" data-wide className="mt-9">
         {/* Heading */}
         <h2 id="templates" className={SECTION_HEADING}>Templates</h2>
         {/* What they are */}
         <p className="mt-1 max-w-[48ch] font-semibold text-ink-muted">A few beats to tell a story in. Pick one for today’s story.</p>
         {/* Each template, as the set-up’s choice cards, two across */}
-        <ul aria-label="Templates" className="mt-3 grid grid-cols-2 gap-3">
+        <ul aria-label="Templates" className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {STORY_TEMPLATES.filter((template) => template.family === "everyday").map((template) => (
             // One template, starting today's story with it
             <li key={template.id}>
@@ -275,13 +306,13 @@ export function StoriesScreen(props: ScreenProps) {
       </section>
 
       {/* Guided stories: the facts are given, the user makes them a story (decision 93) */}
-      <section aria-labelledby="guided" id="guided-stories" className="mt-9 scroll-mt-6">
+      <section aria-labelledby="guided" id="guided-stories" data-wide className="mt-9 scroll-mt-6">
         {/* Heading */}
         <h2 id="guided" className={SECTION_HEADING}>Guided stories</h2>
         {/* What they are, honestly */}
         <p className="mt-1 max-w-[48ch] font-semibold text-ink-muted">You get the facts. You make it a story.</p>
         {/* One fold per level, each with its kind's tile */}
-        <div className="mt-3 flex flex-col gap-2.5">
+        <div className="mt-3 grid items-start gap-3 md:grid-cols-2">
           {GUIDED_LEVELS.map((level) => {
             // The level's stories
             const stories = GUIDED_STORIES.filter((story) => guidedLevel(story) === level.id);
@@ -300,7 +331,7 @@ export function StoriesScreen(props: ScreenProps) {
       </section>
 
       {/* From your moments */}
-      <section aria-labelledby="from-moments" className="mt-9">
+      <section aria-labelledby="from-moments" data-wide className="mt-9">
         {/* Heading */}
         <h2 id="from-moments" className={SECTION_HEADING}>From your moments</h2>
         {/* The notes, each one to tell properly */}
@@ -344,17 +375,17 @@ export function StoriesScreen(props: ScreenProps) {
       </section>
 
       {/* The prompt bank, folded by group */}
-      <section aria-labelledby="prompts" className="mt-9">
+      <section aria-labelledby="prompts" data-wide className="mt-9">
         {/* Heading */}
         <h2 id="prompts" className={SECTION_HEADING}>Something to tell</h2>
         {/* One fold per group */}
-        <div className="mt-3 flex flex-col gap-2.5">
+        <div className="mt-3 grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
           {STORY_GROUPS.map((group) => {
             // The group's prompts
             const prompts = STORY_PROMPTS.filter((prompt) => prompt.group === group.id);
             // One fold
             return (
-              <FoldCard key={group.id} id={`group-${group.id}`} name={group.name} count={prompts.length}>
+              <FoldCard key={group.id} id={`group-${group.id}`} name={group.name} count={prompts.length} look={GROUP_TILES[group.id]}>
                 {/* The prompts */}
                 <ul className="divide-y divide-rule">
                   {/* Each prompt */}

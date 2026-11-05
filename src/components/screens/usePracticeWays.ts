@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { ArrowCounterClockwiseIcon, BookOpenTextIcon, CardsIcon, ChatsCircleIcon, DiceFiveIcon, EarIcon, LightningIcon, ListNumbersIcon, MaskHappyIcon, MicrophoneStageIcon, NotePencilIcon, PauseIcon, PresentationIcon, RepeatIcon, ScrollIcon, SignpostIcon, SpeakerHighIcon, SunHorizonIcon, TextAaIcon, TimerIcon, UsersThreeIcon, WaveSineIcon, WindIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the Connect units' icons
 import { UNIT_ICONS } from "@/components/script/unitIcons";
+// Load the Connect units' tiles
+import { UNIT_TILES } from "@/components/scenes/groundLooks";
 // Load the shape of one way to practise
 import type { Way } from "@/components/script/WayCard";
 // Load the mode tile's look
@@ -185,17 +187,17 @@ export function usePracticeWays(repo: Repository, today: Date | null): PracticeW
   // Each voice mode's row, straight into its next drill (decision 80; clear sounds holds the tricky-word lists too, decision 108)
   const voiceWays: Record<VoiceRowId, Way> = {
     // Clear sounds and the word lists
-    clear: { name: "Clear sounds", detail: `Next: ${nextClearTitle}`, href: nextClear.href, icon: TextAaIcon },
+    clear: { name: "Clear sounds", detail: `Next: ${nextClearTitle}`, href: nextClear.href, icon: TextAaIcon, look: { ground: "sky", prop: "mic", face: "sing" } },
     // Volume
-    volume: { name: "Volume", detail: `Next: ${nextVoice("volume").title}`, href: `/voice/drill?id=${nextVoice("volume").id}`, icon: SpeakerHighIcon },
+    volume: { name: "Volume", detail: `Next: ${nextVoice("volume").title}`, href: `/voice/drill?id=${nextVoice("volume").id}`, icon: SpeakerHighIcon, look: { ground: "sun", prop: "waves", face: "wow" } },
     // Pitch and stress
-    pitch: { name: "Pitch and stress", detail: `Next: ${nextVoice("pitch").title}`, href: `/voice/drill?id=${nextVoice("pitch").id}`, icon: WaveSineIcon },
+    pitch: { name: "Pitch and stress", detail: `Next: ${nextVoice("pitch").title}`, href: `/voice/drill?id=${nextVoice("pitch").id}`, icon: WaveSineIcon, look: { ground: "bloom", prop: "waves", face: "up" } },
     // Tone
-    tone: { name: "Tone", detail: `Next: ${nextVoice("tone").title}`, href: `/voice/drill?id=${nextVoice("tone").id}`, icon: MaskHappyIcon },
+    tone: { name: "Tone", detail: `Next: ${nextVoice("tone").title}`, href: `/voice/drill?id=${nextVoice("tone").id}`, icon: MaskHappyIcon, look: { ground: "plum", prop: "chat", face: "happy" } },
     // Pausing: the pause drills
-    pausing: { name: "Pausing", detail: nextPause ? `Next: ${nextPause.title}` : "Pause where the text is marked, 1 min", href: nextPause ? `/session?mode=pause&prompt=${nextPause.id}` : "/voice#pausing", icon: PauseIcon },
+    pausing: { name: "Pausing", detail: nextPause ? `Next: ${nextPause.title}` : "Pause where the text is marked, 1 min", href: nextPause ? `/session?mode=pause&prompt=${nextPause.id}` : "/voice#pausing", icon: PauseIcon, look: { ground: "leaf", prop: "pause", face: "ready" } },
     // Shadowing
-    shadowing: { name: "Shadowing", detail: `Next: ${nextShadow.title}`, href: `/voice/shadow?id=${nextShadow.id}`, icon: RepeatIcon },
+    shadowing: { name: "Shadowing", detail: `Next: ${nextShadow.title}`, href: `/voice/shadow?id=${nextShadow.id}`, icon: RepeatIcon, look: { ground: "sky", prop: "loop", face: "listen" } },
   };
 
   // Each group's ways, the most relevant first
@@ -234,7 +236,7 @@ export function usePracticeWays(repo: Repository, today: Date | null): PracticeW
       // Story dice: four things to connect into one story (decision 153)
       { name: "Story dice", detail: "Four things that don't belong together. Make one story", href: dice ? `/stories/tell?prompt=${dice.id}` : "/stories#guided-stories", icon: DiceFiveIcon, scene: "story-dice" },
       // Every story, on its own page
-      { name: "All stories", detail: "Your stories, templates, guided stories and prompts", href: "/stories", icon: ListNumbersIcon },
+      { name: "All stories", detail: "Your stories, templates, guided stories and prompts", href: "/stories", icon: ListNumbersIcon, look: { ground: "coral", prop: "book", face: "happy" } },
     ],
     // Everyday conversation (decisions 95, 149 and 150)
     conversation: [
@@ -249,7 +251,7 @@ export function usePracticeWays(repo: Repository, today: Date | null): PracticeW
       // One moment a day
       { name: "One moment a day", detail: "A private note of something worth telling", href: `/session?mode=moment&prompt=${MOMENT_PROMPT.id}`, icon: SunHorizonIcon, scene: "moment" },
       // Every small-talk unit, on its own page
-      { name: "Small talk", detail: `All ${UNITS.length} units, each with lessons and drills`, href: "/small-talk", icon: ListNumbersIcon },
+      { name: "Small talk", detail: `All ${UNITS.length} units, each with lessons and drills`, href: "/small-talk", icon: ListNumbersIcon, look: { ground: "bloom", prop: "chat", face: "happy" } },
     ],
     // How you sound: a warm-up, then the modes done least first (decisions 80 and 108)
     voice: [
@@ -258,7 +260,7 @@ export function usePracticeWays(repo: Repository, today: Date | null): PracticeW
       // The modes, the one done least first
       ...voiceRowsByNeed(counts ?? new Map()).map((row) => voiceWays[row]),
       // Every drill, by mode, on its own page
-      { name: "All voice drills", detail: "Every drill, by what it works on", href: "/voice", icon: ListNumbersIcon },
+      { name: "All voice drills", detail: "Every drill, by what it works on", href: "/voice", icon: ListNumbersIcon, look: { ground: "leaf", prop: "three", face: "sing" } },
     ],
   };
 
@@ -271,9 +273,9 @@ export function usePracticeWays(repo: Repository, today: Date | null): PracticeW
     // Listening
     { name: "Active listening", detail: `${LISTEN_STORIES.length} stories. Hear one once, answer to what mattered`, href: "/listening", icon: EarIcon, scene: "listening" },
     // Quick scenarios
-    { name: "Quick scenarios", detail: "Choose the best reply, then say it", href: "/learn/scenarios", icon: CardsIcon },
+    { name: "Quick scenarios", detail: "Choose the best reply, then say it", href: "/learn/scenarios", icon: CardsIcon, look: { ground: "coral", prop: "q", face: "wonder" } },
     // Each small-talk unit
-    ...UNITS.map((item) => ({ name: item.name, detail: item.when, href: `/small-talk/unit?id=${item.id}`, icon: UNIT_ICONS[item.id] } satisfies Way)),
+    ...UNITS.map((item) => ({ name: item.name, detail: item.when, href: `/small-talk/unit?id=${item.id}`, icon: UNIT_ICONS[item.id], look: UNIT_TILES[item.id] } satisfies Way)),
   ];
 
   // The picked areas' groups, to mark them

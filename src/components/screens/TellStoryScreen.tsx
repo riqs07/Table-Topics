@@ -125,7 +125,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
     <PageFade>
       <main id="main" className={PRACTICE_MAIN}>
         {/* The bar: the way out, the first of three steps (set up, plan, tell) */}
-        <PracticeBar close={close} progress={1 / 3} label={guided ? "Guided story · step 1 of 3" : "Tell a story · step 1 of 3"} />
+        <PracticeBar close={close} progress={unknown ? undefined : 1 / 3} label={unknown ? "Tell a story" : `${planStep ? `Today’s practice · step ${planStep} · ` : ""}${guided ? "Guided story" : "Tell a story"} · step 1 of 3`} />
         {/* A story that cannot be found */}
         {unknown ? (
           <div className={PRACTICE_BODY}>
@@ -146,7 +146,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
               {/* A guided story's facts and nudges, with the template named (decision 93) */}
               {guided && <GuidedStoryCard story={guided} take={take} />}
               {/* The scene, carried over from the Practice card (decision 141): a story you'll need's own, Story dice, the signpost for another guided story, the campfire otherwise (decisions 152 and 153) */}
-              <ScenePanel scene={storyScene({ neededTemplate: findStoryTemplate(suggested).family === "needed" ? suggested : null, guidedLevel: guided ? guidedLevel(guided) : null })} name={guided ? (guided.level === "connect" ? "Story dice" : "Guided story") : findStoryTemplate(suggested).family === "needed" ? findStoryTemplate(suggested).name : "Tell a story"} line="Plan it in a minute, then tell it." className="" />
+              <ScenePanel scene={storyScene({ neededTemplate: findStoryTemplate(suggested).family === "needed" ? suggested : null, guidedLevel: guided ? guidedLevel(guided) : null })} name={guided ? (guided.level === "connect" ? "Story dice" : "Guided story") : findStoryTemplate(suggested).family === "needed" ? findStoryTemplate(suggested).name : undefined} line="Plan it in a minute, then tell it." className="" />
             </div>
 
             {/* The set-up: the template, the length, an example, then start */}
@@ -172,7 +172,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                 {/* The other family's templates, a tap away */}
                 {!showAll && <button type="button" onClick={() => setShowAll(true)} className={`${TEXT_LINK} text-footnote`}>Show all templates</button>}
                 {/* What a story you'll need needs, in a line (decision 152) */}
-                {chosen.needs && <p data-template-needs className="mt-2 rounded-2xl bg-accent-tint px-4 py-3 text-footnote font-bold text-accent-tint-ink">{chosen.needs}</p>}
+                {chosen.needs && <p data-template-needs className="mt-2 rounded-2xl border-2 border-rule bg-accent-tint px-4 py-3 shadow-ledge text-footnote font-bold text-accent-tint-ink">{chosen.needs}</p>}
               </div>
 
               {/* The length, before the example so the Start band never covers it on a phone */}
@@ -217,7 +217,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
               </section>
 
               {/* Start: a minute to plan, then tell it */}
-              <ActionBand action="Start" aside="a minute to plan" href={tellSessionHref(storyId, take, planStep)} />
+              <ActionBand action="Start planning" aside="next: a minute to plan, then tell it" href={tellSessionHref(storyId, take, planStep)} />
             </div>
           </div>
         )}
