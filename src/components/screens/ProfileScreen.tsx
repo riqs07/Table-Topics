@@ -233,7 +233,7 @@ function WholeProfile({ loaded, now, summaryNote }: { loaded: Loaded; now: Date;
           {/* The blob, waiting */}
           <Cast who="you" face="wonder" still className="size-14 flex-none" />
           {/* What will appear */}
-          <p className="font-semibold">No takes measured yet. Record one in <Link href="/practice" className={TEXT_LINK} data-inline>Practice</Link> and its measures appear here.</p>
+          <p className="font-semibold">No takes measured yet. Record one in <Link href="/practice" className="font-extrabold text-accent-tint-ink underline decoration-transparent underline-offset-4 hover:decoration-current" data-inline>Practice</Link> and its measures appear here.</p>
         </div>
       )}
       {/* The families, when there are several */}
@@ -370,7 +370,7 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
       {/* Each group with headline measures */}
       {METRIC_GROUPS.map((group) => {
         // The shown measures in it that have values
-        const headline = family.metrics.filter((summary) => summary.metric.group === group.id && summary.metric.shown);
+        const headline = family.metrics.filter((summary) => summary.metric.group === group.id && summary.metric.shown && !(summary.recent === 0 && (summary.usual ?? 0) === 0));
         // In the voice group, the measures the server's deeper analysis gave too, with what each means (decision 91)
         const deeper = group.id === "voice" ? family.metrics.filter((summary) => summary.metric.group === "voice" && !summary.metric.shown && (summary.source === "voice" || summary.source === "transcript")) : [];
         // Nothing to show, except word habits in vocabulary
