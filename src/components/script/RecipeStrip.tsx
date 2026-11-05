@@ -28,7 +28,7 @@ export function RecipeStrip({ level, focus = null, lesson = false }: { level: St
   }
   // The four beats in a row (two by two on a narrow phone)
   return (
-    <ol aria-label="The recipe" className={`grid grid-cols-2 gap-x-4 gap-y-3 p-4 sm:grid-cols-4 ${CARD}`}>
+    <ol aria-label="The recipe" className={`grid grid-cols-2 gap-x-4 gap-y-3 p-4 ${CARD}`}>
       {/* Each beat */}
       {beatsFor(level.unit).map((beat, index) => (
         // One beat: the lesson's own beat is marked in the accent

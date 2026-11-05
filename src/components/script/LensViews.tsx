@@ -4,7 +4,7 @@
 // Load React's state tool
 import { useState } from "react";
 // Load the button looks and the filled link
-import { PrimaryLink, QUIET } from "@/components/script/Buttons";
+import { SECONDARY, SecondaryLink } from "@/components/script/Buttons";
 // Load the shared card and label looks
 import { CARD, LABEL } from "@/components/script/textStyles";
 // Load the lens findings and their types
@@ -237,7 +237,7 @@ export function ClarityLensView({ text, lens, onPlay }: { text: LensText; lens: 
           {/* Why */}
           <p className="text-footnote leading-snug">{note}</p>
           {/* The drill */}
-          <PrimaryLink href={`/voice/drill?id=${lens.drill.id}`}>Practise: {lens.drill.name}</PrimaryLink>
+          <SecondaryLink href={`/voice/drill?id=${lens.drill.id}`}>Practise: {lens.drill.name}</SecondaryLink>
         </div>
       )}
     </div>
@@ -252,11 +252,11 @@ export function LensEmpty({ children }: { children: React.ReactNode }) {
 
 // "Look closer": opens the lens tabs in place
 export function LookCloser({ onOpen, detail }: { onOpen: () => void; detail: string }) {
-  // A quiet button with a line on what it opens
+  // A second-choice button with a line on what it opens
   return (
     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
       {/* The button */}
-      <button type="button" aria-expanded="false" onClick={onOpen} className={QUIET}>Look closer</button>
+      <button type="button" aria-expanded="false" onClick={onOpen} className={SECONDARY}>Look closer</button>
       {/* What it opens */}
       <span className="text-footnote text-ink-muted">{detail}</span>
     </div>

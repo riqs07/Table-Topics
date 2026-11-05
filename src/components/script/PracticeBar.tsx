@@ -40,8 +40,8 @@ interface PracticeBarProps {
   onClose?: () => void;
   // How far through, from 0 to 1, or left out for no bar
   progress?: number;
-  // The step's label, such as "Read aloud · step 2 of 3"
-  label: string;
+  // The step's label, such as "Read aloud · step 2 of 3" (words, or a part carrying a hook of its own, such as a course's line)
+  label: ReactNode;
   // Keyboard hints on the right, on a computer
   hints?: ReactNode;
   // Extra classes (a page that already has its own top padding pulls the bar up)

@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CurveRow, useRowWidth, useWordMeasure } from "@/components/script/PitchShapes";
 // Load the shared looks
 import { CARD, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
-import { PRIMARY, SECONDARY } from "@/components/script/Buttons";
+import { SECONDARY } from "@/components/script/Buttons";
 // Load the hooks that read the deeper analysis's words, a take's recording and the text it read
 import { useServerWords } from "@/components/screens/useServerWords";
 import { useTakeScript } from "@/components/screens/useTakeScript";
@@ -143,7 +143,7 @@ export function LastVsThisCard({ repo, before, after, kind, names, plays = { bef
             {/* Play the last take */}
             {urlBefore && <button type="button" onClick={() => play("before")} className={`${SECONDARY} flex-1`}>{plays.before}</button>}
             {/* Play this take */}
-            {urlAfter && <button type="button" onClick={() => play("after")} className={`${PRIMARY} flex-1`}>{plays.after}</button>}
+            {urlAfter && <button type="button" onClick={() => play("after")} className={`${SECONDARY} flex-1`}>{plays.after}</button>}
           </div>
         )}
         {/* Rough word times, said quietly */}

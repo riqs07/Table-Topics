@@ -126,7 +126,7 @@ describe("SessionScreen", () => {
     // Where each part sits in the page's text
     const text = document.body.textContent ?? "";
     // The good panel: green, what to keep, the cue as a chip, then the change below
-    const first = [panel.className.includes("bg-accent-tint"), !!within(panel).getByText(FEEDBACK.keep), !!within(panel).getByText(`Next time: ${FEEDBACK.retryCue}`), text.indexOf(FEEDBACK.keep) < text.indexOf(FEEDBACK.change), document.querySelector("[data-verdict] [data-cast='sage']")];
+    const first = [panel.className.includes("bg-accent-tint"), !!within(panel).getByText(FEEDBACK.keep), within(panel).queryByText(/^Next time:/) === null && !!screen.getByText(FEEDBACK.retryCue), text.indexOf(FEEDBACK.keep) < text.indexOf(FEEDBACK.change), document.querySelector("[data-verdict] [data-cast='sage']")];
     // Draw the rough one
     cleanup();
     // (drawn)
@@ -462,7 +462,7 @@ describe("SessionScreen", () => {
     // Draw the screen for a missing id
     render(<SessionScreen sessionId="nope" repository={await repositoryWith()} now={NOW} />);
     // Confirm the explanation, the page's one heading, and the way back to your takes
-    expect([!!(await screen.findByText(/not on this device/)), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to history" }).getAttribute("href")]).toEqual([true, "This take isn’t here.", "/history"]);
+    expect([!!(await screen.findByText(/not on this device/)), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to history" }).getAttribute("href")]).toEqual([true, "This take is not on this device.", "/history"]);
   });
 
   // A session with saved audio can be played back

@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { PitchText } from "@/components/script/PitchText";
 // Load the shared card look and the button looks
 import { CARD, LAB } from "@/components/script/textStyles";
-import { PrimaryLink, SECONDARY } from "@/components/script/Buttons";
+import { SECONDARY, SecondaryLink } from "@/components/script/Buttons";
 // Load the hook that reads the deeper analysis's words
 import { useServerWords } from "@/components/screens/useServerWords";
 // Load the pitch in the words
@@ -121,7 +121,7 @@ export function VoiceSection({ repo, session, usual, hide, fluency, script = nul
       {ready && (
         <div className="mt-4 flex flex-wrap gap-2">
           {/* The phrase rows */}
-          <PrimaryLink href={`/sessions/voice?id=${encodeURIComponent(session.id)}`}>See it phrase by phrase</PrimaryLink>
+          <SecondaryLink href={`/sessions/voice?id=${encodeURIComponent(session.id)}`}>See it phrase by phrase</SecondaryLink>
           {/* Play the take */}
           {onPlay && <button type="button" onClick={onPlay} className={SECONDARY}>Play</button>}
         </div>

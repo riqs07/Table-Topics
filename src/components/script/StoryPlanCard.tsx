@@ -5,7 +5,7 @@ import { STORY_POINTERS, findStoryFocus, findStoryShape, findStoryTemplate } fro
 // Load the story set-up type
 import type { StoryTake } from "@/data/records";
 // Load the shared card look
-import { CARD } from "@/components/script/textStyles";
+import { CARD, LAB } from "@/components/script/textStyles";
 
 // The beats to show: the template's, or an older story's shape's
 export function planBeats(take: StoryTake): { name: string; about: string; beats: string[] } {
@@ -22,13 +22,13 @@ export function planBeats(take: StoryTake): { name: string; about: string; beats
   return { name: template.name, about: template.forWhat, beats: template.beats.map((beat) => beat.name) };
 }
 
-// The three things every good story does, as a quiet card
+// The three things every good story does, as a card
 export function StoryPointers() {
   // The card
   return (
-    <section aria-label="Three things every good story does" data-story-pointers className="mt-4 max-w-md rounded-[22px] bg-accent-tint p-4">
+    <section aria-label="Three things every good story does" data-story-pointers className={`p-5 ${CARD}`}>
       {/* Heading */}
-      <p className="text-footnote font-extrabold text-accent-tint-ink">Three things every good story does</p>
+      <p className={LAB}>Three things every good story does</p>
       {/* The three */}
       <ul className="mt-2 flex flex-col gap-1 text-footnote">
         {/* Each one */}
