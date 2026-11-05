@@ -140,6 +140,8 @@
   --animate-drift: vl-drift 3s ease-out infinite both;
   /* A spark by the blob twinkling (decision 134) */
   --animate-twinkle: vl-twinkle 1.4s ease-in-out infinite;
+  /* A chart drawing itself once from the left, then staying still (Chart Kit) */
+  --animate-chart-draw: vl-chart-draw 1.2s ease-out both;
   /* Blink: open nearly all the time, shut for a moment */
   @keyframes vl-blink {
     /* Open */
@@ -263,6 +265,19 @@
       transform: none;
       /* Visible */
       opacity: 1;
+    }
+  }
+  /* Draw a chart: wiped in from the left */
+  @keyframes vl-chart-draw {
+    /* Start */
+    from {
+      /* Hidden from the left edge */
+      clip-path: inset(0 100% 0 0);
+    }
+    /* End */
+    to {
+      /* Fully shown */
+      clip-path: inset(0 0 0 0);
     }
   }
   /* Fill: grow across from the left edge */

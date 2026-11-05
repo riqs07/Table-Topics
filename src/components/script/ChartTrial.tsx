@@ -1,10 +1,13 @@
 "use client";
-// Every chart, for a week of testing (decision 124): under a take's own views, each round-two chart that this take can draw, each saying what it answers, how sure it can be and what it needs; the charts it cannot draw are listed with why, so testing shows where each one makes sense
+// Every chart, for a week of testing (decision 124), drawn in the Chart Kit's language (second design pass: headline first, the five marks, no red): under a take's own views, each round-two chart that this take can draw, each saying what it answers, how sure it can be and what it needs; the charts it cannot draw are listed with why, so testing shows where each one makes sense
 
 // Load React's memo tool
 import { useMemo, type ReactNode } from "react";
 // Load the shared looks
-import { CARD, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, LAB, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
+// Load the Chart Kit's ribbon
+import { VoiceRibbon } from "@/components/charts/VoiceRibbon";
+import { ribbonFromLevels, ribbonSlots } from "@/core/chartKit";
 import { PRESS } from "@/components/script/Buttons";
 // Load the play type the lenses use
 import type { PlayFrom } from "@/components/script/LensViews";
@@ -59,18 +62,15 @@ function clock(seconds: number): string {
 function TrialCard({ id, title, answers, sure, needs, line, children }: { id: string; title: string; answers: string; sure: "high" | "medium"; needs: string; line: ReactNode; children: ReactNode }) {
   // The card
   return (
-    <section aria-labelledby={`trial-${id}`} data-trial-chart={id} className={`flex flex-col gap-2.5 p-4 ${CARD}`}>
-      {/* Its name and question */}
-      <div>
-        {/* The name */}
-        <h3 id={`trial-${id}`} className="font-semibold">{title}</h3>
-        {/* The question */}
-        <p className="text-footnote font-semibold text-accent">Answers: {answers}</p>
-      </div>
+    <section aria-labelledby={`trial-${id}`} data-trial-chart={id} className={`flex flex-col gap-2.5 p-5 ${CARD}`}>
+      {/* Its name, small */}
+      <h3 id={`trial-${id}`} className={LAB}>{title}</h3>
+      {/* What it shows: the headline the picture proves */}
+      <p className="font-display text-running font-semibold leading-tight">{line}</p>
       {/* The picture */}
       {children}
-      {/* What it shows */}
-      <p className="text-footnote font-semibold leading-snug">{line}</p>
+      {/* The question it answers */}
+      <p className="text-footnote text-ink-muted">Answers: {answers}</p>
       {/* How sure, and what it needs */}
       <p className="flex flex-wrap gap-1.5 text-tab font-semibold">
         {/* How sure */}
@@ -106,12 +106,12 @@ function VoiceLineChart({ line, onPlay }: { line: VoiceLine; onPlay: PlayFrom })
   return (
     <>
       <svg viewBox={`0 0 ${W} 64`} role="img" aria-label={line.phrase.risingStatement ? "Your voice rose at the end of a statement." : "Your voice through one phrase."} className="h-auto w-full">
-        {/* Your usual pitch */}
-        <line x1="0" x2={W} y1="34" y2="34" className="text-rule" stroke="currentColor" strokeDasharray="3 4" />
-        {/* The line */}
-        <path d={smoothPath(points)} className="text-accent" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" />
-        {/* Its end */}
-        <circle cx={last.x} cy={last.y} r="6" className={line.phrase.risingStatement ? "fill-warm" : "fill-accent"} />
+        {/* Your usual pitch: a light grid line */}
+        <line x1="0" x2={W} y1="34" y2="34" className="stroke-rule" strokeWidth="1.5" />
+        {/* The pitch: one soft line, drawn in once */}
+        <path d={smoothPath(points)} className="stroke-chart-voice motion-safe:animate-chart-draw" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        {/* Its end: a teal dot for a clean fall, an open ring for a statement that rose, otherwise a small dot */}
+        <circle cx={last.x} cy={last.y} r={line.phrase.risingStatement ? 5 : 4.5} className={line.phrase.ending === "fell" ? "fill-chart-well" : line.phrase.risingStatement ? "fill-card stroke-chart-voice" : "fill-chart-voice"} strokeWidth="2" />
       </svg>
       {/* The words in place */}
       <p className="relative h-6 text-footnote" aria-hidden="true">{line.words.map((word, index) => <span key={index} className="absolute whitespace-nowrap" style={{ left: `${((placed[index]! * squeeze) / W) * 100}%` }}>{word.text}</span>)}</p>
@@ -121,34 +121,19 @@ function VoiceLineChart({ line, onPlay }: { line: VoiceLine; onPlay: PlayFrom })
   );
 }
 
-// 2 · The flow ribbon
-function FlowChart({ ribbon, onPlay }: { ribbon: FlowRibbon; onPlay: PlayFrom }) {
-  // Across the picture for a moment
-  const x = (seconds: number) => ((seconds - ribbon.from) / Math.max(0.1, ribbon.to - ribbon.from)) * W;
+// 2 · The flow ribbon, as the kit's voice ribbon: pauses between thoughts lit, long stops a grey dashed line
+function FlowChart({ ribbon, levels, onPlay }: { ribbon: FlowRibbon; levels: ReadonlyArray<number>; onPlay: PlayFrom }) {
   // The long stops
   const stops = ribbon.pieces.filter((piece) => piece.kind === "stop");
+  // The voice ribbon from the readings (fewer bars for a very short take)
+  const voice = ribbonFromLevels(levels, LOUDNESS_TICK_MS, [], Math.min(ribbonSlots((levels.length * LOUDNESS_TICK_MS) / 1000), levels.length));
   // The picture
   return (
     <>
-      <svg viewBox={`0 0 ${W} 44`} role="img" aria-label={ribbon.line} className="h-auto w-full">
-        {/* Each piece */}
-        {ribbon.pieces.map((piece, index) => {
-          // Its place
-          const [from, width] = [x(piece.start), Math.max(1.5, x(piece.end) - x(piece.start))];
-          // Speech: a block
-          if (piece.kind === "speech") return <rect key={index} x={from} y="4" width={Math.max(1, width - 1)} height="22" rx="5" className="fill-accent" />;
-          // A long stop: an orange bar
-          if (piece.kind === "stop") return <rect key={index} x={from + 1} y="12" width={Math.max(1, width - 2)} height="6" rx="3" className="fill-warm" />;
-          // A pause between thoughts: a soft bar
-          if (piece.kind === "pause") return <rect key={index} x={from + 1} y="12" width={Math.max(1, width - 2)} height="6" rx="3" className="fill-accent/30" />;
-          // An ordinary silence: nothing
-          return null;
-        })}
-        {/* The ends of the take */}
-        <text x="0" y="40" fontSize="9" className="fill-ink-muted">{clock(ribbon.from)}</text>
-        {/* (end) */}
-        <text x={W} y="40" textAnchor="end" fontSize="9" className="fill-ink-muted">{clock(ribbon.to)}</text>
-      </svg>
+      {/* The ribbon */}
+      {voice && <VoiceRibbon ribbon={voice} lit={ribbon.pieces.filter((piece) => piece.kind === "pause")} grey={stops} pauseNames={{ lit: "between thoughts", grey: "a long stop" }} pauseWords={false} label={ribbon.line} />}
+      {/* The ends of the take */}
+      <p className="flex justify-between text-tab text-ink-muted"><span>0:00</span><span>{clock(voice?.duration ?? ribbon.to)}</span></p>
       {/* Hear the long stops */}
       {onPlay && stops.length > 0 && <div className="flex flex-wrap gap-2">{stops.slice(0, 3).map((stop) => <PlayChip key={stop.start} label={`${(stop.end - stop.start).toFixed(1)} s stop at ${clock(stop.start)}`} onClick={() => onPlay(stop.start - 1.5)} />)}</div>}
     </>
@@ -174,12 +159,12 @@ function PaceChart({ lens }: { lens: PaceLens }) {
   // The picture
   return (
     <svg viewBox={`0 0 ${W} 60`} role="img" aria-label={paceStretchLine(stretch)} className="h-auto w-full">
-      {/* Your usual band */}
-      <rect x="0" y={y(lens.band.high)} width={W} height={Math.max(2, y(lens.band.low) - y(lens.band.high))} rx="6" className="fill-accent/15" />
-      {/* The stretch outside it */}
-      {stretch && <rect x={x(stretch.from) - 4} y="0" width={Math.max(8, x(stretch.to) - x(stretch.from) + 8)} height="60" rx="6" className="fill-warm-tint" />}
-      {/* The pace line */}
-      <path d={smoothPath(shown.map((point) => ({ x: x(point.t), y: y(point.wpm) })))} className="text-ink" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
+      {/* Your usual band: the target */}
+      <rect x="0" y={y(lens.band.high)} width={W} height={Math.max(2, y(lens.band.low) - y(lens.band.high))} rx="6" className="fill-chart-band" />
+      {/* The stretch outside it, a grey wash */}
+      {stretch && <rect x={x(stretch.from) - 4} y="0" width={Math.max(8, x(stretch.to) - x(stretch.from) + 8)} height="60" rx="6" className="fill-chart-ghost" opacity="0.25" />}
+      {/* The pace: one soft line, drawn in once */}
+      <path d={smoothPath(shown.map((point) => ({ x: x(point.t), y: y(point.wpm) })))} className="stroke-chart-voice motion-safe:animate-chart-draw" strokeWidth="2.5" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
@@ -201,13 +186,13 @@ function LoudChart({ shapes }: { shapes: LoudShapes }) {
         const outline = (points: number[], places: number[]) => `M${places.map((place, point) => `${place.toFixed(1)} ${(28 - points[point]! * 24).toFixed(1)}`).join(" L")} L${[...places].reverse().map((place, point) => `${place.toFixed(1)} ${(28 + points[points.length - 1 - point]! * 24).toFixed(1)}`).join(" L")} Z`;
         // The last quarter, for a fade
         const tail = Math.floor(shape.points.length * 0.75);
-        // The shape, its fading end in orange
+        // The shape, its fading end grey
         return (
           <g key={index}>
             {/* The whole shape */}
-            <path d={outline(shape.points, xs)} className="fill-accent/80" />
-            {/* Its quiet end */}
-            {shape.faded && <path d={outline(shape.points.slice(tail - 1), xs.slice(tail - 1))} className="fill-warm" />}
+            <path d={outline(shape.points, xs)} className="fill-chart-voice" />
+            {/* Its quiet end, grey */}
+            {shape.faded && <path d={outline(shape.points.slice(tail - 1), xs.slice(tail - 1))} className="fill-chart-ghost" />}
           </g>
         );
       })}
@@ -228,7 +213,7 @@ function EndingsChart({ endings, onPlay }: { endings: Endings; onPlay: PlayFrom 
         // The tail and its words
         const body = (
           <>
-            <svg viewBox="0 0 28 22" aria-hidden="true" className="h-5 w-7"><path d={tail[ending.ending]} className={ending.risingStatement ? "text-warm" : ending.ending === "fell" ? "text-accent" : "text-ink-muted"} stroke="currentColor" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <svg viewBox="0 0 28 22" aria-hidden="true" className="h-5 w-7"><path d={tail[ending.ending]} className={ending.risingStatement ? "stroke-chart-voice" : ending.ending === "fell" ? "stroke-chart-well" : "stroke-ink-muted"} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
             <span className={compact ? "sr-only" : "max-w-full truncate text-tab"}>…{ending.last} <span className="sr-only">{ending.ending}</span></span>
           </>
         );
@@ -251,15 +236,15 @@ function UsualChart({ rows }: { rows: UsualRow[] }) {
         return (
           <li key={row.name} data-usual-row={row.name}>
             {/* Its name and words */}
-            <p className="flex justify-between text-footnote"><b>{row.name}</b><span className={row.outside ? "font-semibold text-warm-ink" : "text-ink-muted"}>{row.words}</span></p>
+            <p className="flex justify-between text-footnote"><b>{row.name}</b><span className={row.outside ? "font-semibold text-ink" : "text-ink-muted"}>{row.words}</span></p>
             {/* The bar */}
             <div className="relative mt-1 h-4" aria-hidden="true">
-              {/* The track */}
+              {/* The light track */}
               <div className="absolute inset-x-0 top-1.5 h-1 rounded bg-rule" />
-              {/* Your usual band */}
-              <div className="absolute top-0 h-4 rounded-full bg-accent/20" style={{ left: `${x(row.low)}%`, width: `${x(row.high) - x(row.low)}%` }} />
-              {/* Today */}
-              <div className={`absolute top-0 size-4 -translate-x-1/2 rounded-full border-2 border-card ${row.outside ? "bg-warm" : "bg-accent"}`} style={{ left: `${x(row.value)}%` }} />
+              {/* Your usual band: the target */}
+              <div className="absolute top-0 h-4 rounded-full border border-chart-well bg-chart-band" style={{ left: `${x(row.low)}%`, width: `${x(row.high) - x(row.low)}%` }} />
+              {/* Today: a filled dot inside, an open ring outside (shape as well as colour) */}
+              <div className={`absolute top-0 size-4 -translate-x-1/2 rounded-full border-2 ${row.outside ? "border-chart-voice bg-card" : "border-card bg-chart-well"}`} style={{ left: `${x(row.value)}%` }} />
             </div>
           </li>
         );
@@ -292,15 +277,13 @@ function ShapeChart({ arc }: { arc: EnergyArc }) {
   return (
     <>
       <svg viewBox={`0 0 ${W} 70`} role="img" aria-label={arc.line} className="h-auto w-full">
-        {/* The dip */}
-        {low >= 0 && <rect x={(W * low) / 3} y="0" width={W / 3} height="70" className="fill-warm-tint" />}
-        {/* The area */}
-        <path d={`${curve}L${W} 70L0 70Z`} className="fill-accent/15" />
-        {/* The curve */}
-        <path d={curve} className="text-accent" stroke="currentColor" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+        {/* The dip, a grey wash */}
+        {low >= 0 && <rect x={(W * low) / 3} y="0" width={W / 3} height="70" rx="8" className="fill-chart-ghost" opacity="0.2" />}
+        {/* The energy: one soft line, drawn in once */}
+        <path d={curve} className="stroke-chart-voice motion-safe:animate-chart-draw" strokeWidth="2.5" fill="none" strokeLinecap="round" />
       </svg>
       {/* The thirds */}
-      <p className="grid grid-cols-3 text-center text-footnote font-semibold">{["Start", "Middle", "End"].map((name, index) => <span key={name} className={index === low ? "text-warm-ink" : "text-accent"}>{name}</span>)}</p>
+      <p className="grid grid-cols-3 text-center text-footnote font-semibold">{["Start", "Middle", "End"].map((name, index) => <span key={name} className={index === low ? "text-ink" : "text-ink-muted"}>{name}</span>)}</p>
     </>
   );
 }
@@ -315,7 +298,7 @@ function RangeChart({ range }: { range: VoiceRange }) {
       {/* Its label */}
       <p className="text-footnote text-ink-muted">{label} · {Math.round(steps)} steps</p>
       {/* The track and the range, centred */}
-      <div className="relative mt-1 h-5 rounded-full bg-paper" aria-hidden="true"><div className={`absolute top-0 h-5 rounded-full ${today ? "bg-warm" : "bg-ink-muted/40"}`} style={{ left: `${50 - (steps / widest) * 50}%`, width: `${(steps / widest) * 100}%` }} /></div>
+      <div className="relative mt-1 h-5 rounded-full bg-paper" aria-hidden="true"><div className={`absolute top-0 h-5 rounded-full ${today ? "bg-chart-voice" : "bg-chart-ghost"}`} style={{ left: `${50 - (steps / widest) * 50}%`, width: `${(steps / widest) * 100}%` }} /></div>
     </div>
   );
   // Both bars
@@ -335,14 +318,14 @@ function ProgressChart({ progress }: { progress: FocusProgress }) {
   // The picture
   return (
     <svg viewBox={`0 0 ${W} 86`} role="img" aria-label={progress.line} className="h-auto w-full">
-      {/* Where you started */}
-      <rect x="0" y={y(progress.start.high)} width={W} height={Math.max(2, y(progress.start.low) - y(progress.start.high))} rx="6" className="fill-rule/60" />
+      {/* Where you started: a dashed grey band, the ghost */}
+      <rect x="0" y={y(progress.start.high)} width={W} height={Math.max(2, y(progress.start.low) - y(progress.start.high))} rx="6" className="fill-none stroke-chart-ghost" strokeWidth="1.5" strokeDasharray="4 4" />
       {/* Its name */}
-      <text x={W - 4} y="84" textAnchor="end" fontSize="9" className="fill-ink-muted">grey band: where you started</text>
-      {/* The line */}
-      <path d={`M${progress.values.map((value, index) => `${x(index)} ${y(value)}`).join(" L")}`} className="text-ink-muted" stroke="currentColor" strokeWidth="2" fill="none" />
+      <text x={W - 4} y="84" textAnchor="end" fontSize="9" className="fill-ink-muted">dashed band: where you started</text>
+      {/* The line, drawn in once */}
+      <path d={`M${progress.values.map((value, index) => `${x(index)} ${y(value)}`).join(" L")}`} className="stroke-chart-well motion-safe:animate-chart-draw" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       {/* Each take, this one bigger */}
-      {progress.values.map((value, index) => <circle key={index} cx={x(index)} cy={y(value)} r={index === progress.values.length - 1 ? 7 : 4.5} className={index === progress.values.length - 1 ? "fill-accent" : "fill-ink-muted"} />)}
+      {progress.values.map((value, index) => <circle key={index} cx={x(index)} cy={y(value)} r={index === progress.values.length - 1 ? 6 : 4} className="fill-chart-well stroke-card" strokeWidth="2" />)}
     </svg>
   );
 }
@@ -390,11 +373,11 @@ export function ChartTrial({ session, sessions, usual, text, pauses, pace, phras
       {/* Its name */}
       <h2 id="trial-heading" className={SECTION_HEADING}>Every chart (trial)</h2>
       {/* What it is */}
-      <p className={LABEL}>On for a week of testing, to see which charts make sense where. Orange marks what to look at; green what landed.</p>
+      <p className={LABEL}>On for a week of testing, to see which charts make sense where. Grey marks what to look at; teal what landed.</p>
       {/* 1 */}
       {charts.line && <TrialCard id="line" title="1 · Voice line over your words" answers="Where did I rise, fall or go flat?" sure="high" needs="Words with times" line={charts.line.phrase.risingStatement ? "Rose at the end, like a question." : charts.line.phrase.ending === "fell" ? "Fell at the end: it sounded finished." : "Your voice through this phrase."}><VoiceLineChart line={charts.line} onPlay={onPlay} /></TrialCard>}
       {/* 2 */}
-      {charts.flow && <TrialCard id="flow" title="2 · Flow ribbon" answers="Where did I flow, and where did I stop?" sure="high" needs="Audio only" line={charts.flow.line}><FlowChart ribbon={charts.flow} onPlay={onPlay} /></TrialCard>}
+      {charts.flow && <TrialCard id="flow" title="2 · Flow ribbon" answers="Where did I flow, and where did I stop?" sure="high" needs="Audio only" line={charts.flow.line}><FlowChart ribbon={charts.flow} levels={session.loudness ?? []} onPlay={onPlay} /></TrialCard>}
       {/* 3 */}
       {charts.pace && <TrialCard id="pace" title="3 · Pace ribbon" answers="Where did I rush or drag?" sure="medium" needs="Words with times" line={paceStretchLine(paceStretch(charts.pace))}><PaceChart lens={charts.pace} /></TrialCard>}
       {/* A */}

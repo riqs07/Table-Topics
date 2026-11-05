@@ -54,9 +54,9 @@ export function StressKey() {
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-footnote text-ink-muted">
       {/* The key word */}
-      <span className="flex items-center gap-1.5"><svg width="14" height="14" aria-hidden="true" className="text-warm-ink"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 2" /></svg>Where the stress was meant to go</span>
+      <span className="flex items-center gap-1.5"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" className="stroke-chart-well" strokeWidth="2" strokeDasharray="3 2" /></svg>Where the stress was meant to go</span>
       {/* The highest point */}
-      <span className="flex items-center gap-1.5"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" className="fill-accent" /></svg>Your highest point</span>
+      <span className="flex items-center gap-1.5"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" className="fill-chart-voice" /></svg>Your highest point</span>
     </div>
   );
 }

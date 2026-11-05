@@ -1,5 +1,5 @@
 "use client";
-// The results after round 3 of a 4/3/2 loop (decision 118), with the charts that already exist: last try and this try's phrase row with up to three curves where the words line up (round 1 faint, round 2 dashed, round 3 solid), a small table of each round's numbers, and one plain line on what changed that clears the noise (decision 103)
+// The results after round 3 of a 4/3/2 loop (decision 118), with the charts that already exist, drawn in the Chart Kit's language (second design pass): last try and this try's phrase row with up to three curves where the words line up (round 1 a faint dotted ghost, round 2 a dashed ghost, round 3 your soft line), a small table of each round's numbers, and one plain line on what changed that clears the noise (decision 103)
 
 // Load React's memo, state and effect tools
 import { useEffect, useMemo, useState } from "react";
@@ -17,21 +17,13 @@ import { smoothPath } from "@/core/pitchClean";
 // Load the loop's rules
 import { loopRounds } from "@/core/fourThreeTwo";
 import { loopChangeLine, loopTable, roundNumbers } from "@/core/loopCompare";
+// Load the kit's key and the end of a curve
+import { ChartKey } from "@/components/charts/ChartKey";
+import { endPoint } from "@/core/chartKit";
 // Load the record types
 import type { FullSession, SessionRecord } from "@/data/records";
 // Load the repository type
 import type { Repository } from "@/data/repository";
-
-// The key's line for each round: faint dots, dashes, solid
-function KeyLine({ round }: { round: 1 | 2 | 3 }) {
-  // The little line
-  return (
-    <svg width="22" height="6" aria-hidden="true" className={round === 3 ? "text-accent" : "text-ink-muted"}>
-      {/* Round 1 faint, round 2 dashed, round 3 solid */}
-      <line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth={round === 3 ? 3 : round === 2 ? 2.5 : 2} strokeDasharray={round === 3 ? undefined : round === 2 ? "6 4" : "2 4"} opacity={round === 1 ? 0.45 : 1} />
-    </svg>
-  );
-}
 
 // One phrase of round 3 with the earlier rounds' curves under it where they line up
 function TripleRows({ triple, pitch, width, measure }: { triple: PhraseTriple; pitch: PitchWords; width: number; measure: (text: string, bold: boolean) => number }) {
@@ -41,7 +33,7 @@ function TripleRows({ triple, pitch, width, measure }: { triple: PhraseTriple; p
   return (
     <div className="flex flex-col gap-1">
       {/* The rows, the earlier rounds under each */}
-      {lines.map((line, index) => <CurveRow key={index} width={width} words={triple.after.words} slots={line.slots} path={smoothPath(line.points)} under={triple.middle ? smoothPath(overlayPoints(triple.middle, pitch.tickMs, line.slots, triple.after.words)) : null} faintUnder={triple.first ? smoothPath(overlayPoints(triple.first, pitch.tickMs, line.slots, triple.after.words)) : null} label={`Round 3: ${describePhrase(triple.after)}${triple.middle ? " Round 2 is the dashed line." : ""}${triple.first ? " Round 1 is the faint dotted line." : ""}`} look={(place) => (triple.after.words[place]!.peak ? "peak" : "plain")} />)}
+      {lines.map((line, index) => <CurveRow key={index} width={width} words={triple.after.words} slots={line.slots} path={smoothPath(line.points)} under={triple.middle ? smoothPath(overlayPoints(triple.middle, pitch.tickMs, line.slots, triple.after.words)) : null} faintUnder={triple.first ? smoothPath(overlayPoints(triple.first, pitch.tickMs, line.slots, triple.after.words)) : null} fell={triple.after.ending === "fell" && index === lines.length - 1 ? endPoint(line.points) : null} label={`Round 3: ${describePhrase(triple.after)}${triple.middle ? " Round 2 is the dashed line." : ""}${triple.first ? " Round 1 is the faint dotted line." : ""}`} look={(place) => (triple.after.words[place]!.peak ? "peak" : "plain")} />)}
     </div>
   );
 }
@@ -79,10 +71,7 @@ function LoopCurves({ repo, rounds }: { repo: Repository; rounds: readonly [Full
       {/* Each matched phrase */}
       {triples.map((triple) => <TripleRows key={triple.after.index} triple={triple} pitch={now} width={width - 32} measure={measure} />)}
       {/* The key */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-footnote text-ink-muted">
-        {/* Each round */}
-        {([1, 2, 3] as const).map((round) => <span key={round} className="flex items-center gap-1.5"><KeyLine round={round} />Round {round}</span>)}
-      </div>
+      <ChartKey items={[{ kind: "ghost-faint", name: "Round 1" }, { kind: "ghost", name: "Round 2" }, { kind: "pitch", name: "Round 3" }]} />
       {/* Rough word times, said quietly */}
       {now.precision === "rough" && <p className="text-footnote text-ink-muted">Words are placed from the phone’s timings, so their places are rough.</p>}
     </div>

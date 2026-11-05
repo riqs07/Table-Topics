@@ -1,67 +1,38 @@
 "use client";
 // A long take at a glance (decision 115): its fingerprint (one strip of speech stretches, taller where louder, with pause-word ticks, pitch-peak dots and marks under pauses that split a sentence, and a plain headline), its best moment (the words, why, and a play button for just that window), and its energy arc by thirds. Colour roles only
 
-// Load the shared card and label looks
-import { CARD, LABEL } from "@/components/script/textStyles";
 // Load the play and stop icons
 import { PlayIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the clock formatter
 import { formatClock } from "@/core/recordingRules";
 // Load the smooth path drawer
 import { smoothPath } from "@/core/pitchClean";
+// Load the Chart Kit's frame, ribbon and key, the ribbon from stretches and the headline's key words
+import { ChartCard, Emphasised } from "@/components/charts/ChartCard";
+import { VoiceRibbon } from "@/components/charts/VoiceRibbon";
+import { ChartKey } from "@/components/charts/ChartKey";
+import { glanceEmphasis, ribbonFromStretches } from "@/core/chartKit";
 // Load the types drawn here
 import type { Fingerprint } from "@/core/fingerprint";
 import type { BestMoment } from "@/core/bestMoment";
 import type { EnergyArc } from "@/core/energyArc";
 
-// The strip's picture: 326 across, 84 down (it stretches to the card)
-const STRIP = { width: 326, height: 84, middle: 40 } as const;
-
-// The fingerprint card
+// The fingerprint card, as the Chart Kit's "after a take" (second design pass): the headline with its key words lit, the whole take as a voice ribbon (pauses as gaps with a soft band, a pause that split a sentence as a grey dashed line, a dot below for each pause word), its ends, and a key
 export function FingerprintCard({ print }: { print: Fingerprint }) {
-  // Across the picture for a moment
-  const x = (seconds: number) => (seconds / Math.max(1, print.duration)) * STRIP.width;
-  // The usual stretch's level, for drawing the quieter last stretch lighter
-  const quieterLast = print.note !== null;
+  // The ribbon: from the readings when kept on the fingerprint, otherwise from its stretches
+  const ribbon = print.ribbon ?? ribbonFromStretches(print.stretches, print.duration, print.ums);
+  // The headline's key words
+  const em = glanceEmphasis(print.headline);
   // The card
   return (
-    <section aria-labelledby="glance-heading" data-fingerprint className={`mt-5 flex flex-col gap-2 p-5 ${CARD}`}>
-      {/* What it is */}
-      <p className={LABEL}>Your take at a glance</p>
-      {/* The headline */}
-      <h2 id="glance-heading" className="font-display text-cue font-semibold">{print.headline}</h2>
-      {/* The strip */}
-      <svg viewBox={`0 0 ${STRIP.width} ${STRIP.height - 14}`} preserveAspectRatio="none" role="img" aria-label={`The whole take as a strip: ${print.stretches.length} stretches of speech, ${print.ums.length} pause ${print.ums.length === 1 ? "word" : "words"}, ${print.peaks.length} pitch ${print.peaks.length === 1 ? "peak" : "peaks"} and ${print.midPauses.length} ${print.midPauses.length === 1 ? "pause" : "pauses"} mid-sentence.`} className="mt-1 h-[70px] w-full">
-        {/* The pause words, as ticks at the top */}
-        {print.ums.map((at, index) => <polygon key={`u${index}`} data-um points={`${x(at)},4 ${x(at) + 4},11 ${x(at) - 4},11`} className="fill-warm" />)}
-        {/* The stretches, taller where louder */}
-        {print.stretches.map((stretch, index) => {
-          // Its height
-          const tall = 8 + stretch.level * 30;
-          // The stretch
-          return <rect key={`s${index}`} data-stretch x={x(stretch.start)} y={STRIP.middle - tall / 2} width={Math.max(2, x(stretch.end) - x(stretch.start) - 1)} height={tall} rx="4" className={quieterLast && index === print.stretches.length - 1 ? "fill-accent/45" : "fill-accent"} />;
-        })}
-        {/* The pauses that split a sentence, under the strip */}
-        {print.midPauses.map((pause, index) => <rect key={`m${index}`} data-mid x={x(pause.start)} y={STRIP.middle + 22} width={Math.max(4, x(pause.end) - x(pause.start))} height="4" rx="2" className="fill-warm" />)}
-        {/* The pitch peaks, as dots above */}
-        {print.peaks.map((at, index) => <circle key={`p${index}`} data-peak cx={x(at)} cy="18" r="3.5" className="fill-ink" />)}
-      </svg>
+    <ChartCard id="glance-heading" label="Your take at a glance" headline={<Emphasised text={print.headline} em={em} />} note={print.note} className="mt-5" data={{ "data-fingerprint": true }}>
+      {/* The ribbon, with the pauses and pause words to point at */}
+      {ribbon && <div className="mt-1"><VoiceRibbon ribbon={ribbon} width={480} height={48} grey={print.midPauses} pauseNames={{ grey: "mid-sentence" }} label={`The whole take as a ribbon: ${print.stretches.length} stretches of speech, ${print.ums.length} pause ${print.ums.length === 1 ? "word" : "words"} and ${print.midPauses.length} ${print.midPauses.length === 1 ? "pause" : "pauses"} mid-sentence.`} /></div>}
       {/* The ends */}
       <p className="flex justify-between text-footnote text-ink-muted"><span>0:00</span><span>{formatClock(Math.round(print.duration))}</span></p>
       {/* What the marks mean */}
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-footnote text-ink-muted">
-        {/* Speech */}
-        <span className="flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-[18px] flex-none rounded-sm bg-accent" />Speaking (taller = louder)</span>
-        {/* Pause words */}
-        <span className="flex items-center gap-1.5"><svg width="10" height="10" aria-hidden="true" className="flex-none"><polygon points="5,0 10,9 0,9" className="fill-warm" /></svg>Pause word</span>
-        {/* Peaks */}
-        <span className="flex items-center gap-1.5"><svg width="10" height="10" aria-hidden="true" className="flex-none"><circle cx="5" cy="5" r="4" className="fill-ink" /></svg>Pitch peak</span>
-        {/* Split sentences */}
-        <span className="flex items-center gap-1.5"><span aria-hidden="true" className="h-1 w-[18px] flex-none rounded-full bg-warm" />Pause mid-sentence</span>
-      </div>
-      {/* The volume at the end */}
-      {print.note && <p className="mt-1 text-footnote text-ink-muted">{print.note}</p>}
-    </section>
+      <ChartKey items={[{ kind: "voice", name: "Speaking (taller = louder)" }, { kind: "pause", name: "A real pause" }, ...(print.midPauses.length > 0 ? [{ kind: "pause-grey" as const, name: "Pause mid-sentence" }] : []), { kind: "um", name: "Pause word" }]} />
+    </ChartCard>
   );
 }
 
@@ -89,7 +60,7 @@ export function BestMomentCard({ moment, onPlay }: { moment: BestMoment; onPlay:
   );
 }
 
-// The energy-arc card
+// The energy-arc card, in the Chart Kit's language (second design pass): the arc's line as the headline, then the energy by thirds as one soft line over a light grid
 export function EnergyArcCard({ arc }: { arc: EnergyArc }) {
   // The picture's size
   const [width, height] = [326, 70];
@@ -99,29 +70,18 @@ export function EnergyArcCard({ arc }: { arc: EnergyArc }) {
   const y = (value: number) => 6 + ((top - value) / Math.max(0.01, top - bottom)) * (height - 16);
   // The points: held flat at both ends, through each third's middle
   const points = [{ x: 0, y: y(arc.thirds[0]) }, { x: width / 6, y: y(arc.thirds[0]) }, { x: width / 2, y: y(arc.thirds[1]) }, { x: (width * 5) / 6, y: y(arc.thirds[2]) }, { x: width, y: y(arc.thirds[2]) }];
-  // The curve
-  const curve = smoothPath(points);
   // The card
   return (
-    <section aria-labelledby="energy-heading" data-energy-arc className={`mt-5 flex flex-col gap-2 p-5 ${CARD}`}>
-      {/* What it is */}
-      <h2 id="energy-heading" className={LABEL}>Energy</h2>
+    <ChartCard id="energy-heading" label="Energy" heading="label" headline={arc.line} note="Loudness and pitch variety together, by thirds of the take." className="mt-5" data={{ "data-energy-arc": true }}>
       {/* The picture */}
-      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={arc.line} className="h-[70px] w-full">
-        {/* The area under the curve */}
-        <path d={`${curve}L${width} ${height}L0 ${height}Z`} className="fill-accent/15" />
-        {/* The curve */}
-        <path d={curve} className="text-accent" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        {/* The thirds */}
-        <line x1={width / 3} x2={width / 3} y1="0" y2={height} className="text-rule" stroke="currentColor" vectorEffect="non-scaling-stroke" />
-        {/* (second line) */}
-        <line x1={(width * 2) / 3} x2={(width * 2) / 3} y1="0" y2={height} className="text-rule" stroke="currentColor" vectorEffect="non-scaling-stroke" />
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={arc.line} className="block h-auto w-full overflow-visible">
+        {/* The thirds, light grid lines */}
+        {[width / 3, (width * 2) / 3].map((x) => <line key={x} x1={x} x2={x} y1="0" y2={height} className="stroke-rule" strokeWidth="1.5" />)}
+        {/* The energy: one soft line, drawn in once */}
+        <path d={smoothPath(points)} className="stroke-chart-voice motion-safe:animate-chart-draw" strokeWidth="2.5" fill="none" strokeLinecap="round" />
       </svg>
       {/* The thirds' names */}
       <p className="grid grid-cols-3 text-center text-footnote text-ink-muted"><span>Beginning</span><span>Middle</span><span>End</span></p>
-      {/* What it shows */}
-      <p className="text-footnote leading-snug">Loudness and pitch variety together. <b>{arc.line}</b></p>
-    </section>
+    </ChartCard>
   );
 }
-
