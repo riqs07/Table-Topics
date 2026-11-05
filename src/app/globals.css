@@ -72,6 +72,24 @@
   --color-art-coral: var(--vl-art-coral);
   /* (cream) */
   --color-art-cream: var(--vl-art-cream);
+  /* Sage, the coach: pine green body (drawings only) */
+  --color-sage: var(--vl-sage);
+  /* Sage's shaded side */
+  --color-sage-shade: var(--vl-sage-shade);
+  /* The friend, the other person in conversations: teal body (drawings only) */
+  --color-friend: var(--vl-friend);
+  /* The friend's shaded side */
+  --color-friend-shade: var(--vl-friend-shade);
+  /* Charts: your voice as a ribbon, pitch as a line (Chart Kit) */
+  --color-chart-voice: var(--vl-chart-voice);
+  /* Charts: a pause word, as a dot */
+  --color-chart-um: var(--vl-chart-um);
+  /* Charts: what went well, a real pause, as a band */
+  --color-chart-well: var(--vl-chart-well);
+  /* Charts: your last time or day 1, as a dashed ghost */
+  --color-chart-ghost: var(--vl-chart-ghost);
+  /* Charts: the target band behind bars */
+  --color-chart-band: var(--vl-chart-band);
   /* Running text, as font-body */
   --font-body: var(--vl-font-body);
   /* Headings and prompts, as font-display */
@@ -395,6 +413,8 @@
   .vl-scene .s-bob { animation: vl-s-bob 2.6s ease-in-out infinite; }
   /* A character on its own breathing up and down (Buddy, UI rewrite) */
   .vl-scene .b-bob { animation: vl-b-bob 3.4s ease-in-out infinite; }
+  /* The cast at rest: a slow breath, squashing a little from the ground (second pass) */
+  .vl-scene .c-breathe { animation: vl-c-breathe 4.2s ease-in-out infinite; transform-origin: 0 94px; transform-box: view-box; }
   /* Rapid Fire: the jump, the bolt and its lines */
   .vl-scene .s-jolt { animation: vl-s-jolt 2.4s ease-out infinite; }
   /* (the bolt) */
@@ -492,6 +512,8 @@
 /* Blink: open, then shut for a moment */
 @keyframes vl-s-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
 /* Bob: up a little and back */
+/* The cast's breath: a touch wider and lower, then back */
+@keyframes vl-c-breathe { 0%, 100% { transform: none; } 50% { transform: scale(1.02, 0.975); } }
 @keyframes vl-b-bob { 0%, 100% { transform: none; } 50% { transform: translateY(-7px) scale(1.01, 0.99); } }
 @keyframes vl-s-bob { 0%, 100% { transform: none; } 50% { transform: translateY(-3px); } }
 /* Jolt: still, then a quick jump as the bolt strikes */

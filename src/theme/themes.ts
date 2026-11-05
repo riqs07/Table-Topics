@@ -98,6 +98,24 @@ export const THEMES = {
         "art-coral": "#ec6a55",
         // (cream)
         "art-cream": "#fff6e6",
+        // Sage, the coach: pine green body (drawings only)
+        "sage": "#2d5a3d",
+        // Sage's shaded side
+        "sage-shade": "#20432c",
+        // The friend, the other person in conversations: teal body (drawings only)
+        "friend": "#2fb3a4",
+        // The friend's shaded side
+        "friend-shade": "#1f8d80",
+        // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+        "chart-voice": "#5b5fc7",
+        // Charts: a pause word, as a dot
+        "chart-um": "#d9773f",
+        // Charts: what went well, a real pause, as a band
+        "chart-well": "#1f9a8a",
+        // Charts: your last time or day 1, as a dashed ghost
+        "chart-ghost": "#b8a99c",
+        // Charts: the target band behind bars
+        "chart-band": "#e4f5ef",
       },
       // Night colors: warm brown-black
       dark: {
@@ -159,6 +177,24 @@ export const THEMES = {
         "art-coral": "#d85c48",
         // (cream)
         "art-cream": "#f3e9d6",
+        // Sage, the coach: pine green body (drawings only)
+        "sage": "#3e7552",
+        // Sage's shaded side
+        "sage-shade": "#2c5a3d",
+        // The friend, the other person in conversations: teal body (drawings only)
+        "friend": "#2aa896",
+        // The friend's shaded side
+        "friend-shade": "#1d7d71",
+        // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+        "chart-voice": "#7b7fe0",
+        // Charts: a pause word, as a dot
+        "chart-um": "#cf7a44",
+        // Charts: what went well, a real pause, as a band
+        "chart-well": "#2aa896",
+        // Charts: your last time or day 1, as a dashed ghost
+        "chart-ghost": "#6f645b",
+        // Charts: the target band behind bars
+        "chart-band": "#1f3a33",
       },
     },
     // Results and Learn keep the page's own cream; practising stays light too, with the blob on stage
@@ -242,6 +278,24 @@ export const THEMES = {
         "art-coral": "#ec6a55",
         // (cream)
         "art-cream": "#fff6e6",
+        // Sage, the coach: pine green body (drawings only)
+        "sage": "#2d5a3d",
+        // Sage's shaded side
+        "sage-shade": "#20432c",
+        // The friend, the other person in conversations: teal body (drawings only)
+        "friend": "#2fb3a4",
+        // The friend's shaded side
+        "friend-shade": "#1f8d80",
+        // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+        "chart-voice": "#5b5fc7",
+        // Charts: a pause word, as a dot
+        "chart-um": "#d9773f",
+        // Charts: what went well, a real pause, as a band
+        "chart-well": "#1f9a8a",
+        // Charts: your last time or day 1, as a dashed ghost
+        "chart-ghost": "#b8a99c",
+        // Charts: the target band behind bars
+        "chart-band": "#e4f5ef",
       },
       // Night colors: warm charcoal, not blue-black
       dark: {
@@ -303,6 +357,24 @@ export const THEMES = {
         "art-coral": "#d85c48",
         // (cream)
         "art-cream": "#f3e9d6",
+        // Sage, the coach: pine green body (drawings only)
+        "sage": "#3e7552",
+        // Sage's shaded side
+        "sage-shade": "#2c5a3d",
+        // The friend, the other person in conversations: teal body (drawings only)
+        "friend": "#2aa896",
+        // The friend's shaded side
+        "friend-shade": "#1d7d71",
+        // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+        "chart-voice": "#7b7fe0",
+        // Charts: a pause word, as a dot
+        "chart-um": "#cf7a44",
+        // Charts: what went well, a real pause, as a band
+        "chart-well": "#2aa896",
+        // Charts: your last time or day 1, as a dashed ghost
+        "chart-ghost": "#6f645b",
+        // Charts: the target band behind bars
+        "chart-band": "#1f3a33",
       },
     },
     // Readable body face and a soft serif for headings and prompts
@@ -381,6 +453,24 @@ export const THEMES = {
         "art-coral": "#ec6a55",
         // (cream)
         "art-cream": "#fff6e6",
+        // Sage, the coach: pine green body (drawings only)
+        "sage": "#2d5a3d",
+        // Sage's shaded side
+        "sage-shade": "#20432c",
+        // The friend, the other person in conversations: teal body (drawings only)
+        "friend": "#2fb3a4",
+        // The friend's shaded side
+        "friend-shade": "#1f8d80",
+        // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+        "chart-voice": "#5b5fc7",
+        // Charts: a pause word, as a dot
+        "chart-um": "#d9773f",
+        // Charts: what went well, a real pause, as a band
+        "chart-well": "#1f9a8a",
+        // Charts: your last time or day 1, as a dashed ghost
+        "chart-ghost": "#b8a99c",
+        // Charts: the target band behind bars
+        "chart-band": "#e4f5ef",
       },
       // Night colors
       dark: {
@@ -442,6 +532,24 @@ export const THEMES = {
         "art-coral": "#d85c48",
         // (cream)
         "art-cream": "#f3e9d6",
+        // Sage, the coach: pine green body (drawings only)
+        "sage": "#3e7552",
+        // Sage's shaded side
+        "sage-shade": "#2c5a3d",
+        // The friend, the other person in conversations: teal body (drawings only)
+        "friend": "#2aa896",
+        // The friend's shaded side
+        "friend-shade": "#1d7d71",
+        // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+        "chart-voice": "#7b7fe0",
+        // Charts: a pause word, as a dot
+        "chart-um": "#cf7a44",
+        // Charts: what went well, a real pause, as a band
+        "chart-well": "#2aa896",
+        // Charts: your last time or day 1, as a dashed ghost
+        "chart-ghost": "#6f645b",
+        // Charts: the target band behind bars
+        "chart-band": "#1f3a33",
       },
     },
     // One editorial serif for everything (script-page direction)
@@ -453,8 +561,8 @@ export const THEMES = {
       results: { light: { "paper-raised": "#f3f7f2", "paper": "#e3eee6" }, dark: { "paper-raised": "#1b221d", "paper": "#151a16" } },
       // The recording stage: deep green with light ink, in both modes
       stage: {
-        light: { "paper-raised": "#12291c", "paper": "#0c1f15", "ink": "#f4f1ea", "ink-muted": "#b9c9be", "rule": "#3c5a47", "accent": "#8bd3a0", "fill": "#f4f1ea", "fill-ink": "#12291c", "filler": "#a9bcb0", "card": "#1b3626", "accent-ink": "#12291c", "warm-tint": "#3a2b20", "warm-ink": "#f2c3a1", "focus-ring": "#9cc3e8", "light-green": "#66bb6a", "light-yellow": "#e8b923", "light-red": "#f26b5b" },
-        dark: { "paper-raised": "#0e1e15", "paper": "#09160f", "ink": "#f4f1ea", "ink-muted": "#b9c9be", "rule": "#33503e", "accent": "#8bd3a0", "fill": "#f4f1ea", "fill-ink": "#12291c", "filler": "#a9bcb0", "card": "#173022", "accent-ink": "#12291c", "warm-tint": "#3a2b20", "warm-ink": "#f2c3a1", "focus-ring": "#9cc3e8", "light-green": "#66bb6a", "light-yellow": "#e8b923", "light-red": "#f26b5b" },
+        light: { "paper-raised": "#12291c", "paper": "#0c1f15", "ink": "#f4f1ea", "ink-muted": "#b9c9be", "rule": "#3c5a47", "accent": "#8bd3a0", "fill": "#f4f1ea", "fill-ink": "#12291c", "filler": "#a9bcb0", "card": "#1b3626", "accent-ink": "#12291c", "warm-tint": "#3a2b20", "warm-ink": "#f2c3a1", "focus-ring": "#9cc3e8", "light-green": "#66bb6a", "light-yellow": "#e8b923", "light-red": "#f26b5b", "chart-voice": "#a9acf2" },
+        dark: { "paper-raised": "#0e1e15", "paper": "#09160f", "ink": "#f4f1ea", "ink-muted": "#b9c9be", "rule": "#33503e", "accent": "#8bd3a0", "fill": "#f4f1ea", "fill-ink": "#12291c", "filler": "#a9bcb0", "card": "#173022", "accent-ink": "#12291c", "warm-tint": "#3a2b20", "warm-ink": "#f2c3a1", "focus-ring": "#9cc3e8", "light-green": "#66bb6a", "light-yellow": "#e8b923", "light-red": "#f26b5b", "chart-voice": "#a9acf2" },
       },
     },
     fonts: {
@@ -532,6 +640,24 @@ export const THEMES = {
         "art-coral": "#909090",
         // (cream)
         "art-cream": "#f4f4f4",
+        // Sage, the coach: pine green body (drawings only)
+        "sage": "#5a5a5a",
+        // Sage's shaded side
+        "sage-shade": "#444444",
+        // The friend, the other person in conversations: teal body (drawings only)
+        "friend": "#8a8a8a",
+        // The friend's shaded side
+        "friend-shade": "#6e6e6e",
+        // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+        "chart-voice": "#4a4a4a",
+        // Charts: a pause word, as a dot
+        "chart-um": "#7a7a7a",
+        // Charts: what went well, a real pause, as a band
+        "chart-well": "#3a3a3a",
+        // Charts: your last time or day 1, as a dashed ghost
+        "chart-ghost": "#b0b0b0",
+        // Charts: the target band behind bars
+        "chart-band": "#ececec",
       },
       // Night colors
       dark: {
@@ -593,6 +719,24 @@ export const THEMES = {
         "art-coral": "#707070",
         // (cream)
         "art-cream": "#e6e6e6",
+        // Sage, the coach: pine green body (drawings only)
+        "sage": "#9a9a9a",
+        // Sage's shaded side
+        "sage-shade": "#7c7c7c",
+        // The friend, the other person in conversations: teal body (drawings only)
+        "friend": "#bcbcbc",
+        // The friend's shaded side
+        "friend-shade": "#9a9a9a",
+        // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+        "chart-voice": "#d6d6d6",
+        // Charts: a pause word, as a dot
+        "chart-um": "#a8a8a8",
+        // Charts: what went well, a real pause, as a band
+        "chart-well": "#c8c8c8",
+        // Charts: your last time or day 1, as a dashed ghost
+        "chart-ghost": "#6a6a6a",
+        // Charts: the target band behind bars
+        "chart-band": "#2e2e2e",
       },
     },
     // The phone's own fonts

@@ -60,6 +60,24 @@ export const ROLES = [
   "art-coral",
   // (cream: pages, ice and highlights, light in both modes)
   "art-cream",
+  // Sage, the coach: pine green body (drawings only)
+  "sage",
+  // Sage's shaded side
+  "sage-shade",
+  // The friend, the other person in conversations: teal body (drawings only)
+  "friend",
+  // The friend's shaded side
+  "friend-shade",
+  // Charts: your voice as a ribbon, pitch as a line (Chart Kit)
+  "chart-voice",
+  // Charts: a pause word, as a dot
+  "chart-um",
+  // Charts: what went well, a real pause, as a band
+  "chart-well",
+  // Charts: your last time or day 1, as a dashed ghost
+  "chart-ghost",
+  // Charts: the target band behind bars
+  "chart-band",
 ] as const;
 
 // One color role name
@@ -136,4 +154,10 @@ export const CONTRAST_RULES: ReadonlyArray<ContrastRule> = [
   { foreground: "light-red", background: "paper", minimum: NON_TEXT },
   // (same, on lifted surfaces)
   { foreground: "light-red", background: "paper-raised", minimum: NON_TEXT },
+  // Chart marks stand out from the card they sit on (Chart Kit)
+  { foreground: "chart-voice", background: "card", minimum: NON_TEXT },
+  // Chart marks stand out from the card they sit on (Chart Kit)
+  { foreground: "chart-um", background: "card", minimum: NON_TEXT },
+  // Chart marks stand out from the card they sit on (Chart Kit)
+  { foreground: "chart-well", background: "card", minimum: NON_TEXT },
 ];

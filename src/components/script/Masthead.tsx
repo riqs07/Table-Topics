@@ -12,6 +12,8 @@ import type { ReactNode } from "react";
 import { PRESS } from "./Buttons";
 // Load the blob, for the rail's name
 import { Buddy } from "@/components/scenes/Buddy";
+// Load the week card at the foot of the rail
+import { RailWeek } from "./RailWeek";
 
 // The sections a page can belong to (Learn is inside Courses, Skills inside Practice, and Settings, History and the profile inside Me)
 export type Section = "today" | "practice" | "skills" | "courses" | "learn" | "settings" | "me";
@@ -107,6 +109,8 @@ export function Masthead({ title, children, section, nav = true, close = null }:
               </Link>
             );
           })}
+          {/* The week, on a computer */}
+          <RailWeek />
         </nav>
       )}
     </>
