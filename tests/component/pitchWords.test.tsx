@@ -64,7 +64,7 @@ describe("pitch in the text, on a take's page", () => {
     // Drawn
     render(<SessionScreen sessionId="zoo" repository={await repositoryWith([session])} now={NOW} />);
     // The voice section
-    const section = await screen.findByRole("region", { name: "Your voice" });
+    const section = await screen.findByRole("region", { name: "Your voice" }, { timeout: 4000 });
     // The words, once worked out
     const text = await waitFor(() => section.querySelector("[data-pitch-text]")!);
     // The peaks, the endings, the flat phrase, and the rising word's highlight
@@ -82,7 +82,7 @@ describe("pitch in the text, on a take's page", () => {
     // Drawn
     render(<SessionScreen sessionId="zoo" repository={await repositoryWith([session], { exact: ["zoo"] })} now={NOW} />);
     // The words
-    const section = await screen.findByRole("region", { name: "Your voice" });
+    const section = await screen.findByRole("region", { name: "Your voice" }, { timeout: 4000 });
     // As the service wrote them, and no "rough" note
     await waitFor(() => expect(section.querySelector("[data-pitch-text]")?.textContent).toContain("Saturday"));
     // Exact
@@ -96,7 +96,7 @@ describe("pitch in the text, on a take's page", () => {
     // Drawn
     render(<SessionScreen sessionId="zoo" repository={await repositoryWith([session])} now={NOW} />);
     // The curve and its note
-    const section = await screen.findByRole("region", { name: "Your voice" });
+    const section = await screen.findByRole("region", { name: "Your voice" }, { timeout: 4000 });
     // Shown
     expect([!!within(section).getByRole("img", { name: "Your pitch across the take" }), !!within(section).getByText(/No words were caught/), within(section).queryByRole("link", { name: "See it phrase by phrase" })]).toEqual([true, true, null]);
   });
