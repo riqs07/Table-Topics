@@ -1,8 +1,8 @@
 "use client";
 // A player for a saved recording: one large play button, a bar to move through it, and the time
 
-// Load React's state and reference tools
-import { useEffect, useRef, useState } from "react";
+// Load React's state and reference tools, and the type for content passed in
+import { useEffect, useRef, useState, type ReactNode } from "react";
 // Load the play and pause icons
 import { PauseIcon, PlayIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the clock formatter
@@ -26,10 +26,14 @@ interface PlayerProps {
   speeds?: boolean;
   // How much louder to play it (above 1 for a quiet recording made without the browser's levelling; decision 81)
   gain?: number;
+  // A picture of the recording drawn above the bar, such as the Chart Kit's ribbon (optional)
+  picture?: ReactNode;
+  // A quieter play button (muted ink instead of the accent), for an earlier take beside a later one (optional)
+  quiet?: boolean;
 }
 
 // Draw the player
-export function Player({ src, label, name, durationSec, onAudio, onTime, speeds = false, gain = 1 }: PlayerProps) {
+export function Player({ src, label, name, durationSec, onAudio, onTime, speeds = false, gain = 1, picture, quiet = false }: PlayerProps) {
   // The audio element, for playing and moving through it
   const audio = useRef<HTMLAudioElement | null>(null);
   // The sound graph that boosts a quiet recording, made on the first press of play
@@ -138,12 +142,14 @@ export function Player({ src, label, name, durationSec, onAudio, onTime, speeds 
         }}
       />
       {/* Play or pause, a large square button in the accent */}
-      <button type="button" onClick={toggle} aria-label={action} className="flex size-12 flex-none items-center justify-center rounded-full bg-fill text-fill-ink transition-transform duration-100 motion-safe:active:scale-[.94]">
+      <button type="button" onClick={toggle} aria-label={action} className={`flex size-12 flex-none items-center justify-center rounded-full ${quiet ? "bg-ink-muted text-paper-raised" : "bg-fill text-fill-ink"} transition-transform duration-100 motion-safe:active:scale-[.94]`}>
         {/* The icon for what a press does */}
         {playing ? <PauseIcon size={24} weight="fill" aria-hidden /> : <PlayIcon size={24} weight="fill" aria-hidden />}
       </button>
       {/* The bar and the time */}
       <div className="min-w-0 flex-1">
+        {/* The picture of the recording, when given */}
+        {picture && <div className="pt-1">{picture}</div>}
         {/* A bar to move through the recording */}
         <input type="range" min={0} max={Math.max(1, Math.round(durationSec))} step={1} value={Math.min(position, durationSec)} onChange={(event) => seek(Number(event.target.value))} aria-label={`Position in ${name}`} className="h-11 w-full accent-accent" />
         {/* Time so far and the length */}

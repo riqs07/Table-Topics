@@ -21,8 +21,8 @@ import { LoadFailed } from "@/components/script/LoadFailed";
 import { Cast } from "@/components/scenes/Cast";
 import { ModeTile } from "@/components/scenes/ModeTile";
 import { CHECK_IN_TILES } from "@/components/script/checkInTiles";
-// Load the Chart Kit's then-and-now ribbons and the tiny copies they are drawn from
-import { ThenAndNow } from "@/components/charts/ThenAndNow";
+// Load the Chart Kit's ribbon and the tiny copies it is drawn from
+import { VoiceRibbon } from "@/components/charts/VoiceRibbon";
 import { ribbonFromMini } from "@/core/chartKit";
 import { isMiniFingerprint } from "@/core/miniFingerprint";
 // Load the green small-capitals label, for the "now" side
@@ -200,7 +200,11 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
         </div>
       )}
       {/* Each part */}
-      {comparison && comparison.parts.map((part) => <PartSection key={part.part} repo={repo} comparison={comparison} part={part} pauseWords={pauseWords} />)}
+      {comparison && (
+        <div data-wide className="grid items-start gap-x-6 lg:grid-cols-2">
+          {comparison.parts.map((part) => <PartSection key={part.part} repo={repo} comparison={comparison} part={part} pauseWords={pauseWords} />)}
+        </div>
+      )}
     </main>
   );
 }
@@ -240,6 +244,14 @@ function PairChooser({ checkIns, pair, onChoose }: { checkIns: ReadonlyArray<Che
       </div>
     </section>
   );
+}
+
+// A ribbon's pause words in words, for its label (only the ribbon when pause words are hidden, decision 79)
+function ribbonWords(places: number, pauseWords: boolean): string {
+  // Hidden: just the ribbon
+  if (!pauseWords) return "your voice as a ribbon";
+  // How many places
+  return places === 0 ? "no pause words" : `pause words in ${places} ${places === 1 ? "place" : "places"}`;
 }
 
 // The blob then and now, the later one larger and pleased, each with its day under it (storyboard "Then and now")
@@ -329,13 +341,15 @@ function PartSection({ repo, comparison, part, pauseWords }: { repo: Repository;
       {/* The part's name */}
       <h2 id={`part-${part.part}`} className="flex items-center gap-3 font-display text-2xl leading-tight font-semibold"><ModeTile {...CHECK_IN_TILES[part.part]} tilt={-4} still className="size-12" />{partName(part.part)}</h2>
       {/* The two takes: stacked on a phone, side by side on a computer */}
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid gap-3">
         {/* Then and now */}
         {(["a", "b"] as const).map((which) => {
           // This side's take, check-in and audio address
           const [take, checkIn, url] = which === "a" ? [part.a, comparison.a, urlA] : [part.b, comparison.b, urlB];
           // What this week asked, for the parts that change
           const asked = askedText(take);
+          // The take's ribbon from its tiny copy, when it kept one (then as the grey ghost, now in your voice's colour)
+          const ribbon = take && isMiniFingerprint(take.fingerprint) ? <VoiceRibbon ribbon={ribbonFromMini(take.fingerprint, take.durationSec)} height={30} tone={which === "a" ? "ghost" : "voice"} pauseWords={pauseWords} marks={false} draw={which === "b"} label={`${which === "a" ? "Then" : "Now"}, ${shortDay(checkIn.day)}${which === "a" ? ", drawn grey" : ""}: ${ribbonWords(take.fingerprint.ums.length, pauseWords)}.`} /> : null;
           // One side
           return (
             <div key={which} data-side={which} className={`rounded-[18px] p-3.5 ${which === "a" ? "bg-paper" : "bg-accent-tint"}`}>
@@ -345,9 +359,14 @@ function PartSection({ repo, comparison, part, pauseWords }: { repo: Repository;
               {asked && <p className="mt-1 text-footnote">{asked}</p>}
               {/* The player, or why there is none */}
               {take && url ? (
-                <div className="mt-1"><Player src={url} label={`${partName(part.part)}, ${which === "a" ? "then" : "now"}`} name={`${which === "a" ? "then" : "now"}, ${shortDay(checkIn.day)}`} durationSec={take.durationSec} gain={playbackGain(take.loudnessScale)} onAudio={(element) => { players.current[which] = element; }} /></div>
+                <div className="mt-1"><Player picture={ribbon} quiet={which === "a"} src={url} label={`${partName(part.part)}, ${which === "a" ? "then" : "now"}`} name={`${which === "a" ? "then" : "now"}, ${shortDay(checkIn.day)}`} durationSec={take.durationSec} gain={playbackGain(take.loudnessScale)} onAudio={(element) => { players.current[which] = element; }} /></div>
               ) : (
-                <p className="mt-1 text-footnote text-ink-muted">{!take ? "Skipped this time." : "The recording isn’t on this device (deleted, or brought in from a backup). The numbers are still here."}</p>
+                <>
+                  {/* The ribbon on its own, when the recording is gone but its tiny copy is kept */}
+                  {ribbon && <div className="mt-2 rounded-[18px] bg-card px-3 py-2">{ribbon}</div>}
+                  {/* Why there is no player */}
+                  <p className="mt-1 text-footnote text-ink-muted">{!take ? "Skipped this time." : "The recording isn’t on this device (deleted, or brought in from a backup). The numbers are still here."}</p>
+                </>
               )}
             </div>
           );
@@ -364,14 +383,8 @@ function PartSection({ repo, comparison, part, pauseWords }: { repo: Repository;
           <button type="button" aria-pressed={side === "b"} onClick={() => play("b")} className={`min-w-11 ${pill(side === "b")}`}>Now</button>
         </div>
       )}
-      {/* Both takes as the Chart Kit's ribbons, then grey under now, when each kept its tiny copy and the words differ (the same words get the pitch card below, which draws them itself) */}
-      {part.a && part.b && part.a.promptId !== part.b.promptId && isMiniFingerprint(part.a.fingerprint) && isMiniFingerprint(part.b.fingerprint) && (
-        <div className="mt-4 rounded-[18px] border-2 border-rule p-4">
-          <ThenAndNow before={ribbonFromMini(part.a.fingerprint, part.a.durationSec)} after={ribbonFromMini(part.b.fingerprint, part.b.durationSec)} names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} pauseWords={pauseWords} />
-        </div>
-      )}
       {/* The same words both times: then's pitch dashed under now's, phrase by phrase (decision 111) */}
-      {part.a && part.b && part.a.promptId === part.b.promptId && <LastVsThisLoader repo={repo} beforeId={part.a.id} afterId={part.b.id} kind="Then and now" names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} plays={{ before: "Play then", after: "Play now" }} pauseWords={pauseWords} />}
+      {part.a && part.b && part.a.promptId === part.b.promptId && <LastVsThisLoader repo={repo} beforeId={part.a.id} afterId={part.b.id} kind="Then and now" names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} plays={{ before: "Play then", after: "Play now" }} pauseWords={pauseWords} ribbons={false} />}
       {/* What changed, in plain lines */}
       <ul aria-label={`What changed, ${partName(part.part)}`} className="mt-4 divide-y-2 divide-rule rounded-[18px] border-2 border-rule px-4">
         {/* Each line */}

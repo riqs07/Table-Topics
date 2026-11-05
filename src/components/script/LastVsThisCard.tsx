@@ -49,6 +49,8 @@ interface LastVsThisProps {
   script?: string | null;
   // Whether pause words are shown (decision 79): the ribbons' dots and the pause-word number
   pauseWords?: boolean;
+  // Whether to draw the two ribbons (off where the page already draws each take's ribbon in its player)
+  ribbons?: boolean;
 }
 
 // One of this take's phrases with the last take's curve under it (or alone)
@@ -65,7 +67,7 @@ function PairRows({ phrase, pitch, under, width, measure }: { phrase: Phrase; pi
 }
 
 // The card
-export function LastVsThisCard({ repo, before, after, kind, names, plays = { before: "Play last try", after: "Play this try" }, script = null, pauseWords = true }: LastVsThisProps) {
+export function LastVsThisCard({ repo, before, after, kind, names, plays = { before: "Play last try", after: "Play this try" }, script = null, pauseWords = true, ribbons: drawRibbons = true }: LastVsThisProps) {
   // Both takes' service words, once read
   const [serverBefore, serverAfter] = [useServerWords(repo, before.id), useServerWords(repo, after.id)];
   // Both recordings
@@ -96,7 +98,7 @@ export function LastVsThisCard({ repo, before, after, kind, names, plays = { bef
   // The headline, only for a clear change
   const headline = alone ? null : changeHeadline(pairs, { before: rangeOf(before), after: rangeOf(after) });
   // Both takes' ribbons, from the tiny copies kept on them (none when either has no copy)
-  const ribbons = isMiniFingerprint(before.fingerprint) && isMiniFingerprint(after.fingerprint) ? { before: ribbonFromMini(before.fingerprint, before.durationSec), after: ribbonFromMini(after.fingerprint, after.durationSec) } : null;
+  const ribbons = drawRibbons && isMiniFingerprint(before.fingerprint) && isMiniFingerprint(after.fingerprint) ? { before: ribbonFromMini(before.fingerprint, before.durationSec), after: ribbonFromMini(after.fingerprint, after.durationSec) } : null;
   // Where each take's shown stretch starts, for its play button
   const startAt = { before: shown[0]?.before.start ?? 0, after: shown[0]?.after.start ?? now.phrases[0]?.start ?? 0 };
 
