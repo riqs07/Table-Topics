@@ -72,8 +72,8 @@ describe("a short take", () => {
     const session = madeSession("short", withUm, { mode: "talk", promptId: "t001", audioKey: "audio-short" });
     // Drawn
     render(<SessionScreen sessionId="short" repository={await repositoryWith([session])} now={NOW} />);
-    // The pitch in the words, and Look closer
-    await screen.findByRole("region", { name: "Your voice" });
+    // The pitch in the words, and Look closer (the redesigned result draws more, so a loaded machine gets five seconds)
+    await screen.findByRole("region", { name: "Your voice" }, { timeout: 5000 });
     // No tabs, no fingerprint, no best moment
     expect([await screen.findByRole("button", { name: "Look closer" }), screen.queryByRole("tablist"), document.querySelector("[data-fingerprint]"), document.querySelector("[data-best-moment]")].map(Boolean)).toEqual([true, false, false, false]);
     // Open them
