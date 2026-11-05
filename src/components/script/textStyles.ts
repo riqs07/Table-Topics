@@ -29,3 +29,6 @@ export const PBAR = "block h-3.5 overflow-hidden rounded-full bg-rule";
 
 // Its filled part, with a darker lower edge
 export const PBAR_FILL = "block h-full origin-left rounded-full bg-accent shadow-bar";
+
+// A text field or a choice list on a form: the soft cream inset with an edge, bold words (second design pass, Settings)
+export const FIELD = "min-h-11 rounded-xl border-2 border-rule bg-paper px-3 font-bold text-ink";

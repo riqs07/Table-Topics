@@ -4,7 +4,9 @@
 // Load React's state tool
 import { useState } from "react";
 // Load the shared button styles
-import { QUIET, SECONDARY } from "@/components/script/Buttons";
+import { PRESS, SECONDARY } from "@/components/script/Buttons";
+// Load the form field look
+import { FIELD } from "@/components/script/textStyles";
 // Load the calendar file maker
 import { isReminderTime, reminderCalendar } from "@/core/reminder";
 // Load the settings type
@@ -62,12 +64,12 @@ export function PracticeTime({ settings, onSave }: { settings: SettingsRecord; o
         {/* Its label */}
         <span className="block text-footnote text-ink-muted">I’ll practise…</span>
         {/* The field */}
-        <input value={anchor} maxLength={60} onChange={(event) => setAnchor(event.target.value)} placeholder="after my morning coffee" className="mt-1 min-h-11 w-full max-w-md border-b border-ink bg-transparent" />
+        <input value={anchor} maxLength={60} onChange={(event) => setAnchor(event.target.value)} placeholder="after my morning coffee" className={`${FIELD} mt-1 w-full max-w-md`} />
       </label>
       {/* Quick picks, each saved straight away */}
       <div role="group" aria-label="Common moments" className="mt-3 flex flex-wrap gap-2">
         {/* One per moment */}
-        {ANCHORS.map((moment) => <button key={moment} type="button" aria-pressed={anchor === moment} onClick={() => saveAnchor(moment)} className={`${QUIET} text-footnote ${anchor === moment ? "border-ink text-ink" : ""}`}>{moment}</button>)}
+        {ANCHORS.map((moment) => <button key={moment} type="button" aria-pressed={anchor === moment} onClick={() => saveAnchor(moment)} className={`min-h-11 rounded-full border-2 px-4 text-footnote font-extrabold ${PRESS} ${anchor === moment ? "border-fill bg-fill text-fill-ink shadow-chunky-pressed" : "border-rule bg-card text-ink shadow-ledge hover:border-ink-muted"}`}>{moment}</button>)}
       </div>
       {/* Save the typed one */}
       <p className="mt-3"><button type="button" onClick={() => saveAnchor(anchor)} className={SECONDARY}>Save</button></p>
@@ -76,7 +78,7 @@ export function PracticeTime({ settings, onSave }: { settings: SettingsRecord; o
         {/* Its label */}
         <span>Remind me daily at</span>
         {/* The time */}
-        <input type="time" value={time} onChange={(event) => setTime(event.target.value)} className="min-h-11 border-b border-ink bg-transparent" />
+        <input type="time" value={time} onChange={(event) => setTime(event.target.value)} className={FIELD} />
       </label>
       {/* Make the calendar file */}
       <p className="mt-3"><button type="button" onClick={addToCalendar} className={SECONDARY}>Add a daily reminder to my calendar</button></p>

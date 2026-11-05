@@ -145,7 +145,7 @@ export function CheckInRunScreen(props: ScreenProps) {
       {problem !== null && (
         <section role="alert" className="mt-8 flex flex-col gap-5">
           {/* Sage, thinking, with what happened */}
-          <SageSays mood="thinking">Your check-in could not be loaded or saved.</SageSays>
+          <SageSays mood="thinking" heading={!state}>Your check-in could not be loaded or saved.</SageSays>
           {/* The browser's reason, on a card */}
           <p className={`p-5 font-semibold ${CARD}`}><span className={`block ${LAB}`}>What the browser said</span>“{problem}”</p>
           {/* Try again */}
@@ -224,14 +224,14 @@ export function CheckInRunScreen(props: ScreenProps) {
 }
 
 // Sage with a line in a speech bubble (storyboard "Weekly check-in")
-function SageSays({ mood, children, className = "" }: { mood: SageMood; children: ReactNode; className?: string }) {
+function SageSays({ mood, children, className = "", heading = false }: { mood: SageMood; children: ReactNode; className?: string; heading?: boolean }) {
   // The coach and the bubble, side by side
   return (
     <div className={`flex items-end gap-3 ${className}`.trim()}>
       {/* The coach */}
       <Cast who="sage" mood={mood} className="size-16 flex-none md:size-20" />
-      {/* The line */}
-      <p className={`${BUBBLE} mb-2 max-w-[44ch]`}>{children}</p>
+      {/* The line: the page's heading when nothing else on the page is (a failure before anything loaded) */}
+      {heading ? <h1 className={`${BUBBLE} mb-2 max-w-[44ch] font-display text-xl font-semibold`}>{children}</h1> : <p className={`${BUBBLE} mb-2 max-w-[44ch]`}>{children}</p>}
     </div>
   );
 }

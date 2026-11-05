@@ -1,12 +1,16 @@
 "use client";
-// The Settings screen: your history (folded), light or dark, how long recordings are kept, the coach, export and import, and deleting everything
+// The Settings screen: your history (folded), light or dark, how long recordings are kept, the coach, export and import, and deleting everything. Second design pass (extrapolated from Desktop Screens "Me", whose right column is Settings): the blob beside the title, each group under a coloured icon square, white cards with a ledge, and choices on soft cream fields
 
 // Load React's state and effect tools
 import { useEffect, useState, useSyncExternalStore, type ChangeEvent } from "react";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
 // Load the shared page title
-import { PageTitle } from "@/components/script/PageTitle";
+import { PictureTitle } from "@/components/script/PictureTitle";
+// Load the blob, and the icons for the groups
+import { Buddy } from "@/components/scenes/Buddy";
+import { ChartLineUpIcon, DatabaseIcon, MicrophoneIcon, PaletteIcon, SparkleIcon, WrenchIcon } from "@phosphor-icons/react/dist/ssr";
+import type { Icon } from "@phosphor-icons/react";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the day label helper for the export file name
@@ -46,7 +50,7 @@ import { PRESS, QUIET, RowLink, SECONDARY, TEXT_LINK } from "@/components/script
 // Load the switch row
 import { CheckRow } from "@/components/script/CheckRow";
 // Load the shared heading look
-import { CARD, SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, FIELD, PBAR, PBAR_FILL } from "@/components/script/textStyles";
 // Load the choice of what to get better at most, and the reader for the saved one (decision 97)
 import { FocusPicker } from "@/components/script/FocusPicker";
 import { readPracticeFocus } from "@/core/practiceFocus";
@@ -277,9 +281,9 @@ function ConversationMinutesLine({ fetchFn }: { fetchFn?: typeof fetch }) {
 function Section({ title, id, flat = false, children }: { title: string; id?: string; flat?: boolean; children: React.ReactNode }) {
   // A card with a run-in heading, or (inside a fold) a ruled block
   return (
-    <section id={id} className={flat ? "scroll-mt-6 border-t border-rule py-4 text-lede" : `mt-4 scroll-mt-6 p-5 text-lede ${CARD}`}>
+    <section id={id} className={flat ? "scroll-mt-6 border-t-2 border-rule py-4 font-semibold" : `mt-4 scroll-mt-6 p-5 font-semibold md:p-6 ${CARD}`}>
       {/* Heading */}
-      <h3 className={SECTION_HEADING}>{title}</h3>
+      <h3 className="font-display text-xl leading-tight font-semibold">{title}</h3>
       {/* Content */}
       <div className="mt-2">{children}</div>
     </section>
@@ -287,12 +291,12 @@ function Section({ title, id, flat = false, children }: { title: string; id?: st
 }
 
 // A group of sections under one of the page's few headings (decision 110)
-function Group({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+function Group({ id, title, icon: GroupIcon, colour, children }: { id: string; title: string; icon: Icon; colour: string; children: React.ReactNode }) {
   // The heading, then its sections
   return (
     <section aria-labelledby={id} className="mt-10">
-      {/* The group's heading */}
-      <h2 id={id} className="font-display text-2xl font-semibold">{title}</h2>
+      {/* The group's heading, beside its icon on a coloured square (as Me's counts) */}
+      <h2 id={id} className="flex items-center gap-3 font-display text-2xl font-semibold"><span aria-hidden="true" className={`flex size-10 flex-none items-center justify-center rounded-xl ${colour}`}><GroupIcon weight="fill" className="size-5.5" /></span>{title}</h2>
       {/* Its sections */}
       {children}
     </section>
@@ -611,21 +615,22 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Title and a link home */}
       <Masthead title="VoiceLab" section="settings" />
       {/* The page's name */}
-      <PageTitle title="Settings" />
+      {/* The page's name, beside the blob (the Me tab stays lit, and the profile's row below is the one way back) */}
+      <PictureTitle title="Settings" picture={<Buddy face="happy" className="size-14 md:size-18" />}>What you practise, when, and what stays on this device.</PictureTitle>
 
       {/* Result of the last action, read out to screen readers (takes no room until there is one) */}
       <p role="status" className={message ? "mt-4 text-accent" : "sr-only"}>{message}</p>
 
       {/* How you are doing: the profile, which holds the coach summary, check-ins, measures and the way to History (decisions 90 and 109), and "Your week" (decision 140) */}
-      <Group id="group-progress" title="Your progress">
+      <Group id="group-progress" title="Your progress" icon={ChartLineUpIcon} colour="bg-art-sky text-art-cream">
         {/* The profile's row */}
-        <div className={`mt-4 px-5 ${CARD}`}><RowLink href="/profile">Your speaking profile and history</RowLink></div>
+        <div className={`mt-4 px-5 ${CARD}`}><RowLink href="/profile"><span className="flex items-center gap-3.5"><Buddy face="ready" className="size-10 flex-none" /><span className="min-w-0 font-display text-lg leading-tight font-semibold">Your speaking profile and history</span></span></RowLink></div>
         {/* Pause words over three weeks and one suggestion, once there are three sessions (moved here from Today, decision 140) */}
         {today && settings && week && <div className="mt-4"><YourWeekCard week={week} /></div>}
       </Group>
 
       {/* Practice: what to work on, when, the check-in day and conversation turns, with the rarely changed options folded (decision 110) */}
-      <Group id="group-practice" title="Practice">
+      <Group id="group-practice" title="Practice" icon={MicrophoneIcon} colour="bg-art-leaf text-on-warm">
       {/* What the user wants to get better at most, changed at any time (decision 97) */}
       {settings && <Section title="What you want to get better at" id="focus">
         <p className="text-footnote text-ink-muted">Pick one or two. About half of each day’s practice comes from them, and Practice and Learn show them first.</p>
@@ -641,7 +646,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {settings && <Section title="Weekly check-in" id="check-in">
         <p>
           Check in every{" "}
-          <select aria-label="Check-in day" value={readCheckInSettings(settings.checkIn)?.day ?? ""} onChange={(event) => void saveSettingsWith({ ...settings, checkIn: { ...readCheckInSettings(settings.checkIn), ...(event.target.value === "" ? { day: undefined } : { day: Number(event.target.value) }) } }, "Saved. Your check-in moves to that day.")} className="min-h-11 max-w-full border-b border-ink bg-transparent">
+          <select aria-label="Check-in day" value={readCheckInSettings(settings.checkIn)?.day ?? ""} onChange={(event) => void saveSettingsWith({ ...settings, checkIn: { ...readCheckInSettings(settings.checkIn), ...(event.target.value === "" ? { day: undefined } : { day: Number(event.target.value) }) } }, "Saved. Your check-in moves to that day.")} className={`${FIELD} max-w-full`}>
             {/* Not chosen: the day of the first check-in */}
             <option value="">day of my first one</option>
             {/* One option per day */}
@@ -660,7 +665,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {/* Rarely changed: practice days on Today, pause words, and cues while speaking, folded (decision 110) */}
         <details className={`mt-4 px-5 ${CARD}`}>
           {/* The fold's row */}
-          <summary className={`flex min-h-14 cursor-pointer items-center font-semibold ${PRESS}`}>More: practice days, pause words, cues while speaking</summary>
+          <summary className={`flex min-h-14 cursor-pointer items-center font-display text-lg font-semibold ${PRESS}`}>More: practice days, pause words, cues while speaking</summary>
       {/* Whether Today shows the run (decision 78; named for what it holds, so it is not mistaken for the Today tab) */}
       {settings && <Section flat title="Practice days">
         <CheckRow checked={settings.hideStreak !== true} onChange={(event) => void saveSettingsWith({ ...settings, hideStreak: !event.target.checked }, "Saved.")} detail="Days practised in the last week, and your run. Two rest days a week never break a run, and two days in a row after a longer break win it back.">Show my practice days</CheckRow>
@@ -690,13 +695,13 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       </Group>
 
       {/* Recordings and data: how long recordings are kept, export and import, and starting over (decision 110) */}
-      <Group id="group-data" title="Recordings and data">
+      <Group id="group-data" title="Recordings and data" icon={DatabaseIcon} colour="bg-art-coral text-art-cream">
       {/* How long recordings are kept */}
       <Section title="Your recordings">
         {/* The limit as a sentence with a choice in it (decision 98) */}
         <p>
           Keep recordings from the last{" "}
-          <select aria-label="Keep recordings from the last" value={recordingDays(settings)} onChange={changeRetention} className="min-h-11 border-b border-ink bg-transparent">
+          <select aria-label="Keep recordings from the last" value={recordingDays(settings)} onChange={changeRetention} className={FIELD}>
             {/* One option per choice */}
             {RECORDING_DAY_CHOICES.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
           </select>{" "}
@@ -708,7 +713,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         {settings && (
           <p className="mt-3">
             Check-ins:{" "}
-            <select aria-label="Check-in recordings to keep" value={readCheckInSettings(settings.checkIn)?.keep === "thinned" ? "thinned" : "all"} onChange={(event) => void changeCheckInKeep(event)} className="min-h-11 max-w-full border-b border-ink bg-transparent">
+            <select aria-label="Check-in recordings to keep" value={readCheckInSettings(settings.checkIn)?.keep === "thinned" ? "thinned" : "all"} onChange={(event) => void changeCheckInKeep(event)} className={`${FIELD} max-w-full`}>
               {/* Every one */}
               <option value="all">keep every one</option>
               {/* Fewer */}
@@ -746,9 +751,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
             {/* What it is doing */}
             <p className="text-footnote text-ink-muted">{working.what} your data… {PROGRESS_PERCENT(working.progress)}%</p>
             {/* The bar, in the theme's colours (a native progress bar draws in the browser's own green) */}
-            <div role="progressbar" aria-label={`${working.what} your data`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={PROGRESS_PERCENT(working.progress)} className="mt-1 h-2 w-full overflow-hidden rounded-full bg-rule">
+            <div role="progressbar" aria-label={`${working.what} your data`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={PROGRESS_PERCENT(working.progress)} className={`mt-1 w-full ${PBAR}`}>
               {/* The part done */}
-              <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${PROGRESS_PERCENT(working.progress)}%` }} />
+              <div className={`${PBAR_FILL} transition-[width]`} style={{ width: `${PROGRESS_PERCENT(working.progress)}%` }} />
             </div>
           </div>
         )}
@@ -775,7 +780,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       </Group>
 
       {/* Coach and services: the coach's passphrase and the conversation minutes left, and deeper analysis (decision 110) */}
-      <Group id="group-services" title="Coach and services">
+      <Group id="group-services" title="Coach and services" icon={SparkleIcon} colour="bg-art-plum text-art-cream">
       {/* Coach feedback (drawn in the browser only, where the saved passphrase can be read) */}
       {today && <Section title="Coach (advanced)">
         {/* What works without it */}
@@ -789,7 +794,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           {/* Passphrase field and save */}
           <p className="mt-3 flex flex-wrap items-baseline gap-3">
             {/* The field */}
-            <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="min-h-11 min-w-0 flex-1 rounded-xl border-2 border-rule bg-card px-3 py-1" />
+            <input type="password" aria-label="Passphrase" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className={`${FIELD} min-w-0 flex-1 py-1`} />
             {/* Save */}
             <button type="button" onClick={storePassphrase} className={SECONDARY}>Save passphrase</button>
           </p>
@@ -822,7 +827,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       </Group>
 
       {/* Appearance (decision 110) */}
-      <Group id="group-appearance" title="Appearance">
+      <Group id="group-appearance" title="Appearance" icon={PaletteIcon} colour="bg-art-sun text-on-warm">
       {/* Light, dark, or follow the device (drawn in the browser only, where the saved choice can be read) */}
       {today && <Section title="Light or dark">
         <ColorModeChoice />
@@ -832,8 +837,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Every mode on one page, for development: always on a local build, on a released one only once switched on from that page (decision 132) */}
       {(DEVELOPMENT || devLink) && (
         <Section title="Developer">
-          {/* The list */}
-          <div className={`px-5 ${CARD}`}>
+          {/* The list, as rows */}
+          <div className="-mb-2 divide-y-2 divide-rule">
             {/* Every mode */}
             <RowLink href="/dev/modes" meta="every mode">All modes</RowLink>
             {/* Every course tile at 240 and 64 px (decision 145) */}
@@ -846,7 +851,7 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {DEVELOPMENT && (
         <Section title="While building (not in the released app)">
           {/* Fill with sample sessions */}
-          <button type="button" onClick={loadSamples} className={SECONDARY}>Fill with sample sessions</button>
+          <button type="button" onClick={loadSamples} className={`${SECONDARY} mt-2`}><WrenchIcon aria-hidden="true" weight="bold" className="size-5" />Fill with sample sessions</button>
         </Section>
       )}
     </main>

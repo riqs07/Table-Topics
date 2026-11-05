@@ -1,5 +1,5 @@
 "use client";
-// The History screen: progress since the first recording, one trend line, and every session like a contents page
+// The History screen: progress since the first recording, one trend line, and every session like a contents page. Second design pass, storyboard "Your takes": the blob beside the title, pill filters, each take a row with its tile, its name in the display face and a star when kept; the empty page as a card with the sleeping blob and one chunky button
 
 // Load React's state, effect and memo tools
 import { useEffect, useMemo, useState } from "react";
@@ -17,10 +17,14 @@ import { practiceSessions } from "@/core/sessionHome";
 import Link from "next/link";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
-// Load the page title
-import { PageTitle } from "@/components/script/PageTitle";
-// Load the back arrow
-import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the page title with its picture
+import { PictureTitle } from "@/components/script/PictureTitle";
+// Load the back arrow and the star
+import { CaretLeftIcon, StarIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the Chart Kit's line over time
+import { OverWeeks } from "@/components/charts/OverWeeks";
+// Load the blob as a character
+import { Buddy } from "@/components/scenes/Buddy";
 // Load the filled button link
 import { PRESS, PrimaryLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the repository type
@@ -48,7 +52,7 @@ import type { MissionRecord, SessionRecord } from "@/data/records";
 // Load the tiny fingerprint (decision 115)
 import { MiniFingerprint } from "@/components/script/MiniFingerprint";
 // Load the shared heading look
-import { CARD, SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
+import { CARD, CARD_LIST, LAB, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the mode tiles and each take's (second design pass, storyboard 30)
 import { ModeTile } from "@/components/scenes/ModeTile";
 import { takeLook } from "@/components/screens/MeTop";
@@ -65,41 +69,25 @@ const READING_MODES: ReadonlyArray<SessionRecord["mode"]> = ["read", "pause", "l
 // Rows shown at first, and added by each "Show more" (decision 99: drawing thousands of rows at once froze the page)
 export const HISTORY_PAGE = 50;
 
-// Size of the trend drawing (it stretches to fit its column)
-const CHART = { width: 300, height: 80 };
-
-// The trend line of fillers per minute, with a dotted guide at the first value, a caption and labels at each end
+// The trend of pause words a minute, one point per first try, in the Chart Kit's line (the first value as a dashed ghost across), with a caption and the values at each end
 function Trend({ values }: { values: number[] }) {
-  // Highest value, for scaling
-  const top = Math.max(...values);
-  // Lowest value, so the line uses the whole height
-  const bottom = Math.min(...values);
-  // Space kept above and below the line
-  const pad = 8;
-  // Vertical position of a value: highest at the top, lowest at the bottom, a flat line in the middle
-  const y = (value: number) => (top === bottom ? CHART.height / 2 : pad + ((top - value) / (top - bottom)) * (CHART.height - 2 * pad));
-  // The line's points
-  const points = values.map((value, index) => `${(index / (values.length - 1)) * CHART.width},${y(value)}`).join(" ");
-  // Draw it in the accent color, inside a captioned figure
+  // Each try as a point: "First" and "Latest" at the ends, the others named by an invisible mark so each stays apart (only the ends are written along the bottom)
+  const points = values.map((value, index) => ({ label: index === 0 ? "First" : index === values.length - 1 ? "Latest" : "\u200b".repeat(index), value }));
+  // The labels' places, so a point's tip can say which try it was
+  const places = new Map(points.map((point, index) => [point.label, index + 1]));
+  // Draw it inside a captioned figure
   return (
     <figure aria-label="Pause words a minute, first try of each session" className="mt-5">
       {/* What the line measures */}
-      <figcaption className="text-footnote text-ink-muted">Pause words (um, uh, like) a minute, first try of each session. Fewer is smoother.</figcaption>
-      {/* The drawing, stretched to the column */}
-      <svg viewBox={`0 0 ${CHART.width} ${CHART.height}`} preserveAspectRatio="none" className="mt-3 h-20 w-full text-accent" role="img" aria-label={`Pause words a minute, from ${formatRate(values[0] ?? 0)} to ${formatRate(values.at(-1) ?? 0)}`}>
-        {/* A soft area under the line (decision 79) */}
-        <polygon points={`0,${CHART.height} ${points} ${CHART.width},${CHART.height}`} fill="currentColor" fillOpacity="0.1" />
-        {/* Dotted guide at the first recording's value */}
-        <line x1="0" x2={CHART.width} y1={y(values[0] ?? 0)} y2={y(values[0] ?? 0)} stroke="currentColor" strokeOpacity="0.35" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
-        {/* The trend line */}
-        <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      </svg>
+      <figcaption className="text-footnote font-semibold text-ink-muted">Pause words (um, uh, like) a minute, first try of each session. Fewer is smoother.</figcaption>
+      {/* The line */}
+      <div className="mt-3"><OverWeeks weeks={points} format={formatRate} tip={(point) => `Try ${places.get(point.label) ?? ""}: ${point.value === null ? "none" : formatRate(point.value)}`} listLabel="Pause words a minute by try" label={`Pause words a minute, from ${formatRate(values[0] ?? 0)} to ${formatRate(values.at(-1) ?? 0)}`} ghostName="first" /></div>
       {/* The values at each end */}
-      <p className="mt-1 flex justify-between text-footnote text-ink-muted">
+      <p className="mt-1 flex justify-between gap-3 text-footnote text-ink-muted">
         {/* Where it started */}
         <span>{`First: ${formatRate(values[0] ?? 0)} a minute`}</span>
         {/* Where it is now */}
-        <span className="font-semibold text-ink">{`Latest: ${formatRate(values.at(-1) ?? 0)} a minute`}</span>
+        <span className="text-right font-bold text-ink">{`Latest: ${formatRate(values.at(-1) ?? 0)} a minute`}</span>
       </p>
     </figure>
   );
@@ -168,14 +156,14 @@ function Row({ row, now, talkTitles, pauseWords }: { row: HistoryRow; now: Date;
         {/* The prompt, with the day under it (decision 79: rows in a card, no dotted leader) */}
         <span className="min-w-0 flex-1">
           {/* The prompt */}
-          <span className="block leading-snug">{promptText(row.session, talkTitles)}</span>
+          <span className="block font-display text-lg leading-snug font-semibold">{promptText(row.session, talkTitles)}{row.session.starred && <StarIcon aria-label="kept" weight="fill" className="ml-1.5 inline size-4 align-middle text-art-sun" />}</span>
           {/* The day, and whether it was tried twice */}
-          <span className="block text-footnote text-ink-muted">{dayLabel(new Date(row.session.createdAt), now)}{row.retry ? " · tried twice" : ""}</span>
+          <span className="block text-sm font-bold text-ink-muted">{dayLabel(new Date(row.session.createdAt), now)}{row.retry ? " · tried twice" : ""}</span>
           {/* The take's shape, when one is kept (decision 115) */}
           {row.session.fingerprint && <span className="mt-1 block"><MiniFingerprint value={row.session.fingerprint} duration={row.session.durationSec} /></span>}
         </span>
         {/* The result, with its unit */}
-        <span className="flex-none text-right"><span className="block font-semibold tabular-nums">{result}</span><span className="block text-footnote text-ink-muted">{pauseWords ? <><span className="sm:hidden">a minute</span><span className="hidden sm:inline">pause words a minute</span></> : "long"}</span></span>
+        <span className="flex-none text-right"><span className="block font-display text-lg font-semibold tabular-nums">{result}</span><span className="block text-footnote text-ink-muted">{pauseWords ? <><span className="sm:hidden">a minute</span><span className="hidden sm:inline">pause words a minute</span></> : "long"}</span></span>
       </Link>
     </li>
   );
@@ -194,7 +182,7 @@ export function HistoryScreen(props: ScreenProps) {
       {/* The way back to Me, where it is reached from (decision 109) */}
       <p className="mt-2 md:-mt-12"><Link href="/profile" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to Me</Link></p>
       {/* The page's name, as its main heading (also in the empty state; second design pass: "Your takes") */}
-      <PageTitle title="Your takes" />
+      <PictureTitle title="Your takes" picture={<Buddy face="happy" className="size-14 md:size-18" />} />
       {/* The history itself */}
       <HistoryContent repo={repo} today={today} />
     </main>
@@ -262,13 +250,18 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
     <div>
       {/* Empty state */}
       {sessions && sessions.length === 0 && (
-        <div className="mt-6">
+        <div className={`mt-6 flex flex-wrap items-center gap-5 p-5 md:max-w-3xl md:p-6 ${CARD}`}>
           {/* The blob, asleep until there is something to show (decision 134) */}
-          <BlobCharacter mood="sleepy" className="mb-6 size-32" />
-          {/* What will appear */}
-          <p className="text-lede text-ink-muted">Nothing here yet. Your first recording will start the page.</p>
-          {/* The one thing to do */}
-          <p className="mt-5"><PrimaryLink href="/session?mode=free&prompt=free">Record your first session</PrimaryLink></p>
+          <BlobCharacter mood="sleepy" className="size-24 flex-none md:size-28" />
+          {/* What will appear, and the one thing to do */}
+          <div className="min-w-0 flex-[1_1_16rem]">
+            {/* The small label */}
+            <p className={LAB}>No takes yet</p>
+            {/* What will appear */}
+            <p className="mt-1 font-display text-xl leading-snug font-semibold">Nothing here yet. Your first recording will start the page.</p>
+            {/* The one thing to do */}
+            <p className="mt-4"><PrimaryLink href="/session?mode=free&prompt=free">Record your first session</PrimaryLink></p>
+          </div>
         </div>
       )}
 
@@ -277,8 +270,10 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
         <div className="md:grid md:grid-cols-[280px_minmax(0,1fr)] md:gap-14 md:pt-8">
           {/* Progress (top on a phone, margin on a computer) */}
           <aside className={`mt-5 self-start p-5 md:mt-0 ${CARD}`}>
+            {/* The small label */}
+            <p className={LAB}>Since day 1</p>
             {/* Progress as one sentence, or a note that there is only one recording so far */}
-            <h2 className="font-display text-cue font-semibold">{!pauseWords ? `${rows.length} ${rows.length === 1 ? "session" : "sessions"} so far.` : progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h2>
+            <h2 className="mt-1 font-display text-cue font-semibold">{!pauseWords ? `${rows.length} ${rows.length === 1 ? "session" : "sessions"} so far.` : progress ? progressSentence(progress) : "Your first recording is in. Progress shows from your second."}</h2>
             {/* The trend, once there are two first tries (it counts pause words, so not when they are hidden) */}
             {pauseWords && trend.length >= 2 && <Trend values={trend} />}
             {/* Listen to the first recording, if its audio is kept */}
@@ -296,7 +291,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
               {HISTORY_FILTERS.map((choice) => <button key={choice.id} type="button" aria-pressed={show === choice.id} onClick={() => { setShow(choice.id); setLimit(HISTORY_PAGE); }} className={`min-h-11 rounded-full border-2 px-4.5 font-extrabold ${PRESS} ${show === choice.id ? "border-fill bg-fill text-fill-ink shadow-chunky-pressed" : "border-rule bg-card text-ink shadow-ledge hover:border-ink-muted"}`}>{choice.name}</button>)}
             </div>
             {/* The contents list */}
-            <ul aria-label="Sessions" className={`mt-3 text-lede ${CARD_LIST}`}>
+            <ul aria-label="Sessions" className={`mt-3 ${CARD_LIST}`}>
               {/* One row per first try, newest first, a page at a time */}
               {rows.slice(0, limit).map((row) => <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} pauseWords={pauseWords} />)}
               {/* Nothing of this kind yet */}
