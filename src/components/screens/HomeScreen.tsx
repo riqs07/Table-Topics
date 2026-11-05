@@ -226,15 +226,22 @@ function ReminderCard({ days, onSeen }: { days: number; onSeen: () => Promise<vo
   }
   // The card
   return (
-    <section aria-labelledby="look-back" className={`mt-8 p-5 ${CARD}`}>
-      {/* The invitation */}
-      <h2 id="look-back" className="font-display text-cue font-semibold">Hear how far you’ve come</h2>
-      {/* Why now */}
-      <p className="mt-1 text-footnote text-ink-muted">It’s been {sinceWords(days)} since your first check-in. Hear it beside your latest.</p>
-      {/* A failure to put it aside */}
-      {problem !== null && <p role="alert" className="mt-3 text-footnote">That could not be saved. The browser said: “{problem}” Try again.</p>}
+    <section aria-labelledby="look-back" className={`flex flex-wrap items-center gap-4.5 px-4.5 py-4 ${CARD}`}>
+      {/* The picture: you, then and now (the check-in's calendar) */}
+      <ModeTile ground="sun" prop="cal" face="happy" tilt={-4} className="size-20 flex-none md:size-24" />
+      {/* What it is */}
+      <div className="flex min-w-0 flex-[1_1_16rem] flex-col gap-1.5">
+        {/* The small label */}
+        <span className={LAB}>Then and now</span>
+        {/* The invitation */}
+        <h2 id="look-back" className="font-display text-xl leading-tight font-semibold">Hear how far you’ve come</h2>
+        {/* Why now */}
+        <p className="text-sm font-bold text-ink-muted">It’s been {sinceWords(days)} since your first check-in. Hear it beside your latest.</p>
+        {/* A failure to put it aside */}
+        {problem !== null && <p role="alert" className="text-footnote">That could not be saved. The browser said: “{problem}” Try again.</p>}
+      </div>
       {/* Open it, or not now */}
-      <p className="mt-4 flex flex-wrap gap-3">
+      <p className="flex flex-wrap gap-3">
         {/* Open the comparison (and put the reminder aside on the way) */}
         <Link href="/check-in/compare" onClick={() => void onSeen().catch(() => undefined)} className={PRIMARY}>Compare</Link>
         {/* Not now */}
@@ -271,11 +278,16 @@ function FocusAsk({ onAnswer }: { onAnswer: (picks: FocusAreaId[]) => Promise<vo
   }
   // The card
   return (
-    <section aria-labelledby="focus-ask" className={`mt-8 p-5 ${CARD}`}>
-      {/* The question */}
-      <h2 id="focus-ask" className="font-display text-cue font-semibold">What do you want to get better at most?</h2>
+    <section aria-labelledby="focus-ask" className={`p-5 ${CARD}`}>
+      {/* Sage asks, in a bubble (storyboard "What to work on") */}
+      <div className="flex items-end gap-3">
+        {/* The coach */}
+        <Cast who="sage" mood="curious" className="size-16 flex-none md:size-20" />
+        {/* The question */}
+        <h2 id="focus-ask" className={`${BUBBLE} mb-2 font-display text-lg font-semibold md:text-xl`}>What do you want to get better at most?</h2>
+      </div>
       {/* What it does */}
-      <p className="mt-1 text-footnote text-ink-muted">Pick one or two.</p>
+      <p className="mt-3 text-footnote font-bold text-ink-muted">Pick one or two.</p>
       {/* The choices, names only */}
       <FocusPicker value={picks} onChange={setPicks} label="What do you want to get better at most?" compact />
       {/* A save that failed: why, with the buttons still there to try again */}
@@ -526,17 +538,27 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
         {!data && !loadError && <Skeleton blocks={["h-24", "h-96"]} />}
         {/* Saved data could not be read: why, and the ways forward */}
         {!data && loadError !== null && (
-          <section role="alert" className="mt-8 max-w-[48ch] text-lede">
-            {/* What happened */}
-            <h1 className="font-display text-statement font-semibold">Your practice could not be loaded.</h1>
-            {/* The browser's reason, so the problem can be pinned down */}
-            <p className="mt-3">The browser said: “{loadError}” Try again; if it keeps happening, reload the page or check that this site may store data on this device.</p>
+          <section role="alert" className="mt-8 flex max-w-2xl flex-col gap-5">
+            {/* Sage, puzzled, with what happened in the bubble */}
+            <div className="flex items-end gap-3">
+              {/* The coach */}
+              <Cast who="sage" mood="thinking" className="size-20 flex-none md:size-24" />
+              {/* What happened */}
+              <h1 className={`${BUBBLE} mb-3 font-display text-xl font-semibold md:text-2xl`}>Your practice could not be loaded.</h1>
+            </div>
+            {/* The browser's reason, so the problem can be pinned down, on a card */}
+            <div className={`p-5 ${CARD}`}>
+              {/* The small label */}
+              <p className={LAB}>What the browser said</p>
+              {/* The reason and what to do */}
+              <p className="mt-1.5 font-semibold">“{loadError}” Try again; if it keeps happening, reload the page or check that this site may store data on this device.</p>
+            </div>
             {/* Try again, or practise anyway */}
-            <p className="mt-6 flex flex-wrap gap-3">
+            <p className="flex flex-wrap items-center gap-3">
               {/* Try again */}
-              <button type="button" onClick={retryLoad} className={SECONDARY}>Try again</button>
+              <button type="button" onClick={retryLoad} className={PRIMARY}>Try again</button>
               {/* Practise anyway */}
-              <Link href="/practice" className={TEXT_LINK}>Go to Practice</Link>
+              <Link href="/practice" className={SECONDARY}>Go to Practice</Link>
             </p>
           </section>
         )}
@@ -807,10 +829,17 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                     // One suggestion: what kind, then what it uses
                     <li key={`${step.lane}-${step.promptId}`}>
                       <RowLink href={step.href} meta={`${step.minutes} min`}>
-                        {/* Its kind */}
-                        <span className={`block ${LAB}`}>{step.label}</span>
-                        {/* What it uses */}
-                        <span className="block font-semibold">{step.title}</span>
+                        <span className="flex items-center gap-3.5">
+                          {/* Its picture */}
+                          <ModeTile {...stepTile(step)} tilt={-4} still className="size-11 flex-none" />
+                          {/* Its kind and what it uses */}
+                          <span className="min-w-0">
+                            {/* Its kind */}
+                            <span className={`block ${LAB}`}>{step.label}</span>
+                            {/* What it uses */}
+                            <span className="block font-display text-lg leading-tight font-semibold">{step.title}</span>
+                          </span>
+                        </span>
                       </RowLink>
                     </li>
                   ))}
@@ -820,17 +849,17 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
 
             {/* About your practice, quietly: the run on a computer, the week's focus, what you are getting better at and your time */}
             {(runLines.length > 0 || showFocus || !!data.practiceFocus?.length || !!data.anchor) && (
-              <footer className="flex flex-col gap-1 text-footnote font-semibold text-ink-muted">
+              <footer className="flex flex-wrap items-center gap-2">
                 {/* The run, in words, once the day is done (before then the week's ticks on a phone and the rail on a computer say it) */}
-                {allDone && runLines.map((line) => <p key={line}>{line}</p>)}
+                {allDone && runLines.map((line) => <p key={line} className={CHIP}>{line}</p>)}
                 {/* This week's focus, in a few words */}
-                {showFocus && <p>This week: <em className="not-italic text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
+                {showFocus && <p className={CHIP}>This week: <em className="not-italic text-ink">{data.focus.title.toLowerCase()}</em>.</p>}
                 {/* What the user wants to get better at most, once chosen (decision 97) */}
-                {!!data.practiceFocus?.length && <p>Getting better at: <em className="not-italic text-ink">{focusPhrase(data.practiceFocus)}</em>.</p>}
+                {!!data.practiceFocus?.length && <p className={CHIP}>Getting better at: <em className="not-italic text-ink">{focusPhrase(data.practiceFocus)}</em>.</p>}
                 {/* When the user practises, in their words (decision 78) */}
-                {data.anchor && <p>Your time: <em className="not-italic text-ink">{data.anchor}</em>.</p>}
+                {data.anchor && <p className={CHIP}>Your time: <em className="not-italic text-ink">{data.anchor}</em>.</p>}
                 {/* Where the run leads: progress against your own past self */}
-                {runLines.length > 0 && <Link href="/profile" className={`${TEXT_LINK} min-h-9 self-start`}>See your progress</Link>}
+                {runLines.length > 0 && <Link href="/profile" className={`${TEXT_LINK} ml-1 min-h-11 gap-1`}>See your progress<CaretRightIcon aria-hidden="true" weight="bold" className="size-4" /></Link>}
               </footer>
             )}
 

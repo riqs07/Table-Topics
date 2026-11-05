@@ -1,4 +1,4 @@
-// The choice of what to get better at most (decision 97): six areas as toggle buttons, one or two picked, used at the welcome, on Today and in Settings; the full-size picker is a column of big picture rows with a tick box (storyboard "What to work on"), each area's tile moving a few rounds once picked (decision 137)
+// The choice of what to get better at most (decision 97): six areas as toggle buttons, one or two picked, used at the welcome, on Today and in Settings; the short picker on Today shows each area with its small tile; the full-size picker is a column of big picture rows with a tick box (storyboard "What to work on"), each area's tile moving a few rounds once picked (decision 137)
 
 // Load the shared press effect
 import { PRESS } from "@/components/script/Buttons";
@@ -36,8 +36,8 @@ export function FocusPicker({ value, onChange, label, compact = false }: FocusPi
         const scene = FOCUS_SCENES[area.id];
         // (the tile's look)
         const tile = SCENE_TILES[scene];
-        // The short card's choice: a name, filled once picked
-        if (compact) return <button key={area.id} type="button" aria-pressed={picked} onClick={() => onChange(toggleFocus(value, area.id))} className={`min-h-12 rounded-[14px] border-2 px-4 py-2 text-left ${PRESS} ${picked ? "border-accent bg-accent-tint text-accent-tint-ink shadow-picked" : "border-rule bg-card shadow-ledge hover:border-ink-muted"}`}><span className="block font-extrabold leading-snug">{area.name}</span></button>;
+        // The short card's choice: the name (first, so it names the button) and its small tile shown before it, edged in sky once picked
+        if (compact) return <button key={area.id} type="button" aria-pressed={picked} onClick={() => onChange(toggleFocus(value, area.id))} className={`flex min-h-14 items-center gap-3 rounded-[16px] border-2 py-2 pr-3 pl-2 text-left ${PRESS} ${picked ? "border-art-sky bg-art-sky/10 shadow-sky" : "border-rule bg-card shadow-ledge hover:border-ink-muted"}`}><span className="min-w-0 flex-1 font-extrabold leading-snug order-2">{area.name}</span><span aria-hidden="true" className="order-1 flex"><ModeTile ground={tile.ground} prop={tile.prop} face={tile.face} tilt={-4} motion="still" still className="size-9" /></span></button>;
         // A big row: the tile, the name (and what it covers), and the tick box; edged in sky once picked
         return (
           <button key={area.id} type="button" aria-pressed={picked} onClick={() => onChange(toggleFocus(value, area.id))} className={`grid min-h-18 grid-cols-[auto_1fr_auto] items-center gap-x-3.5 rounded-[18px] border-2 py-2.5 pr-4 pl-3 text-left ${PRESS} ${picked ? "border-art-sky bg-art-sky/10 shadow-sky" : "border-rule bg-card shadow-card hover:border-ink-muted"}`}>
