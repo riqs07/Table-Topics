@@ -140,8 +140,10 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
     };
   }, [repo, ids]);
 
+  // Whether pause words are shown (decision 79), worked out once for the comparison and the then-and-now charts
+  const pauseWords = data ? pauseWordsShown(data.settings) : true;
   // The comparison, once everything is in
-  const comparison = pair && analyses && data ? compareCheckIns(pair.a, pair.b, analyses, { pauseWords: pauseWordsShown(data.settings), history: recordedCheckIns(data.checkIns) }) : null;
+  const comparison = pair && analyses && data ? compareCheckIns(pair.a, pair.b, analyses, { pauseWords, history: recordedCheckIns(data.checkIns) }) : null;
   // The check-ins with takes, oldest first
   const recorded = data ? recordedCheckIns(data.checkIns) : [];
 
@@ -165,7 +167,7 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
       {/* Which two */}
       {pair && recorded.length > 2 && <PairChooser checkIns={recorded} pair={pair} onChoose={setChosen} />}
       {/* Each part */}
-      {comparison && comparison.parts.map((part) => <PartSection key={part.part} repo={repo} comparison={comparison} part={part} />)}
+      {comparison && comparison.parts.map((part) => <PartSection key={part.part} repo={repo} comparison={comparison} part={part} pauseWords={pauseWords} />)}
     </main>
   );
 }
@@ -220,7 +222,7 @@ function askedText(session: SessionRecord | null): string | null {
 }
 
 // One part: both takes with A/B play, then what changed and the table
-function PartSection({ repo, comparison, part }: { repo: Repository; comparison: CheckInComparison; part: PartComparison }) {
+function PartSection({ repo, comparison, part, pauseWords }: { repo: Repository; comparison: CheckInComparison; part: PartComparison; pauseWords: boolean }) {
   // The two audio elements, for A/B play
   const players = useRef<{ a: HTMLAudioElement | null; b: HTMLAudioElement | null }>({ a: null, b: null });
   // Which one A/B play is on
@@ -290,7 +292,7 @@ function PartSection({ repo, comparison, part }: { repo: Repository; comparison:
         </div>
       )}
       {/* The same words both times: then's pitch dashed under now's, phrase by phrase (decision 111) */}
-      {part.a && part.b && part.a.promptId === part.b.promptId && <LastVsThisLoader repo={repo} beforeId={part.a.id} afterId={part.b.id} kind="Then and now" names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} plays={{ before: "Play then", after: "Play now" }} />}
+      {part.a && part.b && part.a.promptId === part.b.promptId && <LastVsThisLoader repo={repo} beforeId={part.a.id} afterId={part.b.id} kind="Then and now" names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} plays={{ before: "Play then", after: "Play now" }} pauseWords={pauseWords} />}
       {/* What changed, in plain lines */}
       <ul aria-label={`What changed, ${partName(part.part)}`} className="mt-4 list-disc space-y-1 pl-5">
         {/* Each line */}
