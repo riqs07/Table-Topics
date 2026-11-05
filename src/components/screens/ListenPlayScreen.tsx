@@ -5,17 +5,18 @@
 import { useEffect, useRef, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
+// Load the icons
+import { EarIcon, HeadphonesIcon, HeartIcon, WaveformIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
-import { ActionBand } from "@/components/script/ActionBand";
-import { Masthead } from "@/components/script/Masthead";
+import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
 // Load the two people, and the panel a step's scene glides into from Today
 import { SceneCast } from "@/components/scenes/SceneCast";
 import { ScenePanel } from "@/components/scenes/ScenePanel";
 // Load the shared button looks
 import { PRIMARY, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
-// Load the card look and the small label look
-import { CARD, LABEL } from "@/components/script/textStyles";
+// Load the card, label, bubble and progress bar looks
+import { BUBBLE, CARD, LAB, LAB_ON_TINT, PBAR, PBAR_FILL } from "@/components/script/textStyles";
 // Load the shared screen starting points and today's practice position
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 import { usePlanNav } from "@/components/screens/usePlanNav";
@@ -36,7 +37,7 @@ import { saveListenResult } from "@/data/practiceProgress";
 type Phase = "intro" | "hearing" | "answer" | "done";
 
 // The look of each marked piece of the story
-const MARK_LOOK = { core: "rounded bg-warm-tint px-0.5 font-semibold", caught: "rounded bg-accent/15 px-0.5", missed: "underline decoration-ink-muted decoration-dotted underline-offset-4" } as const;
+const MARK_LOOK = { core: "rounded bg-warm-tint px-0.5 font-semibold", caught: "rounded bg-accent-tint px-0.5", missed: "underline decoration-ink-muted decoration-dotted underline-offset-4" } as const;
 
 // What the screen needs
 interface ListenPlayProps extends ScreenProps {
@@ -58,13 +59,16 @@ export function ListenPlayScreen({ storyId, ...props }: ListenPlayProps) {
   if (!story) {
     // The note
     return (
-      <main id="main" className="mx-auto min-h-dvh max-w-3xl bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
-        {/* Title, with the way back */}
-        <Masthead title="Active listening" nav={false} close={{ href: "/listening", label: "Close, back to Active listening" }} />
-        {/* The note */}
-        <h1 className="mt-8 font-display text-statement">That story isn’t here.</h1>
-        {/* The way back */}
-        <p className="mt-4"><Link href="/listening" className={TEXT_LINK}>Choose another story</Link></p>
+      <main id="main" className={PRACTICE_MAIN}>
+        {/* The bar, with the way back */}
+        <PracticeBar close={{ href: "/listening", label: "Close, back to Active listening" }} label="Active listening" />
+        {/* The note and the way back */}
+        <div className={PRACTICE_BODY}>
+          {/* The note */}
+          <h1 className="font-display text-statement">That story isn’t here.</h1>
+          {/* The way back */}
+          <p className="mt-4"><Link href="/listening" className={TEXT_LINK}>Choose another story</Link></p>
+        </div>
       </main>
     );
   }
@@ -193,108 +197,145 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
 
   // Draw it
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-3xl flex-col bg-paper-raised px-6 pt-6 pb-28 md:px-14 md:pt-10">
-      {/* Title, with the way out (the story's name stays hidden until afterwards) */}
-      <Masthead title={result ? story.title : "Active listening"} nav={false} close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/listening", label: "Close, back to Active listening" }}>{plan ? `Step ${plan.step} of ${plan.total}` : LEVELS[story.level].name}</Masthead>
-      {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
+    <main id="main" className={PRACTICE_MAIN}>
+      {/* The bar: the way out, how far through, and the level (the story's name stays hidden until afterwards) */}
+      <PracticeBar close={planStep ? { href: "/", label: "Close, back to Today" } : { href: "/listening", label: "Close, back to Active listening" }} progress={{ intro: 0.1, hearing: 0.4, answer: 0.7, done: 1 }[phase]} label={plan ? `Active listening · step ${plan.step} of ${plan.total}` : `Active listening · ${LEVELS[story.level].name}`} />
+      {/* The page's heading for screen readers and the keyboard, until the result's own */}
       {!result && <h1 className="sr-only">Active listening</h1>}
-      {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise the two people */}
-      {planStep && phase === "intro" ? <ScenePanel scene="listening" line="Listen once, then answer to what mattered." className="mt-4" /> : (<div className="mt-4 flex justify-center"><SceneCast mood={result ? (result.warm ? "pleased" : "easy") : "easy"} speaking={speaking} name={name} /></div>)}
-      {/* Before hearing it */}
-      {phase === "intro" && (
-        <section aria-label="The story" className="mt-4">
-          {/* Where and who */}
-          <p className="max-w-[52ch] text-lede">{story.setting}</p>
-          {/* What to listen for */}
-          <p className="mt-3 max-w-[52ch] text-footnote text-ink-muted">{LEVELS[story.level].about} Listen for what happened, how it felt, and what matters most to {name}. Then answer as you would to a friend.</p>
-          {/* Listen */}
-          <p className="mt-6"><button type="button" onClick={() => void hear()} className={PRIMARY}>Listen</button></p>
-        </section>
-      )}
-      {/* While hearing it */}
-      {phase === "hearing" && <p role="status" className="mt-4 text-center text-lede">{name} is telling you something. Just listen.</p>}
-      {/* Your answer */}
-      {phase === "answer" && (
-        <section aria-label="Your answer" className={`mt-6 p-4 ${CARD}`}>
-          {/* The ask */}
-          <p className={LABEL}>Your answer, out loud</p>
-          {/* What to do */}
-          <p className="mt-1 text-lede">Answer {name} as you would a friend.</p>
-          {/* Record it */}
-          <QuickRecorder services={services} action="Answer" maxSec={45} onDone={setTranscript} />
-          {/* On, once a take is done */}
-          {transcript !== null && <p className="mt-4"><button type="button" onClick={finish} className={PRIMARY}>Done, see what you caught</button></p>}
-          {/* Hear it again, when allowed */}
-          <p className="mt-4 flex flex-wrap gap-x-4">
-            {/* Once more on level 1 */}
-            {left > 0 && <button type="button" disabled={speaking} onClick={() => void hear()} className={TEXT_LINK}>Hear it once more</button>}
-            {/* The words, for anyone who cannot listen now */}
-            {!showWords && <button type="button" onClick={() => setShowWords(true)} className={TEXT_LINK}>Can’t listen? Show the words</button>}
-          </p>
-          {/* The words, when asked for */}
-          {showWords && <p data-story-words className="mt-3 max-w-[52ch] text-footnote">{story.text}</p>}
-        </section>
-      )}
-      {/* How it went */}
-      {phase === "done" && result && (
-        <section aria-label="How it went" className="mt-6">
-          {/* Their reply */}
-          {reply && <p data-reply className="max-w-[85%] rounded-[18px] bg-card px-4 py-3 shadow-card"><span className="block text-footnote text-ink-muted">{name}</span>{reply}</p>}
-          {/* The headline */}
-          <h1 className="mt-6 font-display text-statement">{result.core ? "You heard what mattered." : `You caught ${result.caught} of ${result.details.length} details.`}</h1>
-          {/* Nothing caught */}
-          {!transcript?.trim() && <p className="mt-2 text-footnote">No words were caught, so nothing could be checked. Try again when you can speak.</p>}
-          {/* The story, marked */}
-          <h2 className="mt-6 font-display text-xl font-semibold">What {name} said</h2>
-          {/* Its words with the details and what mattered */}
-          <p data-story-marked className="mt-2 max-w-[60ch] text-lede leading-relaxed">
-            {/* Each piece */}
-            {storyPieces(story, result).map((piece, index) => (piece.mark ? <mark key={index} data-mark={piece.mark} className={`bg-transparent text-ink ${MARK_LOOK[piece.mark]}`}>{piece.text}</mark> : <span key={index}>{piece.text}</span>))}
-          </p>
-          {/* The key to the marks */}
-          <p className="mt-2 text-footnote text-ink-muted"><span className={MARK_LOOK.core}>What mattered</span> · <span className={MARK_LOOK.caught}>a detail you caught</span> · <span className={MARK_LOOK.missed}>one you missed</span></p>
-          {/* Why it mattered */}
-          <p className="mt-4 border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote text-ink-muted">What mattered</span>{story.core.why}</p>
-          {/* Each check */}
-          <h2 className="mt-6 font-display text-xl font-semibold">Your answer</h2>
-          {/* The checks */}
-          <ul className="mt-2 flex flex-col gap-2">
-            {/* Passed or not, with its words */}
-            {result.checks.map((check) => (
-              <li key={check.id} data-check={check.id} data-passed={check.passed} className="flex gap-2">
-                {/* The mark */}
-                <span aria-hidden="true" className={check.passed ? "text-accent" : "text-ink-muted"}>{check.passed ? "✓" : "○"}</span>
-                {/* What it looks for, and the words */}
-                <span>
-                  {check.label}
-                  <span className="sr-only">{check.passed ? ": yes" : ": not yet"}</span>
-                  {check.evidence && <span className="text-ink-muted"> · {check.evidence}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {/* One way to answer */}
-          <p className="mt-6 max-w-[52ch] text-lede"><span className="block text-footnote text-ink-muted">One way to answer</span>“{story.example}”</p>
-          {/* Saving failed */}
-          {saveFailed && (
-            <p role="alert" className="mt-4 text-footnote">
-              This answer couldn’t be saved.{" "}
-              <button type="button" onClick={() => void save(result)} className={TEXT_LINK}>Try saving again</button>
-            </p>
+      {/* The story on the left, your answer on the right; one column on a phone */}
+      <div role={phase === "done" ? "region" : undefined} aria-label={phase === "done" ? "How it went" : undefined} className={`${PRACTICE_BODY} grid max-w-[69rem] items-start gap-6 lg:grid-cols-2 lg:gap-8`}>
+        {/* Them: who and where, the two of you, and the story */}
+        <section aria-label={phase === "intro" ? "The story" : `With ${name}`} className={`flex min-w-0 flex-col gap-5 p-5 md:p-7 ${CARD}`}>
+          {/* Who */}
+          <p className={LAB}>{result ? story.title : name}</p>
+          {/* Where (until the reply) */}
+          {!reply && <p className="-mt-2 font-semibold text-ink-muted">{story.setting}</p>}
+          {/* Their reply, at the end */}
+          {reply && <p data-reply className={`${BUBBLE} -mt-1 rounded-[22px] font-semibold`}><span className="block text-sm font-extrabold text-ink-muted">{name}</span>{reply}</p>}
+          {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise the two people */}
+          {planStep && phase === "intro" ? <ScenePanel scene="listening" line="Listen once, then answer to what mattered." className="" /> : <SceneCast mood={result ? (result.warm ? "pleased" : "easy") : "easy"} speaking={speaking} name={name} labels friendFirst you={phase === "hearing" ? "listen" : result?.warm ? "happy" : "side-left"} className="bg-art-sky/15" />}
+          {/* Before hearing it: what to listen for, and Listen */}
+          {phase === "intro" && (
+            <>
+              {/* What to listen for */}
+              <p className="max-w-[52ch] font-semibold">{LEVELS[story.level].about} Listen for what happened, how it felt, and what matters most to {name}. Then answer as you would to a friend.</p>
+              {/* Listen */}
+              <p><button type="button" onClick={() => void hear()} className={`${PRIMARY} min-w-40`}><HeadphonesIcon aria-hidden="true" weight="bold" className="size-5" />Listen</button></p>
+            </>
           )}
-          {/* Again */}
-          <p className="mt-6 flex flex-wrap gap-3">
-            {/* Hear the story again */}
-            <button type="button" disabled={speaking} onClick={() => void hear()} className={SECONDARY}>Hear it again</button>
-            {/* Answer it again */}
-            <button type="button" onClick={again} className={SECONDARY}>Try it again</button>
-            {/* Every story, outside today's practice */}
-            {!planStep && <Link href="/listening" className={TEXT_LINK}>All stories</Link>}
-          </p>
-          {/* Inside today's practice: the next step or finish; otherwise the next story */}
-          {planStep ? (plan?.next ? <ActionBand action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <ActionBand action="Finish today’s practice" aside="back to Today" href="/" />) : <ActionBand action="Next story" aside={`${LEVELS[after.level].name}, from ${findPersona(after.personaId)?.name}`} href={listenHref(after.id)} />}
+          {/* While hearing it, and while answering: just listen */}
+          {(phase === "hearing" || phase === "answer") && (
+            <>
+              {/* What is happening */}
+              <p role={phase === "hearing" ? "status" : undefined} className="font-display text-cue font-semibold leading-tight">{phase === "hearing" ? `${name} is telling you something. Just listen.` : `${name} has told you something.`}</p>
+              {/* How */}
+              <p className="-mt-2 flex items-center gap-2.5 font-extrabold"><EarIcon aria-hidden="true" weight="bold" className="size-5 flex-none" />{hearingsAllowed(story) > 1 ? "Listen. You can hear it once more." : "Listen once. No words on screen."}</p>
+              {/* Speaking, shown as a moving sound mark */}
+              <p aria-hidden="true" className="flex items-center gap-3">
+                {/* The sound mark */}
+                <span className="grid size-10 flex-none place-items-center rounded-full bg-accent-tint text-accent-tint-ink"><WaveformIcon weight="bold" className="size-5" /></span>
+                {/* The bar: moving while they speak */}
+                <span className={`${PBAR} h-2.5 flex-1`}><span className={`${PBAR_FILL} transition-[width] duration-700 ${speaking ? "w-2/3 motion-safe:animate-pulse" : "w-full"}`} /></span>
+                {/* Heard so far */}
+                <span className="text-sm font-extrabold text-ink-muted">{speaking ? "Playing" : `Heard ${hearings === 1 ? "once" : `${hearings} times`}`}</span>
+              </p>
+            </>
+          )}
+          {/* At the end: the story marked */}
+          {phase === "done" && result && (
+            <>
+              {/* Small heading */}
+              <h2 className={LAB}>What {name} said</h2>
+              {/* Its words with the details and what mattered */}
+              <p data-story-marked className="-mt-2 max-w-[60ch] text-lede leading-relaxed">
+                {/* Each piece */}
+                {storyPieces(story, result).map((piece, index) => (piece.mark ? <mark key={index} data-mark={piece.mark} className={`bg-transparent text-ink ${MARK_LOOK[piece.mark]}`}>{piece.text}</mark> : <span key={index}>{piece.text}</span>))}
+              </p>
+              {/* The key to the marks */}
+              <p className="-mt-2 text-sm font-bold text-ink-muted"><span className={MARK_LOOK.core}>What mattered</span> · <span className={MARK_LOOK.caught}>a detail you caught</span> · <span className={MARK_LOOK.missed}>one you missed</span></p>
+              {/* Why it mattered */}
+              <p className="flex flex-col gap-1 rounded-2xl bg-warm-tint px-4 py-3.5 font-bold text-warm-ink"><span className={LAB_ON_TINT}>What mattered</span>{story.core.why}</p>
+            </>
+          )}
         </section>
-      )}
+
+        {/* You: your answer out loud, or how it went */}
+        {phase !== "done" ? (
+          <section aria-label={phase === "answer" ? "Your answer" : "Answering"} className={`flex min-w-0 flex-col gap-4 p-5 md:p-7 ${CARD}`}>
+            {/* Small heading */}
+            <p className={LAB}>Your answer, out loud</p>
+            {/* The ask */}
+            <p className="-mt-2 font-display text-cue font-semibold md:text-statement">What did you catch?</p>
+            {/* What to do */}
+            <p className="-mt-2 text-lg font-semibold">Answer {name} as you would a friend.</p>
+            {/* The tip */}
+            <p className="flex items-start gap-3 rounded-2xl bg-warm-tint px-4 py-3.5 font-extrabold text-warm-ink"><HeartIcon aria-hidden="true" weight="bold" className="mt-0.5 size-5 flex-none" />Go to what mattered to them, not just what happened.</p>
+            {/* Record it, once the story has been heard */}
+            {phase === "answer" ? <QuickRecorder services={services} action="Answer" maxSec={45} onDone={setTranscript} /> : <p className="py-3 text-center text-sm font-bold text-ink-muted">Up to 45 seconds. Ready when the story ends.</p>}
+            {/* On, once a take is done */}
+            {phase === "answer" && transcript !== null && <p><button type="button" onClick={finish} className={PRIMARY}>Done, see what you caught</button></p>}
+            {/* Hear it again, when allowed, and the words */}
+            {phase === "answer" && (
+              <p className="flex flex-wrap justify-center gap-x-6 border-t-2 border-rule pt-2">
+                {/* Once more on level 1 */}
+                {left > 0 && <button type="button" disabled={speaking} onClick={() => void hear()} className={`${TEXT_LINK} underline decoration-current`}>Hear it once more</button>}
+                {/* The words, for anyone who cannot listen now */}
+                {!showWords && <button type="button" onClick={() => setShowWords(true)} className={`${TEXT_LINK} underline decoration-current`}>Can’t listen? Show the words</button>}
+              </p>
+            )}
+            {/* The words, when asked for */}
+            {showWords && <p data-story-words className="max-w-[52ch] rounded-2xl bg-paper px-4 py-3 text-footnote">{story.text}</p>}
+          </section>
+        ) : result && (
+          <section aria-label="Your result" className="flex min-w-0 flex-col gap-5">
+            {/* The headline */}
+            <h1 className="font-display text-statement font-semibold">{result.core ? "You heard what mattered." : `You caught ${result.caught} of ${result.details.length} details.`}</h1>
+            {/* Nothing caught */}
+            {!transcript?.trim() && <p className="-mt-2 text-footnote">No words were caught, so nothing could be checked. Try again when you can speak.</p>}
+            {/* The checks */}
+            <div className={`flex flex-col gap-3 p-5 ${CARD}`}>
+              {/* Small heading */}
+              <h2 className={LAB}>Your answer</h2>
+              {/* Each check */}
+              <ul className="flex flex-col gap-2">
+                {/* Passed or not, with its words */}
+                {result.checks.map((check) => (
+                  <li key={check.id} data-check={check.id} data-passed={check.passed} className="flex gap-2.5">
+                    {/* The mark */}
+                    <span aria-hidden="true" className={`grid size-6 flex-none place-items-center rounded-full text-sm font-extrabold ${check.passed ? "bg-accent-tint text-accent-tint-ink" : "border-2 border-rule text-ink-muted"}`}>{check.passed ? "✓" : ""}</span>
+                    {/* What it looks for, and the words */}
+                    <span className="font-semibold">
+                      {check.label}
+                      <span className="sr-only">{check.passed ? ": yes" : ": not yet"}</span>
+                      {check.evidence && <span className="text-ink-muted"> · {check.evidence}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* One way to answer */}
+            <p className="flex flex-col gap-1.5 rounded-2xl bg-accent-tint px-4 py-3.5 font-bold text-accent-tint-ink"><span className={STEP_LABEL}>One way to answer</span>“{story.example}”</p>
+            {/* Saving failed */}
+            {saveFailed && (
+              <p role="alert" className="text-footnote">
+                This answer couldn’t be saved.{" "}
+                <button type="button" onClick={() => void save(result)} className={TEXT_LINK}>Try saving again</button>
+              </p>
+            )}
+            {/* Inside today's practice: the next step or finish; otherwise the next story; then again */}
+            <p className="flex flex-wrap items-center gap-3">
+              {/* The main action */}
+              {planStep ? (plan?.next ? <Link href={plan.next.href} className={PRIMARY}>Next: step {plan.step + 1}<span className="sr-only"> {plan.next.label}</span></Link> : <Link href="/" className={PRIMARY}>Finish today’s practice<span className="sr-only"> back to Today</span></Link>) : <Link href={listenHref(after.id)} className={PRIMARY}>Next story<span className="sr-only"> {LEVELS[after.level].name}, from {findPersona(after.personaId)?.name}</span></Link>}
+              {/* Hear the story again */}
+              <button type="button" disabled={speaking} onClick={() => void hear()} className={SECONDARY}>Hear it again</button>
+              {/* Answer it again */}
+              <button type="button" onClick={again} className={SECONDARY}>Try it again</button>
+              {/* Every story, outside today's practice */}
+              {!planStep && <Link href="/listening" className={TEXT_LINK}>All stories</Link>}
+            </p>
+          </section>
+        )}
+      </div>
     </main>
   );
 }

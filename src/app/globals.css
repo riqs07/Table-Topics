@@ -533,7 +533,15 @@
   .vl-scene[data-motion="few"] .s-move { animation-iteration-count: 3; }
   /* A still scene keeps only its blinks */
   .vl-scene[data-motion="still"] .s-move { animation: none; }
+  /* While you speak (second pass, practice screens): rings spreading out from the blob */
+  .vl-rings .p-ring { animation: vl-p-ring 2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  /* The level bars beside it, rising and falling in turn */
+  .vl-rings .p-lvl { animation: vl-p-lvl 0.9s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: bottom; }
 }
+/* A ring spreading out and fading (second pass) */
+@keyframes vl-p-ring { from { transform: scale(0.85); opacity: 0.7; } to { transform: scale(1.3); opacity: 0; } }
+/* A level bar rising (second pass) */
+@keyframes vl-p-lvl { from { transform: scaleY(0.35); } to { transform: scaleY(1); } }
 /* Blink: open, then shut for a moment */
 @keyframes vl-s-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
 /* Bob: up a little and back */

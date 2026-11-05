@@ -244,7 +244,7 @@ describe("a story and a conversation", () => {
     // Drawn
     render(<SessionScreen sessionId="talk" repository={await repositoryWith([session])} now={NOW} />);
     // The timeline
-    const timeline = await screen.findByRole("region", { name: /^The turns/ });
+    const timeline = await screen.findByRole("region", { name: /^Who talked when/ });
     // Three turns and one question
     expect([timeline.querySelectorAll("[data-turn]").length, timeline.querySelectorAll("[data-question]").length]).toEqual([3, 1]);
   });
