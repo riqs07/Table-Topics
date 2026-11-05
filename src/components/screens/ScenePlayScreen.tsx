@@ -10,11 +10,14 @@ import { SpeakerHighIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-// Load the cast, and the panel a step's scene glides into from Today
+// Load the cast
 import { Cast } from "@/components/scenes/Cast";
+// Load the mode tile, each kind's tile and the carried-over wrapper (decision 141)
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+import { SharedScene } from "@/components/scenes/SharedScene";
 // Load the card for a practice that stopped short
 import { StopCard } from "@/components/script/StopCard";
-import { ScenePanel } from "@/components/scenes/ScenePanel";
 // Load the face names
 import type { FaceName } from "@/components/scenes/Scene";
 // Load the shared button looks
@@ -292,8 +295,8 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
             {/* The setting */}
             <p className="mt-1 font-bold leading-snug">{scene.setting}</p>
           </div>
-          {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise them, their face by the mood */}
-          {planStep && phase === "intro" ? <ScenePanel scene="scenes" line="Choose your replies, then say the last one." className="" /> : (
+          {/* Them, their face by the mood */}
+          {(
             <div role="img" aria-label={mood === "pleased" ? `${name} looks pleased` : mood === "deflated" ? `${name} looks a little deflated` : `${name} looks at ease`} data-mood={mood} data-speaking={speaking || undefined} className="flex flex-col items-center gap-1 self-start px-4">
               {/* The friend */}
               <Cast who="friend" face={MOOD_FACES[mood]} className="size-28 md:size-36" />
@@ -357,8 +360,10 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
                   </li>
                 ))}
               </ol>
-              {/* Start, in the card the spoken turn will use */}
+              {/* Start, in the card the spoken turn will use, with the scenes' tile (carried over from Today's step, decision 141) */}
               <div className={`flex flex-wrap items-center gap-x-6 gap-y-4 p-5 ${CARD}`}>
+                {/* The tile */}
+                <SharedScene scene="scenes"><span className="flex flex-none"><ModeTile ground={SCENE_TILES.scenes.ground} prop={SCENE_TILES.scenes.prop} face={SCENE_TILES.scenes.face} tilt={-4} scene="scenes" className="size-16 md:size-18" /></span></SharedScene>
                 {/* What it is */}
                 <div className="flex min-w-0 flex-[1_1_16rem] flex-col gap-1">
                   {/* Small heading */}

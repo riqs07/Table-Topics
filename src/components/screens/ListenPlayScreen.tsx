@@ -10,15 +10,18 @@ import { EarIcon, HeadphonesIcon, HeartIcon, MicrophoneIcon, WaveformIcon } from
 // Load the script-page building blocks
 import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-// Load the two people, and the panel a step's scene glides into from Today
+// Load the two people
 import { SceneCast } from "@/components/scenes/SceneCast";
 // Load the cast, for you beside the verdict
 import { Cast } from "@/components/scenes/Cast";
-import { ScenePanel } from "@/components/scenes/ScenePanel";
 // Load the shared button looks
 import { PRIMARY, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the card, label, bubble and progress bar looks
 import { BUBBLE, CARD, LAB, LAB_ON_TINT, PBAR, PBAR_FILL } from "@/components/script/textStyles";
+// Load the mode tile, each kind's tile and the carried-over wrapper (decision 141)
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+import { SharedScene } from "@/components/scenes/SharedScene";
 // Load the card for a practice that stopped short
 import { StopCard } from "@/components/script/StopCard";
 // Load the shared screen starting points and today's practice position
@@ -217,15 +220,20 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
           {!reply && <p className="-mt-2 font-semibold text-ink-muted">{story.setting}</p>}
           {/* Their reply, at the end */}
           {reply && <p data-reply className={`${BUBBLE} -mt-1 rounded-[22px] font-semibold`}><span className="block text-sm font-extrabold text-ink-muted">{name}</span>{reply}</p>}
-          {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise the two people */}
-          {planStep && phase === "intro" ? <ScenePanel scene="listening" line="Listen once, then answer to what mattered." className="" /> : <SceneCast mood={result ? (result.warm ? "pleased" : "easy") : "easy"} speaking={speaking} name={name} labels friendFirst you={phase === "hearing" ? "listen" : result?.warm ? "happy" : "side-left"} className="bg-art-sky/15" />}
+          {/* The two people, the teller first */}
+          <SceneCast mood={result ? (result.warm ? "pleased" : "easy") : "easy"} speaking={speaking} name={name} labels friendFirst you={phase === "hearing" ? "listen" : result?.warm ? "happy" : "side-left"} className="bg-art-sky/15" />
           {/* Before hearing it: what to listen for, and Listen */}
           {phase === "intro" && (
             <>
               {/* What to listen for */}
               <p className="max-w-[52ch] font-semibold">{LEVELS[story.level].about} Listen for what happened, how it felt, and what matters most to {name}. Then answer as you would to a friend.</p>
               {/* Listen */}
-              <p><button type="button" onClick={() => void hear()} className={`${PRIMARY} min-w-40`}><HeadphonesIcon aria-hidden="true" weight="bold" className="size-5" />Listen</button></p>
+              <p className="flex items-center gap-4">
+                {/* The listening tile (carried over from Today's step, decision 141) */}
+                <SharedScene scene="listening"><span className="flex flex-none"><ModeTile ground={SCENE_TILES.listening.ground} prop={SCENE_TILES.listening.prop} face={SCENE_TILES.listening.face} tilt={-4} scene="listening" className="size-14" /></span></SharedScene>
+                {/* The button */}
+                <button type="button" onClick={() => void hear()} className={`${PRIMARY} min-w-40`}><HeadphonesIcon aria-hidden="true" weight="bold" className="size-5" />Listen</button>
+              </p>
             </>
           )}
           {/* While hearing it, and while answering: just listen */}
