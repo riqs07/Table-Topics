@@ -54,7 +54,7 @@ export function StoryPlanCard({ take }: { take: StoryTake }) {
         {/* Each beat, numbered in a ring */}
         {plan.beats.map((beat, index) => (
           // One beat
-          <li key={beat} className="flex min-h-12 items-center gap-3.5 border-t-2 border-rule py-2 first:border-t-0">
+          <li key={`${index}-${beat}`} className="flex min-h-12 items-center gap-3.5 border-t-2 border-rule py-2 first:border-t-0">
             {/* Its number */}
             <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full border-2 border-rule font-display text-sm font-semibold text-ink-muted">{index + 1}</span>
             {/* The beat */}

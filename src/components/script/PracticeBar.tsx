@@ -36,6 +36,8 @@ interface PracticeBarProps {
   close?: { href: string; label: string } | null;
   // Something in the cross's place when there is no way out (a clock)
   lead?: ReactNode;
+  // Instead of following the cross's link, do this (a take under way is discarded first, with its undo); the cross is then a button named by the close label
+  onClose?: () => void;
   // How far through, from 0 to 1, or left out for no bar
   progress?: number;
   // The step's label, such as "Read aloud · step 2 of 3"
@@ -47,14 +49,21 @@ interface PracticeBarProps {
 }
 
 // The bar across the top while practising
-export function PracticeBar({ close = null, lead, progress, label, hints, className = "" }: PracticeBarProps) {
+export function PracticeBar({ close = null, lead, onClose, progress, label, hints, className = "" }: PracticeBarProps) {
   // The share filled, kept between 0 and 1
   const share = progress === undefined ? null : Math.max(0, Math.min(1, progress));
   // One row: the cross (or the lead), the bar, the label, then the hints
   return (
     <header data-practice-bar className={`flex flex-wrap items-center gap-x-4 gap-y-1 pt-4 md:gap-x-5 md:pt-5 ${className}`.trim()}>
+      {/* The way out, as a button when leaving does something first */}
+      {close && onClose && (
+        <button type="button" onClick={onClose} aria-label={close.label} className={`-ml-2 inline-flex size-11 flex-none items-center justify-center rounded-[14px] text-ink-muted hover:bg-paper hover:text-ink ${PRESS}`}>
+          {/* The cross */}
+          <XIcon aria-hidden="true" weight="bold" className="size-6" />
+        </button>
+      )}
       {/* The way out */}
-      {close && (
+      {close && !onClose && (
         <Link href={close.href} aria-label={close.label} className={`-ml-2 inline-flex size-11 flex-none items-center justify-center rounded-[14px] text-ink-muted hover:bg-paper hover:text-ink ${PRESS}`}>
           {/* The cross */}
           <XIcon aria-hidden="true" weight="bold" className="size-6" />
