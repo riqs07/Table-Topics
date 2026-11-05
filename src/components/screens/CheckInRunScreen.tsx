@@ -10,7 +10,9 @@ import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { DoneBurst } from "@/components/script/DoneBurst";
-import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
+import { PRACTICE_BODY, PRACTICE_COLUMNS, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
+// Load the shared failed-to-load card
+import { LoadFailed } from "@/components/script/LoadFailed";
 import { Skeleton } from "@/components/script/Skeleton";
 // Load the shared button and card looks
 import { PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
@@ -136,38 +138,33 @@ export function CheckInRunScreen(props: ScreenProps) {
 
   // Draw the page
   return (
-    <main id="main" className={`${PRACTICE_NARROW} pb-40 md:pb-16`}>
-      {/* Focus mode: the cross back to Today, how far through, and the step (the tabs stay hidden while practising) */}
+    <main id="main" className={`${PRACTICE_MAIN} pb-40 md:pb-16`}>
+      {/* Focus mode: the cross back to Today at the far left, how far through, and the step (the tabs stay hidden while practising) */}
       <PracticeBar close={{ href: "/", label: "Close, back to Today" }} progress={state?.open ? (finished ? 1 : behind / CHECK_IN_PARTS.length) : undefined} label={barLabel} />
+      {/* The content under the bar, as wide as the references' computer layout */}
+      <div className={`${PRACTICE_BODY} flex flex-1 flex-col`}>
       {/* Until loaded, a quiet placeholder */}
       {!data && !problem && <Skeleton blocks={["h-24", "h-72"]} />}
       {/* A failure: Sage says so, why, and the way forward */}
-      {problem !== null && (
-        <section role="alert" className="mt-8 flex flex-col gap-5">
-          {/* Sage, thinking, with what happened */}
-          <SageSays mood="thinking" heading={!state}>Your check-in could not be loaded or saved.</SageSays>
-          {/* The browser's reason, on a card */}
-          <p className={`p-5 font-semibold ${CARD}`}><span className={`block ${LAB}`}>What the browser said</span>“{problem}”</p>
-          {/* Try again */}
-          <p><button type="button" onClick={() => { setProblem(null); setAttempt((count) => count + 1); }} className={PRIMARY}>Try again</button></p>
-        </section>
-      )}
+      {problem !== null && <LoadFailed level={state ? 2 : 1} title="Your check-in could not be loaded or saved." reason={problem} onRetry={() => { setProblem(null); setAttempt((count) => count + 1); }} className="mt-4" />}
       {/* Not a check-in day: when the next one is */}
       {state && !state.open && (
-        <section className="mt-8 flex flex-col gap-5">
+        <section className="mt-4 flex max-w-2xl flex-col gap-5">
           {/* Headline */}
           <h1 className="font-display text-statement font-semibold">Not a check-in day.</h1>
           {/* Sage says when */}
           <SageSays mood="calm">{state.next ? `Your next check-in is on ${state.next}.` : "Your next check-in comes soon."}</SageSays>
           {/* The check-ins so far */}
-          <p><Link href="/check-in" className={SECONDARY}>See your check-ins</Link></p>
+          <p><Link href="/check-in" className={PRIMARY}>See your check-ins</Link></p>
         </section>
       )}
       {/* Under way: the parts, and the next one */}
       {state && state.open && !finished && upNext && (
-        <>
+        <div className={PRACTICE_COLUMNS}>
+          {/* The main column: the headline, Sage and the four parts */}
+          <div className="min-w-0">
           {/* Headline */}
-          <h1 className="mt-6 font-display text-statement font-semibold">{state.week === 1 ? "Your first check-in." : `Check-in ${state.week}.`}</h1>
+          <h1 className="font-display text-statement font-semibold">{state.week === 1 ? "Your first check-in." : `Check-in ${state.week}.`}</h1>
           {/* Sage says what it is */}
           <SageSays mood="encouraging" className="mt-4">{state.week === 1 ? `About ${CHECK_IN_MINUTES} minutes. The same four parts every week, so you can hear the change.` : `About ${CHECK_IN_MINUTES} minutes, the same four parts as last time.`}</SageSays>
           {/* The four parts, each a picture card */}
@@ -197,8 +194,11 @@ export function CheckInRunScreen(props: ScreenProps) {
               );
             })}
           </ol>
+          </div>
+          {/* The side column: the next part, a way to skip it, and its Start */}
+          <aside className="flex flex-col lg:sticky lg:top-6">
           {/* The next part: what it asks, and a way to skip it */}
-          <section aria-label="Next part" className={`mt-5 p-5 ${CARD}`}>
+          <section aria-label="Next part" className={`p-5 ${CARD}`}>
             {/* Which part */}
             <p className={LAB}>Part {CHECK_IN_PARTS.indexOf(upNext) + 1} of {CHECK_IN_PARTS.length}</p>
             {/* What it asks, or (for the surprise question) that it stays hidden */}
@@ -211,27 +211,27 @@ export function CheckInRunScreen(props: ScreenProps) {
               <Link href="/" className={`${TEXT_LINK} text-ink-muted`}>Finish later today</Link>
             </p>
           </section>
-          {/* Push the action down */}
-          <div className="flex-1" />
           {/* Start the next part */}
           <ActionBand action={`Start ${CHECK_IN_PART_INFO[upNext].name.toLowerCase()}`} aside={`Part ${CHECK_IN_PARTS.indexOf(upNext) + 1} of ${CHECK_IN_PARTS.length}`} href={partHref(upNext, state.id, state.week)} />
-        </>
+          </aside>
+        </div>
       )}
       {/* Done: what was recorded, the comparison, and when the next one is */}
       {state && finished && state.current && <Finished state={state} current={state.current} />}
+      </div>
     </main>
   );
 }
 
 // Sage with a line in a speech bubble (storyboard "Weekly check-in")
-function SageSays({ mood, children, className = "", heading = false }: { mood: SageMood; children: ReactNode; className?: string; heading?: boolean }) {
+function SageSays({ mood, children, className = "" }: { mood: SageMood; children: ReactNode; className?: string }) {
   // The coach and the bubble, side by side
   return (
     <div className={`flex items-end gap-3 ${className}`.trim()}>
       {/* The coach */}
       <Cast who="sage" mood={mood} className="size-16 flex-none md:size-20" />
-      {/* The line: the page's heading when nothing else on the page is (a failure before anything loaded) */}
-      {heading ? <h1 className={`${BUBBLE} mb-2 max-w-[44ch] font-display text-xl font-semibold`}>{children}</h1> : <p className={`${BUBBLE} mb-2 max-w-[44ch]`}>{children}</p>}
+      {/* The line */}
+      <p className={`${BUBBLE} mb-2 max-w-[44ch]`}>{children}</p>
     </div>
   );
 }
@@ -242,7 +242,7 @@ function Finished({ state, current }: { state: RunState; current: CheckIn }) {
   const recorded = Object.keys(current.takes).length > 0;
   // The page
   return (
-    <section aria-label="Check-in done" className="mt-2 flex flex-1 flex-col">
+    <section aria-label="Check-in done" className="mx-auto mt-2 flex w-full max-w-2xl flex-1 flex-col">
       {/* The blob, pleased, once something was recorded */}
       {recorded ? <DoneBurst celebrate={false} /> : <Cast who="you" face="ready" className="mx-auto mt-6 size-32" />}
       {/* Headline */}

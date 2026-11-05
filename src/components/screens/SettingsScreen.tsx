@@ -621,6 +621,10 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
       {/* Result of the last action, read out to screen readers (takes no room until there is one) */}
       <p role="status" className={message ? "mt-4 text-accent" : "sr-only"}>{message}</p>
 
+      {/* The groups in two columns on a computer, using the page's full width like the other hubs (one column on a phone) */}
+      <div data-wide className="grid items-start gap-x-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      {/* The first column: your progress and practice */}
+      <div className="min-w-0">
       {/* How you are doing: the profile, which holds the coach summary, check-ins, measures and the way to History (decisions 90 and 109), and "Your week" (decision 140) */}
       <Group id="group-progress" title="Your progress" icon={ChartLineUpIcon} colour="bg-art-sky text-art-cream">
         {/* The profile's row */}
@@ -694,6 +698,9 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
         </details>
       </Group>
 
+      </div>
+      {/* The second column: recordings and data, services, appearance and the developer's corner */}
+      <div className="min-w-0">
       {/* Recordings and data: how long recordings are kept, export and import, and starting over (decision 110) */}
       <Group id="group-data" title="Recordings and data" icon={DatabaseIcon} colour="bg-art-coral text-art-cream">
       {/* How long recordings are kept */}
@@ -854,6 +861,8 @@ export function SettingsScreen({ fetchFn, ...props }: SettingsScreenProps) {
           <button type="button" onClick={loadSamples} className={`${SECONDARY} mt-2`}><WrenchIcon aria-hidden="true" weight="bold" className="size-5" />Fill with sample sessions</button>
         </Section>
       )}
+      </div>
+      </div>
     </main>
   );
 }

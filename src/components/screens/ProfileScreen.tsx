@@ -16,7 +16,10 @@ import { PageTitle } from "@/components/script/PageTitle";
 // Load the button looks
 import { PRESS, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared text and card looks
-import { BUBBLE, CARD, CHIP, LAB, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
+import { BUBBLE, CARD, CHIP, CHIP_GOOD, LAB, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared failed-to-load card and the not-found card
+import { LoadFailed } from "@/components/script/LoadFailed";
+import { NotFound } from "@/components/script/SageSays";
 // Load the cast, the mode tiles and the check-in's tile (second design pass)
 import { Cast } from "@/components/scenes/Cast";
 import { ModeTile } from "@/components/scenes/ModeTile";
@@ -88,6 +91,8 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
   const [settings, setSettings] = useState<SettingsRecord | null>(null);
   // The takes, read at once for the top of Me (the profile below waits for older takes to be measured)
   const [takes, setTakes] = useState<SessionRecord[] | null>(null);
+  // How many times it was loaded, so Try again loads afresh
+  const [attempt, setAttempt] = useState(0);
   // Name the tab
   usePageTitle(sessionId ? "All measures for this take" : "Me");
 
@@ -143,7 +148,18 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
       // Ignore late results
       cancelled = true;
     };
-  }, [repo, today, sessionId, fetchFn]);
+  }, [repo, today, sessionId, fetchFn, attempt]);
+
+  // Load everything again, after a failure
+  function retry() {
+    // No failure shown while trying
+    setError(null);
+    // Load afresh
+    setAttempt((count) => count + 1);
+  }
+
+  // For one take: whether it is missing from this device, once everything is read
+  const missing = !!sessionId && !!loaded && !loaded.sessions.some((session) => session.id === sessionId);
 
   // Draw the page
   return (
@@ -151,33 +167,31 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
       {/* The area it heads, the one place for how you are doing, reached from Settings with the gear marked (decision 109) */}
       <Masthead title="Me" section="me" />
       {/* For one take: the way back to it, and the page's name */}
-      {sessionId && <p className="mt-2"><Link href={`/sessions?id=${encodeURIComponent(sessionId)}`} className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to the take</Link></p>}
+      {sessionId && !missing && <p className="mt-2"><Link href={`/sessions?id=${encodeURIComponent(sessionId)}`} className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to the take</Link></p>}
+      {/* The take is not here: Sage says so as the heading, with one chunky way back (the shared not-found pattern) */}
+      {missing && <NotFound title="This take is not on this device." back={{ href: "/history", label: "Back to your takes" }} />}
       {/* (its name) */}
-      {sessionId && <PageTitle title="All measures for this take" />}
+      {sessionId && !missing && <PageTitle title="All measures for this take" />}
       {/* One take's measures */}
       {sessionId && (
         <>
           {/* While older takes are measured */}
           {measuring && <p role="status" className="mt-4 text-ink-muted">Measuring your earlier takes…</p>}
           {/* A failure, with the way forward */}
-          {error && <p role="alert" className={`mt-4 p-5 font-semibold ${CARD}`}>The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
+          {error && <LoadFailed title="This take’s measures could not be loaded." reason={error} onRetry={retry} />}
           {/* The table, once loaded */}
-          {loaded && today && <TakeTable sessionId={sessionId} loaded={loaded} now={today} />}
+          {loaded && today && !missing && <TakeTable sessionId={sessionId} loaded={loaded} now={today} />}
         </>
       )}
       {/* The whole of Me: you so far, then and now, your numbers, your takes and Settings (second design pass), then the speaking profile under them */}
-      {!sessionId && (
+      {!sessionId && error && !takes && <LoadFailed level={1} title="Your progress could not be loaded." reason={error} onRetry={retry} />}
+      {/* (the whole of Me, unless nothing at all could be read) */}
+      {!sessionId && !(error && !takes) && (
         <MeTop repo={repo} sessions={takes ?? loaded?.sessions ?? null} settings={settings} now={today}>
-          {/* The profile's own heading */}
-          <p className={`mt-6 ${LAB}`}>Measured from your takes</p>
-          {/* (the heading) */}
-          <h2 className={`${SECTION_HEADING} mt-1`}>Your speaking profile</h2>
-          {/* What it compares */}
-          <p className="mt-1 max-w-[56ch] font-semibold text-ink-muted">Your usual against your recent takes. Compared only with yourself.</p>
           {/* While older takes are measured */}
           {measuring && <p role="status" className="mt-4 text-ink-muted">Measuring your earlier takes…</p>}
           {/* A failure, with the way forward */}
-          {error && <p role="alert" className={`mt-4 p-5 font-semibold ${CARD}`}>The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
+          {error && <LoadFailed title="Your speaking profile could not be loaded." reason={error} onRetry={retry} />}
           {/* The content, once loaded */}
           {loaded && today && <WholeProfile loaded={loaded} now={today} summaryNote={summaryNote} />}
         </MeTop>
@@ -207,9 +221,15 @@ function WholeProfile({ loaded, now, summaryNote }: { loaded: Loaded; now: Date;
       <CheckIns sessions={loaded.sessions} />
       {/* How often the speaker's own call matched the measure, once there are enough rated takes (decision 116) */}
       <Calibration sessions={loaded.sessions} />
-      {/* Nothing measured yet */}
+      {/* The profile's own heading, after the check-ins so the headings follow the page */}
+      <p className={`mt-8 ${LAB}`}>Measured from your takes</p>
+      {/* (the heading) */}
+      <h2 className={`${SECTION_HEADING} mt-1`}>Your speaking profile</h2>
+      {/* What it compares, once something is measured */}
+      {family && <p className="mt-1 max-w-[56ch] font-semibold text-ink-muted">Your usual against your recent takes. Compared only with yourself.</p>}
+      {/* Nothing measured yet: the blob and the first step, never a page of zeros */}
       {!family && (
-        <div className={`mt-6 flex items-center gap-4 p-5 ${CARD}`}>
+        <div className={`mt-3 flex items-center gap-4 p-5 ${CARD}`}>
           {/* The blob, waiting */}
           <Cast who="you" face="wonder" still className="size-14 flex-none" />
           {/* What will appear */}
@@ -359,25 +379,29 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
         return (
           <section key={group.id} aria-label={group.name} className={`mt-4 p-5 ${CARD}`}>
             {/* Its name */}
-            <h2 className={SECTION_HEADING}>{group.name}</h2>
-            {/* Each headline measure */}
-            <ul className="mt-2 divide-y divide-rule">
-              {headline.map((summary) => (
-                <li key={summary.metric.id} data-metric={summary.metric.id} className="py-2">
-                  {/* Name and recent value */}
-                  <p className="flex items-baseline justify-between gap-3"><span>{summary.metric.name}</span><span className="flex-none whitespace-nowrap font-display text-lg font-semibold">{shown(summary.recent, summary.metric.unit)}</span></p>
-                  {/* Against the usual */}
-                  <p className="text-footnote text-ink-muted">{trendWords(summary)}</p>
-                  {/* A change that held for three takes */}
-                  {summary.flag && <p className="text-footnote text-accent">Your last three takes were all {summary.flag.side} than usual ({summary.flag.values.map((value) => shown(value, summary.metric.unit)).join(", ")}).</p>}
-                </li>
-              ))}
-            </ul>
+            <h3 className="font-display text-xl leading-tight font-semibold">{group.name}</h3>
+            {/* Each headline measure, as a stat tile: its name, the recent value large, and how it sits against your usual */}
+            {headline.length > 0 && (
+              <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                {headline.map((summary) => (
+                  <li key={summary.metric.id} data-metric={summary.metric.id} className="flex flex-col gap-0.5 rounded-[16px] bg-paper px-4 py-3">
+                    {/* Its name */}
+                    <span className="text-sm font-bold text-ink-muted">{summary.metric.name}</span>
+                    {/* The recent value */}
+                    <span className="font-display text-2xl leading-tight font-semibold">{shown(summary.recent, summary.metric.unit)}</span>
+                    {/* Against the usual */}
+                    <span className="text-footnote font-semibold text-ink-muted">{trendWords(summary)}</span>
+                    {/* A change that held for three takes */}
+                    {summary.flag && <span className="text-footnote font-bold text-accent-tint-ink">Your last three takes were all {summary.flag.side} than usual ({summary.flag.values.map((value) => shown(value, summary.metric.unit)).join(", ")}).</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
             {/* The deeper analysis's voice measures, each with what it means */}
             {deeper.length > 0 && (
               <>
                 {/* What they are */}
-                <p className={`mt-3 ${LABEL}`}>From deeper analysis</p>
+                <p className={`mt-4 ${LAB}`}>From deeper analysis</p>
                 <ul aria-label="From deeper analysis" className="mt-1 divide-y divide-rule">
                   {deeper.map((summary) => (
                     <li key={summary.metric.id} data-metric={summary.metric.id} className="py-2">
@@ -397,17 +421,19 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
           </section>
         );
       })}
-      {/* Patterns across takes */}
-      <section aria-label="Patterns" className={`mt-4 p-5 ${CARD}`}>
-        {/* Heading */}
-        <h2 className={SECTION_HEADING}>Patterns</h2>
-        {/* The patterns, or when they will appear */}
-        {patterns.length > 0 ? <ul className="mt-2 list-disc pl-5 text-lede">{patterns.map((pattern) => <li key={pattern.statement}>{pattern.statement}</li>)}</ul> : <p className="mt-2 text-ink-muted">{family.takes >= MIN_FOR_PATTERNS ? "No clear pattern stands out yet." : `Patterns appear after ${MIN_FOR_PATTERNS} takes of one kind; you have ${family.takes} here.`}</p>}
-      </section>
+      {/* Patterns across takes, once there are any (until then a quiet line on when they come) */}
+      {patterns.length > 0 ? (
+        <section aria-label="Patterns" className={`mt-4 p-5 ${CARD}`}>
+          {/* Heading */}
+          <h3 className="font-display text-xl leading-tight font-semibold">Patterns</h3>
+          {/* The patterns, as ruled rows */}
+          <ul className="mt-2 divide-y-2 divide-rule">{patterns.map((pattern) => <li key={pattern.statement} className="py-2.5 font-semibold">{pattern.statement}</li>)}</ul>
+        </section>
+      ) : <p className="mt-4 text-footnote font-semibold text-ink-muted">{family.takes >= MIN_FOR_PATTERNS ? "No clear pattern stands out yet." : `Patterns appear after ${MIN_FOR_PATTERNS} takes of one kind; you have ${family.takes} here.`}</p>}
       {/* Every measure, folded away */}
       <details className={`mt-4 px-5 ${CARD}`}>
         {/* The fold's row */}
-        <summary className={`flex min-h-14 cursor-pointer items-center font-semibold ${PRESS}`}>All measures ({family.metrics.length})</summary>
+        <summary className={`flex min-h-14 cursor-pointer items-center font-display text-lg font-semibold ${PRESS}`}>All measures ({family.metrics.length})</summary>
         {/* The table */}
         <MeasureTable rows={family.metrics.map((summary) => ({ id: summary.metric.id, name: summary.metric.name, value: summary.recent, usual: summary.usual, unit: summary.metric.unit, evidence: summary.metric.evidence, shown: summary.metric.shown, deeper: summary.source === "voice" || summary.source === "transcript" }))} valueLabel="Recent" />
         {/* What is still to come */}
@@ -421,16 +447,17 @@ function FamilyView({ family, profile }: { family: FamilyProfile; profile: Speak
 function WordHabits({ profile }: { profile: SpeakerProfile }) {
   // The habits
   const { favourites, newWords, swaps } = profile.vocabulary;
-  // Draw them
+  // Nothing to say yet: left out rather than a row of "None yet"
+  if (favourites.length === 0 && newWords.length === 0 && swaps.length === 0) return null;
+  // Draw the lists that have something
   return (
-    <div className="mt-2 text-lede">
+    <div className="mt-2">
       {/* Favourite words */}
-      <p className="mt-2"><span className={LABEL}>Said far more than usual lately</span><br />{favourites.length > 0 ? favourites.map((item) => `${item.word} (${item.recent})`).join(", ") : "None stand out yet."}</p>
+      {favourites.length > 0 && <><p className={`mt-3 ${LAB}`}>Said far more than usual lately</p><p className="mt-1.5 flex flex-wrap gap-1.5">{favourites.map((item) => <span key={item.word} className={CHIP}>{item.word} ({item.recent})</span>)}</p></>}
       {/* New words */}
-      <p className="mt-2"><span className={LABEL}>New in the last two weeks</span><br />{newWords.length > 0 ? newWords.map((item) => item.word).join(", ") : "None yet."}</p>
-      {/* The coach's swaps */}
-      <p className="mt-2"><span className={LABEL}>Word swaps from the coach</span></p>
-      {swaps.length > 0 ? <ul className="list-disc pl-5">{swaps.map((swap) => <li key={`${swap.sessionId}-${swap.said}`}>“{swap.said}” → “{swap.stronger}”{swap.why ? ` (${swap.why})` : ""}</li>)}</ul> : <p>None yet.</p>}
+      {newWords.length > 0 && <><p className={`mt-3 ${LAB}`}>New in the last two weeks</p><p className="mt-1.5 flex flex-wrap gap-1.5">{newWords.map((item) => <span key={item.word} className={CHIP_GOOD}>{item.word}</span>)}</p></>}
+      {/* The coach's swaps, as ruled rows */}
+      {swaps.length > 0 && <><p className={`mt-3 ${LAB}`}>Word swaps from the coach</p><ul className="mt-1 divide-y-2 divide-rule">{swaps.map((swap) => <li key={`${swap.sessionId}-${swap.said}`} className="py-2 font-semibold">“{swap.said}” → <b className="text-accent-tint-ink">“{swap.stronger}”</b>{swap.why ? <span className="text-ink-muted"> ({swap.why})</span> : ""}</li>)}</ul></>}
     </div>
   );
 }
