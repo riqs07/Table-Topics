@@ -26,9 +26,9 @@ export function planBeats(take: StoryTake): { name: string; about: string; beats
 export function StoryPointers() {
   // The card
   return (
-    <section aria-label="Three things every good story does" data-story-pointers className="mt-4 max-w-md rounded-[22px] bg-accent/10 p-4">
+    <section aria-label="Three things every good story does" data-story-pointers className="mt-4 max-w-md rounded-[22px] bg-accent-tint p-4">
       {/* Heading */}
-      <p className="text-footnote font-semibold text-accent">Three things every good story does</p>
+      <p className="text-footnote font-extrabold text-accent-tint-ink">Three things every good story does</p>
       {/* The three */}
       <ul className="mt-2 flex flex-col gap-1 text-footnote">
         {/* Each one */}

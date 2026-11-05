@@ -1,8 +1,25 @@
 # Design System
 
 **Purpose:** How you control colors, fonts, and feel, and the rules that keep the look in one place.
-**Last updated:** 2026-10-29 (decision 131)
-**Status:** Built in milestone 2. **Calm studio with a forest green accent was chosen at C6 (2026-10-12).** The other two themes stay in `src/theme/themes.ts`; the style and wireframe pages that showed them side by side were removed in decision 105.
+**Last updated:** 2026-11-05 (the UI rewrite)
+**Status:** Built in milestone 2. **Since the UI rewrite (2026-11-04) the app's theme is Playful**, direction B from the redesign stills; calm studio (chosen at C6), notebook and gray stay in `src/theme/themes.ts`. The style and wireframe pages that showed them side by side were removed in decision 105.
+
+## The UI rewrite: Playful (2026-11-04, branch `ui-rewrite`)
+
+The redesign the roadmap planned, built from the stills on claude.ai ("VoiceLab Desktop Screens", "VoiceLab Current App, Remade", "VoiceLab Playful Screens" and the first prototypes, direction B). These rules sit on top of everything below and win wherever they disagree; the sections below are kept for their history.
+
+- **Theme `playful`** (`src/theme/themes.ts`, the default): the page is warm cream (`paper-raised`), `paper` is the softer cream inset inside cards, cards are white with a 2 px `rule` edge and a solid 4 px `rule` ledge under them (`CARD`, `shadow-card`), ink is a warm brown, never black. The accent is a green dark enough for white words on it and for green words on the soft cream; dark mode is warm brown-black with a brighter green.
+- **Type:** Fredoka (display: headings, card names, buttons, big numbers) over Nunito (text, weight 500 by default, 700 to 800 for labels). Both are loaded in `src/theme/fonts.ts`.
+- **New roles:** `accent-tint` and `accent-tint-ink`, the soft green behind the current tab, "Up next", "Your focus" and good news. Every theme defines them; the contrast test covers the pair.
+- **Buttons** (`Buttons.tsx`): `PRIMARY` is the chunky one, green, uppercase Fredoka, with a darker solid underside (`shadow-chunky`) that it presses into; `SECONDARY` and `QUIET` are white with a 2 px edge and a small ledge (`shadow-ledge`); `TEXT_LINK` is green and bold. The action band (`ActionBand`) is the chunky button at full width.
+- **Small parts** (`textStyles.ts`): `LAB` (the small uppercase label above a title), `BUBBLE` (a speech bubble with its tail on the left, drawn in `globals.css` as `.vl-bubble`), `CHIP` and `CHIP_GOOD` (pills), `PBAR` and `PBAR_FILL` (the thick progress bar with a darker lower edge, `shadow-bar`). Sizes and shadows live as theme tokens (`text-button`, `text-chip`, `shadow-next`, `shadow-picked`, `shadow-sun`), never arbitrary values, so the no-raw-styles test holds.
+- **Navigation** (`Masthead.tsx`): four sections, **Today, Practice, Courses and Me** (`/profile`). On a computer they are a white rail down the left with the blob and "VoiceLab" at the top (the page moves over 15rem, `globals.css`); on a phone a tab bar along the bottom. The current one sits in the `accent-tint` pill. Learn lives inside Courses as "Quick reads"; Settings, History and the speaking profile live inside Me (their `section` is `settings`, which lights Me). There is no gear any more: Settings is reached from Me. Focus mode is unchanged: while practising, no navigation, a cross to leave.
+- **Pictures:** mode tiles (`ModeTile`) for every kind of practice, section and Today step, and `Buddy` for the blob or Sage on their own; see [art-style.md](art-style.md).
+- **Today:** Sage with a speech bubble (a greeting for the time of day and what is left), the run card (the last seven days as squares, the focus, "See your progress"), the headline with a chunky Start, the steps as picture cards (the next edged in sun, done ones faded with a tick), then "Also today" as tile cards.
+- **Practice:** the featured way as a wide card on its tile's tint with a Go button, the other four as picture cards, four across on a computer; the groups under "More ways to practise" use small tiles in their rows.
+- **Courses:** "Keep going" as a wide card with the course tile and a Continue button, every course as a picture card (three across on a computer), and Quick reads (Learn). **A course:** a header band on the course tile's tint, then the lessons as cards winding left and right along a dotted path, each part a round marker (green tick done, sun next, cream open), and the blob saying every lesson is open.
+- **Me:** "You, so far" with the blob, four counts (takes, minutes spoken, stories, days practised; counts only, never a score), tile cards to Your takes, Check-ins and Settings, then the speaking profile.
+- **Width:** `PAGE` allows 72rem; children stay at 48rem unless marked `data-wide` (card grids).
 
 ## Warm and lively (decision 69, 2026-10-19)
 

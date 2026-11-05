@@ -34,6 +34,10 @@ The blob is VoiceLab's one recurring character. Everything else is a prop around
 
 Do not mix them: no ink outlines on a tile, no tilted ground behind a scene.
 
+**Mode tiles (the UI rewrite, 2026-11-04).** The redesign shows a kind of practice as a tile, not a scene: `ModeTile` (`src/components/scenes/ModeTile.tsx`) is a course tile built from parts, a ground (`sky`, `sun`, `bloom`, `leaf`, `plum`, `coral`), one prop from a fixed set (a bolt, a campfire, a speech bubble, waves, a pause sign, a bullseye, a calendar, a glass, an ear, a question mark, a book, three dots, a flag, a loop, a star, a microphone, a door) and the shaded blob's face. Each kind's tile is in `SCENE_TILES` (`modeTileFor.ts`), keyed by its scene name, so every place that knew a kind's scene now shows its tile (Practice cards and rows, Today's steps, the panel at the top of a mode's screen). Courses and lessons keep their own hand-drawn tiles. The ink-line scenes stay for the focus picker and the drawings inside screens. A mode tile on a card sits on its ground's soft tint (`GROUND_TINT`).
+
+**Buddy (the UI rewrite).** `Buddy` (`src/components/scenes/Buddy.tsx`) draws the blob (you) or Sage (the coach, the same outline in the accent green, a little wider and settled, as in [characters/sage.md](characters/sage.md)) on its own, bobbing gently (`b-bob`) unless still. Sage speaks in a `BUBBLE` on Today and the welcome; the blob keeps you company on a course path and heads Me.
+
 ## 3. Anatomy of a course tile
 
 1. **The tile:** `rect x=14 y=14 width=172 height=172 rx=34` (the clip uses the same shape). It leans between 3° and 5°, left or right; tiles shown next to each other lean opposite ways.

@@ -40,10 +40,10 @@ export function TileRow({ href, label, title, detail, ground, prop, face = "read
       <ModeTile ground={ground} prop={prop} face={face} tilt={tilt} className="size-20" />
       {/* The words */}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        {/* The label, unless it is the title */}
-        {label !== title && <span className={LAB}>{label}</span>}
-        {/* The name */}
+        {/* The name (first, so the link is named by it) */}
         <span className="font-display text-xl leading-tight font-semibold">{title}</span>
+        {/* The label above it, unless it is the title */}
+        {label !== title && <span className={`${LAB} order-first`}>{label}</span>}
         {/* The detail */}
         {detail && <span className="text-footnote font-bold text-ink-muted">{detail}</span>}
       </span>

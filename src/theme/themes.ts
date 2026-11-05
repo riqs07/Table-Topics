@@ -51,7 +51,7 @@ export const THEMES = {
         // Card edges, the solid shadow under cards, dividing lines
         "rule": "#f0e2d6",
         // Record button, progress bars and the one fix
-        "accent": "#2c8050",
+        "accent": "#287549",
         // Text on the accent
         "accent-ink": "#ffffff",
         // A soft tint of the accent: the current tab, done marks and good news
@@ -59,7 +59,7 @@ export const THEMES = {
         // Text on the accent tint
         "accent-tint-ink": "#22704a",
         // The chunky main buttons and the action band
-        "fill": "#2c8050",
+        "fill": "#287549",
         // Text on the chunky buttons
         "fill-ink": "#ffffff",
         // Cards lifted off the page
@@ -75,7 +75,7 @@ export const THEMES = {
         // Filler words in a transcript
         "filler": "#6c5e56",
         // Keyboard focus outline
-        "focus-ring": "#2c8050",
+        "focus-ring": "#287549",
         // Table Topics timing light (green)
         "light-green": "#2e7d32",
         // Table Topics timing light (yellow)

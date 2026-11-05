@@ -225,13 +225,13 @@ export const NAV_PAGES: ReadonlyArray<{ path: string; current: string | null }> 
   { path: "/scenes", current: "Practice" },
   { path: "/listening", current: "Practice" },
   // Learn marks Learn
-  { path: "/learn", current: "Learn" },
+  { path: "/learn", current: "Courses" },
   // History lives in Settings, so no tab is marked
-  { path: "/history", current: null },
+  { path: "/history", current: "Me" },
   // Settings marks nothing in the tab bar (its gear is marked instead)
-  { path: "/settings", current: null },
+  { path: "/settings", current: "Me" },
   // The speaking profile lives in Settings (decision 90)
-  { path: "/profile", current: null },
+  { path: "/profile", current: "Me" },
   // A saved-session page that does not exist still offers the way out
   { path: "/sessions?id=missing", current: null },
   // A talk's page belongs to Practice
@@ -258,10 +258,8 @@ export const NAV_LINKS: ReadonlyArray<{ name: string; path: string }> = [
   { name: "Practice", path: "/practice" },
   // Courses (decision 148)
   { name: "Courses", path: "/courses" },
-  // Learn
-  { name: "Learn", path: "/learn" },
-  // Settings
-  { name: "Settings", path: "/settings" },
+  // Me: progress, takes and Settings (the UI rewrite)
+  { name: "Me", path: "/profile" },
 ];
 
 // How the stand-in microphone sounds: a steady tone throughout (the default), or, for turns that end by themselves (decision 101), quiet, then the tone for speakMs, then quiet again, each time the microphone opens

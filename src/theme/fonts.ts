@@ -7,7 +7,7 @@ import localFont from "next/font/local";
 
 // Notebook body font: designed for readability
 // (kept in this project rather than fetched: the same Latin subset Google serves, with the zero redrawn without its slash, which read as "1:0̸0" in times; src/theme/fonts/OFL.txt and decision 89)
-const atkinson = localFont({ src: "./fonts/AtkinsonHyperlegibleNext-OpenZero.woff2", weight: "200 800", style: "normal", display: "swap", variable: "--font-atkinson" });
+const atkinson = localFont({ src: "./fonts/AtkinsonHyperlegibleNext-OpenZero.woff2", weight: "200 800", style: "normal", display: "swap", variable: "--font-atkinson", preload: false });
 // Notebook display font: a soft serif for headings and prompts (not preloaded: only the other themes use it; decision 76)
 const youngSerif = Young_Serif({ weight: "400", subsets: ["latin"], display: "swap", variable: "--font-young-serif", preload: false });
 // The earlier calm studio serif, with italics and optical sizes (not preloaded: only the other themes use it now; decision 76)

@@ -42,7 +42,7 @@ import { stepKey } from "@/core/planSteps";
 import { practiceSessions } from "@/core/sessionHome";
 // Load the hand-drawn welcome (decision 134)
 // Load the step's scene as its mark, and which scene each step shows (decision 137)
-import { PageFade } from "@/components/scenes/SharedScene";
+import { GLIDE, PageFade, SharedScene, onlyOnce } from "@/components/scenes/SharedScene";
 import { stepTile } from "@/components/scenes/modeTileFor";
 import { stepScene } from "@/components/scenes/sceneFor";
 import { GROUND_TINT, ModeTile } from "@/components/scenes/ModeTile";
@@ -363,6 +363,8 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
   // The lesson the user is on, unless it is already one of today's open steps (one link to it is enough)
   const lesson = plan && data?.lesson && !plan.steps.some((step, index) => step.promptId === data.lesson?.promptId && !plan.done[index]) ? data.lesson : null;
 
+  // The kinds that appear once on Today, whose tile may glide into its screen (decision 141)
+  const uniqueScenes = onlyOnce(plan ? plan.steps.map(stepScene) : []);
   // Sage's line in the bubble: a greeting for the time of day and what is left, or a word once the day is done
   const greeting = !plan ? "" : allDone ? "That’s today done. Lovely work." : checkInWaiting ? (plan.checkIn?.baseline ? `Today is your first check-in. About ${CHECK_IN_MINUTES} minutes.` : `Check-in day. About ${CHECK_IN_MINUTES} minutes.`) : nextIndex === -1 ? "The rest can wait. Come back if a moment comes up." : `${partOfDay(today)}. ${doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short ones today` : `${plan.steps.length - doneCount} to go`}, about ${planMinutes(plan.steps.filter((_, index) => !plan.done[index]))} minutes.`;
   // The next step's address, for the Start button
@@ -520,11 +522,11 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                   return (
                     <li key={step.lane} data-step-lane={step.lane} className="motion-safe:animate-rise" style={{ animationDelay: `${150 + index * 70}ms` }}>
                       {/* The whole card starts the step; the next one is edged in sun and marked as the current step */}
-                      <Link href={planHref(step, index + 1)} aria-label={`Step ${index + 1}: ${step.label}`} aria-current={mark === "next" ? "step" : undefined} className={`flex h-full flex-row overflow-hidden rounded-[22px] border-2 bg-card sm:flex-col ${PRESS} hover:-translate-y-0.5 ${mark === "next" ? "border-art-sun shadow-next" : "border-rule shadow-card"}`}>
+                      <Link href={planHref(step, index + 1)} transitionTypes={GLIDE} aria-label={`Step ${index + 1}: ${step.label}`} aria-current={mark === "next" ? "step" : undefined} className={`flex h-full flex-row overflow-hidden rounded-[22px] border-2 bg-card sm:flex-col ${PRESS} hover:-translate-y-0.5 ${mark === "next" ? "border-art-sun shadow-next" : "border-rule shadow-card"}`}>
                         {/* The picture on its ground's tint, with a tick once done */}
                         <span data-step-scene={scene ?? undefined} data-tick={justDone ? "done" : arriving ? "arriving" : undefined} className={`relative flex w-28 flex-none items-center justify-center sm:h-36 sm:w-auto ${GROUND_TINT[tile.ground]}`}>
                           {/* The tile */}
-                          <span className={`flex ${faded ? "opacity-55" : ""} ${pop ? "motion-safe:animate-pop" : ""}`} style={pop ? { animationDelay: data.celebrate ? `${850 + index * 120}ms` : justDone ? "900ms" : "1400ms" } : undefined}><ModeTile ground={tile.ground} prop={tile.prop} face={plan.done[index] ? "happy" : tile.face} tilt={index % 2 ? 4 : -4} still={faded || mark !== "next"} className="size-22 sm:size-28" /></span>
+                          <span className={`flex ${faded ? "opacity-55" : ""} ${pop ? "motion-safe:animate-pop" : ""}`} style={pop ? { animationDelay: data.celebrate ? `${850 + index * 120}ms` : justDone ? "900ms" : "1400ms" } : undefined}>{scene && uniqueScenes.has(scene) ? <SharedScene scene={scene}><span className="flex" data-shared><ModeTile ground={tile.ground} prop={tile.prop} face={plan.done[index] ? "happy" : tile.face} tilt={index % 2 ? 4 : -4} still={faded || mark !== "next"} scene={scene} className="size-22 sm:size-28" /></span></SharedScene> : <ModeTile ground={tile.ground} prop={tile.prop} face={plan.done[index] ? "happy" : tile.face} tilt={index % 2 ? 4 : -4} still={faded || mark !== "next"} className="size-22 sm:size-28" />}</span>
                           {/* The done tick */}
                           {plan.done[index] && <span className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-fill text-fill-ink shadow-chunky-pressed sm:top-3 sm:right-3 sm:size-9"><CheckIcon aria-hidden="true" weight="bold" className="size-5" /><span className="sr-only">Done</span></span>}
                         </span>

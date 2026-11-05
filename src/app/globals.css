@@ -88,6 +88,8 @@
   --shadow-bar: inset 0 -3px 0 color-mix(in srgb, black 14%, transparent);
   /* The next step's sunny ledge on Today (UI rewrite) */
   --shadow-next: 0 5px 0 var(--vl-art-sun);
+  /* The next path mark's darker sunny ledge (UI rewrite) */
+  --shadow-sun: 0 3px 0 var(--vl-warm-shade);
   /* A picked choice's green ledge (UI rewrite) */
   --shadow-picked: 0 3px 0 var(--vl-accent);
   /* The chunky main button's darker underside (UI rewrite) */

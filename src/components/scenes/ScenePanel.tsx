@@ -4,6 +4,8 @@
 import type { SceneName } from "@/components/scenes/Scene";
 // Load the mode tile and its tints (UI rewrite: the panel shows the same tile as the Practice card)
 import { GROUND_TINT, ModeTile } from "@/components/scenes/ModeTile";
+// Load the carried-over wrapper (decision 141)
+import { SharedScene } from "@/components/scenes/SharedScene";
 // Load each kind's tile
 import { SCENE_TILES } from "@/components/scenes/modeTileFor";
 
@@ -15,13 +17,13 @@ export function ScenePanel({ scene, name, line, className = "mt-6 md:mt-0" }: { 
   return (
     <div data-scene-panel={scene} className={`flex items-center gap-4 rounded-[22px] border-2 border-rule p-3 pr-5 md:max-w-md ${GROUND_TINT[tile.ground]} ${className}`}>
       {/* The tile, playing three rounds as the screen opens, then still */}
-      <ModeTile ground={tile.ground} prop={tile.prop} face={tile.face} tilt={-4} className="size-24" />
+      <SharedScene scene={scene}><span className="flex flex-none"><ModeTile ground={tile.ground} prop={tile.prop} face={tile.face} tilt={-4} scene={scene} className="size-24" /></span></SharedScene>
       {/* The words */}
       <p className="min-w-0">
         {/* The mode, unless the page's title says it */}
         {name && <span className="block font-display text-2xl font-semibold">{name}</span>}
         {/* What it is (larger when it stands alone) */}
-        <span className={`block ${name ? "text-footnote font-bold text-ink-muted" : "text-lede leading-snug font-semibold"}`}>{line}</span>
+        <span className={`block ${name ? "text-footnote font-bold text-ink" : "text-lede leading-snug font-semibold"}`}>{line}</span>
       </p>
     </div>
   );

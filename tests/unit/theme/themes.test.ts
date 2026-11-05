@@ -29,7 +29,7 @@ describe("themes", () => {
   // The playful theme: Fredoka headlines over Nunito text, a chunky green accent
   it("sets the playful theme in Fredoka and Nunito with a green accent", () => {
     // Confirm the fonts and the accent
-    expect([THEMES.playful.fonts.display.includes("--font-fredoka"), THEMES.playful.fonts.body.includes("--font-nunito"), THEMES.playful.colors.light.accent]).toEqual([true, true, "#2c8050"]);
+    expect([THEMES.playful.fonts.display.includes("--font-fredoka"), THEMES.playful.fonts.body.includes("--font-nunito"), THEMES.playful.colors.light.accent]).toEqual([true, true, "#287549"]);
   });
 
   // At C6 the accent was changed from sage to forest green

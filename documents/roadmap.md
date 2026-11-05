@@ -130,7 +130,7 @@ To workshop with the user. One idea with three parts: each mode declares what it
 
 ## Later: a UX redesign (added 2026-10-31)
 
-Once the app is in a workable, finished state, redesign the user experience and the look as one coherent system, keeping the content, the code underneath and the app's spirit. Not started; the user will say when.
+Once the app is in a workable, finished state, redesign the user experience and the look as one coherent system, keeping the content, the code underneath and the app's spirit. **Started 2026-11-04 on the branch `ui-rewrite`** from the redesign stills (direction B, Playful): a new theme, the side rail and tab bar (Today, Practice, Courses, Me), mode tiles, and Today, Practice, Courses, a course and Me remade; every other screen takes the new look through the shared parts. What it changed is in `design/design-system.md` ("The UI rewrite"). Built on the branch itself rather than behind a switch.
 
 - **Why:** the app grew one idea at a time and now has many good parts without one plan tying them together.
 - **How:** build a new interface alongside the current one, screen by screen behind a switch, on the same logic, storage and content (about 60% of the code and 179 of the 225 test files carry over; the screens and their tests are rebuilt). Users' saved practice keeps working throughout.

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { PRESS } from "./Buttons";
 
 // The main band: floating just above the bottom of a phone screen (and the tab bar, if any) so it is always in reach, with the page padded below by its height so the last content scrolls clear of it (globals.css); on a computer it sits in place at the end of the column, never over the content (decision 89; it stuck to the bottom of the window before, decision 79, and covered grids such as a result's numbers)
-const STICKY_BAND = `fixed inset-x-4 bottom-[calc(var(--vl-tabbar-h)+0.5rem)] z-20 flex min-h-16 items-center justify-between gap-4 rounded-[20px] px-5 shadow-card md:static md:mt-8 md:mb-10 md:min-h-0 md:max-w-md md:pb-5 md:pt-5 ${PRESS}`;
+const STICKY_BAND = `fixed inset-x-4 bottom-[calc(var(--vl-tabbar-h)+0.75rem)] z-20 flex min-h-16 items-center justify-between gap-4 rounded-2xl px-5 shadow-chunky transition-[transform,box-shadow] duration-100 motion-safe:active:translate-y-[3px] active:shadow-chunky-pressed md:static md:mt-8 md:mb-10 md:min-h-0 md:max-w-md md:pb-4 md:pt-4`;
 
 // What the band shows and where it goes
 interface ActionBandProps {
@@ -24,11 +24,11 @@ interface ActionBandProps {
 export function ActionBand({ action, aside, href, quiet = false }: ActionBandProps) {
   // Filled accent band (or an outlined quiet one) that bleeds to the screen edges on a phone
   return (
-    <Link href={href} data-action-band={quiet ? undefined : true} className={quiet ? `flex min-h-14 items-center justify-between gap-4 rounded-[20px] border-2 border-ink px-5 py-4 text-ink md:mb-3 md:max-w-md ${PRESS}` : `${STICKY_BAND} bg-fill text-fill-ink`}>
+    <Link href={href} data-action-band={quiet ? undefined : true} className={quiet ? `flex min-h-14 items-center justify-between gap-4 rounded-2xl border-2 border-rule bg-card px-5 py-4 text-ink shadow-ledge md:mb-3 md:max-w-md ${PRESS}` : `${STICKY_BAND} bg-fill text-fill-ink`}>
       {/* The action, large in the display face */}
-      <span className="whitespace-nowrap font-display text-band font-semibold">{action}</span>
+      <span className="font-display text-band font-semibold whitespace-nowrap uppercase tracking-[.03em]">{action}</span>
       {/* The aside (wraps on a narrow phone rather than running off the edge) */}
-      <span className="text-right text-sm">{aside}</span>
+      <span className="text-right text-sm font-bold">{aside}</span>
     </Link>
   );
 }
@@ -39,9 +39,9 @@ export function ActionButton({ action, aside, onClick, disabled = false, variant
   return (
     <button type="button" onClick={onClick} disabled={disabled} data-action-band data-variant={variant} className={`${STICKY_BAND} w-full text-left disabled:cursor-not-allowed disabled:bg-rule disabled:text-ink-muted ${variant === "stop" ? "bg-ink text-paper-raised" : "bg-fill text-fill-ink"}`}>
       {/* The action, large in the display face */}
-      <span className="whitespace-nowrap font-display text-band font-semibold">{action}</span>
+      <span className="font-display text-band font-semibold whitespace-nowrap uppercase tracking-[.03em]">{action}</span>
       {/* The aside (wraps on a narrow phone rather than running off the edge) */}
-      <span className="text-right text-sm">{aside}</span>
+      <span className="text-right text-sm font-bold">{aside}</span>
     </button>
   );
 }

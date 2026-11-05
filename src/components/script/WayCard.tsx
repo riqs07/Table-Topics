@@ -12,8 +12,10 @@ import { GROUND_TINT, ModeTile } from "@/components/scenes/ModeTile";
 import { SCENE_TILES, type ModeTileLook } from "@/components/scenes/modeTileFor";
 // Load the press effect
 import { PRESS } from "@/components/script/Buttons";
+// Load the carried-over wrapper and the transition that fades the pages
+import { GLIDE, SharedScene } from "@/components/scenes/SharedScene";
 // Load the card and pill looks
-import { CARD, CHIP_GOOD, LAB } from "@/components/script/textStyles";
+import { CARD, CHIP_GOOD, LAB_ON_TINT } from "@/components/script/textStyles";
 
 // One way to practise
 export interface Way {
@@ -35,17 +37,19 @@ function lookFor(way: Way): ModeTileLook {
   return way.scene ? SCENE_TILES[way.scene] : { ground: "sky", prop: "mic", face: "ready" };
 }
 
-// The card (shared is kept for the callers that asked for the scene to glide; the tiles do not glide)
-export function WayCard({ way, big = false, forFocus = false, delay = 0 }: { way: Way; big?: boolean; forFocus?: boolean; delay?: number; shared?: boolean }) {
+// The card; shared carries the tile into the screen it opens (decision 141)
+export function WayCard({ way, big = false, forFocus = false, delay = 0, shared = false }: { way: Way; big?: boolean; forFocus?: boolean; delay?: number; shared?: boolean }) {
   // Its tile
   const look = lookFor(way);
+  // The tile itself, gliding into the next screen where asked
+  const tile = <ModeTile ground={look.ground} prop={look.prop} face={look.face} tilt={big ? 4 : delay % 140 ? 4 : -4} motion={big ? "loop" : "few"} scene={way.scene} className={big ? "size-28 md:size-34" : "size-26 md:size-30"} />;
+  // (carried over)
+  const carried = shared && way.scene ? <SharedScene scene={way.scene}><span className="flex">{tile}</span></SharedScene> : tile;
   // The picture: on its tint over the words, or (big) beside them
-  const art = big ? (
-    <ModeTile ground={look.ground} prop={look.prop} face={look.face} tilt={4} motion="loop" scene={way.scene} className="size-28 md:size-34" />
-  ) : (
+  const art = big ? carried : (
     <span aria-hidden="true" className={`flex h-32 items-center justify-center md:h-36 ${GROUND_TINT[look.ground]}`}>
       {/* The tile */}
-      <ModeTile ground={look.ground} prop={look.prop} face={look.face} tilt={delay % 140 ? 4 : -4} scene={way.scene} className="size-26 md:size-30" />
+      {carried}
     </span>
   );
   // The words
@@ -54,9 +58,9 @@ export function WayCard({ way, big = false, forFocus = false, delay = 0 }: { way
       {/* The name (first, so the link is named by it) */}
       <span className={`font-display leading-tight font-semibold ${big ? "text-3xl md:text-4xl" : "text-xl"}`}>{way.name}</span>
       {/* The focus mark, or what the big one is, drawn above the name */}
-      {forFocus ? <span className={`${CHIP_GOOD} order-first self-start`}>Your focus</span> : big && way.scene === "rapid-fire" && <span className={`${LAB} order-first`}>Quick start · 1–2 min</span>}
+      {forFocus ? <span className={`${CHIP_GOOD} order-first self-start`}>Your focus</span> : big && way.scene === "rapid-fire" && <span className={`${LAB_ON_TINT} order-first`}>Quick start · 1–2 min</span>}
       {/* What it is */}
-      <span className={`leading-snug font-bold text-ink-muted ${big ? "text-lg" : "text-footnote"}`}>{way.detail}</span>
+      <span className={`leading-snug font-bold ${big ? "text-lg text-ink" : "text-footnote text-ink-muted"}`}>{way.detail}</span>
     </span>
   );
   // The big one's look: its ground's tint, a Go button on the right; the others: a card with the picture on top
@@ -65,7 +69,7 @@ export function WayCard({ way, big = false, forFocus = false, delay = 0 }: { way
   const arrive = { animationDelay: `${delay}ms` };
   // A link when it can start, else a quiet card
   return way.href ? (
-    <Link href={way.href} data-way-card={big ? "big" : "small"} style={arrive} className={`${shape} ${PRESS} motion-safe:animate-rise hover:-translate-y-0.5`}>
+    <Link href={way.href} transitionTypes={shared && way.scene ? GLIDE : undefined} data-way-card={big ? "big" : "small"} style={arrive} className={`${shape} ${PRESS} motion-safe:animate-rise hover:-translate-y-0.5`}>
       {/* The picture and the words */}
       {art}{words}
       {/* The big one's Go, drawn like the chunky button (the whole card is the link) */}

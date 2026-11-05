@@ -15,8 +15,8 @@ for (const start of NAV_PAGES) {
       const nav = page.getByRole("navigation", { name: "Main" });
       // The current section is marked, and only that one
       if (start.current) await expect(nav.locator('[aria-current="page"]')).toHaveText(start.current);
-      // Follow the link (Settings is the gear in the title row, the rest are tabs)
-      await (link.name === "Settings" ? page.locator("header").getByRole("link", { name: "Settings" }) : nav.getByRole("link", { name: link.name, exact: true })).click();
+      // Follow the tab
+      await nav.getByRole("link", { name: link.name, exact: true }).click();
       // It leads to the right section
       await expect(page).toHaveURL((url) => url.pathname === link.path);
     }

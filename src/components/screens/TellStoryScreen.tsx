@@ -43,7 +43,7 @@ interface TellStoryProps extends ScreenProps {
 }
 
 // The look of a choice button: filled when chosen
-const choice = (chosen: boolean) => `min-h-11 rounded-xl border-2 px-3 py-2 text-left ${PRESS} ${chosen ? "border-fill bg-fill text-fill-ink" : "border-rule bg-card"}`;
+const choice = (chosen: boolean) => `min-h-11 rounded-[14px] border-2 px-3 py-2 text-left font-extrabold ${PRESS} ${chosen ? "border-accent bg-accent-tint text-accent-tint-ink shadow-picked" : "border-rule bg-card shadow-ledge"}`;
 
 // The address that starts the planning minute and the telling
 export function tellSessionHref(storyId: string, take: StoryTake, planStep: number | null = null): string {
@@ -145,7 +145,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                     {/* Its name (the suggested one is chosen at the start, so it needs no label) */}
                     <span className="block font-semibold">{item.name}</span>
                     {/* The chosen one: what it is for, and its beats in one line (the others' are a tap away, so the first screen stays short) */}
-                    {template === item.id && <><span className="block text-footnote opacity-80">{item.forWhat}</span><span className="mt-1 block text-footnote">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span></>}
+                    {template === item.id && <><span className="block text-footnote font-bold">{item.forWhat}</span><span className="mt-1 block text-footnote">{item.beats.map((beat, index) => (index === 0 ? beat.name : beat.name.charAt(0).toLowerCase() + beat.name.slice(1))).join(", ")}</span></>}
                   </button>
                 ))}
               </div>
@@ -167,7 +167,7 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                     {/* Its name */}
                     <span className="block font-semibold">{item.name}</span>
                     {/* How long */}
-                    <span className="block text-footnote opacity-80">{item.detail}</span>
+                    <span className="block text-footnote font-bold">{item.detail}</span>
                   </button>
                 ))}
               </div>

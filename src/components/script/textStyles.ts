@@ -12,6 +12,9 @@ export const CARD_LIST = "divide-y-2 divide-rule rounded-[22px] border-2 border-
 // The small uppercase label above a card's title (UI rewrite)
 export const LAB = "text-xs font-extrabold uppercase tracking-[.07em] text-ink-muted";
 
+// The same label on a coloured tint, where the muted ink would be too faint (UI rewrite)
+export const LAB_ON_TINT = "text-xs font-extrabold uppercase tracking-[.07em] text-ink";
+
 // A speech bubble from Sage or the blob, its tail on the left pointing at the speaker (UI rewrite; the tail is drawn in globals.css)
 export const BUBBLE = "vl-bubble relative rounded-[20px] border-2 border-rule bg-card px-4 py-3 font-bold";
 
