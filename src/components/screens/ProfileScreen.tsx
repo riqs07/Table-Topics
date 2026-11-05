@@ -190,8 +190,8 @@ function MeHeader({ sessions }: { sessions: ReadonlyArray<SessionRecord> | null 
             <p className="font-bold text-ink-muted">{first ? `Practising since ${new Date(first).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}` : "Your first take will show up here."}</p>
           </div>
         </div>
-        {/* Settings */}
-        <Link href="/settings" className={QUIET}><GearIcon aria-hidden="true" weight="bold" className="size-5" />Settings</Link>
+        {/* Settings, on a computer (on a phone the Settings card below is enough) */}
+        <Link href="/settings" className={`${QUIET} hidden md:inline-flex`}><GearIcon aria-hidden="true" weight="bold" className="size-5" />Settings</Link>
       </div>
       {/* The numbers, never zeros made to look like failure: counts only */}
       {sessions && sessions.length > 0 && (
