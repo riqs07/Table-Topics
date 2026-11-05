@@ -150,6 +150,8 @@ interface RecordingScreenProps {
   loop?: { id: string | null; round: number } | null;
   // A take inside a guided course: its part and try, or its prompt coming back days later; saved on the take, which then goes back to the course (decision 131)
   course?: CourseTake | null;
+  // Begin the planning minute as the screen opens (a story started from its set-up, whose button already said "Start planning")
+  planNow?: boolean;
 }
 
 // Whether motion is welcome (no "reduce motion" setting), for the Rapid Fire topic draw (decision 133); not in a browser, or unable to tell, means no
@@ -393,7 +395,7 @@ function ScriptText({ tokens, place, guide, className }: { tokens: ReadonlyArray
 }
 
 // Draw the recording screen
-export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null, checkIn = null, loop: givenLoop = null, course = null }: RecordingScreenProps) {
+export function RecordingScreen({ promptId, mode, retryOf, services, navigate, repository, clock: givenClock, sectionIndex = null, ladder: startingLadder = "full", questionIndex = 0, planStep = null, outline: givenOutline = null, fetchFn, story: givenStory = null, checkIn = null, loop: givenLoop = null, course = null, planNow = false }: RecordingScreenProps) {
   // The course part this take belongs to, when inside a course (decision 131)
   const coursePlace = course ? findPart(course.part) : undefined;
   // A 4/3/2 round, only for the kinds it is offered for (decision 118)
@@ -1238,6 +1240,18 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
     go();
   }, [ask, beginThinking, draw, metronomeChoice.on, metronomeChoice.tempo, mode, needsPrimer, promptText, services, smallTalk, stage, start, think]);
 
+  // Whether the planning minute has been begun as the screen opened, so it happens once
+  const begunOnOpen = useRef(false);
+  // A story from its set-up: begin planning once, through the same start as a tap (so the microphone explanation still comes first when it is needed)
+  useEffect(() => {
+    // Only for a story asked to, once, from the start
+    if (!planNow || mode !== "story" || begunOnOpen.current || stage !== "ready") return;
+    // Begun
+    begunOnOpen.current = true;
+    // As if Plan it were pressed
+    begin();
+  }, [begin, mode, planNow, stage]);
+
   // The drawn topic has landed: the countdown starts (decision 133)
   const landTopic = useCallback(() => {
     // The draw is over
@@ -1637,7 +1651,7 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
         </StageRing>
       )}
       {/* Waiting: your blob in its still ring, ready (or wondering, after something went wrong) */}
-      {waiting && !goingAgain && <StageRing face="ready" compact={!!script || stage === "discarded"} />}
+      {waiting && (!goingAgain || !!script) && <StageRing face={goingAgain ? "wonder" : "ready"} compact={!!script || stage === "discarded"} />}
       {/* A surprise question being drawn: the blob waits (decision 133) */}
       {draw && <StageRing face="flat" compact={!!script} />}
       {/* A question being said, the microphone starting, or the take saving: the blob still, with what is happening */}
@@ -1716,6 +1730,26 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
   ) : (
     // The steps, numbered, with a prepared speech's shape and angles under them
     <StepsCard steps={howSteps}>{angles.length > 0 && <Hints angles={angles} compact={false} />}</StepsCard>
+  );
+
+  // While telling a story: a switch to keep the template's beats (or a guided story's facts, with its tile and title as storyboard 14 draws them) in view, for a beginner, or out of the way (decision 130)
+  const storyTemplateBlock = (
+                <div data-story-template className="max-md:order-6">
+                  {/* Show or hide, remembered in this browser */}
+                  <ToggleRow
+                    checked={templateShown}
+                    onChange={(event) => {
+                      // Remember it
+                      saveStoryTemplateShown(event.target.checked);
+                      // Show it
+                      setTemplateShownChange(event.target.checked);
+                    }}
+                  >
+                    {guidedStory ? "Show the facts" : "Show the template"}
+                  </ToggleRow>
+                  {/* The template's beats in order (with any focus), or the guided story's facts */}
+                  {templateShown && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} titled /> : <StoryPlanCard take={storyTake} />)}
+                </div>
   );
 
   // Draw the page
@@ -2013,25 +2047,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
             </section>
             {/* The right column */}
             <aside aria-label="While you speak" className="max-md:contents md:flex md:flex-col md:gap-4.5 md:pt-1.5">
-              {/* While telling a story: a switch to keep the template's beats (or a guided story's facts) in view, for a beginner, or out of the way (decision 130) */}
-              {mode === "story" && (
-                <div data-story-template className="max-md:order-6">
-                  {/* Show or hide, remembered in this browser */}
-                  <ToggleRow
-                    checked={templateShown}
-                    onChange={(event) => {
-                      // Remember it
-                      saveStoryTemplateShown(event.target.checked);
-                      // Show it
-                      setTemplateShownChange(event.target.checked);
-                    }}
-                  >
-                    {guidedStory ? "Show the facts" : "Show the template"}
-                  </ToggleRow>
-                  {/* The template's beats in order (with any focus), or the guided story's facts */}
-                  {templateShown && (guidedStory ? <GuidedStoryCard story={guidedStory} take={storyTake} /> : <StoryPlanCard take={storyTake} />)}
-                </div>
-              )}
+              {/* While telling a story (not a guided one, whose facts come under your words): the template first, as the Story reference draws it */}
+              {mode === "story" && !guidedStory && storyTemplateBlock}
               {/* Your one goal, on the accent's tint (its line left out on a phone) */}
               {goal && mode !== "story" && (
                 <div data-goal-card className="flex flex-col gap-2 rounded-[22px] bg-accent-tint px-5 py-4.5 text-accent-tint-ink max-md:order-6 max-md:gap-1 max-md:py-3.5">
@@ -2061,6 +2078,8 @@ export function RecordingScreen({ promptId, mode, retryOf, services, navigate, r
               </div>
               {/* Where the live words come from */}
               <p className="text-sm font-bold text-ink-muted max-md:order-8">The live words come from your browser’s speech service, so they’re rough.</p>
+              {/* A guided story's facts come under your words, so the words stay in view while you speak */}
+              {mode === "story" && guidedStory && storyTemplateBlock}
               {/* A short speech keeps its points in view while speaking */}
               {mode === "outline" && outline && <div className="max-md:order-8"><OutlinePlan outline={outline} compact /></div>}
               {/* Small talk keeps its recipe in view while speaking */}

@@ -16,6 +16,8 @@ import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
 import { CARD, LAB } from "@/components/script/textStyles";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
+// Load the plan loader (the plan's code loads after the page shows; decision 88)
+import { loadDailyPlanLater } from "@/data/loadDailyPlanLater";
 // Load the story content
 import { STORY_FOCUSES, STORY_LENGTHS, STORY_TEMPLATES, findStoryFocus, findStoryPrompt, findStoryTemplate, momentIdOf, storyTakeQuery, suggestedTemplate } from "@/content/stories";
 // Load the record types
@@ -47,14 +49,35 @@ const choice = (chosen: boolean) => `min-h-14 rounded-[18px] border-2 bg-card px
 
 // The address that starts the planning minute and the telling
 export function tellSessionHref(storyId: string, take: StoryTake, planStep: number | null = null): string {
-  // The seed and set-up, and the plan step when inside today's practice
-  return `/session?mode=story&prompt=${encodeURIComponent(storyId)}${storyTakeQuery(take)}${planStep ? `&plan=${planStep}` : ""}`;
+  // The seed and set-up, the plan step when inside today's practice, and the flag that begins the planning minute at once (the set-up's button already said "Start planning", so there is no second start)
+  return `/session?mode=story&prompt=${encodeURIComponent(storyId)}${storyTakeQuery(take)}${planStep ? `&plan=${planStep}` : ""}&begin=plan`;
 }
 
 // Draw the screen
 export function TellStoryScreen({ storyId, planStep = null, initialTemplate = null, initialFocus = null, ...props }: TellStoryProps) {
   // The repository
-  const { repo } = useScreenBasics(props);
+  const { repo, today } = useScreenBasics(props);
+  // Inside today's practice: how many steps it has, for the bar (loaded below)
+  const [planTotal, setPlanTotal] = useState<number | null>(null);
+  // Load the plan's length once the date is known
+  useEffect(() => {
+    // Only inside the plan, once the date is known
+    if (!planStep || !today) return;
+    // Ignore the answer if the screen closes first
+    let cancelled = false;
+    // Load it (its code arrives after the page shows)
+    loadDailyPlanLater(repo, today).then((plan) => {
+      // Keep its length if still open
+      if (!cancelled) setPlanTotal(plan.steps.length);
+    }).catch(() => {
+      // Without it, the bar says the step alone
+    });
+    // Mark as closed when leaving
+    return () => {
+      // Stop the pending update
+      cancelled = true;
+    };
+  }, [planStep, repo, today]);
   // The prompt from the bank, if the story came from one
   const prompt = findStoryPrompt(storyId);
   // The guided story, if it is one (decision 93)
@@ -123,9 +146,9 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
   // Draw the page
   return (
     <PageFade>
-      <main id="main" className={PRACTICE_MAIN}>
-        {/* The bar: the way out, the first of three steps (set up, plan, tell) */}
-        <PracticeBar close={close} progress={unknown ? undefined : 1 / 3} label={unknown ? "Tell a story" : `${planStep ? `Today’s practice · step ${planStep} · ` : ""}${guided ? "Guided story" : "Tell a story"} · step 1 of 3`} />
+      <main id="main" className={`${PRACTICE_MAIN} max-md:pb-32`}>
+        {/* The bar: the way out, and where this sits: today's step inside the plan (one count only), otherwise the first of three steps (set up, plan, tell) */}
+        <PracticeBar close={close} progress={unknown ? undefined : planStep ? (planStep - 0.5) / Math.max(planStep, planTotal ?? planStep) : 1 / 3} label={unknown ? "Tell a story" : `${guided ? "Guided story" : "Tell a story"} · step ${planStep ? `${planStep}${planTotal ? ` of ${planTotal}` : ""}` : "1 of 3"}`} />
         {/* A story that cannot be found */}
         {unknown ? (
           <div className={PRACTICE_BODY}>

@@ -11,9 +11,12 @@ import type { StoryTake } from "@/data/records";
 // Load the shared card and label looks, and the plus
 import { CARD, LAB } from "@/components/script/textStyles";
 import { PlusIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the guided stories' tile, for the card's heading while telling (storyboard 14)
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
 
 // Draw the card
-export function GuidedStoryCard({ story, take }: { story: GuidedStory; take: StoryTake }) {
+export function GuidedStoryCard({ story, take, titled = false }: { story: GuidedStory; take: StoryTake; titled?: boolean }) {
   // The template or shape, by name
   const shape = planBeats(take);
   // The focus, if any
@@ -25,6 +28,15 @@ export function GuidedStoryCard({ story, take }: { story: GuidedStory; take: Sto
     <section aria-label="Your facts" data-guided-card="full" className="mt-6 flex max-w-lg flex-col gap-4">
       {/* The facts, on their own card */}
       <div className={`px-5 py-5 ${CARD}`}>
+        {/* When asked (while telling, storyboard 14): the guided stories' tile beside the story's title */}
+        {titled && (
+          <div className="mb-3 flex items-center gap-3.5">
+            {/* The tile */}
+            <ModeTile ground={SCENE_TILES["guided-stories"].ground} prop={SCENE_TILES["guided-stories"].prop} face={SCENE_TILES["guided-stories"].face} still className="size-14 flex-none" />
+            {/* The title */}
+            <p className="font-display text-2xl leading-tight font-semibold">{story.title}</p>
+          </div>
+        )}
         {/* "Make it a…": the kind of story to tell (decision 153) */}
         {story.template && <p data-make-it className="mb-2 font-display text-cue font-semibold leading-tight">{findStoryTemplate(story.template).makeIt ?? `Make it a ${findStoryTemplate(story.template).name.toLowerCase()}`}</p>}
         {/* Small heading: the facts in order, out of order, or four things to use */}
