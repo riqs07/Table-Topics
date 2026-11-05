@@ -10,9 +10,14 @@ import { SpeakerHighIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-// Load the cast, and the panel a step's scene glides into from Today
+// Load the cast
 import { Cast } from "@/components/scenes/Cast";
-import { ScenePanel } from "@/components/scenes/ScenePanel";
+// Load the mode tile, each kind's tile and the carried-over wrapper (decision 141)
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+import { SharedScene } from "@/components/scenes/SharedScene";
+// Load the card for a practice that stopped short
+import { StopCard } from "@/components/script/StopCard";
 // Load the face names
 import type { FaceName } from "@/components/scenes/Scene";
 // Load the shared button looks
@@ -77,12 +82,13 @@ export function ScenePlayScreen({ sceneId, ...props }: ScenePlayProps) {
       <main id="main" className={PRACTICE_MAIN}>
         {/* The bar, with the way back */}
         <PracticeBar close={{ href: "/scenes", label: "Close, back to Scenes" }} label="Scenes" />
-        {/* The note and the way back */}
-        <div className={PRACTICE_BODY}>
-          {/* The note */}
-          <h1 className="font-display text-statement">That scene isn’t here.</h1>
-          {/* The way back */}
-          <p className="mt-4"><Link href="/scenes" className={TEXT_LINK}>Choose another scene</Link></p>
+        {/* The note and the way back, in one card with the friend */}
+        <div className={`${PRACTICE_BODY} max-w-3xl`}>
+          {/* The card */}
+          <StopCard who="friend" face="wonder" label="Scenes" title="That scene isn’t here." detail="The link may be old. Every scene is on the Scenes page.">
+            {/* The way back */}
+            <Link href="/scenes" className={PRIMARY}>Choose another scene</Link>
+          </StopCard>
         </div>
       </main>
     );
@@ -289,13 +295,15 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
             {/* The setting */}
             <p className="mt-1 font-bold leading-snug">{scene.setting}</p>
           </div>
-          {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise them, their face by the mood */}
-          {planStep && phase === "intro" ? <ScenePanel scene="scenes" line="Choose your replies, then say the last one." className="" /> : (
+          {/* Them, their face by the mood */}
+          {(
             <div role="img" aria-label={mood === "pleased" ? `${name} looks pleased` : mood === "deflated" ? `${name} looks a little deflated` : `${name} looks at ease`} data-mood={mood} data-speaking={speaking || undefined} className="flex flex-col items-center gap-1 self-start px-4">
               {/* The friend */}
               <Cast who="friend" face={MOOD_FACES[mood]} className="size-28 md:size-36" />
               {/* Their name */}
               <span aria-hidden="true" className="font-display text-xl font-semibold">{name}</span>
+              {/* Before starting: waiting for you */}
+              {phase === "intro" && <span aria-hidden="true" className="text-sm font-bold text-ink-muted">is waiting</span>}
             </div>
           )}
           {/* Their latest line, in a bubble, with a way to hear it again */}
@@ -325,10 +333,10 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
 
         {/* You: the choice, your turn out loud, or how it went */}
         <div className="flex min-w-0 flex-col gap-5">
-          {/* Before starting: how it works */}
+          {/* Before starting (extrapolated from SceneReply): you and the scene's name where the question will be, the three steps where the replies will be, and Start in the card your spoken turn will use */}
           {phase === "intro" && (
-            <section aria-label="The scene" className="flex flex-col gap-5">
-              {/* You, and the ask */}
+            <section aria-label="The scene" className="flex flex-col gap-4">
+              {/* You, and the scene's name */}
               <div className="flex items-center gap-5">
                 {/* You */}
                 <Cast who="you" face="wonder" className="size-16 md:size-20" />
@@ -340,10 +348,34 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
                   <p className="font-display text-cue font-semibold md:text-statement">{scene.title}</p>
                 </div>
               </div>
-              {/* How it works */}
-              <p className="max-w-[52ch] text-lede">Choose two replies; {name} answers to what you choose. Then say the last one yourself, out loud.</p>
-              {/* Start */}
-              <p><button type="button" onClick={start} className={`${PRIMARY} min-w-40`}>Start</button></p>
+              {/* The three steps, drawn where the replies will be */}
+              <ol aria-label="How it goes" className="flex flex-col gap-3">
+                {/* Each step */}
+                {[`Choose a reply. ${name} answers to what you chose.`, "Choose one more.", "Say the last one yourself, out loud. Up to 45 seconds."].map((step, index) => (
+                  <li key={step} className="flex min-h-14 items-center gap-3.5 rounded-[18px] bg-paper px-5 py-3 text-lg font-bold text-ink-muted">
+                    {/* The step's number */}
+                    <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full bg-card font-display text-base text-ink">{index + 1}</span>
+                    {/* What happens */}
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+              {/* Start, in the card the spoken turn will use, with the scenes' tile (carried over from Today's step, decision 141) */}
+              <div className={`flex flex-wrap items-center gap-x-6 gap-y-4 p-5 ${CARD}`}>
+                {/* The tile */}
+                <SharedScene scene="scenes"><span className="flex flex-none"><ModeTile ground={SCENE_TILES.scenes.ground} prop={SCENE_TILES.scenes.prop} face={SCENE_TILES.scenes.face} tilt={-4} scene="scenes" className="size-16 md:size-18" /></span></SharedScene>
+                {/* What it is */}
+                <div className="flex min-w-0 flex-[1_1_16rem] flex-col gap-1">
+                  {/* Small heading */}
+                  <p className={LAB}>With {name} · about 2 min</p>
+                  {/* The ask */}
+                  <p className="font-display text-cue font-semibold">Ready when you are</p>
+                  {/* What to do */}
+                  <p className="max-w-[52ch] font-semibold text-ink-muted">{name} speaks first. Listen, then choose.</p>
+                </div>
+                {/* Start */}
+                <button type="button" onClick={start} className={`${PRIMARY} min-w-40 max-md:w-full`}>Start</button>
+              </div>
             </section>
           )}
           {/* A choice */}
@@ -408,7 +440,7 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
               {/* What to do */}
               <p className="max-w-[52ch] font-semibold text-ink-muted">{scene.final.ask} Up to 45 seconds.</p>
               {/* Record it, once it is your turn */}
-              {phase === "speak" && <QuickRecorder services={services} action="Answer" maxSec={45} onDone={setTranscript} />}
+              {phase === "speak" && <QuickRecorder services={services} action="Answer" maxSec={45} onDone={setTranscript} look="round" />}
               {/* On, once a take is done */}
               {phase === "speak" && transcript !== null && <p className="mt-4"><button type="button" onClick={finish} className={PRIMARY}>Done, hear what {name} says</button></p>}
             </section>
@@ -416,12 +448,12 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
           {/* How it went */}
           {phase === "done" && result && (
             <section aria-label="How it went" className="flex flex-col gap-5">
-              {/* You, and the headline */}
-              <div className="flex items-center gap-5">
+              {/* You, and the headline, on the verdict's colour (as the result after a take: green when it went well, warm amber when not) */}
+              <div data-verdict={result.warm ? "good" : "rough"} className={`flex items-center gap-5 rounded-[22px] px-5 py-4 motion-safe:animate-rise md:px-6 md:py-5 ${result.warm ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>
                 {/* You */}
                 <Cast who="you" face={yourFace} className="size-16 md:size-20" />
                 {/* The headline */}
-                <h1 className="font-display text-statement font-semibold">{result.warm ? `${name} left happy.` : "Close. One more go?"}</h1>
+                <h1 className="font-display text-cue font-semibold leading-tight md:text-statement">{result.warm ? `${name} left happy.` : "Close. One more go?"}</h1>
               </div>
               {/* Your choices and your reply */}
               <div className={`flex flex-col gap-4 p-5 ${CARD}`}>
@@ -462,7 +494,7 @@ function ScenePlay({ scene, planStep = null, services = browserRecordingServices
               </div>
               {/* Saving failed */}
               {saveFailed && (
-                <p role="alert" className="text-footnote">
+                <p role="alert" className="flex flex-wrap items-center gap-x-3 rounded-2xl bg-warm-tint px-4 py-2 font-bold text-warm-ink">
                   This play couldn’t be saved.{" "}
                   <button type="button" onClick={() => void save(result)} className={TEXT_LINK}>Try saving again</button>
                 </p>

@@ -1,21 +1,25 @@
 "use client";
-// Scenes (decision 149): the next scene to play, then every scene with who it is with and how it last went
+// Scenes (decision 149): the next scene to play, then every scene with who it is with and how it last went. Laid out in the UI rewrite's second pass from Desktop Screens "Practice": "‹ Practice", the title, the next scene as the sky band, then every scene as a tile card (its skill's tile, the blob's face from how it last went)
 
 // Load React's state and effect tools
 import { useEffect, useState } from "react";
-// Load Next.js's link component
-import Link from "next/link";
 // Load the page fade round a glide (decision 141)
 import { PageFade } from "@/components/scenes/SharedScene";
-// Load the masthead and the page title
+// Load the masthead
 import { Masthead } from "@/components/script/Masthead";
-import { PageTitle } from "@/components/script/PageTitle";
-// Load the scene panel (decision 141)
-import { ScenePanel } from "@/components/scenes/ScenePanel";
-// Load the main button link and the shared press effect
-import { PRESS, PrimaryLink } from "@/components/script/Buttons";
-// Load the card looks and the small label look
-import { CARD, CARD_LIST, LABEL } from "@/components/script/textStyles";
+// Load the list page's title and the next-up band
+import { HubTitle } from "@/components/script/HubTitle";
+import { NextUpBand } from "@/components/script/NextUpBand";
+// Load the card with a tile
+import { TileRow } from "@/components/script/TileRow";
+// Load the cast
+import { Cast } from "@/components/scenes/Cast";
+// Load each skill's tile
+import { skillTile } from "@/components/scenes/skillTileFor";
+// Load the face names
+import type { FaceName } from "@/components/scenes/Scene";
+// Load the shared heading look
+import { SECTION_HEADING } from "@/components/script/textStyles";
 // Load the page shell
 import { PAGE } from "@/components/script/layout";
 // Load the shared screen starting points
@@ -36,6 +40,9 @@ const SKILLS: Readonly<Record<string, string>> = { answering: "Answering", askin
 
 // How the best play left them, as shown
 const MOOD_WORDS = { pleased: "at best they were pleased", easy: "at best they were at ease", deflated: "they ended deflated" } as const;
+
+// The blob's face on a scene's tile, from how the best play left them
+const MOOD_FACES: Readonly<Record<keyof typeof MOOD_WORDS, FaceName>> = { pleased: "happy", easy: "ready", deflated: "flat" };
 
 // Draw the page
 export function ScenesScreen(props: ScreenProps) {
@@ -82,55 +89,35 @@ export function ScenesScreen(props: ScreenProps) {
     <PageFade>
       <main id="main" className={PAGE}>
         {/* Heading and navigation */}
-        <Masthead title="Practice" section="practice" />
-        {/* The page's name */}
-        <PageTitle title="Scenes">A short conversation. Choose your replies and they answer to what you chose. The last reply is yours, out loud.</PageTitle>
-        {/* The scene, carried over from the Practice card */}
-        <ScenePanel scene="scenes" line="Every reply changes how they answer." className="mt-6" />
-        {/* The next one */}
-        <section aria-label="Next scene" className={`mt-6 p-5 ${CARD}`}>
-          {/* What it is */}
-          <p className={LABEL}>Next up</p>
-          {/* The pick, once known */}
-          {next ? (
-            <>
-              {/* Its name and who it is with */}
-              <p data-next-scene={next.id} className="mt-1 font-display text-2xl font-semibold">{next.title}</p>
-              {/* Who, and the skill */}
-              <p className="text-footnote text-ink-muted">With {findPersona(next.personaId)?.name} · {SKILLS[next.unit] ?? next.unit} · about 2 min</p>
-              {/* Go */}
-              <div className="mt-4"><PrimaryLink href={sceneHref(next.id)}>Play this scene</PrimaryLink></div>
-            </>
-          ) : (
-            // Still reading
-            <p className="mt-1 text-footnote text-ink-muted">Getting ready…</p>
-          )}
-        </section>
+        <Masthead title="VoiceLab" section="practice" />
+        {/* The way back, the page's name, and the two of you */}
+        <HubTitle title="Scenes" line="A short conversation. Choose your replies and they answer to what you chose. The last reply is yours, out loud." figure={<span className="flex items-end gap-1"><Cast who="you" face="wonder" className="size-18" /><Cast who="friend" face="ready" className="size-16" /></span>} />
+        {/* The next one, on the sky (the tile carried over from the Practice card, decision 141) */}
+        <div data-wide className="mt-5 md:mt-7">
+          <NextUpBand scene="scenes" ariaLabel="Next scene" label="Next up · about 2 min" name={next ? <span data-next-scene={next.id}>{next.title}</span> : null} line={next ? `With ${findPersona(next.personaId)?.name} · ${SKILLS[next.unit] ?? next.unit}` : undefined} href={next ? sceneHref(next.id) : null} go="Play this scene" />
+        </div>
         {/* Reading failed: the list still works */}
-        {failed && <p role="alert" className="mt-3 text-footnote">Your past plays couldn’t be read, so every scene shows as new. Playing still works.</p>}
+        {failed && <p role="alert" className="mt-3 text-footnote font-bold">Your past plays couldn’t be read, so every scene shows as new. Playing still works.</p>}
         {/* Every scene */}
-        <section aria-labelledby="all-scenes" className="mt-8">
+        <section aria-labelledby="all-scenes" data-wide className="mt-8">
           {/* The heading */}
-          <h2 id="all-scenes" className="font-display text-xl font-semibold">All scenes</h2>
-          {/* The list */}
-          <ul className={`mt-3 ${CARD_LIST}`}>
+          <h2 id="all-scenes" className={SECTION_HEADING}>All scenes</h2>
+          {/* The cards, two across on a computer */}
+          <ul className="mt-4 grid gap-3 md:grid-cols-2 md:gap-4">
             {/* Each scene */}
-            {SCENES.map((scene) => {
+            {SCENES.map((scene, index) => {
               // How it went
               const played = progress?.[scene.id];
-              // Its row
+              // How the best play left them
+              const mood = played ? moodFor(Number(played.bestWarmth) || 0) : null;
+              // Its skill's tile
+              const look = skillTile(scene.unit);
+              // Who, the skill, and how it last went
+              const detail = `${SKILLS[scene.unit] ?? scene.unit}${played && mood ? ` · played ${played.plays === 1 ? "once" : `${played.plays} times`}, ${MOOD_WORDS[mood]}` : " · not played yet"}`;
+              // Its card, a link into the scene
               return (
                 <li key={scene.id}>
-                  {/* The row, a link into the scene */}
-                  <Link href={sceneHref(scene.id)} className={`flex min-h-16 flex-col justify-center py-3 ${PRESS}`}>
-                    {/* Its name */}
-                    <span className="font-semibold">{scene.title}</span>
-                    {/* Who, the skill, and how it last went */}
-                    <span className="text-footnote text-ink-muted">
-                      {findPersona(scene.personaId)?.name} · {SKILLS[scene.unit] ?? scene.unit}
-                      {played ? ` · played ${played.plays === 1 ? "once" : `${played.plays} times`}, ${MOOD_WORDS[moodFor(Number(played.bestWarmth) || 0)]}` : ""}
-                    </span>
-                  </Link>
+                  <TileRow href={sceneHref(scene.id)} label={`With ${findPersona(scene.personaId)?.name}`} title={scene.title} detail={detail} ground={look.ground} prop={look.prop} face={mood ? MOOD_FACES[mood] : look.face} tilt={index % 2 ? 4 : -4} />
                 </li>
               );
             })}

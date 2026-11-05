@@ -6,7 +6,11 @@ import { useEffect, useRef, useState } from "react";
 // Load the player
 import { Player } from "@/components/script/Player";
 // Load the shared press effect (decision 79)
-import { PRESS } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, SECONDARY } from "@/components/script/Buttons";
+// Load the blob singing in rings, for while you speak (Desktop Screens "Recording")
+import { SingingBlob } from "@/components/script/PracticeBar";
+// Load the icons for the round look: the microphone, stop, and again
+import { ArrowCounterClockwiseIcon, MicrophoneIcon, StopIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the recording contracts
 import type { AudioCapture, LiveTranscriber, RecordingServices } from "@/audio/services";
 
@@ -18,6 +22,8 @@ interface QuickRecorderProps {
   action: string;
   // The longest it runs, in seconds
   maxSec?: number;
+  // The button's look: the small one by default, or the references' big round microphone with its name under it (Desktop Screens "Listening", the answer out loud)
+  look?: "small" | "round";
   // Called with what was said once it stops
   onDone?: (said: string) => void;
 }
@@ -26,7 +32,7 @@ interface QuickRecorderProps {
 type Stage = "ready" | "recording" | "done" | "blocked";
 
 // Draw the recorder
-export function QuickRecorder({ services, action, maxSec = 30, onDone }: QuickRecorderProps) {
+export function QuickRecorder({ services, action, maxSec = 30, onDone, look = "small" }: QuickRecorderProps) {
   // Where it is
   const [stage, setStage] = useState<Stage>("ready");
   // The words heard so far
@@ -119,11 +125,31 @@ export function QuickRecorder({ services, action, maxSec = 30, onDone }: QuickRe
 
   // Draw it
   return (
-    <div className="mt-4">
-      {/* The button: start, stop, or again */}
-      <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={`inline-flex min-h-11 items-center rounded-2xl px-4 font-semibold ${PRESS} ${stage === "recording" ? "bg-ink text-paper-raised" : "border-2 border-ink"}`}>
-        {stage === "recording" ? "Stop" : stage === "done" ? "Try again" : action}
-      </button>
+    <div className={look === "round" ? "mt-2 flex flex-col items-center text-center" : "mt-4"}>
+      {/* The button: start, stop, or again (round: a big circle with its name under it, green to start, dark while recording, white to try again) */}
+      {look === "round" ? (
+        <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={`group flex flex-col items-center gap-2.5 rounded-3xl px-4 py-1 ${PRESS}`}>
+          {/* The circle */}
+          <span aria-hidden="true" className={`grid size-24 place-items-center rounded-full transition-[transform,box-shadow] duration-100 motion-safe:group-active:translate-y-[3px] ${stage === "recording" ? "bg-ink text-paper-raised shadow-chunky" : stage === "done" ? "border-2 border-rule bg-card text-ink shadow-ledge" : "bg-fill text-fill-ink shadow-chunky group-active:shadow-chunky-pressed"}`}>
+            {/* Its icon */}
+            {stage === "recording" ? <StopIcon weight="fill" className="size-9" /> : stage === "done" ? <ArrowCounterClockwiseIcon weight="bold" className="size-8" /> : <MicrophoneIcon weight="bold" className="size-10" />}
+          </span>
+          {/* Its name */}
+          <span className="font-display text-xl font-semibold">{stage === "recording" ? "Stop" : stage === "done" ? "Try again" : action}</span>
+        </button>
+      ) : (
+        <span className="flex flex-wrap items-center gap-4">
+          {/* While recording: you, singing in rings */}
+          {stage === "recording" && <SingingBlob className="size-16" />}
+          {/* The button: chunky green to start, dark and chunky to stop, white to try again */}
+          <button type="button" onClick={() => void (stage === "recording" ? stop() : start())} className={stage === "recording" ? `inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-ink px-6 font-display text-button font-semibold uppercase tracking-[.03em] text-paper-raised shadow-chunky ${PRESS}` : stage === "done" ? SECONDARY : PRIMARY}>
+            {/* Its icon */}
+            {stage === "recording" ? <StopIcon aria-hidden="true" weight="fill" className="size-5" /> : stage === "done" ? <ArrowCounterClockwiseIcon aria-hidden="true" weight="bold" className="size-5" /> : <MicrophoneIcon aria-hidden="true" weight="bold" className="size-5" />}
+            {/* Its words */}
+            {stage === "recording" ? "Stop" : stage === "done" ? "Try again" : action}
+          </button>
+        </span>
+      )}
       {/* A refused microphone */}
       {stage === "blocked" && <p role="alert" className="mt-2 text-footnote">The microphone is blocked. Allow it for this site, then try again.</p>}
       {/* The words, while and after speaking (not a live region: read out while recording, a screen reader would speak your own words back into the microphone) */}

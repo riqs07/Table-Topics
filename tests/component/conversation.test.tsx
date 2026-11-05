@@ -390,12 +390,12 @@ describe("conversations elsewhere", () => {
     render(<ConversationsScreen repository={repository} now={NOW} coachReady={() => true} />);
     // Quick play: the next person, a situation not done yet, starting at once
     const quick = await screen.findByRole("link", { name: "Quick play" });
-    // The list's groups
-    const groups = Array.from(screen.getByLabelText("Or choose a situation").querySelectorAll("optgroup")).map((group) => group.getAttribute("label"));
-    // Choose the station
-    fireEvent.change(screen.getByLabelText("Or choose a situation"), { target: { value: "station" } });
-    // Confirm Quick play's address, the groups, and the chosen one's goal and address (Priya lives there)
-    expect([quick.getAttribute("href"), groups, screen.getByText(/^Goal: /, { selector: "[data-picked-goal]" }).textContent, screen.getByRole("link", { name: "Start this one" }).getAttribute("href")]).toEqual(["/conversations/talk?id=theo&situation=monday&start=1", ["Answering", "Asking", "Listening", "News"], "Goal: Ask one question about their news.", "/conversations/talk?id=priya&situation=station&start=1"]);
+    // The list's groups, one per skill (UI rewrite: tile cards under each skill's name)
+    const groups = within(screen.getByRole("region", { name: "Or choose a situation" })).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    // The station's card
+    const station = screen.getByRole("link", { name: /Bumping into each other/ });
+    // Confirm Quick play's address, the groups, and the station's goal and address (Priya lives there)
+    expect([quick.getAttribute("href"), groups, station.textContent?.includes("Goal: Ask one question about their news."), station.getAttribute("href")]).toEqual(["/conversations/talk?id=theo&situation=monday&start=1", ["Answering", "Asking", "Listening", "News"], true, "/conversations/talk?id=priya&situation=station&start=1"]);
   });
 
   // The page opens with the conversation scene, carried over from the Practice card (decision 141)
@@ -414,8 +414,8 @@ describe("conversations elsewhere", () => {
     render(<ConversationsScreen repository={createRepository(new MemoryStore())} now={NOW} coachReady={() => false} />);
     // Quick play
     const quick = await screen.findByRole("link", { name: "Quick play" });
-    // The options
-    const options = Array.from(screen.getByLabelText("Or choose a situation").querySelectorAll("option")).map((option) => option.getAttribute("value")).filter(Boolean);
+    // The situations offered, as their cards' addresses
+    const options = within(screen.getByRole("region", { name: "Or choose a situation" })).getAllByRole("link").map((link) => new URLSearchParams(link.getAttribute("href")?.split("?")[1]).get("situation"));
     // Confirm
     expect([quick.getAttribute("href"), options, !!screen.getByText(/unlock every situation/)]).toEqual(["/conversations/talk?id=maya&situation=party&start=1", ["party", "meeting", "coffee", "station"], true]);
   });

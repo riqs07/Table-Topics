@@ -6,17 +6,24 @@ import { useEffect, useRef, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the icons
-import { EarIcon, HeadphonesIcon, HeartIcon, WaveformIcon } from "@phosphor-icons/react/dist/ssr";
+import { EarIcon, HeadphonesIcon, HeartIcon, MicrophoneIcon, WaveformIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
 import { QuickRecorder } from "@/components/script/QuickRecorder";
-// Load the two people, and the panel a step's scene glides into from Today
+// Load the two people
 import { SceneCast } from "@/components/scenes/SceneCast";
-import { ScenePanel } from "@/components/scenes/ScenePanel";
+// Load the cast, for you beside the verdict
+import { Cast } from "@/components/scenes/Cast";
 // Load the shared button looks
 import { PRIMARY, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the card, label, bubble and progress bar looks
 import { BUBBLE, CARD, LAB, LAB_ON_TINT, PBAR, PBAR_FILL } from "@/components/script/textStyles";
+// Load the mode tile, each kind's tile and the carried-over wrapper (decision 141)
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+import { SharedScene } from "@/components/scenes/SharedScene";
+// Load the card for a practice that stopped short
+import { StopCard } from "@/components/script/StopCard";
 // Load the shared screen starting points and today's practice position
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 import { usePlanNav } from "@/components/screens/usePlanNav";
@@ -62,12 +69,13 @@ export function ListenPlayScreen({ storyId, ...props }: ListenPlayProps) {
       <main id="main" className={PRACTICE_MAIN}>
         {/* The bar, with the way back */}
         <PracticeBar close={{ href: "/listening", label: "Close, back to Active listening" }} label="Active listening" />
-        {/* The note and the way back */}
-        <div className={PRACTICE_BODY}>
-          {/* The note */}
-          <h1 className="font-display text-statement">That story isn’t here.</h1>
-          {/* The way back */}
-          <p className="mt-4"><Link href="/listening" className={TEXT_LINK}>Choose another story</Link></p>
+        {/* The note and the way back, in one card with the friend */}
+        <div className={`${PRACTICE_BODY} max-w-3xl`}>
+          {/* The card */}
+          <StopCard who="friend" face="wonder" label="Active listening" title="That story isn’t here." detail="The link may be old. Every story is on the Active listening page.">
+            {/* The way back */}
+            <Link href="/listening" className={PRIMARY}>Choose another story</Link>
+          </StopCard>
         </div>
       </main>
     );
@@ -212,15 +220,20 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
           {!reply && <p className="-mt-2 font-semibold text-ink-muted">{story.setting}</p>}
           {/* Their reply, at the end */}
           {reply && <p data-reply className={`${BUBBLE} -mt-1 rounded-[22px] font-semibold`}><span className="block text-sm font-extrabold text-ink-muted">{name}</span>{reply}</p>}
-          {/* Opened from Today, before starting: the step's scene, carried over in its panel (decision 141); otherwise the two people */}
-          {planStep && phase === "intro" ? <ScenePanel scene="listening" line="Listen once, then answer to what mattered." className="" /> : <SceneCast mood={result ? (result.warm ? "pleased" : "easy") : "easy"} speaking={speaking} name={name} labels friendFirst you={phase === "hearing" ? "listen" : result?.warm ? "happy" : "side-left"} className="bg-art-sky/15" />}
+          {/* The two people, the teller first */}
+          <SceneCast mood={result ? (result.warm ? "pleased" : "easy") : "easy"} speaking={speaking} name={name} labels friendFirst you={phase === "hearing" ? "listen" : result?.warm ? "happy" : "side-left"} className="bg-art-sky/15" />
           {/* Before hearing it: what to listen for, and Listen */}
           {phase === "intro" && (
             <>
               {/* What to listen for */}
               <p className="max-w-[52ch] font-semibold">{LEVELS[story.level].about} Listen for what happened, how it felt, and what matters most to {name}. Then answer as you would to a friend.</p>
               {/* Listen */}
-              <p><button type="button" onClick={() => void hear()} className={`${PRIMARY} min-w-40`}><HeadphonesIcon aria-hidden="true" weight="bold" className="size-5" />Listen</button></p>
+              <p className="flex items-center gap-4">
+                {/* The listening tile (carried over from Today's step, decision 141) */}
+                <SharedScene scene="listening"><span className="flex flex-none"><ModeTile ground={SCENE_TILES.listening.ground} prop={SCENE_TILES.listening.prop} face={SCENE_TILES.listening.face} tilt={-4} scene="listening" className="size-14" /></span></SharedScene>
+                {/* The button */}
+                <button type="button" onClick={() => void hear()} className={`${PRIMARY} min-w-40`}><HeadphonesIcon aria-hidden="true" weight="bold" className="size-5" />Listen</button>
+              </p>
             </>
           )}
           {/* While hearing it, and while answering: just listen */}
@@ -271,7 +284,17 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
             {/* The tip */}
             <p className="flex items-start gap-3 rounded-2xl bg-warm-tint px-4 py-3.5 font-extrabold text-warm-ink"><HeartIcon aria-hidden="true" weight="bold" className="mt-0.5 size-5 flex-none" />Go to what mattered to them, not just what happened.</p>
             {/* Record it, once the story has been heard */}
-            {phase === "answer" ? <QuickRecorder services={services} action="Answer" maxSec={45} onDone={setTranscript} /> : <p className="py-3 text-center text-sm font-bold text-ink-muted">Up to 45 seconds. Ready when the story ends.</p>}
+            {phase === "answer" ? <QuickRecorder services={services} action="Answer" maxSec={45} onDone={setTranscript} look="round" /> : (
+              // The answer button's place, waiting for the story to end (as Listening draws it, still and grey until then)
+              <div className="flex flex-col items-center gap-1.5 py-3 text-center">
+                {/* The round microphone, not yet pressable */}
+                <span aria-hidden="true" className="grid size-24 place-items-center rounded-full bg-paper text-ink-muted shadow-ledge"><MicrophoneIcon weight="bold" className="size-9" /></span>
+                {/* Its name */}
+                <span aria-hidden="true" className="mt-2 font-display text-xl font-semibold text-ink-muted">Answer</span>
+                {/* When */}
+                <span className="text-sm font-bold text-ink-muted">Up to 45 seconds. Ready when the story ends.</span>
+              </div>
+            )}
             {/* On, once a take is done */}
             {phase === "answer" && transcript !== null && <p><button type="button" onClick={finish} className={PRIMARY}>Done, see what you caught</button></p>}
             {/* Hear it again, when allowed, and the words */}
@@ -288,8 +311,13 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
           </section>
         ) : result && (
           <section aria-label="Your result" className="flex min-w-0 flex-col gap-5">
-            {/* The headline */}
-            <h1 className="font-display text-statement font-semibold">{result.core ? "You heard what mattered." : `You caught ${result.caught} of ${result.details.length} details.`}</h1>
+            {/* You, and the headline, on the verdict's colour (as the result after a take: green when you heard what mattered, warm amber when not) */}
+            <div data-verdict={result.core ? "good" : "rough"} className={`flex items-center gap-5 rounded-[22px] px-5 py-4 motion-safe:animate-rise md:px-6 md:py-5 ${result.core ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>
+              {/* You */}
+              <Cast who="you" face={result.core ? "happy" : "wonder"} className="size-16 md:size-20" />
+              {/* The headline */}
+              <h1 className="font-display text-cue font-semibold leading-tight md:text-statement">{result.core ? "You heard what mattered." : `You caught ${result.caught} of ${result.details.length} details.`}</h1>
+            </div>
             {/* Nothing caught */}
             {!transcript?.trim() && <p className="-mt-2 text-footnote">No words were caught, so nothing could be checked. Try again when you can speak.</p>}
             {/* The checks */}
@@ -317,7 +345,7 @@ function ListenPlay({ story, planStep = null, services = browserRecordingService
             <p className="flex flex-col gap-1.5 rounded-2xl bg-accent-tint px-4 py-3.5 font-bold text-accent-tint-ink"><span className={STEP_LABEL}>One way to answer</span>“{story.example}”</p>
             {/* Saving failed */}
             {saveFailed && (
-              <p role="alert" className="text-footnote">
+              <p role="alert" className="flex flex-wrap items-center gap-x-3 rounded-2xl bg-warm-tint px-4 py-2 font-bold text-warm-ink">
                 This answer couldn’t be saved.{" "}
                 <button type="button" onClick={() => void save(result)} className={TEXT_LINK}>Try saving again</button>
               </p>
