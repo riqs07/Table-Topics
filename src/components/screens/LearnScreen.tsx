@@ -114,25 +114,26 @@ export function LearnScreen(props: ScreenProps) {
       {!(today && progress && scenarios && missions) && <Skeleton blocks={["h-72", "h-24", "h-28", "h-28"]} />}
       {/* Everything else, at once */}
       {today && progress && scenarios && missions && (<>
-      {/* Today's mission, and how tries have gone (decision 66) */}
-      <MissionSection repo={repo} today={today} initial={missions} />
-
-
-      {/* Practice: quick scenarios */}
-      <h2 className={`${SECTION_HEADING} mt-8`}>Practise</h2>
-      {/* The scenarios card, with the conversation tile */}
-      <div className="mt-3">
-        {/* (Its count says a round is three of the whole bank, so it agrees with the "1 of 3" the round shows) */}
-        <CourseCard href="/learn/scenarios" name="Quick scenarios" blurb="Choose the best reply, then say it aloud." icon={CardsIcon} art={<ModeTile ground={SCENE_TILES.conversation.ground} prop={SCENE_TILES.conversation.prop} face={SCENE_TILES.conversation.face} tilt={-4} className="size-18" />} done={scenarios ? Object.keys(scenarios).length : 0} total={SCENARIOS.length} count={`${QUICK_COUNT} at a time, ${SCENARIOS.length} in all`} />
+      {/* Today's mission beside the quick scenarios on a computer, the page's full width (decision 66) */}
+      <div data-wide className="grid items-start gap-x-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+        {/* Today's mission, and how tries have gone */}
+        <MissionSection repo={repo} today={today} initial={missions} />
+        {/* Practice: quick scenarios */}
+        <section aria-labelledby="practise-heading" className="lg:mt-6">
+          {/* Heading */}
+          <h2 id="practise-heading" className={`${SECTION_HEADING} mt-8 lg:mt-0`}>Practise</h2>
+          {/* The scenarios card, with the conversation tile (its count says a round is three of the whole bank, so it agrees with the "1 of 3" the round shows) */}
+          <div className="mt-3"><CourseCard href="/learn/scenarios" name="Quick scenarios" blurb="Choose the best reply, then say it aloud." icon={CardsIcon} art={<ModeTile ground={SCENE_TILES.conversation.ground} prop={SCENE_TILES.conversation.prop} face={SCENE_TILES.conversation.face} tilt={-4} className="size-18" />} done={scenarios ? Object.keys(scenarios).length : 0} total={SCENARIOS.length} count={`${QUICK_COUNT} at a time, ${SCENARIOS.length} in all`} /></div>
+        </section>
       </div>
 
       {/* The sets, as cards in two groups (Speaking, People); each opens its own page (decision 79); with a focus, its sets come first as "For your focus" (decision 97); each set's icon on its own colour, as Courses' "Quick reads" */}
       {orderLearnGroups(focus, LEARN_GROUPS).map((group) => (
-        <section key={group.name} aria-labelledby={`group-${group.name.replace(/\s+/g, "-")}`}>
+        <section key={group.name} data-wide aria-labelledby={`group-${group.name.replace(/\s+/g, "-")}`}>
           {/* The group's heading */}
           <h2 id={`group-${group.name.replace(/\s+/g, "-")}`} className={`${SECTION_HEADING} mt-8`}>{group.name}</h2>
           {/* Its sets */}
-          <ul aria-label={`${group.name} sets`} className="mt-3 grid gap-3 md:grid-cols-2 md:gap-4">
+          <ul aria-label={`${group.name} sets`} className="mt-3 grid gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
             {/* Each set */}
             {group.sets.map((id) => {
               // The set

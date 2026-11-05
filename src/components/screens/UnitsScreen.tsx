@@ -57,7 +57,7 @@ export function UnitsScreen(props: ScreenProps) {
   return (
     <main id="main" className={PAGE}>
       {/* Heading and navigation */}
-      <Masthead title="Practice" section="practice" />
+      <Masthead title="VoiceLab" section="practice" />
       {/* Back to Practice */}
       <p className="mt-1 md:-mt-12"><Link href="/practice" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote text-ink-muted`}><CaretLeftIcon aria-hidden="true" weight="bold" className="size-4" />Practice</Link></p>
       {/* The page's name on the conversation tile's tint, as a job's list of ways on Practice */}

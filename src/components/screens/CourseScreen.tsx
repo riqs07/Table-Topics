@@ -39,6 +39,8 @@ import { CourseTile, courseTileGround } from "@/components/scenes/CourseTile";
 import { courseTile, lessonTile } from "@/components/scenes/tileFor";
 // Load the hand-drawn celebration (decision 134)
 import { Drawing } from "@/components/script/Drawing";
+// Load the shared not-found card
+import { NotFound } from "@/components/script/SageSays";
 
 // The header band's colours for each ground (shared with Learn's sets and the small-talk units)
 const BAND = GROUND_BAND;
@@ -297,17 +299,8 @@ export function CourseScreen({ courseId, header, ...props }: ScreenProps & { cou
         <Masthead title="Course" section="courses" />
         {/* The way back */}
         <p className="mt-1 md:-mt-12"><Link href="/courses" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote text-ink-muted`}><CaretLeftIcon aria-hidden="true" weight="bold" className="size-4" />All courses</Link></p>
-        {/* The message, on a card with your blob puzzled (extrapolated from the course page's band and cards) */}
-        <section className={`mt-3 flex flex-col items-center gap-4 px-6 py-10 text-center ${CARD}`}>
-          {/* Your blob, puzzled */}
-          <Buddy face="wonder" className="size-28" />
-          {/* The page's heading */}
-          <h1 className="font-display text-statement leading-tight font-semibold">Course</h1>
-          {/* What happened */}
-          <p className="font-bold text-ink-muted">This course could not be found.</p>
-          {/* The way back */}
-          <Link href="/courses" className={PRIMARY}>Back to Courses</Link>
-        </section>
+        {/* Sage, puzzled, says so as the page's heading, then the way back (the shared not-found pattern) */}
+        <NotFound title="This course could not be found." back={{ href: "/courses", label: "Back to Courses" }} className="mt-4" />
       </main>
     );
   }

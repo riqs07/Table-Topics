@@ -2,7 +2,7 @@
 // One scenario question: read the situation, choose the best reply, see every reply's tier and why, then say the move in your own words (decision 54). Second design pass, after Desktop Screens "SceneReply": the situation on the warm tint, your blob over "What's the best thing to say?", the replies as soft bubbles, the one you pick lifted and edged in green with the verdict tucked under it, the move on the soft green, and "Now say it" on a white card
 
 // Load React's state tool
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 // Load the quick recorder for the spoken step
 import { QuickRecorder } from "@/components/script/QuickRecorder";
 // Load the scenario content
@@ -23,6 +23,14 @@ interface ScenarioItemProps {
   services: RecordingServices;
   // Called once with the chosen reply's tier
   onAnswer?: (tier: Tier) => void;
+  // Called once the move has been said aloud
+  onSaid?: () => void;
+  // One column (inside a Learn card), or the two columns of a scene on a computer (the situation and the friend on the left, the rest on the right)
+  layout?: "stack" | "columns";
+  // A heading over the situation (the scenario's name on its own page)
+  heading?: ReactNode;
+  // Something at the foot of the right column (the way on)
+  after?: ReactNode;
 }
 
 // The look of each tier once revealed, on the replies not picked: the best edged in green, the others quiet
@@ -32,7 +40,7 @@ const TIER_LOOK: Readonly<Record<Tier, string>> = { best: "border-accent bg-card
 const FACES: Readonly<Record<Tier, "happy" | "ready" | "wonder">> = { best: "happy", good: "happy", flat: "wonder", misstep: "wonder" };
 
 // Draw the item
-export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps) {
+export function ScenarioItem({ scenario, services, onAnswer, onSaid, layout = "stack", heading, after }: ScenarioItemProps) {
   // The reply chosen (its place), once chosen
   const [chosen, setChosen] = useState<number | null>(null);
   // The best reply's place
@@ -53,9 +61,11 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
   // Whether the pick went well
   const good = picked?.tier === "best" || picked?.tier === "good";
 
-  // Draw it
-  return (
+  // The situation (and, in two columns, the friend it happens with)
+  const situation = (
     <div className="flex flex-col gap-5">
+      {/* The heading, when given */}
+      {heading}
       {/* The situation, on the warm tint */}
       <div className="rounded-[22px] bg-warm-tint px-5 py-4 text-warm-ink">
         {/* Heading */}
@@ -63,6 +73,13 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
         {/* The words */}
         <p className="mt-1 max-w-[56ch] text-lede leading-snug font-bold">{scenario.situation}</p>
       </div>
+      {/* The friend, in two columns: who you are answering, pleased when the reply lands */}
+      {layout === "columns" && <Cast who="friend" face={picked ? (good ? "happy" : "flat") : "ready"} className="hidden size-36 self-center lg:block" />}
+    </div>
+  );
+  // The question, the replies, the reveal and the way on
+  const replies = (
+    <div className="flex min-w-0 flex-col gap-5">
       {/* Your blob, and the question */}
       <div className="flex items-center gap-4">
         {/* You, wondering until you pick */}
@@ -75,7 +92,7 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
         {/* Each reply */}
         {scenario.options.map((option, position) => (
           // One reply: a soft bubble before choosing, then the pick lifted and every reply marked with its tier and pattern
-          <button key={option.text} type="button" disabled={chosen !== null} onClick={() => choose(position)} data-tier={chosen !== null ? option.tier : undefined} className={`min-h-14 rounded-[18px] border-2 px-5 py-3.5 text-left text-lg font-bold ${PRESS} ${position === chosen ? "-rotate-[0.6deg] border-accent bg-card text-ink shadow-picked" : chosen !== null ? TIER_LOOK[option.tier] : "border-transparent bg-paper text-ink hover:border-accent hover:bg-card"}`}>
+          <button key={option.text} type="button" disabled={chosen !== null} onClick={() => choose(position)} data-tier={chosen !== null ? option.tier : undefined} className={`min-h-14 rounded-[18px] border-2 px-5 py-3.5 text-left text-lg font-bold ${PRESS} ${position === chosen ? `-rotate-[0.6deg] bg-card text-ink ${option.tier === "best" || option.tier === "good" ? "border-accent shadow-picked" : "border-warm shadow-ledge"}` : chosen !== null ? TIER_LOOK[option.tier] : "border-transparent bg-paper text-ink hover:border-accent hover:bg-card"}`}>
             {/* The words */}
             <span className="block">{option.text}</span>
             {/* Once chosen: its tier and the pattern behind it */}
@@ -111,10 +128,14 @@ export function ScenarioItem({ scenario, services, onAnswer }: ScenarioItemProps
             {/* What to say */}
             <p className="mt-1 font-display text-xl leading-snug font-semibold">{scenario.sayIt}</p>
             {/* Record it and hear it back */}
-            <QuickRecorder services={services} action="Say it" maxSec={20} />
+            <QuickRecorder services={services} action="Say it" maxSec={20} onDone={() => onSaid?.()} />
           </div>
         </div>
       )}
+      {/* The way on, when given */}
+      {after}
     </div>
   );
+  // One column, or two on a computer
+  return layout === "columns" ? <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-10">{situation}{replies}</div> : <div className="flex flex-col gap-5">{situation}{replies}</div>;
 }
