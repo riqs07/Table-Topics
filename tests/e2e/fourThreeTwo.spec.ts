@@ -43,8 +43,8 @@ test("4/3/2: tell today's story three times, shorter each time, then compare the
   await page.getByRole("list", { name: "Jobs" }).getByRole("link", { name: /^Speak on the spot/ }).click();
   // The drill's page
   await page.getByRole("link", { name: /^4\/3\/2/ }).click();
-  // Today's story, with a full story's times shown
-  const row = page.getByRole("list", { name: "Today's 4/3/2" }).getByRole("link", { name: /^A story/ });
+  // Today's story, the page's quick start, with a full story's times shown
+  const row = page.locator("[data-way-card='big']");
   // (the times)
   await expect(row).toContainText("3:00, then 2:15, then 1:30");
   // Start

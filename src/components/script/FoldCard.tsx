@@ -36,7 +36,7 @@ interface FoldCardProps {
 export function FoldCard({ id, name, detail, count, look, children, art }: FoldCardProps) {
   // A card that opens and closes
   return (
-    <details id={id} className={`group scroll-mt-6 px-4 ${CARD}`}>
+    <details id={id} className={`group scroll-mt-6 px-4 open:col-span-full ${CARD}`}>
       {/* The row */}
       <summary className={`flex min-h-14 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden ${PRESS}`}>
         {/* The group's tile or picture, when it has one (still, apart from blinking) */}

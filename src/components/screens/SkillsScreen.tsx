@@ -208,7 +208,7 @@ export function SkillsScreen(props: ScreenProps) {
           {/* Heading */}
           <h2 id="everything" className={SECTION_HEADING}>Everything</h2>
           {/* The groups, each with its tile */}
-          <div className="mt-3 flex flex-col gap-2.5">
+          <div className="mt-3 grid items-start gap-3 md:grid-cols-2">
             {/* Each group */}
             {groups.map((group) => (
               // A folded group: its row, then its list once opened

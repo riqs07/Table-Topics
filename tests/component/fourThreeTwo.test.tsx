@@ -96,8 +96,8 @@ describe("the 4/3/2 page", () => {
     await repository.saveSession(makeSession({ id: "told", mode: "story", promptId: "sp06", story: { template: "client-win", focus: null, length: "short" } }));
     // Drawn
     render(<FourThreeTwoScreen repository={repository} now={NOW} />);
-    // The day's two
-    const today = within(await screen.findByRole("list", { name: "Today's 4/3/2" })).getAllByRole("link").map((link) => link.getAttribute("href"));
+    // The day's two: today's story as the quick start band, then the prepared speech in the list (second design pass, so the story is not offered twice)
+    const today = [...within(await screen.findByRole("list", { name: "Today's 4/3/2" })).getAllByRole("link").map((link) => link.getAttribute("href")), document.querySelector("[data-way-card='big']")?.getAttribute("href")];
     // The user's story
     const yours = within(await screen.findByRole("list", { name: "Your stories" })).getByRole("link");
     // Each starts round 1 of a new loop: the speech, today's story with its suggested template, and the told story with its own set-up as a retelling

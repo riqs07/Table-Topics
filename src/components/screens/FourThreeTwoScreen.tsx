@@ -19,7 +19,7 @@ import { SCENE_TILES, type ModeTileLook } from "@/components/scenes/modeTileFor"
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the day's prepared-speech topic and story prompt
 import { promptForDay } from "@/content/prompts";
-import { findStoryTemplate, storyPromptForDay, suggestedTemplate } from "@/content/stories";
+import { storyPromptForDay, suggestedTemplate } from "@/content/stories";
 // Load the loop's addresses and times
 import { loopHref, targetWords } from "@/core/fourThreeTwo";
 // Load the user's stories
@@ -106,16 +106,14 @@ export function FourThreeTwoScreen(props: ScreenProps) {
         </div>
       )}
 
-      {/* The day's two */}
+      {/* The other of today's two: the prepared speech (the story is the quick start above) */}
       <section aria-labelledby="loop-today" data-wide className="mt-8">
         {/* Heading */}
-        <h2 id="loop-today" className={SECTION_HEADING}>Today</h2>
+        <h2 id="loop-today" className={SECTION_HEADING}>Also today</h2>
         {/* The cards */}
         <ul aria-label="Today's 4/3/2" className="mt-3 grid gap-3.5 md:grid-cols-2">
           {/* Today's prepared speech */}
           {topic && <li><LoopRow href={loopHref({ mode: "response", promptId: topic.id }, "new", 1)} look={SCENE_TILES["prepared-speech"]} name="Prepared speech" detail={topic.text} times={targetWords("response")} /></li>}
-          {/* Today's story, with its suggested template */}
-          {story && <li><LoopRow href={loopHref({ mode: "story", promptId: story.id, story: { template: suggestedTemplate(story.id), focus: null, length: "full" } }, "new", 1)} look={SCENE_TILES.story} tilt={4} name="A story" detail={story.text} times={`${findStoryTemplate(suggestedTemplate(story.id)).name} · ${targetWords("story", "full")}`} /></li>}
         </ul>
       </section>
 

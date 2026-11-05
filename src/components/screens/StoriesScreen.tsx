@@ -6,7 +6,9 @@ import { useCallback, useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the chevron at the end of a row
-import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenTextIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the tile card for one way (a guided story in its fold)
+import { WayTileCard } from "@/components/script/WayCard";
 // Load the page heading with the main navigation, the list page's header and Sage's line
 import { Masthead } from "@/components/script/Masthead";
 import { HubHeader } from "@/components/script/HubHeader";
@@ -47,9 +49,6 @@ const MOMENTS_SHOWN = 5;
 
 // A story told again's tile
 const TELL_AGAIN = SCENE_TILES["tell-again"];
-
-// A story card's own action: a solid soft-green button with a ledge (not an outline, and not a second chunky primary beside today's Tell it)
-const RETELL = `inline-flex min-h-12 items-center justify-center rounded-[14px] bg-accent-tint px-5 font-extrabold text-accent-tint-ink shadow-ledge transition-[transform,box-shadow] duration-100 hover:brightness-105 motion-safe:active:translate-y-[2px] active:shadow-none`;
 
 // Each group of prompts' tile: one idea in a glance, neighbouring groups on different grounds
 const GROUP_TILES: Readonly<Record<string, ModeTileLook>> = {
@@ -141,11 +140,11 @@ function StoryRow({ story, repo, now, onRenamed }: { story: LibraryStory; repo: 
           <button type="button" onClick={() => { setEditing(false); setDraft(story.title); setError(""); }} className={QUIET}>Cancel</button>
         </form>
       ) : (
-        <p className="flex items-start justify-between gap-x-3">
+        <p className="flex flex-col items-start">
           {/* The title */}
           <span className="min-w-0 font-display text-xl font-semibold leading-tight">{story.title}</span>
-          {/* Rename */}
-          <button type="button" onClick={() => setEditing(true)} aria-label={`Rename “${story.title}”`} className={`${TEXT_LINK} -mt-2.5 flex-none text-footnote text-ink-muted`}>Rename</button>
+          {/* Rename, a small text button under the title */}
+          <button type="button" onClick={() => setEditing(true)} aria-label={`Rename “${story.title}”`} className={`${TEXT_LINK} -my-2 text-footnote text-ink-muted`}>Rename</button>
         </p>
       )}
       {/* Why saving failed */}
@@ -157,7 +156,7 @@ function StoryRow({ story, repo, now, onRenamed }: { story: LibraryStory; repo: 
       {/* Tell it again, and see the last telling */}
       <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
         {/* Tell it again */}
-        <Link href={retellHref(story)} aria-label={`Tell “${story.title}” again`} className={RETELL}>Tell it again</Link>
+        <Link href={retellHref(story)} aria-label={`Tell “${story.title}” again`} className={SECONDARY}>Tell it again</Link>
         {/* The last telling */}
         <Link href={`/sessions?id=${encodeURIComponent(story.latest.id)}`} className={`${TEXT_LINK} text-footnote`}>Last telling</Link>
       </p>
@@ -320,9 +319,9 @@ export function StoriesScreen(props: ScreenProps) {
             return (
               <FoldCard key={level.id} id={`guided-${level.id}`} name={level.name} detail={level.blurb} count={stories.length} look={SCENE_TILES[storyScene({ neededTemplate: null, guidedLevel: level.id })]}>
                 {/* The stories */}
-                <ul aria-label={level.name} className="divide-y divide-rule">
-                  {/* Each story: its title, with its first fact under it */}
-                  {stories.map((story) => <li key={story.id}><RowLink href={tellHref(story.id)}><span className="block font-semibold">{story.title}</span><span className="block text-footnote text-ink-muted">{story.facts[0]}</span></RowLink></li>)}
+                <ul aria-label={level.name} className="grid gap-3 pt-1 md:grid-cols-2 xl:grid-cols-3">
+                  {/* Each story as a tile card, as on the ways pages: its title, with its first fact under it */}
+                  {stories.map((story, index) => <li key={story.id}><WayTileCard way={{ name: story.title, detail: story.facts[0] ?? "", href: tellHref(story.id), icon: BookOpenTextIcon, scene: storyScene({ neededTemplate: null, guidedLevel: level.id }) }} tilt={index % 2 ? 4 : -4} /></li>)}
                 </ul>
               </FoldCard>
             );
