@@ -111,6 +111,8 @@ export function RecordingFromAddress() {
       questionIndex={/^\d+$/.test(params.get("question") ?? "") ? Number(params.get("question")) : 0}
       // The rung of the memory ladder to start on
       planStep={/^\d+$/.test(params.get("plan") ?? "") ? Number(params.get("plan")) : null}
+      // Begin planning straight away, when the story set-up started it
+      planNow={params.get("begin") === "plan"}
       ladder={params.get("ladder") === "keywords" || params.get("ladder") === "none" ? (params.get("ladder") as "keywords" | "none") : "full"}
     />
   );

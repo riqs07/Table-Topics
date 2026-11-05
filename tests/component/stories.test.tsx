@@ -171,7 +171,7 @@ describe("TellStoryScreen", () => {
     // (length)
     fireEvent.click(screen.getByRole("button", { name: /Short/ }));
     // Confirm the prompt, the suggestion, both addresses, the chosen button, the example of the chosen template, no shapes or 4/3/2 switch, and the focuses offered but none picked (storyboard 13's "One thing to try")
-    expect([!!screen.getByText(/a plan fell apart/), suggested.getAttribute("aria-pressed"), first, start(), screen.getByRole("button", { name: /Client win/ }).getAttribute("aria-pressed"), within(screen.getByRole("region", { name: "Example: Client win" })).getByText("(the result, with a number)").tagName, screen.queryByRole("button", { name: /But and so/ }), screen.getByRole("button", { name: "Under a minute" }).getAttribute("aria-pressed"), screen.queryByRole("checkbox")]).toEqual([true, "false", "/session?mode=story&prompt=sp01&template=lesson&length=full", "/session?mode=story&prompt=sp01&template=client-win&length=short", "true", "B", null, "false", null]);
+    expect([!!screen.getByText(/a plan fell apart/), suggested.getAttribute("aria-pressed"), first, start(), screen.getByRole("button", { name: /Client win/ }).getAttribute("aria-pressed"), within(screen.getByRole("region", { name: "Example: Client win" })).getByText("(the result, with a number)").tagName, screen.queryByRole("button", { name: /But and so/ }), screen.getByRole("button", { name: "Under a minute" }).getAttribute("aria-pressed"), screen.queryByRole("checkbox")]).toEqual([true, "false", "/session?mode=story&prompt=sp01&template=lesson&length=full&begin=plan", "/session?mode=story&prompt=sp01&template=client-win&length=short&begin=plan", "true", "B", null, "false", null]);
   });
 
   // One thing to try (storyboard 13): a pill picks a focus for this telling, which the telling page reads from the address; tapping it again clears it, and "Under a minute" also picks short
@@ -193,7 +193,7 @@ describe("TellStoryScreen", () => {
     // Under a minute
     fireEvent.click(screen.getByRole("button", { name: "Under a minute" }));
     // Confirm the five, the picked address and tip, the cleared address, and a minute's story told short
-    expect([names, picked, cleared, start()]).toEqual([["Start in the middle", "Add one line of what someone said", "One vivid detail", "End on the point", "Under a minute"], ["/session?mode=story&prompt=sp01&template=lesson&focus=detail&length=full", "true", true], "/session?mode=story&prompt=sp01&template=lesson&length=full", "/session?mode=story&prompt=sp01&template=lesson&focus=minute&length=short"]);
+    expect([names, picked, cleared, start()]).toEqual([["Start in the middle", "Add one line of what someone said", "One vivid detail", "End on the point", "Under a minute"], ["/session?mode=story&prompt=sp01&template=lesson&focus=detail&length=full&begin=plan", "true", true], "/session?mode=story&prompt=sp01&template=lesson&length=full&begin=plan", "/session?mode=story&prompt=sp01&template=lesson&focus=minute&length=short&begin=plan"]);
   });
 
   // A link can start on a template (from the Stories page), and a Learn card's focus is carried in (decision 94); "Under a minute" starts short
@@ -201,7 +201,7 @@ describe("TellStoryScreen", () => {
     // Draw it as a link would
     render(<TellStoryScreen storyId="sp04" initialTemplate="turning-point" initialFocus="minute" repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the chosen template and the address that starts the telling
-    expect([screen.getByRole("button", { name: /Turning point/ }).getAttribute("aria-pressed"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual(["true", "/session?mode=story&prompt=sp04&template=turning-point&focus=minute&length=short"]);
+    expect([screen.getByRole("button", { name: /Turning point/ }).getAttribute("aria-pressed"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual(["true", "/session?mode=story&prompt=sp04&template=turning-point&focus=minute&length=short&begin=plan"]);
   });
 
   // A story you'll need starts on its own template, shows its family and what it needs, and the everyday ones are a tap away (decision 152)
@@ -213,7 +213,7 @@ describe("TellStoryScreen", () => {
     // Show the rest
     fireEvent.click(screen.getByRole("button", { name: "Show all templates" }));
     // Confirm the needed family first, the need line, then all eight, and the address
-    expect([before, screen.getByText(/Spend most of it on what you did/).hasAttribute("data-template-needs"), within(screen.getByRole("group", { name: "Template" })).getAllByRole("button").length, screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([["Who I am", "Interview answer", "Toast", "A choice I made"], true, 8, "/session?mode=story&prompt=sp47&template=interview&length=full"]);
+    expect([before, screen.getByText(/Spend most of it on what you did/).hasAttribute("data-template-needs"), within(screen.getByRole("group", { name: "Template" })).getAllByRole("button").length, screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([["Who I am", "Interview answer", "Toast", "A choice I made"], true, 8, "/session?mode=story&prompt=sp47&template=interview&length=full&begin=plan"]);
   });
 
   // A "Make it a…" guided story asks for its kind and starts on that template; its details are loose, not numbered (decision 153)
@@ -223,7 +223,7 @@ describe("TellStoryScreen", () => {
     // The card
     const card = screen.getByRole("region", { name: "Your facts" });
     // Confirm the ask, the heading, the loose list and the address
-    expect([within(card).getByText("Make it a toast").hasAttribute("data-make-it"), !!within(card).getByText("Use all four"), card.querySelector("ol")?.getAttribute("data-ordered"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([true, true, "false", "/session?mode=story&prompt=gs41&template=toast&focus=point&length=full"]);
+    expect([within(card).getByText("Make it a toast").hasAttribute("data-make-it"), !!within(card).getByText("Use all four"), card.querySelector("ol")?.getAttribute("data-ordered"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([true, true, "false", "/session?mode=story&prompt=gs41&template=toast&focus=point&length=full&begin=plan"]);
   });
 
   // Inside today's practice: short by default, with the step carried on
@@ -231,7 +231,7 @@ describe("TellStoryScreen", () => {
     // Draw it as step 4
     render(<TellStoryScreen storyId="sp01" planStep={4} repository={createRepository(new MemoryStore())} now={NOW} />);
     // Confirm the address and the way out
-    expect([screen.getByRole("link", { name: /Start/ }).getAttribute("href"), screen.getByRole("link", { name: "Close, back to Today" }).getAttribute("href")]).toEqual(["/session?mode=story&prompt=sp01&template=lesson&length=short&plan=4", "/"]);
+    expect([screen.getByRole("link", { name: /Start/ }).getAttribute("href"), screen.getByRole("link", { name: "Close, back to Today" }).getAttribute("href")]).toEqual(["/session?mode=story&prompt=sp01&template=lesson&length=short&plan=4&begin=plan", "/"]);
   });
 
   // A story from a moment note shows the note's words; a missing note explains instead
@@ -241,7 +241,7 @@ describe("TellStoryScreen", () => {
     // Draw it
     render(<TellStoryScreen storyId="moment-m1" repository={repository} now={NOW} />);
     // Confirm the words and the address
-    expect([await screen.findByText("the kettle sang at dawn"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([expect.anything(), "/session?mode=story&prompt=moment-m1&template=lesson&length=full"]);
+    expect([await screen.findByText("the kettle sang at dawn"), screen.getByRole("link", { name: /Start/ }).getAttribute("href")]).toEqual([expect.anything(), "/session?mode=story&prompt=moment-m1&template=lesson&length=full&begin=plan"]);
     // Remove it
     cleanup();
     // Draw one whose note is gone
@@ -442,7 +442,7 @@ describe("guided stories", () => {
     // Pick another template
     fireEvent.click(screen.getByRole("button", { name: /Funny moment/ }));
     // Confirm the title, a fact, the twist, a nudge, no separate beats card, the default address with the story's focus, the changed one, and the template named on the card
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!within(card).getByText("You got a hot dog."), card.querySelector("[data-twist]")?.textContent, !!within(card).getByText("What did the gorilla do?"), screen.queryByRole("region", { name: "Your beats" }), first, screen.getByRole("link", { name: /Start/ }).getAttribute("href"), within(card).getByText("Funny moment").textContent]).toEqual(["A day at the zoo", true, "TwistThe gorilla was staring right at you.", true, null, "/session?mode=story&prompt=gs13&template=lesson&focus=middle&length=full", "/session?mode=story&prompt=gs13&template=funny&focus=middle&length=full", "Funny moment"]);
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!within(card).getByText("You got a hot dog."), card.querySelector("[data-twist]")?.textContent, !!within(card).getByText("What did the gorilla do?"), screen.queryByRole("region", { name: "Your beats" }), first, screen.getByRole("link", { name: /Start/ }).getAttribute("href"), within(card).getByText("Funny moment").textContent]).toEqual(["A day at the zoo", true, "TwistThe gorilla was staring right at you.", true, null, "/session?mode=story&prompt=gs13&template=lesson&focus=middle&length=full&begin=plan", "/session?mode=story&prompt=gs13&template=funny&focus=middle&length=full&begin=plan", "Funny moment"]);
   });
 
   // While planning the facts card shows in place of the shape card; while telling too, under a switch (decision 130)

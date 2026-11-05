@@ -582,7 +582,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
         </section>
 
         {/* The verdict: green with your happy blob for a good take, warm amber (never red) with your puzzled blob and Sage's one note for a rough one */}
-        <aside aria-labelledby="verdict" data-verdict={verdict} className={`relative flex flex-col gap-3.5 rounded-[26px] px-6 pt-6 pb-5 max-md:-mx-4 max-md:mt-16 max-md:rounded-b-none max-md:px-5 max-md:pb-8 motion-safe:max-md:animate-sheet md:max-w-110 md:flex-[1_1_340px] motion-safe:md:animate-slide-in ${verdict === "good" ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>
+        <aside aria-labelledby="verdict" data-verdict={verdict} className={`relative flex flex-col gap-3.5 rounded-[26px] px-6 pt-6 pb-5 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:gap-2.5 max-md:rounded-b-none max-md:px-5 max-md:pt-5 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] max-md:border-t-2 max-md:border-rule motion-safe:max-md:animate-sheet md:max-w-110 md:flex-[1_1_340px] motion-safe:md:animate-slide-in ${verdict === "good" ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>
           {/* Your blob (and, after a rough take, Sage), peeking over the sheet's edge on a phone */}
           <div className="flex items-end gap-3 max-md:absolute max-md:-top-16 max-md:right-5">
             {/* Your blob */}
@@ -591,20 +591,22 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {verdict === "rough" && <Cast who="sage" mood="calm" className="size-18 md:size-21" />}
           </div>
           {/* The headline */}
-          <h2 id="verdict" className="font-display text-4xl leading-none font-semibold">{verdict === "good" ? "That landed!" : "Good start."}</h2>
+          <h2 id="verdict" className="font-display text-4xl leading-none font-semibold max-md:text-3xl">{verdict === "good" ? "That landed!" : "Good start."}</h2>
           {/* One line: what worked, or Sage's note in its own words */}
           <p className={`font-bold ${verdict === "rough" ? "" : "text-ink"} text-lg leading-snug`}>{verdictLine}</p>
           {/* A personal best: what it was, and before */}
-          {!quick && <PersonalBest reaction={reaction} />}
-          {/* The chips: time spoken and pause words (the cue for next time is in "One change" below, said once) */}
+          {!quick && <div className="max-md:hidden"><PersonalBest reaction={reaction} /></div>}
+          {/* The chips: time spoken, pause words, and after a rough take the cue that goes with Sage's note (said once: the One change card below then keeps only what the coach added) */}
           <ul aria-label="This take" className="flex flex-wrap gap-2">
             {/* Time spoken */}
             <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{formatClock(Math.round(session.durationSec))} spoken</li>
             {/* Pause words, when shown */}
             {view.pauseWords && !reading && <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{pauseCount} pause {pauseCount === 1 ? "word" : "words"}</li>}
+            {/* The cue, after a rough take */}
+            {verdict === "rough" && <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">Cue: <span>{change.retryCue}</span></li>}
           </ul>
           {/* The one chunky button */}
-          <Link href={primary.href} data-action-band className={`${PRIMARY} mt-2 w-full max-md:fixed max-md:inset-x-4 max-md:bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] max-md:z-20 max-md:mt-0 max-md:w-auto`}>{primary.label}</Link>
+          <Link href={primary.href} data-action-band className={`${PRIMARY} mt-2 w-full max-md:mt-1`}>{primary.label}</Link>
           {/* The one text link */}
           <Link href={secondary.href} className={`${TEXT_LINK} self-center uppercase tracking-[.04em] ${verdict === "good" ? "text-accent-tint-ink" : "text-warm-ink"}`}>{secondary.label}</Link>
         </aside>
@@ -647,16 +649,16 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
         <RatingLine session={session} all={all} />
         {/* A 4/3/2 loop's last round: the three rounds compared; an earlier round: which it was, and the way to the comparison (decision 118) */}
         {session.loop && (session.loop.round >= 3 ? <LoopResults repo={repo} session={session} all={all} pauseWords={view.pauseWords} /> : <LoopRoundNote session={session} all={all} />)}
-        {/* The one change and the cue in full, with anything the coach added */}
-        <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
+        {/* The one change and the cue in full, with anything the coach added (after a rough take the panel says the change and the cue, so the card keeps only the coach's extras, and is left out without them) */}
+        {(verdict === "good" || session.feedback?.connection || (session.feedback?.story && session.feedback.story.yours) || session.feedback?.smallTalk) && <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
           {/* The pill that names it, and where it comes from until the coach's note arrives */}
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="inline-flex rounded-full bg-warm-tint px-2.5 py-1 text-footnote font-semibold text-warm-ink">One change</span>{!session.feedback && <span className="text-footnote text-ink-muted">From your numbers</span>}</p>
           {/* The change */}
           {verdict === "good" && <p className="mt-3 text-lede">{change.change}</p>}
-          {/* Small heading for the cue */}
-          <p className="mt-4 text-footnote text-ink-muted">{warmup ? "Before your response" : story ? "Before you tell it again" : "Before you try again"}</p>
+          {/* Small heading for the cue (after a good take; a rough one's is in the panel) */}
+          {verdict === "good" && <p className="mt-4 text-footnote text-ink-muted">{warmup ? "Before your response" : story ? "Before you tell it again" : "Before you try again"}</p>}
           {/* The cue */}
-          <p className="mt-1 font-display text-cue font-semibold">{change.retryCue}</p>
+          {verdict === "good" && <p className="mt-1 font-display text-cue font-semibold">{change.retryCue}</p>}
           {/* For a follow-up question or a reply to a story, a better one */}
           {session.feedback?.connection && (
             <>
@@ -684,7 +686,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
               <p className="mt-1 text-lede">{session.feedback.smallTalk.livelier.split(/(\[[^\]]+\])/).map((part, index) => (part.startsWith("[") ? <em key={index} className="text-accent">{part}</em> : <span key={index}>{part}</span>))}</p>
             </>
           )}
-        </div>
+        </div>}
         {/* A story's beats, as the coach heard them (decision 126) */}
         {story && <YourBeats session={session} />}
         {/* A story you'll need: what that kind needs, as the phone heard it (decision 152) */}
@@ -1267,7 +1269,7 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
         </section>
 
         {/* The verdict: green with your happy blob, or warm amber (never red) with your puzzled blob and Sage when the number went the other way */}
-        <aside aria-labelledby="retry-verdict" data-verdict={verdict} className={`relative flex flex-col gap-3.5 rounded-[26px] px-6 pt-6 pb-5 max-md:-mx-4 max-md:mt-16 max-md:rounded-b-none max-md:px-5 max-md:pb-8 motion-safe:max-md:animate-sheet md:max-w-110 md:flex-[1_1_340px] motion-safe:md:animate-slide-in ${verdict === "good" ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>
+        <aside aria-labelledby="retry-verdict" data-verdict={verdict} className={`relative flex flex-col gap-3.5 rounded-[26px] px-6 pt-6 pb-5 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:gap-2.5 max-md:rounded-b-none max-md:px-5 max-md:pt-5 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] max-md:border-t-2 max-md:border-rule motion-safe:max-md:animate-sheet md:max-w-110 md:flex-[1_1_340px] motion-safe:md:animate-slide-in ${verdict === "good" ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>
           {/* Your blob (and Sage, after a rough one), peeking over the sheet's edge on a phone */}
           <div className="flex items-end gap-3 max-md:absolute max-md:-top-16 max-md:right-5">
             {/* Your blob */}
@@ -1276,11 +1278,11 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
             {verdict === "rough" && <Cast who="sage" mood="encouraging" className="size-18 md:size-21" />}
           </div>
           {/* The headline */}
-          <h2 id="retry-verdict" className="font-display text-4xl leading-none font-semibold">{verdict === "good" ? "That landed!" : "Keep the cue."}</h2>
+          <h2 id="retry-verdict" className="font-display text-4xl leading-none font-semibold max-md:text-3xl">{verdict === "good" ? "That landed!" : "Keep the cue."}</h2>
           {/* One line: what worked, or the note */}
           <p className={`font-bold ${verdict === "rough" ? "" : "text-ink"} text-lg leading-snug`}>{line}</p>
           {/* A personal best: what it was, and before */}
-          <PersonalBest reaction={reaction} />
+          <div className="max-md:hidden"><PersonalBest reaction={reaction} /></div>
           {/* The chips: time spoken and pause words this time */}
           <ul aria-label="This try" className="flex flex-wrap gap-2">
             {/* Time spoken */}
@@ -1289,7 +1291,7 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
             {view.pauseWords && <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{pauseCount} pause {pauseCount === 1 ? "word" : "words"}</li>}
           </ul>
           {/* The one chunky button: the way on */}
-          <Link href={onward.href} data-action-band className={`${PRIMARY} mt-2 w-full max-md:fixed max-md:inset-x-4 max-md:bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] max-md:z-20 max-md:mt-0 max-md:w-auto`}>{onward.label}{!plan && <span className="sr-only">, {home.label.replace("Close, back to", "back to")}</span>}</Link>
+          <Link href={onward.href} data-action-band className={`${PRIMARY} mt-2 w-full max-md:mt-1`}>{onward.label}{!plan && <span className="sr-only">, {home.label.replace("Close, back to", "back to")}</span>}</Link>
           {/* The one text link: once more, compared with this try */}
           <Link href={onceMoreHref(retry, plan)} className={`${TEXT_LINK} self-center uppercase tracking-[.04em] ${verdict === "good" ? "text-accent-tint-ink" : "text-warm-ink"}`}>Try it once more</Link>
         </aside>
@@ -1479,7 +1481,7 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
   // Draw the page
   return (
     // Focus mode for a take (its bar, then two columns on a computer); the main navigation for a take that is not here; a voice drill's or a conversation's own page as before
-    <main id="main" data-area={loaded?.session ? "results" : undefined} className={(!loaded && loadError === null) || (loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation") ? `${PRACTICE_MAIN} max-md:pb-28` : "mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10"}>
+    <main id="main" data-area={loaded?.session ? "results" : undefined} className={(!loaded && loadError === null) || (loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation") ? `${PRACTICE_MAIN} max-md:pb-96` : "mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10"}>
       {/* Still reading: the bar and your blob waiting */}
       {!loaded && loadError === null && <SessionWaiting bare />}
       {/* Not on this device: the main navigation, then Sage says so, with the way to your takes (shared decision 1) */}

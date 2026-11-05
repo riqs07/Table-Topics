@@ -915,9 +915,9 @@ test("Deeper analysis: a part that fails leaves a quiet note on the take", async
 });
 
 // Plan a story for a while, tell it past the minimum, and stop; the take's page opens (decision 92)
-async function tellStory(page: Page): Promise<void> {
-  // Start the planning minute
-  await page.getByRole("button", { name: /Plan it/ }).click();
+async function tellStory(page: Page, fromSetUp = false): Promise<void> {
+  // Start the planning minute (a story started from its set-up is already planning: its button said "Start planning")
+  if (!fromSetUp) await page.getByRole("button", { name: /Plan it/ }).click();
   // Ready before the minute is up
   await page.getByRole("button", { name: /Ready/ }).click();
   // Recording is under way
@@ -970,7 +970,7 @@ test("Stories: pick a prompt, choose a template, tell it, then tell it again and
   // The template's beats show while planning
   await expect(page.getByRole("region", { name: "Your beats" })).toContainText("The result, with a number");
   // Plan and tell
-  await tellStory(page);
+  await tellStory(page, true);
   // The headline from the beats, and what worked
   await expect(page.getByRole("region", { name: "A closer look" }).getByRole("heading", { level: 3 }).first()).toHaveText("2 of 4 beats came through clearly.");
   // The coach's line and how it could sound
@@ -1020,7 +1020,7 @@ test("Stories you'll need: from Practice, tell a toast and see what a toast need
   // The telling page, told with the toast template
   await expect(page).toHaveURL(/mode=story&prompt=sp5\d&template=toast&length=short/);
   // Plan and tell
-  await tellStory(page);
+  await tellStory(page, true);
   // The result: what a toast needs, all three heard
   await expect(page.getByRole("region", { name: "What a toast needs" })).toBeVisible({ timeout: 15_000 });
   // (all passed)
@@ -1055,7 +1055,7 @@ test("Stories: tell a saved moment properly, and find it in Your stories", async
   // Start
   await page.getByRole("link", { name: /^Start/ }).click();
   // Plan and tell
-  await tellStory(page);
+  await tellStory(page, true);
   // The telling, with no coach and no rough checklist (decision 126)
   await expect(page.getByRole("region", { name: "A closer look" }).getByRole("heading", { level: 3 }).first()).toHaveText("Your story.");
   // To Your stories
@@ -1184,7 +1184,7 @@ test("Guided story: pick one, tell it, see what you added, then tell it again", 
   // The telling page, with the facts in view while planning
   await expect(page.getByRole("region", { name: "Your facts" })).toContainText("You got a hot dog.");
   // Plan and tell
-  await tellStory(page);
+  await tellStory(page, true);
   // What you added: all five heard
   await expect(page.getByRole("list", { name: "What you added" }).locator("[data-added=true]")).toHaveCount(5);
   // Every fact made it in

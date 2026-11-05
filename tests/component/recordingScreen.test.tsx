@@ -1293,6 +1293,20 @@ describe("RecordingScreen", () => {
     expect([!!(await screen.findByText("Take discarded.")), !!screen.getByRole("button", { name: "Undo" }), await repository.listSessions(), navigate.mock.calls.length]).toEqual([true, true, [], 0]);
   });
 
+  // A story started from its set-up begins its planning minute as it opens (no second start), and one opened any other way waits on its Plan it
+  it("begins planning at once when the set-up started it, and waits otherwise", async () => {
+    // From the set-up
+    draw({ mode: "story", promptId: "sp01", planNow: true });
+    // The planning minute, with Ready to start early, and no Plan it
+    const fromSetUp = [!!(await screen.findByRole("button", { name: /^Ready/ })), screen.queryByRole("button", { name: /Plan it/ })];
+    // Clear it away
+    cleanup();
+    // Opened from a link
+    draw({ mode: "story", promptId: "sp01" });
+    // Confirm the set-up's start went straight to planning, and a plain opening waits on Plan it
+    expect([...fromSetUp, !!(await screen.findByRole("button", { name: /Plan it/ })), screen.queryByRole("button", { name: /^Ready/ })]).toEqual([true, null, true, null]);
+  });
+
   // While a surprise question counts down, the cross leaves without speaking (as Esc does)
   it("keeps the cross during the countdown, leaving without speaking", async () => {
     // Draw a Table Topic
