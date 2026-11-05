@@ -14,9 +14,13 @@ import { Masthead } from "@/components/script/Masthead";
 // Load the page title
 import { PageTitle } from "@/components/script/PageTitle";
 // Load the button looks
-import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the shared text and card looks
-import { CARD, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
+import { BUBBLE, CARD, CHIP, LAB, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
+// Load the cast, the mode tiles and the check-in's tile (second design pass)
+import { Cast } from "@/components/scenes/Cast";
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { CHECK_IN_TILE } from "@/components/script/checkInTiles";
 // Load the page shell
 import { PAGE } from "@/components/script/layout";
 // Load the shared screen starting points
@@ -156,7 +160,7 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
           {/* While older takes are measured */}
           {measuring && <p role="status" className="mt-4 text-ink-muted">Measuring your earlier takes…</p>}
           {/* A failure, with the way forward */}
-          {error && <p role="alert" className="mt-4 max-w-[48ch]">The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
+          {error && <p role="alert" className={`mt-4 p-5 font-semibold ${CARD}`}>The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
           {/* The table, once loaded */}
           {loaded && today && <TakeTable sessionId={sessionId} loaded={loaded} now={today} />}
         </>
@@ -165,13 +169,15 @@ export function ProfileScreen({ sessionId = null, fetchFn, ...props }: ProfileSc
       {!sessionId && (
         <MeTop repo={repo} sessions={takes ?? loaded?.sessions ?? null} settings={settings} now={today}>
           {/* The profile's own heading */}
-          <h2 className={`${SECTION_HEADING} mt-4`}>Your speaking profile</h2>
+          <p className={`mt-6 ${LAB}`}>Measured from your takes</p>
+          {/* (the heading) */}
+          <h2 className={`${SECTION_HEADING} mt-1`}>Your speaking profile</h2>
           {/* What it compares */}
           <p className="mt-1 max-w-[56ch] font-semibold text-ink-muted">Your usual against your recent takes. Compared only with yourself.</p>
           {/* While older takes are measured */}
           {measuring && <p role="status" className="mt-4 text-ink-muted">Measuring your earlier takes…</p>}
           {/* A failure, with the way forward */}
-          {error && <p role="alert" className="mt-4 max-w-[48ch]">The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
+          {error && <p role="alert" className={`mt-4 p-5 font-semibold ${CARD}`}>The profile could not be loaded. The browser said: “{error}” Reload the page to try again.</p>}
           {/* The content, once loaded */}
           {loaded && today && <WholeProfile loaded={loaded} now={today} summaryNote={summaryNote} />}
         </MeTop>
@@ -202,18 +208,25 @@ function WholeProfile({ loaded, now, summaryNote }: { loaded: Loaded; now: Date;
       {/* How often the speaker's own call matched the measure, once there are enough rated takes (decision 116) */}
       <Calibration sessions={loaded.sessions} />
       {/* Nothing measured yet */}
-      {!family && <p className="mt-6 max-w-[48ch] text-lede">No takes measured yet. Record one in <Link href="/practice" className={TEXT_LINK} data-inline>Practice</Link> and its measures appear here.</p>}
+      {!family && (
+        <div className={`mt-6 flex items-center gap-4 p-5 ${CARD}`}>
+          {/* The blob, waiting */}
+          <Cast who="you" face="wonder" still className="size-14 flex-none" />
+          {/* What will appear */}
+          <p className="font-semibold">No takes measured yet. Record one in <Link href="/practice" className={TEXT_LINK} data-inline>Practice</Link> and its measures appear here.</p>
+        </div>
+      )}
       {/* The families, when there are several */}
       {profile.families.length > 1 && (
-        <div role="group" aria-label="Kind of practice" className="mt-6 flex flex-wrap gap-1 rounded-2xl bg-paper p-1 text-footnote">
-          {/* One button per family */}
-          {profile.families.map((item) => <button key={item.id} type="button" aria-pressed={item.id === familyId} onClick={() => setFamilyId(item.id)} className={`min-h-11 flex-1 rounded-xl px-3 ${PRESS} ${item.id === familyId ? "bg-fill font-semibold text-fill-ink" : "text-ink-muted hover:bg-card hover:text-ink"}`}>{item.name}</button>)}
+        <div role="group" aria-label="Kind of practice" className="mt-6 flex flex-wrap gap-2 text-footnote">
+          {/* One pill per family, as Your takes' filters */}
+          {profile.families.map((item) => <button key={item.id} type="button" aria-pressed={item.id === familyId} onClick={() => setFamilyId(item.id)} className={`min-h-11 rounded-full border-2 px-4.5 font-extrabold ${PRESS} ${item.id === familyId ? "border-fill bg-fill text-fill-ink shadow-chunky-pressed" : "border-rule bg-card text-ink shadow-ledge hover:border-ink-muted"}`}>{item.name}</button>)}
         </div>
       )}
       {/* The chosen family */}
       {family && <FamilyView family={family} profile={profile} />}
       {/* Every session, newest first, on its own page (reached from here, decision 109) */}
-      <p className="mt-6"><Link href="/history" className={TEXT_LINK}>Every session, in History</Link></p>
+      <p className="mt-6"><Link href="/history" className={SECONDARY}>Every session, in History</Link></p>
     </>
   );
 }
@@ -230,24 +243,28 @@ function CheckIns({ sessions }: { sessions: ReadonlyArray<SessionRecord> }) {
       {/* Heading */}
       <h2 id="check-ins" className={SECTION_HEADING}>Check-ins</h2>
       {/* The card */}
-      <div className={`mt-2 p-5 ${CARD}`}>
+      <div className={`mt-2 flex items-start gap-4 p-5 ${CARD}`}>
+        {/* The check-in's tile */}
+        <ModeTile {...CHECK_IN_TILE} tilt={-4} still className="size-14 flex-none md:size-16" />
+        {/* What it says */}
+        <div className="min-w-0 flex-1">
         {latest ? (
           <>
             {/* The latest, and how many */}
-            <p className={LABEL}>Latest · {checkIns.length === 1 ? "your first" : `${checkIns.length} so far`}</p>
+            <p className={LAB}>Latest · {checkIns.length === 1 ? "your first" : `${checkIns.length} so far`}</p>
             {/* Its day */}
             <p className="mt-1 font-display text-cue font-semibold">{dayWords(latest.day)}</p>
             {/* The days before, the latest six */}
             {checkIns.length > 1 && (
               <ul aria-label="Check-in days" className="mt-2 flex flex-wrap gap-1.5">
                 {/* One pill each */}
-                {checkIns.slice(-6).map((checkIn) => <li key={checkIn.id} className="rounded-full bg-paper px-3 py-1 text-footnote tabular-nums">{shortDay(checkIn.day)}</li>)}
+                {checkIns.slice(-6).map((checkIn) => <li key={checkIn.id} className={`${CHIP} tabular-nums`}>{shortDay(checkIn.day)}</li>)}
               </ul>
             )}
             {/* Compare, then every check-in */}
-            <p className="mt-2 flex flex-wrap gap-x-5">
+            <p className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
               {/* Compare (it needs two) */}
-              {checkIns.length >= 2 && <Link href="/check-in/compare" className={TEXT_LINK}>Compare first and latest</Link>}
+              {checkIns.length >= 2 && <Link href="/check-in/compare" className={SECONDARY}>Compare first and latest</Link>}
               {/* Every check-in */}
               <Link href="/check-in" className={TEXT_LINK}>All check-ins</Link>
             </p>
@@ -255,11 +272,12 @@ function CheckIns({ sessions }: { sessions: ReadonlyArray<SessionRecord> }) {
         ) : (
           <>
             {/* What it is */}
-            <p className="text-lede">About 6 minutes once a week: the same four parts, so you can hear how you have changed.</p>
+            <p className="font-semibold">About 6 minutes once a week: the same four parts, so you can hear how you have changed.</p>
             {/* Where to start */}
-            <p className="mt-2"><Link href="/check-in" className={TEXT_LINK}>Your first check-in</Link></p>
+            <p className="mt-3"><Link href="/check-in" className={SECONDARY}>Your first check-in</Link></p>
           </>
         )}
+        </div>
       </div>
     </section>
   );
@@ -459,9 +477,21 @@ function TakeTable({ sessionId, loaded, now }: { sessionId: string; loaded: Load
   // Its analysis
   const analysis = loaded.analyses.find((item) => item.sessionId === sessionId);
   // Not on this device
-  if (!session) return <p data-inline className="mt-6 text-lede text-ink-muted">This take is not on this device. <Link href="/history" className={TEXT_LINK}>Back to history</Link></p>;
+  if (!session) return (
+    <section aria-label="Not found" className={`mt-6 flex flex-col gap-4 p-5 ${CARD}`}>
+      {/* Sage, thinking, says so */}
+      <div className="flex items-end gap-3">
+        {/* The coach */}
+        <Cast who="sage" mood="thinking" className="size-16 flex-none md:size-18" />
+        {/* What happened */}
+        <p data-inline className={`${BUBBLE} mb-2`}>This take is not on this device.</p>
+      </div>
+      {/* The way on */}
+      <p><Link href="/history" className={SECONDARY}>Back to history</Link></p>
+    </section>
+  );
   // Not a kind that is measured
-  if (!analysis) return <p className="mt-6 text-lede text-ink-muted">This kind of practice is not measured.</p>;
+  if (!analysis) return <p className={`mt-6 p-5 font-semibold text-ink-muted ${CARD}`}>This kind of practice is not measured.</p>;
   // The rows
   const rows = takeMeasures(session, analysis, loaded.sessions, loaded.analyses);
   // Draw them

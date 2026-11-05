@@ -1,18 +1,24 @@
 "use client";
-// The weekly check-in itself (decision 100): the four parts in order, each started from here and coming back here when saved, any part skippable, and a finish screen once each part is done or skipped. It can be left and picked up again the same day
+// The weekly check-in itself (decision 100): the four parts in order, each started from here and coming back here when saved, any part skippable, and a finish screen once each part is done or skipped. It can be left and picked up again the same day. Drawn in focus mode after storyboard "Weekly check-in" (second design pass): the bar with the cross, Sage's line, the parts as picture cards with a tick or Next, one chunky Start
 
-// Load React's state and effect tools
-import { useEffect, useState } from "react";
+// Load React's state and effect tools, and the type for content passed in
+import { useEffect, useState, type ReactNode } from "react";
 // Load Next.js's link component
 import Link from "next/link";
+// Load the tick
+import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { Masthead } from "@/components/script/Masthead";
-import { PathMark } from "@/components/script/PathMark";
+import { DoneBurst } from "@/components/script/DoneBurst";
+import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
 import { Skeleton } from "@/components/script/Skeleton";
 // Load the shared button and card looks
-import { QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
-import { CARD } from "@/components/script/textStyles";
+import { PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { BUBBLE, CARD, CARD_LIST, CHIP, CHIP_GOOD, LAB } from "@/components/script/textStyles";
+// Load the cast, the mode tiles and each part's tile
+import { Cast, type SageMood } from "@/components/scenes/Cast";
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { CHECK_IN_TILES } from "@/components/script/checkInTiles";
 // Load the shared screen starting points and the tab title
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 import { usePageTitle } from "@/components/screens/usePageTitle";
@@ -123,31 +129,38 @@ export function CheckInRunScreen(props: ScreenProps) {
   // Whether today's is done
   const finished = isFinished(state?.current);
 
+  // How many parts are behind (done or skipped), for the bar
+  const behind = state?.current ? partStatuses(state.current).filter((item) => item.status !== "open").length : 0;
+  // The bar's label: which part is next, or done
+  const barLabel = finished ? "Weekly check-in · done" : upNext ? `Weekly check-in · part ${CHECK_IN_PARTS.indexOf(upNext) + 1} of ${CHECK_IN_PARTS.length}` : "Weekly check-in";
+
   // Draw the page
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-40 md:px-14 md:pt-10 md:pb-10 md:[&>:not(header,nav,[data-action-band])]:max-w-2xl">
-      {/* The title and a way out (the tabs stay hidden while practising) */}
-      <Masthead title="Check-in" nav={false} close={{ href: "/", label: "Close, back to Today" }} />
+    <main id="main" className={`${PRACTICE_NARROW} pb-40 md:pb-16`}>
+      {/* Focus mode: the cross back to Today, how far through, and the step (the tabs stay hidden while practising) */}
+      <PracticeBar close={{ href: "/", label: "Close, back to Today" }} progress={state?.open ? (finished ? 1 : behind / CHECK_IN_PARTS.length) : undefined} label={barLabel} />
       {/* Until loaded, a quiet placeholder */}
       {!data && !problem && <Skeleton blocks={["h-24", "h-72"]} />}
-      {/* A failure: why, and the way forward */}
+      {/* A failure: Sage says so, why, and the way forward */}
       {problem !== null && (
-        <section role="alert" className="mt-8 max-w-[48ch] text-lede">
-          {/* What happened */}
-          <p>Your check-in could not be loaded or saved. The browser said: “{problem}”</p>
+        <section role="alert" className="mt-8 flex flex-col gap-5">
+          {/* Sage, thinking, with what happened */}
+          <SageSays mood="thinking" heading={!state}>Your check-in could not be loaded or saved.</SageSays>
+          {/* The browser's reason, on a card */}
+          <p className={`p-5 font-semibold ${CARD}`}><span className={`block ${LAB}`}>What the browser said</span>“{problem}”</p>
           {/* Try again */}
-          <p className="mt-4"><button type="button" onClick={() => { setProblem(null); setAttempt((count) => count + 1); }} className={SECONDARY}>Try again</button></p>
+          <p><button type="button" onClick={() => { setProblem(null); setAttempt((count) => count + 1); }} className={PRIMARY}>Try again</button></p>
         </section>
       )}
       {/* Not a check-in day: when the next one is */}
       {state && !state.open && (
-        <section className="mt-8">
+        <section className="mt-8 flex flex-col gap-5">
           {/* Headline */}
           <h1 className="font-display text-statement font-semibold">Not a check-in day.</h1>
-          {/* When */}
-          <p className="mt-3 max-w-[48ch] text-lede">{state.next ? `Your next check-in is on ${state.next}.` : "Your next check-in comes soon."}</p>
+          {/* Sage says when */}
+          <SageSays mood="calm">{state.next ? `Your next check-in is on ${state.next}.` : "Your next check-in comes soon."}</SageSays>
           {/* The check-ins so far */}
-          <p className="mt-4"><Link href="/check-in" className={TEXT_LINK}>See your check-ins</Link></p>
+          <p><Link href="/check-in" className={SECONDARY}>See your check-ins</Link></p>
         </section>
       )}
       {/* Under way: the parts, and the next one */}
@@ -155,30 +168,39 @@ export function CheckInRunScreen(props: ScreenProps) {
         <>
           {/* Headline */}
           <h1 className="mt-6 font-display text-statement font-semibold">{state.week === 1 ? "Your first check-in." : `Check-in ${state.week}.`}</h1>
-          {/* What it is */}
-          <p className="mt-2 max-w-[48ch] text-ink-muted">{state.week === 1 ? `About ${CHECK_IN_MINUTES} minutes. The same four parts every week, so you can hear the change.` : `About ${CHECK_IN_MINUTES} minutes, the same four parts as last time.`}</p>
-          {/* The four parts */}
-          <ol aria-label="The four parts" className={`mt-5 flex flex-col gap-1 p-3 ${CARD}`}>
+          {/* Sage says what it is */}
+          <SageSays mood="encouraging" className="mt-4">{state.week === 1 ? `About ${CHECK_IN_MINUTES} minutes. The same four parts every week, so you can hear the change.` : `About ${CHECK_IN_MINUTES} minutes, the same four parts as last time.`}</SageSays>
+          {/* The four parts, each a picture card */}
+          <ol aria-label="The four parts" className="mt-5 flex flex-col gap-3">
             {/* Each part */}
-            {partStatuses(state.current).map((item, index) => (
-              // One part: its mark, name and how it stands
-              <li key={item.part} data-part={item.part} data-status={item.status} className={`flex items-center gap-3 rounded-2xl px-2 py-2 ${item.part === upNext ? "bg-warm-tint" : ""}`}>
-                {/* Done, next or still to come */}
-                <PathMark mark={item.status === "done" ? "done" : item.part === upNext ? "next" : "open"} number={index + 1} />
-                {/* Its name and what it asks */}
-                <span className="min-w-0 flex-1">
-                  {/* Name */}
-                  <span className={`block ${item.part === upNext ? "font-semibold text-warm-ink" : ""}`}>{CHECK_IN_PART_INFO[item.part].name}</span>
-                  {/* How it stands: skipped, its length, or what it asks */}
-                  <span className="block text-footnote text-ink-muted">{item.status === "skipped" ? "Skipped" : item.status === "done" ? `Done · ${formatClock(state.current?.takes[item.part]?.durationSec ?? 0)}` : CHECK_IN_PART_INFO[item.part].what}</span>
-                </span>
-              </li>
-            ))}
+            {partStatuses(state.current).map((item) => {
+              // Whether it is the one waiting
+              const next = item.part === upNext;
+              // Its tile
+              const tile = CHECK_IN_TILES[item.part];
+              // One part: its tile, name and how it stands, then a tick or "Next"
+              return (
+                <li key={item.part} data-part={item.part} data-status={item.status} className={`flex items-center gap-4 rounded-[22px] border-2 bg-card px-3.5 py-3 ${next ? "border-art-sun shadow-next" : "border-rule shadow-card"}`}>
+                  {/* The tile, quieter once behind */}
+                  <span className={`flex flex-none ${item.status === "open" ? "" : "opacity-60"}`}><ModeTile ground={tile.ground} prop={tile.prop} face={item.status === "done" ? "happy" : tile.face} tilt={-4} still={!next} className="size-14" /></span>
+                  {/* Its name and what it asks */}
+                  <span className="min-w-0 flex-1">
+                    {/* Name */}
+                    <span className="block font-display text-lg leading-tight font-semibold">{CHECK_IN_PART_INFO[item.part].name}</span>
+                    {/* How it stands: skipped, its length, or what it asks */}
+                    <span className="block text-sm font-bold text-ink-muted">{item.status === "skipped" ? "Skipped" : item.status === "done" ? `Done · ${formatClock(state.current?.takes[item.part]?.durationSec ?? 0)}` : CHECK_IN_PART_INFO[item.part].what}</span>
+                  </span>
+                  {/* A tick once done, "Next" on the one waiting */}
+                  {item.status === "done" && <span aria-hidden="true" className="flex size-9 flex-none items-center justify-center rounded-full bg-fill text-fill-ink shadow-chunky-pressed"><CheckIcon weight="bold" className="size-5" /></span>}
+                  {next && <span className={`${CHIP_GOOD} flex-none uppercase`}>Next</span>}
+                </li>
+              );
+            })}
           </ol>
           {/* The next part: what it asks, and a way to skip it */}
-          <section aria-label="Next part" className="mt-6">
+          <section aria-label="Next part" className={`mt-5 p-5 ${CARD}`}>
             {/* Which part */}
-            <p className="text-footnote text-ink-muted">Part {CHECK_IN_PARTS.indexOf(upNext) + 1} of {CHECK_IN_PARTS.length}</p>
+            <p className={LAB}>Part {CHECK_IN_PARTS.indexOf(upNext) + 1} of {CHECK_IN_PARTS.length}</p>
             {/* What it asks, or (for the surprise question) that it stays hidden */}
             <p className="mt-1 max-w-[40ch] font-display text-cue font-semibold">{partPrompt(upNext, state.week).text ?? "A question you’ll see when you start."}</p>
             {/* Skip it, or stop for now */}
@@ -201,30 +223,49 @@ export function CheckInRunScreen(props: ScreenProps) {
   );
 }
 
-// The finish screen: each part's length, the way to compare, and the next check-in day
+// Sage with a line in a speech bubble (storyboard "Weekly check-in")
+function SageSays({ mood, children, className = "", heading = false }: { mood: SageMood; children: ReactNode; className?: string; heading?: boolean }) {
+  // The coach and the bubble, side by side
+  return (
+    <div className={`flex items-end gap-3 ${className}`.trim()}>
+      {/* The coach */}
+      <Cast who="sage" mood={mood} className="size-16 flex-none md:size-20" />
+      {/* The line: the page's heading when nothing else on the page is (a failure before anything loaded) */}
+      {heading ? <h1 className={`${BUBBLE} mb-2 max-w-[44ch] font-display text-xl font-semibold`}>{children}</h1> : <p className={`${BUBBLE} mb-2 max-w-[44ch]`}>{children}</p>}
+    </div>
+  );
+}
+
+// The finish screen (extrapolated from storyboard "Day done"): the blob celebrating, each part's length, the way to compare, and the next check-in day
 function Finished({ state, current }: { state: RunState; current: CheckIn }) {
   // Whether anything was recorded (every part could have been skipped)
   const recorded = Object.keys(current.takes).length > 0;
   // The page
   return (
-    <section aria-label="Check-in done" className="mt-6 flex flex-1 flex-col">
+    <section aria-label="Check-in done" className="mt-2 flex flex-1 flex-col">
+      {/* The blob, pleased, once something was recorded */}
+      {recorded ? <DoneBurst celebrate={false} /> : <Cast who="you" face="ready" className="mx-auto mt-6 size-32" />}
       {/* Headline */}
-      <h1 className="font-display text-statement font-semibold motion-safe:animate-rise">{state.week === 1 && recorded ? "Your starting point is saved." : "Check-in done."}</h1>
+      <h1 className="text-center font-display text-statement font-semibold motion-safe:animate-rise">{state.week === 1 && recorded ? "Your starting point is saved." : "Check-in done."}</h1>
       {/* What happens next */}
-      <p className="mt-2 max-w-[48ch] text-lede">{!recorded ? "Every part was skipped this time." : state.first ? "Hear it beside where you started." : "Next week you’ll do the same four parts and hear the difference."}</p>
+      <p className="mx-auto mt-2 max-w-[44ch] text-center font-bold text-ink-muted">{!recorded ? "Every part was skipped this time." : state.first ? "Hear it beside where you started." : "Next week you’ll do the same four parts and hear the difference."}</p>
       {/* Each part, linking to its take */}
-      <ul aria-label="Your parts" className={`mt-5 divide-y divide-rule px-4 ${CARD}`}>
+      <ul aria-label="Your parts" className={`mt-6 ${CARD_LIST}`}>
         {/* Each part */}
         {CHECK_IN_PARTS.map((part) => {
           // Its take, if any
           const take = current.takes[part];
+          // Its tile
+          const tile = CHECK_IN_TILES[part];
           // One row
           return (
-            <li key={part} className="flex min-h-14 items-center justify-between gap-3 py-2">
+            <li key={part} className="flex min-h-16 items-center gap-3.5 py-2.5">
+              {/* Its tile */}
+              <span className={`flex flex-none ${take ? "" : "opacity-60"}`}><ModeTile ground={tile.ground} prop={tile.prop} face={take ? "happy" : tile.face} tilt={-4} still className="size-11" /></span>
               {/* Its name */}
-              <span>{CHECK_IN_PART_INFO[part].name}</span>
+              <span className="min-w-0 flex-1 font-display text-lg font-semibold">{CHECK_IN_PART_INFO[part].name}</span>
               {/* Its length, linking to the take, or skipped */}
-              {take ? <Link href={`/sessions?id=${encodeURIComponent(take.id)}`} className={TEXT_LINK}>{formatClock(take.durationSec)}</Link> : <span className="text-footnote text-ink-muted">Skipped</span>}
+              {take ? <Link href={`/sessions?id=${encodeURIComponent(take.id)}`} className={TEXT_LINK}>{formatClock(take.durationSec)}</Link> : <span className={CHIP}>Skipped</span>}
             </li>
           );
         })}
@@ -239,7 +280,7 @@ function Finished({ state, current }: { state: RunState; current: CheckIn }) {
         </p>
       )}
       {/* The next check-in day */}
-      {state.next && <p className="mt-5 text-ink-muted">Next check-in: {state.next}.</p>}
+      {state.next && <p className="mt-5 font-bold text-ink-muted">Next check-in: {state.next}.</p>}
       {/* Push the action down */}
       <div className="flex-1" />
       {/* Back to Today */}

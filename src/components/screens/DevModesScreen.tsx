@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Masthead } from "@/components/script/Masthead";
 import { CheckRow } from "@/components/script/CheckRow";
 // Load the shared looks
-import { CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, CARD_LIST, CHIP, CHIP_GOOD, LAB, SECTION_HEADING } from "@/components/script/textStyles";
 import { PAGE } from "@/components/script/layout";
 // Load the never-firing subscription used to tell the browser apart from the server
 import { subscribeToNothing } from "@/components/screens/screenBasics";
@@ -38,13 +38,13 @@ export function DevModesScreen() {
       {/* Title and a way back to Settings */}
       <Masthead title="All modes" nav={false} close={{ href: "/settings", label: "Close, back to Settings" }} />
       {/* What this page is */}
-      <p className="mt-6 text-footnote font-semibold text-accent">For development</p>
+      <p className={`mt-6 ${LAB}`}>For development</p>
       {/* Heading */}
-      <h1 className="mt-1 font-display text-statement">Every way to practise</h1>
+      <h1 className="mt-1 font-display text-statement font-semibold">Every way to practise</h1>
       {/* The counts */}
-      <p className="mt-2 max-w-[52ch] text-lede text-ink-muted">{entries.length} in all: {entries.filter((entry) => entry.main).length} on Practice’s main list, {entries.filter((entry) => !entry.main).length} extended. Extended ones will move into lessons over time.</p>
+      <p className="mt-2 max-w-[52ch] font-bold text-ink-muted">{entries.length} in all: {entries.filter((entry) => entry.main).length} on Practice’s main list, {entries.filter((entry) => !entry.main).length} extended. Extended ones will move into lessons over time.</p>
       {/* The link in Settings */}
-      <div className="mt-4">
+      <div className={`mt-4 px-5 py-3 ${CARD}`}>
         <CheckRow
           checked={linked}
           onChange={(event) => {
@@ -76,7 +76,7 @@ export function DevModesScreen() {
                     {/* Name */}
                     <span className="font-display text-xl font-semibold leading-tight">{entry.name}</span>
                     {/* Tag */}
-                    <span className={`rounded-full px-2 py-0.5 text-footnote ${entry.main ? "bg-fill text-fill-ink" : "bg-paper text-ink-muted"}`}>{entry.main ? "On Practice" : "Extended"}</span>
+                    <span className={entry.main ? CHIP_GOOD : CHIP}>{entry.main ? "On Practice" : "Extended"}</span>
                     {/* Count */}
                     {entry.count && <span className="text-footnote text-ink-muted">{entry.count}</span>}
                   </span>

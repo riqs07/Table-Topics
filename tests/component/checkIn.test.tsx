@@ -264,6 +264,31 @@ describe("the comparison", () => {
     expect([card.closest("section[data-part]")?.getAttribute("data-part"), card.querySelectorAll("[data-under]").length > 0]).toEqual(["read", true]);
   });
 
+  // Pause words switched off in Settings stay off in the then-and-now chart too (decision 79)
+  it("keeps pause words out of the then-and-now chart when they are switched off", async () => {
+    // The passage's first sentence, read the same way twice
+    const said = makeTake([{ words: "Every Saturday I take the same walk to the market.".split(" ").map((text) => ({ text, step: 0 })), pauseAfter: 0.5 }]);
+    // A tiny copy of each take, so the ribbons draw: loud throughout, a pause word a third of the way in
+    const fingerprint = { v: 1 as const, bins: Array.from({ length: 32 }, () => 5), ums: [10] };
+    // An empty repository
+    const repository = createRepository(new MemoryStore());
+    // Pause-word counts switched off
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), showPauseWords: false });
+    // Both check-ins' readings
+    for (const [day, week] of [[new Date(2026, 9, 6), 1], [NOW, 2]] as const) {
+      // The take's id
+      const id = `${checkInId(day)}-read`;
+      // Saved with its readings and its tiny copy
+      await repository.saveSession(makeSession({ id, createdAt: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9).toISOString(), mode: "read", promptId: "ci-read", durationSec: said.durationSec, transcript: said.transcript, marker: true, checkIn: { id: checkInId(day), week, part: "read" }, pitch: said.pitch, loudness: said.loudness, spokenTimes: said.spokenTimes, scriptTimes: said.spokenTimes, fingerprint }));
+    }
+    // Drawn
+    render(<CheckInCompareScreen repository={repository} now={NOW} />);
+    // The then-and-now chart, once both takes are read
+    const chart = await screen.findByRole("img", { name: /^Then, .*drawn grey/ });
+    // Confirm the ribbon is named without its pause words, and no pause-word rate is shown
+    expect([chart.getAttribute("aria-label")?.includes("your voice as a ribbon"), !!screen.queryByText("pause words a minute this try")]).toEqual([true, false]);
+  });
+
   // A/B marks the side playing
   it("switches between then and now", async () => {
     // Two check-ins with readings

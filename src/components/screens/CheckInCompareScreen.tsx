@@ -1,5 +1,5 @@
 "use client";
-// Two weekly check-ins side by side (decision 100): choose which two (first and latest by default), then for each part both recordings with A/B play and a few plain lines on what changed, with every measure folded under "All numbers" (decision 103). A recording that is not on this device (deleted, or imported without audio) is said plainly and the numbers still show
+// Two weekly check-ins side by side (decision 100): choose which two (first and latest by default), then for each part both recordings with A/B play and a few plain lines on what changed, with every measure folded under "All numbers" (decision 103). A recording that is not on this device (deleted, or imported without audio) is said plainly and the numbers still show. Drawn after storyboard "Then and now" (second design pass): the blob then and now over the title, each part a card with its tile, both players on soft cards, the changes as ruled rows, and Sage's closing line
 
 // Load React's state, effect and reference tools
 import { useEffect, useRef, useState } from "react";
@@ -9,12 +9,18 @@ import Link from "next/link";
 import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the script-page building blocks
 import { Masthead } from "@/components/script/Masthead";
-import { PageTitle } from "@/components/script/PageTitle";
+import { PictureTitle } from "@/components/script/PictureTitle";
 import { Player } from "@/components/script/Player";
 import { Skeleton } from "@/components/script/Skeleton";
 // Load the shared looks
-import { PRESS, TEXT_LINK } from "@/components/script/Buttons";
-import { CARD, LABEL, SECTION_HEADING } from "@/components/script/textStyles";
+import { PRESS, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { BUBBLE, CARD, LAB } from "@/components/script/textStyles";
+// Load the cast, the mode tiles and each part's tile
+import { Cast } from "@/components/scenes/Cast";
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { CHECK_IN_TILES } from "@/components/script/checkInTiles";
+// Load the green small-capitals label, for the "now" side
+import { STEP_LABEL } from "@/components/script/PracticeBar";
 import { PAGE } from "@/components/script/layout";
 // Load the shared screen starting points, the tab title and the audio loader
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -140,8 +146,10 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
     };
   }, [repo, ids]);
 
+  // Whether pause words are shown (decision 79), worked out once for the comparison and the then-and-now charts
+  const pauseWords = data ? pauseWordsShown(data.settings) : true;
   // The comparison, once everything is in
-  const comparison = pair && analyses && data ? compareCheckIns(pair.a, pair.b, analyses, { pauseWords: pauseWordsShown(data.settings), history: recordedCheckIns(data.checkIns) }) : null;
+  const comparison = pair && analyses && data ? compareCheckIns(pair.a, pair.b, analyses, { pauseWords, history: recordedCheckIns(data.checkIns) }) : null;
   // The check-ins with takes, oldest first
   const recorded = data ? recordedCheckIns(data.checkIns) : [];
 
@@ -153,19 +161,38 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
       {/* The way back */}
       <p className="mt-2"><Link href="/check-in" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Your check-ins</Link></p>
       {/* The page's name */}
-      <PageTitle title="How far you’ve come">{comparison ? `${shortDay(comparison.a.day)} and ${shortDay(comparison.b.day)}, ${comparison.days} days apart.` : null}</PageTitle>
+      <PictureTitle title="How far you’ve come" picture={<span className="flex items-end"><Cast who="you" face="wonder" still className="size-10 md:size-14" /><Cast who="you" face="happy" className="-ml-2 size-14 md:size-22" /></span>}>{comparison ? `${shortDay(comparison.a.day)} and ${shortDay(comparison.b.day)}, ${comparison.days} days apart.` : "Then and now, part by part."}</PictureTitle>
       {/* Until loaded */}
       {!problem && (!data || (pair && !analyses)) && <Skeleton blocks={["h-16", "h-72"]} />}
       {/* A failure */}
-      {problem !== null && <p role="alert" className="mt-6 max-w-[48ch]">The check-ins could not be loaded. The browser said: “{problem}” Reload the page to try again.</p>}
-      {/* Fewer than two check-ins */}
+      {problem !== null && <p role="alert" className={`mt-6 p-5 font-semibold ${CARD}`}><span className={`block ${LAB}`}>Not loaded</span>The check-ins could not be loaded. The browser said: “{problem}” Reload the page to try again.</p>}
+      {/* Fewer than two check-ins: Sage says what it needs, and the way there */}
       {data && !pair && (
-        <p className="mt-6 max-w-[48ch] text-lede">Comparing needs two check-ins. {recorded.length === 0 ? "Do your first one to set your starting point." : "Your next one will sit beside this one."} <Link href="/check-in" className={TEXT_LINK}>See your check-ins</Link></p>
+        <section aria-label="Nothing to compare yet" className={`mt-6 flex flex-col gap-4 p-5 ${CARD}`}>
+          {/* Sage and the line */}
+          <div className="flex items-end gap-3">
+            {/* The coach */}
+            <Cast who="sage" mood="encouraging" className="size-16 flex-none md:size-18" />
+            {/* What comparing needs */}
+            <p className={`${BUBBLE} mb-2 max-w-[44ch]`}>Comparing needs two check-ins. {recorded.length === 0 ? "Do your first one to set your starting point." : "Your next one will sit beside this one."}</p>
+          </div>
+          {/* The way there */}
+          <p><Link href="/check-in" className={SECONDARY}>See your check-ins</Link></p>
+        </section>
       )}
       {/* Which two */}
       {pair && recorded.length > 2 && <PairChooser checkIns={recorded} pair={pair} onChoose={setChosen} />}
       {/* Each part */}
-      {comparison && comparison.parts.map((part) => <PartSection key={part.part} repo={repo} comparison={comparison} part={part} />)}
+      {comparison && comparison.parts.map((part) => <PartSection key={part.part} repo={repo} comparison={comparison} part={part} pauseWords={pauseWords} />)}
+      {/* Sage's closing line, with the real gap in days (storyboard "Then and now") */}
+      {comparison && (
+        <div className="mt-6 flex items-end gap-3">
+          {/* The coach, proud */}
+          <Cast who="sage" mood="proud" className="size-16 flex-none md:size-18" />
+          {/* The line */}
+          <p className={`${BUBBLE} mb-2 max-w-[44ch]`}>Hear the change? That’s {comparison.days} days of practice.</p>
+        </div>
+      )}
     </main>
   );
 }
@@ -182,22 +209,22 @@ function PairChooser({ checkIns, pair, onChoose }: { checkIns: ReadonlyArray<Che
       {/* Quick choices */}
       <div role="group" aria-label="Quick choices" className="flex flex-wrap gap-2">
         {/* First and latest */}
-        <button type="button" aria-pressed={pair.a.id === checkIns[0]!.id && pair.b.id === latest.id} onClick={() => onChoose({ a: checkIns[0]!.id, b: latest.id })} className={`min-h-11 rounded-full px-4 ${PRESS} ${pair.a.id === checkIns[0]!.id && pair.b.id === latest.id ? "bg-fill font-semibold text-fill-ink" : "bg-paper text-ink-muted hover:text-ink"}`}>First and latest</button>
+        <button type="button" aria-pressed={pair.a.id === checkIns[0]!.id && pair.b.id === latest.id} onClick={() => onChoose({ a: checkIns[0]!.id, b: latest.id })} className={pill(pair.a.id === checkIns[0]!.id && pair.b.id === latest.id)}>First and latest</button>
         {/* Last week and this week */}
-        <button type="button" aria-pressed={pair.a.id === previous.id && pair.b.id === latest.id} onClick={() => onChoose({ a: previous.id, b: latest.id })} className={`min-h-11 rounded-full px-4 ${PRESS} ${pair.a.id === previous.id && pair.b.id === latest.id ? "bg-fill font-semibold text-fill-ink" : "bg-paper text-ink-muted hover:text-ink"}`}>Last two</button>
+        <button type="button" aria-pressed={pair.a.id === previous.id && pair.b.id === latest.id} onClick={() => onChoose({ a: previous.id, b: latest.id })} className={pill(pair.a.id === previous.id && pair.b.id === latest.id)}>Last two</button>
       </div>
       {/* Any two */}
-      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-footnote">
+      <div className="mt-3 flex flex-wrap gap-3 text-footnote font-bold">
         {/* Then */}
-        <label className="flex items-center gap-2">Then
-          <select value={pair.a.id} onChange={(event) => onChoose({ a: event.target.value, b: pair.b.id })} className="min-h-11 border-b border-ink bg-transparent">
+        <label className={`flex items-center gap-2 py-1 pr-2 pl-4 ${CARD}`}>Then
+          <select value={pair.a.id} onChange={(event) => onChoose({ a: event.target.value, b: pair.b.id })} className="min-h-11 rounded-xl bg-paper px-2 font-bold">
             {/* Each check-in */}
             {checkIns.map((checkIn) => <option key={checkIn.id} value={checkIn.id}>{name(checkIn)}</option>)}
           </select>
         </label>
         {/* Now */}
-        <label className="flex items-center gap-2">Now
-          <select value={pair.b.id} onChange={(event) => onChoose({ a: pair.a.id, b: event.target.value })} className="min-h-11 border-b border-ink bg-transparent">
+        <label className={`flex items-center gap-2 py-1 pr-2 pl-4 ${CARD}`}>Now
+          <select value={pair.b.id} onChange={(event) => onChoose({ a: pair.a.id, b: event.target.value })} className="min-h-11 rounded-xl bg-paper px-2 font-bold">
             {/* Each check-in */}
             {checkIns.map((checkIn) => <option key={checkIn.id} value={checkIn.id}>{name(checkIn)}</option>)}
           </select>
@@ -205,6 +232,12 @@ function PairChooser({ checkIns, pair, onChoose }: { checkIns: ReadonlyArray<Che
       </div>
     </section>
   );
+}
+
+// A choice pill: filled green when chosen, white with an edge otherwise (as Your takes' filters)
+function pill(chosen: boolean): string {
+  // The pill's look
+  return `min-h-11 rounded-full border-2 px-4 font-extrabold ${PRESS} ${chosen ? "border-fill bg-fill text-fill-ink" : "border-rule bg-card text-ink hover:border-ink-muted"}`;
 }
 
 // What a take asked, for the parts that change each week (the story and the surprise question)
@@ -220,7 +253,7 @@ function askedText(session: SessionRecord | null): string | null {
 }
 
 // One part: both takes with A/B play, then what changed and the table
-function PartSection({ repo, comparison, part }: { repo: Repository; comparison: CheckInComparison; part: PartComparison }) {
+function PartSection({ repo, comparison, part, pauseWords }: { repo: Repository; comparison: CheckInComparison; part: PartComparison; pauseWords: boolean }) {
   // The two audio elements, for A/B play
   const players = useRef<{ a: HTMLAudioElement | null; b: HTMLAudioElement | null }>({ a: null, b: null });
   // Which one A/B play is on
@@ -252,9 +285,9 @@ function PartSection({ repo, comparison, part }: { repo: Repository; comparison:
   return (
     <section aria-labelledby={`part-${part.part}`} data-part={part.part} className={`mt-6 p-5 ${CARD}`}>
       {/* The part's name */}
-      <h2 id={`part-${part.part}`} className={SECTION_HEADING}>{partName(part.part)}</h2>
+      <h2 id={`part-${part.part}`} className="flex items-center gap-3 font-display text-2xl leading-tight font-semibold"><ModeTile {...CHECK_IN_TILES[part.part]} tilt={-4} still className="size-12" />{partName(part.part)}</h2>
       {/* The two takes: stacked on a phone, side by side on a computer */}
-      <div className="mt-3 grid gap-4 md:grid-cols-2">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         {/* Then and now */}
         {(["a", "b"] as const).map((which) => {
           // This side's take, check-in and audio address
@@ -263,9 +296,9 @@ function PartSection({ repo, comparison, part }: { repo: Repository; comparison:
           const asked = askedText(take);
           // One side
           return (
-            <div key={which} data-side={which}>
+            <div key={which} data-side={which} className={`rounded-[18px] p-3.5 ${which === "a" ? "bg-paper" : "bg-accent-tint"}`}>
               {/* Which one, with its time */}
-              <p className={LABEL}>{which === "a" ? "Then" : "Now"} · {shortDay(checkIn.day)}{take ? ` · ${formatClock(take.durationSec)}${part.time[which] ? `, ${TIME_WORDS[part.time[which]!]}` : ""}` : ""}</p>
+              <p className={which === "a" ? LAB : STEP_LABEL}>{which === "a" ? "Then" : "Now"} · {shortDay(checkIn.day)}{take ? ` · ${formatClock(take.durationSec)}${part.time[which] ? `, ${TIME_WORDS[part.time[which]!]}` : ""}` : ""}</p>
               {/* What was asked, when it differs week to week */}
               {asked && <p className="mt-1 text-footnote">{asked}</p>}
               {/* The player, or why there is none */}
@@ -282,19 +315,19 @@ function PartSection({ repo, comparison, part }: { repo: Repository; comparison:
       {urlA && urlB && (
         <div role="group" aria-label={`Switch between then and now, ${partName(part.part)}`} className="mt-3 flex items-center gap-2">
           {/* What it does */}
-          <span className="text-footnote text-ink-muted">A/B</span>
+          <span className={LAB}>A/B</span>
           {/* Then */}
-          <button type="button" aria-pressed={side === "a"} onClick={() => play("a")} className={`min-h-11 min-w-11 rounded-full px-4 ${PRESS} ${side === "a" ? "bg-fill font-semibold text-fill-ink" : "bg-paper text-ink"}`}>Then</button>
+          <button type="button" aria-pressed={side === "a"} onClick={() => play("a")} className={`min-w-11 ${pill(side === "a")}`}>Then</button>
           {/* Now */}
-          <button type="button" aria-pressed={side === "b"} onClick={() => play("b")} className={`min-h-11 min-w-11 rounded-full px-4 ${PRESS} ${side === "b" ? "bg-fill font-semibold text-fill-ink" : "bg-paper text-ink"}`}>Now</button>
+          <button type="button" aria-pressed={side === "b"} onClick={() => play("b")} className={`min-w-11 ${pill(side === "b")}`}>Now</button>
         </div>
       )}
       {/* The same words both times: then's pitch dashed under now's, phrase by phrase (decision 111) */}
-      {part.a && part.b && part.a.promptId === part.b.promptId && <LastVsThisLoader repo={repo} beforeId={part.a.id} afterId={part.b.id} kind="Then and now" names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} plays={{ before: "Play then", after: "Play now" }} />}
+      {part.a && part.b && part.a.promptId === part.b.promptId && <LastVsThisLoader repo={repo} beforeId={part.a.id} afterId={part.b.id} kind="Then and now" names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} plays={{ before: "Play then", after: "Play now" }} pauseWords={pauseWords} />}
       {/* What changed, in plain lines */}
-      <ul aria-label={`What changed, ${partName(part.part)}`} className="mt-4 list-disc space-y-1 pl-5">
+      <ul aria-label={`What changed, ${partName(part.part)}`} className="mt-4 divide-y-2 divide-rule rounded-[18px] border-2 border-rule px-4">
         {/* Each line */}
-        {part.lines.map((line) => <li key={line}>{line}</li>)}
+        {part.lines.map((line) => <li key={line} className="py-2.5 font-bold">{line}</li>)}
       </ul>
       {/* Every measure, folded away under "All numbers", when both takes are here */}
       {part.rows.length > 0 && (
