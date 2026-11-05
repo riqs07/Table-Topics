@@ -31,12 +31,14 @@ export interface Way {
   icon: Icon;
   // Its kind's scene, which picks its tile
   scene?: SceneName;
+  // Its own tile, for a way with no scene of its own (second design pass, so every way in a list has a tile)
+  look?: ModeTileLook;
 }
 
 // The tile for a way: its kind's, or a microphone on sky
 export function lookFor(way: Way): ModeTileLook {
   // Its kind's tile, or the default
-  return way.scene ? SCENE_TILES[way.scene] : { ground: "sky", prop: "mic", face: "ready" };
+  return way.scene ? SCENE_TILES[way.scene] : (way.look ?? { ground: "sky", prop: "mic", face: "ready" });
 }
 
 // The quick start's Go, drawn like a white chunky button on the band
@@ -104,7 +106,7 @@ export function PictureCard({ href, name, line, more, look, tilt = -4, chip, del
 // One way as a row in a job's list: its tile (or icon), the name and the line, the whole row a link (quiet and not a link while it cannot start)
 export function WayRow({ way }: { way: Way }) {
   // Its tile, when its kind has one
-  const look = way.scene ? SCENE_TILES[way.scene] : null;
+  const look = way.scene ? SCENE_TILES[way.scene] : (way.look ?? null);
   // The words, shared by both forms
   const words = (
     <>
@@ -134,5 +136,31 @@ export function WayRow({ way }: { way: Way }) {
     </Link>
   ) : (
     <div className="flex min-h-18 items-center gap-4 py-3 text-ink-muted">{words}</div>
+  );
+}
+
+// One way as a tile card in a grid (second design pass, desk-Practice's role-play cards at full width): its tile beside the name and the line, the whole card a link (a quiet card while it cannot start)
+export function WayTileCard({ way, tilt = -4 }: { way: Way; tilt?: number }) {
+  // Its tile
+  const look = lookFor(way);
+  // The tile and words, shared by both forms
+  const inside = (
+    <>
+      {/* The tile (playing a few rounds, then resting) */}
+      <ModeTile ground={look.ground} prop={look.prop} face={look.face} tilt={tilt} scene={way.scene} className="size-16 flex-none md:size-18" />
+      {/* The words */}
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {/* The name (first, so the link is named by it) */}
+        <span className="font-display text-lg leading-tight font-semibold">{way.name}</span>
+        {/* What it is */}
+        <span className="text-footnote leading-snug font-bold text-ink-muted">{way.detail}</span>
+      </span>
+    </>
+  );
+  // A link once it can start, else a quiet card
+  return way.href ? (
+    <Link href={way.href} data-way-tile className={`flex h-full items-center gap-3.5 p-3.5 pr-4 ${CARD} ${PRESS} hover:-translate-y-0.5`}>{inside}</Link>
+  ) : (
+    <div data-way-tile className={`flex h-full items-center gap-3.5 p-3.5 pr-4 text-ink-muted ${CARD}`}>{inside}</div>
   );
 }

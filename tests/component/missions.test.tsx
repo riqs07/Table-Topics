@@ -112,7 +112,7 @@ describe("missions", () => {
     // Wait for the words in the box
     await waitFor(() => expect((screen.getByLabelText(/What did you notice/) as HTMLTextAreaElement).value).toBe("she lit up talking about her garden"));
     // Save
-    fireEvent.click(screen.getByRole("button", { name: "Save and compare" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save how it went" }));
     // Confirm the comparison and the saved try
     expect([(await screen.findByText(/^You expected 2 of 5\. It went 4 of 5\. Better than you feared/)).closest("[role=status]") !== null, (await repository.getSettings(NOW)).missions?.[0]?.note]).toEqual([true, "she lit up talking about her garden"]);
   });

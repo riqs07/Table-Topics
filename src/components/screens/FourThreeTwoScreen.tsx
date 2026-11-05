@@ -5,8 +5,8 @@
 import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
-// Load the chevron at the end of a row
-import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the loop icon (the quick start's way needs one)
+import { RepeatIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the page heading with the main navigation, and the list page's header
 import { Masthead } from "@/components/script/Masthead";
 import { HubHeader } from "@/components/script/HubHeader";
@@ -25,7 +25,9 @@ import { loopHref, targetWords } from "@/core/fourThreeTwo";
 // Load the user's stories
 import { storyLibrary, type LibraryStory } from "@/core/storyLibrary";
 // Load the shared heading, card and pill looks
-import { CARD_LIST, CHIP, CHIP_GOOD, SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, CHIP, CHIP_GOOD, SECTION_HEADING } from "@/components/script/textStyles";
+// Load Practice's quick start band
+import { QuickStart } from "@/components/script/WayCard";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -35,13 +37,13 @@ const STORIES_SHOWN = 5;
 // The three rounds, in words
 const ROUNDS = ["Round 1, the longest", "Round 2, shorter", "Round 3, shortest"];
 
-// One thing to say three times: its tile, its name, what it is, and the three times, the whole row a link
-function LoopRow({ href, look, name, detail, times }: { href: string; look: ModeTileLook; name: string; detail?: string; times: string }) {
-  // The row
+// One thing to say three times, as a tile card in a grid (desk-Practice's role-play cards): its tile, its name, what it is, and the three times, the whole card a link
+function LoopRow({ href, look, name, detail, times, tilt = -4 }: { href: string; look: ModeTileLook; name: string; detail?: string; times: string; tilt?: number }) {
+  // The card
   return (
-    <Link href={href} className={`flex min-h-18 items-center gap-4 py-3 hover:text-accent ${PRESS}`}>
-      {/* Its tile (still, apart from blinking; decorative, so the link is named by its words) */}
-      <ModeTile ground={look.ground} prop={look.prop} face={look.face} still className="size-14" />
+    <Link href={href} className={`flex h-full items-center gap-4 p-3.5 pr-4 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
+      {/* Its tile (decorative, so the link is named by its words) */}
+      <ModeTile ground={look.ground} prop={look.prop} face={look.face} tilt={tilt} className="size-16 flex-none md:size-18" />
       {/* The words */}
       <span className="min-w-0 flex-1">
         {/* The name */}
@@ -51,8 +53,6 @@ function LoopRow({ href, look, name, detail, times }: { href: string; look: Mode
         {/* The three times */}
         <span className="mt-1 block text-footnote font-extrabold text-accent-tint-ink">{times}</span>
       </span>
-      {/* The chevron */}
-      <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
     </Link>
   );
 }
@@ -99,26 +99,33 @@ export function FourThreeTwoScreen(props: ScreenProps) {
         </ol>
       </HubHeader>
 
+      {/* The main action: today's story, three times, as Practice's quick start band with its Go */}
+      {story && (
+        <div data-wide className="mt-5">
+          <QuickStart way={{ name: "Today’s story, three times", detail: story.text, href: loopHref({ mode: "story", promptId: story.id, story: { template: suggestedTemplate(story.id), focus: null, length: "full" } }, "new", 1), icon: RepeatIcon, scene: "four-three-two" }} label="Quick start · 3 rounds" title="Today’s story, three times" line={`${story.text} ${targetWords("story", "full")}.`} />
+        </div>
+      )}
+
       {/* The day's two */}
-      <section aria-labelledby="loop-today" className="mt-8">
+      <section aria-labelledby="loop-today" data-wide className="mt-8">
         {/* Heading */}
         <h2 id="loop-today" className={SECTION_HEADING}>Today</h2>
-        {/* The rows */}
-        <ul aria-label="Today's 4/3/2" className={`mt-3 ${CARD_LIST}`}>
+        {/* The cards */}
+        <ul aria-label="Today's 4/3/2" className="mt-3 grid gap-3.5 md:grid-cols-2">
           {/* Today's prepared speech */}
           {topic && <li><LoopRow href={loopHref({ mode: "response", promptId: topic.id }, "new", 1)} look={SCENE_TILES["prepared-speech"]} name="Prepared speech" detail={topic.text} times={targetWords("response")} /></li>}
           {/* Today's story, with its suggested template */}
-          {story && <li><LoopRow href={loopHref({ mode: "story", promptId: story.id, story: { template: suggestedTemplate(story.id), focus: null, length: "full" } }, "new", 1)} look={SCENE_TILES.story} name="A story" detail={story.text} times={`${findStoryTemplate(suggestedTemplate(story.id)).name} · ${targetWords("story", "full")}`} /></li>}
+          {story && <li><LoopRow href={loopHref({ mode: "story", promptId: story.id, story: { template: suggestedTemplate(story.id), focus: null, length: "full" } }, "new", 1)} look={SCENE_TILES.story} tilt={4} name="A story" detail={story.text} times={`${findStoryTemplate(suggestedTemplate(story.id)).name} · ${targetWords("story", "full")}`} /></li>}
         </ul>
       </section>
 
       {/* The user's own stories, told again three times */}
       {stories.length > 0 && (
-        <section aria-labelledby="loop-yours" className="mt-9">
+        <section aria-labelledby="loop-yours" data-wide className="mt-9">
           {/* Heading */}
           <h2 id="loop-yours" className={SECTION_HEADING}>Your stories</h2>
           {/* The rows */}
-          <ul aria-label="Your stories" className={`mt-3 ${CARD_LIST}`}>
+          <ul aria-label="Your stories" className="mt-3 grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
             {/* Each story, with the set-up it was last told with */}
             {stories.slice(0, STORIES_SHOWN).map((item) => {
               // The set-up it was last told with (a story from before set-ups were saved gets its suggested template)

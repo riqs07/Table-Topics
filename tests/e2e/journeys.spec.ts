@@ -753,7 +753,7 @@ test("Mission: try, debrief, see how it went", async ({ page }) => {
   // A note
   await page.getByLabel(/What did you notice/).fill("She lit up talking about her garden");
   // Save
-  await page.getByRole("button", { name: "Save and compare" }).click();
+  await page.getByRole("button", { name: "Save how it went" }).click();
   // How it went
   await expect(page.getByRole("status")).toContainText("It went 4 of 5.");
   // Back to Learn, where it was opened (decision 67)

@@ -11,13 +11,11 @@ import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBa
 import { usePageTitle } from "@/components/screens/usePageTitle";
 // Load every way to practise, grouped into jobs
 import { JOB_LOOKS, usePracticeWays, type JobId } from "@/components/screens/usePracticeWays";
-// Load the row for one way
-import { WayRow } from "@/components/script/WayCard";
+// Load the tile card for one way
+import { WayTileCard } from "@/components/script/WayCard";
 // Load the list page's header and Sage's line
 import { BackLink, HubHeader } from "@/components/script/HubHeader";
 import { NotFound } from "@/components/script/SageSays";
-// Load the shared look
-import { CARD_LIST } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
@@ -55,9 +53,9 @@ export function PracticeWaysScreen({ job, ...props }: ScreenProps & { job: strin
           {/* The way back, then the job's tile on its tint, its name and how many ways */}
           <HubHeader back={{ href: "/practice", label: "Practice" }} look={shown.look} title={shown.title} chip={shown.focus ? "Your focus" : undefined} line={`${shown.ways.length} ways to practise. Pick one and speak.`} />
           {/* Every way */}
-          <ul aria-label="Ways to practise" className={`mt-5 ${CARD_LIST}`}>
+          <ul aria-label="Ways to practise" data-wide className="mt-5 grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
             {/* Each one */}
-            {shown.ways.map((way) => <li key={way.name}><WayRow way={way} /></li>)}
+            {shown.ways.map((way, index) => <li key={way.name}><WayTileCard way={way} tilt={index % 2 ? 4 : -4} /></li>)}
           </ul>
         </>
       ) : (
