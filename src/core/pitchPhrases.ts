@@ -432,12 +432,12 @@ export function xForTime(seconds: number, slots: ReadonlyArray<WordSlot>, words:
   return anchors[0]!.x;
 }
 
-// The height of a curve's picture, in pixels
-export const CURVE_HEIGHT = 64;
+// The height of a curve's picture, in pixels (second design pass: tall enough to read a lift, as desk-PitchDrill draws it)
+export const CURVE_HEIGHT = 120;
 // Where the usual pitch sits down the picture, in pixels
-export const USUAL_Y = 34;
+export const USUAL_Y = 64;
 // Pixels per step (seven steps reach the top of the picture)
-const STEP_PIXELS = 4.5;
+const STEP_PIXELS = 8;
 
 // How far down the picture a pitch in steps sits (higher pitch is higher up), kept inside the picture
 export function yForStep(step: number): number {

@@ -2,7 +2,7 @@
 // A voice drill, take by take (decision 80): clear sounds, volume, pitch and stress, or tone. Each take records its loudness and pitch (and, for clear sounds, its words); the results compare the takes with the speaker's own voice, and stress and tone end with a guessing game. Only the lines are saved, never the audio
 
 // Load React's state, memo, callback, effect and external-store tools
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 // Load Next.js's link component
 import Link from "next/link";
 // Load the practice bar, the page around it and the columns
@@ -16,7 +16,7 @@ import { CARD, LAB } from "@/components/script/textStyles";
 // Load the shared button looks
 import { PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the take stage, the verdict panel and the not-found card
-import { NextLink, NotFoundCard, TakeStage, VERDICT_LOOKS, VerdictPanel, type VerdictTone } from "@/components/script/VoiceTakeStage";
+import { DiscardedCard, NextLink, NotFoundCard, ProblemCard, TakeStage, VERDICT_LOOKS, VerdictPanel, overallTone, takeLineTone, type VerdictTone } from "@/components/script/VoiceTakeStage";
 // Load the take pictures
 import { LevelBars, PitchLine } from "@/components/script/TakeVisuals";
 // Load Next.js's lazy loader
@@ -86,12 +86,8 @@ function mixedOrder(count: number): number[] {
 
 // How a take's line reads: good news, something to work on, or plain (never red)
 function lineTone(line: string): VerdictTone {
-  // Landed as aimed
-  if (/as aimed|as planned|, the target\.|Every word caught|Strong to the last|a clear step up|a clear drop/.test(line)) return "good";
-  // Missed, faded or level
-  if (/^Hard to catch|Aim for|Faded|, not “|No clear peak|about the same level|Lean on/i.test(line)) return "rough";
-  // Anything else
-  return "plain";
+  // The shared reading of a take's line
+  return takeLineTone(line);
 }
 
 // One finished take's verdict: the planned-stress line for a take with a key word, else the drill's own line for it
@@ -112,6 +108,23 @@ const REVIEW_QUESTION: Readonly<Record<string, string>> = { words: "Did every wo
 
 // What your blob says beside a take's verdict
 const VERDICT_WORDS: Readonly<Record<VerdictTone, string>> = { good: "That one landed.", rough: "Hmm, not quite.", plain: "Take done." };
+
+// How long a discarded take can be brought back, in milliseconds (as on the recording page, decision 77)
+const UNDO_MS = 6000;
+
+// A set's headline read for its tone, where the headline itself says how it went (else the takes decide)
+function headlineTone(headline: string): VerdictTone | null {
+  // "N of M ...": landed when at least half did
+  const counted = /^(\d+) of (\d+)/.exec(headline);
+  // Half or more
+  if (counted) return Number(counted[1]) * 2 >= Number(counted[2]) && Number(counted[2]) > 0 ? "good" : "rough";
+  // Said plainly as good news
+  if (/^Three clear levels|^Every word came through|^A clear drop|kept (half|two thirds|three quarters|nearly all)/.test(headline)) return "good";
+  // Said plainly as something to work on
+  if (/Make each step|Go much bigger|Drop further|Go quieter|Too quiet|Not enough voice|hard to catch|About the same level|kept (a quarter|a third|very little)/.test(headline)) return "rough";
+  // The takes decide
+  return null;
+}
 
 // The words of a line, for counting which were caught
 const wordsOf = (text: string) => text.split(/[\s,.;:!?“”"]+/).filter(Boolean);
@@ -182,6 +195,10 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
   const [stage, setStage] = useState<"take" | "slow" | "results">("take");
   // The microphone starting
   const [starting, setStarting] = useState(false);
+  // A take thrown away with the ✕ or Start over, held for a few seconds so it can be brought back (decision 77)
+  const held = useRef<TakeResult | null>(null);
+  // Showing the undo
+  const [discarded, setDiscarded] = useState(false);
   // A take that could not be used
   const [notice, setNotice] = useState<"too-short" | "nothing-heard" | null>(null);
   // How the save went
@@ -254,6 +271,10 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
   const begin = useCallback(async () => {
     // Clear the last notice
     setNotice(null);
+    // A new take lets any discarded one go
+    held.current = null;
+    // No undo now
+    setDiscarded(false);
     // On from the take just shown
     setReviewing(false);
     // Starting
@@ -269,12 +290,10 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
   // The take on screen
   const current = stage === "slow" ? slowTake : drill?.takes[takes.length];
 
-  // Stop a take and keep it, or explain why it could not be used
-  const finish = useCallback(async () => {
-    // The take
-    const take = await stop();
-    // Nothing was under way
-    if (!take || !drill) return;
+  // Keep a finished take, or explain why it could not be used
+  const keep = useCallback(async (take: TakeResult) => {
+    // No drill
+    if (!drill) return;
     // Too short to measure
     if (take.durationSec < MIN_TAKE_SECONDS) {
       // Say so, and record it again
@@ -315,7 +334,69 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
       // Save them
       await save(done);
     }
-  }, [drill, missed, save, slowTake.text, stage, stop, takes]);
+  }, [drill, missed, save, slowTake.text, stage, takes]);
+
+  // Stop a take and keep it
+  const finish = useCallback(async () => {
+    // The take
+    const take = await stop();
+    // Keep it, if one was under way
+    if (take) await keep(take);
+  }, [keep, stop]);
+
+  // Throw the take away (the ✕ or Start over while recording), held for a few seconds in case it was a slip
+  const discard = useCallback(async () => {
+    // Stop without keeping
+    const take = await stop();
+    // Nothing was under way
+    if (!take) return;
+    // Hold it
+    held.current = take;
+    // Offer the undo
+    setDiscarded(true);
+  }, [stop]);
+
+  // Bring a discarded take back
+  const undoDiscard = useCallback(async () => {
+    // The take, if still held
+    const take = held.current;
+    // Let it go from the hold
+    held.current = null;
+    // No undo now
+    setDiscarded(false);
+    // Keep it after all
+    if (take) await keep(take);
+  }, [keep]);
+
+  // A discarded take is let go after a few seconds
+  useEffect(() => {
+    // Only while the undo shows
+    if (!discarded) return;
+    // After the undo window
+    const timer = setTimeout(() => {
+      // Let it go
+      held.current = null;
+      // No undo now
+      setDiscarded(false);
+    }, UNDO_MS);
+    // Cancel if it changes first
+    return () => clearTimeout(timer);
+  }, [discarded]);
+
+  // Escape throws the take away while recording (on a computer), as on the recording page
+  useEffect(() => {
+    // Only while recording
+    if (!recording) return;
+    // The key
+    const onKey = (event: KeyboardEvent) => {
+      // Escape: discard
+      if (event.key === "Escape") void discard();
+    };
+    // Listen
+    window.addEventListener("keydown", onKey);
+    // Stop listening
+    return () => window.removeEventListener("keydown", onKey);
+  }, [discard, recording]);
 
   // Stop a take that runs too long
   useEffect(() => {
@@ -343,8 +424,8 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
     setNextDrill(null);
   }
 
-  // The way out (none mid-take, so a stray tap cannot lose it)
-  const close = recording || starting || stopping ? null : planStep ? { href: "/", label: "Close, back to Today" } : { href: "/voice", label: "Close, back to Your voice" };
+  // The way out, in every state (while recording it throws the take away first, with an undo)
+  const close = planStep ? { href: "/", label: recording ? "Discard this take" : "Close, back to Today" } : { href: "/voice", label: recording ? "Discard this take" : "Close, back to Your voice" };
 
   // An unknown drill
   if (!drill) {
@@ -355,7 +436,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
         <PracticeBar close={{ href: "/voice", label: "Close, back to Your voice" }} label="Voice drill" />
         {/* What happened, and the way back */}
         <div className={PRACTICE_BODY}>
-          <NotFoundCard title="That drill could not be found." line="The link may be old. Every voice drill is on Your voice, by what it trains." href="/voice" action="See every voice drill" />
+          <NotFoundCard title="That drill could not be found." href="/voice" action="See every voice drill" />
         </div>
       </main>
     );
@@ -377,6 +458,10 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
   const shownIndex = reviewed ?? takes.length;
   // Its words and cue
   const shown = stage === "slow" ? slowTake : (drill.takes[shownIndex] ?? current);
+  // The set's tone, for the verdict panel: the headline where it says how it went, else the takes (never the green celebration on a rough set)
+  const resultTone: VerdictTone = findings ? (headlineTone(findings.headline) ?? overallTone(verdicts.map((item) => item.tone))) : "plain";
+  // Sage's one note after a rough set: the first take that went rough
+  const roughLine = verdicts.find((item) => item.tone === "rough")?.line ?? null;
   // Your face and words beside the takes
   const side = recording ? { face: "sing" as const, words: "Recording." } : verdict ? { face: verdict.tone === "good" ? ("happy" as const) : verdict.tone === "rough" ? ("wonder" as const) : ("ready" as const), words: VERDICT_WORDS[verdict.tone] } : { face: takes.length > 0 ? ("happy" as const) : ("ready" as const), words: takes.length === 0 ? "First take." : takes.length === drill.takes.length - 1 ? "Last one." : `${takes.length} done.` };
 
@@ -384,7 +469,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
   return (
     <main id="main" className={PRACTICE_MAIN}>
       {/* The bar: the way out, how many takes are done, and which take */}
-      <PracticeBar close={close} progress={stage === "results" ? 1 : takes.length / Math.max(1, drill.takes.length)} label={`${VOICE_MODE_NAMES[drill.kind]} · ${stage === "results" ? "how it went" : stage === "slow" ? "slow round" : `take ${Math.min(reviewed !== null ? reviewed + 1 : takes.length + 1, drill.takes.length)} of ${drill.takes.length}`}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} />
+      <PracticeBar close={close} onClose={recording ? () => void discard() : undefined} progress={stage === "results" ? 1 : takes.length / Math.max(1, drill.takes.length)} label={`${VOICE_MODE_NAMES[drill.kind]} · ${stage === "results" ? "how it went" : stage === "slow" ? "slow round" : `take ${Math.min(reviewed !== null ? reviewed + 1 : takes.length + 1, drill.takes.length)} of ${drill.takes.length}`}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} />
 
       {/* A take: what to say and how on the left, the takes so far on the right */}
       {taking && shown && (
@@ -396,22 +481,15 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
             <h1 id="take-heading" className="mt-3 font-display text-statement leading-tight font-semibold md:text-prompt">{stage === "slow" ? shown.text : <Stressed text={shown.text} word={shown.stress} />}</h1>
             {/* How to say it */}
             <p className="mt-3 max-w-[52ch] text-lede font-semibold text-ink-muted">{shown.cue}</p>
-            {/* What the drill trains and what good looks like, before the first take (decision 117) */}
-            {stage === "take" && takes.length === 0 && !recording && (
-              <div className="mt-5 flex max-w-[56ch] flex-col gap-1.5 rounded-[22px] bg-accent-tint px-5 py-4 text-accent-tint-ink">
-                {/* What it trains */}
-                <p className="font-semibold">{drill.intro}</p>
-                {/* The goal */}
-                <p data-goal className="font-bold"><span className="font-extrabold">Goal:</span> {drill.goal}</p>
-              </div>
-            )}
             {/* Another of the drill's sentences, before the first take */}
             {stage === "take" && takes.length === 0 && !recording && !starting && setIndex !== null && setCount > 1 && <p className="mt-2"><Link href={`/voice/drill?id=${drill.id}&set=${((setIndex + 1) % setCount) + 1}${planStep ? `&plan=${planStep}` : ""}`} className={`${TEXT_LINK} text-footnote`}>Another sentence</Link></p>}
             {/* A take that could not be used */}
-            {notice === "too-short" && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">That was too short to measure. Say the whole line, then press Stop.</p>}
-            {notice === "nothing-heard" && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">I did not catch anything. Check that the right microphone is selected, then try this take again.</p>}
+            {notice === "too-short" && <ProblemCard>That was too short to measure. Say the whole line, then press Stop.</ProblemCard>}
+            {notice === "nothing-heard" && <ProblemCard>I did not catch anything. Check that the right microphone is selected, then try this take again.</ProblemCard>}
+            {/* A take thrown away, with the undo */}
+            {discarded && <DiscardedCard onUndo={() => void undoDiscard()} />}
             {/* A problem, explained plainly */}
-            {shownProblem && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">{PROBLEM_TEXT[shownProblem]}</p>}
+            {shownProblem && <ProblemCard>{PROBLEM_TEXT[shownProblem]}</ProblemCard>}
             {/* A blocked microphone: how to allow it */}
             {shownProblem === "microphone-blocked" && (
               // One step per device
@@ -449,7 +527,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
               </>
             ) : (
               // The stage: your blob, then Record, or the clock and Stop
-              <TakeStage recording={recording} starting={starting} stopping={stopping} levels={levels} elapsed={elapsed} onStart={() => void begin()} onStop={() => void finish()} blocked={blocked} troubled={!!(notice || problem)} startLabel={notice || problem ? "Try again" : stage === "slow" ? "Record the slow round" : `Record take ${takes.length + 1}`} startDetail={stage === "slow" ? "one word at a time" : `of ${drill.takes.length}`} />
+              <TakeStage recording={recording} starting={starting} stopping={stopping} levels={levels} elapsed={elapsed} onStart={() => void begin()} onStop={() => void finish()} onDiscard={() => void discard()} blocked={blocked} troubled={!!(notice || problem)} startLabel={notice || problem ? "Try again" : discarded ? "Record it again" : stage === "slow" ? "Record the slow round" : `Record take ${takes.length + 1} of ${drill.takes.length}`} />
             )}
           </section>
           {/* The takes: done, this one, and the ones to come */}
@@ -462,6 +540,17 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
                 {/* Where you are */}
                 <p className="font-display text-cue font-semibold leading-tight">{side.words}</p>
               </div>
+              {/* Your one goal: what the drill trains and what good looks like (decision 117) */}
+              {takes.length === 0 && (
+                <div className="flex flex-col gap-1.5 rounded-[22px] bg-accent-tint px-5 py-4 text-accent-tint-ink">
+                  {/* The label */}
+                  <p className="text-xs font-extrabold tracking-[.07em] uppercase">Your one goal</p>
+                  {/* What it trains */}
+                  <p className="font-semibold">{drill.intro}</p>
+                  {/* The goal */}
+                  <p data-goal className="font-bold"><span className="font-extrabold">Goal:</span> {drill.goal}</p>
+                </div>
+              )}
               {/* Small heading */}
               <p className={`${LAB} mt-1`}>Your takes</p>
               {/* Each take */}
@@ -482,7 +571,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
                         <span className={state === "now" ? "text-accent-tint-ink" : state === "done" ? "" : "text-ink-muted"}>{state === "done" ? (done?.tone === "good" ? "Landed" : done?.tone === "rough" ? "Hmm" : "Done") : state === "now" ? "This take" : index === shownIndex + 1 ? "Up next" : ""}</span>
                       </p>
                       {/* What it showed, once recorded; what to do, for this one and the next (on a computer; on a phone the cue is just above) */}
-                      {done ? <p className="mt-1 text-sm font-bold">{done.line}</p> : index <= shownIndex + 1 && <p className="mt-1 text-sm font-semibold text-ink-muted max-lg:hidden">{take.cue}</p>}
+                      {done ? <>{PITCH_MEASURES.has(drill.measure) && takes[index] && <span aria-hidden="true" className="mt-1 block"><PitchLine pitches={takes[index]!.pitches} usual={usual} label="" className="h-10" /></span>}<p className="mt-1 text-sm font-bold">{done.line}</p></> : index <= shownIndex + 1 && <p className="mt-1 text-sm font-semibold text-ink-muted max-lg:hidden">{take.cue}</p>}
                     </li>
                   );
                 })}
@@ -533,20 +622,20 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
                   </li>
                 ))}
               </ol>
-              {/* For the pitch lines: what the dashed line is */}
-              {PITCH_MEASURES.has(drill.measure) && drill.measure !== "stress" && drill.measure !== "dialback" && usual !== null && <p className="mt-2 text-footnote text-ink-muted">The dashed line is your usual pitch; up is higher.</p>}
-              {/* For the curves over the words: what the dashed line is */}
-              {drill.measure === "dialback" && <p className="mt-2 text-footnote text-ink-muted">The dashed line is each take’s own usual pitch; up is higher.</p>}
+              {/* For the pitch lines: what the light line is (the Chart Kit keeps dashes for the ghost) */}
+              {PITCH_MEASURES.has(drill.measure) && drill.measure !== "stress" && drill.measure !== "dialback" && usual !== null && <p className="mt-2 text-footnote text-ink-muted">The light line across is your usual pitch; up is higher.</p>}
+              {/* For the curves over the words: what the light line is */}
+              {drill.measure === "dialback" && <p className="mt-2 text-footnote text-ink-muted">The light line across is each take’s own usual pitch; up is higher.</p>}
               {/* For the stress takes: the key */}
               {drill.measure === "shift" && <p className="mt-2 text-footnote text-ink-muted">The dashed circle is the word to stress; the dot is where your highest pitch landed.</p>}
               {/* For the thick lines: what the thickness is */}
-              {drill.kind === "volume" && <p className="mt-2 text-footnote text-ink-muted">Thicker where you were louder. The dashed line is your usual pitch.</p>}
+              {drill.kind === "volume" && <p className="mt-2 text-footnote text-ink-muted">Thicker where you were louder. The light line across is your usual pitch.</p>}
             </section>
             {/* The side: you, the slow round, saving, and what next (first on a phone, so the next step is near the top) */}
             <div className="max-lg:order-first lg:sticky lg:top-6">
-              <VerdictPanel tone="good" face="happy" headingId="done-heading" heading={`${drill.takes.length} takes done.`}>
-                {/* What it was */}
-                <p className="font-bold text-ink">{drill.intro}</p>
+              <VerdictPanel tone={resultTone} headingId="done-heading" heading={resultTone === "rough" ? "Good start." : `${drill.takes.length} takes done.`}>
+                {/* What it was, or Sage's one note after a rough set: the first take that went rough */}
+                {resultTone === "rough" && roughLine ? <p className="text-lg leading-snug font-bold italic">“{roughLine}”</p> : <p className="font-bold text-ink">{drill.intro}</p>}
                 {/* Clear sounds: the hard words once more, slowly */}
                 {drill.measure === "words" && missed.length > 0 && (
                   <section aria-labelledby="slow-heading" className={`p-4 text-ink ${CARD}`}>
@@ -571,7 +660,7 @@ export function VoiceDrillScreen({ drillId, services, planStep = null, set = nul
                 {/* Once saved: today's next step, or the next drill of this kind */}
                 {saving === "saved" && (plan ? (plan.next ? <NextLink action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <NextLink action="Finish today’s practice" aside="back to Today" href="/" />) : nextDrill ? <NextLink action="Next drill" aside={nextDrill.title} href={`/voice/drill?id=${nextDrill.id}`} /> : null)}
                 {/* Do it again */}
-                <button type="button" onClick={again} className={`${TEXT_LINK} self-center uppercase tracking-[.04em]`}>Do this drill again</button>
+                <button type="button" onClick={again} className={`${TEXT_LINK} self-center uppercase tracking-[.04em] ${resultTone === "rough" ? "text-warm-ink" : ""}`}>Do this drill again</button>
               </VerdictPanel>
             </div>
           </div>

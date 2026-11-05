@@ -45,7 +45,7 @@ export function LevelBars({ takes }: { takes: ReadonlyArray<LevelBar> }) {
 }
 
 // A take's pitch as one soft line: up for higher, down for lower, around a light line at the speaker's usual pitch (gaps where there was no voice)
-export function PitchLine({ pitches, usual, label }: { pitches: ReadonlyArray<number | null>; usual: number | null; label: string }) {
+export function PitchLine({ pitches, usual, label, className = "h-24" }: { pitches: ReadonlyArray<number | null>; usual: number | null; label: string; className?: string }) {
   // Nothing to draw without a usual pitch
   if (usual === null) return null;
   // The readings in steps, slips dropped
@@ -56,7 +56,7 @@ export function PitchLine({ pitches, usual, label }: { pitches: ReadonlyArray<nu
   const points = smoothForDrawing(steps).map((step, index) => (step === null ? null : { x: index, y: PITCH_SPAN - Math.max(-PITCH_SPAN, Math.min(PITCH_SPAN, step)) }));
   // The picture
   return (
-    <svg viewBox={`0 0 ${width} ${PITCH_SPAN * 2}`} preserveAspectRatio="none" role="img" aria-label={label} className="h-14 w-full overflow-visible">
+    <svg viewBox={`0 0 ${width} ${PITCH_SPAN * 2}`} preserveAspectRatio="none" role="img" aria-label={label} className={`w-full overflow-visible ${className}`}>
       {/* The usual pitch: a light grid line */}
       <line x1="0" x2={width} y1={PITCH_SPAN} y2={PITCH_SPAN} className="stroke-rule" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
       {/* The voiced runs: one soft line, drawn in once */}

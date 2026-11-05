@@ -57,6 +57,8 @@ export function StressKey() {
       <span className="flex items-center gap-1.5"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" className="stroke-chart-well" strokeWidth="2" strokeDasharray="3 2" /></svg>Where the stress was meant to go</span>
       {/* The highest point */}
       <span className="flex items-center gap-1.5"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" className="fill-chart-voice" /></svg>Your highest point</span>
+      {/* The usual pitch: the light line across */}
+      <span className="flex items-center gap-1.5"><svg width="22" height="14" aria-hidden="true"><line x1="1" y1="7" x2="21" y2="7" className="stroke-rule" strokeWidth="2" strokeLinecap="round" /></svg>Your usual pitch</span>
     </div>
   );
 }

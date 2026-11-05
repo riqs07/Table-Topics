@@ -2,7 +2,7 @@
 // Shadowing (decision 80; second design pass: the PitchDrill layout, two columns, the take stage and the verdict panel): listen to a phrase in the model voice, say it back the same way, and compare (your length against the model's, the words that were hard to catch, your pitch line); then the whole passage. The model voice is a saved ElevenLabs recording, or the phone's own when it cannot play (decision 82). Only the lines are saved, never the audio
 
 // Load React's state, memo, callback, effect and external-store tools
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 // Load the speaker icon
 import { SpeakerHighIcon } from "@phosphor-icons/react/dist/ssr";
 // Load the practice bar, the page around it and the columns
@@ -14,7 +14,7 @@ import { CARD, LAB } from "@/components/script/textStyles";
 // Load the shared button looks
 import { PRIMARY, QUIET, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the take stage, the verdict panel, the next step, the not-found card and the numbered rows
-import { NextLink, NotFoundCard, NumberedRows, TakeStage, VerdictPanel } from "@/components/script/VoiceTakeStage";
+import { DiscardedCard, NextLink, NotFoundCard, NumberedRows, ProblemCard, TakeStage, VerdictPanel, overallTone, type VerdictTone } from "@/components/script/VoiceTakeStage";
 // Load Next.js's lazy loader
 import dynamic from "next/dynamic";
 // Load the microphone help
@@ -49,6 +49,19 @@ const MAX_TAKE_SECONDS = 45;
 const MIN_TAKE_SECONDS = 0.5;
 // Below this loudness all through, nothing was heard
 const SILENT_LEVEL = 0.01;
+
+// How long a discarded take can be brought back, in milliseconds (as on the recording page, decision 77)
+const UNDO_MS = 6000;
+
+// How a shadowed take's line reads: every word caught at the model's pace is good; words hard to catch, or a pace off the model's, is to work on
+function shadowTone(line: string): VerdictTone {
+  // Something to work on
+  if (/Hard to catch|Faster than|Slower than/.test(line)) return "rough";
+  // Caught, at the model's pace
+  if (/Every word caught|About the model’s pace/.test(line)) return "good";
+  // Neither said
+  return "plain";
+}
 
 // What the shadowing page is given
 interface ShadowScreenProps extends ScreenProps {
@@ -90,6 +103,10 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
   const [speaking, setSpeaking] = useState(false);
   // The microphone starting
   const [starting, setStarting] = useState(false);
+  // A take thrown away with the ✕ or Start over, held for a few seconds so it can be brought back (decision 77)
+  const held = useRef<TakeResult | null>(null);
+  // Showing the undo
+  const [discarded, setDiscarded] = useState(false);
   // A take that could not be used
   const [notice, setNotice] = useState<"too-short" | "nothing-heard" | null>(null);
   // How the save went
@@ -135,6 +152,10 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
   const begin = useCallback(async () => {
     // Clear the last notice
     setNotice(null);
+    // A new take lets any discarded one go
+    held.current = null;
+    // No undo now
+    setDiscarded(false);
     // Starting
     setStarting(true);
     // Open the microphone and record
@@ -143,12 +164,10 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
     setStarting(false);
   }, [start]);
 
-  // Stop a take and compare it, or explain why it could not be used
-  const finish = useCallback(async () => {
-    // The take
-    const take = await stop();
-    // Nothing was under way
-    if (!take || !current) return;
+  // Compare a finished take, or explain why it could not be used
+  const keep = useCallback(async (take: TakeResult) => {
+    // No step
+    if (!current) return;
     // Too short to compare
     if (take.durationSec < MIN_TAKE_SECONDS) {
       // Say so
@@ -171,7 +190,69 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
     setTakes((previous) => Object.assign([...previous], { [step]: take }));
     // And its line
     setLines((previous) => Object.assign([...previous], { [step]: shadowLine(measure, model[step] ?? null, wordsChecked) }));
-  }, [current, model, step, stop, supported]);
+  }, [current, model, step, supported]);
+
+  // Stop a take and compare it
+  const finish = useCallback(async () => {
+    // The take
+    const take = await stop();
+    // Compare it, if one was under way
+    if (take) await keep(take);
+  }, [keep, stop]);
+
+  // Throw the take away (the ✕ or Start over while recording), held for a few seconds in case it was a slip
+  const discard = useCallback(async () => {
+    // Stop without keeping
+    const take = await stop();
+    // Nothing was under way
+    if (!take) return;
+    // Hold it
+    held.current = take;
+    // Offer the undo
+    setDiscarded(true);
+  }, [stop]);
+
+  // Bring a discarded take back
+  const undoDiscard = useCallback(async () => {
+    // The take, if still held
+    const take = held.current;
+    // Let it go from the hold
+    held.current = null;
+    // No undo now
+    setDiscarded(false);
+    // Compare it after all
+    if (take) await keep(take);
+  }, [keep]);
+
+  // A discarded take is let go after a few seconds
+  useEffect(() => {
+    // Only while the undo shows
+    if (!discarded) return;
+    // After the undo window
+    const timer = setTimeout(() => {
+      // Let it go
+      held.current = null;
+      // No undo now
+      setDiscarded(false);
+    }, UNDO_MS);
+    // Cancel if it changes first
+    return () => clearTimeout(timer);
+  }, [discarded]);
+
+  // Escape throws the take away while recording (on a computer), as on the recording page
+  useEffect(() => {
+    // Only while recording
+    if (!recording) return;
+    // The key
+    const onKey = (event: KeyboardEvent) => {
+      // Escape: discard
+      if (event.key === "Escape") void discard();
+    };
+    // Listen
+    window.addEventListener("keydown", onKey);
+    // Stop listening
+    return () => window.removeEventListener("keydown", onKey);
+  }, [discard, recording]);
 
   // Stop a take that runs too long
   useEffect(() => {
@@ -231,8 +312,8 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
     setLines((previous) => Object.assign([...previous], { [step]: "" }));
   }
 
-  // The way out (none mid-take)
-  const close = recording || starting || stopping ? null : planStep ? { href: "/", label: "Close, back to Today" } : { href: "/voice", label: "Close, back to Your voice" };
+  // The way out, in every state (while recording it throws the take away first, with an undo)
+  const close = planStep ? { href: "/", label: recording ? "Discard this take" : "Close, back to Today" } : { href: "/voice", label: recording ? "Discard this take" : "Close, back to Your voice" };
 
   // An unknown passage
   if (!passage) {
@@ -243,7 +324,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
         <PracticeBar close={{ href: "/voice", label: "Close, back to Your voice" }} label="Shadowing" />
         {/* What happened, and the way back */}
         <div className={PRACTICE_BODY}>
-          <NotFoundCard title="That passage could not be found." line="The link may be old. Every passage to shadow is on Your voice." href="/voice#shadowing" action="See every passage" />
+          <NotFoundCard title="That passage could not be found." href="/voice#shadowing" action="See every passage" />
         </div>
       </main>
     );
@@ -253,6 +334,10 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
   const take = takes[step];
   // Its line
   const line = lines[step];
+  // How the run went, for the verdict panel (never the green celebration on a rough run)
+  const doneTone = overallTone(lines.filter(Boolean).map(shadowTone));
+  // Sage's one note after a rough run: the first line to work on
+  const roughLine = lines.find((item) => item && shadowTone(item) === "rough") ?? null;
   // Your face and words beside the steps
   const side = recording ? { face: "sing" as const, words: "Say it back." } : speaking ? { face: "listen" as const, words: "Listen closely." } : take && line ? { face: "happy" as const, words: "Compare the two." } : { face: "ready" as const, words: model[step] !== undefined ? "Your turn." : "Listen first." };
 
@@ -261,7 +346,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
     // The page while practising: two columns on a computer, one on a phone
     <main id="main" className={PRACTICE_MAIN}>
       {/* Title, step and the way out */}
-      <PracticeBar close={close} progress={steps.length > 0 ? Math.max(0, Math.min(step, steps.length)) / steps.length : 0} label={`Shadowing${step >= 0 && step < steps.length ? ` · step ${step + 1} of ${steps.length}` : ""}${plan ? ` · today ${plan.step} of ${plan.total}` : ""}`} />
+      <PracticeBar close={close} onClose={recording ? () => void discard() : undefined} progress={steps.length > 0 ? Math.max(0, Math.min(step, steps.length)) / steps.length : 0} label={`Shadowing${step >= 0 && step < steps.length ? (step < passage.phrases.length ? ` · phrase ${step + 1} of ${passage.phrases.length}` : " · whole passage") : ""}${plan ? ` · today ${plan.step} of ${plan.total}` : ""}`} />
 
       {/* Before starting: the passage and how it works */}
       {step < 0 && (
@@ -314,7 +399,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
             {!recording && !starting && !stopping && (
               <p className="mt-5 flex flex-wrap gap-3">
                 {/* The model voice */}
-                <button type="button" onClick={() => void listen()} disabled={speaking || !services.speak} className={model[step] === undefined && !take ? PRIMARY : SECONDARY}>
+                <button type="button" onClick={() => void listen()} disabled={speaking || !services.speak} className={model[step] === undefined && !take && services.speak ? PRIMARY : SECONDARY}>
                   {/* The speaker */}
                   <SpeakerHighIcon aria-hidden="true" weight="fill" className="size-5" />
                   {/* What it does */}
@@ -325,10 +410,12 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
               </p>
             )}
             {/* A take that could not be used */}
-            {notice === "too-short" && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">That was too short to compare. Say the whole phrase, then press Stop.</p>}
-            {notice === "nothing-heard" && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">I did not catch anything. Check that the right microphone is selected, then try again.</p>}
+            {notice === "too-short" && <ProblemCard>That was too short to compare. Say the whole phrase, then press Stop.</ProblemCard>}
+            {notice === "nothing-heard" && <ProblemCard>I did not catch anything. Check that the right microphone is selected, then try again.</ProblemCard>}
+            {/* A take thrown away, with the undo */}
+            {discarded && <DiscardedCard onUndo={() => void undoDiscard()} />}
             {/* A problem, explained plainly */}
-            {problem && <p role="alert" className="mt-4 max-w-[48ch] rounded-2xl bg-warm-tint px-4 py-3 font-bold text-warm-ink">{PROBLEM_TEXT[problem]}</p>}
+            {problem && <ProblemCard>{PROBLEM_TEXT[problem]}</ProblemCard>}
             {/* A blocked microphone: how to allow it */}
             {problem === "microphone-blocked" && (
               // One step per device
@@ -360,7 +447,7 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
               </>
             ) : (
               // The stage: your blob, then Say it back, or the clock and Stop
-              <TakeStage recording={recording} starting={starting} stopping={stopping} levels={levels} elapsed={elapsed} onStart={() => void begin()} onStop={() => void finish()} troubled={!!(notice || problem)} startLabel={notice || problem ? "Try again" : "Say it back"} startDetail={model[step] !== undefined ? "the same way" : "after listening"} />
+              <TakeStage recording={recording} starting={starting} stopping={stopping} levels={levels} elapsed={elapsed} onStart={() => void begin()} onStop={() => void finish()} onDiscard={() => void discard()} troubled={!!(notice || problem)} quiet={model[step] === undefined && !!services.speak && !notice && !problem} startLabel={notice || problem ? "Try again" : "Say it back"} />
             )}
             {/* The whole passage can be left out */}
             {step === passage.phrases.length && !take && !recording && !starting && !stopping && <p className="mt-2"><button type="button" onClick={next} className={`${TEXT_LINK} text-ink-muted`}>Finish without the whole passage</button></p>}
@@ -416,14 +503,16 @@ export function ShadowScreen({ passageId, services, planStep = null, clock: give
                   <p className={LAB}>{item.label}</p>
                   {/* How it compared */}
                   <p className="mt-1 font-display text-lg font-semibold">{lines[index]}</p>
+                  {/* Your pitch over the model's */}
+                  {takes[index] && <ShadowModelCurve take={takes[index]!} text={item.text} voiceId={item.voiceId} label={item.label} />}
                 </li>
               ) : null)}
             </ol>
             {/* How it went, and what next (first on a phone) */}
             <div className="max-lg:order-first">
-              <VerdictPanel tone="good" face="happy" headingId="shadow-done-panel" heading="Shadowed.">
-                {/* What it was */}
-                <p className="font-bold text-ink">{passage.title}, {passage.source}. Your pace and melody against the model voice’s.</p>
+              <VerdictPanel tone={doneTone} headingId="shadow-done-panel" heading={doneTone === "rough" ? "Good start." : "Shadowed."}>
+                {/* What it was, or Sage's one note after a rough run: the first line to work on */}
+                {doneTone === "rough" && roughLine ? <p className="text-lg leading-snug font-bold italic">“{roughLine}”</p> : <p className="font-bold text-ink">{passage.title}, {passage.source}. Your pace and melody against the model voice’s.</p>}
                 {/* How the save went */}
                 {saving === "saving" && <p role="status" className="text-footnote font-bold">Saving…</p>}
                 {saving === "failed" && (

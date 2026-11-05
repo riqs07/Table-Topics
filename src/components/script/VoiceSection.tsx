@@ -99,8 +99,8 @@ export function VoiceSection({ repo, session, usual, hide, fluency, script = nul
         <>
           {/* The curve */}
           <WholeCurve steps={pitch.steps} />
-          {/* What the dashed line is */}
-          <p className="mt-1 text-footnote text-ink-muted">No words were caught, so this is your pitch on its own. The dashed line is your usual pitch.</p>
+          {/* What the light line is */}
+          <p className="mt-1 text-footnote text-ink-muted">No words were caught, so this is your pitch on its own. The light line across is your usual pitch.</p>
         </>
       )}
       {/* The lines, the pitch in the words first */}

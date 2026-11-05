@@ -89,6 +89,30 @@ describe("VoiceDrillScreen", () => {
     await waitFor(async () => expect((await repository.listSessions()).map((session) => [session.mode, session.promptId, session.voice?.kind, session.voice?.takes.length, session.audioKey])).toEqual([["voice", "v01", "volume", 3, null]]));
     // The band leads to the next volume drill
     expect((await screen.findByRole("link", { name: /Next drill/ })).getAttribute("href")).toBe("/voice/drill?id=v02");
+    // Not three clear steps, so the verdict panel is the warm one with Sage's note, never the green celebration (fix round, shared decision 6)
+    expect([document.querySelector("[data-verdict]")?.getAttribute("data-verdict"), screen.getByRole("heading", { level: 2, name: "Good start." }) !== null]).toEqual(["rough", true]);
+  });
+
+  // The ✕ shows while recording too: it throws the take away, with an undo for a few seconds (as the recording page does, decision 77)
+  it("discards a take from the ✕ while recording, and brings it back with Undo", async () => {
+    // The first three-rooms drill
+    const { clock } = draw("v01");
+    // Start a take
+    fireEvent.click(await screen.findByRole("button", { name: /Record take 1/ }));
+    // Recording, with the ✕ still there
+    await screen.findByRole("button", { name: "Stop" });
+    // Let a few readings in
+    await act(() => new Promise((resolve) => setTimeout(resolve, 250)));
+    // A couple of seconds on
+    clock.advance(2500);
+    // The ✕
+    await act(async () => void fireEvent.click(screen.getByRole("button", { name: "Discard this take" })));
+    // Thrown away, with the undo, and the take still to record
+    expect([(await screen.findByText("Take discarded.")).closest("[role=status]") !== null, !!screen.getByRole("button", { name: "Record it again" })]).toEqual([true, true]);
+    // Undo
+    await act(async () => void fireEvent.click(screen.getByRole("button", { name: "Undo" })));
+    // The take is kept after all: it shows before the next one
+    expect([!!(await screen.findByRole("button", { name: "Next take" })), document.querySelector("[data-take-verdict]")?.textContent]).toEqual([true, "Your starting level."]);
   });
 
   // A volume drill draws each take's line thicker where it was louder (decision 111), and only the volume drills do

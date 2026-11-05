@@ -1,13 +1,11 @@
 // A saved voice drill or shadowing session, opened from History (decision 80): its headline and a line per take (the takes' audio is not kept). Second design pass, after Desktop Screens "Result": the label and headline, each take's line on a card, and beside them the verdict panel with your blob and the one chunky next step
 
-// Load the masthead
-import { Masthead } from "@/components/script/Masthead";
-// Load the step label
-import { STEP_LABEL } from "@/components/script/PracticeBar";
+// Load the focus bar (the ✕, the full progress bar and the label), the columns and the step label
+import { PRACTICE_COLUMNS, PracticeBar, STEP_LABEL } from "@/components/script/PracticeBar";
 // Load the card and label looks
 import { CARD, LAB } from "@/components/script/textStyles";
 // Load the verdict panel and the next step
-import { NextLink, VerdictPanel } from "@/components/script/VoiceTakeStage";
+import { NextLink, VERDICT_LOOKS, VerdictPanel, overallTone, takeLineTone } from "@/components/script/VoiceTakeStage";
 // Load the voice content
 import { VOICE_MODE_NAMES, findShadowPassage, findVoiceDrill } from "@/content/voice";
 // Load the day label
@@ -31,18 +29,22 @@ export function VoiceSessionView({ session, now, plan }: { session: SessionRecor
   const again = voice?.kind === "shadow" ? `/voice/shadow?id=${session.promptId}` : `/voice/drill?id=${session.promptId}`;
   // How many takes were kept
   const count = voice?.takes.length ?? 0;
+  // How the set went, from its saved lines (never the green celebration on a rough set)
+  const tone = overallTone((voice?.takes ?? []).map((take) => takeLineTone(take.line)));
+  // Sage's one note after a rough set: the first line to work on
+  const roughLine = voice?.takes.find((take) => takeLineTone(take.line) === "rough")?.line ?? null;
   // Draw it
   return (
     <>
-      {/* Title and the day */}
-      <Masthead title={voice ? VOICE_MODE_NAMES[voice.kind] : "Voice drill"} section={home.section}>{plan ? `Step ${plan.step} of ${plan.total}` : dayLabel(new Date(session.createdAt), now)}</Masthead>
+      {/* Focus mode, as desk-Result: the ✕ back, the full bar, and which drill on which day */}
+      <PracticeBar className="-mt-6 md:-mt-10" close={{ href: home.href, label: home.label }} progress={1} label={`${voice ? VOICE_MODE_NAMES[voice.kind] : "Voice drill"} · ${plan ? `step ${plan.step} of ${plan.total}` : dayLabel(new Date(session.createdAt), now)}`} />
       {/* The findings */}
       <div className="mt-6 md:mt-8">
         {/* Which drill */}
-        <p className={STEP_LABEL}>{voice ? VOICE_MODE_NAMES[voice.kind] : "Voice drill"} · {name ?? "Voice drill"}</p>
+        <p className={STEP_LABEL}>{name ?? "Voice drill"}</p>
         {/* The headline */}
         <h1 id="voice-heading" className="mt-2 max-w-[28ch] font-display text-statement leading-tight font-semibold">{voice?.headline ?? "Done."}</h1>
-        <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-10">
+        <div className={`mt-6 ${PRACTICE_COLUMNS}`}>
           <section aria-labelledby="voice-heading" className="flex min-w-0 flex-col">
             {/* A line per take */}
             {voice && voice.takes.length > 0 && (
@@ -53,7 +55,7 @@ export function VoiceSessionView({ session, now, plan }: { session: SessionRecor
                     {/* Its name */}
                     <p className={LAB}>Take {index + 1} · {take.label}</p>
                     {/* What it showed */}
-                    <p className="mt-1 font-display text-lg font-semibold">{take.line}</p>
+                    <p className={`mt-2 rounded-[14px] px-4 py-2.5 font-display text-lg font-semibold ${VERDICT_LOOKS[takeLineTone(take.line)]}`}>{take.line}</p>
                   </li>
                 ))}
               </ol>
@@ -63,9 +65,9 @@ export function VoiceSessionView({ session, now, plan }: { session: SessionRecor
           </section>
           {/* What it was, and what next (first on a phone) */}
           <div className="max-lg:order-first">
-            <VerdictPanel tone="good" face="happy" headingId="voice-done-panel" heading={count === 1 ? "1 take done." : `${count} takes done.`}>
-              {/* Which drill */}
-              <p className="font-bold text-ink">{name ?? "This drill"} · {dayLabel(new Date(session.createdAt), now)}</p>
+            <VerdictPanel tone={tone} headingId="voice-done-panel" heading={tone === "rough" ? "Good start." : count === 1 ? "1 take done." : `${count} takes done.`}>
+              {/* Sage's one note after a rough set, or which drill */}
+              {tone === "rough" && roughLine ? <p className="text-lg leading-snug font-bold italic">“{roughLine}”</p> : <p className="font-bold text-ink">{name ?? "This drill"} · {dayLabel(new Date(session.createdAt), now)}</p>}
               {/* Today's next step, or the drill again */}
               {plan ? (plan.next ? <NextLink action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <NextLink action="Finish today’s practice" aside="back to Today" href="/" />) : <NextLink action="Do it again" aside={name ?? "this drill"} href={again} />}
             </VerdictPanel>
