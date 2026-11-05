@@ -259,7 +259,7 @@ export function MeTop({ repo, sessions, settings, now, children }: { repo: Repos
             {/* The page's name */}
             <h1 className="font-display text-statement leading-none font-semibold">You, so far</h1>
             {/* Since when, and the last seven days */}
-            <p className="mt-1 font-bold text-ink-muted">{first ? `Practising since ${new Date(first.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}` : "Your first take will show up here."}{first && <span className="hidden md:inline"> · {lastSeven} of the last 7 days</span>}</p>
+            <p className="mt-1 font-bold text-ink-muted">{first ? `Practising since ${new Date(first.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}` : takes ? "Your first take will show up here." : ""}{first && <span className="hidden md:inline"> · {lastSeven} of the last 7 days</span>}</p>
           </div>
           {/* Settings, on a phone, as the gear */}
           <Link href="/settings" aria-label="Settings" className={`inline-flex size-11 flex-none items-center justify-center rounded-[14px] text-ink-muted hover:bg-paper hover:text-ink lg:hidden ${PRESS}`}><GearIcon aria-hidden="true" weight="bold" className="size-6" /></Link>

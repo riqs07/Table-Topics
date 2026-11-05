@@ -182,5 +182,46 @@ describe("HistoryScreen", () => {
     // Confirm one page again, with the count of how many are shown
     expect([within(screen.getByRole("list", { name: "Sessions" })).getAllByRole("link").length, !!screen.getByText("Showing 50 of 80")]).toEqual([50, true]);
   });
+  // The takes cannot be read: Sage says so, with the browser's reason and Try again, which loads afresh
+  it("says when the takes cannot be loaded, and tries again", async () => {
+    // A store whose takes fail once
+    const working = createRepository(new MemoryStore());
+    // (failing the first read only)
+    let failed = false;
+    // The repository with the failing read
+    const repository = { ...working, listSessions: async () => { if (!failed) { failed = true; throw new Error("The database is not available."); } return working.listSessions(); } };
+    // Drawn
+    render(<HistoryScreen repository={repository} now={NOW} />);
+    // The failure, as a heading under the page's title, with the reason
+    const heading = await screen.findByRole("heading", { level: 2, name: "Your takes could not be loaded." });
+    // Try again
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    // Confirm the reason was shown, and the empty page follows once the read works
+    expect([!!heading, !!(await screen.findByText(/Nothing here yet/))]).toEqual([true, true]);
+  });
+
+  // Stories and kept takes have their own filters, and a row's star keeps the take (storyboard "Your takes")
+  it("filters stories and kept takes, and stars a take from its row", async () => {
+    // A story and a Rapid Fire answer
+    const repository = createRepository(new MemoryStore());
+    // (the story)
+    await repository.saveSession(makeSession({ id: "story-1", mode: "story", promptId: "sp01", createdAt: "2026-10-12T15:00:00.000Z" }));
+    // (the answer)
+    await repository.saveSession(makeSession({ id: "talk-1", mode: "talk", promptId: "t001", createdAt: "2026-10-11T15:00:00.000Z" }));
+    // Drawn
+    render(<HistoryScreen repository={repository} now={NOW} />);
+    // Stories only
+    await userEvent.click(await screen.findByRole("button", { name: "Stories" }));
+    // The rows shown
+    const stories = within(screen.getByRole("list", { name: "Sessions" })).getAllByRole("link").map((link) => link.getAttribute("href"));
+    // Back to all, and keep the answer
+    await userEvent.click(screen.getByRole("button", { name: "All" }));
+    // (its star)
+    await userEvent.click(screen.getByRole("button", { name: /^Keep Rapid Fire/ }));
+    // Kept only
+    await userEvent.click(screen.getByRole("button", { name: "★ Kept" }));
+    // Confirm the story filter, the kept filter, and that the star was saved
+    expect([stories, within(screen.getByRole("list", { name: "Sessions" })).getAllByRole("link").map((link) => link.getAttribute("href")), (await repository.listSessions()).find((session) => session.id === "talk-1")?.starred]).toEqual([["/sessions?id=story-1"], ["/sessions?id=talk-1"], true]);
+  });
 });
 

@@ -56,13 +56,39 @@ import { CARD, CARD_LIST, LAB, SECTION_HEADING } from "@/components/script/textS
 // Load the mode tiles and each take's (second design pass, storyboard 30)
 import { ModeTile } from "@/components/scenes/ModeTile";
 import { takeLook } from "@/components/screens/MeTop";
+// Load the page shell shared with the other hub pages, and the failed-to-load card
+import { PAGE } from "@/components/script/layout";
+import { LoadFailed } from "@/components/script/LoadFailed";
 // Load the blob character, for the empty page (decision 134)
 import { BlobCharacter } from "@/components/script/BlobFace";
 
 // What the list can show (decision 79)
-type HistoryFilter = "all" | "speaking" | "reading";
-// The choices, in order
-const HISTORY_FILTERS: ReadonlyArray<{ id: HistoryFilter; name: string }> = [{ id: "all", name: "All" }, { id: "speaking", name: "Speaking" }, { id: "reading", name: "Reading aloud" }];
+type HistoryFilter = "all" | "speaking" | "stories" | "reading" | "kept";
+// The choices, in order (storyboard "Your takes": All, Speaking, Stories, Reading, Kept)
+const HISTORY_FILTERS: ReadonlyArray<{ id: HistoryFilter; name: string }> = [{ id: "all", name: "All" }, { id: "speaking", name: "Speaking" }, { id: "stories", name: "Stories" }, { id: "reading", name: "Reading aloud" }, { id: "kept", name: "★ Kept" }];
+
+// Whether a take belongs under a filter: speaking is everything not read from a text (stories included, as before), stories are told stories, kept ones are starred
+function shownUnder(filter: HistoryFilter, session: SessionRecord): boolean {
+  // Each filter's rule
+  switch (filter) {
+    // Everything
+    case "all": return true;
+    // Not read from a text
+    case "speaking": return !READING_MODES.includes(session.mode);
+    // Told stories
+    case "stories": return session.mode === "story";
+    // Read from a text
+    case "reading": return READING_MODES.includes(session.mode);
+    // Starred
+    case "kept": return session.starred === true;
+  }
+}
+
+// The week a take falls in, for the list's two groups: the last seven days, then earlier
+function inThisWeek(session: SessionRecord, now: Date): boolean {
+  // Seven days back from now
+  return now.getTime() - new Date(session.createdAt).getTime() < 7 * 86_400_000;
+}
 // Kinds of session that read a text (a passage, a pause drill, a lesson's text, or the user's own script)
 const READING_MODES: ReadonlyArray<SessionRecord["mode"]> = ["read", "pause", "lesson", "rehearse"];
 
@@ -142,21 +168,25 @@ export function promptText(session: SessionRecord, talkTitles: ReadonlyMap<strin
 }
 
 // One line of the contents: day, prompt, dotted leader, result
-function Row({ row, now, talkTitles, pauseWords }: { row: HistoryRow; now: Date; talkTitles: ReadonlyMap<string, string>; pauseWords: boolean }) {
+function Row({ row, now, talkTitles, pauseWords, onStar }: { row: HistoryRow; now: Date; talkTitles: ReadonlyMap<string, string>; pauseWords: boolean; onStar: (session: SessionRecord, starred: boolean) => void }) {
   // First try's rate, and the retry's if there was one (or the length, when pause words are hidden; decision 79)
   const result = !pauseWords ? formatClock(row.session.durationSec) : row.retry ? `${formatRate(row.session.fillersPerMinute)}, then ${formatRate(row.retry.fillersPerMinute)}` : formatRate(row.session.fillersPerMinute);
   // Its tile
   const look = takeLook(row.session);
-  // A link to the session: its tile, then the words
+  // Whether it is kept
+  const kept = row.session.starred === true;
+  // The take's name
+  const name = promptText(row.session, talkTitles);
+  // A link to the session (its tile, then the words), and the star beside it
   return (
-    <li>
-      <Link href={`/sessions?id=${row.session.id}`} className={`flex min-h-14 items-center gap-3 py-3 hover:text-accent ${PRESS}`}>
+    <li className="flex items-center gap-2">
+      <Link href={`/sessions?id=${row.session.id}`} className={`flex min-h-14 min-w-0 flex-1 items-center gap-3 py-3 hover:text-accent ${PRESS}`}>
         {/* The take's tile, still (second design pass) */}
         <ModeTile ground={look.ground} prop={look.prop} face={look.face} still className="size-12" />
         {/* The prompt, with the day under it (decision 79: rows in a card, no dotted leader) */}
         <span className="min-w-0 flex-1">
           {/* The prompt */}
-          <span className="block font-display text-lg leading-snug font-semibold">{promptText(row.session, talkTitles)}{row.session.starred && <StarIcon aria-label="kept" weight="fill" className="ml-1.5 inline size-4 align-middle text-art-sun" />}</span>
+          <span className="block font-display text-lg leading-snug font-semibold">{name}</span>
           {/* The day, and whether it was tried twice */}
           <span className="block text-sm font-bold text-ink-muted">{dayLabel(new Date(row.session.createdAt), now)}{row.retry ? " · tried twice" : ""}</span>
           {/* The take's shape, when one is kept (decision 115) */}
@@ -165,6 +195,8 @@ function Row({ row, now, talkTitles, pauseWords }: { row: HistoryRow; now: Date;
         {/* The result, with its unit */}
         <span className="flex-none text-right"><span className="block font-display text-lg font-semibold tabular-nums">{result}</span><span className="block text-footnote text-ink-muted">{pauseWords ? <><span className="sm:hidden">a minute</span><span className="hidden sm:inline">pause words a minute</span></> : "long"}</span></span>
       </Link>
+      {/* The star: keep this take (its recording and charts stay for good, decision 98) */}
+      <button type="button" aria-pressed={kept} aria-label={`Keep ${name}`} onClick={() => onStar(row.session, !kept)} className={`inline-flex size-11 flex-none items-center justify-center rounded-[14px] hover:bg-paper ${PRESS} ${kept ? "text-art-sun" : "text-rule hover:text-ink-muted"}`}><StarIcon aria-hidden="true" weight="fill" className="size-6" /></button>
     </li>
   );
 }
@@ -176,7 +208,7 @@ export function HistoryScreen(props: ScreenProps) {
   // Draw the page
   return (
     // One column on a phone, margin plus main column on a computer
-    <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
+    <main id="main" className={PAGE}>
       {/* The area it sits in, your progress, with the settings gear marked (decision 109) */}
       <Masthead title="Me" section="settings" />
       {/* The way back to Me, where it is reached from (decision 109) */}
@@ -203,6 +235,12 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
   const [limit, setLimit] = useState(HISTORY_PAGE);
   // Whether pause words are counted (decision 79; counted until Settings is read)
   const [pauseWords, setPauseWords] = useState(true);
+  // Why the takes could not be read, if they could not
+  const [problem, setProblem] = useState<string | null>(null);
+  // How many times it was loaded, so Try again loads afresh
+  const [attempt, setAttempt] = useState(0);
+  // A star that could not be saved, said under the list
+  const [starProblem, setStarProblem] = useState<string | null>(null);
 
   // Load the sessions once the date is known
   useEffect(() => {
@@ -214,6 +252,9 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
     repo.listSessions().then((loaded) => {
       // Keep the speech practice only, if the screen is still open (small-talk answers are listed on their own page)
       if (!cancelled) setSessions(practiceSessions(loaded));
+    }).catch((error: unknown) => {
+      // Said plainly, with Try again
+      if (!cancelled) setProblem(error instanceof Error ? error.message : String(error));
     });
     // Load the mission tries
     repo.getSettings(today).then((settings) => {
@@ -221,18 +262,38 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
       if (!cancelled) setMissions(settings.missions ?? []);
       // And whether pause words are counted
       if (!cancelled) setPauseWords(pauseWordsShown(settings));
+    }).catch(() => {
+      // The takes' own failure says it; the list still shows with pause words counted
     });
     // Load the talk titles too
     repo.listTalks().then((talks) => {
       // Keep them only if the screen is still open
       if (!cancelled) setTalkTitles(new Map(talks.map((talk) => [talk.id, talk.title])));
+    }).catch(() => {
+      // Rehearsals are then named plainly
     });
     // Mark as closed when leaving
     return () => {
       // Stop the pending update
       cancelled = true;
     };
-  }, [repo, today]);
+  }, [repo, today, attempt]);
+
+  // Star or unstar a take from its row, then show it
+  async function star(session: SessionRecord, starred: boolean) {
+    // Saving can fail
+    try {
+      // Saved on the take
+      await repo.setStarred(session.id, starred);
+      // Shown in the list
+      setSessions((list) => list?.map((item) => (item.id === session.id ? { ...item, starred } : item)) ?? null);
+      // No problem to show
+      setStarProblem(null);
+    } catch (failure) {
+      // Said plainly
+      setStarProblem(`The star could not be saved (${failure instanceof Error ? failure.message : String(failure)}). Try again.`);
+    }
+  }
 
   // Work out progress once per list of sessions (not on every tap of a filter)
   const progress = useMemo(() => (sessions ? baselineProgress(sessions) : null), [sessions]);
@@ -241,13 +302,19 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
   // Every row, the same way
   const allRows = useMemo(() => (sessions ? historyRows(sessions) : []), [sessions]);
   // The rows of the chosen kind
-  const rows = useMemo(() => allRows.filter((row) => show === "all" || (show === "reading") === READING_MODES.includes(row.session.mode)), [allRows, show]);
+  const rows = useMemo(() => allRows.filter((row) => shownUnder(show, row.session)), [allRows, show]);
+  // The rows drawn now, and where the earlier ones start (the list is newest first)
+  const drawn = rows.slice(0, limit);
+  // (the first row older than a week)
+  const firstEarlier = today ? drawn.findIndex((row) => !inThisWeek(row.session, today)) : -1;
   // The first recording, for the listen link
   const baseline = useMemo(() => sessions?.find((session) => session.isBaseline), [sessions]);
 
   // Draw it
   return (
-    <div>
+    <div data-wide>
+      {/* The takes could not be read: Sage says so, with Try again */}
+      {problem !== null && <LoadFailed title="Your takes could not be loaded." reason={problem} onRetry={() => { setProblem(null); setAttempt((count) => count + 1); }} />}
       {/* Empty state */}
       {sessions && sessions.length === 0 && (
         <div className={`mt-6 flex flex-wrap items-center gap-5 p-5 md:max-w-3xl md:p-6 ${CARD}`}>
@@ -267,9 +334,9 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
 
       {/* Progress and sessions */}
       {sessions && sessions.length > 0 && today && (
-        <div className="md:grid md:grid-cols-[280px_minmax(0,1fr)] md:gap-14 md:pt-8">
+        <div className="lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-10 lg:pt-6">
           {/* Progress (top on a phone, margin on a computer) */}
-          <aside className={`mt-5 self-start p-5 md:mt-0 ${CARD}`}>
+          <aside className={`mt-5 self-start p-5 lg:mt-0 ${CARD}`}>
             {/* The small label */}
             <p className={LAB}>Since day 1</p>
             {/* Progress as one sentence, or a note that there is only one recording so far */}
@@ -284,7 +351,7 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
             )}
           </aside>
           {/* The list, with a choice of what it shows */}
-          <div className="mt-6 md:mt-0">
+          <div className="mt-6 lg:mt-0">
             {/* All, speaking, or reading aloud */}
             <div role="group" aria-label="Show" className="flex flex-wrap gap-2 text-footnote">
               {/* One pill per choice (second design pass) */}
@@ -293,10 +360,19 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
             {/* The contents list */}
             <ul aria-label="Sessions" className={`mt-3 ${CARD_LIST}`}>
               {/* One row per first try, newest first, a page at a time */}
-              {rows.slice(0, limit).map((row) => <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} pauseWords={pauseWords} />)}
+              {drawn.map((row, index) => [
+                // "This week" over the first row, when it is from the last seven days
+                index === 0 && firstEarlier !== 0 ? <li key="this-week" className={`pt-3 pb-1 ${LAB}`}>This week</li> : null,
+                // "Earlier" over the first older row
+                index === firstEarlier ? <li key="earlier" className={`pt-3 pb-1 ${LAB}`}>Earlier</li> : null,
+                // The row
+                <Row key={row.session.id} row={row} now={today} talkTitles={talkTitles} pauseWords={pauseWords} onStar={(session, starred) => void star(session, starred)} />,
+              ])}
               {/* Nothing of this kind yet */}
               {rows.length === 0 && <li className="py-4 text-ink-muted">Nothing of this kind yet.</li>}
             </ul>
+            {/* A star that could not be saved */}
+            {starProblem && <p role="alert" className="mt-2 text-footnote">{starProblem}</p>}
             {/* More rows, a page at a time, saying how many are shown */}
             {rows.length > limit && (
               <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">

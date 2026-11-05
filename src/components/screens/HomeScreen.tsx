@@ -85,7 +85,7 @@ import { safetyNudge, type SafetyNudge } from "@/core/storageSafety";
 // Load the browser facts behind it, and the way to put it aside
 import { markNudgeDismissed, readSafetyFacts } from "@/data/storageSafety";
 // Load the check-in rules for the reminder to look back (decision 100)
-import { CHECK_IN_MINUTES, CHECK_IN_PARTS, groupCheckIns, readCheckInSettings, resurfaceDue, sinceWords } from "@/core/checkIn";
+import { CHECK_IN_PARTS, groupCheckIns, readCheckInSettings, resurfaceDue, sinceWords } from "@/core/checkIn";
 // Load the way to put the reminder aside
 import { markReminderSeen } from "@/data/checkIns";
 // Load the Quick play pick's type (types only; its code and content load after the page has shown, decision 88)
@@ -516,7 +516,7 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
   // "Evening" and the like, for the greeting and the heading
   const dayPart = partOfDay(today);
   // Sage's line in the bubble: a greeting for the time of day and what is left
-  const greeting = !plan ? "" : checkInWaiting ? (plan.checkIn?.baseline ? `Today is your first check-in. About ${CHECK_IN_MINUTES} minutes.` : `Check-in day. About ${CHECK_IN_MINUTES} minutes.`) : nextIndex === -1 ? "The rest can wait. Come back if a moment comes up." : `${dayPart}. ${doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short ones ${dayPart === "Evening" ? "tonight" : "today"}` : `${plan.steps.length - doneCount} to go`}, about ${planMinutes(openSteps)} minutes.`;
+  const greeting = !plan ? "" : checkInWaiting ? (plan.checkIn?.baseline ? `${dayPart}. Your first check-in is up first, about ${planMinutes(openSteps)} minutes in all.` : `${dayPart}. Your weekly check-in is up first, about ${planMinutes(openSteps)} minutes in all.`) : nextIndex === -1 ? "The rest can wait. Come back if a moment comes up." : `${dayPart}. ${doneCount === 0 ? `${STEP_COUNTS[plan.steps.length] ?? "A few"} short ones ${dayPart === "Evening" ? "tonight" : "today"}` : `${plan.steps.length - doneCount} to go`}, about ${planMinutes(openSteps)} minutes.`;
   // The next step's address, for the Start button
   const nextHref = plan && nextStep ? planHref(nextStep, nextIndex + 1) : null;
   // The heading: "Tonight" in the evening, otherwise "Today", or where things stand
@@ -672,7 +672,7 @@ export function HomeScreen({ random = Math.random, ...props }: ScreenProps & { r
                 </div>
               )}
               {/* On a check-in day, what it is in a line (decision 100) */}
-              {checkInWaiting && <p className="-mt-2 max-w-[56ch] text-lede font-semibold text-ink-muted">{plan.checkIn?.baseline ? `Four short parts, about ${CHECK_IN_MINUTES} minutes. Next week you’ll hear the change.` : `The same four parts as last time, about ${CHECK_IN_MINUTES} minutes.${plan.checkIn?.late ? " Still open today." : ""}`}</p>}
+              {checkInWaiting && <p className="-mt-2 max-w-[56ch] text-lede font-semibold text-ink-muted">{plan.checkIn?.baseline ? "Four short parts. Next week you’ll hear the change." : `The same four parts as last time, so you can hear what changed.${plan.checkIn?.late ? " Still open today." : ""}`}</p>}
               {/* On a phone: the step waiting now on top of the deck, then one big Start, then since day 1 */}
               {nextStep && nextHref && (
                 <div className="flex flex-col gap-4 md:hidden">

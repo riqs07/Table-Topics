@@ -202,6 +202,24 @@ describe("the check-in page", () => {
     expect([!!(await screen.findByText(/The database connection is closing/)), !!screen.getByRole("button", { name: "Try again" })]).toEqual([true, true]);
   });
 
+  // The check-ins cannot be read: Sage says so, with Try again, which loads afresh
+  it("says when the check-ins cannot be loaded, and tries again", async () => {
+    // A store whose takes fail once
+    const working = await dayTwo();
+    // (failing the first read only)
+    let failed = false;
+    // The repository with the failing read
+    const repository = { ...working, listSessions: async () => { if (!failed) { failed = true; throw new Error("The database is not available."); } return working.listSessions(); } };
+    // Drawn
+    render(<CheckInScreen repository={repository} now={NOW} />);
+    // The failure
+    const heading = await screen.findByRole("heading", { name: "Your check-ins could not be loaded." });
+    // Try again
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    // Confirm the failure was said, then the page loads
+    expect([!!heading, !!(await screen.findByRole("region", { name: "This week" }))]).toEqual([true, true]);
+  });
+
   // The list of check-ins
   it("lists every check-in, newest first", async () => {
     // Two check-ins

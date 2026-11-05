@@ -15,10 +15,16 @@ import { Skeleton } from "@/components/script/Skeleton";
 // Load the shared looks
 import { PRESS, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { BUBBLE, CARD, LAB } from "@/components/script/textStyles";
+// Load the shared failed-to-load card
+import { LoadFailed } from "@/components/script/LoadFailed";
 // Load the cast, the mode tiles and each part's tile
 import { Cast } from "@/components/scenes/Cast";
 import { ModeTile } from "@/components/scenes/ModeTile";
 import { CHECK_IN_TILES } from "@/components/script/checkInTiles";
+// Load the Chart Kit's then-and-now ribbons and the tiny copies they are drawn from
+import { ThenAndNow } from "@/components/charts/ThenAndNow";
+import { ribbonFromMini } from "@/core/chartKit";
+import { isMiniFingerprint } from "@/core/miniFingerprint";
 // Load the green small-capitals label, for the "now" side
 import { STEP_LABEL } from "@/components/script/PracticeBar";
 import { PAGE } from "@/components/script/layout";
@@ -96,6 +102,8 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
   const [chosen, setChosen] = useState<{ a: string | null; b: string | null }>({ a: aId, b: bId });
   // A load failure, said plainly
   const [problem, setProblem] = useState<string | null>(null);
+  // How many times it was loaded, so Try again loads afresh
+  const [attempt, setAttempt] = useState(0);
   // Name the tab
   usePageTitle("Compare check-ins");
 
@@ -118,7 +126,7 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
       // Ignore late results
       cancelled = true;
     };
-  }, [repo, today]);
+  }, [repo, today, attempt]);
 
   // The pair being compared
   const pair = data ? pickPair(data.checkIns, chosen.a, chosen.b) : null;
@@ -161,11 +169,11 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
       {/* The way back */}
       <p className="mt-2"><Link href="/check-in" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Your check-ins</Link></p>
       {/* The page's name */}
-      <PictureTitle title="How far you’ve come" picture={<span className="flex items-end"><Cast who="you" face="wonder" still className="size-10 md:size-14" /><Cast who="you" face="happy" className="-ml-2 size-14 md:size-22" /></span>}>{comparison ? `${shortDay(comparison.a.day)} and ${shortDay(comparison.b.day)}, ${comparison.days} days apart.` : "Then and now, part by part."}</PictureTitle>
+      <PictureTitle title="How far you’ve come" picture={comparison ? <BlobsThenAndNow then={shortDay(comparison.a.day)} now={shortDay(comparison.b.day)} /> : <span className="flex items-end"><Cast who="you" face="wonder" still className="size-10 md:size-14" /><Cast who="you" face="happy" className="-ml-2 size-14 md:size-22" /></span>}>{comparison ? `${shortDay(comparison.a.day)} and ${shortDay(comparison.b.day)}, ${comparison.days} days apart.` : "Then and now, part by part."}</PictureTitle>
       {/* Until loaded */}
       {!problem && (!data || (pair && !analyses)) && <Skeleton blocks={["h-16", "h-72"]} />}
       {/* A failure */}
-      {problem !== null && <p role="alert" className={`mt-6 p-5 font-semibold ${CARD}`}><span className={`block ${LAB}`}>Not loaded</span>The check-ins could not be loaded. The browser said: “{problem}” Reload the page to try again.</p>}
+      {problem !== null && <LoadFailed title="The check-ins could not be loaded." reason={problem} onRetry={() => { setProblem(null); setAttempt((count) => count + 1); }} />}
       {/* Fewer than two check-ins: Sage says what it needs, and the way there */}
       {data && !pair && (
         <section aria-label="Nothing to compare yet" className={`mt-6 flex flex-col gap-4 p-5 ${CARD}`}>
@@ -182,17 +190,17 @@ export function CheckInCompareScreen({ aId = null, bId = null, ...props }: Check
       )}
       {/* Which two */}
       {pair && recorded.length > 2 && <PairChooser checkIns={recorded} pair={pair} onChoose={setChosen} />}
-      {/* Each part */}
-      {comparison && comparison.parts.map((part) => <PartSection key={part.part} repo={repo} comparison={comparison} part={part} pauseWords={pauseWords} />)}
-      {/* Sage's closing line, with the real gap in days (storyboard "Then and now") */}
+      {/* Sage's line, with the real gap in days (storyboard "Then and now"), before the parts so it is seen */}
       {comparison && (
-        <div className="mt-6 flex items-end gap-3">
+        <div className="mt-5 flex items-end gap-3">
           {/* The coach, proud */}
           <Cast who="sage" mood="proud" className="size-16 flex-none md:size-18" />
           {/* The line */}
           <p className={`${BUBBLE} mb-2 max-w-[44ch]`}>Hear the change? That’s {comparison.days} days of practice.</p>
         </div>
       )}
+      {/* Each part */}
+      {comparison && comparison.parts.map((part) => <PartSection key={part.part} repo={repo} comparison={comparison} part={part} pauseWords={pauseWords} />)}
     </main>
   );
 }
@@ -231,6 +239,40 @@ function PairChooser({ checkIns, pair, onChoose }: { checkIns: ReadonlyArray<Che
         </label>
       </div>
     </section>
+  );
+}
+
+// The blob then and now, the later one larger and pleased, each with its day under it (storyboard "Then and now")
+function BlobsThenAndNow({ then, now }: { then: string; now: string }) {
+  // Two blobs side by side, lined up at the bottom
+  return (
+    <span className="flex items-end gap-2">
+      {/* Then */}
+      <span className="flex flex-col items-center"><Cast who="you" face="wonder" still className="size-11 md:size-14" /><span className="text-chip font-extrabold text-ink-muted">{then}</span></span>
+      {/* Now */}
+      <span className="flex flex-col items-center"><Cast who="you" face="happy" className="size-15 md:size-20" /><span className="text-chip font-extrabold text-accent-tint-ink">{now}</span></span>
+    </span>
+  );
+}
+
+// One change as a ruled row: the measure on the left, then before and a bold green after on the right, and the note under it (a line in another shape shows as it is)
+function ChangeRow({ line }: { line: string }) {
+  // "Pause words: 5/min → 2.5/min, fewer, better."
+  const match = /^([^:]+):\s*(.+?)\s*→\s*([^,]+?)(,.*)?\.?$/.exec(line);
+  // Not in that shape: the line as it is
+  if (!match) return <li className="py-2.5 font-bold">{line}</li>;
+  // The parts
+  const [, name, before, after, rest] = match;
+  // The row
+  return (
+    <li className="flex flex-wrap items-baseline justify-between gap-x-3 py-2.5 font-bold">
+      {/* The measure */}
+      <span>{name}</span>
+      {/* Before and after */}
+      <span className="tabular-nums text-ink-muted">{before} → <b className="font-display text-lg text-accent-tint-ink">{after}</b></span>
+      {/* What it means, in words */}
+      {rest && <span className="basis-full text-footnote font-semibold text-ink-muted">{rest.replace(/^,\s*/, "").replace(/\.$/, "")}</span>}
+    </li>
   );
 }
 
@@ -322,12 +364,18 @@ function PartSection({ repo, comparison, part, pauseWords }: { repo: Repository;
           <button type="button" aria-pressed={side === "b"} onClick={() => play("b")} className={`min-w-11 ${pill(side === "b")}`}>Now</button>
         </div>
       )}
+      {/* Both takes as the Chart Kit's ribbons, then grey under now, when each kept its tiny copy and the words differ (the same words get the pitch card below, which draws them itself) */}
+      {part.a && part.b && part.a.promptId !== part.b.promptId && isMiniFingerprint(part.a.fingerprint) && isMiniFingerprint(part.b.fingerprint) && (
+        <div className="mt-4 rounded-[18px] border-2 border-rule p-4">
+          <ThenAndNow before={ribbonFromMini(part.a.fingerprint, part.a.durationSec)} after={ribbonFromMini(part.b.fingerprint, part.b.durationSec)} names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} pauseWords={pauseWords} />
+        </div>
+      )}
       {/* The same words both times: then's pitch dashed under now's, phrase by phrase (decision 111) */}
       {part.a && part.b && part.a.promptId === part.b.promptId && <LastVsThisLoader repo={repo} beforeId={part.a.id} afterId={part.b.id} kind="Then and now" names={{ before: `Then, ${shortDay(comparison.a.day)}`, after: `Now, ${shortDay(comparison.b.day)}` }} plays={{ before: "Play then", after: "Play now" }} pauseWords={pauseWords} />}
       {/* What changed, in plain lines */}
       <ul aria-label={`What changed, ${partName(part.part)}`} className="mt-4 divide-y-2 divide-rule rounded-[18px] border-2 border-rule px-4">
         {/* Each line */}
-        {part.lines.map((line) => <li key={line} className="py-2.5 font-bold">{line}</li>)}
+        {part.lines.map((line) => <ChangeRow key={line} line={line} />)}
       </ul>
       {/* Every measure, folded away under "All numbers", when both takes are here */}
       {part.rows.length > 0 && (

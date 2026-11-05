@@ -229,4 +229,17 @@ describe("results page measures", () => {
     // (link)
     expect(screen.getByRole("link", { name: "See all measures for this take" }).getAttribute("href")).toBe("/profile?session=s1");
   });
+  // Nothing can be read: Sage says so as the page's heading, never the new user's "Your first take will show up here."
+  it("says when Me cannot be loaded, without the new user's line", async () => {
+    // A store that cannot be read
+    const broken = createRepository(new MemoryStore());
+    // (every read of the takes fails)
+    const repository = { ...broken, listSessions: async () => { throw new Error("The database is not available."); } };
+    // Drawn
+    render(<ProfileScreen repository={repository} now={NOW} />);
+    // The failure as the page's heading
+    const heading = await screen.findByRole("heading", { level: 1, name: "Your progress could not be loaded." });
+    // Confirm it, Try again, and no new-user line
+    expect([!!heading, !!screen.getByRole("button", { name: "Try again" }), screen.queryByText("Your first take will show up here.")]).toEqual([true, true, null]);
+  });
 });

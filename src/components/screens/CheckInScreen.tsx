@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/script/Skeleton";
 // Load the shared looks
 import { RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { BUBBLE, CARD, CARD_LIST, LAB, SECTION_HEADING } from "@/components/script/textStyles";
+// Load the shared failed-to-load card
+import { LoadFailed } from "@/components/script/LoadFailed";
 // Load the cast, the mode tiles and the check-in's tiles
 import { Cast } from "@/components/scenes/Cast";
 import { ModeTile } from "@/components/scenes/ModeTile";
@@ -34,6 +36,8 @@ export function CheckInScreen(props: ScreenProps) {
   const [data, setData] = useState<CheckInData | null>(null);
   // A load failure, said plainly
   const [problem, setProblem] = useState<string | null>(null);
+  // How many times it was loaded, so Try again loads afresh
+  const [attempt, setAttempt] = useState(0);
   // Name the tab
   usePageTitle("Your check-ins");
 
@@ -56,7 +60,7 @@ export function CheckInScreen(props: ScreenProps) {
       // Ignore late results
       cancelled = true;
     };
-  }, [repo, today]);
+  }, [repo, today, attempt]);
 
   // The check-ins with takes, newest first
   const recorded = data ? recordedCheckIns(data.checkIns).reverse() : [];
@@ -82,7 +86,7 @@ export function CheckInScreen(props: ScreenProps) {
       {/* Until loaded */}
       {!data && !problem && <Skeleton blocks={["h-24", "h-56"]} />}
       {/* A failure */}
-      {problem !== null && <p role="alert" className={`mt-6 p-5 font-semibold ${CARD}`}><span className={`block ${LAB}`}>Not loaded</span>Your check-ins could not be loaded. The browser said: “{problem}” Reload the page to try again.</p>}
+      {problem !== null && <LoadFailed title="Your check-ins could not be loaded." reason={problem} onRetry={() => { setProblem(null); setAttempt((count) => count + 1); }} />}
       {/* Today, or when the next one is: Sage says it, the four parts under it (storyboard "Weekly check-in") */}
       {data && (
         <section aria-label="This week" className={`mt-6 p-5 ${CARD}`}>
