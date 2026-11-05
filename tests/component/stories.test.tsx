@@ -76,7 +76,8 @@ describe("StoriesScreen", () => {
     expect((await screen.findAllByRole("link", { name: storyPromptForDay(NOW).text }))[0]!.getAttribute("href")).toBe(`/stories/tell?prompt=${storyPromptForDay(NOW).id}`);
     // Confirm the empty lines and the eight groups
     expect([await screen.findByText("Stories you tell land here, ready to tell again."), screen.getByRole("link", { name: "Record today’s moment" }).getAttribute("href"), STORY_GROUPS.every((group) => screen.getByText(group.name))]).toEqual([expect.anything(), "/session?mode=moment&prompt=moment", true]);
-  });
+    // (the whole page, every prompt in its fold and a tile on each kind, is a large tree for the role queries: given room, as courses.test.tsx does)
+  }, 20_000);
 
   // Today's story with its suggested template and Tell it, then the four templates, each starting today's story with it (decision 126)
   it("offers today's story with its suggested template, and the templates", async () => {
@@ -125,7 +126,7 @@ describe("StoriesScreen", () => {
     // Save
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     // Confirm it shows and is saved
-    expect([await screen.findByText("The night bus"), (await repository.getStory("sp04"))?.title]).toEqual([expect.anything(), "The night bus"]);
+    expect([await screen.findByText("The night bus", {}, { timeout: 5000 }), (await repository.getStory("sp04"))?.title]).toEqual([expect.anything(), "The night bus"]);
   });
 
   // A title that cannot be saved says why and keeps the field open (rule T1)
@@ -169,8 +170,30 @@ describe("TellStoryScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: /Client win/ }));
     // (length)
     fireEvent.click(screen.getByRole("button", { name: /Short/ }));
-    // Confirm the prompt, the suggestion, both addresses, the chosen button, the example of the chosen template, and no shapes, focuses or 4/3/2 switch
-    expect([!!screen.getByText(/a plan fell apart/), suggested.getAttribute("aria-pressed"), first, start(), screen.getByRole("button", { name: /Client win/ }).getAttribute("aria-pressed"), within(screen.getByRole("region", { name: "Example: Client win" })).getByText("(the result, with a number)").tagName, screen.queryByRole("button", { name: /But and so/ }), screen.queryByRole("button", { name: "Under a minute" }), screen.queryByRole("checkbox")]).toEqual([true, "false", "/session?mode=story&prompt=sp01&template=lesson&length=full", "/session?mode=story&prompt=sp01&template=client-win&length=short", "true", "B", null, null, null]);
+    // Confirm the prompt, the suggestion, both addresses, the chosen button, the example of the chosen template, no shapes or 4/3/2 switch, and the focuses offered but none picked (storyboard 13's "One thing to try")
+    expect([!!screen.getByText(/a plan fell apart/), suggested.getAttribute("aria-pressed"), first, start(), screen.getByRole("button", { name: /Client win/ }).getAttribute("aria-pressed"), within(screen.getByRole("region", { name: "Example: Client win" })).getByText("(the result, with a number)").tagName, screen.queryByRole("button", { name: /But and so/ }), screen.getByRole("button", { name: "Under a minute" }).getAttribute("aria-pressed"), screen.queryByRole("checkbox")]).toEqual([true, "false", "/session?mode=story&prompt=sp01&template=lesson&length=full", "/session?mode=story&prompt=sp01&template=client-win&length=short", "true", "B", null, "false", null]);
+  });
+
+  // One thing to try (storyboard 13): a pill picks a focus for this telling, which the telling page reads from the address; tapping it again clears it, and "Under a minute" also picks short
+  it("picks one thing to try, carried into the telling", async () => {
+    // Draw it for a bank prompt
+    render(<TellStoryScreen storyId="sp01" repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The start band's address
+    const start = () => screen.getByRole("link", { name: /Start/ }).getAttribute("href");
+    // The focuses offered
+    const names = within(screen.getByRole("group", { name: "One thing to try" })).getAllByRole("button").map((button) => button.textContent);
+    // Pick one vivid detail
+    fireEvent.click(screen.getByRole("button", { name: "One vivid detail" }));
+    // Its address and tip
+    const picked = [start(), screen.getByRole("button", { name: "One vivid detail" }).getAttribute("aria-pressed"), !!screen.getByText(/A name, a number, a colour/)];
+    // Tap it again for none
+    fireEvent.click(screen.getByRole("button", { name: "One vivid detail" }));
+    // The address without it
+    const cleared = start();
+    // Under a minute
+    fireEvent.click(screen.getByRole("button", { name: "Under a minute" }));
+    // Confirm the five, the picked address and tip, the cleared address, and a minute's story told short
+    expect([names, picked, cleared, start()]).toEqual([["Start in the middle", "Add one line of what someone said", "One vivid detail", "End on the point", "Under a minute"], ["/session?mode=story&prompt=sp01&template=lesson&focus=detail&length=full", "true", true], "/session?mode=story&prompt=sp01&template=lesson&length=full", "/session?mode=story&prompt=sp01&template=lesson&focus=minute&length=short"]);
   });
 
   // A link can start on a template (from the Stories page), and a Learn card's focus is carried in (decision 94); "Under a minute" starts short

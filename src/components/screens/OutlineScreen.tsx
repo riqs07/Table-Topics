@@ -1,5 +1,5 @@
 "use client";
-// A short speech: the user types what it's about, a few points and a length, then speaks with the points in view (decision 73)
+// A short speech: the user types what it’s about, a few points and a length, then speaks with the points in view (decision 73). Second design pass, extrapolated from Desktop Screens "StoryTell": focus mode with the bar, two columns on a computer (the heading, the short speech’s tile and Sage’s tip; the plan in a card with round point markers and the lengths as choice cards), then the chunky band
 
 // Load React's state tools, and the reader for browser-only values
 import { useState, useSyncExternalStore } from "react";
@@ -7,7 +7,11 @@ import { useState, useSyncExternalStore } from "react";
 import type { Outline } from "@/core/outline";
 // Load the script-page building blocks
 import { ActionBand, ActionButton } from "@/components/script/ActionBand";
-import { PRACTICE_NARROW, PracticeBar } from "@/components/script/PracticeBar";
+import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
+// Load the short speech’s tile panel, Sage’s line and the card and label looks
+import { ScenePanel } from "@/components/scenes/ScenePanel";
+import { SageSays } from "@/components/script/SageSays";
+import { CARD, LAB } from "@/components/script/textStyles";
 // Load the shared button looks
 import { PRESS, QUIET } from "@/components/script/Buttons";
 // Load the plan rules
@@ -16,7 +20,7 @@ import { MAX_POINTS, MAX_TEXT, OUTLINE_LENGTHS, cleanOutline, outlineQuery } fro
 import { parseOutlineDraft, readOutlineDraftText, saveOutlineDraft } from "@/data/outlineDraft";
 
 // The look of a text field
-const FIELD = "min-h-12 w-full rounded-xl border-2 border-rule bg-card px-3 py-2";
+const FIELD = "min-h-12 w-full rounded-xl border-2 border-rule bg-paper px-3 py-2";
 
 // Nothing changes the stored draft while the page is open, so there is nothing to listen to
 function subscribeToNothing(): () => void {
@@ -52,59 +56,70 @@ function OutlineForm({ draft }: { draft: Outline | null }) {
 
   // Draw it
   return (
-    <main id="main" className={PRACTICE_NARROW}>
+    <main id="main" className={PRACTICE_MAIN}>
       {/* Title, with a way back to Practice */}
       <PracticeBar close={{ href: "/practice", label: "Close, back to Practice" }} label="Short speech" />
-      {/* The heading */}
-      <h1 className="mt-6 font-display text-statement font-semibold">Plan a short speech.</h1>
-      {/* What it is about */}
-      <label className="mt-6 block">
-        {/* Label */}
-        <span className="block font-semibold">What’s it about?</span>
-        {/* The field */}
-        <input value={topic} onChange={(event) => setTopic(event.target.value)} maxLength={MAX_TEXT} placeholder="Why I started running" className={`mt-2 ${FIELD}`} />
-      </label>
-      {/* The points */}
-      <fieldset className="mt-6">
-        {/* Label */}
-        <legend className="font-semibold">Your points</legend>
-        {/* A line on how much to write */}
-        <p className="text-footnote text-ink-muted">A few words each. You’ll see them while you speak.</p>
-        {/* Each point */}
-        <ol className="mt-2 flex flex-col gap-2">
-          {points.map((point, index) => (
-            // One point with its number
-            <li key={index} className="flex items-center gap-3">
-              {/* The number */}
-              <span aria-hidden="true" className="flex size-8 flex-none items-center justify-center rounded-lg bg-warm-tint text-footnote font-semibold text-warm-ink">{index + 1}</span>
+      {/* Two columns on a computer, as the story set-up: the speech's tile and Sage on the left, the plan on the right */}
+      <div className={`${PRACTICE_BODY} grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-10`}>
+        {/* The heading, the tile and Sage's tip */}
+        <div className="flex min-w-0 flex-col gap-5">
+          {/* The heading */}
+          <h1 className="font-display text-statement leading-tight font-semibold">Plan a short speech.</h1>
+          {/* The short speech's tile */}
+          <ScenePanel scene="short-speech" name="Short speech" line="Your points stay in view while you speak." className="" />
+          {/* How much to write */}
+          <SageSays mood="encouraging">A few words each. You’ll see them while you speak.</SageSays>
+        </div>
+        {/* The plan, in a card, then the band */}
+        <div className="flex min-w-0 flex-col">
+          <div className={`flex flex-col gap-6 p-5 md:p-6 ${CARD}`}>
+            {/* What it is about */}
+            <label className="block">
+              {/* Label */}
+              <span className={`${LAB} block`}>What’s it about?</span>
               {/* The field */}
-              <input value={point} onChange={(event) => setPoint(index, event.target.value)} maxLength={MAX_TEXT} aria-label={`Point ${index + 1}`} className={FIELD} />
-            </li>
-          ))}
-        </ol>
-        {/* Room for one more, up to four */}
-        {points.length < MAX_POINTS && <p className="mt-2"><button type="button" onClick={() => setPoints([...points, ""])} className={QUIET}>Add a point</button></p>}
-      </fieldset>
-      {/* How long */}
-      <div role="group" aria-label="How long" className="mt-6">
-        {/* Label */}
-        <p className="font-semibold">How long?</p>
-        {/* The lengths */}
-        <div className="mt-2 grid max-w-md grid-cols-4 gap-2">
-          {OUTLINE_LENGTHS.map((minutes) => (
-            // One length, filled when chosen
-            <button key={minutes} type="button" aria-pressed={goal === minutes} onClick={() => setGoal(minutes)} className={`min-h-11 rounded-xl border-2 ${PRESS} ${goal === minutes ? "border-fill bg-fill text-fill-ink" : "border-rule bg-card"}`}>{minutes} min</button>
-          ))}
+              <input value={topic} onChange={(event) => setTopic(event.target.value)} maxLength={MAX_TEXT} placeholder="Why I started running" className={`mt-2 ${FIELD}`} />
+            </label>
+            {/* The points */}
+            <fieldset>
+              {/* Label */}
+              <legend className={LAB}>Your points</legend>
+              {/* Each point */}
+              <ol className="mt-2 flex flex-col gap-2.5">
+                {points.map((point, index) => (
+                  // One point with its number
+                  <li key={index} className="flex items-center gap-3">
+                    {/* The number, on a round marker as on a path */}
+                    <span aria-hidden="true" className="flex size-10 flex-none items-center justify-center rounded-full bg-paper font-display text-lg font-semibold text-ink-muted shadow-ledge">{index + 1}</span>
+                    {/* The field */}
+                    <input value={point} onChange={(event) => setPoint(index, event.target.value)} maxLength={MAX_TEXT} aria-label={`Point ${index + 1}`} className={FIELD} />
+                  </li>
+                ))}
+              </ol>
+              {/* Room for one more, up to four */}
+              {points.length < MAX_POINTS && <p className="mt-3"><button type="button" onClick={() => setPoints([...points, ""])} className={QUIET}>Add a point</button></p>}
+            </fieldset>
+            {/* How long */}
+            <div role="group" aria-label="How long">
+              {/* Label */}
+              <p className={LAB}>How long?</p>
+              {/* The lengths, as the set-up's choice cards */}
+              <div className="mt-2.5 grid max-w-md grid-cols-4 gap-2.5">
+                {OUTLINE_LENGTHS.map((minutes) => (
+                  // One length, edged in the accent when chosen
+                  <button key={minutes} type="button" aria-pressed={goal === minutes} onClick={() => setGoal(minutes)} className={`min-h-12 rounded-[14px] border-2 bg-card font-display text-lg font-semibold ${PRESS} ${goal === minutes ? "border-accent shadow-picked" : "border-rule shadow-card hover:border-ink-muted"}`}>{minutes} min</button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Start, once there is a topic and a point (the plan is kept for next time) */}
+          {outline ? (
+            <div onClickCapture={() => saveOutlineDraft(outline)}><ActionBand action="Start speaking" aside={`${outline.points.length} point${outline.points.length === 1 ? "" : "s"} · ${outline.goalMinutes} min`} href={`/session?mode=outline&${outlineQuery(outline)}`} /></div>
+          ) : (
+            <ActionButton action="Start speaking" aside="add a topic and a point" onClick={() => {}} disabled />
+          )}
         </div>
       </div>
-      {/* Push the band down */}
-      <div className="flex-1" />
-      {/* Start, once there is a topic and a point (the plan is kept for next time) */}
-      {outline ? (
-        <div onClickCapture={() => saveOutlineDraft(outline)}><ActionBand action="Start speaking" aside={`${outline.points.length} point${outline.points.length === 1 ? "" : "s"} · ${outline.goalMinutes} min`} href={`/session?mode=outline&${outlineQuery(outline)}`} /></div>
-      ) : (
-        <ActionButton action="Start speaking" aside="add a topic and a point" onClick={() => {}} disabled />
-      )}
     </main>
   );
 }

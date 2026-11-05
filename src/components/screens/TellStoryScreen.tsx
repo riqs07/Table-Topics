@@ -7,8 +7,6 @@
 import { PageFade } from "@/components/scenes/SharedScene";
 import { ScenePanel } from "@/components/scenes/ScenePanel";
 import { useEffect, useState } from "react";
-// Load Next.js's link component
-import Link from "next/link";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
 import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
@@ -19,7 +17,7 @@ import { CARD, LAB } from "@/components/script/textStyles";
 // Load the shared screen set-up
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the story content
-import { STORY_LENGTHS, STORY_TEMPLATES, findStoryPrompt, findStoryTemplate, momentIdOf, storyTakeQuery, suggestedTemplate } from "@/content/stories";
+import { STORY_FOCUSES, STORY_LENGTHS, STORY_TEMPLATES, findStoryFocus, findStoryPrompt, findStoryTemplate, momentIdOf, storyTakeQuery, suggestedTemplate } from "@/content/stories";
 // Load the record types
 import type { StoryFocus, StoryLength, StoryTake, StoryTemplate } from "@/data/records";
 // Load the guided stories and their card (decision 93)
@@ -27,6 +25,8 @@ import { findGuidedStory, guidedLevel } from "@/content/guidedStories";
 // Load the setup screen's scene for a story's kind (decisions 152 and 153)
 import { storyScene } from "@/components/scenes/sceneFor";
 import { GuidedStoryCard } from "@/components/script/GuidedStoryCard";
+// Load the page that is not there
+import { NotFound } from "@/components/script/SageSays";
 // Load the tab title helper
 import { usePageTitle } from "@/components/screens/usePageTitle";
 
@@ -67,8 +67,8 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
   const suggested = suggestedTemplate(storyId);
   // The template (the one asked for, else the suggested one)
   const [template, setTemplate] = useState<StoryTemplate>(initialTemplate ?? suggested);
-  // The focus carried in: the one the link asked for, else the one a guided story suits, else none
-  const focus: StoryFocus | null = initialFocus ?? guided?.focus ?? null;
+  // One thing to try (storyboard 13's chips): the one the link asked for, else the one a guided story suits, else none until picked
+  const [focus, setFocus] = useState<StoryFocus | null>(initialFocus ?? guided?.focus ?? null);
   // The length (full by default; short inside today's practice, which keeps to a few minutes, or when the link asks for under a minute)
   const [length, setLength] = useState<StoryLength>(planStep || initialFocus === "minute" ? "short" : "full");
   // The chosen template's details
@@ -79,8 +79,20 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
   const shown = showAll ? STORY_TEMPLATES : STORY_TEMPLATES.filter((item) => item.family === chosen.family);
   // The set-up as it will be told
   const take: StoryTake = { template, focus, length };
+  // The focus picked, with how to do it
+  const focusInfo = findStoryFocus(focus);
   // Name the tab
   usePageTitle("Tell a story");
+
+  // Pick one thing to try, or tap the picked one again for none; "Under a minute" also picks the short length, as a link asking for it does
+  function pickFocus(next: StoryFocus) {
+    // The same one again clears it
+    const picked = focus === next ? null : next;
+    // Kept
+    setFocus(picked);
+    // A minute's story is a short one
+    if (picked === "minute") setLength("short");
+  }
 
   // For a moment note, load its words
   useEffect(() => {
@@ -117,10 +129,8 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
         {/* A story that cannot be found */}
         {unknown ? (
           <div className={PRACTICE_BODY}>
-            {/* The page's heading for screen readers and the keyboard, since this state draws no visible one */}
-            <h1 className="sr-only">Tell a story</h1>
-            {/* Where it went */}
-            <p role="alert" className="max-w-[48ch] text-lede">This story is not here. <Link href="/stories" className={TEXT_LINK}>Back to Stories</Link></p>
+            {/* Sage says so, as the page's heading, with the way back */}
+            <NotFound title="This story is not here." back={{ href: "/stories", label: "Back to Stories" }} className="mt-4" />
           </div>
         ) : (
           <div className={`${PRACTICE_BODY} grid items-start gap-8 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-10`}>
@@ -163,6 +173,21 @@ export function TellStoryScreen({ storyId, planStep = null, initialTemplate = nu
                 {!showAll && <button type="button" onClick={() => setShowAll(true)} className={`${TEXT_LINK} text-footnote`}>Show all templates</button>}
                 {/* What a story you'll need needs, in a line (decision 152) */}
                 {chosen.needs && <p data-template-needs className="mt-2 rounded-2xl bg-accent-tint px-4 py-3 text-footnote font-bold text-accent-tint-ink">{chosen.needs}</p>}
+              </div>
+
+              {/* One thing to try, as pills (storyboard 13); none is fine, and the one picked shows how */}
+              <div role="group" aria-labelledby="focus-label">
+                {/* Label */}
+                <p id="focus-label" className={LAB}>One thing to try</p>
+                {/* The focuses */}
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {STORY_FOCUSES.map((item) => (
+                    // One focus, in the warm tint when picked
+                    <button key={item.id} type="button" aria-pressed={focus === item.id} onClick={() => pickFocus(item.id)} className={`inline-flex min-h-11 items-center rounded-full border-2 px-4 text-sm font-extrabold ${PRESS} ${focus === item.id ? "border-warm bg-warm-tint text-warm-ink" : "border-rule bg-card text-ink shadow-ledge hover:border-ink-muted"}`}>{item.name}</button>
+                  ))}
+                </div>
+                {/* How to do the one picked */}
+                {focusInfo && <p data-focus-tip className="mt-2 text-footnote font-bold text-ink-muted">{focusInfo.tip}</p>}
               </div>
 
               {/* The length, before the example so the Start band never covers it on a phone */}

@@ -1,20 +1,21 @@
 "use client";
-// Read aloud (once "Build a skill"): every text to read aloud, the next part to read first, then one folded row per group (decision 79); the lessons moved to Learn's Speaking skills set (decision 107), so this page keeps the readings only, at its old /skills address
+// Read aloud (once "Build a skill"): every text to read aloud, the next part to read first, then one folded row per group (decision 79); the lessons moved to Learn's Speaking skills set (decision 107), so this page keeps the readings only, at its old /skills address. Second design pass, extrapolated from Desktop Screens "Courses" and "ReadAloud": "‹ Speak on the spot" and the reading tile in a header card, the next part as a "Keep going" card with a chunky button, then each group as a folded card with its own tile
 
 // Load React's state and effect tools
+import { useEffect, useState } from "react";
 // Load the page fade round a glide (decision 141)
 import { PageFade } from "@/components/scenes/SharedScene";
-import { useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
-// Load the page heading with the main navigation
+// Load the page heading with the main navigation, the list page's header and Sage's line
 import { Masthead } from "@/components/script/Masthead";
-// Load the shared page title
-import { PageTitle } from "@/components/script/PageTitle";
-// Load the scene panel (decision 141)
-import { ScenePanel } from "@/components/scenes/ScenePanel";
-// Load the whole-row link
-import { PRESS, RowLink } from "@/components/script/Buttons";
+import { HubHeader } from "@/components/script/HubHeader";
+import { SageSays } from "@/components/script/SageSays";
+// Load the mode tile, each kind's tile and the tile look type
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES, type ModeTileLook } from "@/components/scenes/modeTileFor";
+// Load the whole-row link, the press effect and the chunky button look
+import { PRESS, PRIMARY, RowLink } from "@/components/script/Buttons";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
 // Load the full speeches
@@ -28,9 +29,21 @@ import { PASSAGES, type Passage } from "@/content/prompts";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 // Load the shared card list look
-import { CARD, CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, CARD_LIST, LAB, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the folded group card
 import { FoldCard, useOpenFoldFromAddress } from "@/components/script/FoldCard";
+
+// Each group's tile: a book on leaf for whole speeches (the reading tile), a flag on sun for graduation, a microphone on sky for famous moments, a book on plum for plain passages
+const GROUP_TILES: Readonly<Record<string, ModeTileLook>> = {
+  // Whole speeches
+  readings: SCENE_TILES["read-aloud"],
+  // Commencement speeches
+  commencement: { ground: "sun", prop: "flag", face: "happy" },
+  // Short readings
+  "short-readings": { ground: "sky", prop: "mic", face: "sing" },
+  // Practice passages
+  passages: { ground: "plum", prop: "book", face: "ready" },
+};
 
 // A list of texts to read, each a link that starts it
 function TextList({ items, sessionMode, heading }: { items: ReadonlyArray<Passage>; sessionMode: "read" | "pause"; heading?: string }) {
@@ -160,33 +173,46 @@ export function SkillsScreen(props: ScreenProps) {
     <PageFade>
       <main id="main" className={PAGE}>
         {/* Heading and navigation */}
-        <Masthead title="Practice" section="skills" />
-        {/* The page's name */}
-        <PageTitle title="Read aloud">Famous speeches and plain passages, at your own pace.</PageTitle>
-        {/* The scene, carried over from the Practice card (decision 141) */}
-        <ScenePanel scene="read-aloud" line="A part at a time, about a minute each." className="mt-6" />
+        <Masthead title="VoiceLab" section="skills" />
+        {/* The way back, then the reading tile (carried over from the Practice card, decision 141) with the page's name */}
+        <HubHeader back={{ href: "/practice/ways?job=on-the-spot", label: "Speak on the spot" }} look={SCENE_TILES["read-aloud"]} scene="read-aloud" title="Read aloud" line="Famous speeches and plain passages, at your own pace. A part at a time, about a minute each." />
 
-        {/* Up next: the next part to read (decision 79) */}
-        <section aria-labelledby="up-next" className="mt-6">
+        {/* Up next: the next part to read (decision 79), as Courses' "Keep going": the whole card is the link, with a chunky button drawn on it */}
+        <section aria-labelledby="up-next" className="mt-7">
           {/* Heading */}
           <h2 id="up-next" className={SECTION_HEADING}>Up next</h2>
-          {/* The next part */}
-          <ul className={`mt-2 ${CARD_LIST}`}>
-            {/* The next part to read */}
-            {nextReading && <li><RowLink href={`/session?mode=read&prompt=${partId(nextReading.speech, nextReading.part)}`} meta="about 1 min"><span className="block text-footnote text-ink-muted">Read aloud · part {nextReading.part} of {nextReading.speech.parts.length}</span><span className="block font-semibold">{nextReading.speech.title}</span></RowLink></li>}
-          </ul>
+          {/* The next part to read */}
+          {nextReading ? (
+            <Link href={`/session?mode=read&prompt=${partId(nextReading.speech, nextReading.part)}`} className={`mt-3 flex flex-wrap items-center gap-x-5 gap-y-3 p-4 md:p-5 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
+              {/* The words (first, so the link is named by them) */}
+              <span className="order-2 flex min-w-0 flex-[1_1_12rem] flex-col gap-0.5">
+                {/* The speech */}
+                <span className="font-display text-xl leading-tight font-semibold">{nextReading.speech.title}</span>
+                {/* Which part, above it */}
+                <span className={`${LAB} order-first`}>Read aloud · part {nextReading.part} of {nextReading.speech.parts.length}</span>
+                {/* Who gave it */}
+                <span className="text-footnote font-bold text-ink-muted">{nextReading.speech.speaker} · about 1 min</span>
+              </span>
+              {/* The tile */}
+              <span className="order-1 flex flex-none"><ModeTile ground={SCENE_TILES["read-aloud"].ground} prop={SCENE_TILES["read-aloud"].prop} face={SCENE_TILES["read-aloud"].face} tilt={4} className="size-16 md:size-18" /></span>
+              {/* The button drawn on the card */}
+              <span aria-hidden="true" className={`${PRIMARY} order-3 w-full md:w-auto`}>Read part {nextReading.part}</span>
+            </Link>
+          ) : (
+            <SageSays mood="proud" className="mt-3 max-w-xl"><p>You have read every whole speech. Pick any one below to read again.</p></SageSays>
+          )}
         </section>
 
         {/* Every text, one row per group that opens its own list */}
         <section aria-labelledby="everything" className="mt-8">
           {/* Heading */}
           <h2 id="everything" className={SECTION_HEADING}>Everything</h2>
-          {/* The groups */}
-          <div className="mt-2 flex flex-col gap-2">
+          {/* The groups, each with its tile */}
+          <div className="mt-3 flex flex-col gap-2.5">
             {/* Each group */}
             {groups.map((group) => (
               // A folded group: its row, then its list once opened
-              <FoldCard key={group.id} id={group.id} name={group.name} detail={group.detail} count={group.count}>{group.list}</FoldCard>
+              <FoldCard key={group.id} id={group.id} name={group.name} detail={group.detail} count={group.count} look={GROUP_TILES[group.id]}>{group.list}</FoldCard>
             ))}
           </div>
         </section>

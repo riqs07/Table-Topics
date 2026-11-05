@@ -1,15 +1,23 @@
 "use client";
-// Stories (decisions 92, 126 and 152): today's story with its suggested template, the user's own stories to tell again, the stories you'll need (each opening today's prompt of its kind), the four everyday templates (each starts today's story with it), then guided stories with the facts given (decision 93), moment notes to tell properly, and the bank of story prompts
+// Stories (decisions 92, 126 and 152): today's story with its suggested template, the user's own stories to tell again, the stories you'll need (each opening today's prompt of its kind), the four everyday templates (each starts today's story with it), then guided stories with the facts given (decision 93), moment notes to tell properly, and the bank of story prompts. Second design pass, extrapolated from Desktop Screens "Practice", "Courses" and "StoryTell": "‹ Tell stories" and the story tile in a header card, today's story on its coral with a chunky Tell it, your stories as cards with the note to carry in, the stories you'll need as tile cards, the templates as the set-up's choice cards, and Sage where a new user has nothing yet
 
 // Load React's state and effect tools
 import { useCallback, useEffect, useState } from "react";
 // Load Next.js's link component
 import Link from "next/link";
-// Load the page heading with the main navigation, and the page title
+// Load the chevron at the end of a row
+import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
+// Load the page heading with the main navigation, the list page's header and Sage's line
 import { Masthead } from "@/components/script/Masthead";
-import { PageTitle } from "@/components/script/PageTitle";
+import { HubHeader } from "@/components/script/HubHeader";
+import { SageSays } from "@/components/script/SageSays";
+// Load the mode tile, each kind's tile, the scene names and a story's scene
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+import type { SceneName } from "@/components/scenes/Scene";
+import { storyScene } from "@/components/scenes/sceneFor";
 // Load the shared button and row looks
-import { QUIET, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, QUIET, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 // Load the folded group card
 import { FoldCard } from "@/components/script/FoldCard";
 // Load the shared screen set-up
@@ -30,12 +38,15 @@ import { dayLabel } from "@/core/copy";
 import type { SessionRecord } from "@/data/records";
 import type { Repository } from "@/data/repository";
 // Load the shared heading and card looks
-import { CARD, CARD_LIST, SECTION_HEADING } from "@/components/script/textStyles";
+import { CARD, CARD_LIST, LAB, SECTION_HEADING } from "@/components/script/textStyles";
 // Load the shared page shell
 import { PAGE } from "@/components/script/layout";
 
 // How many moment notes to offer
 const MOMENTS_SHOWN = 5;
+
+// A story told again's tile
+const TELL_AGAIN = SCENE_TILES["tell-again"];
 
 // Where telling a prompt starts
 export const tellHref = (promptId: string, template?: string) => `/stories/tell?prompt=${encodeURIComponent(promptId)}${template ? `&template=${template}` : ""}`;
@@ -83,7 +94,11 @@ function StoryRow({ story, repo, now, onRenamed }: { story: LibraryStory; repo: 
 
   // The row
   return (
-    <li data-story={story.id} className="py-3">
+    <li data-story={story.id} className={`flex gap-4 p-4 ${CARD}`}>
+      {/* Its tile: a story told again */}
+      <ModeTile ground={TELL_AGAIN.ground} prop={TELL_AGAIN.prop} face={TELL_AGAIN.face} still className="size-14 max-sm:hidden" />
+      {/* The words */}
+      <div className="min-w-0 flex-1">
       {/* The title, or the field to change it */}
       {editing ? (
         <form onSubmit={(event) => { event.preventDefault(); void save(); }} className="flex flex-wrap items-center gap-2">
@@ -97,7 +112,7 @@ function StoryRow({ story, repo, now, onRenamed }: { story: LibraryStory; repo: 
       ) : (
         <p className="flex flex-wrap items-baseline justify-between gap-x-3">
           {/* The title */}
-          <span className="min-w-0 font-display text-cue font-semibold leading-tight">{story.title}</span>
+          <span className="min-w-0 font-display text-xl font-semibold leading-tight">{story.title}</span>
           {/* Rename */}
           <button type="button" onClick={() => setEditing(true)} aria-label={`Rename “${story.title}”`} className={`${TEXT_LINK} text-footnote text-ink-muted`}>Rename</button>
         </p>
@@ -105,16 +120,17 @@ function StoryRow({ story, repo, now, onRenamed }: { story: LibraryStory; repo: 
       {/* Why saving failed */}
       {error && <p role="alert" className="mt-1 text-footnote">{error}</p>}
       {/* How often, and when last */}
-      <p className="mt-1 text-footnote text-ink-muted">{story.latest.story?.template ? `${findStoryTemplate(story.latest.story.template).name} · ` : ""}Told {story.tellings === 1 ? "once" : story.tellings === 2 ? "twice" : `${story.tellings} times`} · last {dayLabel(new Date(story.lastToldAt), now).toLowerCase()}</p>
-      {/* The takeaway for next time */}
-      <p className="mt-1 text-lede"><span className="text-footnote text-ink-muted">Next time: </span>{story.takeaway}</p>
+      <p className="mt-0.5 text-footnote font-bold text-ink-muted">{story.latest.story?.template ? `${findStoryTemplate(story.latest.story.template).name} · ` : ""}Told {story.tellings === 1 ? "once" : story.tellings === 2 ? "twice" : `${story.tellings} times`} · last {dayLabel(new Date(story.lastToldAt), now).toLowerCase()}</p>
+      {/* The takeaway for next time, on the warm tint like a note to carry in */}
+      <p className="mt-3 rounded-2xl bg-warm-tint px-3.5 py-2.5 font-semibold text-warm-ink"><span className="block text-xs font-extrabold tracking-[.07em] uppercase">Next time</span><span>{story.takeaway}</span></p>
       {/* Tell it again, and see the last telling */}
-      <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+      <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
         {/* Tell it again */}
         <Link href={retellHref(story)} aria-label={`Tell “${story.title}” again`} className={SECONDARY}>Tell it again</Link>
         {/* The last telling */}
         <Link href={`/sessions?id=${encodeURIComponent(story.latest.id)}`} className={`${TEXT_LINK} text-footnote`}>Last telling</Link>
       </p>
+      </div>
     </li>
   );
 }
@@ -164,103 +180,114 @@ export function StoriesScreen(props: ScreenProps) {
     <main id="main" className={PAGE}>
       {/* Heading and navigation */}
       <Masthead title="VoiceLab" section="practice" />
-      {/* The page's name and what it is for */}
-      <PageTitle title="Stories">Tell a true story, then tell it again, a little better each time.</PageTitle>
+      {/* The way back, the story tile, the page's name and what it is for */}
+      <HubHeader back={{ href: "/practice/ways?job=stories", label: "Tell stories" }} look={SCENE_TILES.story} title="Stories" line="Tell a true story, then tell it again, a little better each time." />
 
-      {/* Today's story, with the template suggested for it (decision 126) */}
+      {/* Today's story, with the template suggested for it (decision 126): the coral card of the set-up, then Tell it as the chunky button (as Courses' "Keep going") */}
       {todays && (
-        <section aria-labelledby="today-story" className={`mt-8 p-5 ${CARD}`}>
-          {/* Heading */}
-          <h2 id="today-story" className="text-footnote font-semibold uppercase tracking-wide text-ink-muted">Today’s story</h2>
-          {/* The prompt */}
-          <p className="mt-2 font-display text-cue font-semibold leading-tight">{todays.text}</p>
-          {/* The suggested template */}
-          <p className="mt-2 text-footnote text-ink-muted">Suggested template: {findStoryTemplate(suggestedTemplate(todays.id)).name}</p>
-          {/* Tell it */}
-          <Link href={tellHref(todays.id)} className={`mt-4 ${SECONDARY}`}>Tell it</Link>
+        <section aria-labelledby="today-story" className={`mt-5 flex flex-col gap-4 p-4 md:flex-row md:items-center md:gap-6 md:p-5 ${CARD}`}>
+          {/* The prompt on the story's coral, large */}
+          <div className="min-w-0 flex-1">
+            {/* Heading (above the coral, where small words keep their contrast) */}
+            <h2 id="today-story" className={LAB}>Today’s story</h2>
+            {/* The prompt, large on the coral */}
+            <p className="mt-2 rounded-[18px] bg-art-coral px-5 py-4 font-display text-cue leading-tight font-semibold text-fill-ink shadow-band">{todays.text}</p>
+          </div>
+          {/* The suggested template and Tell it */}
+          <div className="flex flex-col gap-3 md:w-56 md:flex-none">
+            {/* The suggested template */}
+            <p className="text-footnote font-bold text-ink-muted">Suggested template: {findStoryTemplate(suggestedTemplate(todays.id)).name}</p>
+            {/* Tell it */}
+            <Link href={tellHref(todays.id)} className={`${PRIMARY} w-full`}>Tell it</Link>
+          </div>
         </section>
       )}
 
       {/* Why loading failed */}
-      {loadError !== null && <p role="alert" className="mt-8 max-w-[48ch] text-lede">Your stories could not be loaded. The browser said: “{loadError}” <button type="button" onClick={reload} className={TEXT_LINK}>Try again</button></p>}
+      {loadError !== null && <div role="alert" className="mt-8"><SageSays mood="curious">Your stories could not be loaded. The browser said: “{loadError}” <button type="button" onClick={reload} className={TEXT_LINK}>Try again</button></SageSays></div>}
 
       {/* Your stories */}
-      <section aria-labelledby="your-stories" className="mt-10">
+      <section aria-labelledby="your-stories" className="mt-9">
         {/* Heading */}
         <h2 id="your-stories" className={SECTION_HEADING}>Your stories</h2>
         {/* The list, or what will be here */}
         {loaded && loaded.stories.length > 0 && today ? (
-          <ul aria-label="Your stories" className={`mt-2 ${CARD_LIST}`}>
+          <ul aria-label="Your stories" className="mt-3 grid gap-3.5 lg:grid-cols-2">
             {/* Each story */}
             {loaded.stories.map((story) => <StoryRow key={`${story.id}-${story.title}`} story={story} repo={repo} now={today} onRenamed={reload} />)}
           </ul>
         ) : (
-          loaded && <p className="mt-2 max-w-[48ch] text-ink-muted">Stories you tell land here, ready to tell again.</p>
+          loaded && <SageSays mood="encouraging" className="mt-3 max-w-xl"><p>Stories you tell land here, ready to tell again.</p></SageSays>
         )}
       </section>
 
-      {/* The stories you'll need (decision 152): each opens today's prompt of its kind, told with its template */}
-      <section aria-labelledby="needed" id="stories-youll-need" className="mt-10 scroll-mt-6">
+      {/* The stories you'll need (decision 152): each opens today's prompt of its kind, told with its template, as tile cards two across */}
+      <section aria-labelledby="needed" id="stories-youll-need" className="mt-9 scroll-mt-6">
         {/* Heading */}
         <h2 id="needed" className={SECTION_HEADING}>Stories you’ll need</h2>
         {/* What they are */}
-        <p className="mt-1 max-w-[48ch] text-ink-muted">The few stories people tell again and again, and dread. Get them ready.</p>
+        <p className="mt-1 max-w-[48ch] font-semibold text-ink-muted">The few stories people tell again and again, and dread. Get them ready.</p>
         {/* Each kind */}
-        <ul aria-label="Stories you’ll need" className={`mt-2 ${CARD_LIST}`}>
-          {NEEDED_TYPES.map((type) => (
+        <ul aria-label="Stories you’ll need" className="mt-3 grid gap-3.5 md:grid-cols-2">
+          {NEEDED_TYPES.map((type, index) => (
             // One kind, opening today's prompt of it
             <li key={type.template}>
-              <RowLink href={today ? tellHref(neededPromptForDay(type.group, today).id) : "/stories"}>
-                {/* Its name */}
-                <span className="block font-semibold">{type.name}</span>
-                {/* What it is for */}
-                <span className="block text-footnote text-ink-muted">{type.detail}</span>
-                {/* Its beats */}
-                <span className="block text-footnote text-accent">{findStoryTemplate(type.template).beats.map((beat) => beat.name).join(" → ")}</span>
-              </RowLink>
+              <Link href={today ? tellHref(neededPromptForDay(type.group, today).id) : "/stories"} className={`flex h-full items-center gap-4 p-3.5 pr-4 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
+                {/* Its tile */}
+                <ModeTile ground={SCENE_TILES[type.template as SceneName].ground} prop={SCENE_TILES[type.template as SceneName].prop} face={SCENE_TILES[type.template as SceneName].face} tilt={index % 2 ? 4 : -4} className="size-18 flex-none" />
+                {/* The words */}
+                <span className="min-w-0 flex-1">
+                  {/* Its name */}
+                  <span className="block font-display text-xl leading-tight font-semibold">{type.name}</span>
+                  {/* What it is for */}
+                  <span className="block text-footnote font-bold text-ink-muted">{type.detail}</span>
+                  {/* Its beats */}
+                  <span className="mt-1 block text-footnote font-bold text-accent-tint-ink">{findStoryTemplate(type.template).beats.map((beat) => beat.name).join(" → ")}</span>
+                </span>
+              </Link>
             </li>
           ))}
         </ul>
       </section>
 
       {/* The templates: each starts today's story told with it (decision 126); the everyday ones only, since the stories you'll need come with their own prompts */}
-      <section aria-labelledby="templates" className="mt-10">
+      <section aria-labelledby="templates" className="mt-9">
         {/* Heading */}
         <h2 id="templates" className={SECTION_HEADING}>Templates</h2>
         {/* What they are */}
-        <p className="mt-1 max-w-[48ch] text-ink-muted">A few beats to tell a story in. Pick one for today’s story.</p>
-        {/* Each template */}
-        <ul aria-label="Templates" className={`mt-2 ${CARD_LIST}`}>
+        <p className="mt-1 max-w-[48ch] font-semibold text-ink-muted">A few beats to tell a story in. Pick one for today’s story.</p>
+        {/* Each template, as the set-up’s choice cards, two across */}
+        <ul aria-label="Templates" className="mt-3 grid grid-cols-2 gap-3">
           {STORY_TEMPLATES.filter((template) => template.family === "everyday").map((template) => (
             // One template, starting today's story with it
             <li key={template.id}>
-              <RowLink href={todays ? tellHref(todays.id, template.id) : "/stories"}>
+              <Link href={todays ? tellHref(todays.id, template.id) : "/stories"} className={`flex h-full min-h-14 flex-col gap-1 px-4 py-3 ${CARD} ${PRESS} hover:-translate-y-0.5`}>
                 {/* Its name */}
-                <span className="block font-semibold">{template.name}</span>
+                <span className="font-display text-lg leading-tight font-semibold">{template.name}</span>
                 {/* What it is for */}
-                <span className="block text-footnote text-ink-muted">{template.forWhat}</span>
+                <span className="text-footnote font-bold text-ink-muted">{template.forWhat}</span>
                 {/* Its beats */}
-                <span className="block text-footnote text-accent">{template.beats.map((beat) => beat.name).join(" → ")}</span>
-              </RowLink>
+                <span className="mt-auto pt-1 text-sm font-bold text-accent-tint-ink">{template.beats.map((beat) => beat.name).join(" → ")}</span>
+              </Link>
             </li>
           ))}
         </ul>
       </section>
 
       {/* Guided stories: the facts are given, the user makes them a story (decision 93) */}
-      <section aria-labelledby="guided" id="guided-stories" className="mt-10 scroll-mt-6">
+      <section aria-labelledby="guided" id="guided-stories" className="mt-9 scroll-mt-6">
         {/* Heading */}
         <h2 id="guided" className={SECTION_HEADING}>Guided stories</h2>
         {/* What they are, honestly */}
-        <p className="mt-1 max-w-[48ch] text-ink-muted">You get the facts. You make it a story.</p>
-        {/* One fold per level */}
-        <div className="mt-2 flex flex-col gap-2">
+        <p className="mt-1 max-w-[48ch] font-semibold text-ink-muted">You get the facts. You make it a story.</p>
+        {/* One fold per level, each with its kind's tile */}
+        <div className="mt-3 flex flex-col gap-2.5">
           {GUIDED_LEVELS.map((level) => {
             // The level's stories
             const stories = GUIDED_STORIES.filter((story) => guidedLevel(story) === level.id);
             // One fold
             return (
-              <FoldCard key={level.id} id={`guided-${level.id}`} name={level.name} detail={level.blurb} count={stories.length}>
+              <FoldCard key={level.id} id={`guided-${level.id}`} name={level.name} detail={level.blurb} count={stories.length} look={SCENE_TILES[storyScene({ neededTemplate: null, guidedLevel: level.id })]}>
                 {/* The stories */}
                 <ul aria-label={level.name} className="divide-y divide-rule">
                   {/* Each story: its title, with its first fact under it */}
@@ -273,39 +300,55 @@ export function StoriesScreen(props: ScreenProps) {
       </section>
 
       {/* From your moments */}
-      <section aria-labelledby="from-moments" className="mt-10">
+      <section aria-labelledby="from-moments" className="mt-9">
         {/* Heading */}
         <h2 id="from-moments" className={SECTION_HEADING}>From your moments</h2>
         {/* The notes, each one to tell properly */}
         {loaded && loaded.moments.length > 0 && today ? (
-          <ul aria-label="Your moments" className={`mt-2 ${CARD_LIST}`}>
+          <ul aria-label="Your moments" className={`mt-3 ${CARD_LIST}`}>
             {/* Each note */}
             {loaded.moments.slice(0, MOMENTS_SHOWN).map((moment) => (
               // One note
               <li key={moment.id}>
                 {/* The whole row starts telling it */}
-                <RowLink href={tellMomentHref(moment.id)} label="Tell it properly:">
-                  {/* When */}
-                  <span className="block text-footnote text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
-                  {/* What was said, two lines at most */}
-                  <span className="line-clamp-2">{moment.transcript}</span>
-                  {/* What the row does */}
-                  <span className="block text-footnote font-semibold text-accent">Tell it properly</span>
-                </RowLink>
+                <Link href={tellMomentHref(moment.id)} className={`flex min-h-18 items-center gap-4 py-3 hover:text-accent ${PRESS}`}>
+                  {/* What the row does, read before the words */}
+                  <span className="sr-only">Tell it properly: </span>
+                  {/* The moment's tile */}
+                  <ModeTile ground={SCENE_TILES.moment.ground} prop={SCENE_TILES.moment.prop} face={SCENE_TILES.moment.face} still className="size-12 flex-none" />
+                  {/* The words */}
+                  <span className="min-w-0 flex-1">
+                    {/* When */}
+                    <span className="block text-footnote font-bold text-ink-muted">{dayLabel(new Date(moment.createdAt), today)}</span>
+                    {/* What was said, two lines at most */}
+                    <span className="line-clamp-2 font-semibold">{moment.transcript}</span>
+                    {/* What the row does */}
+                    <span className="block text-footnote font-extrabold text-accent-tint-ink">Tell it properly</span>
+                  </span>
+                  {/* The chevron */}
+                  <CaretRightIcon aria-hidden="true" className="size-5 flex-none text-ink-muted" />
+                </Link>
               </li>
             ))}
           </ul>
         ) : (
-          loaded && <p className="mt-2 max-w-[48ch] text-ink-muted">Your one-moment notes show here, ready to tell properly. <Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className={TEXT_LINK}>Record today’s moment</Link></p>
+          loaded && (
+            <div className={`mt-3 flex items-center gap-4 p-4 ${CARD}`}>
+              {/* The moment's tile */}
+              <ModeTile ground={SCENE_TILES.moment.ground} prop={SCENE_TILES.moment.prop} face={SCENE_TILES.moment.face} tilt={4} className="size-16 flex-none" />
+              {/* What will be here, and the first step */}
+              <p className="min-w-0 font-semibold text-ink-muted">Your one-moment notes show here, ready to tell properly. <Link href={`/session?mode=moment&prompt=${MOMENT_PROMPT.id}`} className={TEXT_LINK}>Record today’s moment</Link></p>
+            </div>
+          )
         )}
       </section>
 
       {/* The prompt bank, folded by group */}
-      <section aria-labelledby="prompts" className="mt-10">
+      <section aria-labelledby="prompts" className="mt-9">
         {/* Heading */}
         <h2 id="prompts" className={SECTION_HEADING}>Something to tell</h2>
         {/* One fold per group */}
-        <div className="mt-2 flex flex-col gap-2">
+        <div className="mt-3 flex flex-col gap-2.5">
           {STORY_GROUPS.map((group) => {
             // The group's prompts
             const prompts = STORY_PROMPTS.filter((prompt) => prompt.group === group.id);
