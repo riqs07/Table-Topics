@@ -135,9 +135,9 @@ export function PaceLensView({ text, lens }: { text: LensText; lens: PaceLens })
         {/* The picture */}
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={`Speaking speed across the take. ${lens.summary}`} className="h-14 w-full">
           {/* The band */}
-          <rect x="0" y={y(lens.band.high)} width={width} height={Math.max(2, y(lens.band.low) - y(lens.band.high))} className="fill-accent/15" />
-          {/* The line */}
-          <path d={smoothPath(lens.line.map((point) => ({ x: x(point.t), y: y(point.wpm) })))} className="text-accent" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          <rect x="0" y={y(lens.band.high)} width={width} height={Math.max(2, y(lens.band.low) - y(lens.band.high))} className="fill-chart-band" />
+          {/* The line: one soft line (Chart Kit) */}
+          <path d={smoothPath(lens.line.map((point) => ({ x: x(point.t), y: y(point.wpm) })))} className="stroke-chart-voice" strokeWidth="2.5" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         </svg>
         {/* The ends */}
         <p className="mt-1 flex justify-between text-footnote text-ink-muted"><span>start</span><span>end</span></p>

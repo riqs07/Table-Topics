@@ -1,39 +1,28 @@
-// How long the pause was at each mark of a pause drill, as bars against the one-to-two-second target (decision 80)
+// How long the pause was at each mark of a pause drill (decision 80), as the Chart Kit's pause bars (second design pass): the line on how many landed first with its count emphasised, then one bar per mark against the target band, your words along the bottom
 
 // Load the target and the line
 import { PAUSE_TARGET, pauseLengthsLine } from "@/core/wordTiming";
+// Load the count to emphasise
+import { pauseLineEmphasis } from "@/core/chartKit";
+// Load the kit's headline and bars
+import { Emphasised } from "@/components/charts/ChartCard";
+import { PauseBars } from "@/components/charts/PauseBars";
 
-// The longest pause the bars show, in seconds (longer ones fill the bar)
-const SCALE_SECONDS = 3;
-
-// The bars, one per mark, with the target shaded and a line on how many were in it
+// The line, then the bars
 export function PauseLengths({ gaps }: { gaps: ReadonlyArray<{ after: string; seconds: number | null }> }) {
-  // Where the target starts and ends along the bar, as shares
-  const [from, to] = [(PAUSE_TARGET.shortest / SCALE_SECONDS) * 100, (PAUSE_TARGET.longest / SCALE_SECONDS) * 100];
-  // The list and its line
+  // The line on how many were in the target
+  const line = pauseLengthsLine(gaps);
+  // How many were measured
+  const measured = gaps.filter((gap) => gap.seconds !== null).length;
+  // The line and the bars
   return (
-    <div className="mt-4">
-      {/* How many were in the target */}
-      <p className="text-footnote text-ink-muted">{pauseLengthsLine(gaps)}</p>
+    <div className="mt-4 flex flex-col gap-3">
+      {/* How many were in the target, the count emphasised */}
+      <p className="font-display text-running font-semibold text-ink"><Emphasised text={line} em={pauseLineEmphasis(line)} /></p>
       {/* One bar per mark */}
-      <ul aria-label="Pause at each mark" className="mt-2 flex flex-col gap-2">
-        {/* Each mark */}
-        {gaps.map((gap, index) => (
-          <li key={`${gap.after}-${index}`} className="grid grid-cols-[minmax(0,8rem)_1fr_3.5rem] items-center gap-3 text-footnote">
-            {/* The word before it */}
-            <span className="truncate text-ink-muted">after “{gap.after}”</span>
-            {/* The bar, with the target shaded behind it */}
-            <span aria-hidden="true" className="relative h-3 rounded-full bg-rule">
-              {/* The target */}
-              <span className="absolute inset-y-0 rounded-full bg-accent-tint" style={{ left: `${from}%`, width: `${to - from}%` }} />
-              {/* The pause */}
-              {gap.seconds !== null && <span className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${Math.max(3, Math.min(100, (gap.seconds / SCALE_SECONDS) * 100))}%` }} />}
-            </span>
-            {/* The length */}
-            <span className="text-right tabular-nums">{gap.seconds === null ? "not heard" : `${gap.seconds.toFixed(1)} s`}</span>
-          </li>
-        ))}
-      </ul>
+      <PauseBars gaps={gaps} target={PAUSE_TARGET} listLabel="Pause at each mark" label={`Bars for the pause at each of ${gaps.length} marks against the one-to-two-second band; ${measured === gaps.length ? "all were heard" : `${measured} were heard`}.`} />
+      {/* How to read it */}
+      <p className="text-footnote text-ink-muted">The band is the target. A pause outside it is grey.</p>
     </div>
   );
 }

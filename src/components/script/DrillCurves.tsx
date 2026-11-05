@@ -1,5 +1,5 @@
 "use client";
-// Pitch in your words on the voice drills (decision 111): planned stress on the stress drills' takes, loudness as thickness on the volume drills' takes, each take's curve for "Exaggerate, then dial back" (decision 117), and the model voice's curve under yours in shadowing. A drill's takes keep no word times, so each line's known words are spread over the voiced time (rough)
+// Pitch in your words on the voice drills (decision 111), drawn with the Chart Kit's pitch line and ghost (second design pass): planned stress on the stress drills' takes, loudness as thickness on the volume drills' takes, each take's curve for "Exaggerate, then dial back" (decision 117), and the model voice's curve under yours in shadowing. A drill's takes keep no word times, so each line's known words are spread over the voiced time (rough)
 
 // Load React's memo tool
 import { useMemo } from "react";
@@ -17,6 +17,8 @@ import { drillStress } from "@/core/intonationDrills";
 import { LOUDNESS_TICK_MS } from "@/core/recordingRules";
 // Load the take type
 import type { TakeRecording } from "@/core/voiceFindings";
+// Load the kit's key
+import { ChartKey } from "@/components/charts/ChartKey";
 // Load the model voice's pitch, read once from its recordings
 import { SHADOW_PITCH } from "@/content/shadowPitch";
 
@@ -124,13 +126,10 @@ export function ShadowCurve({ take, text, model, label }: { take: TakeRecording;
     <div ref={ref} data-shadow-curve className="mt-3 flex flex-col gap-1">
       {/* Each row */}
       {drawn.lines.map((line, index) => <CurveRow key={index} width={width} words={drawn.words} slots={line.slots} path={line.path} under={line.under} label={`${label}: your pitch line${drawn.modelDrawn ? ", with the model voice's dashed under it" : ""}.`} />)}
-      {/* The key */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-footnote text-ink-muted">
-        {/* The model */}
-        {drawn.modelDrawn ? <span className="flex items-center gap-1.5"><svg width="22" height="6" aria-hidden="true" className="text-ink-muted"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="2.5" strokeDasharray="6 4" /></svg>Model voice</span> : <span>The model voice’s pitch couldn’t be read for this phrase.</span>}
-        {/* You */}
-        <span className="flex items-center gap-1.5"><svg width="22" height="6" aria-hidden="true" className="text-accent"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="3" /></svg>You</span>
-      </div>
+      {/* The key: the model as a ghost, you as the soft line */}
+      <ChartKey items={drawn.modelDrawn ? [{ kind: "ghost", name: "Model voice" }, { kind: "pitch", name: "You" }] : [{ kind: "pitch", name: "You" }]} />
+      {/* The model's pitch could not be read */}
+      {!drawn.modelDrawn && <p className="text-footnote text-ink-muted">The model voice’s pitch couldn’t be read for this phrase.</p>}
     </div>
   );
 }

@@ -3,10 +3,8 @@
 
 // Load React's state, callback and effect tools
 import { useCallback, useEffect, useState } from "react";
-// Load the picture's sizes and the slot type
-import { CURVE_HEIGHT, USUAL_Y, type PhraseEnd, type WordSlot } from "@/core/pitchPhrases";
-// Load the thick-line piece type
-import type { ThickPiece } from "@/core/loudnessLine";
+// Load the phrase-end type
+import type { PhraseEnd } from "@/core/pitchPhrases";
 
 // The marks' drawings, in a 14-unit square
 const END_PATHS: Readonly<Record<PhraseEnd, string>> = {
@@ -134,109 +132,5 @@ export function useRowWidth(guess = 300): { ref: (element: HTMLElement | null) =
   return { ref, width };
 }
 
-// How a word under a curve is shown
-export type WordLook = "plain" | "peak" | "top" | "target" | "current" | "muted";
-
-// Each look's classes
-const LOOKS: Readonly<Record<WordLook, string>> = {
-  // An ordinary word
-  plain: "text-ink",
-  // One of the phrase's peaks
-  peak: "font-bold text-ink",
-  // The highest point, in the planned-stress card
-  top: "font-bold text-accent",
-  // A key word to lean on
-  target: "font-bold text-warm-ink underline decoration-dotted decoration-2 underline-offset-4",
-  // The word playing now
-  current: "-mx-1 rounded-md bg-fill px-1 font-bold text-fill-ink",
-  // A word in a flat phrase
-  muted: "text-ink-muted",
-};
-
-// What one row of curve and words needs
-export interface CurveRowProps {
-  // The row's width in pixels
-  width: number;
-  // The words with their times
-  words: ReadonlyArray<{ text: string; start: number; end: number }>;
-  // Where each word of this row sits
-  slots: ReadonlyArray<WordSlot>;
-  // This take's curve, as path text
-  path: string;
-  // What the curve shows, read out by screen readers
-  label: string;
-  // A curve drawn dashed underneath: the last take, or the model voice
-  under?: string | null;
-  // A second, fainter curve underneath: the first round of a 4/3/2 loop (decision 118)
-  faintUnder?: string | null;
-  // Where the key words sit on the curve (dashed circles)
-  targets?: ReadonlyArray<{ x: number; y: number }>;
-  // The highest point (a dot)
-  dot?: { x: number; y: number } | null;
-  // Loudness as thickness: pieces drawn behind the curve
-  pieces?: ReadonlyArray<ThickPiece>;
-  // The playhead, while this row plays
-  playhead?: { x: number; y: number } | null;
-  // How each word looks, by its place in the words
-  look?: (index: number) => WordLook;
-  // Tap a word: given, the words are buttons
-  onWord?: ((index: number) => void) | null;
-  // Each word button's label
-  wordLabel?: (index: number) => string;
-}
-
-// One row: the curve over its words, the usual pitch dashed across it
-export function CurveRow({ width, words, slots, path, label, under = null, faintUnder = null, targets = [], dot = null, pieces = [], playhead = null, look = () => "plain", onWord = null, wordLabel }: CurveRowProps) {
-  // The curve and the words
-  return (
-    <div>
-      {/* The picture, named for screen readers */}
-      <svg width={width} height={CURVE_HEIGHT} viewBox={`0 0 ${width} ${CURVE_HEIGHT}`} role="img" aria-label={label} className="block overflow-visible">
-        {/* The usual pitch */}
-        <line x1="0" x2={width} y1={USUAL_Y} y2={USUAL_Y} className="text-ink-muted" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.45" />
-        {/* The faintest curve, dashed and lighter still (a loop's first round) */}
-        {faintUnder && <path data-under-faint d={faintUnder} className="text-ink-muted" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeDasharray="2 4" opacity="0.45" />}
-        {/* The other curve, dashed and muted */}
-        {under && <path data-under d={under} className="text-ink-muted" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeDasharray="6 4" />}
-        {/* Loudness: thicker where louder */}
-        {pieces.length > 0 && <g className="text-accent" opacity="0.35">{pieces.map((piece, index) => <line key={index} data-thick x1={piece.x1} y1={piece.y1} x2={piece.x2} y2={piece.y2} stroke="currentColor" strokeWidth={piece.width} strokeLinecap="round" />)}</g>}
-        {/* This take's curve */}
-        <path data-curve d={path} className="text-accent" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        {/* The key words */}
-        {targets.map((target, index) => <circle key={index} data-target cx={target.x} cy={target.y} r="7" className="text-warm-ink" stroke="currentColor" strokeWidth="2" strokeDasharray="3 2" fill="none" />)}
-        {/* The highest point */}
-        {dot && <circle data-top cx={dot.x} cy={dot.y} r="5" className="fill-accent" />}
-        {/* The playhead */}
-        {playhead && (
-          <g data-playhead className="text-ink">
-            {/* The line across */}
-            <line x1={playhead.x} x2={playhead.x} y1="0" y2={CURVE_HEIGHT} stroke="currentColor" strokeWidth="1.5" />
-            {/* The point on the curve */}
-            <circle cx={playhead.x} cy={playhead.y} r="5" className="fill-card" stroke="currentColor" strokeWidth="2" />
-          </g>
-        )}
-      </svg>
-      {/* The words under it, each at its place */}
-      <div className={`relative ${onWord ? "h-11" : "h-7"}`} style={{ width }}>
-        {/* Each word */}
-        {slots.map((slot) => {
-          // The word
-          const word = words[slot.index]!;
-          // Its look
-          const wordLook = look(slot.index);
-          // Its classes (a playing button takes its highlight on the word inside, so the tap area stays the same)
-          const classes = `absolute top-0 whitespace-nowrap text-footnote ${onWord && wordLook === "current" ? "font-bold text-ink" : LOOKS[wordLook]}`;
-          // A button that plays from it, or plain text
-          return onWord ? (
-            <button key={slot.index} type="button" data-word={slot.index} onClick={() => onWord(slot.index)} aria-label={wordLabel?.(slot.index)} className={`${classes} -mx-1 flex h-11 items-start px-1 pt-0.5`} style={{ left: slot.left }}>
-              {/* The word, highlighted when playing */}
-              <span className={wordLook === "current" ? LOOKS.current : ""}>{word.text}</span>
-            </button>
-          ) : (
-            <span key={slot.index} className={classes} style={{ left: slot.left }}>{word.text}</span>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// One row of curve and words is the Chart Kit's pitch over your words (second design pass), kept here under its old names so every caller stays the same
+export { CurveRow, PitchOverWords, type CurveRowProps, type WordLook } from "@/components/charts/PitchOverWords";

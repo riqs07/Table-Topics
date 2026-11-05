@@ -1,7 +1,9 @@
-// Pictures of a voice drill's takes (decision 80): bars comparing how loud each take was, and a pitch line drawn against the speaker's usual pitch
+// Pictures of a voice drill's takes (decision 80), in the Chart Kit's language (second design pass): thin rounded bars in your voice's colour comparing how loud each take was, and pitch as one soft line against the speaker's usual pitch (a light grid line)
 
 // Load the pitch steps
 import { toSteps } from "@/core/pitch";
+// Load the drawing smoother and the smooth path
+import { smoothForDrawing, smoothPath } from "@/core/pitchClean";
 
 // How far above or below the usual pitch the line can go, in steps
 const PITCH_SPAN = 8;
@@ -31,9 +33,9 @@ export function LevelBars({ takes }: { takes: ReadonlyArray<LevelBar> }) {
             {/* Its name */}
             <span className="truncate text-ink-muted">{take.label}</span>
             {/* The bar, named by its share for screen readers */}
-            <span role="img" aria-label={`${take.label}: ${share}% of the loudest take`} className="h-3 rounded-full bg-rule">
-              {/* The filled part */}
-              <span className="block h-full rounded-full bg-accent" style={{ width: `${share}%` }} />
+            <span role="img" aria-label={`${take.label}: ${share}% of the loudest take`} className="h-2.5 overflow-hidden rounded-full bg-rule">
+              {/* The filled part, drawn in once */}
+              <span className="block h-full origin-left rounded-full bg-chart-voice motion-safe:animate-fill" style={{ width: `${share}%` }} />
             </span>
           </li>
         );
@@ -42,7 +44,7 @@ export function LevelBars({ takes }: { takes: ReadonlyArray<LevelBar> }) {
   );
 }
 
-// A take's pitch as a line: up for higher, down for lower, around a dashed line at the speaker's usual pitch (gaps where there was no voice)
+// A take's pitch as one soft line: up for higher, down for lower, around a light line at the speaker's usual pitch (gaps where there was no voice)
 export function PitchLine({ pitches, usual, label }: { pitches: ReadonlyArray<number | null>; usual: number | null; label: string }) {
   // Nothing to draw without a usual pitch
   if (usual === null) return null;
@@ -50,33 +52,15 @@ export function PitchLine({ pitches, usual, label }: { pitches: ReadonlyArray<nu
   const steps = toSteps(pitches, usual);
   // How wide the picture is: one unit per reading
   const width = Math.max(1, steps.length - 1);
-  // The voiced runs, each its own line
-  const runs: string[] = [];
-  // The run being built
-  let run: string[] = [];
-  // Walk the readings
-  steps.forEach((step, index) => {
-    // A gap ends the run
-    if (step === null) {
-      // Keep it if it has a line in it
-      if (run.length > 1) runs.push(run.join(" "));
-      // Start afresh
-      run = [];
-      // Next reading
-      return;
-    }
-    // Clamp to the picture and add the point (higher pitch is higher up)
-    run.push(`${index},${PITCH_SPAN - Math.max(-PITCH_SPAN, Math.min(PITCH_SPAN, step))}`);
-  });
-  // The last run
-  if (run.length > 1) runs.push(run.join(" "));
+  // The readings smoothed so the line flows like a voice (decision B7), each as a point (higher pitch higher up, kept inside the picture), a gap where there was no voice
+  const points = smoothForDrawing(steps).map((step, index) => (step === null ? null : { x: index, y: PITCH_SPAN - Math.max(-PITCH_SPAN, Math.min(PITCH_SPAN, step)) }));
   // The picture
   return (
-    <svg viewBox={`0 0 ${width} ${PITCH_SPAN * 2}`} preserveAspectRatio="none" role="img" aria-label={label} className="h-14 w-full text-accent">
-      {/* The usual pitch */}
-      <line x1="0" x2={width} y1={PITCH_SPAN} y2={PITCH_SPAN} stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" opacity="0.35" vectorEffect="non-scaling-stroke" />
-      {/* The voiced runs */}
-      {runs.map((points) => <polyline key={points} points={points} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />)}
+    <svg viewBox={`0 0 ${width} ${PITCH_SPAN * 2}`} preserveAspectRatio="none" role="img" aria-label={label} className="h-14 w-full overflow-visible">
+      {/* The usual pitch: a light grid line */}
+      <line x1="0" x2={width} y1={PITCH_SPAN} y2={PITCH_SPAN} className="stroke-rule" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      {/* The voiced runs: one soft line, drawn in once */}
+      <path data-curve d={smoothPath(points)} fill="none" className="stroke-chart-voice motion-safe:animate-chart-draw" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }

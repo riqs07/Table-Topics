@@ -59,10 +59,10 @@ function WholeCurve({ steps }: { steps: ReadonlyArray<number | null> }) {
   // The picture, stretched to the card's width
   return (
     <svg viewBox={`0 0 ${Math.max(1, steps.length - 1)} ${CURVE_HEIGHT}`} preserveAspectRatio="none" role="img" aria-label="Your pitch across the take" className="mt-3 h-16 w-full">
-      {/* The usual pitch */}
-      <line x1="0" x2={steps.length} y1={USUAL_Y} y2={USUAL_Y} className="text-ink-muted" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.45" vectorEffect="non-scaling-stroke" />
-      {/* The curve */}
-      <path d={path} className="text-accent" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      {/* The usual pitch: a light grid line (Chart Kit) */}
+      <line x1="0" x2={steps.length} y1={USUAL_Y} y2={USUAL_Y} className="stroke-rule" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      {/* The curve: one soft line */}
+      <path d={path} className="stroke-chart-voice" strokeWidth="2.5" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
