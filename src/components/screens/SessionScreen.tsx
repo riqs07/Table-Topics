@@ -8,7 +8,6 @@ import Link from "next/link";
 // Load Next.js's lazy loader, for the voice cards only some takes show (decisions 99 and 111)
 import dynamic from "next/dynamic";
 // Load the script-page building blocks
-import { ActionBand } from "@/components/script/ActionBand";
 import { PRESS, PRIMARY, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load focus mode's thin header (second pass)
@@ -1084,7 +1083,7 @@ function StoryBeforeAfter({ original, retold, pauseWords }: { original: FullSess
       {/* What it worked on */}
       {cue && <p className="max-w-[48ch] text-footnote text-ink-muted">You were working on: {cue}</p>}
       {/* The table */}
-      <BeforeAfterTable label="Last time and this time" first="Last time" second="This time" rows={rows} />
+      <div className="mt-3"><BeforeAfterTable label="Last time and this time" first="Last time" second="This time" rows={rows} /></div>
     </section>
   );
 }
@@ -1093,9 +1092,9 @@ function StoryBeforeAfter({ original, retold, pauseWords }: { original: FullSess
 function BeforeAfterTable({ label, first, second, rows }: { label: string; first: string; second: string; rows: ReadonlyArray<{ label: string; before: string; after: string }> }) {
   // The table
   return (
-    <table aria-label={label} className={`mt-3 w-full max-w-md overflow-hidden text-left ${CARD}`}>
-      {/* The column names */}
-      <thead className="text-footnote text-ink-muted">
+    <table aria-label={label} className={`w-full overflow-hidden text-left ${CARD}`}>
+      {/* The column names, as small capitals */}
+      <thead className="text-xs font-extrabold tracking-[.07em] text-ink-muted uppercase">
         <tr>
           {/* What it counts */}
           <th scope="col" className="py-2 pl-4 font-normal" />
@@ -1109,13 +1108,13 @@ function BeforeAfterTable({ label, first, second, rows }: { label: string; first
       <tbody>
         {rows.map((row) => (
           // One number on both
-          <tr key={row.label} className="border-t border-rule">
+          <tr key={row.label} className="border-t-2 border-rule">
             {/* What it counts */}
-            <th scope="row" className="py-2 pl-4 text-footnote font-normal text-ink-muted">{row.label}</th>
+            <th scope="row" className="py-2.5 pl-5 text-footnote font-bold text-ink-muted">{row.label}</th>
             {/* First */}
-            <td className="py-2 text-ink-muted">{row.before}</td>
+            <td className="py-2.5 font-bold text-ink-muted">{row.before}</td>
             {/* Second */}
-            <td className="py-2 pr-4 font-display text-cue font-semibold">{row.after}</td>
+            <td className="py-2.5 pr-5 font-display text-cue font-semibold">{row.after}</td>
           </tr>
         ))}
       </tbody>
@@ -1123,26 +1122,52 @@ function BeforeAfterTable({ label, first, second, rows }: { label: string; first
   );
 }
 
-// Inside today's practice: which step this is, short on a phone so the title keeps its line
-function PlanNote({ plan }: { plan: PlanNav }) {
-  // Two spellings, one per screen size
+// The address that records the same prompt once more, as a try after this one (its result compares the two)
+function onceMoreHref(session: SessionRecord, plan: PlanNav | null): string {
+  // The same kind, prompt and section, marked as a retry of this take
+  return `/session?mode=${session.mode}&prompt=${encodeURIComponent(session.promptId)}${typeof session.sectionIndex === "number" ? `&section=${session.sectionIndex}` : ""}&retryOf=${session.id}${plan ? `&plan=${plan.step}` : ""}`;
+}
+
+// What was said on a take, word by word, pause words softly marked and real pauses as small green bars (the result's "What you said" card)
+function SaidCard({ session, pauseWords }: { session: FullSession; pauseWords: boolean }) {
+  // The words with their marks
+  const said = takeWords(session);
+  // Nothing heard
+  if (said.length === 0) return null;
+  // Whether any real pause was found, for the legend
+  const anyPause = said.some((word) => word.pauseAfter);
+  // The card
   return (
-    <>
-      {/* Phone */}
-      <span className="md:hidden">Step {plan.step} of {plan.total}</span>
-      {/* Computer */}
-      <span className="hidden md:inline">Today’s practice · step {plan.step} of {plan.total}</span>
-    </>
+    <div role="region" aria-label="What you said" className={`flex flex-col gap-3.5 px-5.5 py-5 md:px-6 ${CARD}`}>
+      {/* The small label */}
+      <p className={LAB}>What you said</p>
+      {/* The words */}
+      <p className="text-lg leading-[1.75] md:text-xl">
+        {/* Each word, a pause word marked, a real pause after it as a bar */}
+        {said.map((word, index) => (
+          // One word
+          <span key={index}>
+            {/* The word, highlighted when it is a pause word and they are shown */}
+            {word.filler && pauseWords ? <mark className="rounded-md bg-art-sun/35 px-1 text-ink">{word.text}</mark> : word.text}
+            {/* A real pause */}
+            {word.pauseAfter && <span role="img" aria-label="a real pause" className="mx-1.5 inline-block h-2.5 w-7.5 rounded-full bg-art-leaf align-middle" />}
+            {/* The space after it */}
+            {" "}
+          </span>
+        ))}
+      </p>
+      {/* What the marks mean */}
+      <p className="flex flex-wrap gap-4.5 text-sm font-bold text-ink-muted">
+        {/* Pause words */}
+        {pauseWords && <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-4.5 rounded-[5px] bg-art-sun/35" />pause words</span>}
+        {/* Real pauses */}
+        {anyPause && <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-4.5 rounded-[5px] bg-art-leaf" />a real pause</span>}
+      </p>
+    </div>
   );
 }
 
-// Inside today's practice: the band that moves to the next step, or finishes the practice after the last
-function PlanBand({ plan }: { plan: PlanNav }) {
-  // The next step, or back to Today
-  return plan.next ? <ActionBand action={`Next: step ${plan.step + 1}`} aside={plan.next.label} href={plan.next.href} /> : <ActionBand action="Finish today’s practice" aside="back to Today" href="/" />;
-}
-
-// The Retry result screen
+// The Retry result screen (second pass, built from Desktop Screens "Result"): the change as the headline with both tries' numbers and what you said on the left, the verdict panel on the right with the one chunky way on
 function RetryView({ repo, retry, original, now, plan, view, usual, all }: { repo: Repository; retry: FullSession; original: FullSession; now: Date; plan: PlanNav | null; view: ResultView; usual: number | null; all: ReadonlyArray<SessionRecord> }) {
   // The second try's audio element, for playing a moment from the lenses (decision 115)
   const audio = useRef<HTMLAudioElement | null>(null);
@@ -1158,41 +1183,98 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
   const takeScript = useTakeScript(retry);
   // Both tries' numbers, with the pitch range last
   const changes = [...resultChanges(original, retry, { before: pausesOf(original), after: pausesOf(retry) }).filter((change) => view.pauseWords || change.label !== "pause words a minute"), ...(ranges[0] !== null && ranges[1] !== null ? [{ label: "pitch range, steps", before: String(ranges[0]), after: String(ranges[1]) }] : [])];
+  // The change as one sentence (unless it would count pause words that are hidden; decision 79)
+  const headline = view.pauseWords || measureFor(original.focus)?.kind !== "fillers" ? retryHeadline(retry, original) : "Your second try is in.";
+  // When the number went the other way: a task-focused word, so the second try never reads as failure (person-focused feedback lowers persistence; playbook 6a)
+  const otherWay = retryNote(retry, original);
+  // The second try's own verdict, by the same rules as a first take, and turned rough when its number went the other way
+  const verdict = otherWay ? "rough" : takeVerdict(retry, localChange(retry, view), { pauseWords: view.pauseWords });
+  // The blob's reaction to the take (decision 141)
+  const reaction = takeReaction(retry, all, view.pauseWords);
+  // The panel's one line: why the number went the other way, the blob's own word for a good one, or the one change for next time
+  const line = otherWay ?? (verdict === "good" ? reaction.line : (retry.feedback ?? localChange(retry, view)).change);
+  // What it answered, shown over the headline
+  const asked = answeredPrompt(retry);
+  // The pause words counted, for the chip
+  const pauseCount = fillerCount(retry);
+  // The way on: inside today's practice the next step (or finishing the day), otherwise back to where it started (decision 67)
+  const onward = plan ? (plan.next ? { label: `Next: step ${plan.step + 1}`, href: plan.next.href } : { label: "Finish today’s practice", href: "/" }) : { label: "Done", href: home.href };
   // Draw the page
   return (
     <>
-      {/* Title and day */}
-      <Masthead title="Second try" section={home.section}>{plan ? <PlanNote plan={plan} /> : dayLabel(new Date(retry.createdAt), now)}</Masthead>
-      {/* One column (both tries' numbers are in the table below) */}
-      <div className="flex flex-1 flex-col md:max-w-2xl md:pt-8">
-        {/* Main column */}
-        <div className="flex flex-1 flex-col">
-          {/* The change as one sentence */}
-          <h1 className="mt-6 font-display text-statement font-semibold motion-safe:animate-rise md:mt-0 md:max-w-[18ch] md:text-statement-xl">{view.pauseWords || measureFor(original.focus)?.kind !== "fillers" ? retryHeadline(retry, original) : "Your second try is in."}</h1>
-          {/* When the number went the other way: a task-focused word, so the second try never reads as failure (person-focused feedback lowers persistence; playbook 6a) */}
-          {retryNote(retry, original) && <p className="mt-3 max-w-[48ch] text-lede">{retryNote(retry, original)}</p>}
+      {/* Focus mode's header: the way out, how far through today's practice, what this was and the step */}
+      <PracticeBar close={{ href: home.href, label: home.label }} label={`Second try${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} progress={plan ? plan.step / Math.max(1, plan.total) : undefined} className="-mt-4 md:-mt-8" />
+      {/* The take on the left, the verdict sliding in on the right (on a phone, the take, then the verdict as a sheet) */}
+      <div className="flex flex-col gap-5 md:flex-row md:flex-wrap md:items-start md:gap-9 md:pt-4">
+        {/* The second try */}
+        <section aria-labelledby="retry-heading" className="flex min-w-0 flex-col gap-4.5 md:flex-[999_1_520px]">
+          {/* What it was, how long, and when */}
+          <p className={`${LAB} mt-3 md:mt-0`}>Second try · {formatClock(Math.round(retry.durationSec))} · {plan ? `Today’s practice · step ${plan.step} of ${plan.total}` : `Recorded ${dayLabel(new Date(retry.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}`}</p>
+          {/* What it answered, quietly */}
+          {asked && <p className="-mt-2 font-display text-xl leading-snug font-semibold text-ink-muted">{asked.text}</p>}
+          {/* The change as one sentence: the page's heading */}
+          <h1 id="retry-heading" className="font-display text-3xl leading-tight font-semibold motion-safe:animate-rise md:text-4xl">{headline}</h1>
           {/* What the first try said to work on */}
-          {cue && <p className="mt-4 max-w-[48ch] text-footnote text-ink-muted">You were working on: {cue}</p>}
+          {cue && <p className="-mt-1 font-bold text-ink-muted">You were working on: {cue}</p>}
           {/* The speaker's own call against the measure (decision 116) */}
           <RatingLine session={retry} all={all} />
           {/* Both tries' numbers, first then second (decision 67) */}
-          <div className="mt-2"><BeforeAfterTable label="First and second try" first="First" second="Second" rows={changes} /></div>
-          {/* The coach's notes on the retry */}
-          {retry.feedback && <p className="mt-5 max-w-[48ch] text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
-          {/* The first try's pitch under the second's, phrase by phrase (decision 111) */}
-          {!retry.trimmedAt && takeScript.ready && <LastVsThisCard repo={repo} pauseWords={view.pauseWords} before={original} after={retry} kind="Second try" names={{ before: "First try", after: "Second try" }} plays={{ before: "Play first try", after: "Play second try" }} script={takeScript.script} />}
+          <BeforeAfterTable label="First and second try" first="First" second="Second" rows={changes} />
+          {/* What was said this time */}
+          <SaidCard session={retry} pauseWords={view.pauseWords} />
           {/* Listen back to the second try */}
-          <div className="max-w-[48ch]"><Playback repo={repo} session={retry} onAudio={(element) => { audio.current = element; }} /></div>
-          {/* How the second try's voice sounded (decision 111: the standard voice view on every take with pitch readings) */}
-          <div className="max-w-[48ch]">{takeScript.ready && <TakeViews repo={repo} session={retry} sessions={all} usual={usual} fluency={view.fluency} pauseWords={view.pauseWords} script={takeScript.script} audio={() => audio.current} />}</div>
-          {/* Where the second try's deeper analysis stands, said quietly (decision 91) */}
-          <DeepNote repo={repo} sessionId={retry.id} now={now} />
-          {/* Push the action down */}
-          <div className="flex-1" />
-          {/* Move on: the next step, or back to where it started (decision 67) */}
-          <div className="mt-8">{plan ? <PlanBand plan={plan} /> : <ActionBand action="Done" aside={home.label.replace("Close, back to", "back to")} href={home.href} />}</div>
-        </div>
+          <Playback repo={repo} session={retry} onAudio={(element) => { audio.current = element; }} />
+        </section>
+
+        {/* The verdict: green with your happy blob, or warm amber (never red) with your puzzled blob and Sage when the number went the other way */}
+        <aside aria-labelledby="retry-verdict" data-verdict={verdict} className={`relative flex flex-col gap-3.5 rounded-[26px] px-6 pt-6 pb-5 max-md:-mx-4 max-md:mt-16 max-md:rounded-b-none max-md:px-5 max-md:pb-8 motion-safe:max-md:animate-sheet md:max-w-110 md:flex-[1_1_340px] motion-safe:md:animate-slide-in ${verdict === "good" ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>
+          {/* Your blob (and Sage, after a rough one), peeking over the sheet's edge on a phone */}
+          <div className="flex items-end gap-3 max-md:absolute max-md:-top-16 max-md:right-5">
+            {/* Your blob */}
+            <span data-take-reaction={reaction.kind} className="flex"><Cast who="you" face={verdict === "good" ? "happy" : "wonder"} className="size-22 md:size-30" /></span>
+            {/* Sage, for the one note */}
+            {verdict === "rough" && <Cast who="sage" mood="encouraging" className="size-18 md:size-21" />}
+          </div>
+          {/* The headline */}
+          <h2 id="retry-verdict" className="font-display text-4xl leading-none font-semibold">{verdict === "good" ? "That landed!" : "Keep the cue."}</h2>
+          {/* One line: what worked, or the note */}
+          <p className={`font-bold ${verdict === "rough" ? "" : "text-ink"} text-lg leading-snug`}>{line}</p>
+          {/* A personal best: what it was, and before */}
+          <PersonalBest reaction={reaction} />
+          {/* The chips: time spoken and pause words this time */}
+          <ul aria-label="This try" className="flex flex-wrap gap-2">
+            {/* Time spoken */}
+            <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{formatClock(Math.round(retry.durationSec))} spoken</li>
+            {/* Pause words, when shown */}
+            {view.pauseWords && <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{pauseCount} pause {pauseCount === 1 ? "word" : "words"}</li>}
+          </ul>
+          {/* The one chunky button: the way on */}
+          <Link href={onward.href} data-action-band className={`${PRIMARY} mt-2 w-full`}>{onward.label}{!plan && <span className="sr-only">, {home.label.replace("Close, back to", "back to")}</span>}</Link>
+          {/* The one text link: once more, compared with this try */}
+          <Link href={onceMoreHref(retry, plan)} className={`${TEXT_LINK} self-center uppercase tracking-[.04em] ${verdict === "good" ? "text-accent-tint-ink" : "text-warm-ink"}`}>Try it once more</Link>
+        </aside>
       </div>
+
+      {/* Below: the deeper look at the second try */}
+      <section aria-labelledby="retry-more" className="mt-12 mb-10 flex flex-col gap-4 md:max-w-2xl">
+        {/* Heading */}
+        <h2 id="retry-more" className={SECTION_HEADING}>A closer look</h2>
+        {/* The coach's notes on the retry */}
+        {retry.feedback && <p className="text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
+        {/* The first try's pitch under the second's, phrase by phrase (decision 111) */}
+        {!retry.trimmedAt && takeScript.ready && <LastVsThisCard repo={repo} pauseWords={view.pauseWords} before={original} after={retry} kind="Second try" names={{ before: "First try", after: "Second try" }} plays={{ before: "Play first try", after: "Play second try" }} script={takeScript.script} />}
+        {/* How the second try's voice sounded (decision 111: the standard voice view on every take with pitch readings) */}
+        {takeScript.ready && <TakeViews repo={repo} session={retry} sessions={all} usual={usual} fluency={view.fluency} pauseWords={view.pauseWords} script={takeScript.script} audio={() => audio.current} />}
+        {/* Where the second try's deeper analysis stands, said quietly (decision 91) */}
+        <DeepNote repo={repo} sessionId={retry.id} now={now} />
+        {/* Quieter options */}
+        <ul aria-label="More options" className={`mt-2 divide-y divide-rule px-4 ${CARD}`}>
+          {/* The first try */}
+          <li><RowLink href={`/sessions?id=${encodeURIComponent(original.id)}`}>See your first try</RowLink></li>
+          {/* Every measure of this take, on the profile (decision 90) */}
+          <li><RowLink href={`/profile?session=${encodeURIComponent(retry.id)}`}>See all measures for this take</RowLink></li>
+        </ul>
+      </section>
     </>
   );
 }
@@ -1335,26 +1417,24 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
   return (
     // One column on a phone, two on a computer; the results take their soft green surfaces (decision 69)
     <main id="main" data-area={loaded?.session ? "results" : undefined} className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
-      {/* Nothing yet while loading */}
-      {loaded && !loaded.session && (
+      {/* Not on this device, or could not be read: the main navigation, then a card with your puzzled blob, what happened and the way to your takes (the result's verdict card, extrapolated) */}
+      {((loaded && !loaded.session) || (!loaded && loadError !== null)) && (
         <>
-          {/* Title */}
-          <Masthead title="Session" />
-          {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
-          <h1 className="sr-only">Session</h1>
-          {/* Explanation and a way back */}
-          <p data-inline className="mt-6 text-lede text-ink-muted">This session is not on this device. <Link href="/history" className={TEXT_LINK}>Back to history</Link></p>
-        </>
-      )}
-      {/* The session could not be read: why, and the way back */}
-      {!loaded && loadError !== null && (
-        <>
-          {/* Title */}
-          <Masthead title="Session" />
-          {/* The page's heading for screen readers and the keyboard, since this state draws no visible one (the masthead carries the title) */}
-          <h1 className="sr-only">Session</h1>
-          {/* What happened */}
-          <p role="alert" data-inline className="mt-6 max-w-[48ch] text-lede">This session could not be loaded. The browser said: “{loadError}” Reload the page to try again. <Link href="/history" className={TEXT_LINK}>Back to history</Link></p>
+          {/* Title, with the main navigation */}
+          <Masthead title="Your take" />
+          {/* The card */}
+          <section aria-labelledby="missing-heading" className={`mt-6 flex max-w-xl flex-col items-center gap-4 px-6 py-8 text-center md:mt-10 ${CARD}`}>
+            {/* Your blob, puzzled */}
+            <Cast who="you" face="wonder" className="size-28" />
+            {/* What happened, as the page's heading */}
+            <h1 id="missing-heading" className="font-display text-3xl leading-tight font-semibold">{loaded ? "This take isn’t here." : "This take could not be loaded."}</h1>
+            {/* Why, and what to do */}
+            {loaded ? <p data-inline className="max-w-[44ch] text-lede text-ink-muted">This session is not on this device. Takes stay in the browser they were recorded in, and a deleted take is gone for good.</p> : <p role="alert" data-inline className="max-w-[44ch] text-lede">The browser said: “{loadError}” Reload the page to try again.</p>}
+            {/* The way to your takes */}
+            <Link href="/history" className={`${PRIMARY} mt-2 w-full max-w-xs`}>Back to history</Link>
+            {/* Or Today */}
+            <Link href="/" className={TEXT_LINK}>Back to Today</Link>
+          </section>
         </>
       )}
       {/* A retry with its first try */}

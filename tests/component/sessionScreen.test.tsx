@@ -277,6 +277,20 @@ describe("SessionScreen", () => {
     expect([within(fillers).getAllByRole("cell").map((cell) => cell.textContent), screen.getByRole("link", { name: /^Done/ }).getAttribute("href")]).toEqual([["4.2", "1.8"], "/practice"]);
   });
 
+  // The second try's result is built like the first's (Desktop Screens "Result"): the verdict panel with the way on, and once more as a try after this one
+  it("shows a second try's verdict panel with the way on and once more", async () => {
+    // The first try
+    const first = makeSession({ id: "s1", focus: "cut-fillers", fillersPerMinute: 4.2, feedback: FEEDBACK, feedbackStatus: "done" });
+    // The retry
+    const retry = makeSession({ id: "s2", focus: "cut-fillers", retryOf: "s1", fillersPerMinute: 1.8, feedback: FEEDBACK, feedbackStatus: "done", createdAt: "2026-10-12T16:00:00.000Z" });
+    // Draw the retry's page
+    render(<SessionScreen sessionId="s2" repository={await repositoryWith(first, retry)} now={NOW} />);
+    // The panel
+    const panel = (await screen.findByRole("heading", { level: 2, name: /That landed!|Keep the cue\./ })).closest("aside") as HTMLElement;
+    // Confirm its chunky way on, and once more as a retry of this try
+    expect([within(panel).getByRole("link", { name: /^Done/ }).getAttribute("href"), within(panel).getByRole("link", { name: "Try it once more" }).getAttribute("href")]).toEqual(["/practice", `/session?mode=${retry.mode}&prompt=${retry.promptId}&retryOf=s2`]);
+  });
+
   // A retry shows the pitch range on both tries, when both were measured (decision 81)
   it("compares the pitch range on a retry", async () => {
     // A flat-ending first try and a lively retry
@@ -447,8 +461,8 @@ describe("SessionScreen", () => {
   it("explains a session that is not on this device", async () => {
     // Draw the screen for a missing id
     render(<SessionScreen sessionId="nope" repository={await repositoryWith()} now={NOW} />);
-    // Confirm the explanation
-    expect(await screen.findByText(/not on this device/)).toBeTruthy();
+    // Confirm the explanation, the page's one heading, and the way back to your takes
+    expect([!!(await screen.findByText(/not on this device/)), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("link", { name: "Back to history" }).getAttribute("href")]).toEqual([true, "This take isn’t here.", "/history"]);
   });
 
   // A session with saved audio can be played back

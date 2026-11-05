@@ -48,16 +48,16 @@ export function TopicDraw({ steps, onDone }: TopicDrawProps) {
   // Whether the real topic has landed
   const landed = at === steps.length - 1;
   // The headline's look, shared by the hidden real topic that sets the height and the topic shown over it
-  const headline = "relative font-display text-prompt before:absolute before:-left-[0.42em] before:text-accent before:content-['“'] md:max-w-[16ch] md:text-prompt-xl";
-  // The headline's place: as tall as the real topic all along, so nothing below it moves, with longer topics clipped top and bottom (never at the sides, where the quote mark and the landing pop reach)
+  const headline = "font-display text-3xl leading-tight font-semibold md:max-w-[560px] md:text-4xl";
+  // The headline's place: as tall as the real topic all along, so nothing below it moves, with longer topics clipped top and bottom (never at the sides, where the landing pop reaches)
   return (
-    <div data-topic-draw={landed ? "landed" : "spinning"} className="relative mt-8 grid overflow-y-clip md:mt-0">
+    <div data-topic-draw={landed ? "landed" : "spinning"} className="relative grid w-full justify-items-center overflow-y-clip">
       {/* What a screen reader hears while it spins */}
       <p role="status" className="sr-only">{landed ? "" : "Picking your topic…"}</p>
       {/* The real topic, unseen, holding the height */}
       <p aria-hidden="true" className={`invisible col-start-1 row-start-1 ${headline}`}>{steps[steps.length - 1]}</p>
-      {/* The topic showing: faint while spinning, then full ink with a pop when it lands, growing from the left edge where the text starts so it never runs off the screen */}
-      <p aria-hidden="true" data-topic-shown key={at} className={`col-start-1 row-start-1 ${headline} ${landed ? "origin-left motion-safe:animate-pop" : "text-ink-muted motion-safe:animate-flick"}`}>
+      {/* The topic showing: faint while spinning, then full ink with a pop when it lands, growing from its centre, where the centred question sits */}
+      <p aria-hidden="true" data-topic-shown key={at} className={`col-start-1 row-start-1 ${headline} ${landed ? "origin-center motion-safe:animate-pop" : "text-ink-muted motion-safe:animate-flick"}`}>
         {steps[at]}
       </p>
     </div>

@@ -450,8 +450,8 @@ describe("RecordingScreen", () => {
   it("gives two minutes to think with hints before a Record Response", async () => {
     // Draw a Record Response
     draw({ mode: "response" });
-    // Confirm the prompt is shown up front with the thinking time
-    expect([!!(await screen.findByText(PROMPTS[0]!.text)), !!screen.getByRole("button", { name: /Start thinking.*2 minutes to prepare/ })]).toEqual([true, true]);
+    // Confirm the prompt is shown up front with the thinking time under the one start
+    expect([!!(await screen.findByText(PROMPTS[0]!.text)), !!screen.getByRole("button", { name: /Start thinking/ }), !!screen.getByText("2 minutes to prepare")]).toEqual([true, true, true]);
     // Begin thinking
     fireEvent.click(screen.getByRole("button", { name: /Start thinking/ }));
     // Confirm the countdown, the structure, and this prompt's angles
@@ -722,7 +722,7 @@ describe("RecordingScreen", () => {
     // Recording starts once it has been said
     const stop = await screen.findByRole("button", { name: /Stop/ });
     // Confirm the voice said the question, and the timing light shows the small-talk window
-    expect([fake.said, screen.getByText("Aim for 0:20 to 0:45")?.tagName]).toEqual([["How was your weekend?"], "P"]);
+    expect([fake.said, !!screen.getByText("Turns green at 0:20")]).toEqual([["How was your weekend?"], true]);
     // Speak past the minimum
     clock.advance(25_000);
     // Stop
@@ -1261,6 +1261,46 @@ describe("RecordingScreen", () => {
     expect([await repository.listSessions(), navigate.mock.calls.length, !!screen.getByRole("button", { name: /Start again/ })]).toEqual([[], 0, true]);
   });
 
+  // The cross stays while recording (Desktop Screens "Recording"): it discards the take the way Esc does, with the same undo (second pass; the user found it hidden)
+  it("keeps the cross while recording, discarding the take with an undo", async () => {
+    // Draw the screen
+    const { repository, navigate } = draw();
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Recording
+    await screen.findByRole("button", { name: "Stop" });
+    // The cross, now a button that discards
+    fireEvent.click(screen.getByRole("button", { name: "Discard this take" }));
+    // Confirm the note and its undo, nothing saved, and the page did not change
+    expect([!!(await screen.findByText("Take discarded.")), !!screen.getByRole("button", { name: "Undo" }), await repository.listSessions(), navigate.mock.calls.length]).toEqual([true, true, [], 0]);
+  });
+
+  // While a surprise question counts down, the cross leaves without speaking (as Esc does)
+  it("keeps the cross during the countdown, leaving without speaking", async () => {
+    // Draw a Table Topic
+    const { navigate } = draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id });
+    // Show the topic
+    fireEvent.click(await screen.findByRole("button", { name: /Show my topic/ }));
+    // The countdown
+    await waitFor(() => expect(document.querySelector("[data-countdown]")).not.toBeNull());
+    // Leave by the cross
+    fireEvent.click(screen.getByRole("button", { name: "Leave without speaking" }));
+    // Confirm it went home
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/"));
+  });
+
+  // Before starting, Rapid Fire opens as the Recording layout (the user found the old banner and blob button): the cross and the bar on top, the topic hidden where it will appear, the blob waiting, one chunky start, and how it works beside; no left-hand "Aim for" note
+  it("opens Rapid Fire as the Recording layout before starting", async () => {
+    // Draw a Table Topic
+    draw({ mode: "talk", promptId: TABLE_TOPICS[0]!.id });
+    // The hidden topic
+    await screen.findByText(/Your topic is hidden/);
+    // The parts
+    const parts = [!!screen.getByRole("link", { name: "Close, back to Practice" }), !!screen.getByRole("progressbar", { name: "Progress" }), document.querySelectorAll("button[data-variant='start']").length, screen.getByRole("button", { name: /Show my topic/ }).className.includes("shadow-chunky"), !!within(screen.getByRole("complementary", { name: "Before you speak" })).getByText(/The light turns green at 1:00, yellow at 1:30 and red at 2:00/), screen.getByText("Aim for 1:00 to 2:00").closest("aside")];
+    // Confirm each
+    expect(parts).toEqual([true, true, 1, true, true, null]);
+  });
+
   // Undo keeps the discarded take after all, saving it and opening its page
   it("saves a discarded take when undone", async () => {
     // Draw the screen
@@ -1578,14 +1618,14 @@ describe("RecordingScreen", () => {
     expect((await repository.listSessions()).length).toBe(1);
   });
 
-  // The voice shape is the start button, the round Stop ends the take beside your blob and level, and there is no band at the bottom (decisions 74 and 75; the Recording reference, second pass)
-  it("starts on the voice shape and stops on the round Stop, with no band at the bottom", async () => {
+  // One chunky start under your waiting blob, the round Stop ends the take beside your blob and level, and there is no band at the bottom (decisions 74 and 75; the Recording reference, second pass, and its opening)
+  it("starts on one chunky button and stops on the round Stop, with no band at the bottom", async () => {
     // Draw a one-minute session
     const { repository, clock, navigate } = draw();
-    // The start shape, with its words and length
+    // The one start, with the length to aim for beside it
     const start = await screen.findByRole("button", { name: /Start speaking/ });
-    // Confirm its words and that no band is drawn
-    expect([start.textContent, document.querySelector("[data-action-band]")]).toEqual(["Start speakingabout a minute", null]);
+    // Confirm its words, the length, and that no band is drawn
+    expect([start.textContent, !!screen.getByText("Aim for about a minute"), document.querySelector("[data-action-band]")]).toEqual(["Start speaking", true, null]);
     // Tap it
     fireEvent.click(start);
     // While recording, the round Stop button

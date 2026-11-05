@@ -129,8 +129,8 @@ describe("the rounds", () => {
     expect((await screen.findByText(/Told three times · round 2 of 3 · 3:00/)).textContent).toContain("Same content, less time.");
     // No offer inside a loop
     expect(screen.queryByRole("link", { name: "Tell it three times, shorter each time" })).toBeNull();
-    // The start
-    expect(screen.getByRole("button", { name: /Start round 2/ }).textContent).toContain("3:00 this round");
+    // The one start, with the round's time under it
+    expect([!!screen.getByRole("button", { name: /Start round 2/ }), !!screen.getByText("Aim for 3:00 this round")]).toEqual([true, true]);
   });
 
   // The last round opens its results straight away

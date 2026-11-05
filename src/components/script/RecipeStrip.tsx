@@ -9,6 +9,8 @@ import { beatsFor, type BeatId } from "@/content/smallTalk";
 import type { StripLevel } from "@/core/smallTalk";
 // Load the shared button looks
 import { QUIET } from "@/components/script/Buttons";
+// Load the card look
+import { CARD } from "@/components/script/textStyles";
 
 // Draw the strip
 export function RecipeStrip({ level, focus = null, lesson = false }: { level: StripLevel; focus?: BeatId | null; lesson?: boolean }) {
@@ -18,7 +20,7 @@ export function RecipeStrip({ level, focus = null, lesson = false }: { level: St
   if (level.hidden && !shown) {
     // A quiet way to bring it back
     return (
-      <p className="mt-4">
+      <p>
         {/* Show it */}
         <button type="button" onClick={() => setShown(true)} className={QUIET}>Show the recipe</button>
       </p>
@@ -26,7 +28,7 @@ export function RecipeStrip({ level, focus = null, lesson = false }: { level: St
   }
   // The four beats in a row (two by two on a narrow phone)
   return (
-    <ol aria-label="The recipe" className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 rounded-2xl bg-card p-4 sm:grid-cols-4">
+    <ol aria-label="The recipe" className={`grid grid-cols-2 gap-x-4 gap-y-3 p-4 sm:grid-cols-4 ${CARD}`}>
       {/* Each beat */}
       {beatsFor(level.unit).map((beat, index) => (
         // One beat: the lesson's own beat is marked in the accent
