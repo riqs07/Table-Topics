@@ -62,6 +62,8 @@ export const ROUTES: ReadonlyArray<string> = [
   "/",
   // Practice
   "/practice",
+  // One job's list of ways (second design pass)
+  "/practice/ways?job=stories",
   // Your voice, the warm-up, a voice drill, shadowing, and a drill that does not exist (decision 80)
   "/voice",
   "/voice/warmup",

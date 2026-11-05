@@ -54,6 +54,38 @@ describe("ProfileScreen", () => {
     expect([(await screen.findByText(/No takes measured yet/)).textContent?.includes("Practice"), screen.getByRole("heading", { level: 1 }).textContent, screen.getByRole("heading", { level: 2, name: "Your speaking profile" }) !== null]).toEqual([true, "You, so far", true]);
   });
 
+  // Second design pass: a new user gets a first-take prompt and no counts, so Me never shows a row of zeros
+  it("asks a new user for a first take instead of showing zeros", async () => {
+    // Draw it with nothing saved
+    render(<ProfileScreen repository={createRepository(new MemoryStore())} now={NOW} />);
+    // The prompt
+    const prompt = await screen.findByRole("region", { name: "Your first take" });
+    // Confirm the way to record, and no counts, then-and-now or takes list
+    expect([within(prompt).getByRole("link", { name: "Record your first take" }).getAttribute("href"), screen.queryByRole("list", { name: "Your numbers" }), document.querySelector("[data-then-and-now]"), screen.queryByRole("heading", { name: "Your takes" })]).toEqual(["/session?mode=free&prompt=free", null, null, null]);
+  });
+
+  // Second design pass: Rapid Fire's day 1 against this week, the four counts and the latest takes, with the Settings rows beside them
+  it("shows then and now, the counts, the latest takes and the Settings rows", async () => {
+    // A repository with Rapid Fire on a first day and this week, and a story
+    const repository = createRepository(new MemoryStore());
+    // Day 1
+    await repository.saveSession(makeSession({ id: "a", mode: "talk", createdAt: new Date(2026, 9, 1, 10).toISOString(), fillersPerMinute: 6, durationSec: 60 }));
+    // This week
+    await repository.saveSession(makeSession({ id: "b", mode: "talk", createdAt: new Date(2026, 9, 20, 10).toISOString(), fillersPerMinute: 2, durationSec: 90 }));
+    // A story yesterday
+    await repository.saveSession(makeSession({ id: "c", mode: "story", createdAt: new Date(2026, 9, 21, 9).toISOString(), fillersPerMinute: 3, durationSec: 90 }));
+    // The focus
+    await repository.saveSettings({ ...(await repository.getSettings(NOW)), practiceFocus: ["spot"] });
+    // Draw it
+    render(<ProfileScreen repository={repository} now={NOW} />);
+    // The comparison
+    const compare = await screen.findByRole("region", { name: "Then and now · Rapid Fire" });
+    // The counts
+    const counts = within(screen.getByRole("list", { name: "Your numbers" })).getAllByRole("listitem").map((item) => item.textContent);
+    // Confirm day 1 and this week, the counts (four minutes in all), three takes listed, and the focus in the Settings rows
+    await waitFor(() => expect([compare.textContent?.includes("Day 16.0"), compare.textContent?.includes("This week2.0"), counts, within(screen.getByRole("region", { name: "Your takes" })).getAllByRole("link").length, screen.getByRole("link", { name: /^What you’re working on/ }).textContent?.includes("Thinking on my feet")]).toEqual([true, true, ["3takes", "4 minspoken", "1story told", "2 daysbest run"], 4, true]));
+  });
+
   // The one place for how you are doing (decision 109; the Me tab since the UI rewrite): named "Me" in the masthead, the check-ins in their own section before the measures, every measure folded, and History reached from here
   it("puts the check-ins before the measures, under Me", async () => {
     // The sample takes, plus two check-ins' reading takes a week apart

@@ -257,6 +257,8 @@ export function usePracticeWays(repo: Repository, today: Date | null): PracticeW
       { name: "Warm-up", detail: "Three moves, one minute, nothing recorded", href: "/voice/warmup", icon: WindIcon, scene: "warm-up" },
       // The modes, the one done least first
       ...voiceRowsByNeed(counts ?? new Map()).map((row) => voiceWays[row]),
+      // Every drill, by mode, on its own page
+      { name: "All voice drills", detail: "Every drill, by what it works on", href: "/voice", icon: ListNumbersIcon },
     ],
   };
 

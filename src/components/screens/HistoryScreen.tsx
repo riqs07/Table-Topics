@@ -49,6 +49,9 @@ import type { MissionRecord, SessionRecord } from "@/data/records";
 import { MiniFingerprint } from "@/components/script/MiniFingerprint";
 // Load the shared heading look
 import { CARD, SECTION_HEADING, CARD_LIST } from "@/components/script/textStyles";
+// Load the mode tiles and each take's (second design pass, storyboard 30)
+import { ModeTile } from "@/components/scenes/ModeTile";
+import { takeLook } from "@/components/screens/MeTop";
 // Load the blob character, for the empty page (decision 134)
 import { BlobCharacter } from "@/components/script/BlobFace";
 
@@ -102,8 +105,8 @@ function Trend({ values }: { values: number[] }) {
   );
 }
 
-// Find a prompt's text by id (talk titles come from the user's saved talks)
-function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, string>): string {
+// Find a prompt's text by id (talk titles come from the user's saved talks); Me's latest takes name them the same way
+export function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, string>): string {
   // The first recording is named as such
   if (session.isBaseline) return "Your first recording";
   // Look up the prompt, falling back to a plain label
@@ -154,10 +157,14 @@ function promptText(session: SessionRecord, talkTitles: ReadonlyMap<string, stri
 function Row({ row, now, talkTitles, pauseWords }: { row: HistoryRow; now: Date; talkTitles: ReadonlyMap<string, string>; pauseWords: boolean }) {
   // First try's rate, and the retry's if there was one (or the length, when pause words are hidden; decision 79)
   const result = !pauseWords ? formatClock(row.session.durationSec) : row.retry ? `${formatRate(row.session.fillersPerMinute)}, then ${formatRate(row.retry.fillersPerMinute)}` : formatRate(row.session.fillersPerMinute);
-  // A link to the session, laid out as a baseline-aligned row
+  // Its tile
+  const look = takeLook(row.session);
+  // A link to the session: its tile, then the words
   return (
     <li>
       <Link href={`/sessions?id=${row.session.id}`} className={`flex min-h-14 items-center gap-3 py-3 hover:text-accent ${PRESS}`}>
+        {/* The take's tile, still (second design pass) */}
+        <ModeTile ground={look.ground} prop={look.prop} face={look.face} still className="size-12" />
         {/* The prompt, with the day under it (decision 79: rows in a card, no dotted leader) */}
         <span className="min-w-0 flex-1">
           {/* The prompt */}
@@ -168,7 +175,7 @@ function Row({ row, now, talkTitles, pauseWords }: { row: HistoryRow; now: Date;
           {row.session.fingerprint && <span className="mt-1 block"><MiniFingerprint value={row.session.fingerprint} /></span>}
         </span>
         {/* The result, with its unit */}
-        <span className="flex-none text-right"><span className="block font-semibold tabular-nums">{result}</span><span className="block text-footnote text-ink-muted">{pauseWords ? "pause words a minute" : "long"}</span></span>
+        <span className="flex-none text-right"><span className="block font-semibold tabular-nums">{result}</span><span className="block text-footnote text-ink-muted">{pauseWords ? <><span className="sm:hidden">a minute</span><span className="hidden sm:inline">pause words a minute</span></> : "long"}</span></span>
       </Link>
     </li>
   );
@@ -183,11 +190,11 @@ export function HistoryScreen(props: ScreenProps) {
     // One column on a phone, margin plus main column on a computer
     <main id="main" className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-paper-raised px-6 pt-6 pb-10 md:px-14 md:pt-10">
       {/* The area it sits in, your progress, with the settings gear marked (decision 109) */}
-      <Masthead title="Your progress" section="settings" />
-      {/* The way back to the profile, where it is reached from (decision 109) */}
-      <p className="mt-2"><Link href="/profile" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to your progress</Link></p>
-      {/* The page's name, as its main heading (also in the empty state) */}
-      <PageTitle title="History" />
+      <Masthead title="Me" section="settings" />
+      {/* The way back to Me, where it is reached from (decision 109) */}
+      <p className="mt-2 md:-mt-12"><Link href="/profile" className={`${TEXT_LINK} -ml-1 gap-1 text-footnote`}><CaretLeftIcon aria-hidden="true" className="size-4" />Back to Me</Link></p>
+      {/* The page's name, as its main heading (also in the empty state; second design pass: "Your takes") */}
+      <PageTitle title="Your takes" />
       {/* The history itself */}
       <HistoryContent repo={repo} today={today} />
     </main>
@@ -284,9 +291,9 @@ export function HistoryContent({ repo, today }: { repo: Repository; today: Date 
           {/* The list, with a choice of what it shows */}
           <div className="mt-6 md:mt-0">
             {/* All, speaking, or reading aloud */}
-            <div role="group" aria-label="Show" className="flex max-w-sm gap-1 rounded-2xl bg-paper p-1 text-footnote">
-              {/* One button per choice */}
-              {HISTORY_FILTERS.map((choice) => <button key={choice.id} type="button" aria-pressed={show === choice.id} onClick={() => { setShow(choice.id); setLimit(HISTORY_PAGE); }} className={`min-h-11 flex-1 rounded-xl px-3 ${PRESS} ${show === choice.id ? "bg-fill font-semibold text-fill-ink" : "text-ink-muted hover:bg-card hover:text-ink"}`}>{choice.name}</button>)}
+            <div role="group" aria-label="Show" className="flex flex-wrap gap-2 text-footnote">
+              {/* One pill per choice (second design pass) */}
+              {HISTORY_FILTERS.map((choice) => <button key={choice.id} type="button" aria-pressed={show === choice.id} onClick={() => { setShow(choice.id); setLimit(HISTORY_PAGE); }} className={`min-h-11 rounded-full border-2 px-4.5 font-extrabold ${PRESS} ${show === choice.id ? "border-fill bg-fill text-fill-ink shadow-chunky-pressed" : "border-rule bg-card text-ink shadow-ledge hover:border-ink-muted"}`}>{choice.name}</button>)}
             </div>
             {/* The contents list */}
             <ul aria-label="Sessions" className={`mt-3 text-lede ${CARD_LIST}`}>

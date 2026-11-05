@@ -35,12 +35,10 @@ test("4/3/2: tell today's story three times, shorter each time, then compare the
   await page.clock.install({ time: new Date("2026-10-22T09:00:00") });
   // Past the welcome
   await page.addInitScript(() => localStorage.setItem("voicelab-welcome-seen", "yes"));
-  // Practice, then the drill under "More ways to practise"
+  // Practice, then the drill in Speak on the spot's list
   await page.goto("/practice");
-  // (opened)
-  await page.getByRole("button", { name: "More ways to practise" }).click();
-  // The rest of speaking on the spot
-  await page.getByRole("region", { name: "Speak on the spot" }).getByRole("button", { name: "See all" }).click();
+  // The job's card (second design pass)
+  await page.getByRole("list", { name: "Jobs" }).getByRole("link", { name: /^Speak on the spot/ }).click();
   // The drill's page
   await page.getByRole("link", { name: /^4\/3\/2/ }).click();
   // Today's story, with a full story's times shown
