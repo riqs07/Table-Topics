@@ -421,7 +421,7 @@ test("Small talk: a lesson from its tab to the beats", async ({ page }) => {
   // The answer opens on its results
   await expect(page).toHaveURL(/\/sessions\?id=/, { timeout: 15_000 });
   // The results ask which beats were hit, with the ticks already open under the question (round 4)
-  await expect(page.getByRole("heading", { level: 3 })).toHaveText("Which beats did you hit?");
+  await expect(page.getByRole("region", { name: "A closer look" }).getByRole("heading", { level: 3 }).first()).toHaveText("Which beats did you hit?");
   // Tick the moment
   await page.getByRole("list", { name: "Listen for" }).getByRole("button", { name: /^Moment/ }).click();
   // Save
@@ -972,7 +972,7 @@ test("Stories: pick a prompt, choose a template, tell it, then tell it again and
   // Plan and tell
   await tellStory(page);
   // The headline from the beats, and what worked
-  await expect(page.getByRole("heading", { level: 3 })).toHaveText("2 of 4 beats came through clearly.");
+  await expect(page.getByRole("region", { name: "A closer look" }).getByRole("heading", { level: 3 }).first()).toHaveText("2 of 4 beats came through clearly.");
   // The coach's line and how it could sound
   await expect(page.locator("[data-story-line]")).toContainText("Could sound like");
   // Each beat, the result missing
@@ -1057,7 +1057,7 @@ test("Stories: tell a saved moment properly, and find it in Your stories", async
   // Plan and tell
   await tellStory(page);
   // The telling, with no coach and no rough checklist (decision 126)
-  await expect(page.getByRole("heading", { level: 3 })).toHaveText("Your story.");
+  await expect(page.getByRole("region", { name: "A closer look" }).getByRole("heading", { level: 3 }).first()).toHaveText("Your story.");
   // To Your stories
   await page.getByRole("link", { name: "Your stories", exact: true }).click();
   // The story is listed by the moment's first words, told once
