@@ -137,9 +137,29 @@ describe("RecordingScreen", () => {
     // The browser hears words
     await fake.say({ final: "Um, so I went", interim: "home" });
     // Confirm the filler is marked
-    expect(screen.getByText("Um").className).toContain("text-filler");
+    expect([screen.getByText("Um").tagName, screen.getByText("Um").className]).toEqual(["MARK", expect.stringContaining("bg-art-sun")]);
     // Confirm the meter is shown
     expect(screen.getByRole("img", { name: "Microphone level" })).toBeTruthy();
+  });
+
+  // Focus mode (the Recording reference, second pass): your one goal beside your words, which can be hidden while still heard
+  it("shows your one goal and your words, which can be hidden", async () => {
+    // Draw the screen
+    const { fake } = draw();
+    // Start
+    fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
+    // Wait for the stop action
+    await screen.findByRole("button", { name: "Stop" });
+    // The browser hears words
+    await fake.say({ final: "So I went", interim: "home" });
+    // The right column
+    const side = screen.getByRole("complementary", { name: "While you speak" });
+    // The goal (the week's focus, with nothing else to set one) and the words
+    const shown = [!!side.querySelector("[data-goal]")?.textContent?.startsWith("Your one goal"), !!within(side).getByText("home")];
+    // Hide the words
+    fireEvent.click(screen.getByRole("button", { name: "Hide words" }));
+    // Confirm both, then the words hidden with a way to show them again
+    expect([shown, within(side).queryByText("home"), !!within(side).getByText("Words hidden. They’re still being heard."), !!screen.getByRole("button", { name: "Show words" })]).toEqual([[true, true], null, true, true]);
   });
 
   // Stopping saves the session with its audio and opens its page
@@ -355,11 +375,11 @@ describe("RecordingScreen", () => {
     // The draw
     const spinner = document.querySelector("[data-topic-draw]");
     // What shows first: another topic, no briefing, no countdown, and the spoken status
-    const first = [spinner?.getAttribute("data-topic-draw"), spinner?.querySelector("[data-topic-shown]")?.textContent === TABLE_TOPICS[0]!.text, screen.queryByText(/Your topic is hidden/), screen.queryByText(/starting in/), !!screen.getByText("Picking your topic…")];
+    const first = [spinner?.getAttribute("data-topic-draw"), spinner?.querySelector("[data-topic-shown]")?.textContent === TABLE_TOPICS[0]!.text, screen.queryByText(/Your topic is hidden/), document.querySelector("[data-countdown]"), !!screen.getByText("Picking your topic…")];
     // The draw runs its course
     await act(async () => vi.advanceTimersByTime(2_500));
     // Confirm the first moment, then the draw gone, the topic as the headline, and the countdown at its full ten seconds
-    expect([first, document.querySelector("[data-topic-draw]"), screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/starting in 10/)]).toEqual([["spinning", false, null, null, true], null, TABLE_TOPICS[0]!.text, true]);
+    expect([first, document.querySelector("[data-topic-draw]"), screen.getByRole("heading", { level: 1 }).textContent, document.querySelector("[data-countdown]")?.textContent]).toEqual([["spinning", false, null, null, true], null, TABLE_TOPICS[0]!.text, "10"]);
     // Put the browser back
     vi.unstubAllGlobals();
   });
@@ -383,7 +403,7 @@ describe("RecordingScreen", () => {
     // Show the topic
     fireEvent.click(await screen.findByRole("button", { name: /Show my topic/ }));
     // Confirm the question and the one countdown (no second clock), and that there is no early start
-    expect([!!(await screen.findByText(TABLE_TOPICS[0]!.text)), !!screen.getByText("starting in 10"), screen.queryByText("0:10"), screen.queryByRole("button", { name: /Ready/ })]).toEqual([true, true, null, null]);
+    expect([!!(await screen.findByText(TABLE_TOPICS[0]!.text)), document.querySelector("[data-countdown]")?.textContent, screen.queryByText("0:10"), screen.queryByRole("button", { name: /Ready/ })]).toEqual([true, "10", null, null]);
     // Let 11 seconds pass
     clock.advance(11_000);
     // Let the timer tick
@@ -682,13 +702,13 @@ describe("RecordingScreen", () => {
     // Draw a Reading the room moment, read on a card
     draw({ mode: "smalltalk", promptId: "sr01" });
     // Its hint
-    const read = (await screen.findByText(/^Space to/, { selector: "[data-keyboard-hint]" })).textContent;
+    const read = (await waitFor(() => document.querySelector("[data-keyboard-hint]")!)).textContent;
     // Start again with an asking drill, which is heard
     cleanup();
     // Draw it
     draw({ mode: "smalltalk", promptId: "sa01" });
     // Its hint
-    const heard = (await screen.findByText(/^Space to/, { selector: "[data-keyboard-hint]" })).textContent;
+    const heard = (await waitFor(() => document.querySelector("[data-keyboard-hint]")!)).textContent;
     // Confirm both
     expect([read, heard]).toEqual(["Space to start speaking", "Space to hear them"]);
   });
@@ -1086,7 +1106,7 @@ describe("RecordingScreen", () => {
     // What screen readers hear at the start
     const spoken = () => screen.getByTestId("countdown-spoken").textContent;
     // At the start: focus on the topic, the start announced, and the shown countdown not itself a live region
-    const atStart = [document.activeElement === topic, spoken(), screen.getByText("starting in 10").closest("[role=status]")];
+    const atStart = [document.activeElement === topic, spoken(), document.querySelector("[data-countdown]")!.closest("[role=status]")];
     // Four seconds on: still the same words (nothing new to announce)
     clock.advance(4_000);
     await act(async () => vi.advanceTimersByTime(200));
@@ -1234,7 +1254,7 @@ describe("RecordingScreen", () => {
     // Start
     fireEvent.click(await screen.findByRole("button", { name: /Start speaking/ }));
     // Discard
-    fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Start over" }));
     // Confirm the note and its undo
     expect([!!(await screen.findByText("Take discarded.")), !!screen.getByRole("button", { name: "Undo" })]).toEqual([true, true]);
     // Confirm nothing was saved, the page did not change, and a fresh start is offered
@@ -1254,7 +1274,7 @@ describe("RecordingScreen", () => {
     // Let 20 seconds pass
     clock.advance(20_000);
     // Discard
-    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start over" }));
     // Undo
     fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
     // Confirm the session was saved and opened
@@ -1558,8 +1578,8 @@ describe("RecordingScreen", () => {
     expect((await repository.listSessions()).length).toBe(1);
   });
 
-  // The voice shape is the start and stop button, and there is no band at the bottom (decisions 74 and 75)
-  it("starts and stops on the voice shape, with no band at the bottom", async () => {
+  // The voice shape is the start button, the round Stop ends the take beside your blob and level, and there is no band at the bottom (decisions 74 and 75; the Recording reference, second pass)
+  it("starts on the voice shape and stops on the round Stop, with no band at the bottom", async () => {
     // Draw a one-minute session
     const { repository, clock, navigate } = draw();
     // The start shape, with its words and length
@@ -1568,10 +1588,10 @@ describe("RecordingScreen", () => {
     expect([start.textContent, document.querySelector("[data-action-band]")]).toEqual(["Start speakingabout a minute", null]);
     // Tap it
     fireEvent.click(start);
-    // While recording, the shape is the stop button and still shows the level
+    // While recording, the round Stop button
     const shape = await screen.findByRole("button", { name: "Stop" });
-    // Confirm the level is named inside it, and still no band
-    expect([!!within(shape).getByRole("img", { name: "Microphone level" }), document.querySelector("[data-action-band]")]).toEqual([true, null]);
+    // Confirm it has focus, the level is shown in the take's column with your blob singing, and still no band
+    expect([document.activeElement === shape, !!within(screen.getByRole("region", { name: "Your take" })).getByRole("img", { name: "Microphone level" }), document.querySelector("[data-focus-take] [data-cast='you']")?.closest("[aria-hidden]") !== null, document.querySelector("[data-action-band]")]).toEqual([true, true, true, null]);
     // Speak for 20 seconds, then tap the shape
     clock.advance(20_000);
     fireEvent.click(shape);

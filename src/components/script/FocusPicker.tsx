@@ -1,12 +1,15 @@
-// The choice of what to get better at most (decision 97): six areas as toggle buttons, one or two picked, used at the welcome, on Today and in Settings; the full-size picker shows each area's blob scene, which plays a few rounds when picked (decision 137)
+// The choice of what to get better at most (decision 97): six areas as toggle buttons, one or two picked, used at the welcome, on Today and in Settings; the full-size picker is a column of big picture rows with a tick box (storyboard "What to work on"), each area's tile moving a few rounds once picked (decision 137)
 
 // Load the shared press effect
 import { PRESS } from "@/components/script/Buttons";
 // Load the areas and the tap rule
 import { FOCUS_AREAS, toggleFocus, type FocusAreaId } from "@/core/practiceFocus";
-// Load the blob scenes and each area's one
-import { Scene } from "@/components/scenes/Scene";
+// Load the mode tile, each area's scene and that scene's tile
+import { ModeTile } from "@/components/scenes/ModeTile";
 import { FOCUS_SCENES } from "@/components/scenes/sceneFor";
+import { SCENE_TILES } from "@/components/scenes/modeTileFor";
+// Load the tick
+import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 
 // What the picker needs
 interface FocusPickerProps {
@@ -24,20 +27,28 @@ interface FocusPickerProps {
 export function FocusPicker({ value, onChange, label, compact = false }: FocusPickerProps) {
   // The areas, each a button that shows whether it is picked
   return (
-    <div role="group" aria-label={label} className={`mt-3 grid gap-2 ${compact ? "grid-cols-2" : "sm:grid-cols-2"}`}>
+    <div role="group" aria-label={label} className={`mt-3 grid ${compact ? "grid-cols-2 gap-2" : "gap-3 sm:grid-cols-2"}`}>
       {/* Each area */}
       {FOCUS_AREAS.map((area) => {
         // Whether it is picked
         const picked = value.includes(area.id);
-        // One choice: filled once picked
+        // Its scene, and that scene's tile
+        const scene = FOCUS_SCENES[area.id];
+        // (the tile's look)
+        const tile = SCENE_TILES[scene];
+        // The short card's choice: a name, filled once picked
+        if (compact) return <button key={area.id} type="button" aria-pressed={picked} onClick={() => onChange(toggleFocus(value, area.id))} className={`min-h-12 rounded-[14px] border-2 px-4 py-2 text-left ${PRESS} ${picked ? "border-accent bg-accent-tint text-accent-tint-ink shadow-picked" : "border-rule bg-card shadow-ledge hover:border-ink-muted"}`}><span className="block font-extrabold leading-snug">{area.name}</span></button>;
+        // A big row: the tile, the name (and what it covers), and the tick box; edged in sky once picked
         return (
-          <button key={area.id} type="button" aria-pressed={picked} onClick={() => onChange(toggleFocus(value, area.id))} className={`min-h-12 rounded-[14px] border-2 text-left ${compact ? "px-4 py-2" : "grid grid-cols-[auto_1fr] content-center gap-x-3 py-2 pr-4 pl-2"} ${PRESS} ${picked ? "border-accent bg-accent-tint text-accent-tint-ink shadow-picked" : "border-rule bg-card shadow-ledge hover:border-ink-muted"}`}>
-            {/* Its name (first, so it names the button), beside the scene on the full-size picker */}
-            <span className={`block font-extrabold leading-snug ${compact ? "" : "col-start-2 self-end"}`}>{area.name}</span>
-            {/* What it covers (left out on the short card) */}
-            {!compact && <span className={`col-start-2 block self-start text-footnote ${picked ? "text-accent-tint-ink" : "text-ink-muted"}`}>{area.detail}</span>}
-            {/* Its scene on a tinted tile, in the first column across both lines: still until picked, then a few rounds (not on the short card) */}
-            {!compact && <span aria-hidden="true" className="col-start-1 row-span-2 row-start-1 flex size-14 items-center justify-center self-center rounded-xl bg-warm-tint"><Scene name={FOCUS_SCENES[area.id]} motion={picked ? "few" : "still"} className="size-14" /></span>}
+          <button key={area.id} type="button" aria-pressed={picked} onClick={() => onChange(toggleFocus(value, area.id))} className={`grid min-h-18 grid-cols-[auto_1fr_auto] items-center gap-x-3.5 rounded-[18px] border-2 py-2.5 pr-4 pl-3 text-left ${PRESS} ${picked ? "border-art-sky bg-art-sky/10 shadow-sky" : "border-rule bg-card shadow-card hover:border-ink-muted"}`}>
+            {/* Its name (first, so it names the button) */}
+            <span className="col-start-2 row-start-1 self-end text-lg font-extrabold leading-snug">{area.name}</span>
+            {/* What it covers, under it */}
+            <span className="col-start-2 row-start-2 self-start text-footnote font-semibold text-ink-muted">{area.detail}</span>
+            {/* Its tile: still until picked, then a few rounds */}
+            <span aria-hidden="true" className="col-start-1 row-span-2 row-start-1 flex"><ModeTile ground={tile.ground} prop={tile.prop} face={tile.face} tilt={-4} scene={scene} motion={picked ? "few" : "still"} still={!picked} className="size-12" /></span>
+            {/* The tick box */}
+            <span aria-hidden="true" className={`col-start-3 row-span-2 row-start-1 flex size-7 items-center justify-center rounded-[8px] border-2 ${picked ? "border-art-sky bg-art-sky text-art-cream" : "border-rule bg-card"}`}>{picked && <CheckIcon weight="bold" className="size-4" />}</span>
           </button>
         );
       })}

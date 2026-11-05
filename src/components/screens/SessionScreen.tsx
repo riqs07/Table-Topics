@@ -9,8 +9,14 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 // Load the script-page building blocks
 import { ActionBand } from "@/components/script/ActionBand";
-import { PRESS, RowButton, RowLink, SECONDARY, SecondaryLink, TEXT_LINK } from "@/components/script/Buttons";
+import { PRESS, PRIMARY, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
+// Load focus mode's thin header (second pass)
+import { PracticeBar } from "@/components/script/PracticeBar";
+// Load the cast: your blob reacts, Sage gives the one note
+import { Cast } from "@/components/scenes/Cast";
+// Load what was said word by word, and the take's verdict
+import { takeVerdict, takeWords } from "@/core/takeWords";
 import { Player } from "@/components/script/Player";
 // Load the shared screen starting points
 import { useScreenBasics, type ScreenProps } from "@/components/screens/screenBasics";
@@ -60,15 +66,13 @@ import { countUpValue } from "@/core/countUp";
 // Load the check for which planned points were said
 import { pointsCovered } from "@/core/outline";
 // Load the shared card look
-import { CARD, CARD_LIST } from "@/components/script/textStyles";
+import { CARD, CARD_LIST, LAB, SECTION_HEADING } from "@/components/script/textStyles";
 import { useCountUp } from "@/components/script/useCountUp";
-// Load the filler marker
-import { markFillers } from "@/core/fillers";
 // Load the then-and-now helpers
 import { earlierTake, practiceDay } from "@/core/compare";
 // Load the blob's reaction to a take (decision 141)
 import { takeReaction } from "@/core/takeReaction";
-import { TakeReactionView } from "@/components/script/TakeReaction";
+import { PersonalBest } from "@/components/script/TakeReaction";
 // Load the pause finder
 import { findPauses, pauseDrillSentence } from "@/core/pauses";
 // Load the reading check
@@ -188,30 +192,6 @@ interface ResultView {
   fluency: boolean;
 }
 
-// The transcript with fillers marked quietly; given the times each word was heard and a way to play, each filler plays its moment when tapped (decision 77)
-function Transcript({ text, times = null, onPlay = null, marks = true }: { text: string; times?: ReadonlyArray<number> | null; onPlay?: ((seconds: number) => void) | null; marks?: boolean }) {
-  // The pieces, fillers marked (one plain piece when pause words are hidden; decision 79)
-  const pieces = marks ? markFillers(text) : [{ text, filler: false }];
-  // Where each piece starts in the text
-  const starts = pieces.map((_, index) => pieces.slice(0, index).reduce((sum, piece) => sum + piece.text.length, 0));
-  // Draw each piece, marking fillers
-  return (
-    <p className="text-running">
-      {/* One span per piece */}
-      {pieces.map((piece, index) => {
-        // Plain words
-        if (!piece.filler) return <span key={index}>{piece.text}</span>;
-        // When this filler was heard: the time of its first word (the words before it, counted the way the times were saved)
-        const at = times?.[text.slice(0, starts[index]).split(/\s+/).filter((word) => word !== "").length];
-        // With a time and a recording: a soft highlight that plays from just before it
-        if (onPlay && typeof at === "number") return <button key={index} type="button" onClick={() => onPlay(at)} aria-label={`Play “${piece.text}” at ${formatClock(Math.floor(at))}`} className="rounded bg-filler/15 px-0.5 text-filler underline decoration-dotted underline-offset-4 hover:bg-filler/25">{piece.text}</button>;
-        // Otherwise a soft highlight (not an underline, which reads as a link)
-        return <mark key={index} className="bg-filler/15 px-0.5 text-filler">{piece.text}</mark>;
-      })}
-    </p>
-  );
-}
-
 // A player for a session's saved audio (draws nothing if the audio is gone)
 function Playback({ repo, session, onAudio }: { repo: Repository; session: FullSession; onAudio?: (element: HTMLAudioElement | null) => void }) {
   // The audio's address
@@ -220,13 +200,11 @@ function Playback({ repo, session, onAudio }: { repo: Repository; session: FullS
   if (!url) return null;
   // The player, with a note when this is the baseline
   return (
-    <div className="mt-5">
-      {/* Small heading */}
-      <p className="text-footnote font-semibold text-ink">{session.isBaseline ? "Your first recording. Progress is measured against it." : "Listen back"}</p>
-      {/* A kinder way to listen (decision 79), as its own line under the heading */}
-      <p className="mt-1 text-footnote text-ink-muted">Most people dislike hearing their own voice. Listen the way a friendly coach would.</p>
+    <div className={`px-4.5 py-3.5 ${CARD}`}>
       {/* The player */}
-      <div className="mt-2"><Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} onAudio={onAudio} gain={playbackGain(session.loudnessScale)} /></div>
+      <Player src={url} label="Your recording" name="your recording" durationSec={session.durationSec} onAudio={onAudio} gain={playbackGain(session.loudnessScale)} />
+      {/* Small heading, under it: the first recording, or a kinder way to listen (decision 79) */}
+      <p className="mt-2 text-footnote font-semibold text-ink-muted">{session.isBaseline ? "Your first recording. Progress is measured against it." : "Listen back the way a friendly coach would: most people dislike hearing their own voice."}</p>
     </div>
   );
 }
@@ -463,8 +441,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const bookend = session.mode === "bookend" ? BOOKENDS.find((item) => item.id === session.promptId) : undefined;
   // The drill's two findings
   const bookendOutcome = bookend ? bookendResult(bookend.part, session, { pauseWords: view.pauseWords }) : null;
-  // Whether the transcript is open on a phone (it is always shown on a computer)
-  const [showTranscript, setShowTranscript] = useState(false);
+
   // This take's audio element, for playing a filler's moment (decision 77)
   const audio = useRef<HTMLAudioElement | null>(null);
   // The transcript block, brought into view when the fillers are asked for
@@ -482,10 +459,8 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
     // Play (the browser may refuse, which is fine)
     void element.play().catch(() => {});
   }, []);
-  // Show the fillers in what was said: open the transcript, then bring it into view and move focus to it
+  // Show the fillers in what was said: bring the words into view and move focus to them
   const showFillers = useCallback(() => {
-    // Open it on a phone
-    setShowTranscript(true);
     // Once drawn
     setTimeout(() => {
       // The block
@@ -522,207 +497,268 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   const shownHeadline = !reading && !bookendOutcome && !smallTalk && !story ? headlineKind(session) : null;
   // The focus headline, unless it would count pause words that are hidden (decision 79)
   const headline = shownHeadline === "fillers" && !view.pauseWords ? null : headlineFor(session);
+  // The one change and its cue: the coach's, or the one picked from the numbers
+  const change = session.feedback ?? ownChange;
+  // Whether the take went well or was rough, from the numbers the change is picked from (never red; a rough take gets Sage's one note)
+  const verdict = takeVerdict(session, ownChange, { pauseWords: view.pauseWords });
+  // The retry's words
+  const retryLabel = story ? "Tell it again" : "Try it again";
+  // Inside today's practice, the way on: the next step, or finishing the day
+  const onward = plan ? (plan.next ? { label: `Next: step ${plan.step + 1}`, href: plan.next.href } : { label: "Finish today’s practice", href: "/" }) : null;
+  // The panel's one chunky button and one text link: inside the plan a good take moves on and a rough one tries again; a follow-up moves to the next one; an old warm-up leads to a response; otherwise the retry, and back
+  const [primary, secondary] = onward ? (verdict === "good" ? [onward, { label: retryLabel, href: retryHref }] : [{ label: retryLabel, href: retryHref }, onward]) : next ? [{ label: `Next one · ${next.label}`, href: `/session?mode=smalltalk&prompt=${next.id}` }, { label: retryLabel, href: retryHref }] : warmup ? [{ label: "Now record a response", href: `/session?mode=response&prompt=${promptForDay(now).id}` }, { label: home.label.replace("Close, back to", "Back to"), href: home.href }] : [{ label: retryLabel, href: retryHref }, { label: story ? "Your stories" : home.label.replace("Close, back to", "Back to"), href: home.href }];
+  // The pause words counted, for the chip
+  const pauseCount = fillerCount(session);
+  // The panel's one line: for a good take, what the coach said to keep or the blob's own word; for a rough one, Sage's one note
+  // The blob's reaction to the take (decision 141)
+  const reaction = takeReaction(session, all, view.pauseWords);
+  // (its line)
+  const verdictLine = verdict === "good" ? (session.feedback && !story ? session.feedback.keep : reaction.line) : change.change;
+  // What was said, word by word, with pause words and real pauses marked
+  const said = reading ? [] : takeWords(session);
+  // Whether any real pause was found, for the legend
+  const anyPause = said.some((word) => word.pauseAfter);
   // Draw the page
   return (
     <>
-      {/* Title and the day it was recorded, as a small label (not to be mistaken for the Today tab); the tab bar marks where the session belongs (Today inside the plan) */}
-      <Masthead title={title} section={home.section}>{plan ? <PlanNote plan={plan} /> : <span data-testid="recorded-day" className="text-footnote">Recorded {dayLabel(new Date(session.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}</span>}</Masthead>
-      {/* Notes column and transcript column on a computer (the notes lead and take the wide column; the transcript sits beside them, decision 65) */}
-      <div className="flex flex-1 flex-col md:grid md:grid-cols-[minmax(0,1fr)_320px] md:gap-14 md:pt-8">
-        {/* The transcript (the narrow right column on a computer, opened on demand on a phone) */}
-        <div ref={transcriptBlock} tabIndex={-1} role="region" aria-label="What you said" className={`${showTranscript ? "mt-6" : "hidden"} scroll-mt-6 outline-none md:order-2 md:mt-0 md:block`}>
-          {/* Small heading, saying how to hear a filler when that works */}
-          <p className="text-ink-muted">{passage ? `${passage.title}, as heard` : "What you said"}{!reading && view.pauseWords && canPlay && fillerCount(session) > 0 && <span className="block text-footnote">Tap a marked pause word to hear it.</span>}</p>
-          {/* The words: the passage marked for a reading, otherwise the transcript */}
-          <div className="mt-3 max-w-[46ch]">{reading ? <MarkedPassage check={reading} /> : <Transcript text={session.transcript} times={session.spokenTimes} onPlay={canPlay ? playAt : null} marks={view.pauseWords} />}</div>
-          {/* For a reading, what the marks mean */}
-          {reading && <p className="mt-3 max-w-[46ch] text-footnote text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.{reading.stoppedEarly ? " Dimmed words come after where you stopped." : ""}</p>}
-        </div>
-        {/* The notes (first on a phone, the wide left column on a computer) */}
-        <aside className="order-first flex flex-1 flex-col md:order-1 md:max-w-xl">
+      {/* Focus mode's header: the way out, how far through today's practice, what this was and the step */}
+      <PracticeBar close={{ href: home.href, label: home.label }} label={`${title}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} progress={plan ? plan.step / Math.max(1, plan.total) : undefined} className="-mt-4 md:-mt-8" />
+      {/* The take on the left, the verdict sliding in on the right (on a phone, the words, then the verdict as a sheet) */}
+      <div className="flex flex-col gap-5 md:flex-row md:flex-wrap md:items-start md:gap-9 md:pt-4">
+        {/* The take */}
+        <section aria-labelledby="take-heading" className="flex min-w-0 flex-col gap-4.5 md:flex-[999_1_520px]">
+          {/* What it was, how long, and when */}
+          <p className={`${LAB} mt-3 md:mt-0`}>{title} · {formatClock(Math.round(session.durationSec))} · <span data-testid="recorded-day">{`Recorded ${dayLabel(new Date(session.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}`}</span></p>
           {/* A take from the weekly check-in: which one, and the way to the check-ins (decision 100) */}
-          {session.checkIn && <p className="mt-5 text-footnote md:mt-0 md:mb-3"><Link href="/check-in" className={TEXT_LINK}>{session.checkIn.week === 1 ? "Your first check-in" : `Check-in ${session.checkIn.week}`}</Link></p>}
-          {/* What it answered: the topic, prompt or question (decision 77) */}
-          {asked && (
-            <div className="mt-5 md:mt-0 md:mb-5">
-              {/* Small heading */}
-              <p className="text-footnote text-ink-muted">{asked.label}</p>
-              {/* The words themselves */}
-              <p className="mt-1 max-w-[40ch] font-display text-cue">{asked.text}</p>
-            </div>
-          )}
-          {/* The blob's reaction to the take, after it (not for the quick follow-ups; decision 141) */}
-          {!quick && <TakeReactionView reaction={takeReaction(session, all, view.pauseWords)} />}
-          {/* The focus number as a sentence (or the focus's name when no number measures it) */}
-          {reading ? (
-            <>
-              {/* How much of the passage was read */}
-              <h1 data-testid="reading-headline" className="mt-5 font-display text-3xl font-semibold md:mt-0">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</h1>
-              {/* The detail */}
-              <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}{view.fluency ? `, ${reading.repeated} repeated` : ""}, {reading.extra} extra ({view.pauseWords ? "pause words and added words" : "added words"}).</p>
-              {/* A lesson's tip, as a reminder */}
-              {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
-            </>
-          ) : bookendOutcome ? (
-            <>
-              {/* The drill's main finding */}
-              <h1 className="mt-5 font-display text-3xl font-semibold md:mt-0">{bookendOutcome.headline}</h1>
-              {/* Its second finding */}
-              <p className="mt-2 text-footnote text-ink-muted">{bookendOutcome.detail}</p>
-            </>
-          ) : story ? (
-            // What the phone heard, and the coach's beats once they arrive (decision 92)
-            <StoryHeard session={session} original={original} moment={!asked && momentIdOf(session.promptId) !== null} />
-          ) : smallTalk ? (
-            // The beats: how many, then each with the words that showed it
-            <SmallTalkBeats session={session} ticks={session.selfReview === null ? <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} startOpen /> : null} />
-          ) : (
-            // The focus number as a sentence, when one measures it (otherwise the one change leads)
-            headline ? <h1 className={`font-display text-3xl font-semibold ${asked ? "mt-4" : "mt-5 md:mt-0"}`}>{headline}</h1> : <h1 className="sr-only">{title}</h1>
-          )}
-          {/* When the headline is the fillers (so no fillers tile below), the way to see where they were */}
-          {headline && shownHeadline === "fillers" && fillerCount(session) > 0 && !reading && <p><button type="button" onClick={showFillers} className={`${TEXT_LINK} text-footnote`}>Show where</button></p>}
-          {/* The speaker's own call against the measure, when it was rated and the measure is confident (decision 116) */}
-          <RatingLine session={session} all={all} />
-          {/* A 4/3/2 loop's last round: the three rounds compared; an earlier round: which it was, and the way to the comparison (decision 118) */}
-          {session.loop && (session.loop.round >= 3 ? <LoopResults repo={repo} session={session} all={all} pauseWords={view.pauseWords} /> : <LoopRoundNote session={session} all={all} />)}
-          {/* The next step: the one change and the cue, or a note that feedback has not arrived */}
-          <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
-            {/* The pill that names it, and where it comes from until the coach's note arrives */}
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="inline-flex rounded-full bg-warm-tint px-2.5 py-1 text-footnote font-semibold text-warm-ink">One change</span>{!session.feedback && <span className="text-footnote text-ink-muted">From your numbers</span>}</p>
-            {/* The change */}
-            <p className="mt-3 text-lede">{(session.feedback ?? ownChange).change}</p>
-            {/* Small heading for the cue */}
-            <p className="mt-4 text-footnote text-ink-muted">{warmup ? "Before your response" : story ? "Before you tell it again" : "Before you try again"}</p>
-            {/* The cue */}
-            <p className="mt-1 font-display text-cue font-semibold">{(session.feedback ?? ownChange).retryCue}</p>
-            {/* Inside today's practice the band moves on, so the second try is offered here, right under the cue, one tap away (the loop is speak, one change, try again; offered, never forced) */}
-            {plan && <p className="mt-4"><SecondaryLink href={retryHref}>{story ? "Tell it again" : "Try it again"}</SecondaryLink></p>}
-            {/* For a follow-up question or a reply to a story, a better one */}
-            {session.feedback?.connection && (
-              <>
-                {/* Small heading */}
-                <p className="mt-4 text-footnote text-ink-muted">{findUnit(findSmallTalk(session.promptId)?.unit ?? "asking").words.better}</p>
-                {/* The better version */}
-                <p className="mt-1 text-lede">{session.feedback.connection.better}</p>
-              </>
+          {session.checkIn && <p className="-mt-2 text-footnote"><Link href="/check-in" className={TEXT_LINK}>{session.checkIn.week === 1 ? "Your first check-in" : `Check-in ${session.checkIn.week}`}</Link></p>}
+          {/* What it answered, as the page's heading: the topic, prompt or question (decision 77), the text read, or the kind of take */}
+          <h1 id="take-heading" className="font-display text-2xl leading-tight font-semibold md:text-4xl">{asked?.text ?? passage?.title ?? title}</h1>
+          {/* What was said: pause words highlighted and real pauses as small green bars, or the passage marked for a reading */}
+          <div ref={transcriptBlock} tabIndex={-1} role="region" aria-label="What you said" className={`flex scroll-mt-6 flex-col gap-3.5 px-5.5 py-5 outline-none md:px-6 ${CARD}`}>
+            {/* The small label, saying how to hear a pause word when that works */}
+            <p className={LAB}>{reading ? "As heard" : "What you said"}{!reading && view.pauseWords && canPlay && pauseCount > 0 && <span className="ml-2 font-bold tracking-normal normal-case">· tap a marked pause word to hear it</span>}</p>
+            {/* The words */}
+            {reading ? <MarkedPassage check={reading} /> : (
+              <p className="text-lg leading-[1.75] md:text-xl">
+                {/* Each word, a pause word marked, a real pause after it as a bar */}
+                {said.map((word, index) => {
+                  // A pause word's letters apart from any punctuation round them, so only the word is marked
+                  const [, lead = "", core = word.text, tail = ""] = /^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/u.exec(word.text) ?? [];
+                  // When it was heard, if saved
+                  const at = session.spokenTimes?.[index];
+                  // One word
+                  return (
+                  <span key={index}>
+                    {/* A pause word: a button that plays its moment where that works, else a highlight */}
+                    {word.filler && view.pauseWords ? <>{lead}{canPlay && typeof at === "number" ? <button type="button" onClick={() => playAt(at)} aria-label={`Play “${core}” at ${formatClock(Math.floor(at))}`} className="rounded-md bg-art-sun/35 px-1 hover:bg-art-sun/55">{core}</button> : <mark className="rounded-md bg-art-sun/35 px-1 text-ink">{core}</mark>}{tail}</> : word.text}
+                    {/* A real pause */}
+                    {word.pauseAfter && <span role="img" aria-label="a real pause" className="mx-1.5 inline-block h-2.5 w-7.5 rounded-full bg-art-leaf align-middle" />}
+                    {/* The space after it */}
+                    {" "}
+                  </span>
+                  );
+                })}
+              </p>
             )}
-            {/* For a story, one of your lines and how it could sound (decision 92) */}
-            {session.feedback?.story && session.feedback.story.yours && (
-              <div data-story-line className="mt-4 grid gap-2">
-                {/* Your line */}
-                <p className="text-lede"><span className="block text-footnote text-ink-muted">Your line</span>&ldquo;{session.feedback.story.yours}&rdquo;</p>
-                {/* How it could sound, gaps in brackets set apart */}
-                <p className="border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote text-ink-muted">Could sound like</span>{session.feedback.story.better.split(/(\[[^\]]+\])/).map((part, index) => (part.startsWith("[") ? <em key={index} className="text-accent">{part}</em> : <span key={index}>{part}</span>))}</p>
-              </div>
-            )}
-            {/* For small talk, the answer as it could sound, using only what was said */}
-            {session.feedback?.smallTalk && (
-              <>
-                {/* Small heading */}
-                <p className="mt-4 text-footnote text-ink-muted">As it could sound (only what you said)</p>
-                {/* The livelier version, gaps in brackets set apart */}
-                <p className="mt-1 text-lede">{session.feedback.smallTalk.livelier.split(/(\[[^\]]+\])/).map((part, index) => (part.startsWith("[") ? <em key={index} className="text-accent">{part}</em> : <span key={index}>{part}</span>))}</p>
-              </>
+            {/* What the marks mean */}
+            {reading ? <p className="text-footnote text-ink-muted">Struck-through words were not heard. Some may be the speech service mishearing you rather than a skipped word.{reading.stoppedEarly ? " Dimmed words come after where you stopped." : ""}</p> : (
+              <p className="flex flex-wrap gap-4.5 text-sm font-bold text-ink-muted">
+                {/* Pause words */}
+                {view.pauseWords && <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-4.5 rounded-[5px] bg-art-sun/35" />pause words</span>}
+                {/* Real pauses, when word times were saved */}
+                {anyPause && <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-4.5 rounded-[5px] bg-art-leaf" />a real pause</span>}
+              </p>
             )}
           </div>
-          {/* A story's beats, as the coach heard them (decision 126) */}
-          {story && <YourBeats session={session} />}
-          {/* A story you'll need: what that kind needs, as the phone heard it (decision 152) */}
-          {story && <TypeNeeds session={session} />}
-          {/* A retold story: this telling beside the one before (decision 92) */}
-          {story && original && <StoryBeforeAfter original={original} retold={session} pauseWords={view.pauseWords} />}
-          {/* The same words told again: the last telling's pitch under this one's (decision 111) */}
-          {story && original && !session.trimmedAt && <LastVsThisCard repo={repo} before={original} after={session} kind="Tell it again" names={{ before: `Last time, ${dayLabel(new Date(original.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}`, after: "This time" }} plays={{ before: "Play last time", after: "Play this time" }} />}
-          {/* A short speech's points, right under the change: the answer people look for first (decision 77) */}
-          <OutlinePoints session={session} />
-          {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
-          {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this session."}</p>}
-          {/* Listen back, right under the change (decision 67) */}
+          {/* Listen back (then and now, when an earlier day answered the same) */}
           {earlier ? <ThenAndNow repo={repo} then={earlier.then} now={session} thenDay={earlier.thenDay} nowDay={earlier.nowDay} onNowAudio={(element) => { audio.current = element; }} pauseWords={view.pauseWords} /> : <Playback repo={repo} session={session} onAudio={(element) => { audio.current = element; }} />}
-          {/* Star the take to keep its recording and charts (decision 98; a moment note and a few-second reply are kept apart and need none) */}
-          {!quick && <StarToggle key={session.id} repo={repo} sessionId={session.id} starred={session.starred === true} />}
-          {/* The numbers together */}
-          {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} leaveOut={[...(headline && shownHeadline ? [shownHeadline] : []), ...(timed ? (["length"] as const) : []), ...(view.pauseWords ? [] : (["fillers"] as const))]} onShowFillers={reading ? null : showFillers} />}
-          {/* One quiet line on what the counts are (decision 79) */}
-          {!quick && !reading && <p className="mt-2 text-footnote text-ink-muted">{view.pauseWords ? "A few pause words (um, uh, like) are normal. Counts are rough: speech services can mishear accents." : "Counts are rough: speech services can mishear accents."}</p>}
-          {/* (The pause count is in the numbers row; the longer pause sentence and the "no number measures this" line were cut, decision 63) */}
-          {/* Which pause marks had a pause */}
-          {marks && <p className="mt-2 text-footnote text-ink-muted">{marks}</p>}
-          {/* How long each pause was, against the one-to-two-second target */}
-          {gaps.length > 0 && <PauseLengths gaps={gaps} />}
-          {/* How the pace changed */}
-          {pace && !quick && <p className="mt-2 text-footnote text-ink-muted">{pace.sentence}</p>}
-          {/* After a Table Topic or Record Response, how the timing went (left out when the one change above already says it, so it is said once) */}
-          {timed && !(!session.feedback && ownChange.aboutTiming) && <LengthRing session={session} />}
-          {/* Planned stress, only where the text marks key words (decision 111) */}
-          {!quick && !session.trimmedAt && takeScript.planned && takeScript.script && <PlannedStressCard repo={repo} session={session} script={takeScript.script} kind={session.checkIn ? "Check-in" : lesson ? "Lesson" : "Read aloud"} />}
-          {/* The take's views, focus first: its own practice's view, or by length, with "Look closer" (decisions 81, 111 and 115; not for a few-second reply) */}
-          {!quick && takeScript.ready && <TakeViews repo={repo} session={session} sessions={all} usual={usual} hide={session.feedback ? undefined : ownChange.voiceKind} fluency={view.fluency} pauseWords={view.pauseWords} script={takeScript.script} audio={() => audio.current} />}
-          {/* After a short speech, how the timing went against its length, and which points were heard */}
-          {session.mode === "outline" && session.outline && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, session.outline.goalMinutes * 60)}</p>}
-          {/* After a rehearsal with a goal, how the timing went */}
-          {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
-          {/* The user's own notes, once added (decision 67: after the feedback, never before it) */}
-          {review && (review.worked || review.change || tagWords.length > 0) && (
-            <div className={`mt-5 p-4 text-lede ${CARD}`}>
-              {/* Small heading */}
-              <p className="text-footnote text-ink-muted">Your notes</p>
-              {/* What worked */}
-              {review.worked && <p className="mt-1"><em>Worked.</em> {review.worked}</p>}
-              {/* What to change */}
-              {review.change && <p className="mt-1"><em>Change.</em> {review.change}</p>}
-              {/* The tags */}
-              {tagWords.length > 0 && <p className="mt-1 text-footnote text-ink-muted">{smallTalk ? "You heard" : "Tagged"}: {tagWords.join(", ")}.</p>}
-              {/* The notes against the numbers */}
-              {checks.length > 0 && (
-                <ul aria-label="Your notes against the numbers" className="mt-2 text-footnote">
-                  {/* Each comparison, marked by whether it matched */}
-                  {checks.map((check) => (
-                    // One comparison
-                    <li key={check.text} data-kind={check.kind} className={`mt-1 border-l-2 pl-2 ${check.kind === "matched" ? "border-accent" : "border-rule text-ink-muted"}`}>{check.text}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-          {/* No notes yet: an optional fold to add them */}
-          {session.selfReview === null && !smallTalk && <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} />}
-          {/* What the coach said to keep, after the next step and the numbers */}
-          {session.feedback && !story && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
-          {/* One word swap from the coach's rubric, when it suggested one (decision 90) */}
-          {wordSwap && <p className="mt-2 text-lede"><em>One word swap.</em> <span>“{wordSwap.said}” → “{wordSwap.stronger}”{wordSwap.why ? ` (${wordSwap.why})` : ""}</span></p>}
-          {/* Where the take's deeper analysis stands, said quietly (decision 91) */}
-          <DeepNote repo={repo} sessionId={session.id} now={now} />
-          {/* Quieter options, as a short list of rows (no empty space above them) */}
-          <ul aria-label="More options" className={`mt-6 mb-6 divide-y divide-rule px-4 ${CARD}`}>
-            {/* Open the transcript on a phone */}
-            <li className="md:hidden"><RowButton onClick={() => setShowTranscript(!showTranscript)}>{showTranscript ? "Hide what I said" : "Read what I said"}</RowButton></li>
-            {/* After a part of a full speech, the next part, or the speech's page after the last */}
-            {speechPart && <li>{speechPart.part < speechPart.speech.partCount ? <RowLink href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`}>Read part {speechPart.part + 1}</RowLink> : <RowLink href={`/speech?id=${speechPart.speech.id}`}>That was the last part</RowLink>}</li>}
-            {/* After a rehearsal, back to the talk and its plan */}
-            {rehearsed && <li><RowLink href={`/talk?id=${rehearsed.id}`}>Back to your talk</RowLink></li>}
-            {/* After small talk, another question, back on its own page */}
-            {/* A follow-up or a reply: trying the same one again is a row, since the main action moves on */}
-            {quick && !plan && <li><RowLink href={retryHref}>Try it again</RowLink></li>}
-            {smallTalk && !quick && <li><RowLink href={`/small-talk/unit?id=${findSmallTalk(session.promptId)?.unit ?? "answering"}`}>Another question</RowLink></li>}
-            {/* Back to where it was started (outside today's practice, whose band moves on; decision 67) */}
-            {!plan && !rehearsed && <li><RowLink href={home.href}>{story ? "Your stories" : home.label.replace("Close, back to", "Back to")}</RowLink></li>}
-            {/* Every measure of this take, on the profile (decision 90) */}
-            <li><RowLink href={`/profile?session=${encodeURIComponent(session.id)}`}>See all measures for this take</RowLink></li>
+        </section>
+
+        {/* The verdict: green with your happy blob for a good take, warm amber (never red) with your puzzled blob and Sage's one note for a rough one */}
+        <aside aria-labelledby="verdict" data-verdict={verdict} className={`relative flex flex-col gap-3.5 rounded-[26px] px-6 pt-6 pb-5 max-md:-mx-4 max-md:mt-16 max-md:rounded-b-none max-md:px-5 max-md:pb-8 motion-safe:max-md:animate-sheet md:max-w-110 md:flex-[1_1_340px] motion-safe:md:animate-slide-in ${verdict === "good" ? "bg-accent-tint text-accent-tint-ink" : "bg-warm-tint text-warm-ink"}`}>
+          {/* Your blob (and, after a rough take, Sage), peeking over the sheet's edge on a phone */}
+          <div className="flex items-end gap-3 max-md:absolute max-md:-top-16 max-md:right-5">
+            {/* Your blob */}
+            {!quick && <span data-take-reaction={reaction.kind} className="flex"><Cast who="you" face={verdict === "good" ? "happy" : "wonder"} className="size-22 md:size-30" /></span>}
+            {/* Sage, for the one note */}
+            {verdict === "rough" && <Cast who="sage" mood="calm" className="size-18 md:size-21" />}
+          </div>
+          {/* The headline */}
+          <h2 id="verdict" className="font-display text-4xl leading-none font-semibold">{verdict === "good" ? "That landed!" : "Good start."}</h2>
+          {/* One line: what worked, or Sage's note in its own words */}
+          <p className={`font-bold ${verdict === "rough" ? "italic" : "text-ink"} text-lg leading-snug`}>{verdict === "rough" ? <>“<span>{verdictLine}</span>”</> : verdictLine}</p>
+          {/* A personal best: what it was, and before */}
+          {!quick && <PersonalBest reaction={reaction} />}
+          {/* The chips: time spoken, pause words, and the cue for next time */}
+          <ul aria-label="This take" className="flex flex-wrap gap-2">
+            {/* Time spoken */}
+            <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{formatClock(Math.round(session.durationSec))} spoken</li>
+            {/* Pause words, when shown */}
+            {view.pauseWords && !reading && <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{pauseCount} pause {pauseCount === 1 ? "word" : "words"}</li>}
+            {/* The cue */}
+            <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">Next time: {change.retryCue}</li>
           </ul>
-          {/* Inside today's practice, the next step; after an old warm-up, a Record Response; otherwise the retry */}
-          {plan ? (
-            <PlanBand plan={plan} />
-          ) : next ? (
-            <ActionBand action="Next one" aside={next.label} href={`/session?mode=smalltalk&prompt=${next.id}`} />
-          ) : warmup ? (
-            <ActionBand action="Now record a response" aside="today’s prompt" href={`/session?mode=response&prompt=${promptForDay(now).id}`} />
-          ) : (
-            <ActionBand action={story ? "Tell it again" : "Try it again"} aside={story ? "same story, same template" : rehearsed ? "same part of the talk" : session.mode === "bookend" ? "a lesson on the same end of a talk" : qa || (smallTalk && findSmallTalk(session.promptId)?.unit === "answering") ? "same question" : smallTalk ? "same one" : "same prompt"} href={retryHref} />
-          )}
+          {/* The one chunky button */}
+          <Link href={primary.href} data-action-band className={`${PRIMARY} mt-2 w-full`}>{primary.label}</Link>
+          {/* The one text link */}
+          <Link href={secondary.href} className={`${TEXT_LINK} self-center uppercase tracking-[.04em] ${verdict === "good" ? "text-accent-tint-ink" : "text-warm-ink"}`}>{secondary.label}</Link>
         </aside>
       </div>
+
+      {/* Below the fold: the deeper look at the take, nothing lost */}
+      <section aria-labelledby="more-heading" className="mt-12 mb-10 flex flex-col md:max-w-2xl">
+        {/* Heading */}
+        <h2 id="more-heading" className={SECTION_HEADING}>A closer look</h2>
+        {/* The focus number as a sentence (or the focus's name when no number measures it) */}
+        {reading ? (
+          <>
+            {/* How much of the passage was read */}
+            <h3 data-testid="reading-headline" className="mt-5 font-display text-3xl font-semibold">{lessonOutcome ? lessonOutcome.headline : session.mode === "pause" && passage ? (pauses ? pauseDrillSentence(pauses.count, countPauseMarks(passage.body)) : `The passage has ${countPauseMarks(passage.body)} pause marks.`) : session.mode === "rehearse" ? (reading.stoppedEarly ? `You covered the first ${reading.readTo} words of your script.` : `You covered ${reading.percentRead}% of your script.`) : reading.stoppedEarly ? `You read the first ${reading.readTo} words.` : `You read ${reading.percentRead}% of the words.`}</h3>
+            {/* The detail */}
+            <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}{view.fluency ? `, ${reading.repeated} repeated` : ""}, {reading.extra} extra ({view.pauseWords ? "pause words and added words" : "added words"}).</p>
+            {/* A lesson's tip, as a reminder */}
+            {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
+          </>
+        ) : bookendOutcome ? (
+          <>
+            {/* The drill's main finding */}
+            <h3 className="mt-5 font-display text-3xl font-semibold">{bookendOutcome.headline}</h3>
+            {/* Its second finding */}
+            <p className="mt-2 text-footnote text-ink-muted">{bookendOutcome.detail}</p>
+          </>
+        ) : story ? (
+          // What the phone heard, and the coach's beats once they arrive (decision 92)
+          <StoryHeard session={session} original={original} moment={!asked && momentIdOf(session.promptId) !== null} />
+        ) : smallTalk ? (
+          // The beats: how many, then each with the words that showed it
+          <SmallTalkBeats session={session} ticks={session.selfReview === null ? <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} startOpen /> : null} />
+        ) : (
+          // The focus number as a sentence, when one measures it
+          headline && <h3 data-testid="focus-headline" className="mt-5 font-display text-3xl font-semibold">{headline}</h3>
+        )}
+        {/* When the headline is the fillers (so no fillers tile below), the way to see where they were */}
+        {headline && shownHeadline === "fillers" && fillerCount(session) > 0 && !reading && <p><button type="button" onClick={showFillers} className={`${TEXT_LINK} text-footnote`}>Show where</button></p>}
+        {/* The speaker's own call against the measure, when it was rated and the measure is confident (decision 116) */}
+        <RatingLine session={session} all={all} />
+        {/* A 4/3/2 loop's last round: the three rounds compared; an earlier round: which it was, and the way to the comparison (decision 118) */}
+        {session.loop && (session.loop.round >= 3 ? <LoopResults repo={repo} session={session} all={all} pauseWords={view.pauseWords} /> : <LoopRoundNote session={session} all={all} />)}
+        {/* The one change and the cue in full, with anything the coach added */}
+        <div className={`mt-5 p-5 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "120ms" }}>
+          {/* The pill that names it, and where it comes from until the coach's note arrives */}
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="inline-flex rounded-full bg-warm-tint px-2.5 py-1 text-footnote font-semibold text-warm-ink">One change</span>{!session.feedback && <span className="text-footnote text-ink-muted">From your numbers</span>}</p>
+          {/* The change */}
+          {verdict === "good" && <p className="mt-3 text-lede">{change.change}</p>}
+          {/* Small heading for the cue */}
+          <p className="mt-4 text-footnote text-ink-muted">{warmup ? "Before your response" : story ? "Before you tell it again" : "Before you try again"}</p>
+          {/* The cue */}
+          <p className="mt-1 font-display text-cue font-semibold">{change.retryCue}</p>
+          {/* For a follow-up question or a reply to a story, a better one */}
+          {session.feedback?.connection && (
+            <>
+              {/* Small heading */}
+              <p className="mt-4 text-footnote text-ink-muted">{findUnit(findSmallTalk(session.promptId)?.unit ?? "asking").words.better}</p>
+              {/* The better version */}
+              <p className="mt-1 text-lede">{session.feedback.connection.better}</p>
+            </>
+          )}
+          {/* For a story, one of your lines and how it could sound (decision 92) */}
+          {session.feedback?.story && session.feedback.story.yours && (
+            <div data-story-line className="mt-4 grid gap-2">
+              {/* Your line */}
+              <p className="text-lede"><span className="block text-footnote text-ink-muted">Your line</span>&ldquo;{session.feedback.story.yours}&rdquo;</p>
+              {/* How it could sound, gaps in brackets set apart */}
+              <p className="border-l-2 border-accent pl-3 text-lede"><span className="block text-footnote text-ink-muted">Could sound like</span>{session.feedback.story.better.split(/(\[[^\]]+\])/).map((part, index) => (part.startsWith("[") ? <em key={index} className="text-accent">{part}</em> : <span key={index}>{part}</span>))}</p>
+            </div>
+          )}
+          {/* For small talk, the answer as it could sound, using only what was said */}
+          {session.feedback?.smallTalk && (
+            <>
+              {/* Small heading */}
+              <p className="mt-4 text-footnote text-ink-muted">As it could sound (only what you said)</p>
+              {/* The livelier version, gaps in brackets set apart */}
+              <p className="mt-1 text-lede">{session.feedback.smallTalk.livelier.split(/(\[[^\]]+\])/).map((part, index) => (part.startsWith("[") ? <em key={index} className="text-accent">{part}</em> : <span key={index}>{part}</span>))}</p>
+            </>
+          )}
+        </div>
+        {/* A story's beats, as the coach heard them (decision 126) */}
+        {story && <YourBeats session={session} />}
+        {/* A story you'll need: what that kind needs, as the phone heard it (decision 152) */}
+        {story && <TypeNeeds session={session} />}
+        {/* A retold story: this telling beside the one before (decision 92) */}
+        {story && original && <StoryBeforeAfter original={original} retold={session} pauseWords={view.pauseWords} />}
+        {/* The same words told again: the last telling's pitch under this one's (decision 111) */}
+        {story && original && !session.trimmedAt && <LastVsThisCard repo={repo} pauseWords={view.pauseWords} before={original} after={session} kind="Tell it again" names={{ before: `Last time, ${dayLabel(new Date(original.createdAt), now).replace(/^(Today|Yesterday)$/, (day) => day.toLowerCase())}`, after: "This time" }} plays={{ before: "Play last time", after: "Play this time" }} />}
+        {/* A short speech's points (decision 77) */}
+        <OutlinePoints session={session} />
+        {/* While the coach's note is on its way, or why it will not come (never a setup instruction) */}
+        {!session.feedback && (note || session.feedbackStatus === "failed") && <p className="mt-2 text-footnote text-ink-muted">{note || "The coach could not review this session."}</p>}
+        {/* Star the take to keep its recording and charts (decision 98; a moment note and a few-second reply are kept apart and need none) */}
+        {!quick && <StarToggle key={session.id} repo={repo} sessionId={session.id} starred={session.starred === true} />}
+        {/* The numbers together */}
+        {!quick && <NumbersRow session={session} pauseCount={pauses ? pauses.count : null} leaveOut={[...(headline && shownHeadline ? [shownHeadline] : []), ...(timed ? (["length"] as const) : []), ...(view.pauseWords ? [] : (["fillers"] as const))]} onShowFillers={reading ? null : showFillers} />}
+        {/* One quiet line on what the counts are (decision 79) */}
+        {!quick && !reading && <p className="mt-2 text-footnote text-ink-muted">{view.pauseWords ? "A few pause words (um, uh, like) are normal. Counts are rough: speech services can mishear accents." : "Counts are rough: speech services can mishear accents."}</p>}
+        {/* Which pause marks had a pause */}
+        {marks && <p className="mt-2 text-footnote text-ink-muted">{marks}</p>}
+        {/* How long each pause was, against the one-to-two-second target */}
+        {gaps.length > 0 && <PauseLengths gaps={gaps} />}
+        {/* How the pace changed */}
+        {pace && !quick && <p className="mt-2 text-footnote text-ink-muted">{pace.sentence}</p>}
+        {/* After a Table Topic or Record Response, how the timing went (left out when the one change above already says it, so it is said once) */}
+        {timed && !(!session.feedback && ownChange.aboutTiming) && <LengthRing session={session} />}
+        {/* Planned stress, only where the text marks key words (decision 111) */}
+        {!quick && !session.trimmedAt && takeScript.planned && takeScript.script && <PlannedStressCard repo={repo} session={session} script={takeScript.script} kind={session.checkIn ? "Check-in" : lesson ? "Lesson" : "Read aloud"} />}
+        {/* The take's views, focus first: its own practice's view, or by length, with "Look closer" (decisions 81, 111 and 115; not for a few-second reply) */}
+        {!quick && takeScript.ready && <TakeViews repo={repo} session={session} sessions={all} usual={usual} hide={session.feedback ? undefined : ownChange.voiceKind} fluency={view.fluency} pauseWords={view.pauseWords} script={takeScript.script} audio={() => audio.current} />}
+        {/* After a short speech, how the timing went against its length */}
+        {session.mode === "outline" && session.outline && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, session.outline.goalMinutes * 60)}</p>}
+        {/* After a rehearsal with a goal, how the timing went */}
+        {rehearsed?.goalMinutes && (session.sectionIndex ?? null) === null && <p className="mt-2 text-footnote text-ink-muted">{timingSentence("rehearse", session.durationSec, rehearsed.goalMinutes * 60)}</p>}
+        {/* The user's own notes, once added (decision 67: after the feedback, never before it) */}
+        {review && (review.worked || review.change || tagWords.length > 0) && (
+          <div className={`mt-5 p-4 text-lede ${CARD}`}>
+            {/* Small heading */}
+            <p className="text-footnote text-ink-muted">Your notes</p>
+            {/* What worked */}
+            {review.worked && <p className="mt-1"><em>Worked.</em> {review.worked}</p>}
+            {/* What to change */}
+            {review.change && <p className="mt-1"><em>Change.</em> {review.change}</p>}
+            {/* The tags */}
+            {tagWords.length > 0 && <p className="mt-1 text-footnote text-ink-muted">{smallTalk ? "You heard" : "Tagged"}: {tagWords.join(", ")}.</p>}
+            {/* The notes against the numbers */}
+            {checks.length > 0 && (
+              <ul aria-label="Your notes against the numbers" className="mt-2 text-footnote">
+                {/* Each comparison, marked by whether it matched */}
+                {checks.map((check) => (
+                  // One comparison
+                  <li key={check.text} data-kind={check.kind} className={`mt-1 border-l-2 pl-2 ${check.kind === "matched" ? "border-accent" : "border-rule text-ink-muted"}`}>{check.text}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+        {/* No notes yet: an optional fold to add them */}
+        {session.selfReview === null && !smallTalk && <NotesFold repo={repo} session={session} onSaved={onReviewed} coachWaiting={note === FEEDBACK_NOTES["awaiting-notes"]} />}
+        {/* What the coach said to keep, after the next step and the numbers */}
+        {session.feedback && !story && verdict === "rough" && <p className="mt-5 text-lede"><em>What to keep.</em> <span>{session.feedback.keep}</span></p>}
+        {/* One word swap from the coach's rubric, when it suggested one (decision 90) */}
+        {wordSwap && <p className="mt-2 text-lede"><em>One word swap.</em> <span>“{wordSwap.said}” → “{wordSwap.stronger}”{wordSwap.why ? ` (${wordSwap.why})` : ""}</span></p>}
+        {/* Where the take's deeper analysis stands, said quietly (decision 91) */}
+        <DeepNote repo={repo} sessionId={session.id} now={now} />
+        {/* Quieter options, as a short list of rows */}
+        <ul aria-label="More options" className={`mt-6 divide-y divide-rule px-4 ${CARD}`}>
+          {/* After a part of a full speech, the next part, or the speech's page after the last */}
+          {speechPart && <li>{speechPart.part < speechPart.speech.partCount ? <RowLink href={`/session?mode=read&prompt=${partId(speechPart.speech, speechPart.part + 1)}`}>Read part {speechPart.part + 1}</RowLink> : <RowLink href={`/speech?id=${speechPart.speech.id}`}>That was the last part</RowLink>}</li>}
+          {/* After a rehearsal, back to the talk and its plan */}
+          {rehearsed && secondary.href !== home.href && <li><RowLink href={`/talk?id=${rehearsed.id}`}>Back to your talk</RowLink></li>}
+          {/* After small talk, another question, back on its own page */}
+          {smallTalk && !quick && <li><RowLink href={`/small-talk/unit?id=${findSmallTalk(session.promptId)?.unit ?? "answering"}`}>Another question</RowLink></li>}
+          {/* Back to where it was started (outside today's practice; decision 67), unless the panel already leads there */}
+          {!plan && !rehearsed && secondary.href !== home.href && <li><RowLink href={home.href}>{story ? "Your stories" : home.label.replace("Close, back to", "Back to")}</RowLink></li>}
+          {/* Every measure of this take, on the profile (decision 90) */}
+          <li><RowLink href={`/profile?session=${encodeURIComponent(session.id)}`}>See all measures for this take</RowLink></li>
+        </ul>
+      </section>
     </>
   );
 }
@@ -873,7 +909,7 @@ function SmallTalkBeats({ session, ticks }: { session: FullSession; ticks: React
         </div>
       )}
       {/* How many, as a headline, once reported; until then, the question */}
-      <h1 className={`font-display text-3xl font-semibold ${unit === "answering" ? "mt-5 md:mt-0" : "mt-4"}`}>{!reported ? "Which beats did you hit?" : count === 4 ? "All four beats." : `${count} of 4 beats.`}</h1>
+      <h3 className={`font-display text-3xl font-semibold ${unit === "answering" ? "mt-5" : "mt-4"}`}>{!reported ? "Which beats did you hit?" : count === 4 ? "All four beats." : `${count} of 4 beats.`}</h3>
       {/* A dead-end opening, said plainly */}
       {unit === "answering" && deadEndOpening(session.transcript) && <p className="mt-2 text-lede">It stopped at the opening. Even a quiet day has one thing worth telling.</p>}
       {/* On a fresh answer: the ticks, right under the question */}
@@ -918,7 +954,7 @@ function StoryHeard({ session, original, moment }: { session: FullSession; origi
       {/* From a moment note: say so (a prompt from the bank is shown above instead) */}
       {moment && <p className="mt-5 text-footnote text-ink-muted md:mt-0">From your moment</p>}
       {/* The headline */}
-      <h1 className={`font-display text-3xl font-semibold ${moment ? "mt-1" : "mt-5 md:mt-0"}`}>{guided ? (original ? retellHeadline(original, session) : "What you added") : storyHeadline(session, original)}</h1>
+      <h3 className={`font-display text-3xl font-semibold ${moment ? "mt-1" : "mt-5"}`}>{guided ? (original ? retellHeadline(original, session) : "What you added") : storyHeadline(session, original)}</h3>
       {/* What worked, once the coach has answered */}
       {session.feedback && <p data-story-worked className="mt-3 text-lede"><span className="mr-2 inline-flex rounded-full bg-accent/15 px-2.5 py-0.5 align-middle text-footnote font-semibold text-accent">What worked</span>{session.feedback.keep}</p>}
       {/* A guided story: what was added beyond the facts, and the facts kept (decision 93) */}
@@ -1144,7 +1180,7 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
           {/* The coach's notes on the retry */}
           {retry.feedback && <p className="mt-5 max-w-[48ch] text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
           {/* The first try's pitch under the second's, phrase by phrase (decision 111) */}
-          {!retry.trimmedAt && takeScript.ready && <LastVsThisCard repo={repo} before={original} after={retry} kind="Second try" names={{ before: "First try", after: "Second try" }} plays={{ before: "Play first try", after: "Play second try" }} script={takeScript.script} />}
+          {!retry.trimmedAt && takeScript.ready && <LastVsThisCard repo={repo} pauseWords={view.pauseWords} before={original} after={retry} kind="Second try" names={{ before: "First try", after: "Second try" }} plays={{ before: "Play first try", after: "Play second try" }} script={takeScript.script} />}
           {/* Listen back to the second try */}
           <div className="max-w-[48ch]"><Playback repo={repo} session={retry} onAudio={(element) => { audio.current = element; }} /></div>
           {/* How the second try's voice sounded (decision 111: the standard voice view on every take with pitch readings) */}

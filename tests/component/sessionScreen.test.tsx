@@ -75,10 +75,10 @@ describe("SessionScreen", () => {
     const session = makeSession({ id: "best", mode: "talk", promptId: "t002", durationSec: 77, fillersPerMinute: 1.1, feedback: FEEDBACK, feedbackStatus: "done", createdAt: "2026-10-12T10:00:00.000Z" });
     // Draw the screen
     render(<SessionScreen sessionId="best" repository={await repositoryWith(...earlier, session)} now={NOW} />);
-    // The reaction
-    const reaction = await screen.findByText("Your fewest pause words yet.");
-    // Confirm the line, the celebrating blob and the banner's numbers
-    expect([!!reaction, document.querySelector("[data-take-reaction]")?.getAttribute("data-take-reaction"), !!document.querySelector("[data-take-reaction] [data-blob-character='celebrating']"), screen.getByRole("region", { name: "New personal best" }).textContent]).toEqual([true, "best", true, "New personal best1.1 pause words a minute (was 2.3)"]);
+    // The verdict panel
+    const panel = await screen.findByRole("complementary", { name: "That landed!" });
+    // Confirm a good take (the coach's keep as its line), your blob laughing, and the banner's numbers
+    expect([panel.getAttribute("data-verdict"), !!within(panel).getByText(FEEDBACK.keep), document.querySelector("[data-take-reaction]")?.getAttribute("data-take-reaction"), !!document.querySelector("[data-take-reaction] [data-cast='you']"), within(panel).getByRole("region", { name: "New personal best" }).textContent]).toEqual(["good", true, "best", true, "New personal best1.1 pause words a minute (was 2.3)"]);
   });
 
   // The headline number follows the session's weekly focus
@@ -97,10 +97,8 @@ describe("SessionScreen", () => {
     const session = makeSession({ id: "s1", transcript: "Um, I think it went well.", feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
-    // Open the transcript
-    await userEvent.click(await screen.findByRole("button", { name: "Read what I said" }));
-    // Confirm the filler is marked
-    expect(screen.getByText("Um").className).toContain("text-filler");
+    // Confirm the filler is marked in what was said, shown from the start
+    expect([(await screen.findByText("Um")).tagName, within(screen.getByRole("region", { name: "What you said" })).getByText("Um").className]).toEqual(["MARK", expect.stringContaining("bg-art-sun")]);
   });
 
   // Filler marks are a soft highlight, not an underline that reads as a link
@@ -109,24 +107,34 @@ describe("SessionScreen", () => {
     const session = makeSession({ id: "s1", transcript: "Um, I think it went well.", feedback: FEEDBACK, feedbackStatus: "done" });
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
-    // Open the transcript
-    await userEvent.click(await screen.findByRole("button", { name: "Read what I said" }));
     // The mark's classes
-    const marked = screen.getByText("Um").className;
+    const marked = (await screen.findByText("Um")).className;
     // Confirm a highlight and no underline
-    expect([marked.includes("bg-filler"), marked.includes("underline")]).toEqual([true, false]);
+    expect([marked.includes("bg-art-sun"), marked.includes("underline")]).toEqual([true, false]);
   });
 
-  // The page leads with what to do next: the one change and the cue come before what to keep
-  it("puts the one change and the cue before what to keep", async () => {
-    // A finished first try
-    const session = makeSession({ id: "s1", feedback: FEEDBACK, feedbackStatus: "done" });
-    // Draw the screen
-    render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
+  // The verdict panel (the Result reference, second pass): a good take leads with what to keep and the cue for next time, the change below; a rough one gives Sage's one note, in warm amber, never red
+  it("gives a good take what to keep and a rough one Sage's note", async () => {
+    // A finished first try that went well
+    const good = makeSession({ id: "s1", feedback: FEEDBACK, feedbackStatus: "done", fillersPerMinute: 1 });
+    // And a rough one: many pause words
+    const rough = makeSession({ id: "s2", feedback: FEEDBACK, feedbackStatus: "done", fillersPerMinute: 6 });
+    // Draw the good one
+    render(<SessionScreen sessionId="s1" repository={await repositoryWith(good, rough)} now={NOW} />);
+    // Its panel
+    const panel = await screen.findByRole("complementary", { name: "That landed!" });
     // Where each part sits in the page's text
-    const text = (await screen.findByText(FEEDBACK.keep)).ownerDocument.body.textContent ?? "";
-    // Confirm the order: change, cue, keep
-    expect([text.indexOf(FEEDBACK.change) < text.indexOf(FEEDBACK.retryCue), text.indexOf(FEEDBACK.retryCue) < text.indexOf(FEEDBACK.keep)]).toEqual([true, true]);
+    const text = document.body.textContent ?? "";
+    // The good panel: green, what to keep, the cue as a chip, then the change below
+    const first = [panel.className.includes("bg-accent-tint"), !!within(panel).getByText(FEEDBACK.keep), !!within(panel).getByText(`Next time: ${FEEDBACK.retryCue}`), text.indexOf(FEEDBACK.keep) < text.indexOf(FEEDBACK.change), document.querySelector("[data-verdict] [data-cast='sage']")];
+    // Draw the rough one
+    cleanup();
+    // (drawn)
+    render(<SessionScreen sessionId="s2" repository={await repositoryWith(good, rough)} now={NOW} />);
+    // Its panel
+    const second = await screen.findByRole("complementary", { name: "Good start." });
+    // Confirm both: the rough panel warm, with Sage and the change as the one note
+    expect([first, [second.className.includes("bg-warm-tint"), !!second.querySelector("[data-cast='sage']"), !!within(second).getByText(FEEDBACK.change)]]).toEqual([[true, true, true, true, null], [true, true, true]]);
   });
 
   // The numbers sit together in one compact row
@@ -138,7 +146,7 @@ describe("SessionScreen", () => {
     // The row
     const row = within(await screen.findByRole("region", { name: "Your numbers" }));
     // Confirm speed and length in the row, and the fillers only in the headline (decision 77)
-    expect([!!row.getByText("128"), !!row.getByText("2:14"), row.queryByText("pause words a minute"), screen.getByRole("heading", { level: 1 }).textContent]).toEqual([true, true, null, "2.4 pause words a minute."]);
+    expect([!!row.getByText("128"), !!row.getByText("2:14"), row.queryByText("pause words a minute"), screen.getByTestId("focus-headline").textContent]).toEqual([true, true, null, "2.4 pause words a minute."]);
   });
 
   // A short Table Topic: the topic it answered, a count rather than a rate, and the length only beside the ring (decision 77)
@@ -148,7 +156,7 @@ describe("SessionScreen", () => {
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} />);
     // The headline
-    const headline = await screen.findByRole("heading", { level: 1 });
+    const headline = await screen.findByTestId("focus-headline");
     // The row
     const row = within(screen.getByRole("region", { name: "Your numbers" }));
     // Confirm the topic, the count, and a row with the speed but neither fillers nor length
@@ -169,9 +177,9 @@ describe("SessionScreen", () => {
     await repository.saveAudio("s1", new Blob(["sound"], { type: "audio/webm" }));
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
-    // The transcript starts closed on a phone
-    const block = await screen.findByRole("region", { name: "What you said", hidden: true });
-    // Closed at first
+    // What was said, always shown now (the Result reference shows the words first)
+    const block = await screen.findByRole("region", { name: "What you said" });
+    // Open from the start
     const closed = block.className.includes("hidden");
     // Ask where the fillers were (the headline gives the fillers, so the link sits under it)
     await userEvent.click(await screen.findByRole("button", { name: "Show where" }));
@@ -182,7 +190,7 @@ describe("SessionScreen", () => {
     // The audio element
     const audio = document.querySelector("audio")!;
     // Confirm it opened, and played from a second before
-    expect([closed, block.className.includes("hidden"), play.mock.calls.length, audio.currentTime]).toEqual([true, false, 1, 3]);
+    expect([closed, document.activeElement === block, play.mock.calls.length, audio.currentTime]).toEqual([false, false, 1, 3]);
     // Put playing back
     play.mockRestore();
   });
@@ -228,7 +236,7 @@ describe("SessionScreen", () => {
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={repository} now={NOW} />);
     // Confirm the line
-    expect(await screen.findByText("Most people dislike hearing their own voice. Listen the way a friendly coach would.")).toBeTruthy();
+    expect(await screen.findByText("Listen back the way a friendly coach would: most people dislike hearing their own voice.")).toBeTruthy();
   });
 
   // The recording plays from one large button that becomes Pause
@@ -430,7 +438,7 @@ describe("SessionScreen", () => {
     // Draw the screen
     render(<SessionScreen sessionId="s1" repository={await repositoryWith(session)} now={NOW} fetchFn={vi.fn()} />);
     // Wait for the change
-    await screen.findByText(/^Keep going a little longer/);
+    await screen.findByText(/Keep going a little longer/);
     // Confirm the window's opening time is said once, and neither the ring's sentence nor the contest line appears
     expect([(document.body.textContent?.match(/1:00/g) ?? []).length, screen.queryByText(/under the 1:00 minimum/), screen.queryByText(/would not qualify/)]).toEqual([1, null, null]);
   });
@@ -556,7 +564,7 @@ describe("SessionScreen", () => {
     // Draw the screen
     render(<SessionScreen sessionId="l" repository={await repositoryWith(session)} now={NOW} />);
     // Confirm the title, the check, and the tip reminder
-    expect([!!(await screen.findByText("Lesson 2: Crisp consonants")), /^You read \d+% of the words clearly\.$/.test(screen.getByTestId("reading-headline").textContent ?? ""), !!screen.getByText(/^Remember: /), screen.getAllByText(/You read \d+% of the words/).length]).toEqual([true, true, true, 1]);
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent === "Lesson 2: Crisp consonants", /^You read \d+% of the words clearly\.$/.test(screen.getByTestId("reading-headline").textContent ?? ""), !!screen.getByText(/^Remember: /), screen.getAllByText(/You read \d+% of the words/).length]).toEqual([true, true, true, 1]);
   });
 
   // An old openings drill still shows its own two findings; the drill is retired (decision 106), so trying again opens the lesson on openings

@@ -80,7 +80,7 @@ describe("HomeScreen", () => {
     // Try again
     await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
     // The welcome loads this time, and the explanation is gone
-    expect([!!(await screen.findByRole("link", { name: "Start" })), screen.queryByRole("alert")]).toEqual([true, null]);
+    expect([!!(await screen.findByRole("button", { name: "Let’s start" })), screen.queryByRole("alert")]).toEqual([true, null]);
   });
 
   // A returning user with no practice yet: no weekly line about nothing, no empty margin, and a total that matches the steps (round 4)
@@ -92,9 +92,9 @@ describe("HomeScreen", () => {
     // Today's practice
     const plan = await screen.findByRole("region", { name: "Today's practice" });
     // Each step's minutes, as listed
-    const stepMinutes = within(plan).getAllByRole("listitem").map((item) => Number(/· (\d+) min/.exec(item.textContent ?? "")?.[1] ?? 0));
-    // The total, as shown
-    const total = Number(/about (\d+) min/.exec(within(plan).getByText(/^Today · about/).textContent ?? "")?.[1]);
+    const stepMinutes = within(within(plan).getByRole("list", { name: "Steps" })).getAllByRole("listitem").map((item) => Number(/(\d+) min/.exec(item.textContent ?? "")?.[1] ?? 0));
+    // The total, as shown under the heading
+    const total = Number(/about (\d+) minutes/.exec(within(plan).getByText(/steps · about/).textContent ?? "")?.[1]);
     // Confirm: no weekly focus line, no margin, and the total is the steps added up
     expect([screen.queryByText(/This week:/), document.querySelector("main aside"), total, stepMinutes.reduce((sum, minutes) => sum + minutes, 0)]).toEqual([null, null, total, total]);
   });
@@ -105,20 +105,26 @@ describe("HomeScreen", () => {
     const repository = emptyRepository();
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // Start
-    const start = await screen.findByRole("link", { name: "Start" });
+    // The first screen: Sage says hello, with one button (storyboard "Welcome")
+    const greeting = (await screen.findByRole("heading", { level: 1 })).textContent;
+    // (with Sage, drawn only for the eye)
+    const hello = [document.querySelector("[data-cast='sage']")?.getAttribute("aria-hidden"), greeting, !!screen.getByText(/VoiceLab keeps your recordings on this device/), !!screen.getByText(/Every take ends with one change to try\./), screen.queryByRole("navigation", { name: "Main" }), screen.getByRole("link", { name: "I’ve been here before" }).getAttribute("href")];
+    // On to the question
+    await userEvent.click(screen.getByRole("button", { name: "Let’s start" }));
+    // Continue, the one way in
+    const start = await screen.findByRole("link", { name: "Continue" });
     // The choices
     const choices = within(screen.getByRole("group", { name: "What do you want to get better at most?" })).getAllByRole("button");
-    // Confirm Sage greeting (the UI rewrite; the hand-drawn greeter before it, decision 134), the heading, what VoiceLab keeps, what a session gives, the question with six choices, no tabs, and that Start leads into the first step
-    expect([document.querySelector("[data-cast='sage']")?.getAttribute("aria-hidden"), screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText(/VoiceLab keeps your recordings on this device/), !!screen.getByText("Every take ends with one change to try."), screen.getByRole("heading", { level: 2, name: "What do you want to get better at most?" }).tagName, choices.map((choice) => choice.firstChild?.textContent), screen.queryByRole("navigation", { name: "Main" }), start.getAttribute("href")]).toEqual(["true", "Welcome to VoiceLab", true, true, "H2", ["Telling stories", "Small talk and conversations", "Thinking on my feet", "How I sound", "Speaking at work", "A talk coming up"], null, FIRST_STEP]);
+    // Confirm Sage's greeting (the UI rewrite; the hand-drawn greeter before it, decision 134), what VoiceLab keeps and what a session gives, no tabs and a way back in from a saved copy; then the question as the heading with six choices, and that Continue leads into the first step
+    expect([hello, screen.getByRole("heading", { level: 1 }).textContent, choices.map((choice) => choice.firstChild?.textContent), screen.queryByRole("navigation", { name: "Main" }), start.getAttribute("href")]).toEqual([["true", "Hi. I’m Sage.", true, true, null, "/settings#your-data"], "What do you want to get better at most?", ["Telling stories", "Small talk and conversations", "Thinking on my feet", "How I sound", "Speaking at work", "A talk coming up"], null, FIRST_STEP]);
     // Pick three: the third replaces the first
     for (const name of [/^Telling stories/, /^How I sound/, /^Speaking at work/]) await userEvent.click(screen.getByRole("button", { name }));
     // Confirm two are picked
     expect(screen.getAllByRole("button", { pressed: true }).map((button) => button.firstChild?.textContent)).toEqual(["How I sound", "Speaking at work"]);
-    // Follow Start
+    // Follow Continue
     await userEvent.click(start);
     // Confirm today's practice shows behind it, and the picks were saved
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Four short steps.");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Today");
     // (saved)
     await waitFor(async () => expect((await repository.getSettings(NOW)).practiceFocus).toEqual(["voice", "work"]));
     // Draw again, as on a later visit
@@ -126,7 +132,7 @@ describe("HomeScreen", () => {
     // The later visit
     render(<HomeScreen repository={repository} now={NOW} />);
     // Confirm no welcome and no question card (five steps now: the four and the voice course's first part, decision 144), and the focus named in the margin
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, screen.queryByRole("region", { name: "What do you want to get better at most?" }), !!(await screen.findByText("how I sound and speaking at work"))]).toEqual(["A few short steps.", null, true]);
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!screen.getByText(/^5 steps · about/), screen.queryByRole("region", { name: "What do you want to get better at most?" }), !!(await screen.findByText("how I sound and speaking at work"))]).toEqual(["Today", true, null, true]);
   });
 
   // Start with nothing picked still starts speaking, and records the question as answered so Today does not ask again
@@ -135,8 +141,10 @@ describe("HomeScreen", () => {
     const repository = emptyRepository();
     // Draw the screen
     render(<HomeScreen repository={repository} now={NOW} />);
-    // Start at once
-    await userEvent.click(await screen.findByRole("link", { name: "Start" }));
+    // Past the hello, then on at once with nothing picked
+    await userEvent.click(await screen.findByRole("button", { name: "Let’s start" }));
+    // (Continue)
+    await userEvent.click(await screen.findByRole("link", { name: "Continue" }));
     // Confirm an empty answer was saved
     await waitFor(async () => expect((await repository.getSettings(NOW)).practiceFocus).toEqual([]));
   });
@@ -247,7 +255,7 @@ describe("HomeScreen", () => {
     // The steps
     const steps = within(await screen.findByRole("list", { name: "Steps" })).getAllByRole("link");
     // Confirm the four steps, the card's address, no empty bar or "0 of 4" yet, and that the first step starts free talk inside the plan (no band below; decision 138)
-    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), screen.queryByText(/^0 of/), steps[0]?.getAttribute("href")]).toEqual([["Step 1: Free talk", "Step 2: Learn", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=2`, null, FIRST_STEP]);
+    expect([steps.map((step) => step.getAttribute("aria-label")), steps[1]?.getAttribute("href"), within(screen.getByRole("region", { name: "Today's practice" })).queryByText(/^0 of/), steps[0]?.getAttribute("href")]).toEqual([["Step 1: Free talk", "Step 2: Learn", `Step 3: ${plan.steps[2]?.label}`, `Step 4: ${plan.steps[3]?.label}`], `/learn/card?id=${LEARN_CARDS[0]!.id}&plan=2`, null, FIRST_STEP]);
   });
 
   // Each step's picture is its kind's mode tile (the UI rewrite; a blob scene before, decisions 137 and 139): the next one moving, the others still
@@ -307,8 +315,8 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={repository} now={NOW} />);
     // The steps
     const steps = await screen.findByRole("list", { name: "Steps" });
-    // Confirm the headline, the summary, each step's line, no filler counts, the moment playing, and the blob celebrating in it (decision 134)
-    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 3 minutes 10 today. Second day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/pause words a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length, document.querySelector("[data-done-face] [data-blob-mood]")?.getAttribute("data-blob-mood")]).toEqual(["Done for today.", true, true, true, null, 4, "celebrating"]);
+    // Confirm the headline, the summary, each step's line, no filler counts, the moment playing, your blob laughing in it with its confetti flying (storyboard "Day done"; decision 134), and Sage's one suggestion as the main action
+    expect([screen.getByRole("heading", { level: 1 }).textContent, !!screen.getByText("You spoke for 3 minutes 10 today. Second day this week."), !!within(steps).getByText("Look up more"), !!within(steps).getByText("You spoke for 1 minute 30."), screen.queryByText(/pause words a minute/), steps.querySelectorAll(".motion-safe\\:animate-pop").length, !!document.querySelector("[data-done-face] [data-cast='you']"), document.querySelectorAll("[data-confetti].motion-safe\\:animate-confetti").length > 0]).toEqual(["Done for today.", true, true, true, null, 4, true, true]);
     // The suggestions to keep going
     const more = within(screen.getByRole("region", { name: "Keep going" })).getAllByRole("link");
     // Confirm three or four, none of them today's steps, the last another card
@@ -334,7 +342,7 @@ describe("HomeScreen", () => {
     // Confirm it
     expect([warmScene?.getAttribute("data-step-scene"), warmScene?.querySelector("[data-mode-tile]")?.getAttribute("data-motion"), !!warmScene?.querySelector(".opacity-55"), warmScene?.textContent]).toEqual(["read-aloud", "still", true, "Done"]);
     // Confirm the heading, the done mark, no band, step 1 marked as the current step instead (decision 138), and no suggestions yet
-    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), screen.queryByRole("link", { name: /^Continue/ }), screen.getByRole("link", { current: "step" }).getAttribute("aria-label"), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, null, "Step 1: Learn", null]);
+    expect([(await screen.findByRole("heading", { level: 1 })).textContent, !!within(screen.getByRole("link", { name: "Step 2: Warm up" })).getByText("Done"), screen.getAllByRole("link", { name: /^Continue/ }).map((link) => link.getAttribute("aria-label")), screen.getByRole("link", { current: "step" }).getAttribute("aria-label"), screen.queryByRole("region", { name: "Keep going" })]).toEqual(["Pick up where you left off.", true, ["Continue step 1: Learn", "Continue step 1: Learn"], "Step 1: Learn", null]);
   });
 
   // A step done since Today last showed it ticks off once: it carries the moment, the next step grows in; the next visit plays nothing (decision 141)
@@ -404,8 +412,8 @@ describe("HomeScreen", () => {
     const also = await screen.findByRole("region", { name: "Also today" });
     // Its two rows
     const [lesson, quick] = within(also).getAllByRole("link");
-    // Confirm the lesson (its unit, number and title, and where it goes) and Quick play (a Rapid Fire question, without saying which)
-    expect([lesson!.textContent, lesson!.getAttribute("href"), quick!.textContent, /^\/session\?mode=talk&prompt=t\d+$/.test(quick!.getAttribute("href") ?? "")]).toEqual(["One momentYour lesson · Answering 2/6", "/session?mode=smalltalk&prompt=stl2", "Quick playA random kind of practice", true]);
+    // Confirm the lesson (Keep going: its unit, how far through as a bar and in words, the next title, and where it goes) and Quick play (a Rapid Fire question, without saying which)
+    expect([lesson!.textContent, within(lesson!).getByRole("img").getAttribute("aria-label"), lesson!.getAttribute("href"), quick!.textContent, /^\/session\?mode=talk&prompt=t\d+$/.test(quick!.getAttribute("href") ?? "")]).toEqual(["Keep goingAnswering1 of 6 lessons · next: One moment", "1 of 6 lessons done", "/session?mode=smalltalk&prompt=stl2", "Quick playA random kind of practiceWe won’t say which until you start.", true]);
   });
 
   // When the lesson is already one of today's steps, it is not linked twice; Quick play stays, with its default random source
@@ -423,7 +431,7 @@ describe("HomeScreen", () => {
     // The section beside the steps
     const also = await screen.findByRole("region", { name: "Also today" });
     // Confirm the lesson is a step, and the section holds only Quick play
-    expect([!!within(screen.getByRole("list", { name: "Steps" })).getByRole("link", { name: /Small-talk lesson 1/ }), within(also).getAllByRole("link").map((link) => link.textContent)]).toEqual([true, ["Quick playA random kind of practice", "Your progressThen and now, every take"]]);
+    expect([!!within(screen.getByRole("list", { name: "Steps" })).getByRole("link", { name: /Small-talk lesson 1/ }), within(also).getAllByRole("link").map((link) => link.textContent)]).toEqual([true, ["Quick playA random kind of practiceWe won’t say which until you start."]]);
   });
 
   // A returning user sees days in the last week, and the run only from a week of practice (decision 78)
@@ -444,6 +452,28 @@ describe("HomeScreen", () => {
     render(<HomeScreen repository={repository} now={NOW} />);
     // Confirm both
     expect([early, !!(await screen.findByText("9 practice days and counting."))]).toEqual([[true, null], true]);
+  });
+
+  // "Since day 1" shows one real gain against the first recording, and nothing when there is none (the Today reference, second pass)
+  it("shows since day 1 only with a real gain", async () => {
+    // A first recording with many pause words, and a later one with fewer
+    const repository = emptyRepository();
+    // The first
+    await repository.saveSession(makeSession({ id: "first", mode: "talk", isBaseline: true, fillersPerMinute: 6.2, createdAt: new Date(2026, 9, 5, 9).toISOString() }));
+    // The later
+    await repository.saveSession(makeSession({ id: "later", mode: "talk", fillersPerMinute: 2, createdAt: new Date(2026, 9, 12, 9).toISOString() }));
+    // Draw the screen
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // The cards (one for a computer, one for a phone)
+    const cards = await screen.findAllByRole("link", { name: /^Since day 1/ });
+    // Draw again with no gain
+    cleanup();
+    // The later one no better
+    await repository.saveSession(makeSession({ id: "later", mode: "talk", fillersPerMinute: 6.4, createdAt: new Date(2026, 9, 12, 9).toISOString() }));
+    // Drawn
+    render(<HomeScreen repository={repository} now={NOW} />);
+    // Confirm the gain and where it leads, then nothing
+    expect([cards.map((card) => [card.textContent, card.getAttribute("href")]), (await screen.findAllByRole("list", { name: "Steps" })).length, screen.queryByRole("link", { name: /^Since day 1/ })]).toEqual([[["Since day 14.2 fewer pause words a minute", "/profile"], ["Since day 14.2 fewer pause words a minute", "/profile"]], 1, null]);
   });
 
   // The run can be hidden in Settings, and then Today shows neither the line nor the squares (decision 78)
