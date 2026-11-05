@@ -81,6 +81,9 @@ const BARGE_LAG_SECONDS = 0.5;
 // The most times the persona cuts in on a long turn in one conversation, on hard (decision 120)
 const MAX_CUT_INS = 2;
 
+// The big round button on your dark stage (TalkCall's Done; Start before the call): a chunky green circle on a computer, a full-width bar on a phone
+const ROUND_BUTTON = `grid size-28 place-items-center rounded-full bg-fill font-display text-cue font-semibold text-fill-ink shadow-chunky transition-[transform,box-shadow] duration-100 motion-safe:active:translate-y-[3px] active:shadow-chunky-pressed max-md:h-14 max-md:w-full max-md:rounded-2xl max-md:text-button max-md:uppercase ${PRESS}`;
+
 // How a turn of yours ended: a tap on Done, by itself when you stopped talking, the turn's timer, or the persona cutting in on a long turn (hard; decision 120)
 type TurnEnd = "tap" | "auto" | "timer" | "cut";
 
@@ -1378,47 +1381,65 @@ function Conversation({ persona, skill, situationId, autostart = false, services
   return (
     <main id="main" className={PRACTICE_MAIN}>
       {/* The bar: the way out or the clock, how far through, who and where */}
-      <PracticeBar close={closeLink} lead={clockLead} progress={phase === "intro" ? 0 : phase === "empty" || phase === "lost" || phase === "failed" ? undefined : elapsed / CONVERSATION_LIMIT_SECONDS} label={phase === "intro" ? "Talk with someone" : talkLabel} />
+      <PracticeBar close={closeLink} lead={clockLead} progress={phase === "intro" ? 0 : phase === "empty" || phase === "lost" || phase === "failed" ? undefined : elapsed / CONVERSATION_LIMIT_SECONDS} label={talkLabel} />
 
-      {/* Before starting: the situation and what to practise (once the earlier conversations are counted) */}
+      {/* Before starting (Desktop Screens "TalkCall" before the first turn): the friend in the call with the situation in their bubble, your side waiting with Start, the goal beside it (once the earlier conversations are counted) */}
       {phase === "intro" && earlier !== null && (
         <div className={`${PRACTICE_BODY} ${PRACTICE_COLUMNS}`}>
-          <section aria-labelledby="talk-heading" className="flex flex-col">
-            {/* What this is */}
-            <p className={STEP_LABEL}>Talk with someone · live</p>
-            {/* The situation (decision 127) */}
-            <h1 id="talk-heading" className="mt-2 font-display text-statement font-semibold md:text-prompt">{scenario.title}</h1>
-            {/* Where you are */}
-            <p className="mt-3 max-w-[48ch] text-lede">{named(scenario.setting)}</p>
-            {/* Who it is with, picked for you */}
-            <div data-talking-with className={`mt-6 flex items-center gap-4 p-4 ${CARD}`}>
-              {/* The friend */}
-              <Cast who="friend" face="ready" className="size-16" />
-              {/* Their name and what they are like */}
-              <p className="min-w-0 flex-1">
-                <span className="sr-only">You’ll talk with </span>
-                <span className="block font-display text-xl font-semibold">{persona.name}</span>
-                <span className="block text-footnote font-bold text-ink-muted">{persona.tagline}</span>
-              </p>
+          <section aria-labelledby="talk-heading" className="flex min-w-0 flex-col gap-6">
+            {/* The friend and where you are, as the call will look */}
+            <div className="flex items-end gap-3 md:gap-6">
+              {/* The friend, waiting */}
+              <div className="flex flex-none flex-col items-center">
+                {/* The drawing */}
+                <Cast who="friend" face="ready" label={`${persona.name}, waiting for you`} className="size-20 md:size-44" />
+                {/* Their name */}
+                <span aria-hidden="true" className="mt-1 font-display text-xl font-semibold md:text-2xl">{persona.name}</span>
+                {/* What they are doing */}
+                <span aria-hidden="true" className="text-sm font-bold text-ink-muted">is waiting</span>
+              </div>
+              {/* The situation, in their bubble (decision 127) */}
+              <div data-talking-with className={`${BUBBLE} mb-10 min-w-0 flex-1 rounded-[28px] px-5 py-4 shadow-card md:mb-16 md:px-7 md:py-6`}>
+                {/* What this is */}
+                <span className={LAB}>Talk with someone · live</span>
+                {/* The situation */}
+                <h1 id="talk-heading" className="mt-1.5 font-display text-cue font-semibold leading-tight md:text-statement">{scenario.title}</h1>
+                {/* Where you are */}
+                <p className="mt-2 max-w-[52ch] text-lede leading-snug font-semibold">{named(scenario.setting)}</p>
+                {/* Who it is with, picked for you */}
+                <p className="mt-2 text-footnote font-bold text-ink-muted"><span className="sr-only">You’ll talk with </span>{persona.name}: {persona.tagline}</p>
+              </div>
             </div>
-            {/* How hard, with written lines (decision 120) */}
-            {written && <DifficultyPicker chosen={difficulty} name={persona.name} onChoose={chooseDifficulty} />}
             {/* The coach could not be reached */}
-            {fellBack && <p role="status" className="mt-4 max-w-[48ch] text-lede">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
-            {/* No speech-to-text in this browser */}
-            {!supported && <p role="alert" className="mt-4 max-w-[48ch] text-lede">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
-            {/* Start, or another situation */}
-            {supported && (
-              <p className="mt-6 flex flex-wrap gap-3">
-                {/* Start */}
-                <button type="button" onClick={() => void begin()} className={`${PRIMARY} min-w-40`}>Start</button>
-                {/* Another situation, when lines are written */}
-                {written && !picked && <button type="button" onClick={() => setSkipped(skipped + 1)} className={QUIET}>Another situation</button>}
-              </p>
-            )}
+            {fellBack && <p role="status" className="max-w-[48ch] text-footnote font-bold text-ink-muted">{fellBackWhy === "budget" ? `This month’s conversation minutes are used up, so ${persona.name} will use recorded lines until next month.` : `The coach couldn’t be reached, so ${persona.name} will use recorded lines here.`}</p>}
+            {/* Your side, waiting: the dark stage the call will use, with Start where Done will be */}
+            <div data-ready-stage className="flex flex-wrap items-center gap-6 rounded-[28px] bg-ink p-5 text-paper-raised md:p-7">
+              {/* You, ready, in a still ring */}
+              <span aria-hidden="true" className="grid flex-none place-items-center rounded-full border-4 border-warm/40 p-2.5"><Cast who="you" face="ready" className="size-20 md:size-28" /></span>
+              {/* What happens */}
+              <div className="flex min-w-0 flex-[1_1_14rem] flex-col gap-2">
+                {/* Whose side */}
+                <span className={`${LAB} text-paper-raised/70`}>You</span>
+                {/* The state, in words */}
+                <span className="font-display text-cue font-semibold md:text-statement">{supported ? "Ready when you are" : "Not in this browser"}</span>
+                {/* How the turns go */}
+                {supported && <span className="font-bold text-paper-raised/75">{persona.name} speaks first. {callChosen ? "A phone call (beta, change this in Settings): no turns to end, and you can talk over each other." : liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."}</span>}
+                {/* No speech-to-text in this browser */}
+                {!supported && <p role="alert" className="max-w-[48ch] font-bold text-paper-raised">This browser can’t turn speech into text, so {persona.name} can’t follow what you say. Try Chrome, Edge or Safari.</p>}
+              </div>
+              {/* Start, a big round button where Done will be, then another situation */}
+              {supported && (
+                <div className="flex flex-none flex-col items-center gap-4 max-md:w-full md:ml-auto">
+                  {/* Start */}
+                  <button type="button" onClick={() => void begin()} className={ROUND_BUTTON}>Start</button>
+                  {/* Another situation, when lines are written */}
+                  {written && !picked && <button type="button" onClick={() => setSkipped(skipped + 1)} className={`${QUIET} max-md:w-full`}>Another situation</button>}
+                </div>
+              )}
+            </div>
           </section>
-          {/* The side: the goal and how it works */}
-          <aside aria-label="Before you start" className="flex flex-col gap-4">
+          {/* The side: the goal, how hard, and whose voices */}
+          <aside aria-label="Before you start" className="flex min-w-0 flex-col gap-4 lg:pt-1">
             {/* The one goal (decision 127) */}
             <div data-goal className="flex flex-col gap-1.5 rounded-[22px] bg-accent-tint p-5 text-accent-tint-ink">
               {/* Small heading */}
@@ -1428,8 +1449,10 @@ function Conversation({ persona, skill, situationId, autostart = false, services
               {/* How */}
               <p className="text-footnote font-bold">{named(goal.detail)}</p>
             </div>
-            {/* How it works */}
-            <p className="text-footnote font-bold text-ink-muted">A few exchanges, about a minute. {persona.name} speaks first. {callChosen ? "A phone call (beta, change this in Settings): no turns to end, and you can talk over each other." : liveChosen ? "Answer out loud; a live speech service hears when you’ve finished (beta, change this in Settings)." : auto ? "Answer out loud; your turn ends when you stop talking (change this in Settings)." : "Answer out loud, then tap Done."} {persona.name}’s voice is AI, by ElevenLabs. {callChosen ? "During the call your voice goes to ElevenLabs and is not kept." : liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
+            {/* How hard, with written lines (decision 120) */}
+            {written && <div className={`p-5 ${CARD}`}><DifficultyPicker chosen={difficulty} name={persona.name} onChoose={chooseDifficulty} /></div>}
+            {/* How long, and whose voices */}
+            <p className="text-sm font-bold text-ink-muted">A few exchanges, about a minute. {persona.name}’s voice is AI, by ElevenLabs. {callChosen ? "During the call your voice goes to ElevenLabs and is not kept." : liveChosen ? "While you talk, your voice goes to AssemblyAI and is not kept." : "Your browser turns your words into text, usually through Apple or Google."}</p>
           </aside>
         </div>
       )}
@@ -1508,7 +1531,7 @@ function Conversation({ persona, skill, situationId, autostart = false, services
               {/* The actions: Done (or talk now, or try again), then end */}
               <div className="flex flex-none flex-col items-center gap-4 max-md:w-full md:ml-auto">
                 {/* Done, a big round button, while you speak */}
-                {recording && <button type="button" onClick={() => void done()} aria-label="Done" className={`grid size-28 place-items-center rounded-full bg-fill font-display text-cue font-semibold text-fill-ink shadow-chunky transition-[transform,box-shadow] duration-100 motion-safe:active:translate-y-[3px] active:shadow-chunky-pressed max-md:h-14 max-md:w-full max-md:rounded-2xl max-md:text-button max-md:uppercase ${PRESS}`}>Done</button>}
+                {recording && <button type="button" onClick={() => void done()} aria-label="Done" className={ROUND_BUTTON}>Done</button>}
                 {/* While they talk: talk now, cutting in */}
                 {phase === "them" && <button type="button" onClick={interrupt} aria-label={`Interrupt ${persona.name} and start your turn`} className={`${SECONDARY} max-md:w-full`}>Talk now</button>}
                 {/* A problem: try again */}
@@ -1640,11 +1663,11 @@ function ConversationSide({ name, goal, turns, saving }: { name: string; goal: C
 function DifficultyPicker({ chosen, name, onChoose }: { chosen: ConversationDifficulty; name: string; onChoose: (next: ConversationDifficulty) => void }) {
   // The buttons and the line
   return (
-    <div data-difficulty={chosen} className="mt-5">
+    <div data-difficulty={chosen}>
       {/* The choice's name */}
-      <p id="difficulty-label" className="text-footnote text-ink-muted">How hard should {name} make it?</p>
+      <p id="difficulty-label" className="font-display text-lg font-semibold">How hard should {name} make it?</p>
       {/* The three buttons */}
-      <div role="group" aria-labelledby="difficulty-label" className="mt-2 grid max-w-sm grid-cols-3 gap-1 rounded-2xl bg-paper p-1">
+      <div role="group" aria-labelledby="difficulty-label" className="mt-2.5 grid grid-cols-3 gap-1 rounded-2xl bg-paper p-1">
         {/* One per level */}
         {DIFFICULTIES.map((level) => (
           // One level, filled when chosen
@@ -1652,7 +1675,7 @@ function DifficultyPicker({ chosen, name, onChoose }: { chosen: ConversationDiff
         ))}
       </div>
       {/* What the chosen one means */}
-      <p className="mt-2 text-footnote text-ink-muted">{findDifficulty(chosen).blurb}</p>
+      <p className="mt-2 text-footnote font-bold text-ink-muted">{findDifficulty(chosen).blurb}</p>
     </div>
   );
 }
