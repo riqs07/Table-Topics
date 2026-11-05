@@ -11,7 +11,13 @@ import dynamic from "next/dynamic";
 import { PRESS, PRIMARY, RowLink, SECONDARY, TEXT_LINK } from "@/components/script/Buttons";
 import { Masthead } from "@/components/script/Masthead";
 // Load focus mode's thin header (second pass)
-import { PracticeBar } from "@/components/script/PracticeBar";
+import { PRACTICE_BODY, PRACTICE_MAIN, PracticeBar } from "@/components/script/PracticeBar";
+// Load Sage's line and the not-found message (shared decisions 1 and 3)
+import { NotFound, SageSays } from "@/components/script/SageSays";
+// Load the Chart Kit's card, its then and now, and its ribbons
+import { ChartCard } from "@/components/charts/ChartCard";
+import { ThenAndNow as ThenAndNowChart } from "@/components/charts/ThenAndNow";
+import { ribbonFromLevels, ribbonSlots } from "@/core/chartKit";
 // Load the cast: your blob reacts, Sage gives the one note
 import { Cast } from "@/components/scenes/Cast";
 // Load what was said word by word, and the take's verdict
@@ -303,7 +309,7 @@ function NumbersRow({ session, pauseCount, leaveOut, onShowFillers }: { session:
   if (numbers.length === 0) return null;
   // One tile per number, the number large and its words small beneath
   return (
-    <section aria-label="Your numbers" className={`mt-4 grid gap-2 motion-safe:animate-rise ${TILE_COLUMNS[numbers.length] ?? "grid-cols-2"}`} style={{ animationDelay: "220ms" }}>
+    <section aria-label="Your numbers" className={`mt-4 grid gap-3 motion-safe:animate-rise ${TILE_COLUMNS[numbers.length] ?? "grid-cols-2"}`} style={{ animationDelay: "220ms" }}>
       {/* Each number */}
       {numbers.map((item) => {
         // The number and its words
@@ -319,7 +325,7 @@ function NumbersRow({ session, pauseCount, leaveOut, onShowFillers }: { session:
         if (item.kind === "fillers" && onShowFillers && fillerCount(session) > 0) {
           // The tile as a button, with a small "show" under the words
           return (
-            <button key={item.kind} type="button" onClick={onShowFillers} aria-label={`${item.value} ${item.label}: show where`} className={`min-w-0 rounded-2xl bg-card px-3 pt-3 pb-2.5 text-left hover:bg-paper ${PRESS}`}>
+            <button key={item.kind} type="button" onClick={onShowFillers} aria-label={`${item.value} ${item.label}: show where`} className={`min-w-0 px-3.5 pt-3 pb-2.5 text-left hover:bg-paper ${CARD} ${PRESS}`}>
               {body}
               {/* Where it leads */}
               <span aria-hidden="true" className="mt-1 block text-footnote font-semibold text-accent">Show where</span>
@@ -327,7 +333,7 @@ function NumbersRow({ session, pauseCount, leaveOut, onShowFillers }: { session:
           );
         }
         // Any other number: a plain tile
-        return <div key={item.kind} className="min-w-0 rounded-2xl bg-card px-3 pt-3 pb-2.5">{body}</div>;
+        return <div key={item.kind} className={`min-w-0 px-3.5 pt-3 pb-2.5 ${CARD}`}>{body}</div>;
       })}
     </section>
   );
@@ -343,7 +349,7 @@ function LengthRing({ session }: { session: FullSession }) {
   const length = 239;
   // The ring and the sentence beside it
   return (
-    <div className="mt-4 flex items-center gap-4 motion-safe:animate-rise" style={{ animationDelay: "300ms" }}>
+    <div className={`mt-4 flex items-center gap-4 px-5 py-4 motion-safe:animate-rise ${CARD}`} style={{ animationDelay: "300ms" }}>
       {/* The ring */}
       <svg aria-hidden="true" viewBox="0 0 92 92" className="size-20 flex-none -rotate-90">
         {/* Its track */}
@@ -352,7 +358,7 @@ function LengthRing({ session }: { session: FullSession }) {
         <circle cx="46" cy="46" r="38" fill="none" strokeWidth="10" strokeLinecap="round" strokeDasharray={length} strokeDashoffset={length * (1 - share)} className="stroke-accent motion-safe:animate-ring" style={{ "--vl-ring-len": String(length) } as CSSProperties} />
       </svg>
       {/* How the timing went, with the length */}
-      <p className="text-lede">{timingSentence(session.mode, session.durationSec, undefined, session.promptId, session.story?.length, takeWindow(session))}</p>
+      <p className="text-lede font-bold">{timingSentence(session.mode, session.durationSec, undefined, session.promptId, session.story?.length, takeWindow(session))}</p>
     </div>
   );
 }
@@ -521,7 +527,9 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
   return (
     <>
       {/* Focus mode's header: the way out, how far through today's practice, what this was and the step */}
-      <PracticeBar close={{ href: home.href, label: home.label }} label={`${title}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} progress={plan ? plan.step / Math.max(1, plan.total) : undefined} className="-mt-4 md:-mt-8" />
+      <PracticeBar close={{ href: home.href, label: home.label }} label={`${title}${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} progress={plan ? plan.step / Math.max(1, plan.total) : 1} />
+      {/* Everything under the bar, as wide as the references' computer layout */}
+      <div className={PRACTICE_BODY}>
       {/* The take on the left, the verdict sliding in on the right (on a phone, the words, then the verdict as a sheet) */}
       <div className="flex flex-col gap-5 md:flex-row md:flex-wrap md:items-start md:gap-9 md:pt-4">
         {/* The take */}
@@ -531,7 +539,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* A take from the weekly check-in: which one, and the way to the check-ins (decision 100) */}
           {session.checkIn && <p className="-mt-2 text-footnote"><Link href="/check-in" className={TEXT_LINK}>{session.checkIn.week === 1 ? "Your first check-in" : `Check-in ${session.checkIn.week}`}</Link></p>}
           {/* What it answered, as the page's heading: the topic, prompt or question (decision 77), the text read, or the kind of take */}
-          <h1 id="take-heading" className="font-display text-2xl leading-tight font-semibold md:text-4xl">{asked?.text ?? passage?.title ?? title}</h1>
+          <h1 id="take-heading" className="font-display text-2xl leading-tight font-semibold md:text-4xl">{asked?.text ?? (smallTalk && findSmallTalk(session.promptId)?.unit !== "listening" ? findSmallTalk(session.promptId)?.question : undefined) ?? passage?.title ?? title}</h1>
           {/* What was said: pause words highlighted and real pauses as small green bars, or the passage marked for a reading */}
           <div ref={transcriptBlock} tabIndex={-1} role="region" aria-label="What you said" className={`flex scroll-mt-6 flex-col gap-3.5 px-5.5 py-5 outline-none md:px-6 ${CARD}`}>
             {/* The small label, saying how to hear a pause word when that works */}
@@ -585,27 +593,25 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           {/* The headline */}
           <h2 id="verdict" className="font-display text-4xl leading-none font-semibold">{verdict === "good" ? "That landed!" : "Good start."}</h2>
           {/* One line: what worked, or Sage's note in its own words */}
-          <p className={`font-bold ${verdict === "rough" ? "italic" : "text-ink"} text-lg leading-snug`}>{verdict === "rough" ? <>“<span>{verdictLine}</span>”</> : verdictLine}</p>
+          <p className={`font-bold ${verdict === "rough" ? "" : "text-ink"} text-lg leading-snug`}>{verdictLine}</p>
           {/* A personal best: what it was, and before */}
           {!quick && <PersonalBest reaction={reaction} />}
-          {/* The chips: time spoken, pause words, and the cue for next time */}
+          {/* The chips: time spoken and pause words (the cue for next time is in "One change" below, said once) */}
           <ul aria-label="This take" className="flex flex-wrap gap-2">
             {/* Time spoken */}
             <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{formatClock(Math.round(session.durationSec))} spoken</li>
             {/* Pause words, when shown */}
             {view.pauseWords && !reading && <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{pauseCount} pause {pauseCount === 1 ? "word" : "words"}</li>}
-            {/* The cue */}
-            <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">Next time: {change.retryCue}</li>
           </ul>
           {/* The one chunky button */}
-          <Link href={primary.href} data-action-band className={`${PRIMARY} mt-2 w-full`}>{primary.label}</Link>
+          <Link href={primary.href} data-action-band className={`${PRIMARY} mt-2 w-full max-md:fixed max-md:inset-x-4 max-md:bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] max-md:z-20 max-md:mt-0 max-md:w-auto`}>{primary.label}</Link>
           {/* The one text link */}
           <Link href={secondary.href} className={`${TEXT_LINK} self-center uppercase tracking-[.04em] ${verdict === "good" ? "text-accent-tint-ink" : "text-warm-ink"}`}>{secondary.label}</Link>
         </aside>
       </div>
 
       {/* Below the fold: the deeper look at the take, nothing lost */}
-      <section aria-labelledby="more-heading" className="mt-12 mb-10 flex flex-col md:max-w-2xl">
+      <section aria-labelledby="more-heading" className="mt-12 mb-10 flex flex-col md:max-w-3xl">
         {/* Heading */}
         <h2 id="more-heading" className={SECTION_HEADING}>A closer look</h2>
         {/* The focus number as a sentence (or the focus's name when no number measures it) */}
@@ -616,7 +622,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
             {/* The detail */}
             <p className="mt-2 text-footnote text-ink-muted">{session.mode === "pause" || (lesson && lesson.check !== "clear-words") ? (reading.stoppedEarly ? `You read the first ${reading.readTo} words; ` : `You read ${reading.percentRead}% of the words; `) : ""}{reading.stoppedEarly ? `${reading.missedWithin} not heard in that stretch` : `${reading.missed} not heard`}{view.fluency ? `, ${reading.repeated} repeated` : ""}, {reading.extra} extra ({view.pauseWords ? "pause words and added words" : "added words"}).</p>
             {/* A lesson's tip, as a reminder */}
-            {lesson && <p className="-ml-4 mt-4 border-l-2 border-accent pl-[14px] text-lede">Remember: {lesson.tip}</p>}
+            {lesson && <p className="mt-4 rounded-[22px] bg-accent-tint px-5 py-4 text-lede font-bold text-accent-tint-ink">Remember: {lesson.tip}</p>}
           </>
         ) : bookendOutcome ? (
           <>
@@ -758,6 +764,7 @@ function FeedbackView({ repo, session, now, note, earlier, rehearsed, qaIndex, o
           <li><RowLink href={`/profile?session=${encodeURIComponent(session.id)}`}>See all measures for this take</RowLink></li>
         </ul>
       </section>
+      </div>
     </>
   );
 }
@@ -1167,6 +1174,37 @@ function SaidCard({ session, pauseWords }: { session: FullSession; pauseWords: b
   );
 }
 
+// The times of a take's pause words, from its word times, for the ribbon's dots
+function umTimes(session: FullSession): number[] {
+  // Each pause word's time, when its word has one
+  return takeWords(session).flatMap((word, index) => (word.filler && typeof session.spokenTimes?.[index] === "number" ? [session.spokenTimes[index]!] : []));
+}
+
+// A take's voice as the kit's ribbon, from its loudness readings (none without them)
+function takeRibbon(session: FullSession) {
+  // The readings
+  const levels = session.loudness ?? [];
+  // As a ribbon, with fewer slots for a very short take
+  return levels.length > 0 ? ribbonFromLevels(levels, LOUDNESS_TICK_MS, umTimes(session), Math.min(ribbonSlots(session.durationSec), levels.length)) : null;
+}
+
+// The first try and the second as the Chart Kit's then and now: the first a grey ghost, the second in your voice's colour, with the pause words a minute as the headline when shown
+function RetryRibbons({ original, retry, pauseWords }: { original: FullSession; retry: FullSession; pauseWords: boolean }) {
+  // Both ribbons
+  const [before, after] = [takeRibbon(original), takeRibbon(retry)];
+  // Nothing to draw without both
+  if (!before || !after) return null;
+  // The headline: the pause words, or the voice itself when they are hidden
+  const headline = pauseWords ? `${fillerCount(original)} pause words, then ${fillerCount(retry)}.` : "Your voice, first try and now.";
+  // The card
+  return (
+    <ChartCard id="retry-ribbons" label="Then and now" headline={headline} level={3} data={{ "data-retry-ribbons": "" }}>
+      {/* The two ribbons */}
+      <ThenAndNowChart before={before} after={after} names={{ before: "First try", after: "Second try" }} pauseWords={pauseWords} />
+    </ChartCard>
+  );
+}
+
 // The Retry result screen (second pass, built from Desktop Screens "Result"): the change as the headline with both tries' numbers and what you said on the left, the verdict panel on the right with the one chunky way on
 function RetryView({ repo, retry, original, now, plan, view, usual, all }: { repo: Repository; retry: FullSession; original: FullSession; now: Date; plan: PlanNav | null; view: ResultView; usual: number | null; all: ReadonlyArray<SessionRecord> }) {
   // The second try's audio element, for playing a moment from the lenses (decision 115)
@@ -1203,7 +1241,9 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
   return (
     <>
       {/* Focus mode's header: the way out, how far through today's practice, what this was and the step */}
-      <PracticeBar close={{ href: home.href, label: home.label }} label={`Second try${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} progress={plan ? plan.step / Math.max(1, plan.total) : undefined} className="-mt-4 md:-mt-8" />
+      <PracticeBar close={{ href: home.href, label: home.label }} label={`Second try${plan ? ` · step ${plan.step} of ${plan.total}` : ""}`} progress={plan ? plan.step / Math.max(1, plan.total) : 1} />
+      {/* Everything under the bar, as wide as the references' computer layout */}
+      <div className={PRACTICE_BODY}>
       {/* The take on the left, the verdict sliding in on the right (on a phone, the take, then the verdict as a sheet) */}
       <div className="flex flex-col gap-5 md:flex-row md:flex-wrap md:items-start md:gap-9 md:pt-4">
         {/* The second try */}
@@ -1218,10 +1258,10 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
           {cue && <p className="-mt-1 font-bold text-ink-muted">You were working on: {cue}</p>}
           {/* The speaker's own call against the measure (decision 116) */}
           <RatingLine session={retry} all={all} />
-          {/* Both tries' numbers, first then second (decision 67) */}
-          <BeforeAfterTable label="First and second try" first="First" second="Second" rows={changes} />
           {/* What was said this time */}
           <SaidCard session={retry} pauseWords={view.pauseWords} />
+          {/* Then and now: the first try's voice as a grey ghost over this one's (the Chart Kit) */}
+          <RetryRibbons original={original} retry={retry} pauseWords={view.pauseWords} />
           {/* Listen back to the second try */}
           <Playback repo={repo} session={retry} onAudio={(element) => { audio.current = element; }} />
         </section>
@@ -1249,16 +1289,18 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
             {view.pauseWords && <li className="rounded-xl bg-card px-3 py-1.5 text-sm font-extrabold text-ink">{pauseCount} pause {pauseCount === 1 ? "word" : "words"}</li>}
           </ul>
           {/* The one chunky button: the way on */}
-          <Link href={onward.href} data-action-band className={`${PRIMARY} mt-2 w-full`}>{onward.label}{!plan && <span className="sr-only">, {home.label.replace("Close, back to", "back to")}</span>}</Link>
+          <Link href={onward.href} data-action-band className={`${PRIMARY} mt-2 w-full max-md:fixed max-md:inset-x-4 max-md:bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] max-md:z-20 max-md:mt-0 max-md:w-auto`}>{onward.label}{!plan && <span className="sr-only">, {home.label.replace("Close, back to", "back to")}</span>}</Link>
           {/* The one text link: once more, compared with this try */}
           <Link href={onceMoreHref(retry, plan)} className={`${TEXT_LINK} self-center uppercase tracking-[.04em] ${verdict === "good" ? "text-accent-tint-ink" : "text-warm-ink"}`}>Try it once more</Link>
         </aside>
       </div>
 
       {/* Below: the deeper look at the second try */}
-      <section aria-labelledby="retry-more" className="mt-12 mb-10 flex flex-col gap-4 md:max-w-2xl">
+      <section aria-labelledby="retry-more" className="mt-12 mb-10 flex flex-col gap-4 md:max-w-3xl">
         {/* Heading */}
         <h2 id="retry-more" className={SECTION_HEADING}>A closer look</h2>
+        {/* Both tries' numbers, first then second (decision 67), leaving out what neither try measured */}
+        <BeforeAfterTable label="First and second try" first="First" second="Second" rows={changes.filter((row) => !(row.before === "0" && row.after === "0"))} />
         {/* The coach's notes on the retry */}
         {retry.feedback && <p className="text-lede">{retry.feedback.keep} {retry.feedback.change}</p>}
         {/* The first try's pitch under the second's, phrase by phrase (decision 111) */}
@@ -1275,8 +1317,29 @@ function RetryView({ repo, retry, original, now, plan, view, usual, all }: { rep
           <li><RowLink href={`/profile?session=${encodeURIComponent(retry.id)}`}>See all measures for this take</RowLink></li>
         </ul>
       </section>
+      </div>
     </>
   );
+}
+
+// While a take is being read: focus mode's bar and your blob waiting where the verdict will come (not a page title over grey blocks)
+export function SessionWaiting({ bare = false }: { bare?: boolean }) {
+  // The bar and the blob
+  const body = (
+    <>
+      {/* The bar: the way out to your takes */}
+      <PracticeBar close={{ href: "/history", label: "Back to your takes" }} label="Your take" progress={1} />
+      {/* Your blob, waiting */}
+      <div role="status" className={`${PRACTICE_BODY} flex flex-col items-center gap-4 pt-16 text-center`}>
+        {/* The blob, breathing when motion is welcome */}
+        <Cast who="you" face="ready" className="size-28 motion-safe:animate-breathe" />
+        {/* What is happening */}
+        <p className="font-display text-xl font-semibold">Opening your take…</p>
+      </div>
+    </>
+  );
+  // Inside the screen's own page, or as a page of its own
+  return bare ? body : <main id="main" className={PRACTICE_MAIN}>{body}</main>;
 }
 
 // Draw the session page
@@ -1415,26 +1478,40 @@ export function SessionScreen({ sessionId, fetchFn, planStep = null, ...props }:
 
   // Draw the page
   return (
-    // One column on a phone, two on a computer; the results take their soft green surfaces (decision 69)
-    <main id="main" data-area={loaded?.session ? "results" : undefined} className="mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10">
-      {/* Not on this device, or could not be read: the main navigation, then a card with your puzzled blob, what happened and the way to your takes (the result's verdict card, extrapolated) */}
-      {((loaded && !loaded.session) || (!loaded && loadError !== null)) && (
+    // Focus mode for a take (its bar, then two columns on a computer); the main navigation for a take that is not here; a voice drill's or a conversation's own page as before
+    <main id="main" data-area={loaded?.session ? "results" : undefined} className={(!loaded && loadError === null) || (loaded?.session && loaded.session.mode !== "voice" && loaded.session.mode !== "conversation") ? `${PRACTICE_MAIN} max-md:pb-28` : "mx-auto flex min-h-dvh max-w-6xl flex-col bg-paper-raised px-6 pt-6 md:px-14 md:pt-10"}>
+      {/* Still reading: the bar and your blob waiting */}
+      {!loaded && loadError === null && <SessionWaiting bare />}
+      {/* Not on this device: the main navigation, then Sage says so, with the way to your takes (shared decision 1) */}
+      {loaded && !loaded.session && (
         <>
           {/* Title, with the main navigation */}
           <Masthead title="Your take" />
-          {/* The card */}
-          <section aria-labelledby="missing-heading" className={`mt-6 flex max-w-xl flex-col items-center gap-4 px-6 py-8 text-center md:mt-10 ${CARD}`}>
-            {/* Your blob, puzzled */}
-            <Cast who="you" face="wonder" className="size-28" />
-            {/* What happened, as the page's heading */}
-            <h1 id="missing-heading" className="font-display text-3xl leading-tight font-semibold">{loaded ? "This take isn’t here." : "This take could not be loaded."}</h1>
-            {/* Why, and what to do */}
-            {loaded ? <p data-inline className="max-w-[44ch] text-lede text-ink-muted">This session is not on this device. Takes stay in the browser they were recorded in, and a deleted take is gone for good.</p> : <p role="alert" data-inline className="max-w-[44ch] text-lede">The browser said: “{loadError}” Reload the page to try again.</p>}
-            {/* The way to your takes */}
-            <Link href="/history" className={`${PRIMARY} mt-2 w-full max-w-xs`}>Back to history</Link>
-            {/* Or Today */}
-            <Link href="/" className={TEXT_LINK}>Back to Today</Link>
-          </section>
+          {/* Sage's message and the way back */}
+          <NotFound title="This take is not on this device." back={{ href: "/history", label: "Back to history" }} />
+        </>
+      )}
+      {/* Could not be read: Sage says so in a bubble, the browser's reason on a card, and a chunky Try again (shared decision 3) */}
+      {!loaded && loadError !== null && (
+        <>
+          {/* Title, with the main navigation */}
+          <Masthead title="Your take" />
+          {/* Sage, with the heading */}
+          <SageSays mood="curious" className="mt-8 max-w-xl"><h1 className="font-display text-2xl leading-tight font-semibold">This take could not be loaded.</h1></SageSays>
+          {/* The reason */}
+          <div role="alert" data-inline className={`mt-4 max-w-xl px-5 py-4 ${CARD}`}>
+            {/* Small label */}
+            <p className={LAB}>The browser said</p>
+            {/* Its words */}
+            <p className="mt-1 text-lede font-bold">“{loadError}”</p>
+          </div>
+          {/* Try again, or go back */}
+          <p className="mt-6 flex max-w-xl flex-wrap items-center gap-4">
+            {/* Reload */}
+            <button type="button" onClick={() => window.location.reload()} className={`${PRIMARY} w-full max-w-xs`}>Try again</button>
+            {/* Back */}
+            <Link href="/history" className={TEXT_LINK}>Back to history</Link>
+          </p>
         </>
       )}
       {/* A retry with its first try */}

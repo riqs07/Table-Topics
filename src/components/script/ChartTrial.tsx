@@ -96,25 +96,30 @@ function VoiceLineChart({ line, onPlay }: { line: VoiceLine; onPlay: PlayFrom })
   const points = line.points.map((point) => ({ x: 6 + point.x * (W - 12), y: y(point.step) }));
   // The last point
   const last = points.at(-1)!;
-  // The words in place, each pushed right of the one before so none overlap (about 8 units a letter), then squeezed back to fit
-  const placed = line.words.reduce<number[]>((places, word, index) => [...places, Math.max(word.x * W, index === 0 ? 0 : places[index - 1]! + line.words[index - 1]!.text.length * 8 + 6)], []);
+  // The words' size in picture units, and a letter's width at that size (generous, so neighbours keep a gap)
+  const [size, letter, gap] = [9, 5.6, 5];
+  // The words in place, each pushed right of the one before so none overlap
+  const placed = line.words.reduce<number[]>((places, word, index) => [...places, Math.max(word.x * W, index === 0 ? 0 : places[index - 1]! + line.words[index - 1]!.text.length * letter + gap)], []);
   // How far the last word reaches
-  const reach = (placed.at(-1) ?? 0) + (line.words.at(-1)?.text.length ?? 0) * 8;
-  // Squeezed to the row when it runs over
+  const reach = (placed.at(-1) ?? 0) + (line.words.at(-1)?.text.length ?? 0) * letter;
+  // Squeezed to the row when it runs over: places and size together, so the gaps stay
   const squeeze = reach > W ? W / reach : 1;
   // The picture and the words
   return (
     <>
-      <svg viewBox={`0 0 ${W} 64`} role="img" aria-label={line.phrase.risingStatement ? "Your voice rose at the end of a statement." : "Your voice through one phrase."} className="h-auto w-full">
+      <svg viewBox={`0 0 ${W} 84`} role="img" aria-label={line.phrase.risingStatement ? "Your voice rose at the end of a statement." : "Your voice through one phrase."} className="h-auto w-full">
         {/* Your usual pitch: a light grid line */}
         <line x1="0" x2={W} y1="34" y2="34" className="stroke-rule" strokeWidth="1.5" />
         {/* The pitch: one soft line, drawn in once */}
         <path d={smoothPath(points)} className="stroke-chart-voice motion-safe:animate-chart-draw" strokeWidth="2.5" fill="none" strokeLinecap="round" />
         {/* Its end: a teal dot for a clean fall, an open ring for a statement that rose, otherwise a small dot */}
         <circle cx={last.x} cy={last.y} r={line.phrase.risingStatement ? 5 : 4.5} className={line.phrase.ending === "fell" ? "fill-chart-well" : line.phrase.risingStatement ? "fill-card stroke-chart-voice" : "fill-chart-voice"} strokeWidth="2" />
+        {/* The words in place under the line, sized with the picture */}
+        <g aria-hidden="true" className="fill-ink" fontSize={size * squeeze} fontWeight={600}>
+          {/* Each word */}
+          {line.words.map((word, index) => <text key={index} x={placed[index]! * squeeze} y="78">{word.text}</text>)}
+        </g>
       </svg>
-      {/* The words in place */}
-      <p className="relative h-6 text-footnote" aria-hidden="true">{line.words.map((word, index) => <span key={index} className="absolute whitespace-nowrap" style={{ left: `${((placed[index]! * squeeze) / W) * 100}%` }}>{word.text}</span>)}</p>
       {/* Hear it */}
       {onPlay && <div><PlayChip label="Hear this phrase" onClick={() => onPlay(line.phrase.start)} /></div>}
     </>
@@ -369,11 +374,11 @@ export function ChartTrial({ session, sessions, usual, text, pauses, pace, phras
   ].filter((reason): reason is string => typeof reason === "string");
   // The section
   return (
-    <section aria-labelledby="trial-heading" data-chart-trial className="mt-8 flex max-w-md flex-col gap-3">
+    <section aria-labelledby="trial-heading" data-chart-trial className="mt-8 grid gap-4 lg:grid-cols-2">
       {/* Its name */}
-      <h2 id="trial-heading" className={SECTION_HEADING}>Every chart (trial)</h2>
+      <h2 id="trial-heading" className={`${SECTION_HEADING} lg:col-span-2`}>Every chart (trial)</h2>
       {/* What it is */}
-      <p className={LABEL}>On for a week of testing, to see which charts make sense where. Grey marks what to look at; teal what landed.</p>
+      <p className={`${LABEL} -mt-2 lg:col-span-2`}>On for a week of testing, to see which charts make sense where. Grey marks what to look at; teal what landed.</p>
       {/* 1 */}
       {charts.line && <TrialCard id="line" title="1 · Voice line over your words" answers="Where did I rise, fall or go flat?" sure="high" needs="Words with times" line={charts.line.phrase.risingStatement ? "Rose at the end, like a question." : charts.line.phrase.ending === "fell" ? "Fell at the end: it sounded finished." : "Your voice through this phrase."}><VoiceLineChart line={charts.line} onPlay={onPlay} /></TrialCard>}
       {/* 2 */}
@@ -395,7 +400,7 @@ export function ChartTrial({ session, sessions, usual, text, pauses, pace, phras
       {/* G */}
       {charts.progress && <TrialCard id="progress" title="G · Progress on your focus" answers="Am I getting better at this?" sure="high" needs="Three takes" line={charts.progress.line}><ProgressChart progress={charts.progress} /></TrialCard>}
       {/* The situational ones, and what this take could not draw */}
-      <div className={`p-4 text-footnote text-ink-muted ${CARD}`}>
+      <div className={`p-4 text-footnote text-ink-muted lg:col-span-2 ${CARD}`}>
         {/* Where the others live */}
         <p>Before and after shows on a retry; conversation lanes on a conversation.</p>
         {/* Not drawn */}

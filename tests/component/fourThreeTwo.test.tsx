@@ -126,7 +126,7 @@ describe("the rounds", () => {
     // Drawn
     render(<RecordingScreen promptId="p008" mode="response" retryOf={null} repository={createRepository(new MemoryStore())} services={services()} navigate={vi.fn()} loop={{ id: "L1", round: 2 }} />);
     // Which round and its time
-    expect((await screen.findByText(/Told three times · round 2 of 3 · 3:00/)).textContent).toContain("Same content, less time.");
+    expect([!!(await screen.findByText(/Told three times · round 2 of 3 · 3:00/)), !!screen.getByText("Same content, less time")]).toEqual([true, true]);
     // No offer inside a loop
     expect(screen.queryByRole("link", { name: "Tell it three times, shorter each time" })).toBeNull();
     // The one start, with the round's time under it
